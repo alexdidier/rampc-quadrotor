@@ -1,0 +1,93 @@
+ControllerType: 'Dummy' #'Dummy', 'PID', 'LQR', 'LQR Nested'
+
+
+##################  PID Params  ######################
+
+SampleTimePID: 0.008 #in seconds
+SampleTimeLQRFull: 0.015
+SampleTimeLQRNested: 0.004
+SampleTimeRate: 0.004
+
+FeedforwardMotor1: 37700
+FeedforwardMotor2: 37700
+FeedforwardMotor3: 37200
+FeedforwardMotor4: 35000
+
+#### PID X ####
+
+KpX: 1
+KiX: 0.3
+KdX: 0.8
+NX: 227.162
+MinSatPIDX: -0.3
+MaxSatPIDX: 0.3
+
+#### PID Y ####
+
+KpY: 1
+KiY: 0.3
+KdY: 0.8
+NY: 227.162
+MinSatPIDY: -0.3
+MaxSatPIDY: 0.3
+#### PID Z ####
+
+KpZ: 30000
+KiZ: 5000
+KdZ: 20000
+NZ: 40.626
+MinSatPIDZ: -8000
+MaxSatPIDZ: 8000
+#### PID Yaw ####
+
+KpYaw: 3
+KiYaw: 0.04
+KdYaw: 0.8
+NYaw: 100
+MinSatPIDYaw: -99999
+MaxSatPIDYaw: 99999
+#### PID Pitch ####
+
+KpPitch: 3
+KiPitch: 1.5
+KdPitch: 0
+NPitch: 100
+MinSatPIDPitch: -99999
+MaxSatPIDPitch: 99999
+#### PID Roll ####
+
+KpRoll: 3
+KiRoll: 1.5
+KdRoll: 0
+NRoll: 100
+MinSatPIDRoll: -99999
+MaxSatPIDRoll: 99999
+
+
+
+#### PID Rate Yaw ####
+
+KpRateYaw: 500
+KiRateYaw: 20
+KdRateYaw: 0
+NRateYaw: 100
+MinSatRateYaw: -8000
+MaxSatRateYaw: 8000
+
+#### PID Rate Pitch ####
+
+KpRatePitch: 3000
+KiRatePitch: 0
+KdRatePitch: 0
+NRatePitch: 100
+MinSatRatePitch: -20000
+MaxSatRatePitch: 20000
+
+#### PID Rate Roll ####
+
+KpRateRoll: 3000
+KiRateRoll: 0
+KdRateRoll: 0
+NRateRoll: 100
+MinSatRateRoll: -20000
+MaxSatRateRoll: 20000

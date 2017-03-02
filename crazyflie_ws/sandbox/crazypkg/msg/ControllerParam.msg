@@ -1,0 +1,4 @@
+int16 crazyControllerType
+int16 basicControllerType
+int16 paramType
+float64 value

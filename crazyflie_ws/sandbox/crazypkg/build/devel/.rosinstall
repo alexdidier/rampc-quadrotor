@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/crazyfly/crazyflie_ws/sandbox/crazypkg/build/devel/setup.sh

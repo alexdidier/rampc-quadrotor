@@ -1,0 +1,2 @@
+HostName: '10.42.0.15:801'
+StreamMode: 'ClientPull'
