@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/crazyflie/D-FaLL-System/pps_ws/devel/setup.sh
