@@ -1,2 +1,0 @@
-d_fall_pps
--DCATKIN_DEVEL_PREFIX=/home/crazyflie/D-FaLL-System/pps_ws/devel -DCMAKE_INSTALL_PREFIX=/home/crazyflie/D-FaLL-System/pps_ws/install -G Unix Makefiles

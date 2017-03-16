@@ -1,8 +1,0 @@
-prefix=/home/crazyflie/D-FaLL-System/pps_ws/devel
-
-Name: d_fall_pps
-Description: Description of d_fall_pps
-Version: 0.0.0
-Cflags: 
-Libs: -L/home/crazyflie/D-FaLL-System/pps_ws/devel/lib 
-Requires: 
