@@ -103,10 +103,10 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES d_fall_pps
-#  CATKIN_DEPENDS roscpp rospy std_msgs
-#  DEPENDS system_lib
+  INCLUDE_DIRS include
+  LIBRARIES
+  CATKIN_DEPENDS roscpp rospy std_msgs
+  DEPENDS
 )
 
 ###########
@@ -152,7 +152,10 @@ add_executable(ViconDataNode src/ViconDataNode.cpp)
 #   ${catkin_LIBRARIES}
 # )
 
+find_library(VICON_LIBRARY ViconDataStreamSDK_CPP HINTS lib/vicon)
+
 target_link_libraries(ViconDataNode ${catkin_LIBRARIES})
+target_link_libraries(ViconDataNode ${VICON_LIBRARY})
 
 #############
 ## Install ##
