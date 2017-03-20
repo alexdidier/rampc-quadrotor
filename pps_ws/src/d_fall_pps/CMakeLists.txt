@@ -8,6 +8,7 @@ project(d_fall_pps)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  message_generation
   roscpp
   rospy
   std_msgs
@@ -53,6 +54,11 @@ find_package(catkin REQUIRED COMPONENTS
 #   Message2.msg
 # )
 
+add_message_files(
+  FILES
+  ViconData.msg
+)
+
 ## Generate services in the 'srv' folder
 # add_service_files(
 #   FILES
@@ -72,6 +78,10 @@ find_package(catkin REQUIRED COMPONENTS
 #   DEPENDENCIES
 #   std_msgs
 # )
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -136,6 +146,7 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/d_fall_pps_node.cpp)
 add_executable(ViconDataNode src/ViconDataNode.cpp)
+add_executable(PPSClient src/PPSClient.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -156,6 +167,8 @@ find_library(VICON_LIBRARY ViconDataStreamSDK_CPP HINTS lib/vicon)
 
 target_link_libraries(ViconDataNode ${catkin_LIBRARIES})
 target_link_libraries(ViconDataNode ${VICON_LIBRARY})
+
+target_link_libraries(PPSClient ${catkin_LIBRARIES})
 
 #############
 ## Install ##
