@@ -1,7 +1,4 @@
-this is copied from dusan and might therefore need modification
-also you need to add this file in the CMakeLists.txt
-
-
+#copied from Dusan, eventually remove onboardControllerType
 float32 roll
 float32 pitch
 float32 yaw

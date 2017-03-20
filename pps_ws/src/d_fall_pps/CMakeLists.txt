@@ -57,6 +57,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
   FILES
   ViconData.msg
+  ControlParameters.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -145,7 +146,7 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/d_fall_pps_node.cpp)
-add_executable(ViconDataNode src/ViconDataNode.cpp)
+add_executable(ViconDataPublisher src/ViconDataPublisher.cpp)
 add_executable(PPSClient src/PPSClient.cpp)
 
 ## Rename C++ executable without prefix
@@ -165,8 +166,8 @@ add_executable(PPSClient src/PPSClient.cpp)
 
 find_library(VICON_LIBRARY ViconDataStreamSDK_CPP HINTS lib/vicon)
 
-target_link_libraries(ViconDataNode ${catkin_LIBRARIES})
-target_link_libraries(ViconDataNode ${VICON_LIBRARY})
+target_link_libraries(ViconDataPublisher ${catkin_LIBRARIES})
+target_link_libraries(ViconDataPublisher ${VICON_LIBRARY})
 
 target_link_libraries(PPSClient ${catkin_LIBRARIES})
 
