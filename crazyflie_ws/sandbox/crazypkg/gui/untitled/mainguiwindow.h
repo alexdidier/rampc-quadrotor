@@ -1,7 +1,7 @@
 #ifndef MAINGUIWINDOW_H
 #define MAINGUIWINDOW_H
 
-// #define DEBUG_GUI
+#define DEBUG_GUI
 
 #include <QMainWindow>
 #include <QTimer>
@@ -126,9 +126,15 @@ private slots:
    // void on_buttonStop_2_clicked();
    #endif
 
+    void on_spinBoxNumCrazyflies_valueChanged(int arg1);
+
+    void on_spinBoxNumCrazyflies_editingFinished();
+
 private:
 
     Ui::MainGUIWindow *ui;
+    void _init();
+    void _refresh_tabs();
 
     #ifndef DEBUG_GUI
     // void refreshScreen();

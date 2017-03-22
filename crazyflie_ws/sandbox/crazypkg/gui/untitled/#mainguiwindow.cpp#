@@ -37,7 +37,7 @@ MainGUIWindow::~MainGUIWindow()
     delete ui;
 }
 
-void MainGUIWindow::_refresh_tabs()
+void MainGUIWindow::_init_tabs()
 {
     ui->tabWidget->clear();
     std::string str;
@@ -53,7 +53,7 @@ void MainGUIWindow::_refresh_tabs()
 void MainGUIWindow::_init()
 {
     ui->spinBoxNumCrazyflies->setMaximum(N_MAX_CRAZYFLIES);
-    _refresh_tabs();
+    _init_tabs();
 }
 
 #ifndef DEBUG_GUI
@@ -930,10 +930,6 @@ void CSetpointQueue::print()
 #endif  // DEBUG_GUI
 void MainGUIWindow::on_spinBoxNumCrazyflies_valueChanged(int arg1)
 {
-
+    
 }
 
-void MainGUIWindow::on_spinBoxNumCrazyflies_editingFinished()
-{
-    _refresh_tabs();
-}

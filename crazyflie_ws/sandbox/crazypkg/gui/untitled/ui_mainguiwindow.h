@@ -17,6 +17,7 @@
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QMenuBar>
+#include <QtWidgets/QSpinBox>
 #include <QtWidgets/QStatusBar>
 #include <QtWidgets/QTabWidget>
 #include <QtWidgets/QToolBar>
@@ -30,10 +31,9 @@ public:
     QWidget *centralWidget;
     QFrame *frame;
     QTabWidget *tabWidget;
-    QWidget *tab;
-    QWidget *tab_2;
     QFrame *frame_2;
     QFrame *frame_3;
+    QSpinBox *spinBoxNumCrazyflies;
     QMenuBar *menuBar;
     QToolBar *mainToolBar;
     QStatusBar *statusBar;
@@ -47,18 +47,13 @@ public:
         centralWidget->setObjectName(QStringLiteral("centralWidget"));
         frame = new QFrame(centralWidget);
         frame->setObjectName(QStringLiteral("frame"));
-        frame->setGeometry(QRect(40, 500, 1171, 451));
+        frame->setGeometry(QRect(40, 510, 1171, 451));
         frame->setFrameShape(QFrame::StyledPanel);
         frame->setFrameShadow(QFrame::Raised);
         tabWidget = new QTabWidget(frame);
         tabWidget->setObjectName(QStringLiteral("tabWidget"));
         tabWidget->setGeometry(QRect(20, 19, 1131, 401));
-        tab = new QWidget();
-        tab->setObjectName(QStringLiteral("tab"));
-        tabWidget->addTab(tab, QString());
-        tab_2 = new QWidget();
-        tab_2->setObjectName(QStringLiteral("tab_2"));
-        tabWidget->addTab(tab_2, QString());
+        tabWidget->setLayoutDirection(Qt::LeftToRight);
         frame_2 = new QFrame(centralWidget);
         frame_2->setObjectName(QStringLiteral("frame_2"));
         frame_2->setGeometry(QRect(40, 10, 571, 481));
@@ -69,6 +64,12 @@ public:
         frame_3->setGeometry(QRect(630, 10, 791, 481));
         frame_3->setFrameShape(QFrame::StyledPanel);
         frame_3->setFrameShadow(QFrame::Raised);
+        spinBoxNumCrazyflies = new QSpinBox(centralWidget);
+        spinBoxNumCrazyflies->setObjectName(QStringLiteral("spinBoxNumCrazyflies"));
+        spinBoxNumCrazyflies->setGeometry(QRect(1340, 560, 47, 23));
+        spinBoxNumCrazyflies->setReadOnly(false);
+        spinBoxNumCrazyflies->setAccelerated(false);
+        spinBoxNumCrazyflies->setMaximum(6);
         MainGUIWindow->setCentralWidget(centralWidget);
         menuBar = new QMenuBar(MainGUIWindow);
         menuBar->setObjectName(QStringLiteral("menuBar"));
@@ -83,14 +84,15 @@ public:
 
         retranslateUi(MainGUIWindow);
 
+        tabWidget->setCurrentIndex(-1);
+
+
         QMetaObject::connectSlotsByName(MainGUIWindow);
     } // setupUi
 
     void retranslateUi(QMainWindow *MainGUIWindow)
     {
         MainGUIWindow->setWindowTitle(QApplication::translate("MainGUIWindow", "MainGUIWindow", 0));
-        tabWidget->setTabText(tabWidget->indexOf(tab), QApplication::translate("MainGUIWindow", "Tab 1", 0));
-        tabWidget->setTabText(tabWidget->indexOf(tab_2), QApplication::translate("MainGUIWindow", "Tab 2", 0));
     } // retranslateUi
 
 };
