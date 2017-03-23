@@ -20,9 +20,7 @@
 #include "d_fall_pps/Setpoint.h"
 #include "d_fall_pps/MotorCommands.h"
 
-using namespace d_fall_pps;
-
-bool calculateControlOutput(Controller::Request &request, Controller::Response &response) {
+bool calculateControlOutput(d_fall_pps::Controller::Request &request, d_fall_pps::Controller::Response &response) {
     ROS_INFO("calculate control output");
 }
 
