@@ -57,7 +57,8 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
   FILES
   ViconData.msg
-  ControlParameters.msg
+  MotorCommands.msg
+  Setpoint.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -66,6 +67,10 @@ add_message_files(
 #   Service1.srv
 #   Service2.srv
 # )
+add_service_files(
+  FILES
+  Controller.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -148,6 +153,7 @@ include_directories(
 # add_executable(${PROJECT_NAME}_node src/d_fall_pps_node.cpp)
 add_executable(ViconDataPublisher src/ViconDataPublisher.cpp)
 add_executable(PPSClient src/PPSClient.cpp)
+add_executable(SafeControllerService src/SafeControllerService.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -170,6 +176,8 @@ target_link_libraries(ViconDataPublisher ${catkin_LIBRARIES})
 target_link_libraries(ViconDataPublisher ${VICON_LIBRARY})
 
 target_link_libraries(PPSClient ${catkin_LIBRARIES})
+
+target_link_libraries(SafeControllerService ${catkin_LIBRARIES})
 
 #############
 ## Install ##
