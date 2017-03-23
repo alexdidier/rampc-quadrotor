@@ -1,5 +1,6 @@
 #include "mainguiwindow.h"
 #include "ui_mainguiwindow.h"
+
 #include <QDoubleSpinBox>
 #include <QTextEdit>
 #include <QString>
@@ -27,6 +28,7 @@ MainGUIWindow::MainGUIWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainGUIWindow)
 {
+
     ui->setupUi(this);
     _init();
 }
@@ -52,6 +54,14 @@ void MainGUIWindow::_refresh_tabs()
 
 void MainGUIWindow::_init()
 {
+
+    scene = new myGraphicsScene(this);
+
+    ui->graphicsView->setScene(scene);
+    QRect rect(10, 20, 80, 60);
+    scene->addText("Hello world!");
+    scene->addRect(rect, QPen(Qt::black), QBrush(Qt::blue));
+
     ui->spinBoxNumCrazyflies->setMaximum(N_MAX_CRAZYFLIES);
     _refresh_tabs();
 }
@@ -930,10 +940,15 @@ void CSetpointQueue::print()
 #endif  // DEBUG_GUI
 void MainGUIWindow::on_spinBoxNumCrazyflies_valueChanged(int arg1)
 {
-
+    _refresh_tabs();
 }
 
 void MainGUIWindow::on_spinBoxNumCrazyflies_editingFinished()
 {
-    _refresh_tabs();
+
+}
+
+void MainGUIWindow::on_graphicsView_rubberBandChanged(const QRect &viewportRect, const QPointF &fromScenePoint, const QPointF &toScenePoint)
+{
+
 }

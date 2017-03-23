@@ -46,13 +46,13 @@
      </property>
     </widget>
    </widget>
-   <widget class="QFrame" name="frame_2">
+   <widget class="QFrame" name="frame_drawing">
     <property name="geometry">
      <rect>
-      <x>40</x>
-      <y>10</y>
-      <width>571</width>
-      <height>481</height>
+      <x>30</x>
+      <y>20</y>
+      <width>582</width>
+      <height>469</height>
      </rect>
     </property>
     <property name="frameShape">
@@ -61,14 +61,27 @@
     <property name="frameShadow">
      <enum>QFrame::Raised</enum>
     </property>
+    <widget class="QGraphicsView" name="graphicsView">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>20</y>
+       <width>531</width>
+       <height>430</height>
+      </rect>
+     </property>
+     <property name="mouseTracking">
+      <bool>true</bool>
+     </property>
+    </widget>
    </widget>
    <widget class="QFrame" name="frame_3">
     <property name="geometry">
      <rect>
-      <x>630</x>
-      <y>10</y>
-      <width>791</width>
-      <height>481</height>
+      <x>629</x>
+      <y>21</y>
+      <width>581</width>
+      <height>469</height>
      </rect>
     </property>
     <property name="frameShape">

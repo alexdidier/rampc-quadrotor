@@ -5,6 +5,7 @@
 
 #include <QMainWindow>
 #include <QTimer>
+#include <QGridLayout>
 
 #ifndef DEBUG_GUI
 #include "ros/callback_queue.h"
@@ -12,7 +13,7 @@
 #include "CrazyFlieTypes.h"
 #endif
 #include "ui_mainguiwindow.h"
-
+#include "myGraphicsScene.h"
 
 namespace Ui {
 class MainGUIWindow;
@@ -130,9 +131,14 @@ private slots:
 
     void on_spinBoxNumCrazyflies_editingFinished();
 
+    void on_graphicsView_rubberBandChanged(const QRect &viewportRect, const QPointF &fromScenePoint, const QPointF &toScenePoint);
+
 private:
 
     Ui::MainGUIWindow *ui;
+    myGraphicsScene* scene;      //TODO: make a subclass from QGraphicScene class, mouse events
+
+
     void _init();
     void _refresh_tabs();
 

@@ -14,6 +14,7 @@
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QButtonGroup>
 #include <QtWidgets/QFrame>
+#include <QtWidgets/QGraphicsView>
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QMenuBar>
@@ -31,7 +32,8 @@ public:
     QWidget *centralWidget;
     QFrame *frame;
     QTabWidget *tabWidget;
-    QFrame *frame_2;
+    QFrame *frame_drawing;
+    QGraphicsView *graphicsView;
     QFrame *frame_3;
     QSpinBox *spinBoxNumCrazyflies;
     QMenuBar *menuBar;
@@ -54,14 +56,18 @@ public:
         tabWidget->setObjectName(QStringLiteral("tabWidget"));
         tabWidget->setGeometry(QRect(20, 19, 1131, 401));
         tabWidget->setLayoutDirection(Qt::LeftToRight);
-        frame_2 = new QFrame(centralWidget);
-        frame_2->setObjectName(QStringLiteral("frame_2"));
-        frame_2->setGeometry(QRect(40, 10, 571, 481));
-        frame_2->setFrameShape(QFrame::StyledPanel);
-        frame_2->setFrameShadow(QFrame::Raised);
+        frame_drawing = new QFrame(centralWidget);
+        frame_drawing->setObjectName(QStringLiteral("frame_drawing"));
+        frame_drawing->setGeometry(QRect(30, 20, 582, 469));
+        frame_drawing->setFrameShape(QFrame::StyledPanel);
+        frame_drawing->setFrameShadow(QFrame::Raised);
+        graphicsView = new QGraphicsView(frame_drawing);
+        graphicsView->setObjectName(QStringLiteral("graphicsView"));
+        graphicsView->setGeometry(QRect(30, 20, 531, 430));
+        graphicsView->setMouseTracking(true);
         frame_3 = new QFrame(centralWidget);
         frame_3->setObjectName(QStringLiteral("frame_3"));
-        frame_3->setGeometry(QRect(630, 10, 791, 481));
+        frame_3->setGeometry(QRect(629, 21, 581, 469));
         frame_3->setFrameShape(QFrame::StyledPanel);
         frame_3->setFrameShadow(QFrame::Raised);
         spinBoxNumCrazyflies = new QSpinBox(centralWidget);
