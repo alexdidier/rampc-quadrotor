@@ -16,6 +16,8 @@
 
 #include "ros/ros.h"
 
+using namespace d_fall_pps;
+
 int main(int argc, char* argv[]) {
     ROS_INFO_STREAM("fdsafsfdsalj");
 }

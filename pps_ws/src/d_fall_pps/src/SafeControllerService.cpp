@@ -22,7 +22,7 @@
 
 using namespace d_fall_pps;
 
-bool calculateControlOutput(d_fall_pps::Controller::Request &request, d_fall_pps::Controller::Response &response) {
+bool calculateControlOutput(Controller::Request &request, Controller::Response &response) {
     ROS_INFO("calculate control output");
 }
 
