@@ -1,19 +1,25 @@
 #ifndef MAINGUIWINDOW_H
 #define MAINGUIWINDOW_H
-//#include "/home/crazyfly/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QMainWindow"
+
+#define DEBUG_GUI
+
 #include <QMainWindow>
-#include "ros/callback_queue.h"
 #include <QTimer>
+
+#ifndef DEBUG_GUI
+#include "ros/callback_queue.h"
 #include "ros/ros.h"
 #include "CrazyFlieTypes.h"
+#endif
 #include "ui_mainguiwindow.h"
+
 
 namespace Ui {
 class MainGUIWindow;
 }
 
-//bool flagMotorCommandsGUI;
 
+#ifndef DEBUG_GUI
 struct setpoint
 {
     double x;
@@ -43,108 +49,126 @@ private:
     QueueElem* currElem;
     QueueElem* lastElem;
 };
-
+#endif
 
 class MainGUIWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    explicit MainGUIWindow(ros::NodeHandle*, /*ros::CallbackQueue* callbackQueue, ros::Publisher* publisherMotorCommandsGUI,*/ QWidget *parent = 0);
+    #ifdef DEBUG_GUI
+    explicit MainGUIWindow(/*ros::NodeHandle* ,*/ /*ros::CallbackQueue* callbackQueue, ros::Publisher* publisherMotorCommandsGUI,*/ QWidget *parent = 0);
+    #else
+    explicit MainGUIWindow(ros::NodeHandle* , /*ros::CallbackQueue* callbackQueue, ros::Publisher* publisherMotorCommandsGUI,*/ QWidget *parent = 0);
+    #endif
     ~MainGUIWindow();
+    #ifndef DEBUG_GUI
     void init();
+    #endif
 public slots:
+    #ifndef DEBUG_GUI
     void runCallbacks();
+    #endif
 private slots:
+    #ifndef DEBUG_GUI
+   // void PIDParamTableChanged(double param);
 
-    void PIDParamTableChanged(double param);
+   // void RateParamTableChanged(double param);
 
-    void RateParamTableChanged(double param);
+   // void positionSetpointChanged(double param);
 
-    void positionSetpointChanged(double param);
+   // void sampleTimeChanged(double param);
 
-    void sampleTimeChanged(double param);
+   // void feedforwardCmdChanged(double cmd);
 
-    void feedforwardCmdChanged(double cmd);
+   // void controllerTypeChanged(bool checked);
 
-    void controllerTypeChanged(bool checked);
+   // void trajectoryTypeChanged(bool checked);
 
-    void trajectoryTypeChanged(bool checked);
+   // void on_buttonStop_clicked();
 
-    void on_buttonStop_clicked();
+   // void on_buttonPrint_clicked();
 
-    void on_buttonPrint_clicked();
+   // void on_buttonSetpointChange_clicked();
 
-    void on_buttonSetpointChange_clicked();
+   // void on_buttonPIDDefaultParams_clicked();
 
-    void on_buttonPIDDefaultParams_clicked();
+   // void on_buttonSetpointCurrPos_clicked();
 
-    void on_buttonSetpointCurrPos_clicked();
+   // void on_buttonDefaultFeedforward_clicked();
 
-    void on_buttonDefaultFeedforward_clicked();
+   // void on_buttonResetMissed_clicked();
 
-    void on_buttonResetMissed_clicked();
+   // void on_SetpointHome_clicked();
 
-    void on_SetpointHome_clicked();
+   // void on_setpointZ200_clicked();
 
-    void on_setpointZ200_clicked();
+   // void on_slideMotorCmdTest_valueChanged(int value);
 
-    void on_slideMotorCmdTest_valueChanged(int value);
+   // void on_buttonResetControllers_clicked();
 
-    void on_buttonResetControllers_clicked();
+   // void on_buttonSetDefaultTs_clicked();
 
-    void on_buttonSetDefaultTs_clicked();
+   // void on_buttonSetDefaultRateParams_clicked();
 
-    void on_buttonSetDefaultRateParams_clicked();
+   // void on_slideRollAngleTest_valueChanged(int value);
 
-    void on_slideRollAngleTest_valueChanged(int value);
+   // void on_slidePitchAngleTest_valueChanged(int value);
 
-    void on_slidePitchAngleTest_valueChanged(int value);
+   // void on_slideYawAngleTest_valueChanged(int value);
 
-    void on_slideYawAngleTest_valueChanged(int value);
+   // void on_slideRollRateTest_valueChanged(int value);
 
-    void on_slideRollRateTest_valueChanged(int value);
+   // void on_slidePitchRateTest_valueChanged(int value);
 
-    void on_slidePitchRateTest_valueChanged(int value);
+   // void on_slideYawRateTest_valueChanged(int value);
 
-    void on_slideYawRateTest_valueChanged(int value);
+   // void on_buttonStop_2_clicked();
+   #endif
 
-    void on_buttonStop_2_clicked();
+    void on_spinBoxNumCrazyflies_valueChanged(int arg1);
+
+    void on_spinBoxNumCrazyflies_editingFinished();
 
 private:
-    void refreshScreen();
-
-    //callbacks
-    void callbackControllerOutput(const crazypkg::ControllerOutputPackage& msg);
-    void callbackViconData(const crazypkg::ViconData& msg);
-    void callbackCntViconDataMissed(const std_msgs::Int32& msg);
-
-    void readDefaultParameters();
-    void setDefaultPIDParameters();
-    void setDefaultRateParameters();
-    void setDefaultSampleTime();
-    void setDefaultFeedforwardCmd();
-
-    void initPIDParamsTable();
-    void initRateParamsTable();
-    void initPositionSetpoint();
-    void initSampleTime();
-    void initControllerType();
-    void initFeedforwardCmd();
-    void initSetpointQueues();
-    void initSetpointType();
-
-    void publishSetpoint();
-    void updateSetpoint();
-    //void publishSampleTime(EControllerType controller);
 
     Ui::MainGUIWindow *ui;
+    void _init();
+    void _refresh_tabs();
+
+    #ifndef DEBUG_GUI
+    // void refreshScreen();
+
+    // callbacks
+    // void callbackControllerOutput(const crazypkg::ControllerOutputPackage& msg);
+    // void callbackViconData(const crazypkg::ViconData& msg);
+    // void callbackCntViconDataMissed(const std_msgs::Int32& msg);
+
+    void readDefaultParameters();
+    // void setDefaultPIDParameters();
+    // void setDefaultRateParameters();
+    // void setDefaultSampleTime();
+    // void setDefaultFeedforwardCmd();
+
+    // void initPIDParamsTable();
+    // void initRateParamsTable();
+    // void initPositionSetpoint();
+    // void initSampleTime();
+    // void initControllerType();
+    // void initFeedforwardCmd();
+    // void initSetpointQueues();
+    // void initSetpointType();
+
+    // void publishSetpoint();
+    // void updateSetpoint();
+
+    // void publishSampleTime(EControllerType controller);
 
     ros::CallbackQueue m_CallbackQueue;
     ros::NodeHandle* m_pNodeHandle;
 
-    //publishers
-    //ros::Publisher* m_pPublisherMotorCommandsGUI;
+    // publishers
+    // ros::Publisher* m_pPublisherMotorCommandsGUI;
     ros::Publisher* m_pPublisherControllerParam;
     ros::Publisher* m_pPublisherPositionSetpoint;
     ros::Publisher* m_pPublisherSampleTime;
@@ -165,13 +189,13 @@ private:
     ros::Subscriber* m_pSubscriberViconData;
     ros::Subscriber* m_pSubscriberCntViconDataMissed;
 
-   // crazypkg::MotorCommands m_MotorCommands;
-    //crazypkg::ViconData m_ViconData;
+    // crazypkg::MotorCommands m_MotorCommands;
+    // crazypkg::ViconData m_ViconData;
 
-    //params
-    //PIDParams m_PIDParams [countPIDControllers];
+    // params
+    // PIDParams m_PIDParams [countPIDControllers];
 
-    //default params
+    // default params
     PIDParams m_DefaultPIDParams[countPIDControllers];
     PIDParams m_DefaultRateParams[countRateControllers];
     double m_DefaultSampleTime[countSampleTimeTypes];
@@ -193,7 +217,7 @@ private:
 
     ETrajectoryType m_trajectoryType;
 
-
+    #endif
 };
 
 
