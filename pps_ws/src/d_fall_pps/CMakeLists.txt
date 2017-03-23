@@ -149,6 +149,7 @@ include_directories(
 # add_executable(${PROJECT_NAME}_node src/d_fall_pps_node.cpp)
 add_executable(ViconDataPublisher src/ViconDataPublisher.cpp)
 add_executable(PPSClient src/PPSClient.cpp)
+add_executable(SafeControllerService src/SafeControllerService.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -171,6 +172,8 @@ target_link_libraries(ViconDataPublisher ${catkin_LIBRARIES})
 target_link_libraries(ViconDataPublisher ${VICON_LIBRARY})
 
 target_link_libraries(PPSClient ${catkin_LIBRARIES})
+
+target_link_libraries(SafeControllerService ${catkin_LIBRARIES})
 
 #############
 ## Install ##
