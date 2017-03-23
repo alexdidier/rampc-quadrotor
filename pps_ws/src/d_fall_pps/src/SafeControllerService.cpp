@@ -15,7 +15,25 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "ros/ros.h"
+#include "d_fall_pps/Controller.h"
+#include "d_fall_pps/ViconData.h"
+#include "d_fall_pps/Setpoint.h"
+#include "d_fall_pps/MotorCommands.h"
+
+using namespace d_fall_pps;
+
+bool calculateControlOutput(d_fall_pps::Controller::Request &request, d_fall_pps::Controller::Response &response) {
+    ROS_INFO("calculate control output");
+}
 
 int main(int argc, char* argv[]) {
-    ROS_INFO_STREAM("fdsafsfdsalj");
+    ros::init(argc, argv, "SafeControllerService");
+
+    ros::NodeHandle nodeHandle("~");
+
+    ros::ServiceServer service = nodeHandle.advertiseService("Controller", calculateControlOutput);
+    ROS_INFO("SafeControllerService ready");
+    ros::spin();
+
+    return 0;
 }
