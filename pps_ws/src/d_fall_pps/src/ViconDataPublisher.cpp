@@ -30,6 +30,19 @@ int main(int argc, char* argv[]) {
     ros::Publisher viconDataPublisher =
             nodeHandle.advertise<d_fall_pps::ViconData>("ViconData", 1);
 
+    //publish something random if no viconData is available for testing
+    /*
+    d_fall_pps::ViconData viconData; 
+    double i = 1; 
+    while(true)
+    {
+    	viconData.roll  = i;
+    	 viconDataPublisher.publish(viconData);
+    	 ++i;
+    }
+    //the code will not go further than here if testing without real ViconData
+    */
+
     Client client;
 
     //connect client to Vicon computer
@@ -47,17 +60,21 @@ int main(int argc, char* argv[]) {
     }
 
     //set data stream parameters
-    client.SetStreamMode(ViconDataStreamSDK::CPP::StreamMode::ClientPull);
+    client.SetStreamMode(ViconDataStreamSDK::CPP::StreamMode::ClientPull); //phfriedl: maybe ServerPush instead of ClientPull for less latency?
 
     client.EnableSegmentData();
     client.EnableMarkerData();
     client.EnableUnlabeledMarkerData();
     client.EnableDeviceData();
 
-    // Set the global up axis
+    // Set the global up axis, such that Z is up
     client.SetAxisMapping(Direction::Forward,
             Direction::Left,
             Direction::Up);
+
+    //TODO
+    //maybe we need a loop rate?---------e.g. 0.5 MHz -----------------------------
+    //ros::Rate loop_rate(500000)
 
     while (ros::ok()) {
         // Get a frame
@@ -70,8 +87,9 @@ int main(int argc, char* argv[]) {
 
         // //Process the data and publish on topic
         for (int index = 0; index < subjectCount; index++) {
-            std::string subjectName = client.GetSubjectName(index).SubjectName;
-            std::string segmentName = client.GetSegmentName(subjectName, index).SegmentName;
+       		std::string subjectName = client.GetSubjectName(index).SubjectName;
+            std::string segmentName = client.GetSegmentName(subjectName, 0).SegmentName; //last value had to be changed to 0 instead of index, 27.03.17
+
 
             Output_GetSegmentGlobalTranslation outputTranslation =
                     client.GetSegmentGlobalTranslation(subjectName, segmentName);
@@ -79,16 +97,23 @@ int main(int argc, char* argv[]) {
             Output_GetSegmentGlobalRotationQuaternion outputRotation =
                     client.GetSegmentGlobalRotationQuaternion(subjectName, segmentName);
 
+
             //calculate position and rotation of Crazyflie
             double quat_x = outputRotation.Rotation[0];
             double quat_y = outputRotation.Rotation[1];
             double quat_z = outputRotation.Rotation[2];
             double quat_w = outputRotation.Rotation[3];
+            ROS_INFO("x-value and w-value:");
+            ROS_INFO_STREAM(quat_x);
+            ROS_INFO_STREAM(quat_w);
 
             //TODO check whether this transformation is correct
             double roll = atan2(2 * (quat_w * quat_x + quat_y * quat_z), 1 - 2 * (quat_x * quat_x + quat_y * quat_y));
             double pitch = asin(2 * (quat_w * quat_y - quat_z * quat_x));
             double yaw = atan2(2 * (quat_w * quat_z + quat_x * quat_y), 1 - 2 * (quat_y * quat_y + quat_z * quat_z));
+            ROS_INFO("roll:");
+            ROS_INFO_STREAM(roll);
+            ROS_INFO("----------------------");
 
             //calculate time until frame data was received
             Output_GetLatencyTotal outputLatencyTotal = client.GetLatencyTotal();
@@ -102,6 +127,7 @@ int main(int argc, char* argv[]) {
             //build and publish message
             d_fall_pps::ViconData viconData;
             viconData.crazyflieName = subjectName;
+
             viconData.x = outputTranslation.Translation[0];
             viconData.y = outputTranslation.Translation[1];
             viconData.z = outputTranslation.Translation[2];
@@ -110,7 +136,9 @@ int main(int argc, char* argv[]) {
             viconData.yaw = yaw;
             viconData.acquiringTime = totalViconLatency;
 
+            //finally publish
             viconDataPublisher.publish(viconData);
+
         }
 
     }
