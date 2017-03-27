@@ -15,7 +15,26 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "ros/ros.h"
+#include "d_fall_pps/ViconData.h"
 
-int main(int argc, char* argv[]) {
-    ROS_INFO_STREAM("fdsafsfdsalj");
+//is called upon every new arrival of data in main
+void viconCallback(const d_fall_pps::ViconData& data){
+	ROS_INFO("Callback called");
+	ROS_INFO_STREAM(data);
+
+}
+
+int main(int argc, char* argv[]){
+	ROS_INFO_STREAM("PPSClient started");
+
+	ros::init(argc, argv, "PPSClient");
+	ros::NodeHandle nodeHandle("~");
+
+	ROS_INFO_STREAM("about to subscribe");
+	//maybe set second argument to 1 (as we only want the most recent data)
+	ros::Subscriber ViconSubscriber = nodeHandle.subscribe("/ViconDataPublisher/ViconData", 1, viconCallback);
+	ROS_INFO_STREAM("subscribed");
+
+    ros::spin();
+    return 0;
 }

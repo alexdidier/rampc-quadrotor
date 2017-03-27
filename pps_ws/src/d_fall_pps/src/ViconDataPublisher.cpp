@@ -76,7 +76,19 @@ int main(int argc, char* argv[]) {
     //maybe we need a loop rate?---------e.g. 0.5 MHz -----------------------------
     //ros::Rate loop_rate(500000)
 
+
+    int iterations = 0;
     while (ros::ok()) {
+    	//if you want to see at least some output in the terminal
+    	//to see that you are still publishing
+    	if(iterations % 1000 == 0){
+        	ROS_INFO("iteration #%d",iterations);
+    	}
+    	iterations++;
+
+
+
+
         // Get a frame
         while (client.GetFrame().Result != Result::Success) {
             // Sleep a little so that we don't lumber the CPU with a busy poll
@@ -103,17 +115,11 @@ int main(int argc, char* argv[]) {
             double quat_y = outputRotation.Rotation[1];
             double quat_z = outputRotation.Rotation[2];
             double quat_w = outputRotation.Rotation[3];
-            ROS_INFO("x-value and w-value:");
-            ROS_INFO_STREAM(quat_x);
-            ROS_INFO_STREAM(quat_w);
 
             //TODO check whether this transformation is correct
             double roll = atan2(2 * (quat_w * quat_x + quat_y * quat_z), 1 - 2 * (quat_x * quat_x + quat_y * quat_y));
             double pitch = asin(2 * (quat_w * quat_y - quat_z * quat_x));
             double yaw = atan2(2 * (quat_w * quat_z + quat_x * quat_y), 1 - 2 * (quat_y * quat_y + quat_z * quat_z));
-            ROS_INFO("roll:");
-            ROS_INFO_STREAM(roll);
-            ROS_INFO("----------------------");
 
             //calculate time until frame data was received
             Output_GetLatencyTotal outputLatencyTotal = client.GetLatencyTotal();
