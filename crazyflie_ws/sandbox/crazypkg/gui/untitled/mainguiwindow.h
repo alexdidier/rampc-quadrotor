@@ -6,6 +6,7 @@
 #include <QMainWindow>
 #include <QTimer>
 #include <QGridLayout>
+#include <QGraphicsRectItem>
 
 #ifndef DEBUG_GUI
 #include "ros/callback_queue.h"
@@ -137,7 +138,7 @@ private:
 
     Ui::MainGUIWindow *ui;
     myGraphicsScene* scene;      //TODO: make a subclass from QGraphicScene class, mouse events
-
+    QGraphicsRectItem* item1;
 
     void _init();
     void _refresh_tabs();

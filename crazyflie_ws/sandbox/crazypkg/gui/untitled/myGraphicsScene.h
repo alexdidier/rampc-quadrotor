@@ -1,5 +1,7 @@
-#ifndef DIAGRAMSCENE_H
-#define DIAGRAMSCENE_H
+#ifndef MYGRAPHICSSCENE_H
+#define MYGRAPHICSSCENE_H
+
+#include <vector>
 
 #include <QGraphicsScene>
 
@@ -14,6 +16,7 @@ class myGraphicsScene : public QGraphicsScene
 
 public:
     explicit myGraphicsScene(QObject *parent = 0);
+    std::vector<QGraphicsRectItem*> rectangles;
 
 public slots:
 
@@ -27,13 +30,14 @@ protected:
 private:
     QPen* pen;
     QBrush* brush;
-    QRect* rect;
-    QPoint* p1;
-    QPoint* p2;
+    QRectF* tmp_rect;
+    QGraphicsRectItem* tmp_rect_item;
+    QPointF* p1;
+    QPointF* p2;
 
-    bool firstClick;
+    // bool firstClick;
 
-    // bool startedRect;
+    bool startedRect;
 };
 
 #endif
