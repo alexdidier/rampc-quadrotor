@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import roslib
-roslib.load_manifest('d_fall_pps')
+import roslib; roslib.load_manifest('crazypkg')
 import rospy
-from d_fall_pps.msg import ControlParameters
+from crazypkg.msg import ControllerOutputPackage
 
 
 # General import
@@ -29,12 +28,11 @@ from cflib.crazyflie.log import LogConfig
 # Logging settings
 logging.basicConfig(level=logging.ERROR)
 
-class SimpleClient:
+class PPSRadioClient:
     """
-       Example script that runs several threads that read Vicon measurements
-       from a file and send it together with the setpoints to the Crazyflie.
-       It also employs a keyboard event detector that allows the user to
-       manipulate the setpoints with keys.
+       CrazyRadio client that recieves the commands from the controller and 
+       sends them in a CRTP package to the crazyflie with the specified 
+       address.
     """
     def __init__(self, link_uri):
 
@@ -68,7 +66,6 @@ class SimpleClient:
         """
         #print "Connection to %s successful: " % link_uri
         rospy.loginfo("Connection to %s successful: " % link_uri)
-        cf_client._send_to_commander(1, 1, 1, 100, 100, 100, 100, 100, 1)
 
     def _connection_failed(self, link_uri, msg):
         """Callback when connection initial connection fails (i.e no Crazyflie
@@ -87,35 +84,27 @@ class SimpleClient:
         #print "Disconnected from %s" % link_uri
         rospy.logwarn("Disconnected from %s" % link_uri)
 
-
-    def _send_commands(self,cmd1,cmd2,cmd3,cmd4):
-
-            # Send setpoints at the given frequency.
-                # Fill the CRTP packet with the setpoints and send it to the stabilizer
-                pk = CRTPPacket()
-                pk.port = CRTPPort.STABILIZER
-                pk.data = struct.pack('<ffff', cmd1,cmd2,cmd3,cmd4)
-                self._cf.send_packet(pk)
-                #print "Motor commands: %f, %f, %f, %f" % (cmd1,cmd2,cmd3,cmd4)
-
     def _send_to_commander(self,roll, pitch, yaw, thrust,cmd1,cmd2,cmd3,cmd4,mode):
         pk = CRTPPacket()
         pk.port = CRTPPort.COMMANDER
-        pk.data = struct.pack('<fffH', roll, pitch, yaw, thrust)
+        pk.data = struct.pack('<fffHHHHHH', roll, pitch, yaw, thrust,cmd1,cmd2,cmd3,cmd4,mode)
         self._cf.send_packet(pk)
 
-        # self._cf.commander.send_setpoint (roll, pitch, yaw, thrust,cmd1,cmd2,cmd3,cmd4,mode)
-        # print "Motor commands: %f, %f, %f, %f" % (cmd1,cmd2,cmd3,cmd4)
+def motorControlCallback(data):
+        """Callback for motor controller actions"""
+    cf_client._send_to_commander(0, 0, 0, data.motorCmd1, data.motorCmd2, data.motorCmd3, data.motorCmd4, ???type???)
+    rospy.loginfo("motor controller callback: %s, %s, %s, %s", data.motorCmd1, data.motorCmd2, data.motorCmd3, data.motorCmd4)
 
-def subscriberControllerOutputCallback(data):
+def angleControlCallback(data):
+        """Callback for angle controller actions"""
+    cf_client._send_to_commander(data.roll,data.pitch,data.yaw,data.thrust, 0, 0, 0, 0, ???type???)
+    rospy.loginfo("angle controller callback: %s, %s, %s", data.roll,data.pitch,data.yaw,data.thrust)
+
+def rateControlCallback(data):
+        """Callback for rate controller actions"""
     #cf_client._send_commands(data.cmd1,data.cmd2,data.cmd3,data.cmd4)
-    cf_client._send_to_commander(data.roll,data.pitch,data.yaw,data.thrust,data.motorCmd1, data.motorCmd2, data.motorCmd3, data.motorCmd4, data.onboardControllerType)
-    #rospy.loginfo(data.onboardControllerType);
-    #rospy.loginfo(data.motorCmd1);
-    #rospy.logdebug_throttle(2,"sending motor commands to crazyflie: ")
-
-
-
+    cf_client._send_to_commander(data.roll,data.pitch,data.yaw,data.thrust, 0, 0, 0, 0, ???type???)
+    rospy.loginfo("rate controller callback: %s, %s, %s", data.roll,data.pitch,data.yaw,data.thrust)
 
 if __name__ == '__main__':
     rospy.init_node('CrazyRadio', anonymous=True)
@@ -133,19 +122,16 @@ if __name__ == '__main__':
         for i in available:
             print i[0]
         if len(available) > 0:
-            # uri would can be specified directly, as for example: radio://0/70/250K
-            # instead of available[0][0]
             global cf_client
-            #cf_client = SimpleClient('radio://0/80/250K')
-            cf_client = SimpleClient(available[0][0])
-            time.sleep(5.0)
-            #rospy.Subscriber("FlightControl/topicControllerOutput", ControllerOutputPackage, subscriberControllerOutputCallback)
+
+            #TODO: load address from parameters
+            cf_client = PPSRadioClient(available[0][0])
+            time.sleep(3.0)
+            #TODO: register action/subscriber/.. callback
 
             rospy.spin()
         else:
             rospy.logerr("No Crazyflies found, cannot run example")
-
-        #inp=raw_input('press any key');
 
 
         time.sleep(0.5)
