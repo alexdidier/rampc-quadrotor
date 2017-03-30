@@ -14,6 +14,18 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+
+
+//TODO:
+//CentralManager: extract data about room from vicon data
+//CentralManager: assign area for each group and those coordinates to PPSClients
+//ViconDataPublisher: extract data about room from vicon data in and send also to PPSClient
+//PPSClient: Compare data received from CentralManager and ViconDataPublisher and determine in which area you are
+//PPSClient: Choose correct controller accoring to current area
+
+
+
 #include <string.h>
 #include "DataStreamClient.h"
 #include "ros/ros.h"
