@@ -28,6 +28,10 @@ from cflib.crazyflie.log import LogConfig
 # Logging settings
 logging.basicConfig(level=logging.ERROR)
 
+CONTROLLER_MOTOR = 2
+CONTROLLER_ANGLE = 1
+CONTROLLER_RATE = 0
+
 class PPSRadioClient:
     """
        CrazyRadio client that recieves the commands from the controller and 
@@ -86,20 +90,19 @@ class PPSRadioClient:
         pk.data = struct.pack('<fffHHHHHH', roll, pitch, yaw, thrust,cmd1,cmd2,cmd3,cmd4,mode)
         self._cf.send_packet(pk)
 
-def motorControlCallback(data):
+def motorCommandCallback(data):
         """Callback for motor controller actions"""
-    cf_client._send_to_commander(0, 0, 0, data.motorCmd1, data.motorCmd2, data.motorCmd3, data.motorCmd4, ???type???)
+    cf_client._send_to_commander(0, 0, 0, data.motorCmd1, data.motorCmd2, data.motorCmd3, data.motorCmd4, CONTROLLER_MOTOR)
     rospy.loginfo("motor controller callback: %s, %s, %s, %s", data.motorCmd1, data.motorCmd2, data.motorCmd3, data.motorCmd4)
 
-def angleControlCallback(data):
+def angleCommandCallback(data):
         """Callback for angle controller actions"""
-    cf_client._send_to_commander(data.roll,data.pitch,data.yaw,data.thrust, 0, 0, 0, 0, ???type???)
+    cf_client._send_to_commander(data.roll,data.pitch,data.yaw,data.thrust, 0, 0, 0, 0, CONTROLLER_ANGLE)
     rospy.loginfo("angle controller callback: %s, %s, %s", data.roll,data.pitch,data.yaw,data.thrust)
 
-def rateControlCallback(data):
+def rateCommandCallback(data):
         """Callback for rate controller actions"""
-    #cf_client._send_commands(data.cmd1,data.cmd2,data.cmd3,data.cmd4)
-    cf_client._send_to_commander(data.roll,data.pitch,data.yaw,data.thrust, 0, 0, 0, 0, ???type???)
+    cf_client._send_to_commander(data.roll,data.pitch,data.yaw,data.thrust, 0, 0, 0, 0, CONTROLLER_RATE)
     rospy.loginfo("rate controller callback: %s, %s, %s", data.roll,data.pitch,data.yaw,data.thrust)
 
 if __name__ == '__main__':
@@ -123,9 +126,9 @@ if __name__ == '__main__':
             cf_client = PPSRadioClient(available[0][0])
             time.sleep(3.0)
             #TODO: change publisher name if not correct
-            rospy.Subscriber("PPSClient/MotorCommand", MotorCommand, motorControlCallback)
-            rospy.Subscriber("PPSClient/AngleCommand", AngleCommand, angleControlCallback)
-            rospy.Subscriber("PPSClient/RateCommand", RateCommand, rateControlCallback)
+            rospy.Subscriber("PPSClient/MotorCommands", MotorCommand, motorCommandCallback)
+            rospy.Subscriber("PPSClient/AngleCommands", AngleCommand, angleCommandCallback)
+            rospy.Subscriber("PPSClient/RateCommands", RateCommand, rateCommandCallback)
 
             rospy.spin()
         else:
