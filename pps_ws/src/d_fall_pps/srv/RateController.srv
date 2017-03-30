@@ -1,4 +1,4 @@
 ViconData crazyflieLocation
 Setpoint setpoint
 ---
-RateControl controlOutput
+RateCommand controlOutput

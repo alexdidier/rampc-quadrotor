@@ -1,4 +1,4 @@
 ViconData crazyflieLocation
 Setpoint setpoint
 ---
-MotorControl controlOutput
+MotorCommand controlOutput

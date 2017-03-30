@@ -1,4 +1,4 @@
 ViconData crazyflieLocation
 Setpoint setpoint
 ---
-AngleControl controlOutput
+AngleCommand controlOutput

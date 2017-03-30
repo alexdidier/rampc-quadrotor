@@ -58,9 +58,9 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
   FILES
   ViconData.msg
-  MotorControl.msg
-  AngleControl.msg
-  RateControl.msg
+  MotorCommand.msg
+  AngleCommand.msg
+  RateCommand.msg
   Setpoint.msg
 )
 
