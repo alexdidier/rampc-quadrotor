@@ -1,0 +1,26 @@
+<launch>
+	<!-- Might be needed when our CrazyRadio works. There is no CrazyRadio.launch file yet!
+	<include file="$(find d_fall_pps)/launch/CrazyRadio.launch" />
+	-->
+
+	<node pkg="d_fall_pps" name="ViconDataPublisher" output="screen" type="ViconDataPublisher">
+	</node>
+
+	<node pkg="d_fall_pps" name="PPSClient" output="screen" type="PPSClient">
+		<rosparam command="load" file="$(find d_fall_pps)/launch/studentParams.yaml" />	
+	</node>
+
+
+
+	<!-- We will need something similar for our Control node(s)
+	<node pkg="d_fall_pps" name="SafeControllerService" output="screen" type="FlightControl">
+	</node>
+	-->
+
+	<!-- When we have a GUI, this has to be adapted and included
+	<node pkg="d_fall_pps" name="GUI" output="screen" type="GUI">
+		<rosparam command="load" file="$(find d_fall_pps)/launch/ControlParams.yaml" />
+	</node>
+	-->
+
+</launch>

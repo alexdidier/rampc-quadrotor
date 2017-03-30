@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  genmsg
 )
 
 ## System dependencies are found with CMake's conventions
@@ -57,7 +58,9 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
   FILES
   ViconData.msg
-  MotorCommands.msg
+  MotorCommand.msg
+  AngleCommand.msg
+  RateCommand.msg
   Setpoint.msg
 )
 
@@ -69,7 +72,9 @@ add_message_files(
 # )
 add_service_files(
   FILES
-  Controller.srv
+  MotorController.srv
+  AngleController.srv
+  RateController.srv
 )
 
 ## Generate actions in the 'action' folder
