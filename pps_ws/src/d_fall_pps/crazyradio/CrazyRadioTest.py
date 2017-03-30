@@ -68,7 +68,7 @@ class SimpleClient:
         """
         #print "Connection to %s successful: " % link_uri
         rospy.loginfo("Connection to %s successful: " % link_uri)
-        cf_client._send_to_commander(1, 1, 1, 100, 100, 100, 100, 100, 1)
+        cf_client._send_to_commander(0, 0, 0, 1000,    0, 0, 0, 0, 0)
 
     def _connection_failed(self, link_uri, msg):
         """Callback when connection initial connection fails (i.e no Crazyflie
@@ -89,20 +89,22 @@ class SimpleClient:
 
 
     def _send_commands(self,cmd1,cmd2,cmd3,cmd4):
-
-            # Send setpoints at the given frequency.
-                # Fill the CRTP packet with the setpoints and send it to the stabilizer
-                pk = CRTPPacket()
-                pk.port = CRTPPort.STABILIZER
-                pk.data = struct.pack('<ffff', cmd1,cmd2,cmd3,cmd4)
-                self._cf.send_packet(pk)
-                #print "Motor commands: %f, %f, %f, %f" % (cmd1,cmd2,cmd3,cmd4)
+        # Send setpoints at the given frequency.
+        # Fill the CRTP packet with the setpoints and send it to the stabilizer
+        pk = CRTPPacket()
+        pk.port = CRTPPort.STABILIZER
+        pk.data = struct.pack('<ffff', cmd1,cmd2,cmd3,cmd4)
+        self._cf.send_packet(pk)
+        print('command')
+        #print "Motor commands: %f, %f, %f, %f" % (cmd1,cmd2,cmd3,cmd4)
 
     def _send_to_commander(self,roll, pitch, yaw, thrust,cmd1,cmd2,cmd3,cmd4,mode):
         pk = CRTPPacket()
         pk.port = CRTPPort.COMMANDER
+        #pk.data = struct.pack('<fffHHHHHH', roll, pitch, yaw, thrust,cmd1,cmd2,cmd3,cmd4,mode)
         pk.data = struct.pack('<fffH', roll, pitch, yaw, thrust)
         self._cf.send_packet(pk)
+        print(thrust)
 
         # self._cf.commander.send_setpoint (roll, pitch, yaw, thrust,cmd1,cmd2,cmd3,cmd4,mode)
         # print "Motor commands: %f, %f, %f, %f" % (cmd1,cmd2,cmd3,cmd4)
@@ -136,10 +138,13 @@ if __name__ == '__main__':
             # uri would can be specified directly, as for example: radio://0/70/250K
             # instead of available[0][0]
             global cf_client
-            #cf_client = SimpleClient('radio://0/80/250K')
+            #cf_client = SimpleClient('radio://0/111/250K')
             cf_client = SimpleClient(available[0][0])
             time.sleep(5.0)
             #rospy.Subscriber("FlightControl/topicControllerOutput", ControllerOutputPackage, subscriberControllerOutputCallback)
+
+            while True:
+                cf_client._send_to_commander(1, 1, 1, 1000,    100, 100, 100, 100, 100)
 
             rospy.spin()
         else:
