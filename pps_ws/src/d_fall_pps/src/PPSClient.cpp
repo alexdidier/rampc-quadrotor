@@ -17,10 +17,47 @@
 #include "ros/ros.h"
 #include "d_fall_pps/ViconData.h"
 
+//the teamname and the assigned crazyflie, will be extracted from studentParams.yaml
+std::string team; //is this needed?
+std::string cflie;
+
+
+
+//debugging
+int callbackCalls = 0;
+
 //is called upon every new arrival of data in main
 void viconCallback(const d_fall_pps::ViconData& data){
-	ROS_INFO("Callback called");
-	ROS_INFO_STREAM(data);
+	//debugging
+	++callbackCalls;
+	//ROS_INFO("Callback called #%d",callbackCalls);
+	//ROS_INFO("Recived Pitch in this callback: %f", data.pitch);
+	//ROS_INFO("received data:"); ROS_INFO_STREAM(data);
+	//ROS_INFO("My teamname is:"); ROS_INFO_STREAM(team);
+	//ROS_INFO("My crazyflie is:"); ROS_INFO_STREAM(cflie);
+
+	//extract data from "data" and publish/add to service for controller
+	if(data.crazyflieName == cflie){
+		d_fall_pps::ViconData myDataToPublish;
+		myDataToPublish.crazyflieName = data.crazyflieName;
+		myDataToPublish.x = data.x;
+		myDataToPublish.y = data.y;
+		myDataToPublish.z = data.z;
+		myDataToPublish.roll = data.roll;
+		myDataToPublish.pitch = data.pitch;
+		myDataToPublish.yaw = data.yaw;
+		myDataToPublish.acquiringTime = data.acquiringTime;
+		//ROS_INFO("data to share with right controller:");
+		//ROS_INFO_STREAM(myDataToPublish);
+
+
+		//TODO:
+		//Some way of choosing the correct controller: Safe or Custom
+	}
+	else {
+		ROS_INFO("ViconData from other crazyflie received");
+	}
+
 
 }
 
@@ -30,8 +67,16 @@ int main(int argc, char* argv[]){
 	ros::init(argc, argv, "PPSClient");
 	ros::NodeHandle nodeHandle("~");
 
+	//get the params defined in studentParams.yaml
+	if(!nodeHandle.getParam("TeamName",team)){
+		ROS_ERROR("Failed to get TeamName");
+	}
+
+	if(!nodeHandle.getParam("CrazyFlieName",cflie)){
+		ROS_ERROR("Failed to get CrazyFlieName");
+	}
+	
 	ROS_INFO_STREAM("about to subscribe");
-	//maybe set second argument to 1 (as we only want the most recent data)
 	ros::Subscriber ViconSubscriber = nodeHandle.subscribe("/ViconDataPublisher/ViconData", 1, viconCallback);
 	ROS_INFO_STREAM("subscribed");
 
