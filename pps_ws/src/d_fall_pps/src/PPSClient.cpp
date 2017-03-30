@@ -66,16 +66,13 @@ void viconCallback(const d_fall_pps::ViconData& data){
 
 
 //Send to Crayzradio>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-void CControlMgr::callbackRunRateController(const ros::TimerEvent&)
+void callbackRunRateController(const ros::TimerEvent&)
 {
-    if(m_pRateController!=NULL)
-        if(m_pRateController->fIsInit())
-        {
-            DistributePowerAndSendToCrazyflie(m_pRateController->computeOutput());
-        }
+      DistributePowerAndSendToCrazyflie(m_pRateController->computeOutput());
+
 }
 
-void CControlMgr::DistributePowerAndSendToCrazyflie(ControllerOutput rateControllerOutput)
+void DistributePowerAndSendToCrazyflie(ControllerOutput rateControllerOutput)
 {
     assert(rateControllerOutput.onboardControllerType=eOnboardMotorCmdController);
     assert(m_isRateOffboard==true);
@@ -89,7 +86,7 @@ void CControlMgr::DistributePowerAndSendToCrazyflie(ControllerOutput rateControl
     SendToCrazyflie(rateControllerOutput);
 }
 
-void CControlMgr::SendToCrazyflie(ControllerOutput package)
+void SendToCrazyflie(ControllerOutput package)
 {
     if(m_isStopped)
     {
