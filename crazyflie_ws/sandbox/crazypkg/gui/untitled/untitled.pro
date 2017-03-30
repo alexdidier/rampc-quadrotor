@@ -14,9 +14,13 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainguiwindow.cpp \
-    myGraphicsScene.cpp
+    myGraphicsScene.cpp \
+    myGraphicsRectItem.cpp \
+    cornergrabber.cpp \
 
 HEADERS  += mainguiwindow.h \
-    myGraphicsScene.h
+    myGraphicsScene.h \
+    myGraphicsRectItem.h \
+    cornergrabber.h
 
 FORMS    += mainguiwindow.ui

@@ -5,6 +5,8 @@
 
 #include <QGraphicsScene>
 
+#include "myGraphicsRectItem.h"
+
 class QGraphicsSceneMouseEvent;
 class QPointF;
 class QColor;
@@ -16,7 +18,7 @@ class myGraphicsScene : public QGraphicsScene
 
 public:
     explicit myGraphicsScene(QObject *parent = 0);
-    std::vector<QGraphicsRectItem*> rectangles;
+    std::vector<myGraphicsRectItem*> rectangles;
 
 public slots:
 
@@ -31,7 +33,7 @@ private:
     QPen* pen;
     QBrush* brush;
     QRectF* tmp_rect;
-    QGraphicsRectItem* tmp_rect_item;
+    myGraphicsRectItem* tmp_rect_item;
     QPointF* p1;
     QPointF* p2;
 
