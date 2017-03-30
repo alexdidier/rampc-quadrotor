@@ -15,12 +15,12 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "ros/ros.h"
-#include "d_fall_pps/Controller.h"
+#include "d_fall_pps/RateController.h"
 #include "d_fall_pps/ViconData.h"
 #include "d_fall_pps/Setpoint.h"
-#include "d_fall_pps/MotorCommands.h"
+#include "d_fall_pps/MotorControl.h"
 
-bool calculateControlOutput(d_fall_pps::Controller::Request &request, d_fall_pps::Controller::Response &response) {
+bool calculateControlOutput(d_fall_pps::RateController::Request &request, d_fall_pps::RateController::Response &response) {
     ROS_INFO("calculate control output");
 }
 
@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
 
     ros::NodeHandle nodeHandle("~");
 
-    ros::ServiceServer service = nodeHandle.advertiseService("Controller", calculateControlOutput);
+    ros::ServiceServer service = nodeHandle.advertiseService("RateController", calculateControlOutput);
     ROS_INFO("SafeControllerService ready");
     ros::spin();
 
