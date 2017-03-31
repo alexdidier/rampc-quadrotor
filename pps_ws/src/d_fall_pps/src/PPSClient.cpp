@@ -118,69 +118,6 @@ void viconCallback(const d_fall_pps::ViconData& data){
 
 
 
-
-
-//Send to Crayzradio>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-/*
-void CControlMgr::callbackRunRateController(const ros::TimerEvent&)
-{
-    if(m_pRateController!=NULL)
-        if(m_pRateController->fIsInit())
-        {
-            DistributePowerAndSendToCrazyflie(m_pRateController->computeOutput());
-        }
-}
-
-void CControlMgr::DistributePowerAndSendToCrazyflie(ControllerOutput rateControllerOutput)
-{
-    assert(rateControllerOutput.onboardControllerType=eOnboardMotorCmdController);
-    assert(m_isRateOffboard==true);
-
-
-    rateControllerOutput.motorCmd1=m_CrazyControllerOutput.motorCmd1-rateControllerOutput.roll/2.0-rateControllerOutput.pitch/2.0-rateControllerOutput.yaw;
-    rateControllerOutput.motorCmd2=m_CrazyControllerOutput.motorCmd2-rateControllerOutput.roll/2.0+rateControllerOutput.pitch/2.0+rateControllerOutput.yaw;
-    rateControllerOutput.motorCmd3=m_CrazyControllerOutput.motorCmd3+rateControllerOutput.roll/2.0+rateControllerOutput.pitch/2.0-rateControllerOutput.yaw;
-    rateControllerOutput.motorCmd4=m_CrazyControllerOutput.motorCmd4+rateControllerOutput.roll/2.0-rateControllerOutput.pitch/2.0+rateControllerOutput.yaw;
-
-    SendToCrazyflie(rateControllerOutput);
-}
-
-void CControlMgr::SendToCrazyflie(ControllerOutput package)
-{
-    if(m_isStopped)
-    {
-        c.motorCmd1=0;
-        m_packageToSend.motorCmd2=0;
-        m_packageToSend.motorCmd3=0;
-        m_packageToSend.motorCmd4=0;
-        m_packageToSend.onboardControllerType=eOnboardMotorCmdController;
-        m_pPublisherControllerOutput->publish(m_packageToSend);
-        return;
-    }
-    else
-    {
-        m_packageToSend.roll=package.roll*RAD2DEG;
-        m_packageToSend.pitch=package.pitch*RAD2DEG;
-        m_packageToSend.yaw=package.yaw*RAD2DEG;
-
-        m_packageToSend.thrust=SaturateToUINT16(package.thrust);
-        m_packageToSend.motorCmd1=SaturateToUINT16(package.motorCmd1);
-        m_packageToSend.motorCmd2=SaturateToUINT16(package.motorCmd2);
-        m_packageToSend.motorCmd3=SaturateToUINT16(package.motorCmd3);
-        m_packageToSend.motorCmd4=SaturateToUINT16(package.motorCmd4);
-
-        m_packageToSend.onboardControllerType=package.onboardControllerType;
-
-        m_pPublisherControllerOutput->publish(m_packageToSend);
-    }
-}
-
-
-*/
-//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
 //callback method to publish d_fall_pps::AngleCommand
 void callbackAngleCommand(const ros::TimerEvent&)
 {
