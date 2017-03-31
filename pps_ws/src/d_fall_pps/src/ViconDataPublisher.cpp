@@ -32,6 +32,7 @@
 #include "d_fall_pps/ViconData.h"
 
 using namespace ViconDataStreamSDK::CPP;
+using namespace d_fall_pps;
 
 int main(int argc, char* argv[]) {
     ros::init(argc, argv, "ViconDataPublisher");
@@ -40,11 +41,11 @@ int main(int argc, char* argv[]) {
     ros::Time::init();
 
     ros::Publisher viconDataPublisher =
-            nodeHandle.advertise<d_fall_pps::ViconData>("ViconData", 1);
+            nodeHandle.advertise<ViconData>("ViconData", 1);
 
     //publish something random if no viconData is available for testing
     /*
-    d_fall_pps::ViconData viconData; 
+    ViconData viconData; 
     double i = 1; 
     while(true)
     {
@@ -143,7 +144,7 @@ int main(int argc, char* argv[]) {
             }
 
             //build and publish message
-            d_fall_pps::ViconData viconData;
+            ViconData viconData;
             viconData.crazyflieName = subjectName;
 
             viconData.x = outputTranslation.Translation[0];

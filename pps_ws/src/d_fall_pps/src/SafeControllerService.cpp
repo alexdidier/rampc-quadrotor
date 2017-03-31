@@ -15,16 +15,29 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "ros/ros.h"
-#include "d_fall_pps/RateController.h"
 #include "d_fall_pps/ViconData.h"
 #include "d_fall_pps/Setpoint.h"
-#include "d_fall_pps/MotorControl.h"
+#include "d_fall_pps/RateCommand.h"
+#include "d_fall_pps/RateController.h"
 
-bool calculateControlOutput(d_fall_pps::RateController::Request &request, d_fall_pps::RateController::Response &response) {
+using namespace d_fall_pps;
+
+bool calculateControlOutput(RateController::Request &request, RateController::Response &response) {
     ROS_INFO("calculate control output");
-    //add safeController
-
     
+    ViconData vicon = request.crazyflieLocation;
+    Setpoint goal = request.setpoint;
+    ROS_INFO("request received with following ViconData");
+    ROS_INFO_STREAM(vicon);
+    ROS_INFO("the goal setpoint is:");
+    ROS_INFO_STREAM(request.setpoint);
+
+    //add/calculate safeController
+    response.controlOutput.rollRate = 1; //testvalue
+	response.controlOutput.pitchRate = 2; //testvalue
+	response.controlOutput.yawRate = 3; //testvalue
+
+	return true;
 }
 
 int main(int argc, char* argv[]) {

@@ -25,6 +25,9 @@
 
 #include "ros/ros.h"
 #include "d_fall_pps/ViconData.h"
+#include "d_fall_pps/RateController.h"
+
+using namespace d_fall_pps;
 
 //the teamname and the assigned crazyflie, will be extracted from studentParams.yaml
 std::string team; //is this needed here? maybe for room asignment received from CentralManager?
@@ -35,7 +38,7 @@ ros::ServiceClient rateClient;
 
 //extract data from "data" and publish/add to service for controller
 //not void: sould give back controlldata
-void PPSClientToController(data){
+void ppsClientToController(ViconData data){
 	if(data.crazyflieName == cflie){
 		/* unnecessairy: just send data!!!!!
 		d_fall_pps::ViconData myDataToPublish;
@@ -56,10 +59,27 @@ void PPSClientToController(data){
 
 		//TODO:
 		//communicating with Controller
+		RateController srvRate;
+		Setpoint goalLocation;
 
+		goalLocation.x = 9; //testvalue
+		goalLocation.y = 8; //testvalue
+		goalLocation.z = 7; //testvalue
+
+		srvRate.request.crazyflieLocation = data;
+		srvRate.request.setpoint = goalLocation;
 
 		//TODO:
 		//return control commands
+		if(rateClient.call(srvRate)){
+			ROS_INFO("Service gave response");
+			ROS_INFO("Received control input");
+			ROS_INFO_STREAM(srvRate.response.controlOutput);
+		}
+		else{
+			ROS_ERROR("Failed to call SafeControllerService");
+			//return 1; //return some useful stuff
+		}
 	}
 	else {
 		ROS_INFO("ViconData from other crazyflie received");
@@ -68,12 +88,12 @@ void PPSClientToController(data){
 
 
 //debugging
-int callbackCalls = 0;
+//int callbackCalls = 0;
 
 //is called upon every new arrival of data in main
 void viconCallback(const d_fall_pps::ViconData& data){
 	//debugging
-	++callbackCalls;
+	//++callbackCalls;
 	//ROS_INFO("Callback called #%d",callbackCalls);
 	//ROS_INFO("Recived Pitch in this callback: %f", data.pitch);
 	//ROS_INFO("received data:"); ROS_INFO_STREAM(data);
@@ -81,7 +101,7 @@ void viconCallback(const d_fall_pps::ViconData& data){
 	//ROS_INFO("My crazyflie is:"); ROS_INFO_STREAM(cflie);
 
 	//extract data from "data" and publish/add to service for controller
-	PPSClientToController(data);
+	ppsClientToController(data);
 
 }
 
@@ -90,6 +110,7 @@ void viconCallback(const d_fall_pps::ViconData& data){
 
 
 //Send to Crayzradio>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+/*
 void CControlMgr::callbackRunRateController(const ros::TimerEvent&)
 {
     if(m_pRateController!=NULL)
@@ -144,7 +165,7 @@ void CControlMgr::SendToCrazyflie(ControllerOutput package)
 }
 
 
-
+*/
 //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 int main(int argc, char* argv[]){
@@ -166,7 +187,7 @@ int main(int argc, char* argv[]){
 	ros::Subscriber ViconSubscriber = nodeHandle.subscribe("/ViconDataPublisher/ViconData", 1, viconCallback);
 	ROS_INFO_STREAM("subscribed");
 	
-	
+	/*
 	//publish package_for_crazyradio>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 	    //m_pNodeHandle=nodeHandle;
     	//m_pCallbackQueueControlMgr=new ros::CallbackQueue();
@@ -179,7 +200,7 @@ int main(int argc, char* argv[]){
 	ros::Pubslisher AngleCommandsPublisher = nodeHandle.advertise <d_fall_pps::MotorCommandsPackage>("MotorCommands", 10));
 
 	//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
+	*/
 
 
 
