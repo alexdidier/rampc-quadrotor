@@ -11,11 +11,8 @@
 	</node>
 
 
-
-	<!-- We will need something similar for our Control node(s)
-	<node pkg="d_fall_pps" name="SafeControllerService" output="screen" type="FlightControl">
+	<node pkg="d_fall_pps" name="SafeControllerService" output="screen" type="SafeControllerService">
 	</node>
-	-->
 
 	<!-- When we have a GUI, this has to be adapted and included
 	<node pkg="d_fall_pps" name="GUI" output="screen" type="GUI">

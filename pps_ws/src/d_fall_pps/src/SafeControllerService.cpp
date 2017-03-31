@@ -22,6 +22,15 @@
 
 using namespace d_fall_pps;
 
+
+/*TODO:
+request from paul
+Specificy controller in a file
+
+
+
+*/
+
 bool calculateControlOutput(RateController::Request &request, RateController::Response &response) {
     ROS_INFO("calculate control output");
     

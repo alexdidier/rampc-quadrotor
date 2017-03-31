@@ -206,7 +206,7 @@ int main(int argc, char* argv[]){
 
 
 	//service: now only one available: to add several services depending on controller
-	rateClient = nodeHandle.serviceClient<d_fall_pps::RateController>("/SafeControllerService/RateCommand");
+	rateClient = nodeHandle.serviceClient<d_fall_pps::RateController>("/SafeControllerService/RateController");
 
 
 
