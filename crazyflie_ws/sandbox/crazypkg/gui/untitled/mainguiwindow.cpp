@@ -6,7 +6,6 @@
 #include <QString>
 
 
-
 #define N_MAX_CRAZYFLIES           20 // protection number
 
 #ifndef DEBUG_GUI
@@ -58,12 +57,14 @@ void MainGUIWindow::_init()
     scene = new myGraphicsScene(ui->frame_drawing);
     //scene->setSceneRect(QRectF(QPointF(-100, 100), QSizeF(200, 200)));
 
-    ui->graphicsView->setScene(scene);
+    ui->graphicsView->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
     item1 = new QGraphicsRectItem(0,0,100,100);
     item1->setBrush(QBrush(Qt::blue));
     scene->addText("Hello world!");
     // scene->addRect(rect, QPen(Qt::black), QBrush(Qt::blue));
     scene->addItem(item1);
+
+    ui->graphicsView->setScene(scene);
 
     ui->spinBoxNumCrazyflies->setMaximum(N_MAX_CRAZYFLIES);
     _refresh_tabs();
