@@ -26,6 +26,9 @@
 #include "ros/ros.h"
 #include "d_fall_pps/ViconData.h"
 #include "d_fall_pps/RateController.h"
+#include "d_fall_pps/AngleCommand.h"
+#include "d_fall_pps/RateCommand.h"
+#include "d_fall_pps/MotorCommand.h"
 
 using namespace d_fall_pps;
 
@@ -35,6 +38,14 @@ std::string cflie;
 
 //global sevices
 ros::ServiceClient rateClient;
+
+ros::Publisher AngleCommandPublisher;
+ros::Publisher RateCommandPublisher;
+ros::Publisher MotorCommandPublisher;
+
+//uncommenting the next line causes FATAL Error at runtime: "You must call ros::init() before creating the first NodeHandle"
+//ros::NodeHandle nodeHandle;
+
 
 //extract data from "data" and publish/add to service for controller
 //not void: sould give back controlldata
@@ -138,7 +149,7 @@ void CControlMgr::SendToCrazyflie(ControllerOutput package)
 {
     if(m_isStopped)
     {
-        m_packageToSend.motorCmd1=0;
+        c.motorCmd1=0;
         m_packageToSend.motorCmd2=0;
         m_packageToSend.motorCmd3=0;
         m_packageToSend.motorCmd4=0;
@@ -168,6 +179,48 @@ void CControlMgr::SendToCrazyflie(ControllerOutput package)
 */
 //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+
+//callback method to publish d_fall_pps::AngleCommand
+void callbackAngleCommand(const ros::TimerEvent&)
+{
+	d_fall_pps::AngleCommand AngleCommandPkg;
+	AngleCommandPkg.rollAngle = 1;
+	AngleCommandPkg.pitchAngle = 1;
+	AngleCommandPkg.yawAngle = 1;
+	
+	AngleCommandPublisher.publish(AngleCommandPkg);
+	ROS_INFO_STREAM("AngleCommandTimer pubslishes: " << AngleCommandPkg.rollAngle << ", " << AngleCommandPkg.pitchAngle << ", " << AngleCommandPkg.yawAngle);
+}
+
+//callback method to publish d_fall_pps::RateCommand
+void callbackRateCommand(const ros::TimerEvent&)
+{
+	d_fall_pps::RateCommand RateCommandPkg;
+	RateCommandPkg.rollRate = 2;
+	RateCommandPkg.pitchRate = 2;
+	RateCommandPkg.yawRate = 2;
+	
+	RateCommandPublisher.publish(RateCommandPkg);
+	ROS_INFO_STREAM("RateCommandTimer pubslishes: " << RateCommandPkg.rollRate << ", " << RateCommandPkg.pitchRate << ", " << RateCommandPkg.yawRate);
+}
+
+//callback method to publish d_fall_pps::MotorCommand
+void callbackMotorCommand(const ros::TimerEvent&)
+{
+	d_fall_pps::MotorCommand MotorCommandPkg;
+	MotorCommandPkg.cmd1 = 3;
+	MotorCommandPkg.cmd2 = 3;
+	MotorCommandPkg.cmd3 = 3;
+	MotorCommandPkg.cmd4 = 3;
+	
+	MotorCommandPublisher.publish(MotorCommandPkg);
+	ROS_INFO_STREAM("MotorCommandTimer pubslishes: " << MotorCommandPkg.cmd1 << ", " << MotorCommandPkg.cmd2 << ", " << MotorCommandPkg.cmd3 << ", " << MotorCommandPkg.cmd4);
+}
+
+
+
+
 int main(int argc, char* argv[]){
 	ROS_INFO_STREAM("PPSClient started");
 
@@ -183,33 +236,30 @@ int main(int argc, char* argv[]){
 		ROS_ERROR("Failed to get CrazyFlieName");
 	}
 	
-	ROS_INFO_STREAM("about to subscribe");
 	ros::Subscriber ViconSubscriber = nodeHandle.subscribe("/ViconDataPublisher/ViconData", 1, viconCallback);
-	ROS_INFO_STREAM("subscribed");
+	ROS_INFO_STREAM("successfully subscribed to ViconData");
 	
+	
+	//ros::Timers to call method that publishes controller outputs for crayzradio node
 	/*
-	//publish package_for_crazyradio>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-	    //m_pNodeHandle=nodeHandle;
-    	//m_pCallbackQueueControlMgr=new ros::CallbackQueue();
-    	//m_pNodeHandle->setCallbackQueue(m_pCallbackQueueControlMgr);
-
-
-    ROS_INFO_STREAM("creating publishers for package_for_crazyradio");
-	ros::Pubslisher AngleCommandsPublisher = nodeHandle.advertise <d_fall_pps::AngleCommandsPackage>("AngleCommands", 10));
-	ros::Pubslisher AngleCommandsPublisher = nodeHandle.advertise <d_fall_pps::RateCommandsPackage>("RateCommands", 10));
-	ros::Pubslisher AngleCommandsPublisher = nodeHandle.advertise <d_fall_pps::MotorCommandsPackage>("MotorCommands", 10));
-
-	//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+	Timers let you schedule a callback to happen at a specific rate through the same callback queue mechanism used by subscription, service, etc. callbacks. 
+	Timers are not a realtime thread/kernel replacement, rather they are useful for things that do not have hard realtime requirements. 
+	Reference: http://wiki.ros.org/roscpp/Overview/Timers
 	*/
-
-
+    ROS_INFO("creating publishers for package_for_crazyradio");
+	ros::Timer AngleCommandTimer = nodeHandle.createTimer(ros::Duration(0.1), callbackAngleCommand);
+	ros::Timer RateCommandTimer = nodeHandle.createTimer(ros::Duration(0.1), callbackRateCommand);
+	ros::Timer MotorCommandTimer = nodeHandle.createTimer(ros::Duration(0.1), callbackMotorCommand);
+	
+	
+	//ros::Publishers to advertise on the three command type topics
+	AngleCommandPublisher = nodeHandle.advertise <d_fall_pps::AngleCommand>("topicAngleCommand", 1000);
+	RateCommandPublisher = nodeHandle.advertise<d_fall_pps::RateCommand>("topicRateCommand", 1000);
+	MotorCommandPublisher = nodeHandle.advertise <d_fall_pps::MotorCommand>("topicMotorCommand", 1000);
 
 
 	//service: now only one available: to add several services depending on controller
 	rateClient = nodeHandle.serviceClient<d_fall_pps::RateController>("/SafeControllerService/RateController");
-
-
-
 
 
 

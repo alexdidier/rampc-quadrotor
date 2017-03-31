@@ -1,7 +1,6 @@
 <launch>
-	<!-- Might be needed when our CrazyRadio works. There is no CrazyRadio.launch file yet!
-	<include file="$(find d_fall_pps)/launch/CrazyRadio.launch" />
-	-->
+	
+	<node pkg="d_fall_pps" name="CrazyRadio" output="screen" type="CrazyRadio.py"/>
 
 	<node pkg="d_fall_pps" name="ViconDataPublisher" output="screen" type="ViconDataPublisher">
 	</node>

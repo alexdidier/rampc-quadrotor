@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
     ros::NodeHandle nodeHandle("~");
 
     ros::ServiceServer service = nodeHandle.advertiseService("RateController", calculateControlOutput);
-    ROS_INFO("SafeControllerService ready");
+    ROS_INFO("SafeControllerService ready to send");
     ros::spin();
 
     return 0;
