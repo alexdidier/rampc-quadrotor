@@ -30,24 +30,24 @@
 Basic tab to be able to set (and test) colors in the LED-ring.
 """
 
-__author__ = 'Bitcraze AB'
-__all__ = ['LEDTab']
-
 import logging
-import sys
 
-logger = logging.getLogger(__name__)
+from PyQt5 import QtGui, uic
+from PyQt5.QtCore import pyqtSignal
 
-from PyQt4 import QtGui, uic
-from PyQt4.QtCore import pyqtSignal
-from PyQt4.QtGui import QColorDialog
-
+import cfclient
 from cfclient.ui.tab import Tab
 
 from cflib.crazyflie.mem import MemoryElement
 
-led_tab_class = uic.loadUiType(sys.path[0] +
-                                "/cfclient/ui/tabs/ledTab.ui")[0]
+__author__ = 'Bitcraze AB'
+__all__ = ['LEDTab']
+
+logger = logging.getLogger(__name__)
+
+led_tab_class = uic.loadUiType(cfclient.module_path +
+                               "/ui/tabs/ledTab.ui")[0]
+
 
 class LEDTab(Tab, led_tab_class):
     """Tab for plotting logging data"""
@@ -90,7 +90,7 @@ class LEDTab(Tab, led_tab_class):
                       self._u11,
                       self._u12]
 
-        self._intensity = 1
+        self._intensity = self._intensity_slider.value()
 
         self._u1.clicked.connect(lambda: self._select(0))
         self._u2.clicked.connect(lambda: self._select(1))
@@ -114,8 +114,14 @@ class LEDTab(Tab, led_tab_class):
             self._intensity_slider.setValue)
 
     def _select(self, nbr):
-        col = QColorDialog()
-        col = QtGui.QColorDialog.getColor()
+        col = QtGui.QColor()  # default to invalid
+
+        if self._mem:
+            led = self._mem.leds[nbr]
+            col = QtGui.QColor.fromRgb(led.r, led.g, led.b)
+
+        col = QtGui.QColorDialog.getColor(col)
+
         if col.isValid() and self._mem:
             logger.info(col.red())
             self._mem.leds[nbr].set(r=col.red(), g=col.green(), b=col.blue())
@@ -141,9 +147,11 @@ class LEDTab(Tab, led_tab_class):
 
     def _connected(self, link_uri):
         """Callback when the Crazyflie has been connected"""
-        self._mem = self._helper.cf.mem.get_mems(
-            MemoryElement.TYPE_DRIVER_LED)[0]
-        logger.info(self._mem)
+        mems = self._helper.cf.mem.get_mems(MemoryElement.TYPE_DRIVER_LED)
+        if len(mems) > 0:
+            self._mem = mems[0]
+            logger.info(self._mem)
+
         if self._mem:
             for btn in self._btns:
                 btn.setEnabled(True)

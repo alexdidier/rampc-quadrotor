@@ -35,22 +35,19 @@ Currently it can just use the PySdl2 driver but in the future there will be a
 Linux and Windows driver that can bypass PySdl2.
 """
 
-__author__ = 'Bitcraze AB'
-__all__ = ['LogVariable', 'LogConfigReader', 'LogConfigRemoveThis']
-
 import glob
 import json
 import logging
 import os
 import shutil
-import sys
+
+import cfclient
+from cflib.crazyflie.log import LogVariable, LogConfig
+
+__author__ = 'Bitcraze AB'
+__all__ = ['LogVariable', 'LogConfigReader']
 
 logger = logging.getLogger(__name__)
-
-#from PyQt4 import QtCore, QtGui, uic
-#from PyQt4.QtCore import pyqtSlot, pyqtSignal
-
-from cflib.crazyflie.log import LogVariable, LogConfig
 
 
 class LogConfigReader():
@@ -59,24 +56,25 @@ class LogConfigReader():
     def __init__(self, crazyflie):
         self.dsList = []
         # Check if user config exists, otherwise copy files
-        if (not os.path.exists(sys.path[1] + "/log")):
+        if (not os.path.exists(cfclient.config_path + "/log")):
             logger.info("No user config found, copying dist files")
-            os.makedirs(sys.path[1] + "/log")
-            for f in glob.glob(sys.path[0] +
-                               "/cfclient/configs/log/[A-Za-z]*.json"):
-                shutil.copy2(f, sys.path[1] + "/log")
+            os.makedirs(cfclient.config_path + "/log")
+            for f in glob.glob(
+                    cfclient.module_path + "/configs/log/[A-Za-z]*.json"):
+                shutil.copy2(f, cfclient.config_path + "/log")
         self._cf = crazyflie
         self._cf.connected.add_callback(self._connected)
 
     def _read_config_files(self):
         """Read and parse log configurations"""
         configsfound = [os.path.basename(f) for f in
-                        glob.glob(sys.path[1] + "/log/[A-Za-z_-]*.json")]
+                        glob.glob(cfclient.config_path +
+                                  "/log/[A-Za-z_-]*.json")]
         new_dsList = []
         for conf in configsfound:
             try:
                 logger.info("Parsing [%s]", conf)
-                json_data = open(sys.path[1] + "/log/%s" % conf)
+                json_data = open(cfclient.config_path + "/log/%s" % conf)
                 self.data = json.load(json_data)
                 infoNode = self.data["logconfig"]["logblock"]
 
@@ -115,7 +113,7 @@ class LogConfigReader():
 
     def saveLogConfigFile(self, logconfig):
         """Save a log configuration to file"""
-        filename = sys.path[1] + "/log/" + logconfig.name + ".json"
+        filename = cfclient.config_path + "/log/" + logconfig.name + ".json"
         logger.info("Saving config for [%s]", filename)
 
         # Build tree for JSON

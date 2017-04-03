@@ -20,32 +20,32 @@
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-
-#  You should have received a copy of the GNU General Public License
-#  along with this program; if not, write to the Free Software
-#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
+#  You should have received a copy of the GNU General Public License along with
+#  this program; if not, write to the Free Software Foundation, Inc.,
+#  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """
 The bootloader dialog is used to update the Crazyflie firmware and to
 read/write the configuration block in the Crazyflie flash.
 """
+import logging
+
+import cfclient
+from cflib.crazyflie.mem import MemoryElement
+
+from PyQt5 import QtWidgets
+from PyQt5 import uic
+from PyQt5.QtCore import pyqtSignal
 
 __author__ = 'Bitcraze AB'
-__all__ = ['CfConfig']
-
-import sys
-import logging
+__all__ = ['Cf2ConfigDialog']
 
 logger = logging.getLogger(__name__)
 
-from PyQt4 import QtCore, QtGui, uic
-from PyQt4.QtCore import Qt, pyqtSlot, pyqtSignal, QThread, SIGNAL
-from cflib.crazyflie.mem import MemoryElement
+service_dialog_class = uic.loadUiType(cfclient.module_path +
+                                      "/ui/dialogs/cf2config.ui")[0]
 
-service_dialog_class = uic.loadUiType(sys.path[0] +
-                                      "/cfclient/ui/dialogs/cf2config.ui")[0]
 
-class Cf2ConfigDialog(QtGui.QWidget, service_dialog_class):
+class Cf2ConfigDialog(QtWidgets.QWidget, service_dialog_class):
     """Tab for update the Crazyflie firmware and for reading/writing the config
     block in flash"""
 
@@ -67,7 +67,8 @@ class Cf2ConfigDialog(QtGui.QWidget, service_dialog_class):
         self._write_data_btn.clicked.connect(self._write_data)
 
     def _write_done(self, mem, addr):
-        self._cf.mem.get_mems(MemoryElement.TYPE_I2C)[0].update(self._data_updated)
+        self._cf.mem.get_mems(
+            MemoryElement.TYPE_I2C)[0].update(self._data_updated)
 
     def _data_updated(self, mem):
         self._roll_trim.setValue(mem.elements["roll_trim"])
@@ -76,10 +77,9 @@ class Cf2ConfigDialog(QtGui.QWidget, service_dialog_class):
         self._radio_speed.setCurrentIndex(mem.elements["radio_speed"])
         if "radio_address" in mem.elements:
             self._radio_address.setValue(mem.elements["radio_address"])
-            self._radio_address.setEnabled(True)
         else:
             self._radio_address.setValue(int("0xE7E7E7E7E7", 0))
-            self._radio_address.setEnabled(False)
+        self._radio_address.setEnabled(True)
         self._write_data_btn.setEnabled(True)
 
     def _set_ui_connected(self, link_uri):

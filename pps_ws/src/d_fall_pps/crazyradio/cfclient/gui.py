@@ -26,9 +26,6 @@
 
 """Initialization of the PC Client GUI."""
 
-__author__ = 'Bitcraze AB'
-__all__ = ['']
-
 import sys
 import os
 import argparse
@@ -36,9 +33,13 @@ import datetime
 
 import logging
 
+import cfclient
+
+__author__ = 'Bitcraze AB'
+__all__ = []
+
 
 def main():
-
     """
     Check starting conditions and start GUI.
 
@@ -47,17 +48,17 @@ def main():
     to stdout and start the GUI.
     """
 
-    # Set ERROR level for PyQt4 logger
-    qtlogger = logging.getLogger('PyQt4')
+    # Set ERROR level for PyQt5 logger
+    qtlogger = logging.getLogger('PyQt5')
     qtlogger.setLevel(logging.ERROR)
 
-    parser = argparse.ArgumentParser(description="cfclient - "
-                                     "Crazyflie graphical control client")
+    parser = argparse.ArgumentParser(
+        description="cfclient - Crazyflie graphical control client")
     parser.add_argument('--debug', '-d', nargs=1, default='info', type=str,
                         help="set debug level "
-                        "[minimal, info, debug, debugfile]")
+                             "[minimal, info, debug, debugfile]")
     args = parser.parse_args()
-    globals().update(vars(args))
+    debug = args.debug
 
     cflogger = logging.getLogger('')
 
@@ -80,28 +81,28 @@ def main():
         logging.basicConfig(level=logging.INFO)
 
     logger = logging.getLogger(__name__)
-    
-    logger.debug("Using config path {}".format(sys.path[1]))
+
+    logger.debug("Using config path {}".format(cfclient.config_path))
     logger.debug("sys.path={}".format(sys.path))
 
     # Try all the imports used in the project here to control what happens....
     try:
-        import usb
+        import usb  # noqa
     except ImportError:
         logger.critical("No pyusb installation found, exiting!")
         sys.exit(1)
 
     if not sys.platform.startswith('linux'):
         try:
-            import sdl2
+            import sdl2  # noqa
         except ImportError:
             logger.critical("No pysdl2 installation found, exiting!")
             sys.exit(1)
 
     try:
-        import PyQt4
+        import PyQt5  # noqa
     except ImportError:
-        logger.critical("No PyQT4 installation found, exiting!")
+        logger.critical("No PyQT5 installation found, exiting!")
         sys.exit(1)
 
     # Disable printouts from STL
@@ -110,28 +111,49 @@ def main():
         os.dup2(os.open('/dev/null', os.O_WRONLY), 1)
         sys.stdout = os.fdopen(stdout, 'w')
         logger.info("Disabling STL printouts")
-    
+
     if os.name == 'nt':
         stdout = os.dup(1)
         os.dup2(os.open('NUL', os.O_WRONLY), 1)
         sys.stdout = os.fdopen(stdout, 'w')
         logger.info("Disabling STL printouts")
 
+    if sys.platform == 'darwin':
+        try:
+            import Foundation
+            bundle = Foundation.NSBundle.mainBundle()
+            if bundle:
+                info = (bundle.localizedInfoDictionary() or
+                        bundle.infoDictionary())
+                if info:
+                    info['CFBundleName'] = 'Crazyflie'
+        except ImportError:
+            logger.info("Foundation not found. Menu will show python as "
+                        "application name")
+
     # Start up the main user-interface
-    from ui.main import MainUI
-    from PyQt4.QtGui import QApplication, QIcon
+    from .ui.main import MainUI
+    from PyQt5.QtWidgets import QApplication
+    from PyQt5.QtGui import QIcon
+
     app = QApplication(sys.argv)
 
-    app.setWindowIcon(QIcon(sys.path[0] + "/cfclient/icon-256.png"))
+    app.setWindowIcon(QIcon(cfclient.module_path + "/icon-256.png"))
     # Make sure the right icon is set in Windows 7+ taskbar
     if os.name == 'nt':
         import ctypes
+
         try:
             myappid = 'mycompany.myproduct.subproduct.version'
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+                myappid)
         except Exception:
             pass
-    
+
     main_window = MainUI()
     main_window.show()
     sys.exit(app.exec_())
+
+
+if __name__ == "__main__":
+    main()

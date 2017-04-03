@@ -30,20 +30,17 @@
 Used to write log data to files.
 """
 
-__author__ = 'Bitcraze AB'
-__all__ = ['LogWriter']
-
 import os
-import sys
 import datetime
 
 import logging
 
+import cfclient
+
+__author__ = 'Bitcraze AB'
+__all__ = ['LogWriter']
+
 logger = logging.getLogger(__name__)
-
-from cflib.crazyflie.log import LogConfig
-
-import traceback
 
 
 class LogWriter():
@@ -55,7 +52,7 @@ class LogWriter():
         self._dir = directory
         self._connected_ts = connected_ts
 
-        self._dir = os.path.join(sys.path[1], "logdata",
+        self._dir = os.path.join(cfclient.config_path, "logdata",
                                  connected_ts.strftime("%Y%m%dT%H-%M-%S"))
         self._file = None
         self._header_written = False

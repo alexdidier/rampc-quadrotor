@@ -20,7 +20,6 @@
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-
 #  You should have received a copy of the GNU General Public License
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
@@ -30,21 +29,22 @@ Mux for giving control to one device (slave/student) for all axis (roll/pitch/
 yaw/thrust) with the ability to take over all of them from a second device
 (master/teacher).
 """
-
-__author__ = 'Bitcraze AB'
-__all__ = ['SelectiveMux']
-
 import logging
 
 from .takeoverselectivemux import TakeOverSelectiveMux
+
+__author__ = 'Bitcraze AB'
+__all__ = ['TakeOverMux']
 
 logger = logging.getLogger(__name__)
 
 
 class TakeOverMux(TakeOverSelectiveMux):
+
     def __init__(self, *args):
         super(TakeOverMux, self).__init__(*args)
         self.name = "Teacher (RPYT)"
-        self._muxing = {self._master: ("estop", "alt1", "alt2", "althold",
-                                       "exit"),
-                        self._slave: ("roll", "pitch", "yaw", "thrust")}
+        self._muxing = {
+            self._master: ("estop", "alt1", "alt2", "assistedControl", "exit"),
+            self._slave: ("roll", "pitch", "yaw", "thrust")
+        }

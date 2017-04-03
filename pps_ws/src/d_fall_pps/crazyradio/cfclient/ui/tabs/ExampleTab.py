@@ -32,25 +32,23 @@ with the necessary QT Signals to wrap Crazyflie API callbacks and also
 connects the connected/disconnected callbacks.
 """
 
+import logging
+
+from PyQt5 import uic
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtWidgets import QMessageBox
+
+import cfclient
+from cfclient.ui.tab import Tab
+
 __author__ = 'Bitcraze AB'
 __all__ = ['ExampleTab']
 
-import logging
-import sys
-
 logger = logging.getLogger(__name__)
 
-from PyQt4 import QtCore, QtGui, uic
-from PyQt4.QtCore import pyqtSlot, pyqtSignal, QThread, Qt
-from PyQt4.QtGui import QMessageBox
+example_tab_class = uic.loadUiType(cfclient.module_path +
+                                   "/ui/tabs/exampleTab.ui")[0]
 
-from cfclient.ui.tab import Tab
-
-from cflib.crazyflie.log import LogConfig, Log
-from cflib.crazyflie.param import Param
-
-example_tab_class = uic.loadUiType(sys.path[0] +
-                                "/cfclient/ui/tabs/exampleTab.ui")[0]
 
 class ExampleTab(Tab, example_tab_class):
     """Tab for plotting logging data"""

@@ -21,9 +21,9 @@
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
 
-#  You should have received a copy of the GNU General Public License
-#  along with this program; if not, write to the Free Software
-#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#  You should have received a copy of the GNU General Public License along with
+#  this program; if not, write to the Free Software Foundation, Inc.,
+#  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 """
 The bootloader dialog is used to update the Crazyflie firmware and to
@@ -31,27 +31,20 @@ read/write the configuration block in the Crazyflie flash.
 """
 from cflib.bootloader import Bootloader
 
+import logging
+
+from PyQt5 import QtWidgets, uic
+from PyQt5.QtCore import pyqtSlot, pyqtSignal, QThread
+
+import cfclient
+
 __author__ = 'Bitcraze AB'
 __all__ = ['BootloaderDialog']
 
-import struct
-import sys
-import time
-
-import logging
 logger = logging.getLogger(__name__)
 
-from PyQt4 import QtCore, QtGui, uic
-from PyQt4.QtCore import Qt, pyqtSlot, pyqtSignal, QThread, SIGNAL
-
-from cfclient.ui.tab import Tab
-
-import cflib.crtp
-
-from cflib.bootloader.cloader import Cloader
-
-service_dialog_class = uic.loadUiType(sys.path[0] +
-                                      "/cfclient/ui/dialogs/bootloader.ui")[0]
+service_dialog_class = uic.loadUiType(cfclient.module_path +
+                                      "/ui/dialogs/bootloader.ui")[0]
 
 
 class UIState:
@@ -63,9 +56,10 @@ class UIState:
     RESET = 4
 
 
-class BootloaderDialog(QtGui.QWidget, service_dialog_class):
+class BootloaderDialog(QtWidgets.QWidget, service_dialog_class):
     """Tab for update the Crazyflie firmware and for reading/writing the config
     block in flash"""
+
     def __init__(self, helper, *args):
         super(BootloaderDialog, self).__init__(*args)
         self.setupUi(self)
@@ -93,13 +87,13 @@ class BootloaderDialog(QtGui.QWidget, service_dialog_class):
         self.clt.statusChanged.connect(self.statusUpdate)
         # self.clt.updateBootloaderStatusSignal.connect(
         #                                         self.updateBootloaderStatus)
-        self.clt.connectingSignal.connect(lambda:
-                                          self.setUiState(UIState.CONNECTING))
-        self.clt.connectedSignal.connect(lambda:
-                                         self.setUiState(UIState.COLD_CONNECT))
+        self.clt.connectingSignal.connect(
+            lambda: self.setUiState(UIState.CONNECTING))
+        self.clt.connectedSignal.connect(
+            lambda: self.setUiState(UIState.COLD_CONNECT))
         self.clt.failed_signal.connect(lambda m: self._ui_connection_fail(m))
-        self.clt.disconnectedSignal.connect(lambda:
-                                        self.setUiState(UIState.DISCONNECTED))
+        self.clt.disconnectedSignal.connect(
+            lambda: self.setUiState(UIState.DISCONNECTED))
 
         self.clt.start()
 
@@ -165,7 +159,7 @@ class BootloaderDialog(QtGui.QWidget, service_dialog_class):
     def pathBrowse(self):
         filename = ""
         # Fix for crash in X on Ubuntu 14.04
-        filename = QtGui.QFileDialog.getOpenFileName()
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName()
         if filename != "":
             self.imagePathLine.setText(filename)
         pass
@@ -180,7 +174,7 @@ class BootloaderDialog(QtGui.QWidget, service_dialog_class):
             self.clt.program.emit(self.imagePathLine.text(),
                                   self.verifyCheckBox.isChecked())
         else:
-            msgBox = QtGui.QMessageBox()
+            msgBox = QtWidgets.QMessageBox()
             msgBox.setText("Please choose an image file to program.")
 
             msgBox.exec_()
@@ -271,7 +265,7 @@ class CrazyloadThread(QThread):
     def programAction(self, filename, verify):
         targets = {}
         if str(filename).endswith("bin"):
-            targets["stm32"] = ("fw", )
+            targets["stm32"] = ("fw",)
         try:
             self._bl.flash(str(filename), targets)
             self.programmed.emit(True)

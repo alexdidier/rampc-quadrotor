@@ -21,35 +21,36 @@
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
 
-#  You should have received a copy of the GNU General Public License
-#  along with this program; if not, write to the Free Software
-#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#  You should have received a copy of the GNU General Public License along with
+#  this program; if not, write to the Free Software Foundation, Inc.,
+#  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 """
 The console tab is used as a console for printouts from the Crazyflie.
 """
 
+import logging
+
+from PyQt5 import uic
+from PyQt5.QtCore import pyqtSignal
+
+import cfclient
+from cfclient.ui.tab import Tab
+
 __author__ = 'Bitcraze AB'
 __all__ = ['ConsoleTab']
 
-import time
-import sys
-
-import logging
 logger = logging.getLogger(__name__)
 
-from PyQt4 import QtCore, QtGui, uic
-from PyQt4.QtCore import pyqtSlot, pyqtSignal
-
-from cfclient.ui.tab import Tab
-
-console_tab_class = uic.loadUiType(sys.path[0] +
-                                   "/cfclient/ui/tabs/consoleTab.ui")[0]
+console_tab_class = uic.loadUiType(cfclient.module_path +
+                                   "/ui/tabs/consoleTab.ui")[0]
 
 
 class ConsoleTab(Tab, console_tab_class):
     """Console tab for showing printouts from Crazyflie"""
-    update = pyqtSignal(str)
+    _connected_signal = pyqtSignal(str)
+    _disconnected_signal = pyqtSignal(str)
+    _update = pyqtSignal(str)
 
     def __init__(self, tabWidget, helper, *args):
         super(ConsoleTab, self).__init__(*args)
@@ -59,14 +60,37 @@ class ConsoleTab(Tab, console_tab_class):
         self.menuName = "Console"
 
         self.tabWidget = tabWidget
-        self.helper = helper
+        self._helper = helper
 
-        self.update.connect(self.printText)
+        # Always wrap callbacks from Crazyflie API though QT Signal/Slots
+        # to avoid manipulating the UI when rendering it
+        self._connected_signal.connect(self._connected)
+        self._disconnected_signal.connect(self._disconnected)
+        self._update.connect(self.printText)
 
-        self.helper.cf.console.receivedChar.add_callback(self.update.emit)
+        self._helper.cf.console.receivedChar.add_callback(self._update.emit)
+        self._helper.cf.connected.add_callback(self._connected_signal.emit)
+        self._helper.cf.disconnected.add_callback(
+            self._disconnected_signal.emit)
+
+        self._clearButton.clicked.connect(self.clear)
+        self._dumpSystemLoadButton.clicked.connect(
+            lambda enabled:
+            self._helper.cf.param.set_value("system.taskDump", '1'))
 
     def printText(self, text):
         # Make sure we get printouts from the Crazyflie into the log (such as
         # build version and test ok/fail)
         logger.debug("[%s]", text)
         self.console.insertPlainText(text)
+
+    def clear(self):
+        self.console.clear()
+
+    def _connected(self, link_uri):
+        """Callback when the Crazyflie has been connected"""
+        self._dumpSystemLoadButton.setEnabled(True)
+
+    def _disconnected(self, link_uri):
+        """Callback for when the Crazyflie has been disconnected"""
+        self._dumpSystemLoadButton.setEnabled(False)

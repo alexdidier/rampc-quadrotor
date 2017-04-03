@@ -31,34 +31,33 @@ This tab shows all log blocks that are registered and can be used to start the
 logging and also to write the logging data to file.
 """
 
+from PyQt5 import uic
+from PyQt5.QtCore import Qt, pyqtSignal
+
+import cfclient
+from cfclient.ui.tab import Tab
+
+import logging
+
+from PyQt5.QtWidgets import QApplication, QStyledItemDelegate
+from PyQt5.QtWidgets import QAbstractItemView, QStyleOptionButton, QStyle
+from PyQt5.QtCore import QAbstractItemModel, QModelIndex
+
+from cfclient.utils.logdatawriter import LogWriter
+
 __author__ = 'Bitcraze AB'
 __all__ = ['LogBlockTab']
 
-import sys
+logblock_tab_class = uic.loadUiType(
+    cfclient.module_path + "/ui/tabs/logBlockTab.ui")[0]
 
-from PyQt4 import QtCore, QtGui, uic
-from PyQt4.QtCore import Qt, pyqtSlot, pyqtSignal, QThread, SIGNAL
-
-from cfclient.ui.tab import Tab
-
-logblock_tab_class = uic.loadUiType(sys.path[0] +
-                                 "/cfclient/ui/tabs/logBlockTab.ui")[0]
-
-import logging
 logger = logging.getLogger(__name__)
-
-from PyQt4.QtGui import QApplication, QStyledItemDelegate, QAbstractItemView
-from PyQt4.QtGui import QStyleOptionButton, QStyle
-from PyQt4 import QtCore, QtGui, uic
-from PyQt4.QtCore import pyqtSlot, pyqtSignal, QThread
-from PyQt4.QtCore import QAbstractItemModel, QModelIndex, QString, QVariant
-
-from cfclient.utils.logdatawriter import LogWriter
 
 
 class LogBlockChildItem(object):
     """Class that acts as a child in the tree and represents one variable in
     a log block"""
+
     def __init__(self, parent, name):
         """Initialize the node"""
         self.parent = parent
@@ -100,7 +99,9 @@ class LogBlockItem(object):
         self._doing_transaction = False
 
     def _log_error(self, logconfig, msg):
-        """Callback when there's an error starting the block in the Crazyflie"""
+        """
+        Callback when there's an error starting the block in the Crazyflie
+        """
         # Do nothing here, a pop-up will notify the user that the
         # starting failed
         self._doing_transaction = False
@@ -109,9 +110,9 @@ class LogBlockItem(object):
         """Callback when a block has been started in the Crazyflie"""
         logger.debug("%s started: %s", self.name, started)
         if started:
-             self._block_started = True
+            self._block_started = True
         else:
-             self._block_started = False
+            self._block_started = False
         self._doing_transaction = False
         self._model.refresh()
 
@@ -163,6 +164,7 @@ class LogBlockItem(object):
 
 
 class LogBlockModel(QAbstractItemModel):
+
     def __init__(self, view, parent=None):
         super(LogBlockModel, self).__init__(parent)
         self._nodes = []
@@ -180,7 +182,9 @@ class LogBlockModel(QAbstractItemModel):
         self.layoutChanged.emit()
 
     def clicked(self, index):
-        """Callback when a cell has been clicked (mouse down/up on same cell)"""
+        """
+        Callback when a cell has been clicked (mouse down/up on same cell)
+        """
         node = index.internalPointer()
         if not node.parent and index.column() == 3:
             if node.logging_started():
@@ -217,7 +221,7 @@ class LogBlockModel(QAbstractItemModel):
     def headerData(self, section, orientation, role):
         """Re-implemented method to get the headers"""
         if role == Qt.DisplayRole:
-            return QString(self._column_headers[section])
+            return self._column_headers[section]
 
     def rowCount(self, parent):
         """Re-implemented method to get the number of rows for a given index"""
@@ -261,7 +265,7 @@ class LogBlockModel(QAbstractItemModel):
                 (index.column() == 4 or index.column() == 3):
             return Qt.AlignHCenter | Qt.AlignVCenter
 
-        return QVariant()
+        return None
 
     def reset(self):
         """Reset the model"""
@@ -282,7 +286,7 @@ class CheckboxDelegate(QStyledItemDelegate):
         col = index.column()
         if not item.parent and (col == 3 or col == 4):
             s = QStyleOptionButton()
-            checkbox_rect = QApplication.style().\
+            checkbox_rect = QApplication.style(). \
                 subElementRect(QStyle.SE_CheckBoxIndicator, option)
             s.rect = option.rect
             center_offset = s.rect.width() / 2 - checkbox_rect.width() / 2
@@ -342,4 +346,6 @@ class LogBlockTab(Tab, logblock_tab_class):
 
     def _disconnected(self, link_uri):
         """Callback when the Crazyflie is disconnected"""
+        self._model.beginResetModel()
         self._model.reset()
+        self._model.endResetModel()

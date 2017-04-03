@@ -94,7 +94,7 @@ class PPSRadioClient:
 
 def motorCommandCallback(data):
     """Callback for motor controller actions"""
-    cf_client._send_to_commander(0, 0, 0, 0, data.cmd1 * 10000, data.cmd2 * 10000, data.cmd3 * 10000, data.cmd4 * 10000, CONTROLLER_MOTOR)
+    cf_client._send_to_commander(0, 0, 0, 0, data.cmd1 * 1000, data.cmd2 * 1000, data.cmd3 * 1000, data.cmd4 * 1000, CONTROLLER_MOTOR)
     rospy.loginfo("motor controller callback: %s, %s, %s, %s", data.cmd1, data.cmd2, data.cmd3, data.cmd4)
 
 def angleCommandCallback(data):
@@ -122,12 +122,16 @@ if __name__ == '__main__':
         available = cflib.crtp.scan_interfaces()
         rospy.loginfo("Crazyflies found:")
         for i in available:
+            rospy.loginfo("----------------------------------------------------------------")
+            rospy.loginfo(i[0])
+        for i in available:
             print i[0]
         if len(available) > 0:
             global cf_client
 
             #TODO: load address from parameters
-            cf_client = PPSRadioClient(available[0][0])
+            cf_client = PPSRadioClient("radio://0/72/2M")
+            #cf_client = PPSRadioClient(available[0][0])
             time.sleep(2.0)
             #TODO: change publisher name if not correct
             rospy.Subscriber("/PPSClient/MotorCommand", MotorCommand, motorCommandCallback)

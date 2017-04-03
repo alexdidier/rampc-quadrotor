@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import logging
 from threading import Thread
 import time
@@ -12,6 +13,7 @@ logger = logging.getLogger(__name__)
 MODULE_MAIN = "WiimoteReader"
 MODULE_NAME = "WII"
 
+
 class _Reader(object):
     # needs attributes:
     # - name
@@ -19,15 +21,21 @@ class _Reader(object):
     # - limit_thrust
     # - limit_yaw
     # - open
+
     def devices(self):
         """List all the available connections"""
         raise NotImplemented()
+
     def open(self, device_id):
-        """Initialize the reading and open the device with deviceId and set the mapping for axis/buttons using the
-        inputMap"""
+        """
+        Initialize the reading and open the device with deviceId and set the
+        mapping for axis/buttons using the inputMap
+        """
         return
+
     def close(self, device_id):
         return
+
     def read(self, device_id):
         """Read input from the selected device."""
         raise NotImplemented()
@@ -47,6 +55,7 @@ PLUS = 4096
 
 
 class HandleWiimote(Thread):
+
     def __init__(self, reader, wii, *args):
         super(HandleWiimote, self).__init__(*args)
         self.reader = reader
@@ -90,9 +99,9 @@ class HandleWiimote(Thread):
                 self.reader.data['thrust'] = -1
 
             if button:
-                sample = max(max_sample, sample/3)
+                sample = max(max_sample, sample / 3)
             else:
-                sample = min(min_sample, sample*3)
+                sample = min(min_sample, sample * 3)
                 self.adjust()
             time.sleep(sample)
 
@@ -112,6 +121,7 @@ class HandleWiimote(Thread):
         else:
             self.reader.data['roll'] = 0
 
+
 class WiimoteReader(_Reader):
     name = MODULE_NAME
 
@@ -120,14 +130,14 @@ class WiimoteReader(_Reader):
         self.limit_thrust = False
         self.limit_yaw = False
 
-        print "Press 1 + 2 to connect wii"
+        print("Press 1 + 2 to connect wii")
         time.sleep(1)
         self.wm = cwiid.Wiimote()
         self.wm.rpt_mode = cwiid.RPT_BTN
         logger.info("FOUND WIIMOTE")
         self.data = {"roll": 0.0, "pitch": 0.0, "yaw": 0.0,
                      "thrust": -1.0, "estop": False, "exit": False,
-                     "althold": False, "alt1": False, "alt2": False,
+                     "assistedControl": False, "alt1": False, "alt2": False,
                      "pitchNeg": False, "rollNeg": False,
                      "pitchPos": False, "rollPos": False}
         self.wii_thread = HandleWiimote(self, self.wm)

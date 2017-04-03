@@ -37,6 +37,7 @@ logger = logging.getLogger(__name__)
 
 
 class _ToggleState(dict):
+
     def __getattr__(self, attr):
         return self.get(attr)
 
@@ -45,11 +46,12 @@ class _ToggleState(dict):
 
 
 class InputData:
+
     def __init__(self):
-        #self._toggled = {}
+        # self._toggled = {}
         self._axes = ("roll", "pitch", "yaw", "thrust")
         self._buttons = ("alt1", "alt2", "estop", "exit", "pitchNeg",
-                         "pitchPos", "rollNeg", "rollPos", "althold",
+                         "pitchPos", "rollNeg", "rollPos", "assistedControl",
                          "muxswitch")
         for axis in self._axes:
             self.__dict__[axis] = 0.0
@@ -64,7 +66,7 @@ class InputData:
         return self._axes + self._buttons
 
     def _check_toggle(self, key, data):
-        if not key in self._prev_btn_values:
+        if key not in self._prev_btn_values:
             self._prev_btn_values[key] = data
         elif self._prev_btn_values[key] != data:
             self._prev_btn_values[key] = data
@@ -95,6 +97,7 @@ class InputData:
 
 
 class InputReaderInterface(object):
+
     def __init__(self, dev_name, dev_id, dev_reader):
         """Initialize the reader"""
         # Set if the device supports mapping and can be configured
@@ -122,7 +125,6 @@ class InputReaderInterface(object):
         # Stateful things
         self._old_thrust = 0
         self._old_raw_thrust = 0
-        self._old_alt_hold = False
 
         self._prev_thrust = 0
         self._last_time = 0
@@ -159,14 +161,16 @@ class InputReaderInterface(object):
         return [self._cap_rp(roll), self._cap_rp(pitch)]
 
     def _scale_and_deadband_yaw(self, yaw):
-        return InputReaderInterface.deadband(yaw, 0.2) * self.input.max_yaw_rate
+        return (InputReaderInterface.deadband(yaw, 0.2) *
+                self.input.max_yaw_rate)
 
-    def _limit_thrust(self, thrust, althold, emergency_stop):
+    def _limit_thrust(self, thrust, assisted_control, emergency_stop):
         # Thust limiting (slew, minimum and emergency stop)
         if self.input.springy_throttle:
-            if althold and self.input.has_pressure_sensor:
-                thrust = int(round(InputReaderInterface.deadband(thrust, 0.2)
-                                   * 32767 + 32767))  # Convert to uint16
+            if assisted_control and self.input.get_assisted_control() == \
+                    self.input.ASSISTED_CONTROL_ALTHOLD:
+                thrust = int(round(InputReaderInterface.deadband(thrust, 0.2) *
+                                   32767 + 32767))  # Convert to uint16
             else:
                 # Scale the thrust to percent (it's between 0 and 1)
                 thrust *= 100
@@ -190,8 +194,8 @@ class InputReaderInterface(object):
                         else:
                             # If we are "inside" the limit, then lower
                             # according to the rate we have set each iteration
-                            lowering = (time() - self._last_time) * \
-                                self.input.thrust_slew_rate
+                            lowering = ((time() - self._last_time) *
+                                        self.input.thrust_slew_rate)
                             limited_thrust = self._prev_thrust - lowering
                 elif emergency_stop or thrust < self.thrust_stop_limit:
                     # If the thrust have been pulled down or the
@@ -214,7 +218,8 @@ class InputReaderInterface(object):
                 thrust = limited_thrust
         else:
             thrust = thrust / 2 + 0.5
-            if althold and self.input.has_pressure_sensor:
+            if assisted_control and self.input.get_assisted_control() == \
+                    self.input.ASSISTED_CONTROL_ALTHOLD:
                 thrust = 32767
             else:
                 if thrust < -0.90 or emergency_stop:
@@ -224,28 +229,20 @@ class InputReaderInterface(object):
                         self.input.max_thrust -
                         self.input.min_thrust)
                 if (self.input.thrust_slew_enabled and
-                            self.input.thrust_slew_limit > thrust and not
-                emergency_stop):
+                    self.input.thrust_slew_limit > thrust and not
+                        emergency_stop):
                     if self._old_thrust > self.input.thrust_slew_limit:
                         self._old_thrust = self.input.thrust_slew_limit
                     if thrust < (self._old_thrust -
-                                     (self.input.thrust_slew_rate / 100)):
-                        thrust = self._old_thrust - \
-                                 self.input.thrust_slew_rate / 100
+                                 self.input.thrust_slew_rate / 100):
+                        thrust = (self._old_thrust -
+                                  self.input.thrust_slew_rate / 100)
                     if thrust < -1 or thrust < self.input.min_thrust:
                         thrust = 0
 
         self._old_thrust = thrust
         self._old_raw_thrust = thrust
         return thrust
-
-    def set_alt_hold_available(self, available):
-        """Set if altitude hold is available or not (depending on HW)"""
-        self.input._has_pressure_sensor = available
-
-    def enable_alt_hold(self, althold):
-        """Enable or disable altitude hold"""
-        self._old_alt_hold = althold
 
     @staticmethod
     def deadband(value, threshold):

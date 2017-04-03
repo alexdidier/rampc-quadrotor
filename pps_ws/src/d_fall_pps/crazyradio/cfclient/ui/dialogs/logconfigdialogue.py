@@ -21,9 +21,9 @@
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
 
-#  You should have received a copy of the GNU General Public License
-#  along with this program; if not, write to the Free Software
-#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#  You should have received a copy of the GNU General Public License along with
+#  this program; if not, write to the Free Software Foundation, Inc.,
+#  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 """
 This dialogue is used to configure different log configurations that is used to
@@ -31,25 +31,23 @@ enable logging of data from the Crazyflie. These can then be used in different
 views in the UI.
 """
 
+import logging
+
+import cfclient
+from PyQt5 import Qt, QtWidgets, uic
+from PyQt5.QtCore import *  # noqa
+from PyQt5.QtWidgets import *  # noqa
+from PyQt5.Qt import *  # noqa
+
+from cflib.crazyflie.log import LogConfig
+
 __author__ = 'Bitcraze AB'
 __all__ = ['LogConfigDialogue']
 
-import sys
-import os
-import logging
-
 logger = logging.getLogger(__name__)
 
-from PyQt4 import Qt, QtCore, QtGui, uic
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4.Qt import *
-
-from cflib.crazyflie.log import Log, LogVariable, LogConfig
-
-(logconfig_widget_class,
-connect_widget_base_class) = (uic.loadUiType(sys.path[0] +
-                                 '/cfclient/ui/dialogs/logconfigdialogue.ui'))
+(logconfig_widget_class, connect_widget_base_class) = (
+    uic.loadUiType(cfclient.module_path + '/ui/dialogs/logconfigdialogue.ui'))
 
 NAME_FIELD = 0
 ID_FIELD = 1
@@ -57,7 +55,7 @@ PTYPE_FIELD = 2
 CTYPE_FIELD = 3
 
 
-class LogConfigDialogue(QtGui.QWidget, logconfig_widget_class):
+class LogConfigDialogue(QtWidgets.QWidget, logconfig_widget_class):
 
     def __init__(self, helper, *args):
         super(LogConfigDialogue, self).__init__(*args)
@@ -77,7 +75,7 @@ class LogConfigDialogue(QtGui.QWidget, logconfig_widget_class):
 
         self.loggingPeriod.textChanged.connect(self.periodChanged)
 
-        self.packetSize.setMaximum(30)
+        self.packetSize.setMaximum(26)
         self.currentSize = 0
         self.packetSize.setValue(0)
         self.period = 0
@@ -118,7 +116,14 @@ class LogConfigDialogue(QtGui.QWidget, logconfig_widget_class):
             for leaf in self.getNodeChildren(node):
                 self.currentSize = (self.currentSize +
                                     self.decodeSize(leaf.text(CTYPE_FIELD)))
-        self.packetSize.setValue(self.currentSize)
+        if self.currentSize > 26:
+            self.packetSize.setMaximum(self.currentSize / 26.0 * 100.0)
+            self.packetSize.setFormat("%v%")
+            self.packetSize.setValue(self.currentSize / 26.0 * 100.0)
+        else:
+            self.packetSize.setMaximum(26)
+            self.packetSize.setFormat("%p%")
+            self.packetSize.setValue(self.currentSize)
 
     def addNewVar(self, logTreeItem, target):
         parentName = logTreeItem.parent().text(NAME_FIELD)
@@ -127,7 +132,7 @@ class LogConfigDialogue(QtGui.QWidget, logconfig_widget_class):
         item = logTreeItem.clone()
 
         if (len(varParent) == 0):
-            newParent = QtGui.QTreeWidgetItem()
+            newParent = QtWidgets.QTreeWidgetItem()
             newParent.setData(0, Qt.DisplayRole, parentName)
             newParent.addChild(item)
             target.addTopLevelItem(newParent)
@@ -137,7 +142,7 @@ class LogConfigDialogue(QtGui.QWidget, logconfig_widget_class):
             parent.addChild(item)
 
     def moveNodeItem(self, source, target, item):
-        if (item.parent() == None):
+        if (item.parent() is None):
             children = self.getNodeChildren(item)
             for c in children:
                 self.addNewVar(c, target)
@@ -154,7 +159,7 @@ class LogConfigDialogue(QtGui.QWidget, logconfig_widget_class):
         self.checkAndEnableSaveButton()
 
     def checkAndEnableSaveButton(self):
-        if (self.currentSize > 0 and self.period > 0):
+        if self.currentSize > 0 and self.period > 0 and self.currentSize <= 26:
             self.saveButton.setEnabled(True)
         else:
             self.saveButton.setEnabled(False)
@@ -171,7 +176,7 @@ class LogConfigDialogue(QtGui.QWidget, logconfig_widget_class):
                 if (parent.child(n).text(NAME_FIELD) == itemName):
                     node = parent.child(n)
                     break
-        if (node != None):
+        if (node is not None):
             self.moveNodeItem(source, target, node)
             return True
         return False
@@ -180,7 +185,7 @@ class LogConfigDialogue(QtGui.QWidget, logconfig_widget_class):
         self.updateToc()
         self.populateDropDown()
         toc = self.helper.cf.log.toc
-        if (len(toc.toc.keys()) > 0):
+        if (len(list(toc.toc.keys())) > 0):
             self.configNameCombo.setEnabled(True)
         else:
             self.configNameCombo.setEnabled(False)
@@ -197,7 +202,7 @@ class LogConfigDialogue(QtGui.QWidget, logconfig_widget_class):
             self.period = 0
 
     def showErrorPopup(self, caption, message):
-        self.box = QMessageBox()
+        self.box = QMessageBox()  # noqa
         self.box.setWindowTitle(caption)
         self.box.setText(message)
         # self.box.setButtonText(1, "Ok")
@@ -209,11 +214,11 @@ class LogConfigDialogue(QtGui.QWidget, logconfig_widget_class):
 
         toc = self.helper.cf.log.toc
 
-        for group in toc.toc.keys():
-            groupItem = QtGui.QTreeWidgetItem()
+        for group in list(toc.toc.keys()):
+            groupItem = QtWidgets.QTreeWidgetItem()
             groupItem.setData(NAME_FIELD, Qt.DisplayRole, group)
-            for param in toc.toc[group].keys():
-                item = QtGui.QTreeWidgetItem()
+            for param in list(toc.toc[group].keys()):
+                item = QtWidgets.QTreeWidgetItem()
                 item.setData(NAME_FIELD, Qt.DisplayRole, param)
                 item.setData(ID_FIELD, Qt.DisplayRole,
                              toc.toc[group][param].ident)
@@ -241,7 +246,7 @@ class LogConfigDialogue(QtGui.QWidget, logconfig_widget_class):
         for d in self.helper.logConfigReader.getLogConfigs():
             if (d.name == cText):
                 config = d
-        if (config == None):
+        if (config is None):
             logger.warning("Could not load config")
         else:
             self.resetTrees()
@@ -252,11 +257,11 @@ class LogConfigDialogue(QtGui.QWidget, logconfig_widget_class):
                     parts = v.name.split(".")
                     varParent = parts[0]
                     varName = parts[1]
-                    if self.moveNodeByName(self.logTree,
-                                            self.varTree,
-                                            varParent,
-                                            varName) == False:
-                        logger.warning("Could not find node %s.%s!!", varParent, varName)
+                    if self.moveNodeByName(
+                            self.logTree, self.varTree, varParent,
+                            varName) is False:
+                        logger.warning("Could not find node %s.%s!!",
+                                       varParent, varName)
                 else:
                     logger.warning("Error: Mem vars not supported!")
 
@@ -280,4 +285,3 @@ class LogConfigDialogue(QtGui.QWidget, logconfig_widget_class):
                 completeName = "%s.%s" % (parentName, varName)
                 logconfig.add_variable(completeName, varType)
         return logconfig
-

@@ -31,36 +31,41 @@ Find all the available input interfaces and try to initialize them.
 
 """
 
-__author__ = 'Bitcraze AB'
-__all__ = ['InputInterface']
-
-import os
-import glob
 import logging
 from ..inputreaderinterface import InputReaderInterface
 
+__author__ = 'Bitcraze AB'
+__all__ = ['InputInterface']
+
 logger = logging.getLogger(__name__)
 
-found_interfaces = [os.path.splitext(os.path.basename(f))[0] for
-             f in glob.glob(os.path.dirname(__file__) + "/[A-Za-z]*.py")]
-if len(found_interfaces) == 0:
-    found_interfaces = [os.path.splitext(os.path.basename(f))[0] for
-                 f in glob.glob(os.path.dirname(__file__) +
-                                "/[A-Za-z]*.pyc")]
+# Force py2exe to include interfaces module in the build
+try:
+    from . import leapmotion  # noqa
+    from . import wiimote  # noqa
+    from . import zmqpull  # noqa
+except Exception:
+    pass
 
-logger.info("Found interfaces: {}".format(found_interfaces))
+# Statically listing input interfaces
+input_interface = ["leapmotion",
+                   "wiimote",
+                   "zmqpull"]
+
+logger.info("Found interfaces: {}".format(input_interface))
 
 initialized_interfaces = []
 available_interfaces = []
 
-for interface in found_interfaces:
+for interface in input_interface:
     try:
-        module = __import__(interface, globals(), locals(), [interface], -1)
+        module = __import__(interface, globals(), locals(), [interface], 1)
         main_name = getattr(module, "MODULE_MAIN")
         initialized_interfaces.append(getattr(module, main_name)())
         logger.info("Successfully initialized [{}]".format(interface))
     except Exception as e:
         logger.info("Could not initialize [{}]: {}".format(interface, e))
+
 
 def devices():
     # Todo: Support rescanning and adding/removing devices
@@ -68,12 +73,13 @@ def devices():
         for reader in initialized_interfaces:
             devs = reader.devices()
             for dev in devs:
-                available_interfaces.append(InputInterface(dev["name"],
-                                                           dev["id"],
-                                                           reader))
+                available_interfaces.append(InputInterface(
+                    dev["name"], dev["id"], reader))
     return available_interfaces
 
+
 class InputInterface(InputReaderInterface):
+
     def __init__(self, dev_name, dev_id, dev_reader):
         super(InputInterface, self).__init__(dev_name, dev_id, dev_reader)
 
@@ -95,7 +101,7 @@ class InputInterface(InputReaderInterface):
     def read(self, include_raw=False):
         mydata = self._reader.read(self.id)
         # Merge interface returned data into InputReader Data Item
-        for key in mydata.keys():
+        for key in list(mydata.keys()):
             self.data.set(key, mydata[key])
 
         return self.data

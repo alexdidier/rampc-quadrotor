@@ -38,11 +38,6 @@ Windows drivers.
 The input device's axes and buttons are mapped to software inputs using a
 configuration file.
 """
-
-__author__ = 'Bitcraze AB'
-__all__ = ['JoystickReader']
-
-import sys
 import os
 import re
 import glob
@@ -50,23 +45,26 @@ import traceback
 import logging
 import shutil
 
-import inputreaders as readers
-import inputinterfaces as interfaces
+from . import inputreaders as readers
+from . import inputinterfaces as interfaces
 
-logger = logging.getLogger(__name__)
-
+import cfclient
 from cfclient.utils.config import Config
 from cfclient.utils.config_manager import ConfigManager
 
 from cfclient.utils.periodictimer import PeriodicTimer
 from cflib.utils.callbacks import Caller
-import mux
-from .mux import InputMux
 from .mux.nomux import NoMux
 from .mux.takeovermux import TakeOverMux
 from .mux.takeoverselectivemux import TakeOverSelectiveMux
 
+__author__ = 'Bitcraze AB'
+__all__ = ['JoystickReader']
+
+logger = logging.getLogger(__name__)
+
 MAX_THRUST = 65000
+
 
 class JoystickReader(object):
     """
@@ -75,8 +73,16 @@ class JoystickReader(object):
     """
     inputConfig = []
 
+    ASSISTED_CONTROL_ALTHOLD = 0
+    ASSISTED_CONTROL_POSHOLD = 1
+
     def __init__(self, do_device_discovery=True):
         self._input_device = None
+
+        self._mux = [NoMux(self), TakeOverSelectiveMux(self),
+                     TakeOverMux(self)]
+        # Set NoMux as default
+        self._selected_mux = self._mux[0]
 
         self.min_thrust = 0
         self.max_thrust = 0
@@ -87,20 +93,19 @@ class JoystickReader(object):
 
         self.max_rp_angle = 0
         self.max_yaw_rate = 0
+        try:
+            self.set_assisted_control(Config().get("assistedControl"))
+        except KeyError:
+            self.set_assisted_control(JoystickReader.ASSISTED_CONTROL_ALTHOLD)
 
         self._old_thrust = 0
         self._old_raw_thrust = 0
-        self._old_alt_hold = False
         self.springy_throttle = True
 
         self.trim_roll = Config().get("trim_roll")
         self.trim_pitch = Config().get("trim_pitch")
 
         self._input_map = None
-
-        self._mux = [NoMux(self), TakeOverSelectiveMux(self), TakeOverMux(self)]
-        # Set NoMux as default
-        self._selected_mux = self._mux[0]
 
         if Config().get("flightmode") is "Normal":
             self.max_yaw_rate = Config().get("normal_max_yaw")
@@ -122,10 +127,9 @@ class JoystickReader(object):
         self._dev_blacklist = None
         if len(Config().get("input_device_blacklist")) > 0:
             self._dev_blacklist = re.compile(
-                            Config().get("input_device_blacklist"))
+                Config().get("input_device_blacklist"))
         logger.info("Using device blacklist [{}]".format(
-                            Config().get("input_device_blacklist")))
-
+            Config().get("input_device_blacklist")))
 
         self._available_devices = {}
 
@@ -133,8 +137,8 @@ class JoystickReader(object):
         self._read_timer = PeriodicTimer(0.01, self.read_input)
 
         if do_device_discovery:
-            self._discovery_timer = PeriodicTimer(1.0, 
-                            self._do_device_discovery)
+            self._discovery_timer = PeriodicTimer(1.0,
+                                                  self._do_device_discovery)
             self._discovery_timer.start()
 
         # Check if user config exists, otherwise copy files
@@ -142,8 +146,8 @@ class JoystickReader(object):
             logger.info("No user config found, copying dist files")
             os.makedirs(ConfigManager().configs_dir)
 
-        for f in glob.glob(sys.path[0] +
-                           "/cfclient/configs/input/[A-Za-z]*.json"):
+        for f in glob.glob(
+                cfclient.module_path + "/configs/input/[A-Za-z]*.json"):
             dest = os.path.join(ConfigManager().
                                 configs_dir, os.path.basename(f))
             if not os.path.isfile(dest):
@@ -153,11 +157,12 @@ class JoystickReader(object):
         ConfigManager().get_list_of_configs()
 
         self.input_updated = Caller()
+        self.assisted_input_updated = Caller()
         self.rp_trim_updated = Caller()
         self.emergency_stop_updated = Caller()
         self.device_discovery = Caller()
         self.device_error = Caller()
-        self.althold_updated = Caller()
+        self.assisted_control_updated = Caller()
         self.alt1_updated = Caller()
         self.alt2_updated = Caller()
 
@@ -174,10 +179,6 @@ class JoystickReader(object):
     def set_alt_hold_available(self, available):
         """Set if altitude hold is available or not (depending on HW)"""
         self.has_pressure_sensor = available
-
-    def enable_alt_hold(self, althold):
-        """Enable or disable altitude hold"""
-        self._old_alt_hold = althold
 
     def _do_device_discovery(self):
         devs = self.available_devices()
@@ -207,6 +208,12 @@ class JoystickReader(object):
 
         logger.info("Selected MUX: {}".format(self._selected_mux.name))
 
+    def set_assisted_control(self, mode):
+        self._assisted_control = mode
+
+    def get_assisted_control(self):
+        return self._assisted_control
+
     def available_devices(self):
         """List all available and approved input devices.
         This function will filter available devices by using the
@@ -216,13 +223,13 @@ class JoystickReader(object):
         approved_devs = []
 
         for dev in devs:
-            if ((not self._dev_blacklist) or 
-                    (self._dev_blacklist and not
-                     self._dev_blacklist.match(dev.name))):
+            if ((not self._dev_blacklist) or
+                    (self._dev_blacklist and
+                     not self._dev_blacklist.match(dev.name))):
                 dev.input = self
                 approved_devs.append(dev)
 
-        return approved_devs 
+        return approved_devs
 
     def enableRawReading(self, device_name):
         """
@@ -246,7 +253,7 @@ class JoystickReader(object):
         """Return the saved mapping for a given device"""
         config = None
         device_config_mapping = Config().get("device_config_mapping")
-        if device_name in device_config_mapping.keys():
+        if device_name in list(device_config_mapping.keys()):
             config = device_config_mapping[device_name]
 
         logging.debug("For [{}] we recommend [{}]".format(device_name, config))
@@ -260,7 +267,8 @@ class JoystickReader(object):
 
     def read_raw_values(self):
         """ Read raw values from the input device."""
-        [axes, buttons, mapped_values] = self._input_device.read(include_raw=True)
+        [axes, buttons, mapped_values] = self._input_device.read(
+            include_raw=True)
         dict_axes = {}
         dict_buttons = {}
 
@@ -294,7 +302,7 @@ class JoystickReader(object):
         config_name. Returns True if device supports mapping, otherwise False
         """
         try:
-            #device_id = self._available_devices[device_name]
+            # device_id = self._available_devices[device_name]
             # Check if we supplied a new map, if not use the preferred one
             device = self._get_device_from_name(device_name)
             self._selected_mux.add_device(device, role)
@@ -306,19 +314,19 @@ class JoystickReader(object):
             return device.supports_mapping
         except Exception:
             self.device_error.call(
-                     "Error while opening/initializing  input device\n\n%s" %
-                     (traceback.format_exc()))
+                "Error while opening/initializing  input device\n\n%s" %
+                (traceback.format_exc()))
 
         if not self._input_device:
             self.device_error.call(
-                     "Could not find device {}".format(device_name))
+                "Could not find device {}".format(device_name))
         return False
 
     def resume_input(self):
         self._selected_mux.resume()
         self._read_timer.start()
 
-    def pause_input(self, device_name = None):
+    def pause_input(self, device_name=None):
         """Stop reading from the input device."""
         self._read_timer.stop()
         self._selected_mux.pause()
@@ -339,12 +347,24 @@ class JoystickReader(object):
             data = self._selected_mux.read()
 
             if data:
-                if data.toggled.althold:
+                if data.toggled.assistedControl:
+                    if self._assisted_control == \
+                            JoystickReader.ASSISTED_CONTROL_POSHOLD:
+                        if data.assistedControl:
+                            for d in self._selected_mux.devices():
+                                d.limit_thrust = False
+                                d.limit_rp = False
+                        else:
+                            for d in self._selected_mux.devices():
+                                d.limit_thrust = True
+                                d.limit_rp = True
                     try:
-                        self.althold_updated.call(str(data.althold))
+                        self.assisted_control_updated.call(
+                                            data.assistedControl)
                     except Exception as e:
-                        logger.warning("Exception while doing callback from"
-                                       "input-device for althold: {}".format(e))
+                        logger.warning(
+                            "Exception while doing callback from input-device "
+                            "for assited control: {}".format(e))
 
                 if data.toggled.estop:
                     try:
@@ -366,41 +386,53 @@ class JoystickReader(object):
                         logger.warning("Exception while doing callback from"
                                        "input-device for alt2: {}".format(e))
 
-                # Update the user roll/pitch trim from device
-                if data.toggled.pitchNeg and data.pitchNeg:
-                    self.trim_pitch -= 1
-                if data.toggled.pitchPos and data.pitchPos:
-                    self.trim_pitch += 1
-                if data.toggled.rollNeg and data.rollNeg:
-                    self.trim_roll -= 1
-                if data.toggled.rollPos and data.rollPos:
-                    self.trim_roll += 1
+                if self._assisted_control == \
+                        JoystickReader.ASSISTED_CONTROL_POSHOLD \
+                        and data.assistedControl:
+                    vx = data.roll
+                    vy = data.pitch
+                    vz = data.thrust
+                    yawrate = data.yaw
+                    # The odd use of vx and vy is to map forward on the
+                    # physical joystick to positiv X-axis
+                    self.assisted_input_updated.call(vy, -vx, vz, yawrate)
+                else:
+                    # Update the user roll/pitch trim from device
+                    if data.toggled.pitchNeg and data.pitchNeg:
+                        self.trim_pitch -= 1
+                    if data.toggled.pitchPos and data.pitchPos:
+                        self.trim_pitch += 1
+                    if data.toggled.rollNeg and data.rollNeg:
+                        self.trim_roll -= 1
+                    if data.toggled.rollPos and data.rollPos:
+                        self.trim_roll += 1
 
-                if data.toggled.pitchNeg or data.toggled.pitchPos or \
-                        data.toggled.rollNeg or data.toggled.rollPos:
-                    self.rp_trim_updated.call(self.trim_roll, self.trim_pitch)
+                    if data.toggled.pitchNeg or data.toggled.pitchPos or \
+                            data.toggled.rollNeg or data.toggled.rollPos:
+                        self.rp_trim_updated.call(self.trim_roll,
+                                                  self.trim_pitch)
 
-                # Thrust might be <0 here, make sure it's not otherwise we'll
-                # get an error.
-                if data.thrust < 0:
-                    data.thrust = 0
-                if data.thrust > 0xFFFF:
-                    data.thrust = 0xFFFF
+                    # If we are using alt hold the data is not in a percentage
+                    if not data.assistedControl:
+                        data.thrust = JoystickReader.p2t(data.thrust)
 
-                # If we are using alt hold the data is not in a percentage
-                if not data.althold:
-                    data.thrust = JoystickReader.p2t(data.thrust)
+                    # Thrust might be <0 here, make sure it's not otherwise
+                    # we'll get an error.
+                    if data.thrust < 0:
+                        data.thrust = 0
+                    if data.thrust > 0xFFFF:
+                        data.thrust = 0xFFFF
 
-                self.input_updated.call(data.roll + self.trim_roll,
-                                        data.pitch + self.trim_pitch,
-                                        data.yaw, data.thrust)
+                    self.input_updated.call(data.roll + self.trim_roll,
+                                            data.pitch + self.trim_pitch,
+                                            data.yaw, data.thrust)
             else:
                 self.input_updated.call(0, 0, 0, 0)
         except Exception:
             logger.warning("Exception while reading inputdevice: %s",
                            traceback.format_exc())
             self.device_error.call("Error reading from input device\n\n%s" %
-                                     traceback.format_exc())
+                                   traceback.format_exc())
             self.input_updated.call(0, 0, 0, 0)
             self._read_timer.stop()
 

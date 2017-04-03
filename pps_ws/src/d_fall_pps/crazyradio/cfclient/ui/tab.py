@@ -21,27 +21,28 @@
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
 
-#  You should have received a copy of the GNU General Public License
-#  along with this program; if not, write to the Free Software
-#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#  You should have received a copy of the GNU General Public License along with
+#  this program; if not, write to the Free Software Foundation, Inc.,
+#  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 """
 Superclass for all tabs that implements common functions.
 """
 
-__author__ = 'Bitcraze AB'
-__all__ = ['Tab']
-
 import logging
-logger = logging.getLogger(__name__)
 
-from PyQt4 import QtCore, QtGui, uic
-from PyQt4.QtCore import Qt, pyqtSlot, pyqtSignal, QThread, SIGNAL
+from PyQt5 import QtWidgets
+from PyQt5.QtCore import pyqtSlot
 
 from cfclient.utils.config import Config
 
+__author__ = 'Bitcraze AB'
+__all__ = ['Tab']
 
-class Tab(QtGui.QWidget):
+logger = logging.getLogger(__name__)
+
+
+class Tab(QtWidgets.QWidget):
     """Superclass for all tabs that implements common functions."""
 
     def __init__(self):
@@ -60,7 +61,7 @@ class Tab(QtGui.QWidget):
                 s = Config().get("open_tabs")
                 if (len(s) > 0):
                     s += ","
-            except Exception as e:
+            except Exception:
                 logger.warning("Exception while adding tab to config and "
                                "reading tab config")
             # Check this since tabs in config are opened when app is started
@@ -72,7 +73,7 @@ class Tab(QtGui.QWidget):
             self.tabWidget.removeTab(self.tabWidget.indexOf(self))
             try:
                 parts = Config().get("open_tabs").split(",")
-            except Exception as e:
+            except Exception:
                 logger.warning("Exception while removing tab from config and "
                                "reading tab config")
                 parts = []
@@ -90,3 +91,6 @@ class Tab(QtGui.QWidget):
     def getTabName(self):
         """Return the name of the tab that will be shown in the tab"""
         return self.tabName
+
+    def is_visible(self):
+        return self.tabWidget.currentWidget() == self

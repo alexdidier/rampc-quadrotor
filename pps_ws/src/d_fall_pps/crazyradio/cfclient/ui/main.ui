@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>872</width>
-    <height>641</height>
+    <height>671</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -22,16 +22,36 @@
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
        <layout class="QGridLayout" name="gridLayout_2">
-        <item row="0" column="1">
-         <widget class="QPushButton" name="quickConnectButton">
-          <property name="enabled">
+        <item row="0" column="0">
+         <widget class="QComboBox" name="interfaceCombo">
+          <property name="minimumSize">
+           <size>
+            <width>160</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="editable">
            <bool>false</bool>
           </property>
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Quickconnect using the last connection parameters&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QPushButton" name="connectButton">
+          <property name="minimumSize">
+           <size>
+            <width>60</width>
+            <height>0</height>
+           </size>
           </property>
-          <property name="text">
-           <string>Quick Connect</string>
+         </widget>
+        </item>
+        <item row="0" column="2">
+         <widget class="QPushButton" name="scanButton">
+          <property name="minimumSize">
+           <size>
+            <width>50</width>
+            <height>0</height>
+           </size>
           </property>
          </widget>
         </item>
@@ -48,11 +68,18 @@
           </property>
          </spacer>
         </item>
-        <item row="0" column="5">
+        <item row="0" column="6">
+         <widget class="QLabel" name="linkQualityLabel">
+          <property name="text">
+           <string>Link Quality:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="7">
          <widget class="QProgressBar" name="linkQualityBar">
           <property name="minimumSize">
            <size>
-            <width>150</width>
+            <width>30</width>
             <height>0</height>
            </size>
           </property>
@@ -76,27 +103,24 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="0">
-         <widget class="QPushButton" name="connectButton">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Connect to a Crazyflie&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
+        <item row="0" column="4">
+         <widget class="QLabel" name="batteryLabel">
           <property name="text">
-           <string>Connect</string>
+           <string>Battery:</string>
           </property>
          </widget>
         </item>
-        <item row="0" column="4">
+        <item row="0" column="5">
          <widget class="QProgressBar" name="batteryBar">
           <property name="minimumSize">
            <size>
-            <width>150</width>
+            <width>30</width>
             <height>0</height>
            </size>
           </property>
           <property name="maximumSize">
            <size>
-            <width>150</width>
+            <width>100</width>
             <height>16777215</height>
            </size>
           </property>
@@ -123,26 +147,101 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="2">
-         <widget class="QCheckBox" name="autoReconnectCheckBox">
-          <property name="mouseTracking">
-           <bool>false</bool>
-          </property>
-          <property name="text">
-           <string>Auto Reconnect</string>
-          </property>
-          <property name="checked">
-           <bool>false</bool>
-          </property>
-         </widget>
-        </item>
        </layout>
       </item>
       <item>
-       <widget class="QTabWidget" name="tabs">
-        <property name="currentIndex">
-         <number>-1</number>
+       <widget class="QGroupBox" name="groupBox">
+        <layout class="QHBoxLayout" stretch="0,0,1">
+         <item>
+          <widget class="QLabel" name="addressLabel">
+           <property name="text">
+            <string>Address:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="HexSpinBox" name="address">
+           <property name="minimumSize">
+            <size>
+             <width>140</width>
+             <height>0</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="autoReconnectCheckBox">
+           <property name="mouseTracking">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>Auto Reconnect</string>
+           </property>
+           <property name="checked">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QScrollArea" name="scrollArea">
+        <property name="autoFillBackground">
+         <bool>false</bool>
         </property>
+        <property name="frameShape">
+         <enum>QFrame::NoFrame</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Sunken</enum>
+        </property>
+        <property name="lineWidth">
+         <number>1</number>
+        </property>
+        <property name="verticalScrollBarPolicy">
+         <enum>Qt::ScrollBarAsNeeded</enum>
+        </property>
+        <property name="widgetResizable">
+         <bool>true</bool>
+        </property>
+        <widget class="QWidget" name="scrollAreaWidgetContents">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>0</y>
+           <width>852</width>
+           <height>500</height>
+          </rect>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_3">
+          <property name="sizeConstraint">
+           <enum>QLayout::SetNoConstraint</enum>
+          </property>
+          <property name="margin">
+           <number>0</number>
+          </property>
+          <item row="0" column="0">
+           <widget class="QTabWidget" name="tabs">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="currentIndex">
+             <number>-1</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
        </widget>
       </item>
      </layout>
@@ -169,8 +268,6 @@
     <property name="title">
      <string>View</string>
     </property>
-    <addaction name="tabsMenuItem"/>
-    <addaction name="toolboxesMenuItem"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -186,12 +283,11 @@
     <addaction name="separator"/>
     <addaction name="_menuItem_openconfigfolder"/>
    </widget>
-   <widget class="QMenu" name="menuCrazyflie">
+   <widget class="QMenu" name="menuConnect">
     <property name="title">
-     <string>Crazyflie</string>
+     <string>Connect</string>
     </property>
     <addaction name="menuItemConnect"/>
-    <addaction name="menuItemQuickConnect"/>
     <addaction name="menuItemBootloader"/>
     <addaction name="_menu_cf2_config"/>
     <addaction name="_menu_cf1_config"/>
@@ -205,7 +301,7 @@
     <addaction name="separator"/>
    </widget>
    <addaction name="menuFile"/>
-   <addaction name="menuCrazyflie"/>
+   <addaction name="menuConnect"/>
    <addaction name="_menu_inputdevice"/>
    <addaction name="menuSettings"/>
    <addaction name="menuView"/>
@@ -220,9 +316,6 @@
   <action name="menuItemExit">
    <property name="text">
     <string>Exit</string>
-   </property>
-   <property name="menuRole">
-    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="menuItemRegulation">
@@ -265,11 +358,6 @@
     <enum>QAction::NoRole</enum>
    </property>
   </action>
-  <action name="menuItemQuickConnect">
-   <property name="text">
-    <string>Quick connect</string>
-   </property>
-  </action>
   <action name="menuItemConfInputDevice">
    <property name="text">
     <string>Configure device mapping</string>
@@ -286,16 +374,6 @@
   <action name="menuItemConsole">
    <property name="text">
     <string>Console</string>
-   </property>
-  </action>
-  <action name="toolboxesMenuItem">
-   <property name="text">
-    <string>Toolboxes</string>
-   </property>
-  </action>
-  <action name="tabsMenuItem">
-   <property name="text">
-    <string>Tabs</string>
    </property>
   </action>
   <action name="logConfigAction">
@@ -370,6 +448,13 @@
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>HexSpinBox</class>
+   <extends>QSpinBox</extends>
+   <header>cfclient.ui.widgets.hexspinbox</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

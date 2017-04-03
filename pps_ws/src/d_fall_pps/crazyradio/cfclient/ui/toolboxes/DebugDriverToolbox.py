@@ -20,34 +20,33 @@
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-
-#  You should have received a copy of the GNU General Public License
-#  along with this program; if not, write to the Free Software
-#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
+#  You should have received a copy of the GNU General Public License along with
+#  this program; if not, write to the Free Software Foundation, Inc.,
+#  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """
 Toolbox used to interact with the DebugDriver using a designated port. It's
 intended to be used for debugging.
 """
+import struct
+
+from cflib.crtp.crtpstack import CRTPPacket
+from cflib.crtp.crtpstack import CRTPPort
+from PyQt5 import QtWidgets
+from PyQt5 import uic
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import Qt
+
+import cfclient
 
 __author__ = 'Bitcraze AB'
 __all__ = ['DebugDriverToolbox']
 
-import time
-import sys
-
-import struct
-from cflib.crtp.crtpstack import CRTPPacket, CRTPPort
-
-from PyQt4 import QtCore, QtGui, uic
-from PyQt4.QtCore import Qt, pyqtSlot, pyqtSignal, QThread, SIGNAL
-
 debugdriver_tab_class = uic.loadUiType(
-                           sys.path[0] +
-                           "/cfclient/ui/toolboxes/debugDriverToolbox.ui")[0]
+    cfclient.module_path +
+    "/ui/toolboxes/debugDriverToolbox.ui")[0]
 
 
-class DebugDriverToolbox(QtGui.QWidget, debugdriver_tab_class):
+class DebugDriverToolbox(QtWidgets.QWidget, debugdriver_tab_class):
     """Used to interact with the DebugDriver toolbox"""
     connectionDoneSignal = pyqtSignal(str)
     disconnectedSignal = pyqtSignal(str)
@@ -60,7 +59,7 @@ class DebugDriverToolbox(QtGui.QWidget, debugdriver_tab_class):
 
         # Connected / disconnected signals
         self.helper.cf.connected.add_callback(
-                                             self.connectionDoneSignal.emit)
+            self.connectionDoneSignal.emit)
         self.connectionDoneSignal.connect(self.connectionDone)
         self.helper.cf.disconnected.add_callback(self.disconnectedSignal.emit)
         self.disconnectedSignal.connect(self.disconnected)
@@ -69,14 +68,14 @@ class DebugDriverToolbox(QtGui.QWidget, debugdriver_tab_class):
         self.forceDisconnect.pressed.connect(self.forceDisconnecPressed)
 
     def forceDisconnecPressed(self):
-        if (self.helper.cf.link != None):
+        if (self.helper.cf.link is not None):
             p = CRTPPacket()
             p.set_header(CRTPPort.DEBUGDRIVER, 0)
             p.data = struct.pack('<B', 1)  # Force disconnect
             self.helper.cf.send_packet(p)
 
     def linkQualityChanged(self, value):
-        if (self.helper.cf.link != None):
+        if (self.helper.cf.link is not None):
             p = CRTPPacket()
             p.set_header(CRTPPort.DEBUGDRIVER, 0)
             p.data = struct.pack('<BB', 0, value)  # Set link quality
@@ -106,4 +105,3 @@ class DebugDriverToolbox(QtGui.QWidget, debugdriver_tab_class):
 
     def preferedDockArea(self):
         return Qt.RightDockWidgetArea
-
