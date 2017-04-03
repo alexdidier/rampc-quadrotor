@@ -94,8 +94,8 @@ class PPSRadioClient:
 
 def motorCommandCallback(data):
     """Callback for motor controller actions"""
-    cf_client._send_to_commander(0, 0, 0, 0, data.cmd1, data.cmd2, data.cmd3, 40, CONTROLLER_MOTOR)
-    rospy.loginfo("motor controller callback: %s, %s, %s, %s", data.cmd1,data.cmd2,data.cmd3,data.cmd4)
+    cf_client._send_to_commander(0, 0, 0, 0, data.cmd1 * 10000, data.cmd2 * 10000, data.cmd3 * 10000, data.cmd4 * 10000, CONTROLLER_MOTOR)
+    rospy.loginfo("motor controller callback: %s, %s, %s, %s", data.cmd1, data.cmd2, data.cmd3, data.cmd4)
 
 def angleCommandCallback(data):
     """Callback for angle controller actions"""
@@ -135,8 +135,8 @@ if __name__ == '__main__':
             rospy.Subscriber("/PPSClient/RateCommand", RateCommand, rateCommandCallback)
 
             rospy.spin()
-            rospy.loginfo("Setting crazyflie setpoint to 0")
-            cf_client._send_to_commander(0, 0, 0, 0, 0, 0, 0, 0, 0)
+            rospy.loginfo("Turning off crazyflie")
+            cf_client._send_to_commander(0, 0, 0, 0, 0, 0, 0, 0, CONTROLLER_MOTOR)
             cf_client._cf.close_link()
         else:
             rospy.logerr("No Crazyflies found")
