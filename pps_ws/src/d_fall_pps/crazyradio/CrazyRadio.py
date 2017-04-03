@@ -94,23 +94,20 @@ class PPSRadioClient:
 
 def motorCommandCallback(data):
     """Callback for motor controller actions"""
-    rospy.loginfo("test motorCommandCallback")
+    cf_client._send_to_commander(0, 0, 0, 0, data.cmd1, data.cmd2, data.cmd3, 40, CONTROLLER_MOTOR)
+    rospy.loginfo("motor controller callback: %s, %s, %s, %s", data.cmd1,data.cmd2,data.cmd3,data.cmd4)
 
 def angleCommandCallback(data):
     """Callback for angle controller actions"""
-    ###cf_client._send_to_commander(data.roll,data.pitch,data.yaw,data.thrust, 0, 0, 0, 0, CONTROLLER_ANGLE)
-    ####rospy.loginfo("angle controller callback: %s, %s, %s", data.roll,data.pitch,data.yaw,data.thrust)
-    rospy.loginfo("test angleCommandCallback")
+    #cmd1..4 must not be 0, as crazyflie onboard controller resets
+    #cf_client._send_to_commander(data.rollAngle,data.pitchAngle,data.yawAngle,data.thrust, 1, 1, 1, 1, CONTROLLER_ANGLE)
+    rospy.loginfo("angle controller callback: %s, %s, %s, %s", data.rollAngle, data.pitchAngle ,data.yawAngle, data.thrust)
 
 def rateCommandCallback(data):
     """Callback for rate controller actions"""
-    ###cf_client._send_to_commander(data.roll,data.pitch,data.yaw,data.thrust, 0, 0, 0, 0, CONTROLLER_RATE)
-    ###rospy.loginfo("rate controller callback: %s, %s, %s", data.roll,data.pitch,data.yaw,data.thrust)
-    rospy.loginfo("test rateCommandCallback")
-
-def testCallback(data):
-    """Callback used to test data receipt if no crazyfly was found"""
-    rospy.loginfo("Crazyradio.py successfully subscribed and received testvalues: %f", data.cmd1)
+    #cmd1..4 must not be 0, as crazyflie onboard controller resets
+    #cf_client._send_to_commander(data.rollRate,data.pitchRate,data.yawRate,data.thrust, 1, 1, 1 , 1, CONTROLLER_RATE)
+    rospy.loginfo("rate controller callback: %s, %s, %s, %s", data.rollRate, data.pitchRate, data.yawRate, data.thrust)
 
 if __name__ == '__main__':
     rospy.init_node('CrazyRadio', anonymous=True)
@@ -119,7 +116,6 @@ if __name__ == '__main__':
 
 
     while not rospy.is_shutdown():
-
         # Scan for Crazyflies and use the first one found
         rospy.loginfo("Scanning interfaces for Crazyflies...")
         available=[]
@@ -132,25 +128,15 @@ if __name__ == '__main__':
 
             #TODO: load address from parameters
             cf_client = PPSRadioClient(available[0][0])
-            time.sleep(3.0)
+            time.sleep(2.0)
             #TODO: change publisher name if not correct
-            rospy.Subscriber("PPSClient/topicMotorCommand", MotorCommand, motorCommandCallback)
-            rospy.loginfo("trying to subscribe")
-            #rospy.Subscriber("PPSClient/AngleCommands", AngleCommand, angleCommandCallback)
-            #rospy.Subscriber("PPSClient/RateCommands", RateCommand, rateCommandCallback)
+            rospy.Subscriber("/PPSClient/MotorCommand", MotorCommand, motorCommandCallback)
+            rospy.Subscriber("/PPSClient/AngleCommand", AngleCommand, angleCommandCallback)
+            rospy.Subscriber("/PPSClient/RateCommand", RateCommand, rateCommandCallback)
 
             rospy.spin()
+            rospy.loginfo("Setting crazyflie setpoint to 0")
+            cf_client._send_to_commander(0, 0, 0, 0, 0, 0, 0, 0, 0)
+            cf_client._cf.close_link()
         else:
-            #rospy.logerr("No Crazyflies found, cannot run example")
-            #for testing try to subscribe even if no crazyflie was found
-            rospy.loginfo("No Crazyflies found, still trying to subscribe")
-            rospy.Subscriber("PPSClient/topicMotorCommand", MotorCommand, testCallback)
-            rospy.spin()
-
-
-
-        time.sleep(0.5)
-
-    cf_client._cf.close_link()
-
-
+            rospy.logerr("No Crazyflies found")

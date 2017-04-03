@@ -39,9 +39,9 @@ std::string cflie;
 //global sevices
 ros::ServiceClient rateClient;
 
-ros::Publisher AngleCommandPublisher;
-ros::Publisher RateCommandPublisher;
-ros::Publisher MotorCommandPublisher;
+ros::Publisher angleCommandPublisher;
+ros::Publisher rateCommandPublisher;
+ros::Publisher motorCommandPublisher;
 
 //uncommenting the next line causes FATAL Error at runtime: "You must call ros::init() before creating the first NodeHandle"
 //ros::NodeHandle nodeHandle;
@@ -121,38 +121,40 @@ void viconCallback(const d_fall_pps::ViconData& data){
 //callback method to publish d_fall_pps::AngleCommand
 void callbackAngleCommand(const ros::TimerEvent&)
 {
-	d_fall_pps::AngleCommand AngleCommandPkg;
-	AngleCommandPkg.rollAngle = 1;
-	AngleCommandPkg.pitchAngle = 1;
-	AngleCommandPkg.yawAngle = 1;
+	d_fall_pps::AngleCommand angleCommandPkg;
+	angleCommandPkg.rollAngle = 1;
+	angleCommandPkg.pitchAngle = 1;
+	angleCommandPkg.yawAngle = 1;
+	angleCommandPkg.thrust = 50;
 	
-	AngleCommandPublisher.publish(AngleCommandPkg);
-	ROS_INFO_STREAM("AngleCommandTimer pubslishes: " << AngleCommandPkg.rollAngle << ", " << AngleCommandPkg.pitchAngle << ", " << AngleCommandPkg.yawAngle);
+	angleCommandPublisher.publish(angleCommandPkg);
+	ROS_INFO_STREAM("AngleCommandTimer pubslishes: " << angleCommandPkg.rollAngle << ", " << angleCommandPkg.pitchAngle << ", " << angleCommandPkg.yawAngle);
 }
 
 //callback method to publish d_fall_pps::RateCommand
 void callbackRateCommand(const ros::TimerEvent&)
 {
-	d_fall_pps::RateCommand RateCommandPkg;
-	RateCommandPkg.rollRate = 2;
-	RateCommandPkg.pitchRate = 2;
-	RateCommandPkg.yawRate = 2;
+	d_fall_pps::RateCommand rateCommandPkg;
+	rateCommandPkg.rollRate = 2;
+	rateCommandPkg.pitchRate = 2;
+	rateCommandPkg.yawRate = 2;
+	rateCommandPkg.thrust = 50;
 	
-	RateCommandPublisher.publish(RateCommandPkg);
-	ROS_INFO_STREAM("RateCommandTimer pubslishes: " << RateCommandPkg.rollRate << ", " << RateCommandPkg.pitchRate << ", " << RateCommandPkg.yawRate);
+	rateCommandPublisher.publish(rateCommandPkg);
+	ROS_INFO_STREAM("RateCommandTimer pubslishes: " << rateCommandPkg.rollRate << ", " << rateCommandPkg.pitchRate << ", " << rateCommandPkg.yawRate);
 }
 
 //callback method to publish d_fall_pps::MotorCommand
 void callbackMotorCommand(const ros::TimerEvent&)
 {
-	d_fall_pps::MotorCommand MotorCommandPkg;
-	MotorCommandPkg.cmd1 = 3;
-	MotorCommandPkg.cmd2 = 3;
-	MotorCommandPkg.cmd3 = 3;
-	MotorCommandPkg.cmd4 = 3;
+	d_fall_pps::MotorCommand motorCommandPkg;
+	motorCommandPkg.cmd1 = 3;
+	motorCommandPkg.cmd2 = 3;
+	motorCommandPkg.cmd3 = 3;
+	motorCommandPkg.cmd4 = 3;
 	
-	MotorCommandPublisher.publish(MotorCommandPkg);
-	ROS_INFO_STREAM("MotorCommandTimer pubslishes: " << MotorCommandPkg.cmd1 << ", " << MotorCommandPkg.cmd2 << ", " << MotorCommandPkg.cmd3 << ", " << MotorCommandPkg.cmd4);
+	motorCommandPublisher.publish(motorCommandPkg);
+	ROS_INFO_STREAM("MotorCommandTimer pubslishes: " << motorCommandPkg.cmd1 << ", " << motorCommandPkg.cmd2 << ", " << motorCommandPkg.cmd3 << ", " << motorCommandPkg.cmd4);
 }
 
 
@@ -184,15 +186,15 @@ int main(int argc, char* argv[]){
 	Reference: http://wiki.ros.org/roscpp/Overview/Timers
 	*/
     ROS_INFO("creating publishers for package_for_crazyradio");
-	ros::Timer AngleCommandTimer = nodeHandle.createTimer(ros::Duration(0.1), callbackAngleCommand);
-	ros::Timer RateCommandTimer = nodeHandle.createTimer(ros::Duration(0.1), callbackRateCommand);
-	ros::Timer MotorCommandTimer = nodeHandle.createTimer(ros::Duration(0.1), callbackMotorCommand);
+	ros::Timer angleCommandTimer = nodeHandle.createTimer(ros::Duration(0.1), callbackAngleCommand);
+	ros::Timer rateCommandTimer = nodeHandle.createTimer(ros::Duration(0.1), callbackRateCommand);
+	ros::Timer motorCommandTimer = nodeHandle.createTimer(ros::Duration(0.1), callbackMotorCommand);
 	
 	
 	//ros::Publishers to advertise on the three command type topics
-	AngleCommandPublisher = nodeHandle.advertise <d_fall_pps::AngleCommand>("topicAngleCommand", 1000);
-	RateCommandPublisher = nodeHandle.advertise<d_fall_pps::RateCommand>("topicRateCommand", 1000);
-	MotorCommandPublisher = nodeHandle.advertise <d_fall_pps::MotorCommand>("topicMotorCommand", 1000);
+	angleCommandPublisher = nodeHandle.advertise <d_fall_pps::AngleCommand>("AngleCommand", 1000);
+	rateCommandPublisher = nodeHandle.advertise<d_fall_pps::RateCommand>("RateCommand", 1000);
+	motorCommandPublisher = nodeHandle.advertise <d_fall_pps::MotorCommand>("MotorCommand", 1000);
 
 
 	//service: now only one available: to add several services depending on controller

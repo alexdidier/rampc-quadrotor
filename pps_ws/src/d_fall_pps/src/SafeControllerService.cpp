@@ -45,6 +45,7 @@ bool calculateControlOutput(RateController::Request &request, RateController::Re
     response.controlOutput.rollRate = 1; //testvalue
 	response.controlOutput.pitchRate = 2; //testvalue
 	response.controlOutput.yawRate = 3; //testvalue
+    response.controlOutput.thrust = 50;
 
 	return true;
 }
