@@ -94,7 +94,7 @@ class PPSRadioClient:
 
 def motorCommandCallback(data):
     """Callback for motor controller actions"""
-    cf_client._send_to_commander(0, 0, 0, 0, data.cmd1 * 1000, data.cmd2 * 1000, data.cmd3 * 1000, data.cmd4 * 1000, CONTROLLER_MOTOR)
+    cf_client._send_to_commander(0, 0, 0, 0, data.cmd1, data.cmd2 * 1000, data.cmd3 * 1000, data.cmd4 * 1000, CONTROLLER_MOTOR)
     rospy.loginfo("motor controller callback: %s, %s, %s, %s", data.cmd1, data.cmd2, data.cmd3, data.cmd4)
 
 def angleCommandCallback(data):
@@ -114,33 +114,23 @@ if __name__ == '__main__':
     # Initialize the low-level drivers (don't list the debug drivers)
     cflib.crtp.init_drivers(enable_debug_driver=False)
 
+    if rospy.has_param("/CrazyRadio/CrazyFlieAddress"):
+        radio_address = rospy.get_param("/CrazyRadio/CrazyFlieAddress")
+        rospy.loginfo("Connecting to %s" % radio_address)
+        global cf_client
 
-    while not rospy.is_shutdown():
-        # Scan for Crazyflies and use the first one found
-        rospy.loginfo("Scanning interfaces for Crazyflies...")
-        available=[]
-        available = cflib.crtp.scan_interfaces()
-        rospy.loginfo("Crazyflies found:")
-        for i in available:
-            rospy.loginfo("----------------------------------------------------------------")
-            rospy.loginfo(i[0])
-        for i in available:
-            print i[0]
-        if len(available) > 0:
-            global cf_client
+        #TODO: load address from parameters
+        cf_client = PPSRadioClient(radio_address)
+        time.sleep(1.0)
 
-            #TODO: load address from parameters
-            cf_client = PPSRadioClient("radio://0/72/2M")
-            #cf_client = PPSRadioClient(available[0][0])
-            time.sleep(2.0)
-            #TODO: change publisher name if not correct
-            rospy.Subscriber("/PPSClient/MotorCommand", MotorCommand, motorCommandCallback)
-            rospy.Subscriber("/PPSClient/AngleCommand", AngleCommand, angleCommandCallback)
-            rospy.Subscriber("/PPSClient/RateCommand", RateCommand, rateCommandCallback)
+        #TODO: change publisher name if not correct
+        rospy.Subscriber("/PPSClient/MotorCommand", MotorCommand, motorCommandCallback)
+        rospy.Subscriber("/PPSClient/AngleCommand", AngleCommand, angleCommandCallback)
+        rospy.Subscriber("/PPSClient/RateCommand", RateCommand, rateCommandCallback)
 
-            rospy.spin()
-            rospy.loginfo("Turning off crazyflie")
-            cf_client._send_to_commander(0, 0, 0, 0, 0, 0, 0, 0, CONTROLLER_MOTOR)
-            cf_client._cf.close_link()
-        else:
-            rospy.logerr("No Crazyflies found")
+        rospy.spin()
+        rospy.loginfo("Turning off crazyflie")
+        cf_client._send_to_commander(0, 0, 0, 0, 0, 0, 0, 0, CONTROLLER_MOTOR)
+        cf_client._cf.close_link()
+    else:
+        rospy.logerr("No radio address provided")
