@@ -67,6 +67,7 @@ public:
     #ifndef DEBUG_GUI
     void init();
     #endif
+
 public slots:
     #ifndef DEBUG_GUI
     void runCallbacks();
@@ -128,11 +129,8 @@ private slots:
    // void on_buttonStop_2_clicked();
    #endif
 
-    void on_spinBoxNumCrazyflies_valueChanged(int arg1);
+    void set_tabs(int n);
 
-    void on_spinBoxNumCrazyflies_editingFinished();
-
-    void on_graphicsView_rubberBandChanged(const QRect &viewportRect, const QPointF &fromScenePoint, const QPointF &toScenePoint);
 
 private:
 
@@ -141,7 +139,6 @@ private:
     QGraphicsRectItem* item1;
 
     void _init();
-    void _refresh_tabs();
 
     #ifndef DEBUG_GUI
     // void refreshScreen();

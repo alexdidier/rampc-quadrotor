@@ -3,6 +3,7 @@
 #include <QGraphicsSceneMouseEvent>
 #include <QRect>
 #include <QApplication>
+#include <QKeyEvent>
 
 myGraphicsScene::myGraphicsScene(QObject *parent)
     : QGraphicsScene(parent)
@@ -13,6 +14,49 @@ myGraphicsScene::myGraphicsScene(QObject *parent)
     tmp_rect = 0;
     startedRect = false;
     // firstClick = true;
+}
+
+
+void myGraphicsScene::keyPressEvent(QKeyEvent * keyEvent)
+{
+    if(keyEvent->key() == Qt::Key_Delete)
+    {
+        qDebug("del key pressed");
+        for(unsigned int i = 0; i < rectangles.size(); i++)
+        {
+            if(rectangles[i]->isSelected())
+            {
+                qDebug("selectedRectangle: %d", i);
+                removeRectangle(i);
+            }
+        }
+    }
+    QGraphicsScene::keyPressEvent(keyEvent);
+}
+
+void myGraphicsScene::setSelectedRectangle(int index)
+{
+    for(unsigned int i = 0; i < rectangles.size(); i++)
+    {
+        rectangles[i]->setSelected(false);
+        if(index == i)
+        {
+            rectangles[index]->setSelected(true);
+        }
+    }
+}
+
+int myGraphicsScene::checkSelectedRectangle()
+{
+    for(unsigned int i = 0; i < rectangles.size(); i++)
+    {
+        if(rectangles[i]->isSelected())
+        {
+            qDebug("rectangle selected index = %d", i);
+            return i;
+        }
+    }
+    return -1;
 }
 
 void myGraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent)
@@ -29,6 +73,7 @@ void myGraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent)
         addItem(tmp_rect_item);
     }
 
+
     QGraphicsScene::mousePressEvent(mouseEvent);
 }
 
@@ -43,27 +88,37 @@ void myGraphicsScene::mouseMoveEvent(QGraphicsSceneMouseEvent *mouseEvent)
     QGraphicsScene::mouseMoveEvent(mouseEvent);
 }
 
+void myGraphicsScene::addRectangleToVector(myGraphicsRectItem* rect)
+{
+    rectangles.push_back(rect);
+    emit numRectanglesChanged(rectangles.size());
+}
+
+void myGraphicsScene::removeRectangle(int index)
+{
+    this->removeItem(rectangles[index]);
+    rectangles.erase(rectangles.begin() + index);
+    emit numRectanglesChanged(rectangles.size());
+}
+
 void myGraphicsScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent)
 {
     if(startedRect)
     {
         if (mouseEvent->button() != Qt::LeftButton)
             return;
-
-        // Drag and drop approach:
-
         // TODO: If too small, etc etc, dont add it to the container and remove it
 
         tmp_rect_item->setRect(tmp_rect_item->rect().normalized());
-        rectangles.push_back(tmp_rect_item);
-
+        addRectangleToVector(tmp_rect_item);
         tmp_rect = 0;
         startedRect = false;
-
-        // update();
-
     }
-
+    int selected_rect = checkSelectedRectangle();
+    if(selected_rect != -1)
+    {
+        emit rectangleSelected(selected_rect);
+    }
 
     QGraphicsScene::mouseReleaseEvent(mouseEvent);
 }

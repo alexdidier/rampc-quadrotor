@@ -1,6 +1,7 @@
 #include "mainguiwindow.h"
 #include "ui_mainguiwindow.h"
 
+#include <QObject>
 #include <QDoubleSpinBox>
 #include <QTextEdit>
 #include <QString>
@@ -38,11 +39,11 @@ MainGUIWindow::~MainGUIWindow()
     delete ui;
 }
 
-void MainGUIWindow::_refresh_tabs()
+void MainGUIWindow::set_tabs(int n)
 {
     ui->tabWidget->clear();
     std::string str;
-    for (int i = 0; i < ui->spinBoxNumCrazyflies->value(); i++)
+    for (int i = 0; i < n; i++)
     {
         str = "CrazyFly ";
         str += std::to_string(i+1);
@@ -58,16 +59,13 @@ void MainGUIWindow::_init()
     //scene->setSceneRect(QRectF(QPointF(-100, 100), QSizeF(200, 200)));
 
     ui->graphicsView->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
-    item1 = new QGraphicsRectItem(0,0,100,100);
-    item1->setBrush(QBrush(Qt::blue));
-    scene->addText("Hello world!");
-    // scene->addRect(rect, QPen(Qt::black), QBrush(Qt::blue));
-    scene->addItem(item1);
-
     ui->graphicsView->setScene(scene);
 
-    ui->spinBoxNumCrazyflies->setMaximum(N_MAX_CRAZYFLIES);
-    _refresh_tabs();
+
+    QObject::connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)), scene, SLOT(removeRectangle(int)));
+    QObject::connect(scene, SIGNAL(numRectanglesChanged(int)), this, SLOT(set_tabs(int)));
+    QObject::connect(ui->tabWidget, SIGNAL(currentChanged(int)), scene, SLOT(setSelectedRectangle(int)));
+    QObject::connect(scene, SIGNAL(rectangleSelected(int)), ui->tabWidget, SLOT(setCurrentIndex(int)));
 }
 
 #ifndef DEBUG_GUI
@@ -132,6 +130,8 @@ void MainGUIWindow::init()
 
     //refreshScreen();
 }
+
+
 
 // void MainGUIWindow::refreshScreen()
 // {
@@ -942,17 +942,3 @@ void CSetpointQueue::print()
 
 // }
 #endif  // DEBUG_GUI
-void MainGUIWindow::on_spinBoxNumCrazyflies_valueChanged(int arg1)
-{
-    _refresh_tabs();
-}
-
-void MainGUIWindow::on_spinBoxNumCrazyflies_editingFinished()
-{
-
-}
-
-void MainGUIWindow::on_graphicsView_rubberBandChanged(const QRect &viewportRect, const QPointF &fromScenePoint, const QPointF &toScenePoint)
-{
-
-}

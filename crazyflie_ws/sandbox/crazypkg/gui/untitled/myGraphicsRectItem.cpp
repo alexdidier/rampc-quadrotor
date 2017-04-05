@@ -12,11 +12,13 @@ myGraphicsRectItem::myGraphicsRectItem(const QRectF & rect, QGraphicsItem * pare
 {
     this->setFlag(QGraphicsItem::ItemIsSelectable);
     this->setFlag(QGraphicsItem::ItemIsMovable);
+    this->setFlag(QGraphicsItem::ItemSendsScenePositionChanges);
     pen = new QPen(Qt::red);
     brush = new QBrush(Qt::red);
 
     tmp_rect = 0;
     _grabbers_created = false;
+    resize_mode = false;
     // this->setAcceptHoverEvents(true);
 }
 
@@ -49,6 +51,20 @@ QVariant myGraphicsRectItem::itemChange(GraphicsItemChange change, const QVarian
             deleteGrabbers();
         }
     }
+    if (change == QGraphicsItem::ItemPositionChange && scene()) // with this, block movement of object when we are hovering through cornergrabbers
+    {
+        if(checkCornerGrabbers() == CornerGrabber::noCorner)
+        {
+            qDebug("move now!");
+            return QPointF(value.toPointF().x(), value.toPointF().y());
+        }
+        else
+        {
+            qDebug("dont move now!");
+            return QPointF(pos().x(), pos().y());
+        }
+    }
+
 
     return QGraphicsItem::itemChange(change, value);
 }
@@ -58,7 +74,7 @@ bool myGraphicsRectItem::grabbersAreCreated()
     return _grabbers_created;
 }
 
-void myGraphicsRectItem::setCornerPositions()
+void myGraphicsRectItem::setCornerPositions() //need to call this function whenever we chnge the size of the rectangle
 {
     QRectF rect = this->rect();
 
@@ -101,7 +117,15 @@ int myGraphicsRectItem::checkCornerGrabbers()
     else if( _bottomRight_corner->isActive())
         return CornerGrabber::bottomRight;
     else
-        return 20;
+        return CornerGrabber::noCorner;               //0 is none
+}
+
+bool myGraphicsRectItem::anyGrabber()
+{
+    if(checkCornerGrabbers() != CornerGrabber::noCorner)
+        return true;
+    else
+        return false;
 }
 
 void myGraphicsRectItem::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent)
@@ -109,38 +133,64 @@ void myGraphicsRectItem::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent)
     if (mouseEvent->button() != Qt::LeftButton)
         return;
 
-    createGrabbers();           //This is just in case they have not been created by now.
+    createGrabbers();           //This is just in case they have not been created by now. We have a creator guardian anyhow
 
-    switch(checkCornerGrabbers())
+    if(anyGrabber())
     {
-        case CornerGrabber::bottomLeft:
-            qDebug("bottomLeft");
-            mouseEvent->setAccepted(true);
-            break;
-        case CornerGrabber::topLeft:
-            qDebug("topLeft");
-            mouseEvent->setAccepted(true);
-            break;
-        case CornerGrabber::topRight:
-            qDebug("topRight");
-            mouseEvent->setAccepted(true);
-            break;
-        case CornerGrabber::bottomRight:
-            qDebug("bottomRight");
-            mouseEvent->setAccepted(true);
-            break;
-        default:
-            qDebug("No corner");
-            // Normal case here, mouse not in corner grabbers
-            QGraphicsRectItem::mousePressEvent(mouseEvent);
-            break;
+        resize_mode = true;
     }
-    // TODO: check if over handlers, if, resize mode
+    QGraphicsRectItem::mousePressEvent(mouseEvent);
 }
 
 void myGraphicsRectItem::mouseMoveEvent(QGraphicsSceneMouseEvent *mouseEvent)
 {
     this->prepareGeometryChange();
+    if(resize_mode)
+    {
+        switch(checkCornerGrabbers())
+        {
+            case CornerGrabber::bottomLeft:
+            {
+                qDebug("bottomLeft");
+                QRectF resize_rect = this->rect();
+                resize_rect.setBottomLeft(mouseEvent->pos());
+                this->setRect(resize_rect.normalized());
+                setCornerPositions();
+                break;
+            }
+            case CornerGrabber::topLeft:
+            {
+                qDebug("topLeft");
+                QRectF resize_rect = this->rect();
+                resize_rect.setTopLeft(mouseEvent->pos());
+                this->setRect(resize_rect.normalized());
+                setCornerPositions();
+                break;
+            }
+            case CornerGrabber::topRight:
+            {
+                qDebug("topRight");
+                QRectF resize_rect = this->rect();
+                resize_rect.setTopRight(mouseEvent->pos());
+                this->setRect(resize_rect.normalized());
+                setCornerPositions();
+                break;
+            }
+            case CornerGrabber::bottomRight:
+            {
+                qDebug("bottomRight");
+                QRectF resize_rect = this->rect();
+                resize_rect.setBottomRight(mouseEvent->pos());
+                this->setRect(resize_rect.normalized());
+                setCornerPositions();
+                break;
+            }
+            case CornerGrabber::noCorner:
+                qDebug("No corner. Should never enter here");
+            default:
+                break;
+        }
+    }
     QGraphicsRectItem::mouseMoveEvent(mouseEvent);
 }
 
@@ -150,5 +200,9 @@ void myGraphicsRectItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent)
     if (mouseEvent->button() != Qt::LeftButton)
         return;
     // TODO: stop resize mode
+    if(resize_mode)
+    {
+        resize_mode = false;
+    }
     QGraphicsRectItem::mouseReleaseEvent(mouseEvent);
 }

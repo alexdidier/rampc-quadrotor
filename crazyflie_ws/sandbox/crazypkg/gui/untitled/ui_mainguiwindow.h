@@ -14,15 +14,14 @@
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QButtonGroup>
 #include <QtWidgets/QFrame>
-#include <QtWidgets/QGraphicsView>
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QMenuBar>
-#include <QtWidgets/QSpinBox>
 #include <QtWidgets/QStatusBar>
 #include <QtWidgets/QTabWidget>
 #include <QtWidgets/QToolBar>
 #include <QtWidgets/QWidget>
+#include "myGraphicsView.h"
 
 QT_BEGIN_NAMESPACE
 
@@ -33,9 +32,8 @@ public:
     QFrame *frame;
     QTabWidget *tabWidget;
     QFrame *frame_drawing;
-    QGraphicsView *graphicsView;
+    myGraphicsView *graphicsView;
     QFrame *frame_3;
-    QSpinBox *spinBoxNumCrazyflies;
     QMenuBar *menuBar;
     QToolBar *mainToolBar;
     QStatusBar *statusBar;
@@ -56,26 +54,21 @@ public:
         tabWidget->setObjectName(QStringLiteral("tabWidget"));
         tabWidget->setGeometry(QRect(20, 19, 1131, 401));
         tabWidget->setLayoutDirection(Qt::LeftToRight);
+        tabWidget->setTabsClosable(true);
         frame_drawing = new QFrame(centralWidget);
         frame_drawing->setObjectName(QStringLiteral("frame_drawing"));
-        frame_drawing->setGeometry(QRect(30, 20, 582, 469));
+        frame_drawing->setGeometry(QRect(20, 20, 641, 469));
         frame_drawing->setFrameShape(QFrame::StyledPanel);
         frame_drawing->setFrameShadow(QFrame::Raised);
-        graphicsView = new QGraphicsView(frame_drawing);
+        graphicsView = new myGraphicsView(frame_drawing);
         graphicsView->setObjectName(QStringLiteral("graphicsView"));
-        graphicsView->setGeometry(QRect(30, 20, 531, 430));
+        graphicsView->setGeometry(QRect(10, 9, 621, 451));
         graphicsView->setMouseTracking(true);
         frame_3 = new QFrame(centralWidget);
         frame_3->setObjectName(QStringLiteral("frame_3"));
-        frame_3->setGeometry(QRect(629, 21, 581, 469));
+        frame_3->setGeometry(QRect(669, 21, 541, 469));
         frame_3->setFrameShape(QFrame::StyledPanel);
         frame_3->setFrameShadow(QFrame::Raised);
-        spinBoxNumCrazyflies = new QSpinBox(centralWidget);
-        spinBoxNumCrazyflies->setObjectName(QStringLiteral("spinBoxNumCrazyflies"));
-        spinBoxNumCrazyflies->setGeometry(QRect(1340, 560, 47, 23));
-        spinBoxNumCrazyflies->setReadOnly(false);
-        spinBoxNumCrazyflies->setAccelerated(false);
-        spinBoxNumCrazyflies->setMaximum(6);
         MainGUIWindow->setCentralWidget(centralWidget);
         menuBar = new QMenuBar(MainGUIWindow);
         menuBar->setObjectName(QStringLiteral("menuBar"));

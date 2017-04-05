@@ -44,14 +44,17 @@
      <property name="currentIndex">
       <number>-1</number>
      </property>
+     <property name="tabsClosable">
+      <bool>true</bool>
+     </property>
     </widget>
    </widget>
    <widget class="QFrame" name="frame_drawing">
     <property name="geometry">
      <rect>
-      <x>30</x>
+      <x>20</x>
       <y>20</y>
-      <width>582</width>
+      <width>641</width>
       <height>469</height>
      </rect>
     </property>
@@ -61,13 +64,13 @@
     <property name="frameShadow">
      <enum>QFrame::Raised</enum>
     </property>
-    <widget class="QGraphicsView" name="graphicsView">
+    <widget class="myGraphicsView" name="graphicsView">
      <property name="geometry">
       <rect>
-       <x>30</x>
-       <y>20</y>
-       <width>531</width>
-       <height>430</height>
+       <x>10</x>
+       <y>9</y>
+       <width>621</width>
+       <height>451</height>
       </rect>
      </property>
      <property name="mouseTracking">
@@ -78,9 +81,9 @@
    <widget class="QFrame" name="frame_3">
     <property name="geometry">
      <rect>
-      <x>629</x>
+      <x>669</x>
       <y>21</y>
-      <width>581</width>
+      <width>541</width>
       <height>469</height>
      </rect>
     </property>
@@ -89,25 +92,6 @@
     </property>
     <property name="frameShadow">
      <enum>QFrame::Raised</enum>
-    </property>
-   </widget>
-   <widget class="QSpinBox" name="spinBoxNumCrazyflies">
-    <property name="geometry">
-     <rect>
-      <x>1340</x>
-      <y>560</y>
-      <width>47</width>
-      <height>23</height>
-     </rect>
-    </property>
-    <property name="readOnly">
-     <bool>false</bool>
-    </property>
-    <property name="accelerated">
-     <bool>false</bool>
-    </property>
-    <property name="maximum">
-     <number>6</number>
     </property>
    </widget>
   </widget>
@@ -132,6 +116,13 @@
   <widget class="QStatusBar" name="statusBar"/>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>myGraphicsView</class>
+   <extends>QGraphicsView</extends>
+   <header>myGraphicsView.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

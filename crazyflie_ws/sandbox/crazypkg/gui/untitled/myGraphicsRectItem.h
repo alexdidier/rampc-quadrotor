@@ -28,6 +28,7 @@ protected:
 
 private:
     void setCornerPositions();
+    bool anyGrabber();
     int checkCornerGrabbers();
     void createGrabbers();
     bool grabbersAreCreated();
@@ -46,6 +47,8 @@ private:
     CornerGrabber* _bottomRight_corner;
 
     bool _grabbers_created;
+    bool resize_mode;
+
 };
 
 #endif

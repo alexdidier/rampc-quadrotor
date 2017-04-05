@@ -31,7 +31,7 @@ public:
     qreal mouseDownY;
 
     enum {kMouseReleased=0, kMouseDown, kMouseMoving}; ///< define the mouse states
-    enum {bottomLeft, topLeft, topRight, bottomRight};
+    enum {noCorner, bottomLeft, topLeft, topRight, bottomRight};
 
 
 private:
