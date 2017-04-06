@@ -51,19 +51,6 @@ ros::Publisher motorCommandPublisher;
 //not void: sould give back controlldata
 void ppsClientToController(ViconData data){
 	if(data.crazyflieName == cflie){
-		/* unnecessairy: just send data!!!!!
-		d_fall_pps::ViconData myDataToPublish;
-		myDataToPublish.crazyflieName = data.crazyflieName;
-		myDataToPublish.x = data.x;
-		myDataToPublish.y = data.y;
-		myDataToPublish.z = data.z;
-		myDataToPublish.roll = data.roll;
-		myDataToPublish.pitch = data.pitch;
-		myDataToPublish.yaw = data.yaw;
-		myDataToPublish.acquiringTime = data.acquiringTime;
-		*/
-
-
 		//TODO:
 		//Some way of choosing the correct controller: Safe or Custom
 		//using the area data
@@ -106,7 +93,7 @@ void viconCallback(const d_fall_pps::ViconData& data){
 	//debugging
 	//++callbackCalls;
 	//ROS_INFO("Callback called #%d",callbackCalls);
-	//ROS_INFO("Recived Pitch in this callback: %f", data.pitch);
+	//ROS_INFO("Received Pitch in this callback: %f", data.pitch);
 	//ROS_INFO("received data:"); ROS_INFO_STREAM(data);
 	//ROS_INFO("My teamname is:"); ROS_INFO_STREAM(team);
 	//ROS_INFO("My crazyflie is:"); ROS_INFO_STREAM(cflie);
@@ -192,9 +179,9 @@ int main(int argc, char* argv[]){
 	
 	
 	//ros::Publishers to advertise on the three command type topics
-	angleCommandPublisher = nodeHandle.advertise <d_fall_pps::AngleCommand>("AngleCommand", 1000);
-	rateCommandPublisher = nodeHandle.advertise<d_fall_pps::RateCommand>("RateCommand", 1000);
-	motorCommandPublisher = nodeHandle.advertise <d_fall_pps::MotorCommand>("MotorCommand", 1000);
+	angleCommandPublisher = nodeHandle.advertise <d_fall_pps::AngleCommand>("AngleCommand", 1);
+	rateCommandPublisher = nodeHandle.advertise<d_fall_pps::RateCommand>("RateCommand", 1);
+	motorCommandPublisher = nodeHandle.advertise <d_fall_pps::MotorCommand>("MotorCommand", 1);
 
 
 	//service: now only one available: to add several services depending on controller
