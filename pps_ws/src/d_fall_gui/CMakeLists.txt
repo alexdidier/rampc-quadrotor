@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(d_fall_pps)
+project(d_fall_gui)
 
 ## Add support for C++11, supported in ROS Kinetic and newer
 # add_definitions(-std=c++11)
@@ -8,11 +8,9 @@ project(d_fall_pps)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  message_generation
   roscpp
   rospy
   std_msgs
-  genmsg
 )
 
 ## System dependencies are found with CMake's conventions
@@ -55,30 +53,12 @@ find_package(catkin REQUIRED COMPONENTS
 #   Message2.msg
 # )
 
-add_message_files(
-  FILES
-  ViconData.msg
-  MotorCommand.msg
-  AngleCommand.msg
-  RateCommand.msg
-  Setpoint.msg
-  CrazyflieContext.msg
-  AreaBounds.msg
-)
-
 ## Generate services in the 'srv' folder
 # add_service_files(
 #   FILES
 #   Service1.srv
 #   Service2.srv
 # )
-add_service_files(
-  FILES
-  MotorController.srv
-  AngleController.srv
-  RateController.srv
-  CentralManager.srv
-)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -92,10 +72,6 @@ add_service_files(
 #   DEPENDENCIES
 #   std_msgs
 # )
-generate_messages(
-  DEPENDENCIES
-  std_msgs
-)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -127,10 +103,10 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES
-  CATKIN_DEPENDS roscpp rospy std_msgs
-  DEPENDS
+#  INCLUDE_DIRS include
+#  LIBRARIES d_fall_gui
+#  CATKIN_DEPENDS roscpp rospy std_msgs
+#  DEPENDS system_lib
 )
 
 ###########
@@ -142,12 +118,11 @@ catkin_package(
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
-  include
 )
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/d_fall_pps.cpp
+#   src/${PROJECT_NAME}/d_fall_gui.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -158,11 +133,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/d_fall_pps_node.cpp)
-add_executable(ViconDataPublisher src/ViconDataPublisher.cpp)
-add_executable(PPSClient src/PPSClient.cpp)
-add_executable(SafeControllerService src/SafeControllerService.cpp)
-add_executable(CentralManagerService src/CentralManagerService.cpp)
+# add_executable(${PROJECT_NAME}_node src/d_fall_gui_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -178,17 +149,6 @@ add_executable(CentralManagerService src/CentralManagerService.cpp)
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
-
-find_library(VICON_LIBRARY ViconDataStreamSDK_CPP HINTS lib/vicon)
-
-target_link_libraries(ViconDataPublisher ${catkin_LIBRARIES})
-target_link_libraries(ViconDataPublisher ${VICON_LIBRARY})
-
-target_link_libraries(PPSClient ${catkin_LIBRARIES})
-
-target_link_libraries(SafeControllerService ${catkin_LIBRARIES})
-
-target_link_libraries(CentralManagerService ${catkin_LIBRARIES})
 
 #############
 ## Install ##
@@ -230,7 +190,7 @@ target_link_libraries(CentralManagerService ${catkin_LIBRARIES})
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_d_fall_pps.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_d_fall_gui.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

@@ -1,6 +1,10 @@
 TeamName: 'Two'
 CrazyFlieName: "cfTwo"
-CrazyFlieAddress: "radio://0/72/2M"
+CrazyFlieAddress: "radio://0/99/2M"
+SafeController: ""
+SafeControllerType: ""
+CustomController: ""
+CustomControllerType: ""
 
 #controllertypes to add with adjustable
 #motor, angle and rate
