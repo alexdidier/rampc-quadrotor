@@ -62,6 +62,7 @@ add_message_files(
   AngleCommand.msg
   RateCommand.msg
   Setpoint.msg
+  CrazyflieContext.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -75,6 +76,7 @@ add_service_files(
   MotorController.srv
   AngleController.srv
   RateController.srv
+  CentralManager.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -159,6 +161,7 @@ include_directories(
 add_executable(ViconDataPublisher src/ViconDataPublisher.cpp)
 add_executable(PPSClient src/PPSClient.cpp)
 add_executable(SafeControllerService src/SafeControllerService.cpp)
+add_executable(CentralManagerService src/CentralManagerService.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -183,6 +186,8 @@ target_link_libraries(ViconDataPublisher ${VICON_LIBRARY})
 target_link_libraries(PPSClient ${catkin_LIBRARIES})
 
 target_link_libraries(SafeControllerService ${catkin_LIBRARIES})
+
+target_link_libraries(CentralManagerService ${catkin_LIBRARIES})
 
 #############
 ## Install ##
