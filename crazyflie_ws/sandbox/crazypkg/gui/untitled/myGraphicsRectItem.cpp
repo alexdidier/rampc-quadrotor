@@ -6,8 +6,9 @@
 #include <QBrush>
 #include <QApplication>
 #include <QVariant>
+#include <string.h>
 
-myGraphicsRectItem::myGraphicsRectItem(const QRectF & rect, QGraphicsItem * parent)
+myGraphicsRectItem::myGraphicsRectItem(const QRectF & rect,  QGraphicsItem * parent)
     : QGraphicsRectItem(rect, parent)
 {
     this->setFlag(QGraphicsItem::ItemIsSelectable);
@@ -19,8 +20,8 @@ myGraphicsRectItem::myGraphicsRectItem(const QRectF & rect, QGraphicsItem * pare
     tmp_rect = 0;
     _grabbers_created = false;
     resize_mode = false;
-    // this->setAcceptHoverEvents(true);
 }
+
 
 void myGraphicsRectItem::deleteGrabbers()
 {
@@ -77,11 +78,10 @@ bool myGraphicsRectItem::grabbersAreCreated()
 void myGraphicsRectItem::setCornerPositions() //need to call this function whenever we chnge the size of the rectangle
 {
     QRectF rect = this->rect();
-
-    _bottomLeft_corner->setPos(rect.bottomLeft().x(), rect.bottomLeft().y() - _bottomLeft_corner->getHeight());
+    _bottomLeft_corner->setPos(rect.bottomLeft().x(), rect.bottomLeft().y());
     _topLeft_corner->setPos(rect.topLeft().x(), rect.topLeft().y());
-    _topRight_corner->setPos(rect.topRight().x() - _topRight_corner->getWidth(), rect.topRight().y());
-    _bottomRight_corner->setPos(rect.bottomRight().x() - _bottomRight_corner->getWidth(), rect.bottomRight().y() - _bottomRight_corner->getHeight());
+    _topRight_corner->setPos(rect.topRight().x(), rect.topRight().y());
+    _bottomRight_corner->setPos(rect.bottomRight().x(), rect.bottomRight().y());
 }
 
 void myGraphicsRectItem::createGrabbers()
@@ -91,7 +91,7 @@ void myGraphicsRectItem::createGrabbers()
         _bottomLeft_corner = new CornerGrabber(this, CornerGrabber::bottomLeft);
         _topLeft_corner = new CornerGrabber(this, CornerGrabber::topLeft);
         _topRight_corner = new CornerGrabber(this, CornerGrabber::topRight);
-        _bottomRight_corner = new CornerGrabber(this, CornerGrabber::topRight);
+        _bottomRight_corner = new CornerGrabber(this, CornerGrabber::bottomRight);
 
 
         _bottomLeft_corner->installSceneEventFilter(this);
@@ -155,7 +155,6 @@ void myGraphicsRectItem::mouseMoveEvent(QGraphicsSceneMouseEvent *mouseEvent)
                 QRectF resize_rect = this->rect();
                 resize_rect.setBottomLeft(mouseEvent->pos());
                 this->setRect(resize_rect.normalized());
-                setCornerPositions();
                 break;
             }
             case CornerGrabber::topLeft:
@@ -164,7 +163,6 @@ void myGraphicsRectItem::mouseMoveEvent(QGraphicsSceneMouseEvent *mouseEvent)
                 QRectF resize_rect = this->rect();
                 resize_rect.setTopLeft(mouseEvent->pos());
                 this->setRect(resize_rect.normalized());
-                setCornerPositions();
                 break;
             }
             case CornerGrabber::topRight:
@@ -173,7 +171,6 @@ void myGraphicsRectItem::mouseMoveEvent(QGraphicsSceneMouseEvent *mouseEvent)
                 QRectF resize_rect = this->rect();
                 resize_rect.setTopRight(mouseEvent->pos());
                 this->setRect(resize_rect.normalized());
-                setCornerPositions();
                 break;
             }
             case CornerGrabber::bottomRight:
@@ -182,7 +179,6 @@ void myGraphicsRectItem::mouseMoveEvent(QGraphicsSceneMouseEvent *mouseEvent)
                 QRectF resize_rect = this->rect();
                 resize_rect.setBottomRight(mouseEvent->pos());
                 this->setRect(resize_rect.normalized());
-                setCornerPositions();
                 break;
             }
             case CornerGrabber::noCorner:
@@ -190,6 +186,8 @@ void myGraphicsRectItem::mouseMoveEvent(QGraphicsSceneMouseEvent *mouseEvent)
             default:
                 break;
         }
+        setCornerPositions();
+        rectSizeChanged();
     }
     QGraphicsRectItem::mouseMoveEvent(mouseEvent);
 }

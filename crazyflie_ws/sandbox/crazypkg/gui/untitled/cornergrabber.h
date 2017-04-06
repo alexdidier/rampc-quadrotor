@@ -13,6 +13,8 @@
 #include <QPointF>
 
 
+#define GRABBER_HEIGHT         10
+#define GRABBER_WIDTH          10
 
 class CornerGrabber : public QGraphicsItem
 {
@@ -21,18 +23,12 @@ public:
     explicit CornerGrabber(QGraphicsItem *parent = 0,  int corner = 0);
 
     int getCorner(); ///< allows the owner to find out which coner this is
-    void setMouseState(int); ///< allows the owner to record the current mouse state
-    int  getMouseState(); ///< allows the owner to get the current mouse state
     qreal getHeight();
     qreal getWidth();
     bool isActive();
+    QRectF rect() const;
 
-    qreal mouseDownX;
-    qreal mouseDownY;
-
-    enum {kMouseReleased=0, kMouseDown, kMouseMoving}; ///< define the mouse states
     enum {noCorner, bottomLeft, topLeft, topRight, bottomRight};
-
 
 private:
 
@@ -52,6 +48,9 @@ private:
     virtual void mousePressEvent(QGraphicsSceneDragDropEvent *event);
     virtual void mouseReleaseEvent (QGraphicsSceneMouseEvent * event );
 
+    QRectF createRect();
+    void setRect(const QRectF & rectangle);
+
     QColor _outterborderColor; ///< the hover event handlers will toggle this between red and black
     QPen _outterborderPen; ///< the pen is used to paint the red/black border
 
@@ -62,9 +61,7 @@ private:
 
     bool _is_active;
 
-    int _mouseButtonState;
-
-
+    QRectF _rect;
 };
 
 #endif // CORNERGRABBER_H

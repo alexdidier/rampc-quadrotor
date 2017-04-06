@@ -2,23 +2,20 @@
 
 CornerGrabber::CornerGrabber(QGraphicsItem *parent,  int corner) :
     QGraphicsItem(parent),
-    mouseDownX(0),
-    mouseDownY(0),
     _outterborderColor(Qt::black),
     _outterborderPen(),
-    _width(6),
-    _height(6),
+    _width(GRABBER_WIDTH),
+    _height(GRABBER_HEIGHT),
     _corner(corner),
-    _mouseButtonState(kMouseReleased),
     _is_active(false)
 {
     setParentItem(parent);
-
     _outterborderPen.setWidth(2);
     _outterborderPen.setColor(_outterborderColor);
-
-   this->setAcceptHoverEvents(true);
+    this->setAcceptHoverEvents(true);
+    this->setFlag(QGraphicsItem::ItemIgnoresTransformations);
 }
+
 
 qreal CornerGrabber::getHeight()
 {
@@ -28,16 +25,6 @@ qreal CornerGrabber::getHeight()
 qreal CornerGrabber::getWidth()
 {
     return _width;
-}
-
-void CornerGrabber::setMouseState(int s)
-{
-    _mouseButtonState = s;
-}
-
-int CornerGrabber::getMouseState()
-{
-    return _mouseButtonState;
 }
 
 int CornerGrabber::getCorner()
@@ -99,26 +86,71 @@ void CornerGrabber::hoverEnterEvent ( QGraphicsSceneHoverEvent * )
 
 QRectF CornerGrabber::boundingRect() const
 {
-    return QRectF(0,0,_width,_height);
+    QRectF bounding_rect = this->rect();
+    return bounding_rect;
 }
 
+QRectF CornerGrabber::rect() const
+{
+    return _rect;
+}
+
+void CornerGrabber::setRect(const QRectF & rectangle)
+{
+    _rect = rectangle;
+}
 
 void CornerGrabber::paint (QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *)
 {
 
     // fill the box with solid color, use sharp corners
-
+    prepareGeometryChange();
     _outterborderPen.setCapStyle(Qt::SquareCap);
     _outterborderPen.setStyle(Qt::SolidLine);
     painter->setPen(_outterborderPen);
-
-    QPointF topLeft (0, 0);
-    QPointF bottomRight ( _width, _height);
-
-    QRectF rect (topLeft, bottomRight);
-
+    QRectF rect = createRect();
+    this->setRect(rect);
     QBrush brush (Qt::SolidPattern);
     brush.setColor (_outterborderColor);
-    painter->fillRect(rect,brush);
+    painter->fillRect(_rect,brush);
 
+}
+
+QRectF CornerGrabber::createRect()
+{
+    QPointF topLeft(0,0);
+    QPointF bottomRight(_width, _height);
+    QRectF rect(topLeft, bottomRight);
+
+    switch(_corner)
+    {
+        case CornerGrabber::bottomLeft:
+        {
+            QPointF move_to(0,0);
+            rect.moveBottomLeft(move_to);
+            return rect;
+            break;
+        }
+        case CornerGrabber::topLeft:
+        {
+            return rect;
+            break;
+        }
+        case CornerGrabber::topRight:
+        {
+            QPointF move_to(0,0);
+            rect.moveTopRight(move_to);
+            return rect;
+            break;
+        }
+        case CornerGrabber::bottomRight:
+        {
+            QPointF move_to(0,0);
+            rect.moveBottomRight(move_to);
+            return rect;
+            break;
+        }
+        default:
+            break;
+    }
 }

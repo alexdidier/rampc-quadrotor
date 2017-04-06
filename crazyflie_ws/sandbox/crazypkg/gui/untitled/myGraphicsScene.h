@@ -5,7 +5,7 @@
 
 #include <QGraphicsScene>
 
-#include "myGraphicsRectItem.h"
+#include "crazyFlyZone.h"
 
 class QGraphicsSceneMouseEvent;
 class QPointF;
@@ -19,7 +19,7 @@ class myGraphicsScene : public QGraphicsScene
 public:
 
     explicit myGraphicsScene(QObject *parent = 0);
-    std::vector<myGraphicsRectItem*> rectangles;
+    std::vector<crazyFlyZone*> rectangles;
 
 public slots:
     void removeRectangle(int index);
@@ -37,13 +37,14 @@ protected:
     void keyPressEvent(QKeyEvent * keyEvent) override;
 
 private:
-    void addRectangleToVector(myGraphicsRectItem* rect);
+    void addRectangleToVector(crazyFlyZone* rect);
     int checkSelectedRectangle();
+    void updateIndexesAndLabels();
 
     QPen* pen;
     QBrush* brush;
     QRectF* tmp_rect;
-    myGraphicsRectItem* tmp_rect_item;
+    crazyFlyZone* tmp_rect_item;
     QPointF* p1;
     QPointF* p2;
 

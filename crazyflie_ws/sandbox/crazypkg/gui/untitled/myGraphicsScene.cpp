@@ -69,7 +69,8 @@ void myGraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent)
         startedRect = true;
         p1 = new QPointF(mouseEvent->scenePos());
         tmp_rect = new QRectF(*p1, *p1);
-        tmp_rect_item = new myGraphicsRectItem(*tmp_rect);
+        int index = rectangles.size();
+        tmp_rect_item = new crazyFlyZone(*tmp_rect, index);
         addItem(tmp_rect_item);
     }
 
@@ -88,17 +89,31 @@ void myGraphicsScene::mouseMoveEvent(QGraphicsSceneMouseEvent *mouseEvent)
     QGraphicsScene::mouseMoveEvent(mouseEvent);
 }
 
-void myGraphicsScene::addRectangleToVector(myGraphicsRectItem* rect)
+void myGraphicsScene::addRectangleToVector(crazyFlyZone* rect)
 {
     rectangles.push_back(rect);
     emit numRectanglesChanged(rectangles.size());
+}
+
+void myGraphicsScene::updateIndexesAndLabels()
+{
+    for(int i = 0; i < rectangles.size(); i++)
+    {
+        rectangles[i]->setIndex(i);
+        std::string str = std::to_string(i + 1);
+        rectangles[i]->updateLabel(str.c_str());
+        qDebug("reset Index %d and update label",i);
+
+    }
 }
 
 void myGraphicsScene::removeRectangle(int index)
 {
     this->removeItem(rectangles[index]);
     rectangles.erase(rectangles.begin() + index);
-    emit numRectanglesChanged(rectangles.size());
+    qDebug("removed Rectangle %d", index);
+    updateIndexesAndLabels();
+    emit numRectanglesChanged(rectangles.size()); // for tab managing
 }
 
 void myGraphicsScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent)
@@ -111,6 +126,9 @@ void myGraphicsScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent)
 
         tmp_rect_item->setRect(tmp_rect_item->rect().normalized());
         addRectangleToVector(tmp_rect_item);
+        std::string str = std::to_string(rectangles.size());
+        tmp_rect_item->setLabel(str.c_str());
+        setSelectedRectangle(rectangles.size() - 1); //select just created rectangle
         tmp_rect = 0;
         startedRect = false;
     }

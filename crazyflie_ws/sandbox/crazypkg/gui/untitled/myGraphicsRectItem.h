@@ -1,6 +1,5 @@
 #ifndef MYGRAPHICSRECTITEM_H
 #define MYGRAPHICSRECTITEM_H
-#include <vector>
 
 #include <QGraphicsRectItem>
 #include "cornergrabber.h"
@@ -23,6 +22,8 @@ protected:
     void mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent) override;
     void mouseMoveEvent(QGraphicsSceneMouseEvent *mouseEvent) override;
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent) override;
+
+    virtual void rectSizeChanged() = 0; // pure virtual function, has to be overridden in derived class
 
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 
