@@ -29,6 +29,8 @@
 #include "d_fall_pps/AngleCommand.h"
 #include "d_fall_pps/RateCommand.h"
 #include "d_fall_pps/MotorCommand.h"
+#include "d_fall_pps/CrazyflieContext.h"
+
 
 using namespace d_fall_pps;
 
@@ -47,9 +49,17 @@ ros::Publisher motorCommandPublisher;
 //ros::NodeHandle nodeHandle;
 
 
+//acceptance test for crazyflie position and attitude 
+bool safetyCheck(ViconData data){
+	CrazyflieContext CrazyflieContext;
+	
+	return true;
+}
+
+
 //extract data from "data" and publish/add to service for controller
 //not void: sould give back controlldata
-void ppsClientToController(ViconData data){
+void ppsClientToController(ViconData data, bool autocontrol){
 	if(data.crazyflieName == cflie){
 		/* unnecessairy: just send data!!!!!
 		d_fall_pps::ViconData myDataToPublish;
@@ -111,8 +121,10 @@ void viconCallback(const d_fall_pps::ViconData& data){
 	//ROS_INFO("My teamname is:"); ROS_INFO_STREAM(team);
 	//ROS_INFO("My crazyflie is:"); ROS_INFO_STREAM(cflie);
 
-	//extract data from "data" and publish/add to service for controller
-	ppsClientToController(data);
+	//forward data to safety check
+	bool autocontrolOn = safetyCheck(data);
+
+	ppsClientToController(data, autocontrolOn);
 
 }
 
