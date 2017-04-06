@@ -1,1 +1,1 @@
-string test
+AreaBounds localArea

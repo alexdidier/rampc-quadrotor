@@ -63,6 +63,7 @@ add_message_files(
   RateCommand.msg
   Setpoint.msg
   CrazyflieContext.msg
+  AreaBounds.msg
 )
 
 ## Generate services in the 'srv' folder
