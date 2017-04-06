@@ -21,19 +21,17 @@
 using namespace d_fall_pps;
 
 
-/*TODO:
-request from paul
-Specificy controller in a file
-
-
-
-*/
-
+//receive request from students (containing (maybe among other things) their name)
+//send them back the CrazyflieContext (containing (maybe among other things) the area to fly in)
 bool returnCrazyflieContext(CentralManager::Request &request, CentralManager::Response &response) {
-    ROS_INFO("cnetal manager");
+    ROS_INFO("central manager");
 
 	return true;
 }
+
+
+
+
 
 int main(int argc, char* argv[]) {
     ros::init(argc, argv, "CentralManagerService");
