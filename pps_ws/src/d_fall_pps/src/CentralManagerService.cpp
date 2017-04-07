@@ -25,6 +25,18 @@ using namespace d_fall_pps;
 //send them back the CrazyflieContext (containing (maybe among other things) the area to fly in)
 bool returnCrazyflieContext(CentralManager::Request &request, CentralManager::Response &response) {
     ROS_INFO("central manager");
+	
+	
+	//TBD: crazyflie-dependent area assignment instead of hardcoding
+		//request contains string crazyflieName
+	//respond with area boundaries upon request
+	response.context.localArea.xmin = -1000;
+	response.context.localArea.xmax = 1000;
+	response.context.localArea.ymin = -1000;
+	response.context.localArea.ymax = 1000;
+	response.context.localArea.zmin = -200;
+	response.context.localArea.zmax = 800;
+
 
 	return true;
 }

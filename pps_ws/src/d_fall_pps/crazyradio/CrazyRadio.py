@@ -94,7 +94,7 @@ class PPSRadioClient:
 
 def motorCommandCallback(data):
     """Callback for motor controller actions"""
-    cf_client._send_to_commander(0, 0, 0, 0, data.cmd1, data.cmd2 * 1000, data.cmd3 * 1000, data.cmd4 * 1000, CONTROLLER_MOTOR)
+    cf_client._send_to_commander(0, 0, 0, 0, data.cmd1, data.cmd2, data.cmd3, data.cmd4, CONTROLLER_MOTOR)
     rospy.loginfo("motor controller callback: %s, %s, %s, %s", data.cmd1, data.cmd2, data.cmd3, data.cmd4)
 
 def angleCommandCallback(data):

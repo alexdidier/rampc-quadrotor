@@ -1,4 +1,7 @@
 <launch>
+		
+	<node pkg="d_fall_pps" name="CentralManagerService" output="screen" type="CentralManagerService">
+	</node>
 	
 	<node pkg="d_fall_pps" name="CrazyRadio" output="screen" type="CrazyRadio.py">
 		<rosparam command="load" file="$(find d_fall_pps)/launch/studentParams.yaml" />	
@@ -14,6 +17,7 @@
 
 	<node pkg="d_fall_pps" name="SafeControllerService" output="screen" type="SafeControllerService">
 	</node>
+
 
 	<!-- When we have a GUI, this has to be adapted and included
 	<node pkg="d_fall_pps" name="GUI" output="screen" type="GUI">
