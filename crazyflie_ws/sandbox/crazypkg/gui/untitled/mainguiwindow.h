@@ -130,12 +130,14 @@ private slots:
    #endif
 
     void set_tabs(int n);
-
+    void transitionToMode(int mode);
+    void on_drawingModeButton_clicked();
+    void on_removeTable_clicked();
 
 private:
 
     Ui::MainGUIWindow *ui;
-    myGraphicsScene* scene;      //TODO: make a subclass from QGraphicScene class, mouse events
+    myGraphicsScene* scene;
     QGraphicsRectItem* item1;
 
     void _init();

@@ -69,12 +69,38 @@
       <rect>
        <x>10</x>
        <y>9</y>
-       <width>621</width>
-       <height>451</height>
+       <width>571</width>
+       <height>401</height>
       </rect>
      </property>
      <property name="mouseTracking">
       <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="drawingModeButton">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>430</y>
+       <width>141</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>CreateTableMode</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="removeTable">
+     <property name="geometry">
+      <rect>
+       <x>200</x>
+       <y>430</y>
+       <width>91</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Remove Table</string>
      </property>
     </widget>
    </widget>

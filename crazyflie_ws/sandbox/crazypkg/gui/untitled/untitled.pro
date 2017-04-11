@@ -18,13 +18,15 @@ SOURCES += main.cpp\
     myGraphicsRectItem.cpp \
     cornergrabber.cpp \
     myGraphicsView.cpp \
-    crazyFlyZone.cpp
+    crazyFlyZone.cpp \
+    tablePiece.cpp
 
 HEADERS  += mainguiwindow.h \
     myGraphicsScene.h \
     myGraphicsRectItem.h \
     cornergrabber.h \
     myGraphicsView.h \
-    crazyFlyZone.h
+    crazyFlyZone.h \
+    tablePiece.h
 
 FORMS    += mainguiwindow.ui

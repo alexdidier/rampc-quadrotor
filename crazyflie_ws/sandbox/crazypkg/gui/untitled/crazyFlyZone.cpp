@@ -3,6 +3,7 @@
 crazyFlyZone::crazyFlyZone(const QRectF & rect, int index,  QGraphicsItem * parent)
     : myGraphicsRectItem(rect, parent)
 {
+    this->setPen(QPen(Qt::black, 0));
     setIndex(index);
 }
 
@@ -17,8 +18,6 @@ void crazyFlyZone::setLabel(QString string)
     label = new QGraphicsSimpleTextItem(string, this);
     label->setFlag(QGraphicsItem::ItemIgnoresTransformations);
     label->setFont(QFont("Arial", 18, QFont::Bold, true));
-    // TODO: choose position and format of text
-    // label->setPos(label->mapToItem(this, QPointF(0,0)));
     setLabelPosition();
 }
 
@@ -41,7 +40,7 @@ void crazyFlyZone::setIndex(int index)
     _index = index;
 }
 
-void crazyFlyZone::rectSizeChanged()
+void crazyFlyZone::rectSizeChanged() // pure virtual coming from parent
 {
     setLabelPosition();
 }

@@ -13,6 +13,8 @@ class myGraphicsRectItem : public QGraphicsRectItem
 {
 public:
     explicit myGraphicsRectItem(const QRectF & rect, QGraphicsItem * parent = 0);
+    void lock();
+    void unlock();
 
 public slots:
 
@@ -49,6 +51,7 @@ private:
 
     bool _grabbers_created;
     bool resize_mode;
+    bool locked;
 
 };
 

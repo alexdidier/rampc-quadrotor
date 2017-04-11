@@ -17,6 +17,7 @@
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QMenuBar>
+#include <QtWidgets/QPushButton>
 #include <QtWidgets/QStatusBar>
 #include <QtWidgets/QTabWidget>
 #include <QtWidgets/QToolBar>
@@ -33,6 +34,8 @@ public:
     QTabWidget *tabWidget;
     QFrame *frame_drawing;
     myGraphicsView *graphicsView;
+    QPushButton *drawingModeButton;
+    QPushButton *removeTable;
     QFrame *frame_3;
     QMenuBar *menuBar;
     QToolBar *mainToolBar;
@@ -62,8 +65,14 @@ public:
         frame_drawing->setFrameShadow(QFrame::Raised);
         graphicsView = new myGraphicsView(frame_drawing);
         graphicsView->setObjectName(QStringLiteral("graphicsView"));
-        graphicsView->setGeometry(QRect(10, 9, 621, 451));
+        graphicsView->setGeometry(QRect(10, 9, 571, 401));
         graphicsView->setMouseTracking(true);
+        drawingModeButton = new QPushButton(frame_drawing);
+        drawingModeButton->setObjectName(QStringLiteral("drawingModeButton"));
+        drawingModeButton->setGeometry(QRect(20, 430, 141, 21));
+        removeTable = new QPushButton(frame_drawing);
+        removeTable->setObjectName(QStringLiteral("removeTable"));
+        removeTable->setGeometry(QRect(200, 430, 91, 21));
         frame_3 = new QFrame(centralWidget);
         frame_3->setObjectName(QStringLiteral("frame_3"));
         frame_3->setGeometry(QRect(669, 21, 541, 469));
@@ -92,6 +101,8 @@ public:
     void retranslateUi(QMainWindow *MainGUIWindow)
     {
         MainGUIWindow->setWindowTitle(QApplication::translate("MainGUIWindow", "MainGUIWindow", 0));
+        drawingModeButton->setText(QApplication::translate("MainGUIWindow", "CreateTableMode", 0));
+        removeTable->setText(QApplication::translate("MainGUIWindow", "Remove Table", 0));
     } // retranslateUi
 
 };

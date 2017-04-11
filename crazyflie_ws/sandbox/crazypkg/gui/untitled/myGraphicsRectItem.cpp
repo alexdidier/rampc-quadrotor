@@ -11,8 +11,7 @@
 myGraphicsRectItem::myGraphicsRectItem(const QRectF & rect,  QGraphicsItem * parent)
     : QGraphicsRectItem(rect, parent)
 {
-    this->setFlag(QGraphicsItem::ItemIsSelectable);
-    this->setFlag(QGraphicsItem::ItemIsMovable);
+    unlock();
     this->setFlag(QGraphicsItem::ItemSendsScenePositionChanges);
     pen = new QPen(Qt::red);
     brush = new QBrush(Qt::red);
@@ -22,6 +21,19 @@ myGraphicsRectItem::myGraphicsRectItem(const QRectF & rect,  QGraphicsItem * par
     resize_mode = false;
 }
 
+void myGraphicsRectItem::lock()
+{
+    this->setFlag(QGraphicsItem::ItemIsSelectable, false);
+    this->setFlag(QGraphicsItem::ItemIsMovable, false);
+    locked = true;
+}
+
+void myGraphicsRectItem::unlock()
+{
+    this->setFlag(QGraphicsItem::ItemIsSelectable, true);
+    this->setFlag(QGraphicsItem::ItemIsMovable, true);
+    locked = false;
+}
 
 void myGraphicsRectItem::deleteGrabbers()
 {
@@ -133,12 +145,15 @@ void myGraphicsRectItem::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent)
     if (mouseEvent->button() != Qt::LeftButton)
         return;
 
-    createGrabbers();           //This is just in case they have not been created by now. We have a creator guardian anyhow
-
-    if(anyGrabber())
+    if(!locked)
     {
-        resize_mode = true;
+        createGrabbers();           //This is just in case they have not been created by now. We have a creator guardian anyhow. Change this maybe?
+        if(anyGrabber())
+        {
+            resize_mode = true;
+        }
     }
+
     QGraphicsRectItem::mousePressEvent(mouseEvent);
 }
 

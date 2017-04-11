@@ -62,10 +62,11 @@ void MainGUIWindow::_init()
     ui->graphicsView->setScene(scene);
 
 
-    QObject::connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)), scene, SLOT(removeRectangle(int)));
-    QObject::connect(scene, SIGNAL(numRectanglesChanged(int)), this, SLOT(set_tabs(int)));
-    QObject::connect(ui->tabWidget, SIGNAL(currentChanged(int)), scene, SLOT(setSelectedRectangle(int)));
-    QObject::connect(scene, SIGNAL(rectangleSelected(int)), ui->tabWidget, SLOT(setCurrentIndex(int)));
+    QObject::connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)), scene, SLOT(removeCrazyFlyZone(int)));
+    QObject::connect(scene, SIGNAL(numCrazyFlyZonesChanged(int)), this, SLOT(set_tabs(int)));
+    QObject::connect(ui->tabWidget, SIGNAL(currentChanged(int)), scene, SLOT(setSelectedCrazyFlyZone(int)));
+    QObject::connect(scene, SIGNAL(crazyFlyZoneSelected(int)), ui->tabWidget, SLOT(setCurrentIndex(int)));
+    QObject::connect(scene, SIGNAL(modeChanged(int)), this, SLOT(transitionToMode(int)));
 }
 
 #ifndef DEBUG_GUI
@@ -942,3 +943,48 @@ void CSetpointQueue::print()
 
 // }
 #endif  // DEBUG_GUI
+
+
+void MainGUIWindow::on_drawingModeButton_clicked()
+{
+    switch(scene->getMode())
+    {
+        case myGraphicsScene::mode_table:
+        {
+            scene->setMode(myGraphicsScene::mode_crazyfly_zones);
+            ui->drawingModeButton->setText("CreateCFZonesMode");
+            break;
+        }
+        case myGraphicsScene::mode_crazyfly_zones:
+        {
+            scene->setMode(myGraphicsScene::mode_table);
+            ui->drawingModeButton->setText("CreateTableMode");
+            break;
+        }
+    }
+}
+
+void MainGUIWindow::on_removeTable_clicked()
+{
+    if(scene->getMode() == myGraphicsScene::mode_table)
+    {
+        scene->removeTable();
+    }
+}
+
+void MainGUIWindow::transitionToMode(int mode)
+{
+    switch(mode)
+    {
+        case myGraphicsScene::mode_table:
+        {
+            ui->removeTable->setDisabled(false);
+            break;
+        }
+        case myGraphicsScene::mode_crazyfly_zones:
+        {
+            ui->removeTable->setDisabled(true);
+            break;
+        }
+    }
+}
