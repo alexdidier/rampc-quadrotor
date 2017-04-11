@@ -13,11 +13,14 @@
 #include <QtWidgets/QAction>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QButtonGroup>
+#include <QtWidgets/QCheckBox>
 #include <QtWidgets/QFrame>
+#include <QtWidgets/QGroupBox>
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QPushButton>
+#include <QtWidgets/QRadioButton>
 #include <QtWidgets/QStatusBar>
 #include <QtWidgets/QTabWidget>
 #include <QtWidgets/QToolBar>
@@ -34,8 +37,13 @@ public:
     QTabWidget *tabWidget;
     QFrame *frame_drawing;
     myGraphicsView *graphicsView;
-    QPushButton *drawingModeButton;
     QPushButton *removeTable;
+    QGroupBox *groupBox;
+    QRadioButton *radioButton_table_mode;
+    QRadioButton *radioButton_crazyfly_zones_mode;
+    QGroupBox *groupBox_2;
+    QCheckBox *checkBox_crazyfly_zones;
+    QCheckBox *checkBox_vicon_markers;
     QFrame *frame_3;
     QMenuBar *menuBar;
     QToolBar *mainToolBar;
@@ -50,32 +58,55 @@ public:
         centralWidget->setObjectName(QStringLiteral("centralWidget"));
         frame = new QFrame(centralWidget);
         frame->setObjectName(QStringLiteral("frame"));
-        frame->setGeometry(QRect(40, 510, 1171, 451));
+        frame->setGeometry(QRect(40, 510, 1431, 451));
         frame->setFrameShape(QFrame::StyledPanel);
         frame->setFrameShadow(QFrame::Raised);
         tabWidget = new QTabWidget(frame);
         tabWidget->setObjectName(QStringLiteral("tabWidget"));
-        tabWidget->setGeometry(QRect(20, 19, 1131, 401));
+        tabWidget->setGeometry(QRect(20, 19, 1391, 401));
         tabWidget->setLayoutDirection(Qt::LeftToRight);
         tabWidget->setTabsClosable(true);
         frame_drawing = new QFrame(centralWidget);
         frame_drawing->setObjectName(QStringLiteral("frame_drawing"));
-        frame_drawing->setGeometry(QRect(20, 20, 641, 469));
+        frame_drawing->setGeometry(QRect(20, 18, 951, 471));
         frame_drawing->setFrameShape(QFrame::StyledPanel);
         frame_drawing->setFrameShadow(QFrame::Raised);
         graphicsView = new myGraphicsView(frame_drawing);
         graphicsView->setObjectName(QStringLiteral("graphicsView"));
-        graphicsView->setGeometry(QRect(10, 9, 571, 401));
+        graphicsView->setGeometry(QRect(10, 9, 741, 401));
         graphicsView->setMouseTracking(true);
-        drawingModeButton = new QPushButton(frame_drawing);
-        drawingModeButton->setObjectName(QStringLiteral("drawingModeButton"));
-        drawingModeButton->setGeometry(QRect(20, 430, 141, 21));
         removeTable = new QPushButton(frame_drawing);
         removeTable->setObjectName(QStringLiteral("removeTable"));
-        removeTable->setGeometry(QRect(200, 430, 91, 21));
+        removeTable->setGeometry(QRect(340, 430, 91, 21));
+        groupBox = new QGroupBox(frame_drawing);
+        groupBox->setObjectName(QStringLiteral("groupBox"));
+        groupBox->setGeometry(QRect(790, 30, 121, 80));
+        radioButton_table_mode = new QRadioButton(groupBox);
+        radioButton_table_mode->setObjectName(QStringLiteral("radioButton_table_mode"));
+        radioButton_table_mode->setGeometry(QRect(10, 20, 61, 20));
+        QFont font;
+        font.setPointSize(7);
+        radioButton_table_mode->setFont(font);
+        radioButton_table_mode->setChecked(true);
+        radioButton_crazyfly_zones_mode = new QRadioButton(groupBox);
+        radioButton_crazyfly_zones_mode->setObjectName(QStringLiteral("radioButton_crazyfly_zones_mode"));
+        radioButton_crazyfly_zones_mode->setGeometry(QRect(10, 50, 91, 16));
+        radioButton_crazyfly_zones_mode->setFont(font);
+        radioButton_crazyfly_zones_mode->setCheckable(true);
+        groupBox_2 = new QGroupBox(frame_drawing);
+        groupBox_2->setObjectName(QStringLiteral("groupBox_2"));
+        groupBox_2->setGeometry(QRect(790, 130, 120, 241));
+        checkBox_crazyfly_zones = new QCheckBox(groupBox_2);
+        checkBox_crazyfly_zones->setObjectName(QStringLiteral("checkBox_crazyfly_zones"));
+        checkBox_crazyfly_zones->setGeometry(QRect(10, 20, 101, 20));
+        checkBox_crazyfly_zones->setFont(font);
+        checkBox_vicon_markers = new QCheckBox(groupBox_2);
+        checkBox_vicon_markers->setObjectName(QStringLiteral("checkBox_vicon_markers"));
+        checkBox_vicon_markers->setGeometry(QRect(10, 40, 101, 20));
+        checkBox_vicon_markers->setFont(font);
         frame_3 = new QFrame(centralWidget);
         frame_3->setObjectName(QStringLiteral("frame_3"));
-        frame_3->setGeometry(QRect(669, 21, 541, 469));
+        frame_3->setGeometry(QRect(990, 20, 481, 469));
         frame_3->setFrameShape(QFrame::StyledPanel);
         frame_3->setFrameShadow(QFrame::Raised);
         MainGUIWindow->setCentralWidget(centralWidget);
@@ -101,8 +132,13 @@ public:
     void retranslateUi(QMainWindow *MainGUIWindow)
     {
         MainGUIWindow->setWindowTitle(QApplication::translate("MainGUIWindow", "MainGUIWindow", 0));
-        drawingModeButton->setText(QApplication::translate("MainGUIWindow", "CreateTableMode", 0));
         removeTable->setText(QApplication::translate("MainGUIWindow", "Remove Table", 0));
+        groupBox->setTitle(QApplication::translate("MainGUIWindow", "Creation Modes", 0));
+        radioButton_table_mode->setText(QApplication::translate("MainGUIWindow", "Tables", 0));
+        radioButton_crazyfly_zones_mode->setText(QApplication::translate("MainGUIWindow", "CrazyFly Zones", 0));
+        groupBox_2->setTitle(QApplication::translate("MainGUIWindow", "What to show", 0));
+        checkBox_crazyfly_zones->setText(QApplication::translate("MainGUIWindow", "Show CF Zones", 0));
+        checkBox_vicon_markers->setText(QApplication::translate("MainGUIWindow", "Show Markers", 0));
     } // retranslateUi
 
 };

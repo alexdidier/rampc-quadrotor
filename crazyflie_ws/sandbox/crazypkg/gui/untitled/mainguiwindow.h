@@ -131,8 +131,12 @@ private slots:
 
     void set_tabs(int n);
     void transitionToMode(int mode);
-    void on_drawingModeButton_clicked();
     void on_removeTable_clicked();
+
+    void on_radioButton_table_mode_toggled(bool checked);
+
+    void on_radioButton_crazyfly_zones_mode_toggled(bool checked);
+    void handleTablePiecesNumChanged(int newNum);
 
 private:
 

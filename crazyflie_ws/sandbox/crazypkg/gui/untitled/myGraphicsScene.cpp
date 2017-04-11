@@ -152,6 +152,7 @@ void myGraphicsScene::addCrazyFlyZoneToVector(crazyFlyZone* rect)
 void myGraphicsScene::addTablePieceToVector(tablePiece* rect)
 {
     table_pieces.push_back(rect);
+    emit numTablePiecesChanged(table_pieces.size());
 }
 
 void myGraphicsScene::updateIndexesAndLabelsCrazyFlyZones()
@@ -247,6 +248,7 @@ void myGraphicsScene::removeTable()
         this->removeItem(table_pieces[i]);
     }
     table_pieces.clear();
+    emit numTablePiecesChanged(table_pieces.size());
 }
 
 void myGraphicsScene::removeTablePiece(int index)
@@ -254,6 +256,7 @@ void myGraphicsScene::removeTablePiece(int index)
     this->removeItem(table_pieces[index]);
     table_pieces.erase(table_pieces.begin() + index);
     qDebug("removed TabledPiece %d", index);
+    emit numTablePiecesChanged(table_pieces.size());
 }
 
 void myGraphicsScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent)

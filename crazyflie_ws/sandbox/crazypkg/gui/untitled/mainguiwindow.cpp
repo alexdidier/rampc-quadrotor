@@ -56,10 +56,13 @@ void MainGUIWindow::_init()
 {
 
     scene = new myGraphicsScene(ui->frame_drawing);
-    //scene->setSceneRect(QRectF(QPointF(-100, 100), QSizeF(200, 200)));
+    scene->setSceneRect(QRectF(QPointF(-1400, 1400), QSizeF(1400, 1400)));
 
     ui->graphicsView->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
     ui->graphicsView->setScene(scene);
+
+    // ui->radioButton_crazyfly_zones_mode->setCheckable(false);
+    // ui->radioButton_crazyfly_zones_mode->setEnabled(false);
 
 
     QObject::connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)), scene, SLOT(removeCrazyFlyZone(int)));
@@ -67,6 +70,7 @@ void MainGUIWindow::_init()
     QObject::connect(ui->tabWidget, SIGNAL(currentChanged(int)), scene, SLOT(setSelectedCrazyFlyZone(int)));
     QObject::connect(scene, SIGNAL(crazyFlyZoneSelected(int)), ui->tabWidget, SLOT(setCurrentIndex(int)));
     QObject::connect(scene, SIGNAL(modeChanged(int)), this, SLOT(transitionToMode(int)));
+    QObject::connect(scene, SIGNAL(numTablePiecesChanged(int)), this, SLOT(handleTablePiecesNumChanged(int)));
 }
 
 #ifndef DEBUG_GUI
@@ -945,24 +949,6 @@ void CSetpointQueue::print()
 #endif  // DEBUG_GUI
 
 
-void MainGUIWindow::on_drawingModeButton_clicked()
-{
-    switch(scene->getMode())
-    {
-        case myGraphicsScene::mode_table:
-        {
-            scene->setMode(myGraphicsScene::mode_crazyfly_zones);
-            ui->drawingModeButton->setText("CreateCFZonesMode");
-            break;
-        }
-        case myGraphicsScene::mode_crazyfly_zones:
-        {
-            scene->setMode(myGraphicsScene::mode_table);
-            ui->drawingModeButton->setText("CreateTableMode");
-            break;
-        }
-    }
-}
 
 void MainGUIWindow::on_removeTable_clicked()
 {
@@ -987,4 +973,56 @@ void MainGUIWindow::transitionToMode(int mode)
             break;
         }
     }
+}
+
+void MainGUIWindow::on_radioButton_table_mode_toggled(bool checked)
+{
+    switch(scene->getMode())
+    {
+        case myGraphicsScene::mode_table:
+        {
+            // already in the mode we want, do nothing
+            break;
+        }
+        case myGraphicsScene::mode_crazyfly_zones:
+        {
+            scene->setMode(myGraphicsScene::mode_table);
+            ui->radioButton_crazyfly_zones_mode->setChecked(false);
+            break;
+        }
+    }
+
+}
+
+
+void MainGUIWindow::on_radioButton_crazyfly_zones_mode_toggled(bool checked)
+{
+    switch(scene->getMode())
+    {
+        case myGraphicsScene::mode_table:
+        {
+            scene->setMode(myGraphicsScene::mode_crazyfly_zones);
+            ui->radioButton_table_mode->setChecked(false);
+            break;
+        }
+        case myGraphicsScene::mode_crazyfly_zones:
+        {
+            // already in the mode we want, do nothing
+            break;
+        }
+    }
+}
+
+void MainGUIWindow::handleTablePiecesNumChanged(int newNum)
+{
+    // if(newNum == 0)
+    // {
+    //     ui->radioButton_crazyfly_zones_mode->setCheckable(false);
+    //     ui->radioButton_crazyfly_zones_mode->setEnabled(false);
+    // }
+    // else
+    // {
+    //     ui->radioButton_crazyfly_zones_mode->setCheckable(true);
+    //     ui->radioButton_crazyfly_zones_mode->setEnabled(true);
+    // }
 }

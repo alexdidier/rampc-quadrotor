@@ -38,6 +38,7 @@ signals:
     void numCrazyFlyZonesChanged(int newNum);
     void crazyFlyZoneSelected(int index);
     void modeChanged(int mode);
+    void numTablePiecesChanged(int newNum);
 
 protected:
     void mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent) override;
