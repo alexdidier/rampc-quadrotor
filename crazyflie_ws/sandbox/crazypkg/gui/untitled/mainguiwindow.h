@@ -138,6 +138,14 @@ private slots:
     void on_radioButton_crazyfly_zones_mode_toggled(bool checked);
     void handleTablePiecesNumChanged(int newNum);
 
+    void on_radioButton_lock_mode_toggled(bool checked);
+
+    void on_checkBox_grid_toggled(bool checked);
+
+    void on_checkBox_table_toggled(bool checked);
+
+    void on_checkBox_crazyfly_zones_toggled(bool checked);
+
 private:
 
     Ui::MainGUIWindow *ui;

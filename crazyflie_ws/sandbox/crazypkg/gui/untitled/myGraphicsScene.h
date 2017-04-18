@@ -25,7 +25,15 @@ public:
     int getMode();
 
     void setMode(int new_mode);
-    enum {mode_table, mode_crazyfly_zones};
+    void setGrid(bool enable);
+
+    void hideTable();
+    void showTable();
+
+    void hideCrazyFlyZones();
+    void showCrazyFlyZones();
+
+    enum {mode_table, mode_crazyfly_zones, mode_locked};
 
     void removeTable();
 
@@ -46,6 +54,7 @@ protected:
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent) override;
 
     void keyPressEvent(QKeyEvent * keyEvent) override;
+    void drawBackground(QPainter *painter, const QRectF &rect);
 
 private:
     void lockTablePieces(void);
@@ -69,6 +78,7 @@ private:
 
     bool startedRect;
     int mode;
+    bool grid_enable;
 };
 
 #endif

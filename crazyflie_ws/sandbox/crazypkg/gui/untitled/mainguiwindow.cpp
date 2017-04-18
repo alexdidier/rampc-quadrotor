@@ -987,7 +987,11 @@ void MainGUIWindow::on_radioButton_table_mode_toggled(bool checked)
         case myGraphicsScene::mode_crazyfly_zones:
         {
             scene->setMode(myGraphicsScene::mode_table);
-            ui->radioButton_crazyfly_zones_mode->setChecked(false);
+            break;
+        }
+        case myGraphicsScene::mode_locked:
+        {
+            scene->setMode(myGraphicsScene::mode_table);
             break;
         }
     }
@@ -1002,12 +1006,16 @@ void MainGUIWindow::on_radioButton_crazyfly_zones_mode_toggled(bool checked)
         case myGraphicsScene::mode_table:
         {
             scene->setMode(myGraphicsScene::mode_crazyfly_zones);
-            ui->radioButton_table_mode->setChecked(false);
             break;
         }
         case myGraphicsScene::mode_crazyfly_zones:
         {
             // already in the mode we want, do nothing
+            break;
+        }
+        case myGraphicsScene::mode_locked:
+        {
+            scene->setMode(myGraphicsScene::mode_crazyfly_zones);
             break;
         }
     }
@@ -1025,4 +1033,54 @@ void MainGUIWindow::handleTablePiecesNumChanged(int newNum)
     //     ui->radioButton_crazyfly_zones_mode->setCheckable(true);
     //     ui->radioButton_crazyfly_zones_mode->setEnabled(true);
     // }
+}
+
+void MainGUIWindow::on_radioButton_lock_mode_toggled(bool checked)
+{
+    switch(scene->getMode())
+    {
+        case myGraphicsScene::mode_table:
+        {
+            scene->setMode(myGraphicsScene::mode_locked);
+            break;
+        }
+        case myGraphicsScene::mode_crazyfly_zones:
+        {
+            scene->setMode(myGraphicsScene::mode_locked);
+            break;
+        }
+        case myGraphicsScene::mode_locked:
+        {
+            break;
+        }
+    }
+}
+
+void MainGUIWindow::on_checkBox_grid_toggled(bool checked)
+{
+    scene->setGrid(checked);
+}
+
+void MainGUIWindow::on_checkBox_table_toggled(bool checked)
+{
+    if(checked)
+    {
+        scene->showTable();
+    }
+    else
+    {
+        scene->hideTable();
+    }
+}
+
+void MainGUIWindow::on_checkBox_crazyfly_zones_toggled(bool checked)
+{
+    if(checked)
+    {
+        scene->showCrazyFlyZones();
+    }
+    else
+    {
+        scene->hideCrazyFlyZones();
+    }
 }

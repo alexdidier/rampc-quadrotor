@@ -13,6 +13,7 @@ myGraphicsScene::myGraphicsScene(QObject *parent)
     setMode(mode_table);
     tmp_rect = 0;
     startedRect = false;
+    setGrid(true);
 }
 
 
@@ -53,6 +54,13 @@ void myGraphicsScene::keyPressEvent(QKeyEvent * keyEvent)
             }
             break;
         }
+        case mode_locked:
+        {
+            // nothing so far
+            break;
+        }
+        default:
+            break;
     }
 
     QGraphicsScene::keyPressEvent(keyEvent);
@@ -89,14 +97,12 @@ void myGraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent)
         return;
     if(Qt::ControlModifier == QApplication::keyboardModifiers())
     {
-        // TODO: implement table creation mode
-        // Drag and drop approach
-        startedRect = true;
-        p1 = new QPointF(mouseEvent->scenePos());
         switch(mode)
         {
             case mode_table:
             {
+                startedRect = true;
+                p1 = new QPointF(mouseEvent->scenePos());
                 tmp_rect = new QRectF(*p1, *p1);
                 tmp_table_piece_item = new tablePiece(*tmp_rect);
                 addItem(tmp_table_piece_item);
@@ -104,13 +110,22 @@ void myGraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent)
             }
             case mode_crazyfly_zones:
             {
+                startedRect = true;
+                p1 = new QPointF(mouseEvent->scenePos());
                 tmp_rect = new QRectF(*p1, *p1);
                 int index = crazyfly_zones.size();
                 tmp_crazyfly_zone_item = new crazyFlyZone(*tmp_rect, index);
                 addItem(tmp_crazyfly_zone_item);
-
                 break;
             }
+            case mode_locked:
+            {
+                // do nothing so far
+                startedRect = false;
+                break;
+            }
+            default:
+                break;
         }
     }
     else
@@ -227,9 +242,54 @@ void myGraphicsScene::setMode(int new_mode)
             unlockCrazyFlyZones();
             break;
         }
+        case mode_locked:
+        {
+            // TODO: define locked mode. Do not allow to create anything, change some color of something to state that we are in that mode
+            lockTablePieces();
+            lockCrazyFlyZones();
+            break;
+        }
     }
     mode = new_mode;
     emit modeChanged(new_mode);
+}
+
+void myGraphicsScene::setGrid(bool enable)
+{
+    grid_enable = enable;
+    update();
+}
+
+void myGraphicsScene::hideTable()
+{
+    for(int i = 0; i < table_pieces.size(); i++)
+    {
+        this->removeItem(table_pieces[i]);
+    }
+}
+
+void myGraphicsScene::showTable()
+{
+    for(int i = 0; i < table_pieces.size(); i++)
+    {
+        this->addItem(table_pieces[i]);
+    }
+}
+
+void myGraphicsScene::hideCrazyFlyZones()
+{
+    for(int i = 0; i < crazyfly_zones.size(); i++)
+    {
+        this->removeItem(crazyfly_zones[i]);
+    }
+}
+
+void myGraphicsScene::showCrazyFlyZones()
+{
+    for(int i = 0; i < crazyfly_zones.size(); i++)
+    {
+        this->addItem(crazyfly_zones[i]);
+    }
 }
 
 void myGraphicsScene::removeCrazyFlyZone(int index)
@@ -249,6 +309,30 @@ void myGraphicsScene::removeTable()
     }
     table_pieces.clear();
     emit numTablePiecesChanged(table_pieces.size());
+}
+
+void myGraphicsScene::drawBackground(QPainter *painter, const QRectF &rect)
+{
+
+    if(grid_enable)
+    {
+        const int gridSize = 25;
+
+        qreal left = int(rect.left()) - (int(rect.left()) % gridSize);
+        qreal top = int(rect.top()) - (int(rect.top()) % gridSize);
+
+        QVarLengthArray<QLineF, 100> lines;
+
+        for (qreal x = left; x < rect.right(); x += gridSize)
+            lines.append(QLineF(x, rect.top(), x, rect.bottom()));
+        for (qreal y = top; y < rect.bottom(); y += gridSize)
+            lines.append(QLineF(rect.left(), y, rect.right(), y));
+
+        // qDebug() << lines.size();
+
+        painter->setPen(QPen(QColor(0, 0, 0, 0x40), 0));
+        painter->drawLines(lines.data(), lines.size());
+    }
 }
 
 void myGraphicsScene::removeTablePiece(int index)
@@ -296,6 +380,13 @@ void myGraphicsScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent)
                 }
                 break;
             }
+            case mode_locked:
+            {
+                // Do nothing so far..
+                break;
+            }
+            default:
+                break;
         }
 
 

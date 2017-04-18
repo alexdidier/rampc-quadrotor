@@ -96,7 +96,7 @@
        <x>790</x>
        <y>30</y>
        <width>121</width>
-       <height>80</height>
+       <height>121</height>
       </rect>
      </property>
      <property name="title">
@@ -144,14 +144,35 @@
        <bool>true</bool>
       </property>
      </widget>
+     <widget class="QRadioButton" name="radioButton_lock_mode">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>80</y>
+        <width>91</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>7</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Lock</string>
+      </property>
+      <property name="checkable">
+       <bool>true</bool>
+      </property>
+     </widget>
     </widget>
     <widget class="QGroupBox" name="groupBox_2">
      <property name="geometry">
       <rect>
        <x>790</x>
-       <y>130</y>
+       <y>230</y>
        <width>120</width>
-       <height>241</height>
+       <height>141</height>
       </rect>
      </property>
      <property name="title">
@@ -174,6 +195,9 @@
       <property name="text">
        <string>Show CF Zones</string>
       </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
      </widget>
      <widget class="QCheckBox" name="checkBox_vicon_markers">
       <property name="geometry">
@@ -191,6 +215,48 @@
       </property>
       <property name="text">
        <string>Show Markers</string>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="checkBox_grid">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>60</y>
+        <width>101</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>7</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Show Grid</string>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="checkBox_table">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>80</y>
+        <width>101</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>7</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Show Table</string>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
       </property>
      </widget>
     </widget>
