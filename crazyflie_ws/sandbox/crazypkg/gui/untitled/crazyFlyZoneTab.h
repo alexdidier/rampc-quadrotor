@@ -13,6 +13,8 @@ public:
     QPushButton* center_button;
 private:
     int _index;
+    int _num_rows;
+    int _num_columns;
 signals:
     void centerButtonClickedSignal(int index);
 

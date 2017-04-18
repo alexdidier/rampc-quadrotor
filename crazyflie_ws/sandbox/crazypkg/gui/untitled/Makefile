@@ -1011,9 +1011,10 @@ moc_myGraphicsView.cpp: /home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QGr
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/bin/moc
 	/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/bin/moc $(DEFINES) -I/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/mkspecs/linux-g++ -I/home/gazebo-cf/work/D-FaLL-System/crazyflie_ws/sandbox/crazypkg/gui/untitled -I/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include -I/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets -I/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui -I/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore -I/usr/include/c++/5 -I/usr/include/x86_64-linux-gnu/c++/5 -I/usr/include/c++/5/backward -I/usr/lib/gcc/x86_64-linux-gnu/5/include -I/usr/local/include -I/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed -I/usr/include/x86_64-linux-gnu -I/usr/include myGraphicsView.h -o moc_myGraphicsView.cpp
 
-moc_crazyFlyZoneTab.cpp: /home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QWidget \
-		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qwidget.h \
-		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qwindowdefs.h \
+moc_crazyFlyZoneTab.cpp: /home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/QObject \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qobject.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qobjectdefs.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qnamespace.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qglobal.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qconfig.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qfeatures.h \
@@ -1036,11 +1037,7 @@ moc_crazyFlyZoneTab.cpp: /home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QW
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qmutex.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qnumeric.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qversiontagging.h \
-		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qobjectdefs.h \
-		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qnamespace.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qobjectdefs_impl.h \
-		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qwindowdefs_win.h \
-		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qobject.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qstring.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qchar.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qbytearray.h \
@@ -1062,6 +1059,10 @@ moc_crazyFlyZoneTab.cpp: /home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QW
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qvarlengtharray.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qcontainerfwd.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qobject_impl.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QWidget \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qwidget.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qwindowdefs.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qwindowdefs_win.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qmargins.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qpaintdevice.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qrect.h \
@@ -1108,6 +1109,10 @@ moc_crazyFlyZoneTab.cpp: /home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QW
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qfiledevice.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qvector2d.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qtouchdevice.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QPushButton \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qpushbutton.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qabstractbutton.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qicon.h \
 		crazyFlyZoneTab.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/bin/moc
 	/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/bin/moc $(DEFINES) -I/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/mkspecs/linux-g++ -I/home/gazebo-cf/work/D-FaLL-System/crazyflie_ws/sandbox/crazypkg/gui/untitled -I/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include -I/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets -I/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui -I/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore -I/usr/include/c++/5 -I/usr/include/x86_64-linux-gnu/c++/5 -I/usr/include/c++/5/backward -I/usr/lib/gcc/x86_64-linux-gnu/5/include -I/usr/local/include -I/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed -I/usr/include/x86_64-linux-gnu -I/usr/include crazyFlyZoneTab.h -o moc_crazyFlyZoneTab.cpp
@@ -2309,9 +2314,10 @@ tablePiece.o: tablePiece.cpp tablePiece.h \
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o tablePiece.o tablePiece.cpp
 
 crazyFlyZoneTab.o: crazyFlyZoneTab.cpp crazyFlyZoneTab.h \
-		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QWidget \
-		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qwidget.h \
-		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qwindowdefs.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/QObject \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qobject.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qobjectdefs.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qnamespace.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qglobal.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qconfig.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qfeatures.h \
@@ -2334,11 +2340,7 @@ crazyFlyZoneTab.o: crazyFlyZoneTab.cpp crazyFlyZoneTab.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qmutex.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qnumeric.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qversiontagging.h \
-		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qobjectdefs.h \
-		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qnamespace.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qobjectdefs_impl.h \
-		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qwindowdefs_win.h \
-		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qobject.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qstring.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qchar.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qbytearray.h \
@@ -2360,6 +2362,10 @@ crazyFlyZoneTab.o: crazyFlyZoneTab.cpp crazyFlyZoneTab.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qvarlengtharray.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qcontainerfwd.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qobject_impl.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QWidget \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qwidget.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qwindowdefs.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qwindowdefs_win.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qmargins.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qpaintdevice.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qrect.h \
@@ -2405,7 +2411,16 @@ crazyFlyZoneTab.o: crazyFlyZoneTab.cpp crazyFlyZoneTab.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qfile.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qfiledevice.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qvector2d.h \
-		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qtouchdevice.h
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qtouchdevice.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QPushButton \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qpushbutton.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qabstractbutton.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qicon.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QLayout \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qlayout.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qlayoutitem.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qboxlayout.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qgridlayout.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o crazyFlyZoneTab.o crazyFlyZoneTab.cpp
 
 moc_mainguiwindow.o: moc_mainguiwindow.cpp 
