@@ -19,7 +19,8 @@ SOURCES += main.cpp\
     cornergrabber.cpp \
     myGraphicsView.cpp \
     crazyFlyZone.cpp \
-    tablePiece.cpp
+    tablePiece.cpp \
+    crazyFlyZoneTab.cpp
 
 HEADERS  += mainguiwindow.h \
     myGraphicsScene.h \
@@ -27,6 +28,7 @@ HEADERS  += mainguiwindow.h \
     cornergrabber.h \
     myGraphicsView.h \
     crazyFlyZone.h \
-    tablePiece.h
+    tablePiece.h \
+    crazyFlyZoneTab.h
 
 FORMS    += mainguiwindow.ui

@@ -47,6 +47,7 @@ public:
     QCheckBox *checkBox_vicon_markers;
     QCheckBox *checkBox_grid;
     QCheckBox *checkBox_table;
+    QPushButton *pushButton_fitAll;
     QFrame *frame_3;
     QMenuBar *menuBar;
     QToolBar *mainToolBar;
@@ -123,6 +124,9 @@ public:
         checkBox_table->setGeometry(QRect(10, 80, 101, 20));
         checkBox_table->setFont(font);
         checkBox_table->setChecked(true);
+        pushButton_fitAll = new QPushButton(frame_drawing);
+        pushButton_fitAll->setObjectName(QStringLiteral("pushButton_fitAll"));
+        pushButton_fitAll->setGeometry(QRect(800, 410, 51, 51));
         frame_3 = new QFrame(centralWidget);
         frame_3->setObjectName(QStringLiteral("frame_3"));
         frame_3->setGeometry(QRect(990, 20, 481, 469));
@@ -161,6 +165,7 @@ public:
         checkBox_vicon_markers->setText(QApplication::translate("MainGUIWindow", "Show Markers", 0));
         checkBox_grid->setText(QApplication::translate("MainGUIWindow", "Show Grid", 0));
         checkBox_table->setText(QApplication::translate("MainGUIWindow", "Show Table", 0));
+        pushButton_fitAll->setText(QApplication::translate("MainGUIWindow", "Fit All", 0));
     } // retranslateUi
 
 };

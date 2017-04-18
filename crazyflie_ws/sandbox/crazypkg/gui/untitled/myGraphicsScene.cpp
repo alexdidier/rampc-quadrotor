@@ -294,7 +294,7 @@ void myGraphicsScene::showCrazyFlyZones()
 
 QRectF myGraphicsScene::getRectFCrazyFlyZone(int index)
 {
-    QRectF rect(crazyfly_zones[index]->rect());
+    QRectF rect(crazyfly_zones[index]->sceneBoundingRect());
     return rect;
 }
 

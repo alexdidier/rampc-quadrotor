@@ -148,6 +148,10 @@ private slots:
 
     void on_tabWidget_currentChanged(int index);
 
+    void centerViewIndex(int index);
+
+    void on_pushButton_fitAll_clicked();
+
 private:
 
     Ui::MainGUIWindow *ui;

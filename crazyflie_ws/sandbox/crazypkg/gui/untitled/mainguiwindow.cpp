@@ -1,5 +1,6 @@
 #include "mainguiwindow.h"
 #include "ui_mainguiwindow.h"
+#include "crazyFlyZoneTab.h"
 
 #include <QObject>
 #include <QDoubleSpinBox>
@@ -48,7 +49,9 @@ void MainGUIWindow::set_tabs(int n)
         str = "CrazyFly ";
         str += std::to_string(i+1);
         QString qstr(str.c_str());
-        ui->tabWidget->addTab(new QWidget(), qstr);
+        crazyFlyZoneTab* widget = new crazyFlyZoneTab(i);
+        ui->tabWidget->addTab(widget, qstr);
+        connect(widget, SIGNAL(centerButtonClickedSignal(int)), this, SLOT(centerViewIndex(int)));
     }
 }
 
@@ -1090,6 +1093,18 @@ void MainGUIWindow::on_tabWidget_currentChanged(int index)
     if(index >= 0)
     {
         scene->setSelectedCrazyFlyZone(index);
-        ui->graphicsView->fitInView(scene->getRectFCrazyFlyZone(index));
     }
+}
+
+void MainGUIWindow::centerViewIndex(int index)
+{
+    ui->graphicsView->fitInView(scene->getRectFCrazyFlyZone(index), Qt::KeepAspectRatio);
+    ui->graphicsView->scale(0.95, 0.95); // A bit back zoom, so we can see everything better
+}
+
+
+void MainGUIWindow::on_pushButton_fitAll_clicked()
+{
+    ui->graphicsView->fitInView(scene->itemsBoundingRect(), Qt::KeepAspectRatio);
+    ui->graphicsView->scale(0.95, 0.95); // A bit back zoom, so we can see everything better
 }

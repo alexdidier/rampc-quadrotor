@@ -20,7 +20,7 @@ void myGraphicsView::wheelEvent(QWheelEvent *event)
         double scaleFactor = 1.15;
         if(event->delta() > 0) {
             // Zoom in
-            this-> scale(scaleFactor, scaleFactor);
+            this->scale(scaleFactor, scaleFactor);
 
         } else {
             // Zooming out

@@ -260,6 +260,19 @@
       </property>
      </widget>
     </widget>
+    <widget class="QPushButton" name="pushButton_fitAll">
+     <property name="geometry">
+      <rect>
+       <x>800</x>
+       <y>410</y>
+       <width>51</width>
+       <height>51</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Fit All</string>
+     </property>
+    </widget>
    </widget>
    <widget class="QFrame" name="frame_3">
     <property name="geometry">

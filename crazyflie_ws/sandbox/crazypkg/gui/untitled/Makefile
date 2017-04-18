@@ -55,9 +55,11 @@ SOURCES       = main.cpp \
 		cornergrabber.cpp \
 		myGraphicsView.cpp \
 		crazyFlyZone.cpp \
-		tablePiece.cpp moc_mainguiwindow.cpp \
+		tablePiece.cpp \
+		crazyFlyZoneTab.cpp moc_mainguiwindow.cpp \
 		moc_myGraphicsScene.cpp \
-		moc_myGraphicsView.cpp
+		moc_myGraphicsView.cpp \
+		moc_crazyFlyZoneTab.cpp
 OBJECTS       = main.o \
 		mainguiwindow.o \
 		myGraphicsScene.o \
@@ -66,9 +68,11 @@ OBJECTS       = main.o \
 		myGraphicsView.o \
 		crazyFlyZone.o \
 		tablePiece.o \
+		crazyFlyZoneTab.o \
 		moc_mainguiwindow.o \
 		moc_myGraphicsScene.o \
-		moc_myGraphicsView.o
+		moc_myGraphicsView.o \
+		moc_crazyFlyZoneTab.o
 DIST          = /home/gazebo-cf/Qt5.7.0/5.7/gcc_64/mkspecs/features/spec_pre.prf \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/mkspecs/common/unix.conf \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/mkspecs/common/linux.conf \
@@ -224,14 +228,16 @@ DIST          = /home/gazebo-cf/Qt5.7.0/5.7/gcc_64/mkspecs/features/spec_pre.prf
 		cornergrabber.h \
 		myGraphicsView.h \
 		crazyFlyZone.h \
-		tablePiece.h main.cpp \
+		tablePiece.h \
+		crazyFlyZoneTab.h main.cpp \
 		mainguiwindow.cpp \
 		myGraphicsScene.cpp \
 		myGraphicsRectItem.cpp \
 		cornergrabber.cpp \
 		myGraphicsView.cpp \
 		crazyFlyZone.cpp \
-		tablePiece.cpp
+		tablePiece.cpp \
+		crazyFlyZoneTab.cpp
 QMAKE_TARGET  = untitled
 DESTDIR       = 
 TARGET        = untitled
@@ -564,8 +570,8 @@ dist: distdir FORCE
 distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
-	$(COPY_FILE) --parents mainguiwindow.h myGraphicsScene.h myGraphicsRectItem.h cornergrabber.h myGraphicsView.h crazyFlyZone.h tablePiece.h $(DISTDIR)/
-	$(COPY_FILE) --parents main.cpp mainguiwindow.cpp myGraphicsScene.cpp myGraphicsRectItem.cpp cornergrabber.cpp myGraphicsView.cpp crazyFlyZone.cpp tablePiece.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents mainguiwindow.h myGraphicsScene.h myGraphicsRectItem.h cornergrabber.h myGraphicsView.h crazyFlyZone.h tablePiece.h crazyFlyZoneTab.h $(DISTDIR)/
+	$(COPY_FILE) --parents main.cpp mainguiwindow.cpp myGraphicsScene.cpp myGraphicsRectItem.cpp cornergrabber.cpp myGraphicsView.cpp crazyFlyZone.cpp tablePiece.cpp crazyFlyZoneTab.cpp $(DISTDIR)/
 	$(COPY_FILE) --parents mainguiwindow.ui $(DISTDIR)/
 
 
@@ -592,9 +598,9 @@ benchmark: first
 
 compiler_rcc_make_all:
 compiler_rcc_clean:
-compiler_moc_header_make_all: moc_mainguiwindow.cpp moc_myGraphicsScene.cpp moc_myGraphicsView.cpp
+compiler_moc_header_make_all: moc_mainguiwindow.cpp moc_myGraphicsScene.cpp moc_myGraphicsView.cpp moc_crazyFlyZoneTab.cpp
 compiler_moc_header_clean:
-	-$(DEL_FILE) moc_mainguiwindow.cpp moc_myGraphicsScene.cpp moc_myGraphicsView.cpp
+	-$(DEL_FILE) moc_mainguiwindow.cpp moc_myGraphicsScene.cpp moc_myGraphicsView.cpp moc_crazyFlyZoneTab.cpp
 moc_mainguiwindow.cpp: /home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QMainWindow \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qmainwindow.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qwidget.h \
@@ -719,8 +725,13 @@ moc_mainguiwindow.cpp: /home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QMai
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qinputmethod.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QButtonGroup \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qbuttongroup.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QCheckBox \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qcheckbox.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qabstractbutton.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QFrame \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qframe.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QGroupBox \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qgroupbox.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QHeaderView \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qheaderview.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qabstractitemview.h \
@@ -740,6 +751,10 @@ moc_mainguiwindow.cpp: /home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QMai
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QMenuBar \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qmenubar.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qmenu.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QPushButton \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qpushbutton.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QRadioButton \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qradiobutton.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QStatusBar \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qstatusbar.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QTabWidget \
@@ -996,6 +1011,107 @@ moc_myGraphicsView.cpp: /home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QGr
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/bin/moc
 	/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/bin/moc $(DEFINES) -I/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/mkspecs/linux-g++ -I/home/gazebo-cf/work/D-FaLL-System/crazyflie_ws/sandbox/crazypkg/gui/untitled -I/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include -I/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets -I/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui -I/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore -I/usr/include/c++/5 -I/usr/include/x86_64-linux-gnu/c++/5 -I/usr/include/c++/5/backward -I/usr/lib/gcc/x86_64-linux-gnu/5/include -I/usr/local/include -I/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed -I/usr/include/x86_64-linux-gnu -I/usr/include myGraphicsView.h -o moc_myGraphicsView.cpp
 
+moc_crazyFlyZoneTab.cpp: /home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QWidget \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qwidget.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qwindowdefs.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qglobal.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qconfig.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qfeatures.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qsystemdetection.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qprocessordetection.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qcompilerdetection.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qtypeinfo.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qtypetraits.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qisenum.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qsysinfo.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qlogging.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qflags.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qatomic.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qbasicatomic.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qatomic_bootstrap.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qgenericatomic.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qatomic_cxx11.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qatomic_msvc.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qglobalstatic.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qmutex.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qnumeric.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qversiontagging.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qobjectdefs.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qnamespace.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qobjectdefs_impl.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qwindowdefs_win.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qobject.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qstring.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qchar.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qbytearray.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qrefcount.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qarraydata.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qstringbuilder.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qlist.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qalgorithms.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qiterator.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qhashfunctions.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qpair.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qbytearraylist.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qstringlist.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qregexp.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qstringmatcher.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qcoreevent.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qscopedpointer.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qmetatype.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qvarlengtharray.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qcontainerfwd.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qobject_impl.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qmargins.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qpaintdevice.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qrect.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qsize.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qpoint.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qpalette.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qcolor.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qrgb.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qrgba64.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qbrush.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qvector.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qmatrix.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qpolygon.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qregion.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qdatastream.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qiodevice.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qline.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qtransform.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qpainterpath.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qimage.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qpixelformat.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qpixmap.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qsharedpointer.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qshareddata.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qhash.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qsharedpointer_impl.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qfont.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qfontmetrics.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qfontinfo.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qsizepolicy.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qcursor.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qkeysequence.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qevent.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qvariant.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qmap.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qdebug.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qtextstream.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qlocale.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qset.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qcontiguouscache.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qurl.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qurlquery.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qfile.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qfiledevice.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qvector2d.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qtouchdevice.h \
+		crazyFlyZoneTab.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/bin/moc
+	/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/bin/moc $(DEFINES) -I/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/mkspecs/linux-g++ -I/home/gazebo-cf/work/D-FaLL-System/crazyflie_ws/sandbox/crazypkg/gui/untitled -I/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include -I/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets -I/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui -I/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore -I/usr/include/c++/5 -I/usr/include/x86_64-linux-gnu/c++/5 -I/usr/include/c++/5/backward -I/usr/lib/gcc/x86_64-linux-gnu/5/include -I/usr/local/include -I/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed -I/usr/include/x86_64-linux-gnu -I/usr/include crazyFlyZoneTab.h -o moc_crazyFlyZoneTab.cpp
+
 compiler_moc_source_make_all:
 compiler_moc_source_clean:
 compiler_uic_make_all: ui_mainguiwindow.h
@@ -1247,8 +1363,13 @@ main.o: main.cpp mainguiwindow.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qinputmethod.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QButtonGroup \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qbuttongroup.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QCheckBox \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qcheckbox.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qabstractbutton.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QFrame \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qframe.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QGroupBox \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qgroupbox.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QHeaderView \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qheaderview.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qabstractitemview.h \
@@ -1268,6 +1389,10 @@ main.o: main.cpp mainguiwindow.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QMenuBar \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qmenubar.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qmenu.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QPushButton \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qpushbutton.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QRadioButton \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qradiobutton.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QStatusBar \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qstatusbar.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QTabWidget \
@@ -1427,8 +1552,13 @@ mainguiwindow.o: mainguiwindow.cpp mainguiwindow.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qinputmethod.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QButtonGroup \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qbuttongroup.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QCheckBox \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qcheckbox.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qabstractbutton.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QFrame \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qframe.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QGroupBox \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qgroupbox.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QHeaderView \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qheaderview.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qabstractitemview.h \
@@ -1448,6 +1578,10 @@ mainguiwindow.o: mainguiwindow.cpp mainguiwindow.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QMenuBar \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qmenubar.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qmenu.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QPushButton \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qpushbutton.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QRadioButton \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qradiobutton.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QStatusBar \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qstatusbar.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QTabWidget \
@@ -1480,6 +1614,7 @@ mainguiwindow.o: mainguiwindow.cpp mainguiwindow.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/QPen \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/QPointF \
 		tablePiece.h \
+		crazyFlyZoneTab.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QDoubleSpinBox \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qspinbox.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QTextEdit \
@@ -2173,6 +2308,106 @@ tablePiece.o: tablePiece.cpp tablePiece.h \
 		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/QPointF
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o tablePiece.o tablePiece.cpp
 
+crazyFlyZoneTab.o: crazyFlyZoneTab.cpp crazyFlyZoneTab.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/QWidget \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qwidget.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qwindowdefs.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qglobal.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qconfig.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qfeatures.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qsystemdetection.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qprocessordetection.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qcompilerdetection.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qtypeinfo.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qtypetraits.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qisenum.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qsysinfo.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qlogging.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qflags.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qatomic.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qbasicatomic.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qatomic_bootstrap.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qgenericatomic.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qatomic_cxx11.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qatomic_msvc.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qglobalstatic.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qmutex.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qnumeric.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qversiontagging.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qobjectdefs.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qnamespace.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qobjectdefs_impl.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qwindowdefs_win.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qobject.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qstring.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qchar.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qbytearray.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qrefcount.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qarraydata.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qstringbuilder.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qlist.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qalgorithms.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qiterator.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qhashfunctions.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qpair.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qbytearraylist.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qstringlist.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qregexp.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qstringmatcher.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qcoreevent.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qscopedpointer.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qmetatype.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qvarlengtharray.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qcontainerfwd.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qobject_impl.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qmargins.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qpaintdevice.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qrect.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qsize.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qpoint.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qpalette.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qcolor.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qrgb.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qrgba64.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qbrush.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qvector.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qmatrix.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qpolygon.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qregion.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qdatastream.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qiodevice.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qline.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qtransform.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qpainterpath.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qimage.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qpixelformat.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qpixmap.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qsharedpointer.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qshareddata.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qhash.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qsharedpointer_impl.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qfont.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qfontmetrics.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qfontinfo.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtWidgets/qsizepolicy.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qcursor.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qkeysequence.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qevent.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qvariant.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qmap.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qdebug.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qtextstream.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qlocale.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qset.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qcontiguouscache.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qurl.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qurlquery.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qfile.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtCore/qfiledevice.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qvector2d.h \
+		/home/gazebo-cf/Qt5.7.0/5.7/gcc_64/include/QtGui/qtouchdevice.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o crazyFlyZoneTab.o crazyFlyZoneTab.cpp
+
 moc_mainguiwindow.o: moc_mainguiwindow.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o moc_mainguiwindow.o moc_mainguiwindow.cpp
 
@@ -2181,6 +2416,9 @@ moc_myGraphicsScene.o: moc_myGraphicsScene.cpp
 
 moc_myGraphicsView.o: moc_myGraphicsView.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o moc_myGraphicsView.o moc_myGraphicsView.cpp
+
+moc_crazyFlyZoneTab.o: moc_crazyFlyZoneTab.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o moc_crazyFlyZoneTab.o moc_crazyFlyZoneTab.cpp
 
 ####### Install
 
