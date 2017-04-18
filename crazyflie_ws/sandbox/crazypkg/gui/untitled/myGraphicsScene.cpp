@@ -292,6 +292,12 @@ void myGraphicsScene::showCrazyFlyZones()
     }
 }
 
+QRectF myGraphicsScene::getRectFCrazyFlyZone(int index)
+{
+    QRectF rect(crazyfly_zones[index]->rect());
+    return rect;
+}
+
 void myGraphicsScene::removeCrazyFlyZone(int index)
 {
     this->removeItem(crazyfly_zones[index]);

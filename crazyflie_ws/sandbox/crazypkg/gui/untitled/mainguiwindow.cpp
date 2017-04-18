@@ -1084,3 +1084,12 @@ void MainGUIWindow::on_checkBox_crazyfly_zones_toggled(bool checked)
         scene->hideCrazyFlyZones();
     }
 }
+
+void MainGUIWindow::on_tabWidget_currentChanged(int index)
+{
+    if(index >= 0)
+    {
+        scene->setSelectedCrazyFlyZone(index);
+        ui->graphicsView->fitInView(scene->getRectFCrazyFlyZone(index));
+    }
+}

@@ -146,6 +146,8 @@ private slots:
 
     void on_checkBox_crazyfly_zones_toggled(bool checked);
 
+    void on_tabWidget_currentChanged(int index);
+
 private:
 
     Ui::MainGUIWindow *ui;

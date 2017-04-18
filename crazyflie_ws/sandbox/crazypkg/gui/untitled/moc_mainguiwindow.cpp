@@ -19,8 +19,8 @@
 
 QT_BEGIN_MOC_NAMESPACE
 struct qt_meta_stringdata_MainGUIWindow_t {
-    QByteArrayData data[16];
-    char stringdata0[310];
+    QByteArrayData data[18];
+    char stringdata0[344];
 };
 #define QT_MOC_LITERAL(idx, ofs, len) \
     Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
@@ -44,7 +44,9 @@ QT_MOC_LITERAL(11, 184, 6), // "newNum"
 QT_MOC_LITERAL(12, 191, 32), // "on_radioButton_lock_mode_toggled"
 QT_MOC_LITERAL(13, 224, 24), // "on_checkBox_grid_toggled"
 QT_MOC_LITERAL(14, 249, 25), // "on_checkBox_table_toggled"
-QT_MOC_LITERAL(15, 275, 34) // "on_checkBox_crazyfly_zones_to..."
+QT_MOC_LITERAL(15, 275, 34), // "on_checkBox_crazyfly_zones_to..."
+QT_MOC_LITERAL(16, 310, 27), // "on_tabWidget_currentChanged"
+QT_MOC_LITERAL(17, 338, 5) // "index"
 
     },
     "MainGUIWindow\0set_tabs\0\0n\0transitionToMode\0"
@@ -55,7 +57,8 @@ QT_MOC_LITERAL(15, 275, 34) // "on_checkBox_crazyfly_zones_to..."
     "on_radioButton_lock_mode_toggled\0"
     "on_checkBox_grid_toggled\0"
     "on_checkBox_table_toggled\0"
-    "on_checkBox_crazyfly_zones_toggled"
+    "on_checkBox_crazyfly_zones_toggled\0"
+    "on_tabWidget_currentChanged\0index"
 };
 #undef QT_MOC_LITERAL
 
@@ -65,7 +68,7 @@ static const uint qt_meta_data_MainGUIWindow[] = {
        7,       // revision
        0,       // classname
        0,    0, // classinfo
-      10,   14, // methods
+      11,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -73,16 +76,17 @@ static const uint qt_meta_data_MainGUIWindow[] = {
        0,       // signalCount
 
  // slots: name, argc, parameters, tag, flags
-       1,    1,   64,    2, 0x08 /* Private */,
-       4,    1,   67,    2, 0x08 /* Private */,
-       6,    0,   70,    2, 0x08 /* Private */,
-       7,    1,   71,    2, 0x08 /* Private */,
-       9,    1,   74,    2, 0x08 /* Private */,
-      10,    1,   77,    2, 0x08 /* Private */,
-      12,    1,   80,    2, 0x08 /* Private */,
-      13,    1,   83,    2, 0x08 /* Private */,
-      14,    1,   86,    2, 0x08 /* Private */,
-      15,    1,   89,    2, 0x08 /* Private */,
+       1,    1,   69,    2, 0x08 /* Private */,
+       4,    1,   72,    2, 0x08 /* Private */,
+       6,    0,   75,    2, 0x08 /* Private */,
+       7,    1,   76,    2, 0x08 /* Private */,
+       9,    1,   79,    2, 0x08 /* Private */,
+      10,    1,   82,    2, 0x08 /* Private */,
+      12,    1,   85,    2, 0x08 /* Private */,
+      13,    1,   88,    2, 0x08 /* Private */,
+      14,    1,   91,    2, 0x08 /* Private */,
+      15,    1,   94,    2, 0x08 /* Private */,
+      16,    1,   97,    2, 0x08 /* Private */,
 
  // slots: parameters
     QMetaType::Void, QMetaType::Int,    3,
@@ -95,6 +99,7 @@ static const uint qt_meta_data_MainGUIWindow[] = {
     QMetaType::Void, QMetaType::Bool,    8,
     QMetaType::Void, QMetaType::Bool,    8,
     QMetaType::Void, QMetaType::Bool,    8,
+    QMetaType::Void, QMetaType::Int,   17,
 
        0        // eod
 };
@@ -115,6 +120,7 @@ void MainGUIWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _i
         case 7: _t->on_checkBox_grid_toggled((*reinterpret_cast< bool(*)>(_a[1]))); break;
         case 8: _t->on_checkBox_table_toggled((*reinterpret_cast< bool(*)>(_a[1]))); break;
         case 9: _t->on_checkBox_crazyfly_zones_toggled((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 10: _t->on_tabWidget_currentChanged((*reinterpret_cast< int(*)>(_a[1]))); break;
         default: ;
         }
     }
@@ -145,13 +151,13 @@ int MainGUIWindow::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 10)
+        if (_id < 11)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 10;
+        _id -= 11;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 10)
+        if (_id < 11)
             *reinterpret_cast<int*>(_a[0]) = -1;
-        _id -= 10;
+        _id -= 11;
     }
     return _id;
 }

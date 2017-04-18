@@ -33,6 +33,8 @@ public:
     void hideCrazyFlyZones();
     void showCrazyFlyZones();
 
+    QRectF getRectFCrazyFlyZone(int index);
+
     enum {mode_table, mode_crazyfly_zones, mode_locked};
 
     void removeTable();
