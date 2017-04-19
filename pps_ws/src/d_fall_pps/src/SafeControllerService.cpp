@@ -36,10 +36,10 @@ bool calculateControlOutput(RateController::Request &request, RateController::Re
     
     ViconData vicon = request.crazyflieLocation;
     Setpoint goal = request.setpoint;
-    ROS_INFO("request received with following ViconData");
-    ROS_INFO_STREAM(vicon);
-    ROS_INFO("the goal setpoint is:");
-    ROS_INFO_STREAM(request.setpoint);
+    //ROS_INFO("request received with following ViconData");
+    //ROS_INFO_STREAM(vicon);
+    //ROS_INFO("the goal setpoint is:");
+    //ROS_INFO_STREAM(request.setpoint);
 
     //add/calculate safeController
     response.controlOutput.rollRate = 1; //testvalue

@@ -116,7 +116,7 @@ if __name__ == '__main__':
 
     if rospy.has_param("/CrazyRadio/CrazyFlieAddress"):
         radio_address = rospy.get_param("/CrazyRadio/CrazyFlieAddress")
-        rospy.loginfo("Connecting to %s" % radio_address)
+        rospy.loginfo("Crazyradio connecting to %s" % radio_address)
         global cf_client
 
         #TODO: load address from parameters
