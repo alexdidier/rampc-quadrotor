@@ -47,12 +47,15 @@ std::string team; //is this needed here? maybe for room asignment received from 
 std::string cflie;
 
 //global sevices
-ros::ServiceClient rateClient;
+ros::ServiceClient safeController;
 ros::ServiceClient centralClient;
 
 ros::Publisher angleCommandPublisher;
 ros::Publisher rateCommandPublisher;
 ros::Publisher motorCommandPublisher;
+
+//msg for safeController Output
+d_fall_pps::RateCommand safeRateCommandPkg;
 
 //uncommenting the next line causes FATAL Error at runtime: "You must call ros::init() before creating the first NodeHandle"
 //ros::NodeHandle nodeHandle;
@@ -72,6 +75,7 @@ AreaBoundaries Area;
 
 
 //struct consistent with dusans controller
+/*
 struct ControllerOutput
 {
   //ControllerOutput():roll(0),pitch(0),yaw(0),thrust(0),motorCmd1(0),motorCmd2(0),motorCmd3(0),motorCmd4(0) {}
@@ -86,7 +90,7 @@ struct ControllerOutput
   uint8_t onboardControllerType;
 };
 
-ControllerOutput ControlCommandTest;
+ControllerOutput ControlCommandTest;*/
 //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<move this section to a separate file that is included
 
 
@@ -94,44 +98,51 @@ ControllerOutput ControlCommandTest;
 //not void: sould give back controlldata
 void ppsClientToController(ViconData data, bool autocontrolOn){
 	if(data.crazyflieName == cflie){
+		//call safecontroller if autocontrol is true
+		//safeRateCommandPkg.motorCmd1 = 0;
+		//safeRateCommandPkg.motorCmd2 = 0;
+		//safeRateCommandPkg.motorCmd3 = 0;
+		//safeRateCommandPkg.motorCmd4 = 0;
 		if(autocontrolOn){
-			//call safecontroller if autocontrol is true
-			ControlCommandTest.motorCmd1 = 0;
-			ControlCommandTest.motorCmd2 = 0;
-			ControlCommandTest.motorCmd3 = 0;
-			ControlCommandTest.motorCmd4 = 0;
+			return;
+			//call safecontroller here
 		}
 		else {
-			//
-			ControlCommandTest.motorCmd1 = 1000;
-			ControlCommandTest.motorCmd2 = 1000;
-			ControlCommandTest.motorCmd3 = 1000;
-			ControlCommandTest.motorCmd4 = 1000;
+			//student controller is called here
+				//for the moment use safecontroller for TESTING
+			
+			RateController srvRate;
+			Setpoint goalLocation;
+
+			goalLocation.x = -5; //testvalue
+			goalLocation.y = 250; //testvalue
+			goalLocation.z = 300; //testvalue
+
+			srvRate.request.crazyflieLocation = data;
+			srvRate.request.setpoint = goalLocation;
+
+			//TODO:
+			//return control commands
+			if(safeController.call(srvRate)){
+				ROS_INFO("Received control input");
+				ROS_INFO_STREAM(srvRate.response.controlOutput);
+				
+				
+				safeRateCommandPkg.rollRate = srvRate.response.controlOutput.rollRate;
+				safeRateCommandPkg.pitchRate = srvRate.response.controlOutput.pitchRate;
+				safeRateCommandPkg.yawRate = srvRate.response.controlOutput.yawRate;
+				safeRateCommandPkg.thrust = srvRate.response.controlOutput.thrust;
+  				//onboardControllerType = ??????????????????????
+				
+				
+			}
+			else{
+				ROS_ERROR("Failed to call SafeControllerService");
+				//return 1; //return some useful stuff
+			}
 		}
 
-		//TODO:
-		//communicating with Controller
-		RateController srvRate;
-		Setpoint goalLocation;
-
-		goalLocation.x = 9; //testvalue
-		goalLocation.y = 8; //testvalue
-		goalLocation.z = 7; //testvalue
-
-		srvRate.request.crazyflieLocation = data;
-		srvRate.request.setpoint = goalLocation;
-
-		//TODO:
-		//return control commands
-		if(rateClient.call(srvRate)){
-			ROS_INFO("Service gave response");
-			ROS_INFO("Received control input");
-			ROS_INFO_STREAM(srvRate.response.controlOutput);
-		}
-		else{
-			ROS_ERROR("Failed to call SafeControllerService");
-			//return 1; //return some useful stuff
-		}
+		
 	}
 	else {
 		ROS_INFO("ViconData from other crazyflie received");
@@ -197,26 +208,28 @@ void callbackAngleCommand(const ros::TimerEvent&)
 }
 
 //callback method to publish d_fall_pps::RateCommand
-void callbackRateCommand(const ros::TimerEvent&)
+void callbackRateCommand(const ros::TimerEvent)
 {
-	d_fall_pps::RateCommand rateCommandPkg;
-	rateCommandPkg.rollRate = 2;
-	rateCommandPkg.pitchRate = 2;
-	rateCommandPkg.yawRate = 2;
-	rateCommandPkg.thrust = 50;
+	//d_fall_pps::RateCommand rateCommandPkg;
+	//rateCommandPkg.rollRate = ...;
+	//rateCommandPkg.pitchRate = ...;
+	//rateCommandPkg.yawRate = ...;
+	//rateCommandPkg.thrust = ...,
 	
-	rateCommandPublisher.publish(rateCommandPkg);
-	ROS_INFO_STREAM("RateCommandTimer pubslishes: " << rateCommandPkg.rollRate << ", " << rateCommandPkg.pitchRate << ", " << rateCommandPkg.yawRate);
+	
+	//Achtung: gepublisht wird safeRateCommandPkg vom Type d_fall_pps::RateCommand >>>> brauchen wir eine separate callback fuer die commands des safetyController benoetigt?????
+	rateCommandPublisher.publish(safeRateCommandPkg);
+	ROS_INFO_STREAM("RateCommandTimer pubslishes: " << safeRateCommandPkg.rollRate << ", " << safeRateCommandPkg.pitchRate << ", " << safeRateCommandPkg.yawRate);
 }
 
 //callback method to publish d_fall_pps::MotorCommand
 void callbackMotorCommand(const ros::TimerEvent&)
 {
 	d_fall_pps::MotorCommand motorCommandPkg;
-	motorCommandPkg.cmd1 = ControlCommandTest.motorCmd1;
-	motorCommandPkg.cmd2 = ControlCommandTest.motorCmd2;
-	motorCommandPkg.cmd3 = ControlCommandTest.motorCmd3;
-	motorCommandPkg.cmd4 = ControlCommandTest.motorCmd4;
+	//motorCommandPkg.cmd1 = ControlCommandTest.motorCmd1;
+	//motorCommandPkg.cmd2 = ControlCommandTest.motorCmd2;
+	//motorCommandPkg.cmd3 = ControlCommandTest.motorCmd3;
+	//motorCommandPkg.cmd4 = ControlCommandTest.motorCmd4;
 	
 	motorCommandPublisher.publish(motorCommandPkg);
 	ROS_INFO_STREAM("MotorCommandTimer pubslishes: " << motorCommandPkg.cmd1 << ", " << motorCommandPkg.cmd2 << ", " << motorCommandPkg.cmd3 << ", " << motorCommandPkg.cmd4);
@@ -264,9 +277,9 @@ int main(int argc, char* argv[]){
 
 	//service 
 		//to be expanded with additional services depending on controller (currently only one available)
-	rateClient = nodeHandle.serviceClient<d_fall_pps::RateController>("/SafeControllerService/RateController");
+	safeController = nodeHandle.serviceClient<d_fall_pps::RateController>("/SafeControllerService/RateController");
 	
-	//rateClient = nodeHandle.serviceClient<d_fall_pps::RateController>("/SafeControllerService/RateController", true);
+	//safeController = nodeHandle.serviceClient<d_fall_pps::RateController>("/SafeControllerService/RateController", true);
 	//http://wiki.ros.org/roscpp/Overview/Services 
 	//2.1 Persistenct Connection: ROS also allows for persistent connections to services. With a persistent connection, a client stays connected to a service. 
 	// Otherwise, a client normally does a lookup and reconnects to a service each time.

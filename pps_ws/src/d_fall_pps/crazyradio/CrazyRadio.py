@@ -94,7 +94,7 @@ class PPSRadioClient:
 
 def motorCommandCallback(data):
     """Callback for motor controller actions"""
-    cf_client._send_to_commander(0, 0, 0, 0, data.cmd1, data.cmd2, data.cmd3, data.cmd4, CONTROLLER_MOTOR)
+    #cf_client._send_to_commander(0, 0, 0, 0, data.cmd1, data.cmd2, data.cmd3, data.cmd4, CONTROLLER_MOTOR)
     rospy.loginfo("motor controller callback: %s, %s, %s, %s", data.cmd1, data.cmd2, data.cmd3, data.cmd4)
 
 def angleCommandCallback(data):
@@ -106,8 +106,10 @@ def angleCommandCallback(data):
 def rateCommandCallback(data):
     """Callback for rate controller actions"""
     #cmd1..4 must not be 0, as crazyflie onboard controller resets
-    #cf_client._send_to_commander(data.rollRate,data.pitchRate,data.yawRate,data.thrust, 1, 1, 1 , 1, CONTROLLER_RATE)
-    rospy.loginfo("rate controller callback: %s, %s, %s, %s", data.rollRate, data.pitchRate, data.yawRate, data.thrust)
+    #cf_client._send_to_commander(data.rollRate,data.pitchRate,data.yawRate,data.thrust, 1, 1, 1, 1, CONTROLLER_RATE)
+    cf_client._send_to_commander(0,0,0,0, 20000, 20000, 0, 0, 2)
+    #ACHTUNG: mode ist auf 2 (CONTROLLER_MOTOR), da die rateCommandCallback zum testen verwendet wurde!!!!!!!!!!!!!!!!!!!!!!!!
+    rospy.loginfo("rate controller callback : %s, %s, %s, %s", data.rollRate, data.pitchRate, data.yawRate, data.thrust)
 
 if __name__ == '__main__':
     rospy.init_node('CrazyRadio', anonymous=True)
