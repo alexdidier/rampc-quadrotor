@@ -1,12 +1,15 @@
 #include "mainguiwindow.h"
 #include "ui_mainguiwindow.h"
 #include "crazyFlyZoneTab.h"
+#include "myGraphicsScene.h"
+#include "myGraphicsView.h"
 
 #include <QObject>
 #include <QDoubleSpinBox>
 #include <QTextEdit>
 #include <QString>
 
+#include <string>
 
 #define N_MAX_CRAZYFLIES           20 // protection number
 
@@ -43,12 +46,13 @@ MainGUIWindow::~MainGUIWindow()
 void MainGUIWindow::set_tabs(int n)
 {
     ui->tabWidget->clear();
-    std::string str;
     for (int i = 0; i < n; i++)
     {
-        str = "CrazyFly ";
-        str += std::to_string(i+1);
-        QString qstr(str.c_str());
+        // str = "CrazyFly ";
+        // str += std::to_string(i+1);
+        QString qstr = "CrazyFly ";
+        qstr.append(QString::number(i+1));
+        // QString qstr(str.c_str());
         crazyFlyZoneTab* widget = new crazyFlyZoneTab(i);
         ui->tabWidget->addTab(widget, qstr);
         connect(widget, SIGNAL(centerButtonClickedSignal(int)), this, SLOT(centerViewIndex(int)));

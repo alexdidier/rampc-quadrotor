@@ -14,6 +14,10 @@ find_package(catkin REQUIRED COMPONENTS
   )
 
 
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+set(CMAKE_AUTOMOC ON)
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -22,16 +26,25 @@ find_package(Qt5Core REQUIRED)
 find_package(Qt5Gui REQUIRED)
 
 
+set(MY_LIB_PATH_SRC ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/src)
+set(MY_LIB_PATH_INC ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/include)
 
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
+# #set the default path for built executables to the "bin" directory
+# set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+# #set the default path for built libraries to the "lib" directory
+# set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-#set the default path for built executables to the "bin" directory
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-#set the default path for built libraries to the "lib" directory
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
+add_definitions(-std=c++11)
 
-qt5_wrap_ui(UIS_HDRS gui/untitled/mainguiwindow.ui)
-qt5_wrap_cpp(SRC_HDRS gui/untitled/mainguiwindow.h)
+set(SRC_HDRS
+  ${MY_LIB_PATH_INC}/crazyFlyZoneTab.h
+  ${MY_LIB_PATH_INC}/myGraphicsScene.h
+  ${MY_LIB_PATH_INC}/myGraphicsView.h
+  ${MY_LIB_PATH_INC}/mainguiwindow.h
+  )
+
+qt5_wrap_ui(UIS_HDRS GUI_Qt/CrazyFlyGUI/src/mainguiwindow.ui)
+qt5_wrap_cpp(SRC_MOC_HDRS ${SRC_HDRS})
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -133,6 +146,7 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
+  GUI_Qt/CrazyFlyGUI/include
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -151,7 +165,27 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/d_fall_gui_node.cpp)
 
-add_executable(GUI )
+add_executable(myGUI GUI_Qt/CrazyFlyGUI/src/mainguiwindow.cpp GUI_Qt/CrazyFlyGUI/src/main.cpp ${UIS_HDRS} ${SRC_HDRS})
+qt5_use_modules(myGUI Widgets)
+
+
+
+set(MY_LIB_SOURCES
+    ${MY_LIB_PATH_SRC}/cornergrabber.cpp
+    ${MY_LIB_PATH_SRC}/crazyFlyZone.cpp
+    ${MY_LIB_PATH_SRC}/crazyFlyZoneTab.cpp
+    ${MY_LIB_PATH_SRC}/myGraphicsRectItem.cpp
+    ${MY_LIB_PATH_SRC}/myGraphicsScene.cpp
+    ${MY_LIB_PATH_SRC}/myGraphicsView.cpp
+    ${MY_LIB_PATH_SRC}/tablePiece.cpp
+    )
+
+
+add_library(my_library ${MY_LIB_SOURCES})
+
+target_link_libraries(myGUI Qt5::Widgets)
+target_link_libraries(my_library Qt5::Widgets)
+target_link_libraries(myGUI my_library)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the

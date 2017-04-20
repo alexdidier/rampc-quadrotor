@@ -8,6 +8,7 @@
 #include <QGridLayout>
 #include <QGraphicsRectItem>
 
+
 #ifndef DEBUG_GUI
 #include "ros/callback_queue.h"
 #include "ros/ros.h"

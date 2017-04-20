@@ -12,6 +12,7 @@ TARGET = CrazyFlyGUI
 TEMPLATE = app
 
 INCLUDEPATH += $$PWD/include
+CONFIG += c++11
 
 
 SOURCES += \

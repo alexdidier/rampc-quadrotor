@@ -316,7 +316,7 @@
   <customwidget>
    <class>myGraphicsView</class>
    <extends>QGraphicsView</extends>
-   <header>./include/myGraphicsView.h</header>
+   <header>myGraphicsView.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
