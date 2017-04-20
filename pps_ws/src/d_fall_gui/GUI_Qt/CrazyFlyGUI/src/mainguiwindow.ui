@@ -270,7 +270,7 @@
       </rect>
      </property>
      <property name="text">
-      <string>Fit AllT</string>
+      <string>Fit All</string>
      </property>
     </widget>
    </widget>
@@ -316,7 +316,7 @@
   <customwidget>
    <class>myGraphicsView</class>
    <extends>QGraphicsView</extends>
-   <header>../../include/myGraphicsView.h</header>
+   <header>./include/myGraphicsView.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

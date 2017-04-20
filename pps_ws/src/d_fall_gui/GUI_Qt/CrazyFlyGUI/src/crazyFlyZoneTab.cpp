@@ -1,4 +1,4 @@
-#include "../../include/crazyFlyZoneTab.h"
+#include "crazyFlyZoneTab.h"
 
 #include <QLayout>
 

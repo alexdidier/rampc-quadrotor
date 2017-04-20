@@ -1,4 +1,4 @@
-#include "../../include/tablePiece.h"
+#include "tablePiece.h"
 
 tablePiece::tablePiece(const QRectF & rect,  QGraphicsItem * parent)
     : myGraphicsRectItem(rect, parent)

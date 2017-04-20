@@ -1,4 +1,4 @@
-#include "../../include/myGraphicsRectItem.h"
+#include "myGraphicsRectItem.h"
 
 #include <QGraphicsSceneMouseEvent>
 #include <QGraphicsRectItem>

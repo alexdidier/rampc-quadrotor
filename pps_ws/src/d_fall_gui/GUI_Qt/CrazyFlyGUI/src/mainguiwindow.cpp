@@ -1,6 +1,6 @@
-#include "../../include/mainguiwindow.h"
+#include "mainguiwindow.h"
 #include "ui_mainguiwindow.h"
-#include "../../include/crazyFlyZoneTab.h"
+#include "crazyFlyZoneTab.h"
 
 #include <QObject>
 #include <QDoubleSpinBox>

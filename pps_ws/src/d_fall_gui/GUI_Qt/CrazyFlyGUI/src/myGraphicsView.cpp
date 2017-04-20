@@ -1,4 +1,4 @@
-#include "../../include/myGraphicsView.h"
+#include "myGraphicsView.h"
 
 #include <QApplication>
 #include <QMouseEvent>

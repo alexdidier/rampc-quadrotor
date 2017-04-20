@@ -1,4 +1,4 @@
-#include "../../include/myGraphicsScene.h"
+#include "myGraphicsScene.h"
 
 #include <QGraphicsSceneMouseEvent>
 #include <QRect>

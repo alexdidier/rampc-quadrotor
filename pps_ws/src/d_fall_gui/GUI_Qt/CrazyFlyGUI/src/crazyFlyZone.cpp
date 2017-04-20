@@ -1,4 +1,4 @@
-#include "../../include/crazyFlyZone.h"
+#include "crazyFlyZone.h"
 
 crazyFlyZone::crazyFlyZone(const QRectF & rect, int index,  QGraphicsItem * parent)
     : myGraphicsRectItem(rect, parent)

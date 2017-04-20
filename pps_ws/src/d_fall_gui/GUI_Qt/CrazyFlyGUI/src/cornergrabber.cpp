@@ -1,4 +1,4 @@
-#include "../../include/cornergrabber.h"
+#include "cornergrabber.h"
 
 CornerGrabber::CornerGrabber(QGraphicsItem *parent,  int corner) :
     QGraphicsItem(parent),

@@ -11,11 +11,27 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
-)
+  )
+
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
+find_package(Qt5Widgets REQUIRED)
+find_package(Qt5Core REQUIRED)
+find_package(Qt5Gui REQUIRED)
+
+
+
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+#set the default path for built executables to the "bin" directory
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+#set the default path for built libraries to the "lib" directory
+set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
+
+qt5_wrap_ui(UIS_HDRS gui/untitled/mainguiwindow.ui)
+qt5_wrap_cpp(SRC_HDRS gui/untitled/mainguiwindow.h)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -103,10 +119,10 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES d_fall_gui
-#  CATKIN_DEPENDS roscpp rospy std_msgs
-#  DEPENDS system_lib
+ INCLUDE_DIRS include
+ LIBRARIES
+ CATKIN_DEPENDS roscpp rospy std_msgs
+ DEPENDS
 )
 
 ###########
@@ -134,6 +150,8 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/d_fall_gui_node.cpp)
+
+add_executable(GUI )
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
