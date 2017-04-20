@@ -75,60 +75,7 @@ public slots:
     #endif
 private slots:
     #ifndef DEBUG_GUI
-   // void PIDParamTableChanged(double param);
-
-   // void RateParamTableChanged(double param);
-
-   // void positionSetpointChanged(double param);
-
-   // void sampleTimeChanged(double param);
-
-   // void feedforwardCmdChanged(double cmd);
-
-   // void controllerTypeChanged(bool checked);
-
-   // void trajectoryTypeChanged(bool checked);
-
-   // void on_buttonStop_clicked();
-
-   // void on_buttonPrint_clicked();
-
-   // void on_buttonSetpointChange_clicked();
-
-   // void on_buttonPIDDefaultParams_clicked();
-
-   // void on_buttonSetpointCurrPos_clicked();
-
-   // void on_buttonDefaultFeedforward_clicked();
-
-   // void on_buttonResetMissed_clicked();
-
-   // void on_SetpointHome_clicked();
-
-   // void on_setpointZ200_clicked();
-
-   // void on_slideMotorCmdTest_valueChanged(int value);
-
-   // void on_buttonResetControllers_clicked();
-
-   // void on_buttonSetDefaultTs_clicked();
-
-   // void on_buttonSetDefaultRateParams_clicked();
-
-   // void on_slideRollAngleTest_valueChanged(int value);
-
-   // void on_slidePitchAngleTest_valueChanged(int value);
-
-   // void on_slideYawAngleTest_valueChanged(int value);
-
-   // void on_slideRollRateTest_valueChanged(int value);
-
-   // void on_slidePitchRateTest_valueChanged(int value);
-
-   // void on_slideYawRateTest_valueChanged(int value);
-
-   // void on_buttonStop_2_clicked();
-   #endif
+    #endif
 
     void set_tabs(int n);
     void transitionToMode(int mode);
@@ -162,33 +109,7 @@ private:
     void _init();
 
     #ifndef DEBUG_GUI
-    // void refreshScreen();
-
-    // callbacks
-    // void callbackControllerOutput(const crazypkg::ControllerOutputPackage& msg);
-    // void callbackViconData(const crazypkg::ViconData& msg);
-    // void callbackCntViconDataMissed(const std_msgs::Int32& msg);
-
     void readDefaultParameters();
-    // void setDefaultPIDParameters();
-    // void setDefaultRateParameters();
-    // void setDefaultSampleTime();
-    // void setDefaultFeedforwardCmd();
-
-    // void initPIDParamsTable();
-    // void initRateParamsTable();
-    // void initPositionSetpoint();
-    // void initSampleTime();
-    // void initControllerType();
-    // void initFeedforwardCmd();
-    // void initSetpointQueues();
-    // void initSetpointType();
-
-    // void publishSetpoint();
-    // void updateSetpoint();
-
-    // void publishSampleTime(EControllerType controller);
-
     ros::CallbackQueue m_CallbackQueue;
     ros::NodeHandle* m_pNodeHandle;
 

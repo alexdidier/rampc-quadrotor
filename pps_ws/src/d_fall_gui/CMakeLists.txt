@@ -15,7 +15,6 @@ find_package(catkin REQUIRED COMPONENTS
 
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
 set(CMAKE_AUTOMOC ON)
 
 ## System dependencies are found with CMake's conventions
@@ -36,7 +35,7 @@ set(MY_LIB_PATH_INC ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/include)
 
 add_definitions(-std=c++11)
 
-set(SRC_HDRS
+set(SRC_HDRS_QOBJECT            #sources that have the Qt macro QOBJECT inside, the MOC cpp file needs to be done manually
   ${MY_LIB_PATH_INC}/crazyFlyZoneTab.h
   ${MY_LIB_PATH_INC}/myGraphicsScene.h
   ${MY_LIB_PATH_INC}/myGraphicsView.h
@@ -44,7 +43,7 @@ set(SRC_HDRS
   )
 
 qt5_wrap_ui(UIS_HDRS GUI_Qt/CrazyFlyGUI/src/mainguiwindow.ui)
-qt5_wrap_cpp(SRC_MOC_HDRS ${SRC_HDRS})
+qt5_wrap_cpp(SRC_MOC_HDRS ${SRC_HDRS_QOBJECT})
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -146,7 +145,7 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
-  GUI_Qt/CrazyFlyGUI/include
+  ${MY_LIB_PATH_INC}
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -165,12 +164,12 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/d_fall_gui_node.cpp)
 
-add_executable(myGUI GUI_Qt/CrazyFlyGUI/src/mainguiwindow.cpp GUI_Qt/CrazyFlyGUI/src/main.cpp ${UIS_HDRS} ${SRC_HDRS})
-qt5_use_modules(myGUI Widgets)
+add_executable(my_GUI GUI_Qt/CrazyFlyGUI/src/mainguiwindow.cpp GUI_Qt/CrazyFlyGUI/src/main.cpp ${UIS_HDRS} ${SRC_HDRS_QOBJECT})
+qt5_use_modules(my_GUI Widgets)
 
 
 
-set(MY_LIB_SOURCES
+set(MY_LIB_SOURCES              # compilation of sources
     ${MY_LIB_PATH_SRC}/cornergrabber.cpp
     ${MY_LIB_PATH_SRC}/crazyFlyZone.cpp
     ${MY_LIB_PATH_SRC}/crazyFlyZoneTab.cpp
@@ -183,9 +182,9 @@ set(MY_LIB_SOURCES
 
 add_library(my_library ${MY_LIB_SOURCES})
 
-target_link_libraries(myGUI Qt5::Widgets)
-target_link_libraries(my_library Qt5::Widgets)
-target_link_libraries(myGUI my_library)
+target_link_libraries(my_GUI Qt5::Widgets) # let my_GUI have acesss to Qt stuff
+target_link_libraries(my_library Qt5::Widgets) # let my_library have access to Qt stuff
+target_link_libraries(my_GUI my_library)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
