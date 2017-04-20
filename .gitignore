@@ -31,3 +31,6 @@ pps_ws/devel/
 ./pps_ws/src/d_fall_pps/crazyradio/cflib/bootloader/cloader.pyc
 ./pps_ws/src/d_fall_pps/crazyradio/leapsdk/__init__.pyc
 
+
+
+pps_ws/src/d_fall_gui/GUI_Qt/build*
