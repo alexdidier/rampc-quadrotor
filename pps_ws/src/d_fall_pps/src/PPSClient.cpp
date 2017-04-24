@@ -54,44 +54,12 @@ ros::Publisher angleCommandPublisher;
 ros::Publisher rateCommandPublisher;
 ros::Publisher motorCommandPublisher;
 
-//msg for safeController Output
-RateCommand safeRateCommandPkg;
-
-//uncommenting the next line causes FATAL Error at runtime: "You must call ros::init() before creating the first NodeHandle"
-//ros::NodeHandle nodeHandle;
-
 AreaBounds localArea;
 
-
-//struct consistent with dusans controller
-/*
-struct ControllerOutput
-{
-  //ControllerOutput():roll(0),pitch(0),yaw(0),thrust(0),motorCmd1(0),motorCmd2(0),motorCmd3(0),motorCmd4(0) {}
-  float roll;
-  float pitch;
-  float yaw;
-  float thrust;
-  float motorCmd1;
-  float motorCmd2;
-  float motorCmd3;
-  float motorCmd4;
-  uint8_t onboardControllerType;
-};
-
-ControllerOutput ControlCommandTest;*/
-//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<move this section to a separate file that is included
-
-
-//extract data from "data" and publish/add to service for controller
-//not void: sould give back controlldata
 void ppsClientToController(ViconData data, bool autocontrolOn){
 	if(data.crazyflieName == cflie){
 		//call safecontroller if autocontrol is true
-		//safeRateCommandPkg.motorCmd1 = 0;
-		//safeRateCommandPkg.motorCmd2 = 0;
-		//safeRateCommandPkg.motorCmd3 = 0;
-		//safeRateCommandPkg.motorCmd4 = 0;
+
 		if(autocontrolOn){
 			return;
 			//call safecontroller here
@@ -116,11 +84,7 @@ void ppsClientToController(ViconData data, bool autocontrolOn){
 				ROS_INFO("Received control input");
 				ROS_INFO_STREAM(srvRate.response.controlOutput);
 				
-				
-				safeRateCommandPkg.rollRate = srvRate.response.controlOutput.rollRate;
-				safeRateCommandPkg.pitchRate = srvRate.response.controlOutput.pitchRate;
-				safeRateCommandPkg.yawRate = srvRate.response.controlOutput.yawRate;
-				safeRateCommandPkg.thrust = srvRate.response.controlOutput.thrust;
+				rateCommandPublisher.publish(srvRate.response.controlOutput);
   				//onboardControllerType = ??????????????????????
 				
 				
@@ -163,7 +127,7 @@ bool safetyCheck(ViconData data){
 
 //is called upon every new arrival of data in main
 void viconCallback(const ViconData& data){
-	//ROS_INFO("in viconCallback"); 
+	ROS_INFO("in viconCallback"); 
 	//ROS_INFO_STREAM(data);
 	//ROS_INFO("My teamname is:"); ROS_INFO_STREAM(team);
 	//ROS_INFO("My crazyflie is:"); ROS_INFO_STREAM(cflie);
@@ -180,52 +144,6 @@ void viconCallback(const ViconData& data){
 
 
 }
-
-
-
-//callback method to publish d_fall_pps::AngleCommand
-void callbackAngleCommand(const ros::TimerEvent&)
-{
-	AngleCommand angleCommandPkg;
-	angleCommandPkg.rollAngle = 1;
-	angleCommandPkg.pitchAngle = 1;
-	angleCommandPkg.yawAngle = 1;
-	angleCommandPkg.thrust = 50;
-	
-	angleCommandPublisher.publish(angleCommandPkg);
-	ROS_INFO_STREAM("AngleCommandTimer pubslishes: " << angleCommandPkg.rollAngle << ", " << angleCommandPkg.pitchAngle << ", " << angleCommandPkg.yawAngle);
-}
-
-//callback method to publish d_fall_pps::RateCommand
-void callbackRateCommand(const ros::TimerEvent)
-{
-	//d_fall_pps::RateCommand rateCommandPkg;
-	//rateCommandPkg.rollRate = ...;
-	//rateCommandPkg.pitchRate = ...;
-	//rateCommandPkg.yawRate = ...;
-	//rateCommandPkg.thrust = ...,
-	
-	
-	//Achtung: gepublisht wird safeRateCommandPkg vom Type d_fall_pps::RateCommand >>>> brauchen wir eine separate callback fuer die commands des safetyController benoetigt?????
-	rateCommandPublisher.publish(safeRateCommandPkg);
-	ROS_INFO_STREAM("RateCommandTimer pubslishes: " << safeRateCommandPkg.rollRate << ", " << safeRateCommandPkg.pitchRate << ", " << safeRateCommandPkg.yawRate);
-}
-
-//callback method to publish d_fall_pps::MotorCommand
-void callbackMotorCommand(const ros::TimerEvent&)
-{
-	d_fall_pps::MotorCommand motorCommandPkg;
-	//motorCommandPkg.cmd1 = ControlCommandTest.motorCmd1;
-	//motorCommandPkg.cmd2 = ControlCommandTest.motorCmd2;
-	//motorCommandPkg.cmd3 = ControlCommandTest.motorCmd3;
-	//motorCommandPkg.cmd4 = ControlCommandTest.motorCmd4;
-	
-	motorCommandPublisher.publish(motorCommandPkg);
-	ROS_INFO_STREAM("MotorCommandTimer pubslishes: " << motorCommandPkg.cmd1 << ", " << motorCommandPkg.cmd2 << ", " << motorCommandPkg.cmd3 << ", " << motorCommandPkg.cmd4);
-}
-
-
-
 
 int main(int argc, char* argv[]){
 	ROS_INFO_STREAM("PPSClient started");
@@ -245,19 +163,6 @@ int main(int argc, char* argv[]){
 	ros::Subscriber ViconSubscriber = nodeHandle.subscribe("/ViconDataPublisher/ViconData", 1, viconCallback);
 	ROS_INFO_STREAM("successfully subscribed to ViconData");
 	
-	
-	//ros::Timers to call method that publishes controller outputs for crayzradio node
-	/*
-	Timers let you schedule a callback to happen at a specific rate through the same callback queue mechanism used by subscription, service, etc. callbacks. 
-	Timers are not a realtime thread/kernel replacement, rather they are useful for things that do not have hard realtime requirements. 
-	Reference: http://wiki.ros.org/roscpp/Overview/Timers
-	*/
-    ROS_INFO("creating publishers for package_for_crazyradio");
-	ros::Timer angleCommandTimer = nodeHandle.createTimer(ros::Duration(0.1), callbackAngleCommand);
-	ros::Timer rateCommandTimer = nodeHandle.createTimer(ros::Duration(0.1), callbackRateCommand);
-	ros::Timer motorCommandTimer = nodeHandle.createTimer(ros::Duration(0.1), callbackMotorCommand);
-	
-	
 	//ros::Publishers to advertise on the three command type topics
 	angleCommandPublisher = nodeHandle.advertise <AngleCommand>("AngleCommand", 1);
 	rateCommandPublisher = nodeHandle.advertise<RateCommand>("RateCommand", 1);
@@ -266,7 +171,7 @@ int main(int argc, char* argv[]){
 
 	//service 
 		//to be expanded with additional services depending on controller (currently only one available)
-	safeController = nodeHandle.serviceClient<RateController>("/SafeControllerService/RateController");
+	safeController = nodeHandle.serviceClient<RateController>("/SafeControllerService/RateController", true);
 	
 	//safeController = nodeHandle.serviceClient<d_fall_pps::RateController>("/SafeControllerService/RateController", true);
 	//http://wiki.ros.org/roscpp/Overview/Services 

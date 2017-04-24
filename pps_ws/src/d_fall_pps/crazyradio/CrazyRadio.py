@@ -94,22 +94,20 @@ class PPSRadioClient:
 
 def motorCommandCallback(data):
     """Callback for motor controller actions"""
-    #cf_client._send_to_commander(0, 0, 0, 0, data.cmd1, data.cmd2, data.cmd3, data.cmd4, CONTROLLER_MOTOR)
     rospy.loginfo("motor controller callback: %s, %s, %s, %s", data.cmd1, data.cmd2, data.cmd3, data.cmd4)
+    #cf_client._send_to_commander(0, 0, 0, 0, data.cmd1, data.cmd2, data.cmd3, data.cmd4, CONTROLLER_MOTOR)
 
 def angleCommandCallback(data):
     """Callback for angle controller actions"""
+    rospy.loginfo("angle controller callback: %s, %s, %s, %s", data.rollAngle, data.pitchAngle ,data.yawAngle, data.thrust)
     #cmd1..4 must not be 0, as crazyflie onboard controller resets
     #cf_client._send_to_commander(data.rollAngle,data.pitchAngle,data.yawAngle,data.thrust, 1, 1, 1, 1, CONTROLLER_ANGLE)
-    rospy.loginfo("angle controller callback: %s, %s, %s, %s", data.rollAngle, data.pitchAngle ,data.yawAngle, data.thrust)
 
 def rateCommandCallback(data):
     """Callback for rate controller actions"""
-    #cmd1..4 must not be 0, as crazyflie onboard controller resets
-    cf_client._send_to_commander(data.rollRate,data.pitchRate,data.yawRate,data.thrust, 1, 1, 1, 1, CONTROLLER_RATE)
-    #cf_client._send_to_commander(0,0,0,0, 20000, 20000, 0, 0, 0)
-    #ACHTUNG: mode ist auf 2 (CONTROLLER_MOTOR), da die rateCommandCallback zum testen verwendet wurde!!!!!!!!!!!!!!!!!!!!!!!!
+    #cmd1..4 must not be 0, as crazyflie onboard controller resets!
     rospy.loginfo("rate controller callback : %s, %s, %s, %s", data.rollRate, data.pitchRate, data.yawRate, data.thrust)
+    cf_client._send_to_commander(data.rollRate,data.pitchRate,data.yawRate,data.thrust, 1, 1, 1, 1, CONTROLLER_RATE)
 
 if __name__ == '__main__':
     rospy.init_node('CrazyRadio', anonymous=True)
@@ -121,11 +119,9 @@ if __name__ == '__main__':
         rospy.loginfo("Crazyradio connecting to %s" % radio_address)
         global cf_client
 
-        #TODO: load address from parameters
         cf_client = PPSRadioClient(radio_address)
         time.sleep(1.0)
 
-        #TODO: change publisher name if not correct
         rospy.Subscriber("/PPSClient/MotorCommand", MotorCommand, motorCommandCallback)
         rospy.Subscriber("/PPSClient/AngleCommand", AngleCommand, angleCommandCallback)
         rospy.Subscriber("/PPSClient/RateCommand", RateCommand, rateCommandCallback)
@@ -134,5 +130,6 @@ if __name__ == '__main__':
         rospy.loginfo("Turning off crazyflie")
         cf_client._send_to_commander(0, 0, 0, 0, 0, 0, 0, 0, CONTROLLER_MOTOR)
         cf_client._cf.close_link()
+        rospy.loginfo("Link closed")
     else:
         rospy.logerr("No radio address provided")

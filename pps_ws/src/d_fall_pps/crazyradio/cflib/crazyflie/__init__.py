@@ -246,8 +246,9 @@ class Crazyflie():
     def close_link(self):
         """Close the communication link."""
         logger.info("Closing link")
-        if (self.link is not None):
-            self.commander.send_setpoint(0, 0, 0, 0)
+#        commented out because send_setpoint was changed
+#        if (self.link is not None):
+#            self.commander.send_setpoint(0, 0, 0, 0)
         if (self.link is not None):
             self.link.close()
             self.link = None
