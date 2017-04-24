@@ -73,7 +73,11 @@ bool calculateControlOutput(RateController::Request &request, RateController::Re
     response.controlOutput.yawRate = -(k[18] * px + k[19] * py + k[20] * pz + k[21] * vx + k[22] * vy + k[23] * vz + k[24] * roll + k[25] * pitch + k[26] * yaw);
     float thrustIntermediate = -(k[27] * px + k[28] * py + k[29] * pz + k[30] * vx + k[31] * vy + k[32] * vz + k[33] * roll + k[34] * pitch + k[35] * yaw);
     //idea: linerazie plot and apply on sum of thrust instead of on each motor
-    response.controlOutput.thrust = 20000;
+    if(thrustIntermediate < 0) thrustIntermediate = 0;
+    response.controlOutput.thrust = (int) (428571 * thrustIntermediate);
+    ROS_INFO("??????????????????????????????????????????????????????????????????????????????????????");
+    ROS_INFO_STREAM(thrustIntermediate);
+    ROS_INFO_STREAM(response.controlOutput.thrust);
 
 
     /*cmd1Thrust=(-m_a1+sqrt(m_a1*m_a1-4*m_a2*(m_a0-(thrust+m_ffCmd1Thrust))))/(2*m_a2);

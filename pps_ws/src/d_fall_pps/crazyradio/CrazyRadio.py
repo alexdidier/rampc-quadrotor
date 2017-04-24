@@ -106,8 +106,8 @@ def angleCommandCallback(data):
 def rateCommandCallback(data):
     """Callback for rate controller actions"""
     #cmd1..4 must not be 0, as crazyflie onboard controller resets
-    #cf_client._send_to_commander(data.rollRate,data.pitchRate,data.yawRate,data.thrust, 1, 1, 1, 1, CONTROLLER_RATE)
-    cf_client._send_to_commander(0,0,0,0, 20000, 20000, 0, 0, 2)
+    cf_client._send_to_commander(data.rollRate,data.pitchRate,data.yawRate,data.thrust, 1, 1, 1, 1, CONTROLLER_RATE)
+    #cf_client._send_to_commander(0,0,0,0, 20000, 20000, 0, 0, 0)
     #ACHTUNG: mode ist auf 2 (CONTROLLER_MOTOR), da die rateCommandCallback zum testen verwendet wurde!!!!!!!!!!!!!!!!!!!!!!!!
     rospy.loginfo("rate controller callback : %s, %s, %s, %s", data.rollRate, data.pitchRate, data.yawRate, data.thrust)
 

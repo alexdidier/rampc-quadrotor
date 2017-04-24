@@ -17,10 +17,10 @@
 
 //TODO:
 //CentralManager: extract data about room from vicon data
-//CentralManager: assign area for each group and those coordinates to PPSClients
+//CentralManager: assign localArea for each group and those coordinates to PPSClients
 //ViconDataPublisher: extract data about room from vicon data in and send also to PPSClient
-//PPSClient: Compare data received from CentralManager and ViconDataPublisher and determine in which area you are
-//PPSClient: Choose correct controller accoring to current area
+//PPSClient: Compare data received from CentralManager and ViconDataPublisher and determine in which localArea you are
+//PPSClient: Choose correct controller accoring to current localArea
 
 
 #include "ros/ros.h"
@@ -60,18 +60,7 @@ d_fall_pps::RateCommand safeRateCommandPkg;
 //uncommenting the next line causes FATAL Error at runtime: "You must call ros::init() before creating the first NodeHandle"
 //ros::NodeHandle nodeHandle;
 
-
-//move this section to a separate file that is included>>>>>>>>>
-struct AreaBoundaries{
-	float areaBoundxmin;
-	float areaBoundxmax;
-	float areaBoundymin;
-	float areaBoundymax;
-	float areaBoundzmin;
-	float areaBoundzmax;
-};
-
-AreaBoundaries Area;
+AreaBounds localArea;
 
 
 //struct consistent with dusans controller
@@ -156,13 +145,13 @@ bool safetyCheck(ViconData data){
 	//ROS_INFO_STREAM("ViconData: " << data.x << ", " << data.y << ", " << data.z);
 	
 	//position check
-	if((data.x < Area.areaBoundxmin) or (data.x < Area.areaBoundxmax)){
+	if((data.x < localArea.xmin) or (data.x > localArea.xmax)){
 		return true;
 	}
-	if((data.y < Area.areaBoundymin) or (data.z < Area.areaBoundymax)){
+	if((data.y < localArea.ymin) or (data.y > localArea.ymax)){
 		return true;
 	}
-	if((data.z < Area.areaBoundzmin) or (data.z < Area.areaBoundzmax)){
+	if((data.z < localArea.zmin) or (data.z > localArea.zmax)){
 		return true;
 	}
 	
@@ -174,7 +163,7 @@ bool safetyCheck(ViconData data){
 
 //is called upon every new arrival of data in main
 void viconCallback(const d_fall_pps::ViconData& data){
-	ROS_INFO("in viconCallback"); 
+	//ROS_INFO("in viconCallback"); 
 	//ROS_INFO_STREAM(data);
 	//ROS_INFO("My teamname is:"); ROS_INFO_STREAM(team);
 	//ROS_INFO("My crazyflie is:"); ROS_INFO_STREAM(cflie);
@@ -182,7 +171,7 @@ void viconCallback(const d_fall_pps::ViconData& data){
 	if(data.crazyflieName == cflie){	
 		//forward data to safety check
 		bool autocontrolOn = safetyCheck(data);
-		ROS_INFO_STREAM("autocontrolOn: " << autocontrolOn);
+		//ROS_INFO_STREAM("autocontrolOn: " << autocontrolOn);
 		ppsClientToController(data, autocontrolOn);
 	}
 	else {
@@ -294,14 +283,9 @@ int main(int argc, char* argv[]){
 	CentralManager ManagerSettings;
 	if(centralClient.call(ManagerSettings)){
 
-		Area.areaBoundxmin = ManagerSettings.response.context.localArea.xmin;
-		Area.areaBoundxmax = ManagerSettings.response.context.localArea.xmin;
-		Area.areaBoundymin = ManagerSettings.response.context.localArea.xmin;
-		Area.areaBoundymax = ManagerSettings.response.context.localArea.xmin;
-		Area.areaBoundzmin = ManagerSettings.response.context.localArea.xmin;
-		Area.areaBoundzmax = ManagerSettings.response.context.localArea.xmin;
+		localArea = ManagerSettings.response.context.localArea;
 		ROS_INFO("CentralManager responded");
-		ROS_INFO("AreaBoundaries Set");
+		ROS_INFO("localAreaBoundaries Set");
 		
 
 	}
