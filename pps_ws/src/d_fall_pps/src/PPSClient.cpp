@@ -55,7 +55,7 @@ ros::Publisher rateCommandPublisher;
 ros::Publisher motorCommandPublisher;
 
 //msg for safeController Output
-d_fall_pps::RateCommand safeRateCommandPkg;
+RateCommand safeRateCommandPkg;
 
 //uncommenting the next line causes FATAL Error at runtime: "You must call ros::init() before creating the first NodeHandle"
 //ros::NodeHandle nodeHandle;
@@ -162,7 +162,7 @@ bool safetyCheck(ViconData data){
 }
 
 //is called upon every new arrival of data in main
-void viconCallback(const d_fall_pps::ViconData& data){
+void viconCallback(const ViconData& data){
 	//ROS_INFO("in viconCallback"); 
 	//ROS_INFO_STREAM(data);
 	//ROS_INFO("My teamname is:"); ROS_INFO_STREAM(team);
@@ -186,7 +186,7 @@ void viconCallback(const d_fall_pps::ViconData& data){
 //callback method to publish d_fall_pps::AngleCommand
 void callbackAngleCommand(const ros::TimerEvent&)
 {
-	d_fall_pps::AngleCommand angleCommandPkg;
+	AngleCommand angleCommandPkg;
 	angleCommandPkg.rollAngle = 1;
 	angleCommandPkg.pitchAngle = 1;
 	angleCommandPkg.yawAngle = 1;
@@ -259,14 +259,14 @@ int main(int argc, char* argv[]){
 	
 	
 	//ros::Publishers to advertise on the three command type topics
-	angleCommandPublisher = nodeHandle.advertise <d_fall_pps::AngleCommand>("AngleCommand", 1);
-	rateCommandPublisher = nodeHandle.advertise<d_fall_pps::RateCommand>("RateCommand", 1);
-	motorCommandPublisher = nodeHandle.advertise <d_fall_pps::MotorCommand>("MotorCommand", 1);
+	angleCommandPublisher = nodeHandle.advertise <AngleCommand>("AngleCommand", 1);
+	rateCommandPublisher = nodeHandle.advertise<RateCommand>("RateCommand", 1);
+	motorCommandPublisher = nodeHandle.advertise <MotorCommand>("MotorCommand", 1);
 
 
 	//service 
 		//to be expanded with additional services depending on controller (currently only one available)
-	safeController = nodeHandle.serviceClient<d_fall_pps::RateController>("/SafeControllerService/RateController");
+	safeController = nodeHandle.serviceClient<RateController>("/SafeControllerService/RateController");
 	
 	//safeController = nodeHandle.serviceClient<d_fall_pps::RateController>("/SafeControllerService/RateController", true);
 	//http://wiki.ros.org/roscpp/Overview/Services 
@@ -275,7 +275,7 @@ int main(int argc, char* argv[]){
 
 
 	//service 
-	centralClient = nodeHandle.serviceClient<d_fall_pps::CentralManager>("/CentralManagerService/CentralManager");
+	centralClient = nodeHandle.serviceClient<CentralManager>("/CentralManagerService/CentralManager");
 	
 	
 	//TBD: some sort of init procedure to get data from CentralManager upfront
