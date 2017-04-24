@@ -129,6 +129,8 @@ if __name__ == '__main__':
         rospy.spin()
         rospy.loginfo("Turning off crazyflie")
         cf_client._send_to_commander(0, 0, 0, 0, 0, 0, 0, 0, CONTROLLER_MOTOR)
+        #wait for client to send its commands
+        time.sleep(1.0)
         cf_client._cf.close_link()
         rospy.loginfo("Link closed")
     else:

@@ -88,8 +88,7 @@ void ppsClientToController(ViconData data, bool autocontrolOn){
   				//onboardControllerType = ??????????????????????
 				
 				
-			}
-			else{
+			} else {
 				ROS_ERROR("Failed to call SafeControllerService");
 				//return 1; //return some useful stuff
 			}
@@ -171,6 +170,7 @@ int main(int argc, char* argv[]){
 
 	//service 
 		//to be expanded with additional services depending on controller (currently only one available)
+	ros::service::waitForService("/SafeControllerService/RateController");
 	safeController = nodeHandle.serviceClient<RateController>("/SafeControllerService/RateController", true);
 	
 	//safeController = nodeHandle.serviceClient<d_fall_pps::RateController>("/SafeControllerService/RateController", true);
