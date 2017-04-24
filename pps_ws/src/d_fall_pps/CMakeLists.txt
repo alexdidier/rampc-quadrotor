@@ -164,6 +164,12 @@ add_executable(PPSClient src/PPSClient.cpp)
 add_executable(SafeControllerService src/SafeControllerService.cpp)
 add_executable(CentralManagerService src/CentralManagerService.cpp)
 
+
+add_dependencies(ViconDataPublisher d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(PPSClient d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(SafeControllerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(CentralManagerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
