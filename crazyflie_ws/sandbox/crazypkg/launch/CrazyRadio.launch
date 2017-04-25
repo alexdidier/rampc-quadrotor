@@ -1,5 +1,0 @@
-<launch>
-
-	<node pkg="crazypkg" name="CrazyRadio" output="screen" type="CrazyRadio.py"/>
-
-</launch>
