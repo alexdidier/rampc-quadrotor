@@ -64,6 +64,8 @@ void MainGUIWindow::_init()
     QObject::connect(scene, SIGNAL(crazyFlyZoneSelected(int)), ui->tabWidget, SLOT(setCurrentIndex(int)));
     QObject::connect(scene, SIGNAL(modeChanged(int)), this, SLOT(transitionToMode(int)));
     QObject::connect(scene, SIGNAL(numTablePiecesChanged(int)), this, SLOT(handleTablePiecesNumChanged(int)));
+
+    ui->checkBox_vicon_highlight_markers->setEnabled(false);
 }
 
 #ifndef CATKIN_MAKE
@@ -228,6 +230,7 @@ void MainGUIWindow::on_checkBox_vicon_markers_toggled(bool checked)
         marker = new Marker(0, 0);
         scene->addItem(marker);
         ui->checkBox_vicon_highlight_markers->setCheckable(true);
+        ui->checkBox_vicon_highlight_markers->setEnabled(true);
     }
     else
     {
@@ -235,6 +238,7 @@ void MainGUIWindow::on_checkBox_vicon_markers_toggled(bool checked)
         delete marker;
         ui->checkBox_vicon_highlight_markers->setChecked(false);
         ui->checkBox_vicon_highlight_markers->setCheckable(false);
+        ui->checkBox_vicon_highlight_markers->setEnabled(false);
     }
 }
 
