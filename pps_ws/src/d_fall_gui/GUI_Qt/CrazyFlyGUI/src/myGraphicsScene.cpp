@@ -1,4 +1,5 @@
 #include "myGraphicsScene.h"
+#include "globalDefinitions.h"
 
 #include <QGraphicsSceneMouseEvent>
 #include <QRect>
@@ -14,6 +15,9 @@ myGraphicsScene::myGraphicsScene(QObject *parent)
     tmp_rect = 0;
     startedRect = false;
     setGrid(true);
+
+    marker = new Marker(0, 0);
+    this->addItem(marker);
 }
 
 
@@ -95,6 +99,7 @@ void myGraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent)
 {
     if (mouseEvent->button() != Qt::LeftButton)
         return;
+    qDebug("Mouse Position in world coord: %d, %d", (int)mapFromSceneToWorld((mouseEvent->scenePos()).toPoint()).x(), (int)mapFromSceneToWorld((mouseEvent->scenePos()).toPoint()).y());
     if(Qt::ControlModifier == QApplication::keyboardModifiers())
     {
         switch(mode)
@@ -322,7 +327,7 @@ void myGraphicsScene::drawBackground(QPainter *painter, const QRectF &rect)
 
     if(grid_enable)
     {
-        const int gridSize = 25;
+        const int gridSize = 1 * TO_METERS;
 
         qreal left = int(rect.left()) - (int(rect.left()) % gridSize);
         qreal top = int(rect.top()) - (int(rect.top()) % gridSize);
@@ -397,4 +402,17 @@ void myGraphicsScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent)
 
 
     QGraphicsScene::mouseReleaseEvent(mouseEvent);
+}
+
+
+QPointF myGraphicsScene::mapFromWorldToScene(QPointF point)
+{
+    QPointF new_point(point.x(), -1 * point.y());
+    return new_point;
+}
+
+QPointF myGraphicsScene::mapFromSceneToWorld(QPointF point)
+{
+    QPointF new_point(point.x(), -1 * point.y());
+    return new_point;
 }

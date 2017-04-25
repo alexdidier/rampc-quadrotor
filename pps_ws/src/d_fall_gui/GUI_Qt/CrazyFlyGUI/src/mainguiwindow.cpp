@@ -48,10 +48,14 @@ void MainGUIWindow::set_tabs(int n)
 void MainGUIWindow::_init()
 {
 
-    scene = new myGraphicsScene(ui->frame_drawing);
-    scene->setSceneRect(QRectF(QPointF(-1400, 1400), QSizeF(1400, 1400)));
-
     ui->graphicsView->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
+
+    scene = new myGraphicsScene(ui->frame_drawing);
+    scene->setSceneRect(-100 * TO_METERS, -100 * TO_METERS, 200 * TO_METERS, 200 * TO_METERS);
+
+    // Marker* marker = new Marker(0, 0);
+    // scene->addItem(marker);
+
     ui->graphicsView->setScene(scene);
 
     QObject::connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)), scene, SLOT(removeCrazyFlyZone(int)));

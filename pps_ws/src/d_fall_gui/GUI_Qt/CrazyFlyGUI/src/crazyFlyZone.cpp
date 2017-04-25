@@ -1,4 +1,5 @@
 #include "crazyFlyZone.h"
+#include "globalDefinitions.h"
 
 crazyFlyZone::crazyFlyZone(const QRectF & rect, int index,  QGraphicsItem * parent)
     : myGraphicsRectItem(rect, parent)
@@ -17,14 +18,14 @@ void crazyFlyZone::setLabel(QString string)
 {
     label = new QGraphicsSimpleTextItem(string, this);
     label->setFlag(QGraphicsItem::ItemIgnoresTransformations);
-    label->setFont(QFont("Arial", 18, QFont::Bold, true));
+    label->setFont(QFont("Arial", 16, QFont::Bold, true));
     setLabelPosition();
 }
 
 void crazyFlyZone::setLabelPosition()
 {
-    qreal x_offset = 10;
-    qreal y_offset = 5;
+    qreal x_offset = 0.1 * TO_METERS;
+    qreal y_offset = 0.05 * TO_METERS;
     label->setPos(this->rect().topLeft().x() + x_offset,this->rect().topLeft().y() + y_offset);
 }
 

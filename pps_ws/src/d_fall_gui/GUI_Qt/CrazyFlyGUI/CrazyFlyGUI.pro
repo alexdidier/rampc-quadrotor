@@ -24,7 +24,8 @@ SOURCES += \
     src/myGraphicsRectItem.cpp \
     src/myGraphicsScene.cpp \
     src/myGraphicsView.cpp \
-    src/tablePiece.cpp
+    src/tablePiece.cpp \
+    src/marker.cpp
 
 HEADERS  += \
     include/cornergrabber.h \
@@ -34,7 +35,9 @@ HEADERS  += \
     include/myGraphicsRectItem.h \
     include/myGraphicsScene.h \
     include/myGraphicsView.h \
-    include/tablePiece.h
+    include/tablePiece.h \
+    include/globalDefinitions.h \
+    include/marker.h
 
 FORMS    += \
     src/mainguiwindow.ui

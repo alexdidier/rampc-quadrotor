@@ -7,7 +7,6 @@
 #include <QGridLayout>
 #include <QGraphicsRectItem>
 
-
 #ifdef CATKIN_MAKE
 #include "ros/callback_queue.h"
 #include "ros/ros.h"
@@ -15,6 +14,10 @@
 
 #include "ui_mainguiwindow.h"
 #include "myGraphicsScene.h"
+#include "globalDefinitions.h"
+
+#include "marker.h"             // temporal, just to check
+
 
 namespace Ui {
 class MainGUIWindow;
@@ -94,7 +97,6 @@ private:
 
     Ui::MainGUIWindow *ui;
     myGraphicsScene* scene;
-
     void _init();
 
     #ifdef CATKIN_MAKE

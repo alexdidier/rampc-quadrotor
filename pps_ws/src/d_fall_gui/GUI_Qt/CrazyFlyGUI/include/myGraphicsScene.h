@@ -8,6 +8,8 @@
 #include "crazyFlyZone.h"
 #include "tablePiece.h"
 
+#include "marker.h"
+
 class QGraphicsSceneMouseEvent;
 class QPointF;
 class QColor;
@@ -34,6 +36,10 @@ public:
     void showCrazyFlyZones();
 
     QRectF getRectFCrazyFlyZone(int index);
+
+    // Y axis in QGraphicsView is inverted wrt normal axis. This functions map from one way to the other
+    QPointF mapFromWorldToScene(QPointF point);
+    QPointF mapFromSceneToWorld(QPointF point);
 
     enum {mode_table, mode_crazyfly_zones, mode_locked};
 
@@ -77,6 +83,8 @@ private:
     tablePiece* tmp_table_piece_item;
     QPointF* p1;
     QPointF* p2;
+
+    Marker* marker;
 
     bool startedRect;
     int mode;

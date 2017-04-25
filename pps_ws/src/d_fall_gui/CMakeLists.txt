@@ -179,6 +179,7 @@ set(MY_LIB_SOURCES              # compilation of sources
     ${MY_LIB_PATH_SRC}/myGraphicsScene.cpp
     ${MY_LIB_PATH_SRC}/myGraphicsView.cpp
     ${MY_LIB_PATH_SRC}/tablePiece.cpp
+    ${MY_LIB_PATH_SRC}/marker.cpp
     )
 
 
