@@ -13,6 +13,8 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   )
 
+# Add precompiler definitions to include ROS things in GUI compilation
+add_definitions(-DCATKIN_MAKE)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
@@ -185,6 +187,7 @@ add_library(my_library ${MY_LIB_SOURCES})
 target_link_libraries(my_GUI Qt5::Widgets) # let my_GUI have acesss to Qt stuff
 target_link_libraries(my_library Qt5::Widgets) # let my_library have access to Qt stuff
 target_link_libraries(my_GUI my_library)
+target_link_libraries(my_GUI ${catkin_LIBRARIES})
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the

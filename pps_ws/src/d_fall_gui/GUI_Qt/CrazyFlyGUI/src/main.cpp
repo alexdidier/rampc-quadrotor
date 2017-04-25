@@ -2,35 +2,23 @@
 #include "ui_mainguiwindow.h"
 #include <QApplication>
 
-#ifndef DEBUG_GUI
-#include "CrazyFlieInclude.h"
+#ifdef CATKIN_MAKE
 #endif
 
 int main(int argc, char *argv[])
 {
-    #ifndef DEBUG_GUI
+    #ifdef CATKIN_MAKE
     ros::init(argc, argv, "GUI");
     ros::NodeHandle nodeHandle("~");
     #endif
     QApplication applicationGUI(argc, argv);
 
-    #ifndef DEBUG_GUI
-    MainGUIWindow mainWindow(&nodeHandle);
-    mainWindow.init();
-    #else
     MainGUIWindow mainWindow;
-    #endif
-
-    #ifndef DEBUG_GUI
-    QTimer *timerExecuteCallbacks = new QTimer(&applicationGUI);
-    mainWindow.connect(timerExecuteCallbacks, SIGNAL(timeout()), &mainWindow, SLOT(runCallbacks()));
-    timerExecuteCallbacks->start(100);
-    #endif
 
     mainWindow.show();
     applicationGUI.exec();
 
-    #ifndef DEBUG_GUI
+    #ifdef CATKIN_MAKE
     ROS_WARN("GUI application terminated");
     #endif
 }
