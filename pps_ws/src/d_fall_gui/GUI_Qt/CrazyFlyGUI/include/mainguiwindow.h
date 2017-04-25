@@ -93,11 +93,17 @@ private slots:
 
     void on_pushButton_fitAll_clicked();
 
+    void on_checkBox_vicon_markers_toggled(bool checked);
+
+    void on_checkBox_vicon_highlight_markers_toggled(bool checked);
+
 private:
 
     Ui::MainGUIWindow *ui;
     myGraphicsScene* scene;
     void _init();
+
+    Marker* marker;
 
     #ifdef CATKIN_MAKE
 

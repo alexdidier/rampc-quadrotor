@@ -15,9 +15,6 @@ myGraphicsScene::myGraphicsScene(QObject *parent)
     tmp_rect = 0;
     startedRect = false;
     setGrid(true);
-
-    marker = new Marker(0, 0);
-    this->addItem(marker);
 }
 
 

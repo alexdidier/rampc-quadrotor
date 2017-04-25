@@ -19,31 +19,42 @@ Marker::Marker(qreal x, qreal y, QGraphicsItem * parent)
     this->setPen(Qt::NoPen);
     this->setBrush(QColor(255, 0, 0));
     this->setZValue(10);        // max z value, should always be seen
-
-    setHighlighted();
 }
 
 void Marker::setHighlighted(void)
 {
-    prepareGeometryChange();
-    _highlight_circle = new QGraphicsEllipseItem();
-    _highlight_circle->setRect(QRectF(_x_highlight, _y_highlight, _highlight_diameter, _highlight_diameter));
-    _highlight_circle->setPen(QPen(QBrush(Qt::black), HIGHLIGHT_WIDTH));
-    _highlight_circle->setParentItem(this);
-    _highlight_circle->setFlag(QGraphicsItem::ItemIgnoresTransformations);
-    _highlighted = true;
+    if(!_highlighted)
+    {
+        prepareGeometryChange();
+        _highlight_circle = new QGraphicsEllipseItem();
+        _highlight_circle->setRect(QRectF(_x_highlight, _y_highlight, _highlight_diameter, _highlight_diameter));
+        _highlight_circle->setPen(QPen(QBrush(Qt::black), HIGHLIGHT_WIDTH));
+        _highlight_circle->setParentItem(this);
+        _highlight_circle->setFlag(QGraphicsItem::ItemIgnoresTransformations);
+        _highlighted = true;
+    }
 }
 
 void Marker::clearHighlighted(void)
 {
-    prepareGeometryChange();
-    _highlighted = false;
+    if(_highlighted)
+    {
+        prepareGeometryChange();
+        _highlight_circle->setParentItem(NULL);
+        delete _highlight_circle;
+        _highlighted = false;
+    }
 }
 
 
 bool Marker::getHighlighted(void)
 {
     return _highlighted;
+}
+
+Marker::~Marker()
+{
+    clearHighlighted();
 }
 
 

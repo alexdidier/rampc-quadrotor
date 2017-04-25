@@ -171,8 +171,8 @@
       <rect>
        <x>790</x>
        <y>230</y>
-       <width>120</width>
-       <height>141</height>
+       <width>131</width>
+       <height>131</height>
       </rect>
      </property>
      <property name="title">
@@ -216,12 +216,15 @@
       <property name="text">
        <string>Show Markers</string>
       </property>
+      <property name="checked">
+       <bool>false</bool>
+      </property>
      </widget>
      <widget class="QCheckBox" name="checkBox_grid">
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>60</y>
+        <y>80</y>
         <width>101</width>
         <height>20</height>
        </rect>
@@ -242,7 +245,7 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>80</y>
+        <y>100</y>
         <width>101</width>
         <height>20</height>
        </rect>
@@ -257,6 +260,27 @@
       </property>
       <property name="checked">
        <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="checkBox_vicon_highlight_markers">
+      <property name="geometry">
+       <rect>
+        <x>30</x>
+        <y>60</y>
+        <width>101</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>6</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Highlight Markers</string>
+      </property>
+      <property name="checkable">
+       <bool>false</bool>
       </property>
      </widget>
     </widget>

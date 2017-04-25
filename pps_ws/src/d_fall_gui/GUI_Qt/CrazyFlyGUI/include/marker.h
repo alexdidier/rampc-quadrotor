@@ -15,6 +15,7 @@ class Marker : public QGraphicsEllipseItem
 
 public:
     explicit Marker(qreal x, qreal y, QGraphicsItem *parent = 0);
+    ~Marker();
 
     void setHighlighted(void);
 

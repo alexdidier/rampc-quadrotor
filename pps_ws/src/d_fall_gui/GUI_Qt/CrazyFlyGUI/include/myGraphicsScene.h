@@ -8,7 +8,6 @@
 #include "crazyFlyZone.h"
 #include "tablePiece.h"
 
-#include "marker.h"
 
 class QGraphicsSceneMouseEvent;
 class QPointF;
@@ -84,7 +83,6 @@ private:
     QPointF* p1;
     QPointF* p2;
 
-    Marker* marker;
 
     bool startedRect;
     int mode;

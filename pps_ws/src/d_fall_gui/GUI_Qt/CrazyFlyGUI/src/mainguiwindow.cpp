@@ -219,3 +219,33 @@ void MainGUIWindow::on_pushButton_fitAll_clicked()
     ui->graphicsView->fitInView(scene->itemsBoundingRect(), Qt::KeepAspectRatio);
     ui->graphicsView->scale(0.95, 0.95); // A bit back zoom, so we can see everything better
 }
+
+void MainGUIWindow::on_checkBox_vicon_markers_toggled(bool checked)
+{
+    // This is temporal, just to see effect. In the end the marker will be created with data from vicon
+    if(checked)
+    {
+        marker = new Marker(0, 0);
+        scene->addItem(marker);
+        ui->checkBox_vicon_highlight_markers->setCheckable(true);
+    }
+    else
+    {
+        marker->setParentItem(NULL);
+        delete marker;
+        ui->checkBox_vicon_highlight_markers->setChecked(false);
+        ui->checkBox_vicon_highlight_markers->setCheckable(false);
+    }
+}
+
+void MainGUIWindow::on_checkBox_vicon_highlight_markers_toggled(bool checked)
+{
+    if(checked)
+    {
+        marker->setHighlighted();
+    }
+    else
+    {
+        marker->clearHighlighted();
+    }
+}
