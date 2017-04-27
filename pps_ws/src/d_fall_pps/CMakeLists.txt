@@ -15,20 +15,23 @@ find_package(catkin REQUIRED COMPONENTS
   genmsg
 )
 
-# Add precompiler definitions to include ROS things in GUI compilation
+
+# GUI -- Add precompiler definitions to include ROS things in GUI compilation
 add_definitions(-DCATKIN_MAKE)
 
+# GUI -- Things needed for Qt wrapper build process
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
+# GUI -- Add Qt support
 find_package(Qt5Widgets REQUIRED)
 find_package(Qt5Core REQUIRED)
 find_package(Qt5Gui REQUIRED)
 
-
+# GUI -- Add src and includes
 set(MY_LIB_PATH_SRC ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/src)
 set(MY_LIB_PATH_INC ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/include)
 
@@ -37,15 +40,19 @@ set(MY_LIB_PATH_INC ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/include)
 # #set the default path for built libraries to the "lib" directory
 # set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
+# GUI -- need c++11 for some things
 add_definitions(-std=c++11)
 
-set(SRC_HDRS_QOBJECT            #sources that have the Qt macro QOBJECT inside, the MOC cpp file needs to be done manually
+# GUI -- Special Qt sources that need to be wrapped before being compiled
+# they have the Qt macro QOBJECT inside, the MOC cpp file needs to be done manually
+set(SRC_HDRS_QOBJECT
   ${MY_LIB_PATH_INC}/crazyFlyZoneTab.h
   ${MY_LIB_PATH_INC}/myGraphicsScene.h
   ${MY_LIB_PATH_INC}/myGraphicsView.h
   ${MY_LIB_PATH_INC}/mainguiwindow.h
   )
 
+# GUI -- wrap UI file and QOBJECT files
 qt5_wrap_ui(UIS_HDRS GUI_Qt/CrazyFlyGUI/src/mainguiwindow.ui)
 qt5_wrap_cpp(SRC_MOC_HDRS ${SRC_HDRS_QOBJECT})
 
@@ -171,7 +178,7 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
-  ${MY_LIB_PATH_INC}
+  ${MY_LIB_PATH_INC}            # GUI -- include directory inside GUI folder
   ${catkin_INCLUDE_DIRS}
   include
 )
@@ -195,9 +202,13 @@ add_executable(PPSClient src/PPSClient.cpp)
 add_executable(SafeControllerService src/SafeControllerService.cpp)
 add_executable(CentralManagerService src/CentralManagerService.cpp)
 
+
+# GUI -- add executables here
 add_executable(my_GUI GUI_Qt/CrazyFlyGUI/src/mainguiwindow.cpp GUI_Qt/CrazyFlyGUI/src/main.cpp ${UIS_HDRS} ${SRC_HDRS_QOBJECT})
 qt5_use_modules(my_GUI Widgets)
 
+
+# GUI -- add sources here
 set(MY_LIB_SOURCES              # compilation of sources
     ${MY_LIB_PATH_SRC}/cornergrabber.cpp
     ${MY_LIB_PATH_SRC}/crazyFlyZone.cpp
@@ -208,6 +219,9 @@ set(MY_LIB_SOURCES              # compilation of sources
     ${MY_LIB_PATH_SRC}/tablePiece.cpp
     ${MY_LIB_PATH_SRC}/marker.cpp
     )
+
+
+
 
 add_dependencies(ViconDataPublisher d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(PPSClient d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
@@ -241,10 +255,14 @@ target_link_libraries(SafeControllerService ${catkin_LIBRARIES})
 target_link_libraries(CentralManagerService ${catkin_LIBRARIES})
 
 
+
+# GUI -- add libraries
 add_library(my_library ${MY_LIB_SOURCES})
 
-target_link_libraries(my_GUI Qt5::Widgets) # let my_GUI have acesss to Qt stuff
-target_link_libraries(my_library Qt5::Widgets) # let my_library have access to Qt stuff
+
+# GUI -- link libraries
+target_link_libraries(my_GUI Qt5::Widgets) # GUI -- let my_GUI have acesss to Qt stuff
+target_link_libraries(my_library Qt5::Widgets) # GUI -- let my_library have access to Qt stuff
 target_link_libraries(my_GUI my_library)
 target_link_libraries(my_GUI ${catkin_LIBRARIES})
 
