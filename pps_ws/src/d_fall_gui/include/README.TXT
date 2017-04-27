@@ -1,1 +1,0 @@
-This file is here to have git create an include directory, as git only tracks files and not directories. If you were to make a fresh clone of the repository, the package d_fall_gui would not compile, as catkin requires the include directory. This file can be deleted as soon as there is something else in the include directory.
