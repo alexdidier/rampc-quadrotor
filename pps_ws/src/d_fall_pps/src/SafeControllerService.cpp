@@ -67,8 +67,8 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     float yaw = request.crazyflieLocation.yaw - request.setpoint.yaw;
 
     response.controlOutput.roll = -(k[0] * px + k[1] * py + k[2] * pz + k[3] * vx + k[4] * vy + k[5] * vz + k[6] * roll + k[7] * pitch + k[8] * yaw);
-    response.controlOutput.rate = -(k[9] * px + k[10] * py + k[11] * pz + k[12] * vx + k[13] * vy + k[14] * vz + k[15] * roll + k[16] * pitch + k[17] * yaw);
-    response.controlOutput.rate = -(k[18] * px + k[19] * py + k[20] * pz + k[21] * vx + k[22] * vy + k[23] * vz + k[24] * roll + k[25] * pitch + k[26] * yaw);
+    response.controlOutput.pitch = -(k[9] * px + k[10] * py + k[11] * pz + k[12] * vx + k[13] * vy + k[14] * vz + k[15] * roll + k[16] * pitch + k[17] * yaw);
+    response.controlOutput.yaw = -(k[18] * px + k[19] * py + k[20] * pz + k[21] * vx + k[22] * vy + k[23] * vz + k[24] * roll + k[25] * pitch + k[26] * yaw);
     float thrustIntermediate = -(k[27] * px + k[28] * py + k[29] * pz + k[30] * vx + k[31] * vy + k[32] * vz + k[33] * roll + k[34] * pitch + k[35] * yaw);
     //idea: linerazie plot and apply on sum of thrust instead of on each motor
     if(thrustIntermediate < 0) {thrustIntermediate = 0;}
