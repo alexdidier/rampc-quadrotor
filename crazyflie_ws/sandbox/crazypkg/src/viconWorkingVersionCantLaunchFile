@@ -1,0 +1,486 @@
+///////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (C) OMG Plc 2009.
+// All rights reserved.  This software is protected by copyright
+// law and international treaties.  No part of this software / document
+// may be reproduced or distributed in any form or by any means,
+// whether transiently or incidentally to some other use of this software,
+// without the written permission of the copyright owner.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+#include <DataStreamClient.h>
+
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <cassert>
+#include <ctime>
+#include <vector>
+#include <string.h>
+#include <math.h>
+#include "ros/ros.h"
+
+#ifdef WIN32
+  #include <conio.h>   // For _kbhit()
+  #include <cstdio>   // For getchar()
+  #include <windows.h> // For Sleep()
+#else
+  #include <unistd.h> // For sleep()
+#endif // WIN32
+
+#include <time.h>
+
+
+using namespace ViconDataStreamSDK::CPP;
+
+#define output_stream if(!LogFile.empty()) ; else std::cout 
+
+namespace
+{
+  std::string Adapt( const bool i_Value )
+  {
+    return i_Value ? "True" : "False";
+  }
+
+  std::string Adapt( const Direction::Enum i_Direction )
+  {
+    switch( i_Direction )
+    {
+      case Direction::Forward:
+        return "Forward";
+      case Direction::Backward:
+        return "Backward";
+      case Direction::Left:
+        return "Left";
+      case Direction::Right:
+        return "Right";
+      case Direction::Up:
+        return "Up";
+      case Direction::Down:
+        return "Down";
+      default:
+        return "Unknown";
+    }
+  }
+
+  std::string Adapt( const DeviceType::Enum i_DeviceType )
+  {
+    switch( i_DeviceType )
+    {
+      case DeviceType::ForcePlate:
+        return "ForcePlate";
+      case DeviceType::Unknown:
+      default:
+        return "Unknown";
+    }
+  }
+
+  std::string Adapt( const Unit::Enum i_Unit )
+  {
+    switch( i_Unit )
+    {
+      case Unit::Meter:
+        return "Meter";
+      case Unit::Volt:
+        return "Volt";
+      case Unit::NewtonMeter:
+        return "NewtonMeter";
+      case Unit::Newton:
+        return "Newton";
+      case Unit::Kilogram:
+        return "Kilogram";
+      case Unit::Second:
+        return "Second";
+      case Unit::Ampere:
+        return "Ampere";
+      case Unit::Kelvin:
+        return "Kelvin";
+      case Unit::Mole:
+        return "Mole";
+      case Unit::Candela:
+        return "Candela";
+      case Unit::Radian:
+        return "Radian";
+      case Unit::Steradian:
+        return "Steradian";
+      case Unit::MeterSquared:
+        return "MeterSquared";
+      case Unit::MeterCubed:
+        return "MeterCubed";
+      case Unit::MeterPerSecond:
+        return "MeterPerSecond";
+      case Unit::MeterPerSecondSquared:
+        return "MeterPerSecondSquared";
+      case Unit::RadianPerSecond:
+        return "RadianPerSecond";
+      case Unit::RadianPerSecondSquared:
+        return "RadianPerSecondSquared";
+      case Unit::Hertz:
+        return "Hertz";
+      case Unit::Joule:
+        return "Joule";
+      case Unit::Watt:
+        return "Watt";
+      case Unit::Pascal:
+        return "Pascal";
+      case Unit::Lumen:
+        return "Lumen";
+      case Unit::Lux:
+        return "Lux";
+      case Unit::Coulomb:
+        return "Coulomb";
+      case Unit::Ohm:
+        return "Ohm";
+      case Unit::Farad:
+        return "Farad";
+      case Unit::Weber:
+        return "Weber";
+      case Unit::Tesla:
+        return "Tesla";
+      case Unit::Henry:
+        return "Henry";
+      case Unit::Siemens:
+        return "Siemens";
+      case Unit::Becquerel:
+        return "Becquerel";
+      case Unit::Gray:
+        return "Gray";
+      case Unit::Sievert:
+        return "Sievert";
+      case Unit::Katal:
+        return "Katal";
+
+      case Unit::Unknown:
+      default:
+        return "Unknown";
+    }
+  }
+#ifdef WIN32
+  bool Hit()
+  {
+    bool hit = false;
+    while( _kbhit() )
+    {
+      getchar();
+      hit = true;
+    }
+    return hit;
+  }
+#endif
+}
+
+int main( int argc, char* argv[] )
+{
+  // Program options
+  
+//std::string HostName = "169.254.8.55:801";
+//std::string HostName = "192.168.10.1:801";
+std::string HostName = "10.42.0.15:801"; 
+//std::string HostName = "192.168.10.1"; 
+//std::string HostName = "192.168.56.1"; 
+
+
+  if( argc > 1 )
+  {
+    HostName = argv[1];
+  }
+
+  // log contains:
+  // version number
+  // log of framerate over time
+  // --multicast
+  // kill off internal app
+  std::string LogFile = "";
+  std::string MulticastAddress = "224.0.0.0:44801";
+  bool ConnectToMultiCast = false;
+  bool EnableMultiCast = false;
+  bool EnableHapticTest = false;
+  bool bReadCentroids = false;
+  std::vector<std::string> HapticOnList(0);
+  for(int a=2; a < argc; ++a)
+  {
+    std::string arg = argv[a];
+    if(arg == "--help")
+    {
+      std::cout << argv[0] << " <HostName>: allowed options include:\n  --log_file <LogFile> --enable_multicast <MulticastAddress:Port> --connect_to_multicast <MulticastAddress:Port> --help --enable_haptic_test <DeviceName> --centroids" << std::endl;
+      return 0;
+    }
+    else if (arg=="--log_file")
+    {
+      if(a < argc)
+      {
+        LogFile = argv[a+1];
+        std::cout << "Using log file <"<< LogFile << "> ..." << std::endl;
+        ++a;
+      }
+    }
+    else if (arg=="--enable_multicast")
+    {
+      EnableMultiCast = true;
+      if(a < argc)
+      {
+        MulticastAddress = argv[a+1];
+        std::cout << "Enabling multicast address <"<< MulticastAddress << "> ..." << std::endl;
+        ++a;
+      }
+    }
+    else if (arg=="--connect_to_multicast")
+    {
+      ConnectToMultiCast = true;
+      if(a < argc)
+      {
+        MulticastAddress = argv[a+1];
+        std::cout << "connecting to multicast address <"<< MulticastAddress << "> ..." << std::endl;
+        ++a;
+      }
+    }
+    else if (arg=="--enable_haptic_test")
+    {
+      EnableHapticTest = true;
+      ++a;
+      if ( a < argc )
+      {    
+        //assuming no haptic device name starts with "--"
+        while( a < argc && strncmp( argv[a], "--", 2 ) !=0  )
+        {
+          HapticOnList.push_back( argv[a] );
+          ++a;
+        }
+      }
+    }
+    else if( arg=="--centroids" )
+    {
+      bReadCentroids = true;
+    }
+    else
+    {
+      std::cout << "Failed to understand argument <" << argv[a] << ">...exiting" << std::endl;
+      return 1;
+    }
+  }
+
+  std::ofstream ofs;
+  if(!LogFile.empty())
+  {
+    ofs.open(LogFile.c_str());
+    if(!ofs.is_open())
+    {
+      std::cout << "Could not open log file <" << LogFile << ">...exiting" << std::endl;
+      return 1;
+    }
+  }
+  // Make a new client
+  Client MyClient;
+
+  for(int i=0; i != 3; ++i) // repeat to check disconnecting doesn't wreck next connect
+  {
+    // Connect to a server
+    std::cout << "Connecting to " << HostName << " ..." << std::flush;
+    while( !MyClient.IsConnected().Connected )
+    {
+      // Direct connection
+
+      bool ok = false;
+      if(ConnectToMultiCast)
+      {
+        // Multicast connection
+        ok = ( MyClient.ConnectToMulticast( HostName, MulticastAddress ).Result == Result::Success );
+
+      }
+      else
+      {	
+        ok =( MyClient.Connect( HostName ).Result == Result::Success );
+      }
+      if(!ok)
+      {
+        std::cout << "Warning - connect failed..." << std::endl;
+      }
+      else
+      {
+	std::cout << "Connected successfully" << std::endl;
+      }
+
+
+      std::cout << ".";
+  #ifdef WIN32
+      Sleep( 1000 );
+  #else
+      sleep(1);
+  #endif
+    }
+    std::cout << std::endl;
+
+    // Enable some different data types
+    MyClient.EnableSegmentData();
+    MyClient.EnableMarkerData();
+    MyClient.EnableUnlabeledMarkerData();
+    MyClient.EnableDeviceData();
+    if( bReadCentroids )
+    {
+      MyClient.EnableCentroidData();
+    }
+
+    // Set the streaming mode
+    MyClient.SetStreamMode( ViconDataStreamSDK::CPP::StreamMode::ClientPull );
+    //MyClient.SetStreamMode( ViconDataStreamSDK::CPP::StreamMode::ClientPullPreFetch );
+    //MyClient.SetStreamMode( ViconDataStreamSDK::CPP::StreamMode::ServerPush );
+
+    // Set the global up axis
+    MyClient.SetAxisMapping( Direction::Forward, 
+                             Direction::Left, 
+                             Direction::Up ); // Z-up
+    // MyClient.SetGlobalUpAxis( Direction::Forward, 
+    //                           Direction::Up, 
+    //                           Direction::Right ); // Y-up
+
+    if( EnableMultiCast )
+    {
+      assert( MyClient.IsConnected().Connected );
+      MyClient.StartTransmittingMulticast( HostName, MulticastAddress );
+    }
+
+    /*size_t FrameRateWindow = 1000; // frames
+    size_t Counter = 0;
+    clock_t LastTime = clock();
+    ros::Time::init();
+    ros::Time lasttime=ros::Time::now();
+    ros::Time nowtime;*/
+
+    // Open the log file from which the python client will read in the values.
+    //std::ofstream logdata;
+    double quat_x, quat_y, quat_z, quat_w, roll, pitch, yaw;
+
+    // Loop until a key is pressed
+
+  #ifdef WIN32
+    while( !Hit() )
+  #else
+    while( true)
+  #endif
+
+    {
+      // Get a frame
+      //output_stream << "Waiting for new frame...";
+      while( MyClient.GetFrame().Result != Result::Success )
+      {
+        // Sleep a little so that we don't lumber the CPU with a busy poll
+        #ifdef WIN32
+          Sleep( 200 );
+        #else
+          sleep(10);
+        #endif
+
+        output_stream << ".";
+      }
+      //output_stream << std::endl;
+
+      /*if(++Counter == FrameRateWindow)
+      {
+        clock_t Now = clock();
+        nowtime=ros::Time::now();
+        //double FrameRate = (double)(FrameRateWindow * CLOCKS_PER_SEC) / (double)(Now - LastTime);
+        ros::Duration dur=(nowtime - lasttime);
+        double FrameRate = (double)(FrameRateWindow) / (dur.toSec());
+        //std::cout<<nowtime<<"  "<<lasttime<<"  "<<FrameRateWindow<<"  "<<"  "<<dur<<"  "<<FrameRate<<std::endl;
+        lasttime=nowtime;
+        if(!LogFile.empty())
+        {
+          time_t rawtime;
+          struct tm * timeinfo;
+          time ( &rawtime );
+          timeinfo = localtime ( &rawtime );
+
+          ofs << "Frame rate = " << FrameRate << " at " <<  asctime (timeinfo)<< std::endl;
+        }
+
+        LastTime = Now;
+        Counter = 1;
+      }*/
+
+      // Get the frame number
+     // Output_GetFrameNumber _Output_GetFrameNumber = MyClient.GetFrameNumber();
+     // output_stream << "Frame Number: " << _Output_GetFrameNumber.FrameNumber << std::endl;
+
+      // Count the number of subjects
+      unsigned int SubjectCount = MyClient.GetSubjectCount().SubjectCount;
+      //output_stream << "Subjects (" << SubjectCount << "):" << std::endl;
+
+      //logdata.open("logFrame.txt", std::ios_base::trunc);
+
+      // Write selected data from all the subject into a file.
+      for( unsigned int SubjectIndex = 0 ; SubjectIndex < SubjectCount ; ++SubjectIndex )
+      {
+
+        // Get the subject's name
+        std::string SubjectName = MyClient.GetSubjectName( SubjectIndex ).SubjectName;
+        std::string SegmentName = MyClient.GetSegmentName( SubjectName, SubjectIndex ).SegmentName;
+
+        // Get global translations
+        Output_GetSegmentGlobalTranslation _Output_Translation = 
+              MyClient.GetSegmentGlobalTranslation( SubjectName, SegmentName );
+        // Get global rotations
+        Output_GetSegmentGlobalRotationQuaternion _Output_Rotation = 
+              MyClient.GetSegmentGlobalRotationQuaternion( SubjectName, SegmentName );
+
+        quat_x = _Output_Rotation.Rotation [ 0 ];
+        quat_y = _Output_Rotation.Rotation [ 1 ];
+        quat_z = _Output_Rotation.Rotation [ 2 ];
+        quat_w = _Output_Rotation.Rotation [ 3 ];
+
+        roll = atan2(2 * (quat_w * quat_x + quat_y * quat_z), 1 - 2 * (quat_x * quat_x + quat_y * quat_y));
+        pitch = asin(2 * (quat_w * quat_y - quat_z * quat_x));
+        yaw = atan2(2 * (quat_w * quat_z + quat_x * quat_y), 1 - 2 * (quat_y * quat_y + quat_z * quat_z));
+
+	
+        std::cout<<_Output_Translation.Translation[ 0 ]  << ",";
+        std::cout << _Output_Translation.Translation[ 1 ]  << ",";
+        std::cout << _Output_Translation.Translation[ 2 ]  << ",";
+        std::cout << roll  << ",";
+        std::cout << pitch  << ",";
+        std::cout << yaw << ",";
+        std::cout << std::endl;
+	
+        // Write the data to the file.
+        //logdata << _Output_GetFrameNumber.FrameNumber  << ":";
+        //logdata << SubjectName << ",";
+        //logdata << _Output_Translation.Translation[ 0 ]  << ",";
+        //logdata << _Output_Translation.Translation[ 1 ]  << ",";
+        //logdata << _Output_Translation.Translation[ 2 ]  << ",";
+        //logdata << roll  << ",";
+        //logdata << pitch  << ",";
+        //logdata << yaw << ",";
+        //logdata << std::endl;
+
+        //output_stream << "Roll: " << roll << ", Pitch: " << pitch << ", Yaw: " << yaw << std::endl;
+        //output_stream << quat_x << quat_y << quat_z << quat_w << std::endl;
+      }
+
+      //logdata.close();
+      //return 0;
+    }
+
+    if( EnableMultiCast )
+    {
+      MyClient.StopTransmittingMulticast();
+    }
+    MyClient.DisableSegmentData();
+    MyClient.DisableMarkerData();
+    MyClient.DisableUnlabeledMarkerData();
+    MyClient.DisableDeviceData();
+    if( bReadCentroids )
+    {
+      MyClient.DisableCentroidData();
+    }
+
+    // Disconnect and dispose
+    int t = clock();
+    std::cout << " Disconnecting..." << std::endl;
+    MyClient.Disconnect();
+    int dt = clock() - t;
+    double secs = (double) (dt)/(double)CLOCKS_PER_SEC;
+    std::cout << " Disconnect time = " << secs << " secs" << std::endl;
+
+  }
+}
+

@@ -1,0 +1,46 @@
+ViconDataStreamSDK: {HostName: '10.42.0.15:801'}
+rosdistro: 'kinetic
+
+  '
+roslaunch:
+  uris: {host_crazyfly_thinkpad_w550s__33019: 'http://crazyfly-ThinkPad-W550s:33019/',
+    host_crazyfly_thinkpad_w550s__33108: 'http://crazyfly-ThinkPad-W550s:33108/',
+    host_crazyfly_thinkpad_w550s__33114: 'http://crazyfly-ThinkPad-W550s:33114/',
+    host_crazyfly_thinkpad_w550s__33261: 'http://crazyfly-ThinkPad-W550s:33261/',
+    host_crazyfly_thinkpad_w550s__33377: 'http://crazyfly-ThinkPad-W550s:33377/',
+    host_crazyfly_thinkpad_w550s__33520: 'http://crazyfly-ThinkPad-W550s:33520/',
+    host_crazyfly_thinkpad_w550s__33898: 'http://crazyfly-ThinkPad-W550s:33898/',
+    host_crazyfly_thinkpad_w550s__34531: 'http://crazyfly-ThinkPad-W550s:34531/',
+    host_crazyfly_thinkpad_w550s__34769: 'http://crazyfly-ThinkPad-W550s:34769/',
+    host_crazyfly_thinkpad_w550s__35406: 'http://crazyfly-ThinkPad-W550s:35406/',
+    host_crazyfly_thinkpad_w550s__35614: 'http://crazyfly-ThinkPad-W550s:35614/',
+    host_crazyfly_thinkpad_w550s__35942: 'http://crazyfly-ThinkPad-W550s:35942/',
+    host_crazyfly_thinkpad_w550s__35948: 'http://crazyfly-ThinkPad-W550s:35948/',
+    host_crazyfly_thinkpad_w550s__36780: 'http://crazyfly-ThinkPad-W550s:36780/',
+    host_crazyfly_thinkpad_w550s__36910: 'http://crazyfly-ThinkPad-W550s:36910/',
+    host_crazyfly_thinkpad_w550s__37089: 'http://crazyfly-ThinkPad-W550s:37089/',
+    host_crazyfly_thinkpad_w550s__37491: 'http://crazyfly-ThinkPad-W550s:37491/',
+    host_crazyfly_thinkpad_w550s__37898: 'http://crazyfly-ThinkPad-W550s:37898/',
+    host_crazyfly_thinkpad_w550s__38400: 'http://crazyfly-ThinkPad-W550s:38400/',
+    host_crazyfly_thinkpad_w550s__39819: 'http://crazyfly-ThinkPad-W550s:39819/',
+    host_crazyfly_thinkpad_w550s__40058: 'http://crazyfly-ThinkPad-W550s:40058/',
+    host_crazyfly_thinkpad_w550s__40714: 'http://crazyfly-ThinkPad-W550s:40714/',
+    host_crazyfly_thinkpad_w550s__40827: 'http://crazyfly-ThinkPad-W550s:40827/',
+    host_crazyfly_thinkpad_w550s__42218: 'http://crazyfly-ThinkPad-W550s:42218/',
+    host_crazyfly_thinkpad_w550s__42530: 'http://crazyfly-ThinkPad-W550s:42530/',
+    host_crazyfly_thinkpad_w550s__42816: 'http://crazyfly-ThinkPad-W550s:42816/',
+    host_crazyfly_thinkpad_w550s__43017: 'http://crazyfly-ThinkPad-W550s:43017/',
+    host_crazyfly_thinkpad_w550s__44542: 'http://crazyfly-ThinkPad-W550s:44542/',
+    host_crazyfly_thinkpad_w550s__45144: 'http://crazyfly-ThinkPad-W550s:45144/',
+    host_crazyfly_thinkpad_w550s__45301: 'http://crazyfly-ThinkPad-W550s:45301/',
+    host_crazyfly_thinkpad_w550s__45624: 'http://crazyfly-ThinkPad-W550s:45624/',
+    host_crazyfly_thinkpad_w550s__45675: 'http://crazyfly-ThinkPad-W550s:45675/',
+    host_crazyfly_thinkpad_w550s__45720: 'http://crazyfly-ThinkPad-W550s:45720/',
+    host_crazyfly_thinkpad_w550s__46550: 'http://crazyfly-ThinkPad-W550s:46550/',
+    host_crazyfly_thinkpad_w550s__46652: 'http://crazyfly-ThinkPad-W550s:46652/'}
+rosversion: '1.12.5
+
+  '
+run_id: 702a5ff0-96dc-11e6-99b9-185e0fcceb5b
+turtlesim1: {background_b: 255, background_g: 86, background_r: 69}
+turtlesim2: {background_b: 255, background_g: 86, background_r: 69}

@@ -1,0 +1,9 @@
+-I/home/crazyfly/crazyflie_ws/sandbox/crazypkg/include
+-I/opt/ros/kinetic/include
+-I/usr/include
+-I/home/crazyfly/crazyflie_ws/sandbox/crazypkg
+-I/home/crazyfly/crazyflie_ws/sandbox/crazypkg/build
+-DROS_PACKAGE_NAME="crazypkg"
+-o
+/home/crazyfly/crazyflie_ws/sandbox/crazypkg/build/gui/untitled/moc_mainguiwindow.cpp
+/home/crazyfly/crazyflie_ws/sandbox/crazypkg/gui/untitled/mainguiwindow.h
