@@ -88,9 +88,7 @@ qt5_wrap_cpp(SRC_MOC_HDRS ${SRC_HDRS_QOBJECT})
 add_message_files(
   FILES
   ViconData.msg
-  MotorCommand.msg
-  AngleCommand.msg
-  RateCommand.msg
+  ControlCommand.msg
   Setpoint.msg
   CrazyflieContext.msg
   AreaBounds.msg
@@ -104,9 +102,7 @@ add_message_files(
 # )
 add_service_files(
   FILES
-  MotorController.srv
-  AngleController.srv
-  RateController.srv
+  Controller.srv
   CentralManager.srv
 )
 

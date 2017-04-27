@@ -78,7 +78,7 @@ void ppsClientToController(ViconData data, bool autocontrolOn){
 				ROS_INFO("Received control input");
 				ROS_INFO_STREAM(srvRate.response.controlOutput);
 				
-				rateCommandPublisher.publish(srvRate.response.controlOutput);
+				controlCommandPublisher.publish(srvRate.response.controlOutput);
   				//onboardControllerType = ??????????????????????
 				
 				
@@ -157,13 +157,13 @@ int main(int argc, char* argv[]){
 	ROS_INFO_STREAM("successfully subscribed to ViconData");
 	
 	//ros::Publishers to advertise the control output
-	controlCommandPublisher = nodeHandle.advertise <AngleCommand>("ControlCommand", 1);
+	controlCommandPublisher = nodeHandle.advertise <ControlCommand>("ControlCommand", 1);
 
 
 	//service 
 		//to be expanded with additional services depending on controller (currently only one available)
 	ros::service::waitForService("/SafeControllerService/RateController");
-	safeController = nodeHandle.serviceClient<RateController>("/SafeControllerService/RateController", true);
+	safeController = nodeHandle.serviceClient<Controller>("/SafeControllerService/RateController", true);
 	
 	//safeController = nodeHandle.serviceClient<d_fall_pps::RateController>("/SafeControllerService/RateController", true);
 	//http://wiki.ros.org/roscpp/Overview/Services 
