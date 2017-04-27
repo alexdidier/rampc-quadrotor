@@ -126,7 +126,7 @@ bool safetyCheck(ViconData data){
 
 //is called upon every new arrival of data in main
 void viconCallback(const ViconData& data){
-	ROS_INFO("in viconCallback"); 
+	ROS_INFO("in viconCallback PPSClient");
 	//ROS_INFO_STREAM(data);
 	//ROS_INFO("My teamname is:"); ROS_INFO_STREAM(team);
 	//ROS_INFO("My crazyflie is:"); ROS_INFO_STREAM(cflie);

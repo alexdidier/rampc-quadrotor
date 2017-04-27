@@ -5,6 +5,14 @@
 #ifdef CATKIN_MAKE
 #endif
 
+#ifdef CATKIN_MAKE
+
+using namespace d_fall_pps;
+
+
+#endif
+
+
 int main(int argc, char *argv[])
 {
     #ifdef CATKIN_MAKE
@@ -13,8 +21,11 @@ int main(int argc, char *argv[])
     #endif
     QApplication applicationGUI(argc, argv);
 
+    #ifdef CATKIN_MAKE
+    MainGUIWindow mainWindow(&nodeHandle);
+    #else
     MainGUIWindow mainWindow;
-
+    #endif
     mainWindow.show();
     applicationGUI.exec();
 

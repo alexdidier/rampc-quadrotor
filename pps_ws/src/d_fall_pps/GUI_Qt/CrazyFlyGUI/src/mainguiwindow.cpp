@@ -11,13 +11,32 @@
 
 #include <string>
 
+#ifdef CATKIN_MAKE
+
+using namespace d_fall_pps;
+
+void viconCallback(const ViconData& data)
+{
+    ROS_INFO("in viconCallback");
+    qDebug("in viconCallback");
+}
+#endif
+
+
 #define N_MAX_CRAZYFLIES           20 // protection number
 
 #ifdef CATKIN_MAKE
+MainGUIWindow::MainGUIWindow(ros::NodeHandle* pNodeHandle, QWidget *parent) :
+    QMainWindow(parent),
+    ui(new Ui::MainGUIWindow),
+    _pNodeHandle(pNodeHandle)
+{
+    ui->setupUi(this);
+    _init();
+}
+
+
 #else
-
-#endif
-
 MainGUIWindow::MainGUIWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainGUIWindow)
@@ -26,6 +45,9 @@ MainGUIWindow::MainGUIWindow(QWidget *parent) :
     ui->setupUi(this);
     _init();
 }
+
+#endif
+
 
 MainGUIWindow::~MainGUIWindow()
 {
@@ -47,6 +69,12 @@ void MainGUIWindow::set_tabs(int n)
 
 void MainGUIWindow::_init()
 {
+    sleep(1000);
+    #ifdef CATKIN_MAKE
+    ViconSubscriber = new ros::Subscriber(_pNodeHandle->subscribe("/ViconDataPublisher/ViconData", 1, viconCallback));
+    ROS_INFO("successfully subscribed to ViconData from GUI");
+    qDebug("successfully subscribed to ViconData from GUI");
+    #endif
 
     ui->graphicsView->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
 

@@ -10,6 +10,7 @@
 #ifdef CATKIN_MAKE
 #include "ros/callback_queue.h"
 #include "ros/ros.h"
+#include "d_fall_pps/ViconData.h"
 #endif
 
 #include "ui_mainguiwindow.h"
@@ -61,7 +62,11 @@ class MainGUIWindow : public QMainWindow
     Q_OBJECT
 
 public:
+    #ifdef CATKIN_MAKE
+    explicit MainGUIWindow(ros::NodeHandle* pNodeHandle, QWidget *parent = 0);
+    #else
     explicit MainGUIWindow(QWidget *parent = 0);
+    #endif
     ~MainGUIWindow();
 
 public slots:
@@ -106,6 +111,8 @@ private:
     Marker* marker;
 
     #ifdef CATKIN_MAKE
+    ros::NodeHandle* _pNodeHandle;
+    ros::Subscriber* ViconSubscriber;
 
     #endif
 };

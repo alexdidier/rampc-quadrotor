@@ -44,17 +44,21 @@ int main(int argc, char* argv[]) {
             nodeHandle.advertise<ViconData>("ViconData", 1);
 
     //publish something random if no viconData is available for testing
-    /*
-    ViconData viconData; 
-    double i = 1; 
-    while(true)
+
+    ViconData viconData;
+    int i = 1;
+    while(ros::ok())
     {
+        if(i % 1000 == 0)
+        {
+        	ROS_INFO("iteration #%d",i);
+    	}
     	viconData.roll  = i;
-    	 viconDataPublisher.publish(viconData);
-    	 ++i;
+        viconDataPublisher.publish(viconData);
+        ros::Duration(0.001).sleep();
+        ++i;
     }
     //the code will not go further than here if testing without real ViconData
-    */
 
     Client client;
 
