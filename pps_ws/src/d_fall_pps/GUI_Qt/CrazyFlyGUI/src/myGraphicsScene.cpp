@@ -321,6 +321,15 @@ void myGraphicsScene::removeTable()
 
 void myGraphicsScene::drawBackground(QPainter *painter, const QRectF &rect)
 {
+    // add coordinate origin. X is red, Y is Green
+
+    // X axis
+    painter->setPen(QPen(QColor(0xFF, 0, 0, 0xFF), 0));
+    painter->drawLine(QLineF(rect.left(), 0, rect.right(), 0));
+
+    // Y axis
+    painter->setPen(QPen(QColor(0, 0xFF, 0, 0xFF), 0));
+    painter->drawLine(QLineF(0, rect.top(), 0, rect.bottom()));
 
     if(grid_enable)
     {
@@ -332,8 +341,10 @@ void myGraphicsScene::drawBackground(QPainter *painter, const QRectF &rect)
         QVarLengthArray<QLineF, 100> lines;
 
         for (qreal x = left; x < rect.right(); x += gridSize)
+            if(x != 0)
             lines.append(QLineF(x, rect.top(), x, rect.bottom()));
         for (qreal y = top; y < rect.bottom(); y += gridSize)
+            if(y != 0)
             lines.append(QLineF(rect.left(), y, rect.right(), y));
 
         // qDebug() << lines.size();
