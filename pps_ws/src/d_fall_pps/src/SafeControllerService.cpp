@@ -17,15 +17,15 @@
 #include "ros/ros.h"
 #include "d_fall_pps/ViconData.h"
 #include "d_fall_pps/Setpoint.h"
-#include "d_fall_pps/RateCommand.h"
-#include "d_fall_pps/RateController.h"
+#include "d_fall_pps/ControlCommand.h"
+#include "d_fall_pps/Controller.h"
 
 using namespace d_fall_pps;
 
 
 ViconData previousLocation;
 
-bool calculateControlOutput(RateController::Request &request, RateController::Response &response) {
+bool calculateControlOutput(Controller::Request &request, Controller::Response &response) {
     ROS_INFO("calculate control output");
 
     //Philipp: I have put this here, because in the first call, we wouldnt have previousLocation initialized
@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
 
     ros::NodeHandle nodeHandle("~");
 
-    ros::ServiceServer service = nodeHandle.advertiseService("RateController", calculateControlOutput);
+    ros::ServiceServer service = nodeHandle.advertiseService("Controller", calculateControlOutput);
     ROS_INFO("SafeControllerService ready to send");
     ros::spin();
 
