@@ -1,32 +1,56 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(d_fall_pps)
-
-
-# GUI -- CMakeLists.txt
-include(${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/CMakeLists.txt)
 
 ## Add support for C++11, supported in ROS Kinetic and newer
-# add_definitions(-std=c++11)
+add_definitions(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  message_generation
   roscpp
   rospy
   std_msgs
-  genmsg
-)
+  )
+
+# Add precompiler definitions to include ROS things in GUI compilation
+add_definitions(-DCATKIN_MAKE)
+
+
+# GUI -- Things needed for Qt wrapper build process
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_AUTOMOC ON)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
+
+# Add Qt support
+find_package(Qt5Widgets REQUIRED)
+find_package(Qt5Core REQUIRED)
+find_package(Qt5Gui REQUIRED)
+
+# Add src and includes
+set(MY_LIB_PATH_SRC ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/src)
+set(MY_LIB_PATH_INC ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/include)
 
 # #set the default path for built executables to the "bin" directory
 # set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 # #set the default path for built libraries to the "lib" directory
 # set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
+
+# GUI -- Special Qt sources that need to be wrapped before being compiled
+# sources that have the Qt macro QOBJECT inside, the MOC cpp file needs to be done manually
+
+set(SRC_HDRS_QOBJECT
+  ${MY_LIB_PATH_INC}/crazyFlyZoneTab.h
+  ${MY_LIB_PATH_INC}/myGraphicsScene.h
+  ${MY_LIB_PATH_INC}/myGraphicsView.h
+  ${MY_LIB_PATH_INC}/mainguiwindow.h
+  )
+
+# GUI -- wrap UI file and QOBJECT files
+qt5_wrap_ui(UIS_HDRS GUI_Qt/CrazyFlyGUI/src/mainguiwindow.ui)
+qt5_wrap_cpp(SRC_MOC_HDRS ${SRC_HDRS_QOBJECT})
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -64,30 +88,12 @@ find_package(catkin REQUIRED COMPONENTS
 #   Message2.msg
 # )
 
-add_message_files(
-  FILES
-  ViconData.msg
-  MotorCommand.msg
-  AngleCommand.msg
-  RateCommand.msg
-  Setpoint.msg
-  CrazyflieContext.msg
-  AreaBounds.msg
-)
-
 ## Generate services in the 'srv' folder
 # add_service_files(
 #   FILES
 #   Service1.srv
 #   Service2.srv
 # )
-add_service_files(
-  FILES
-  MotorController.srv
-  AngleController.srv
-  RateController.srv
-  CentralManager.srv
-)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -101,10 +107,6 @@ add_service_files(
 #   DEPENDENCIES
 #   std_msgs
 # )
-generate_messages(
-  DEPENDENCIES
-  std_msgs
-)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -135,12 +137,13 @@ generate_messages(
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
-catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES
-  CATKIN_DEPENDS roscpp rospy std_msgs
-  DEPENDS
-)
+
+# catkin_package( # this is done outside, in the other CMakeLists.txt
+#  INCLUDE_DIRS include
+#  LIBRARIES
+#  CATKIN_DEPENDS roscpp rospy std_msgs
+#  DEPENDS
+# )
 
 ###########
 ## Build ##
@@ -150,13 +153,13 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
+  ${MY_LIB_PATH_INC}
   ${catkin_INCLUDE_DIRS}
-  include
 )
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/d_fall_pps.cpp
+#   src/${PROJECT_NAME}/d_fall_gui.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -167,17 +170,36 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/d_fall_pps_node.cpp)
-add_executable(ViconDataPublisher src/ViconDataPublisher.cpp)
-add_executable(PPSClient src/PPSClient.cpp)
-add_executable(SafeControllerService src/SafeControllerService.cpp)
-add_executable(CentralManagerService src/CentralManagerService.cpp)
+# add_executable(${PROJECT_NAME}_node src/d_fall_gui_node.cpp)
 
 
-add_dependencies(ViconDataPublisher d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(PPSClient d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(SafeControllerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(CentralManagerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+# Add executables here
+add_executable(my_GUI GUI_Qt/CrazyFlyGUI/src/mainguiwindow.cpp GUI_Qt/CrazyFlyGUI/src/main.cpp ${UIS_HDRS} ${SRC_HDRS_QOBJECT})
+qt5_use_modules(my_GUI Widgets)
+
+
+
+# Add sources here
+set(MY_LIB_SOURCES              # compilation of sources
+    ${MY_LIB_PATH_SRC}/cornergrabber.cpp
+    ${MY_LIB_PATH_SRC}/crazyFlyZone.cpp
+    ${MY_LIB_PATH_SRC}/crazyFlyZoneTab.cpp
+    ${MY_LIB_PATH_SRC}/myGraphicsRectItem.cpp
+    ${MY_LIB_PATH_SRC}/myGraphicsScene.cpp
+    ${MY_LIB_PATH_SRC}/myGraphicsView.cpp
+    ${MY_LIB_PATH_SRC}/tablePiece.cpp
+    ${MY_LIB_PATH_SRC}/marker.cpp
+    )
+
+
+# Add libraries
+add_library(my_library ${MY_LIB_SOURCES})
+
+# Link libraries
+target_link_libraries(my_GUI Qt5::Widgets) # let my_GUI have acesss to Qt stuff
+target_link_libraries(my_library Qt5::Widgets) # let my_library have access to Qt stuff
+target_link_libraries(my_GUI my_library)
+target_link_libraries(my_GUI ${catkin_LIBRARIES})
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -193,18 +215,6 @@ add_dependencies(CentralManagerService d_fall_pps_generate_messages_cpp ${catkin
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
-
-find_library(VICON_LIBRARY ViconDataStreamSDK_CPP HINTS lib/vicon)
-
-target_link_libraries(ViconDataPublisher ${catkin_LIBRARIES})
-target_link_libraries(ViconDataPublisher ${VICON_LIBRARY})
-
-target_link_libraries(PPSClient ${catkin_LIBRARIES})
-
-target_link_libraries(SafeControllerService ${catkin_LIBRARIES})
-
-target_link_libraries(CentralManagerService ${catkin_LIBRARIES})
-
 
 #############
 ## Install ##
@@ -246,7 +256,7 @@ target_link_libraries(CentralManagerService ${catkin_LIBRARIES})
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_d_fall_pps.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_d_fall_gui.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
