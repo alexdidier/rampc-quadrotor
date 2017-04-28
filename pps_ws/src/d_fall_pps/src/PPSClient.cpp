@@ -65,8 +65,8 @@ void ppsClientToController(ViconData data, bool autocontrolOn){
 			Controller srvRate;
 			Setpoint goalLocation;
 
-			goalLocation.x = -5; //testvalue
-			goalLocation.y = 250; //testvalue
+			goalLocation.x = 90; //testvalue
+			goalLocation.y = 180; //testvalue
 			goalLocation.z = 300; //testvalue
 
 			srvRate.request.crazyflieLocation = data;
@@ -120,12 +120,14 @@ bool safetyCheck(ViconData data){
 
 //is called upon every new arrival of data in main
 void viconCallback(const ViconData& data){
-	ROS_INFO("in viconCallback"); 
+	//ROS_INFO("in viconCallback"); 
 	//ROS_INFO_STREAM(data);
 	//ROS_INFO("My teamname is:"); ROS_INFO_STREAM(team);
 	//ROS_INFO("My crazyflie is:"); ROS_INFO_STREAM(cflie);
 
 	if(data.crazyflieName == cflie){	
+		ROS_INFO("in viconCallback"); 
+		ROS_INFO_STREAM(data);
 		//forward data to safety check
 		bool autocontrolOn = safetyCheck(data);
 		//ROS_INFO_STREAM("autocontrolOn: " << autocontrolOn);

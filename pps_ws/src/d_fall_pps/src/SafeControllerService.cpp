@@ -32,16 +32,18 @@ const float a1=1.032633e-6;
 const float a0=5.484560e-4;
 const float saturationThrust = a2*12000*12000 + a1*12000 + a0;
 
+const float feedforwardm1 = 37000;
+const float feedforwardm2 = 37000;
+const float feedforwardm3 = 37000;
+const float feedforwardm4 = 37000;
+
+
 void ffSetup(ControlCommand prevCommands)
 {
-    ffThrust1 = a2*prevCommands.motorCmd1*prevCommands.motorCmd1+
-            a1*prevCommands.motorCmd1+a0;
-    ffThrust2 = a2*prevCommands.motorCmd2*prevCommands.motorCmd2+
-            a1*prevCommands.motorCmd2 + a0;
-    ffThrust3 = a2*prevCommands.motorCmd3*prevCommands.motorCmd3+
-            a1*prevCommands.motorCmd3 + a0;
-    ffThrust4 = a2*prevCommands.motorCmd4*prevCommands.motorCmd4+
-            a1*prevCommands.motorCmd4 + a0;
+    ffThrust1 = a2*feedforwardm1*feedforwardm1+a1*feedforwardm1+a0;
+    ffThrust2 = a2*feedforwardm2*feedforwardm2+a1*feedforwardm2+a0;
+    ffThrust3 = a2*feedforwardm3*feedforwardm3+a1*feedforwardm3+a0;
+    ffThrust4 = a2*feedforwardm4*feedforwardm4+a1*feedforwardm4+a0;
 }
 
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response) {
@@ -50,7 +52,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 
     //Philipp: I have put this here, because in the first call, we wouldnt have previousLocation initialized
     //save previous data for calculating velocities in next step
-    previousLocation = request.crazyflieLocation;
+    //previousLocation = request.crazyflieLocation;
     
     ViconData vicon = request.crazyflieLocation;
     Setpoint goal = request.setpoint;
@@ -69,18 +71,26 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     const float k[] = {
         0,            -1.714330725,            0,             0,   -1.337107465,              0,      5.115369735,             0,            0,
         1.714330725,             0,            0,   1.337107465,              0,              0,                0,   5.115369735,            0,
-        0,                       0,            0,             0,              0,              0,                0,             0,  3.843099534,
+        0,                       0,            0,             0,              0,              0,                0,             0,  2.843099534,
         0,                       0,   0.22195826,             0,              0,     0.12362477,                0,             0,            0
     };
 
     float px = request.crazyflieLocation.x - request.setpoint.x;
-    float py = request.crazyflieLocation.y - request.setpoint.y;
+    float py = -(request.crazyflieLocation.y - request.setpoint.y);
     float pz = request.crazyflieLocation.z - request.setpoint.z;
+
 
     //linear approximation of derivative of position
     float vx = (request.crazyflieLocation.x - previousLocation.x) / request.crazyflieLocation.acquiringTime;
-    float vy = (request.crazyflieLocation.y - previousLocation.y) / request.crazyflieLocation.acquiringTime;
+    float vy = -((request.crazyflieLocation.y - previousLocation.y) / request.crazyflieLocation.acquiringTime);
     float vz = (request.crazyflieLocation.z - previousLocation.z) / request.crazyflieLocation.acquiringTime;
+
+    ROS_INFO_STREAM("px: " << px);
+    ROS_INFO_STREAM("py: " << py);
+    ROS_INFO_STREAM("pz: " << pz);
+    ROS_INFO_STREAM("vx: " << vx);
+    ROS_INFO_STREAM("vy: " << vy);
+    ROS_INFO_STREAM("vz: " << vz);
 
     float roll = request.crazyflieLocation.roll;
     float pitch = request.crazyflieLocation.pitch;
@@ -105,6 +115,8 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     previousCommand = response.controlOutput;
 
     response.controlOutput.onboardControllerType = 0; //RATE
+
+    previousLocation = request.crazyflieLocation;
     
 	return true;
 }
