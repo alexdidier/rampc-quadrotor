@@ -118,11 +118,11 @@ int main(int argc, char* argv[]) {
 
             Output_GetSegmentGlobalTranslation outputTranslation =
                     client.GetSegmentGlobalTranslation(subjectName, segmentName);
-            ROS_INFO_STREAM("translation occluded: " << outputTranslation.Occluded);
+            //ROS_INFO_STREAM("translation occluded: " << outputTranslation.Occluded);
 
             Output_GetSegmentGlobalRotationQuaternion outputRotation =
                     client.GetSegmentGlobalRotationQuaternion(subjectName, segmentName);
-            ROS_INFO_STREAM("translation occluded: " << outputRotation.Occluded);
+            //ROS_INFO_STREAM("translation occluded: " << outputRotation.Occluded);
 
 
             //calculate position and rotation of Crazyflie

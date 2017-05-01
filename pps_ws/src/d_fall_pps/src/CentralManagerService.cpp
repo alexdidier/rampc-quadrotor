@@ -30,13 +30,12 @@ bool returnCrazyflieContext(CentralManager::Request &request, CentralManager::Re
 	//TBD: crazyflie-dependent area assignment instead of hardcoding
 		//request contains string crazyflieName
 	//respond with area boundaries upon request
-	response.context.localArea.xmin = -1000;
-	response.context.localArea.xmax = 1000;
-	response.context.localArea.ymin = -1000;
-	response.context.localArea.ymax = 1000;
-	response.context.localArea.zmin = -200;
-	response.context.localArea.zmax = 800;
-
+	response.context.localArea.xmin = -1.5;
+	response.context.localArea.xmax = 1.5;
+	response.context.localArea.ymin = -1.5;
+	response.context.localArea.ymax = 1.5;
+	response.context.localArea.zmin = -0.25;
+	response.context.localArea.zmax = 0.8;
 
 	return true;
 }

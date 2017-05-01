@@ -35,6 +35,7 @@
 #include "d_fall_pps/ControlCommand.h"
 #include "d_fall_pps/CrazyflieContext.h"
 
+#include "d_fall_pps/ControlCommand.h"
 
 using namespace d_fall_pps;
 
@@ -51,56 +52,62 @@ ros::Publisher controlCommandPublisher;
 AreaBounds localArea;
 
 void ppsClientToController(ViconData data, bool autocontrolOn){
-	if(data.crazyflieName == cflie){
 		//call safecontroller if autocontrol is true
 
-		if(autocontrolOn){
-			return;
-			//call safecontroller here
-		}
-		else {
-			//student controller is called here
-				//for the moment use safecontroller for TESTING
-			
-			Controller srvRate;
-			Setpoint goalLocation;
+	if(autocontrolOn){
+		//TBD: call safecontroller here
 
-			goalLocation.x = 0; //testvalue
-			goalLocation.y = 0.5; //testvalue
-			goalLocation.z = 0.5; //testvalue
-			goalLocation.yaw = 0;
-
-			srvRate.request.crazyflieLocation = data;
-			srvRate.request.setpoint = goalLocation;
-
-			//TODO:
-			//return control commands
-			if(safeController.call(srvRate)){
-				ROS_INFO("Received control output");
-				ROS_INFO_STREAM(srvRate.response.controlOutput);
-				
-				controlCommandPublisher.publish(srvRate.response.controlOutput);
-  				//onboardControllerType = ??????????????????????
-				
-				
-			} else {
-				ROS_ERROR("Failed to call SafeControllerService");
-				//return 1; //return some useful stuff
-			}
-		}
-
-		
+		//for the moment just switch the motor off
+		ROS_INFO_STREAM("AutocontrolOn >>>>>> SWITCHED OFF");
+		ControlCommand switchOffControls;
+		switchOffControls.roll = 0;
+		switchOffControls.pitch = 0;
+		switchOffControls.yaw = 0;
+		switchOffControls.motorCmd1 = 0;
+		switchOffControls.motorCmd2 = 0;
+		switchOffControls.motorCmd3 = 0;
+		switchOffControls.motorCmd4 = 0;
+		switchOffControls.onboardControllerType = 0;
+		controlCommandPublisher.publish(switchOffControls);
 	}
 	else {
-		ROS_INFO("ViconData from other crazyflie received");
+		//student controller is called here
+			//for the moment use safecontroller for TESTING
+		
+		Controller srvRate;
+		Setpoint goalLocation;
+
+		goalLocation.x = 0; //testvalue
+		goalLocation.y = 0.5; //testvalue
+		goalLocation.z = 0.4; //testvalue
+		goalLocation.yaw = 0;
+
+		srvRate.request.crazyflieLocation = data;
+		srvRate.request.setpoint = goalLocation;
+
+		//TODO:
+		//return control commands
+		if(safeController.call(srvRate)){
+			//ROS_INFO("Received control output");
+			//ROS_INFO_STREAM(srvRate.response.controlOutput);
+			
+			//check attitude an 
+
+			controlCommandPublisher.publish(srvRate.response.controlOutput);
+				//onboardControllerType = ??????????????????????
+			
+			
+		} else {
+			ROS_ERROR("Failed to call SafeControllerService");
+			//return 1; //return some useful stuff
+		}
 	}
+	
 }
 
-//acceptance test for crazyflie position and attitude 
+//acceptance test for crazyflie position
 bool safetyCheck(ViconData data){
 	CrazyflieContext CrazyflieContext;
-	//ROS_INFO("in safetyCheck");
-	//ROS_INFO_STREAM("ViconData: " << data.x << ", " << data.y << ", " << data.z);
 	
 	//position check
 	if((data.x < localArea.xmin) or (data.x > localArea.xmax)){
@@ -113,25 +120,19 @@ bool safetyCheck(ViconData data){
 		return true;
 	}
 	
-	//attitude check
-	
 	//all checks passed
 	return false;
 }
 
 //is called upon every new arrival of data in main
 void viconCallback(const ViconData& data){
-	//ROS_INFO("in viconCallback"); 
-	//ROS_INFO_STREAM(data);
 	//ROS_INFO("My teamname is:"); ROS_INFO_STREAM(team);
 	//ROS_INFO("My crazyflie is:"); ROS_INFO_STREAM(cflie);
 
 	if(data.crazyflieName == cflie){	
-		ROS_INFO("in viconCallback"); 
 		ROS_INFO_STREAM(data);
 		//forward data to safety check
 		bool autocontrolOn = safetyCheck(data);
-		//ROS_INFO_STREAM("autocontrolOn: " << autocontrolOn);
 		ppsClientToController(data, autocontrolOn);
 	}
 	else {

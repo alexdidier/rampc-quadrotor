@@ -92,7 +92,7 @@ class PPSRadioClient:
 
 def controlCommandCallback(data):
     """Callback for controller actions"""
-    rospy.loginfo("controller callback : %s, %s, %s", data.roll, data.pitch, data.yaw)
+    #rospy.loginfo("controller callback : %s, %s, %s", data.roll, data.pitch, data.yaw)
 
     #cmd1..4 must not be 0, as crazyflie onboard controller resets!
     #pitch and yaw are inverted on crazyflie controller

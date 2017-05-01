@@ -24,6 +24,7 @@
 
 #define PI 3.1415926535
 #define RATE_CONTROLLER 0
+#define RAD2DEG 57.3
 
 using namespace d_fall_pps;
 
@@ -79,7 +80,10 @@ void estimateState(Controller::Request &request, float (&est)[9]) {
 
     est[6] = request.crazyflieLocation.roll;
     est[7] = request.crazyflieLocation.pitch;
+    //ROS_INFO_STREAM("crazyflieyaw: " << request.crazyflieLocation.yaw);
+    //ROS_INFO_STREAM("setpointyaw: " << request.setpoint.yaw);
     float yaw = request.crazyflieLocation.yaw - request.setpoint.yaw;
+    //ROS_INFO_STREAM("differenceyaw: " << yaw);
 
     while(yaw > PI) yaw -= 2 * PI;
     while(yaw < -PI) yaw += 2 * PI;
@@ -104,8 +108,6 @@ void convertIntoBodyFrame(Controller::Request &request, float est[9], float (&st
 }
 
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response) {
-    ROS_INFO("calculate control output");
-    
     ViconData vicon = request.crazyflieLocation;
     Setpoint goal = request.setpoint;
 
@@ -127,15 +129,14 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     	thrustIntermediate -= gainMatrixThrust[i] * state[i];
     }
 
-    ROS_INFO_STREAM("x: " << state[0]);
-    ROS_INFO_STREAM("vx: " << state[3]);
-    ROS_INFO_STREAM("pitch: " << state[7]);
-    ROS_INFO_STREAM("roll: " << outRoll);
-    ROS_INFO_STREAM("pitch: " << outPitch);
+    //HINWEIS: übersteuern beim outYaw wenn man 180 Grad zum yaw-Setpoint startet
+    //nach Multiplikation mit 0.5 gibt es den Effekt nicht mehr -> mit Paul besprechen....
+    outYaw = outYaw * 0.5;
 
-    response.controlOutput.roll = outRoll;
-    response.controlOutput.pitch = outPitch;
-    response.controlOutput.yaw = outYaw;
+    //multiply by RAD2DEG as OnBoard Controller expects degrees
+    response.controlOutput.roll = outRoll*RAD2DEG;
+    response.controlOutput.pitch = outPitch* RAD2DEG;
+    response.controlOutput.yaw = outYaw * RAD2DEG;
 
     if(thrustIntermediate > saturationThrust)
         thrustIntermediate = saturationThrust;
