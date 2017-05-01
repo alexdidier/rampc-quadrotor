@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
     }
 
     //set data stream parameters
-    client.SetStreamMode(ViconDataStreamSDK::CPP::StreamMode::ClientPull); //phfriedl: maybe ServerPush instead of ClientPull for less latency?
+    client.SetStreamMode(ViconDataStreamSDK::CPP::StreamMode::ServerPush); //phfriedl: maybe ServerPush instead of ClientPull for less latency?
 
     client.EnableSegmentData();
     client.EnableMarkerData();

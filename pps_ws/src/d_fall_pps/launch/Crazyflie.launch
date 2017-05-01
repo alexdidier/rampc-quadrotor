@@ -4,18 +4,19 @@
 	</node>
 	
 	<node pkg="d_fall_pps" name="CrazyRadio" output="screen" type="CrazyRadio.py">
-		<rosparam command="load" file="$(find d_fall_pps)/launch/studentParams.yaml" />	
+		<rosparam command="load" file="$(find d_fall_pps)/param/ClientConfig.yaml" />
 	</node>
 
 	<node pkg="d_fall_pps" name="ViconDataPublisher" output="screen" type="ViconDataPublisher">
 	</node>
 
 	<node pkg="d_fall_pps" name="PPSClient" output="screen" type="PPSClient">
-		<rosparam command="load" file="$(find d_fall_pps)/launch/studentParams.yaml" />	
+		<rosparam command="load" file="$(find d_fall_pps)/param/ClientConfig.yaml" />	
 	</node>
 
 
 	<node pkg="d_fall_pps" name="SafeControllerService" output="screen" type="SafeControllerService">
+		<rosparam command="load" file="$(find d_fall_pps)/param/SafeController.yaml" />
 	</node>
 
 

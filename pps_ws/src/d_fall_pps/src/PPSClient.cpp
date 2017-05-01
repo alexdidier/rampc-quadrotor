@@ -66,8 +66,8 @@ void ppsClientToController(ViconData data, bool autocontrolOn){
 			Setpoint goalLocation;
 
 			goalLocation.x = 0; //testvalue
-			goalLocation.y = 0; //testvalue
-			goalLocation.z = 0.3; //testvalue
+			goalLocation.y = 0.5; //testvalue
+			goalLocation.z = 0.5; //testvalue
 			goalLocation.yaw = 0;
 
 			srvRate.request.crazyflieLocation = data;
