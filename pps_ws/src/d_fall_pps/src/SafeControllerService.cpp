@@ -14,6 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <math.h>
 #include "ros/ros.h"
 #include "d_fall_pps/ViconData.h"
 #include "d_fall_pps/Setpoint.h"
@@ -38,7 +39,7 @@ const float feedforwardm3 = 37000;
 const float feedforwardm4 = 37000;
 
 
-void ffSetup(ControlCommand prevCommands)
+void ffSetup()
 {
     ffThrust1 = a2*feedforwardm1*feedforwardm1+a1*feedforwardm1+a0;
     ffThrust2 = a2*feedforwardm2*feedforwardm2+a1*feedforwardm2+a0;
@@ -48,11 +49,7 @@ void ffSetup(ControlCommand prevCommands)
 
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response) {
     ROS_INFO("calculate control output");
-    ffSetup(previousCommand);
-
-    //Philipp: I have put this here, because in the first call, we wouldnt have previousLocation initialized
-    //save previous data for calculating velocities in next step
-    //previousLocation = request.crazyflieLocation;
+    ffSetup(); //to change that it only does this once at intialization
     
     ViconData vicon = request.crazyflieLocation;
     Setpoint goal = request.setpoint;
@@ -62,8 +59,6 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     ROS_INFO_STREAM(vicon);
     ROS_INFO("the goal setpoint is:");
     ROS_INFO_STREAM(request.setpoint);
-
-
 
 
     //add/calculate safeController
@@ -76,13 +71,13 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     };
 
     float px = request.crazyflieLocation.x - request.setpoint.x;
-    float py = -(request.crazyflieLocation.y - request.setpoint.y);
+    float py = request.crazyflieLocation.y - request.setpoint.y;
     float pz = request.crazyflieLocation.z - request.setpoint.z;
 
 
-    //linear approximation of derivative of position
+    //linear approximation of derivative of position (no Estimator implemented...)
     float vx = (request.crazyflieLocation.x - previousLocation.x) / request.crazyflieLocation.acquiringTime;
-    float vy = -((request.crazyflieLocation.y - previousLocation.y) / request.crazyflieLocation.acquiringTime);
+    float vy = (request.crazyflieLocation.y - previousLocation.y) / request.crazyflieLocation.acquiringTime;
     float vz = (request.crazyflieLocation.z - previousLocation.z) / request.crazyflieLocation.acquiringTime;
 
     ROS_INFO_STREAM("px: " << px);
@@ -96,13 +91,47 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     float pitch = request.crazyflieLocation.pitch;
     float yaw = request.crazyflieLocation.yaw - request.setpoint.yaw;
 
+    const float PI = 3.141592535f;
+    while(yaw > PI) yaw -= 2 * PI;
+    while(yaw < -PI) yaw += 2 * PI;
+
+
+    ROS_INFO_STREAM("yaw: " << yaw);
+
+    //convert into body frame
+    float sinYaw = sin(request.crazyflieLocation.yaw);
+    float cosYaw = cos(request.crazyflieLocation.yaw);
+
+    float state[9]; //px, py, pz, vx, vy, vz, roll, pitch, yaw
+    state[0] = px * cosYaw + py * sinYaw;
+    state[1] = -px * sinYaw + py * cosYaw;
+    state[2] = pz;
+
+    state[3] = vx * cosYaw + vy * sinYaw;
+    state[4] = -vx * sinYaw + vy * cosYaw;
+    state[5] = vz;
+
+    state[6] = roll;
+    state[7] = pitch;
+    state[8] = yaw;
+
     //roll,pitch,yaw calculations
-    response.controlOutput.roll = -(k[0] * px + k[1] * py + k[2] * pz + k[3] * vx + k[4] * vy + k[5] * vz + k[6] * roll + k[7] * pitch + k[8] * yaw);
-    response.controlOutput.pitch = -(k[9] * px + k[10] * py + k[11] * pz + k[12] * vx + k[13] * vy + k[14] * vz + k[15] * roll + k[16] * pitch + k[17] * yaw);
-    response.controlOutput.yaw = -(k[18] * px + k[19] * py + k[20] * pz + k[21] * vx + k[22] * vy + k[23] * vz + k[24] * roll + k[25] * pitch + k[26] * yaw);
-    
-    //motor command calculations
-    float thrustIntermediate = -(k[27] * px + k[28] * py + k[29] * pz + k[30] * vx + k[31] * vy + k[32] * vz + k[33] * roll + k[34] * pitch + k[35] * yaw);
+    float resRoll = 0;
+    float resPitch = 0;
+    float resYaw = 0;
+    float thrustIntermediate = 0;
+    for(int i = 0; i < 9; ++i) {
+    	resRoll -= k[i + 0] * state[i];
+    	resPitch -= k[i + 9] * state[i];
+    	resYaw -= k[i + 18] * state[i];
+    	thrustIntermediate -= k[i + 27] * state[i];
+    }
+
+    response.controlOutput.roll = resRoll;
+    response.controlOutput.pitch = resPitch;
+    response.controlOutput.yaw = resYaw;
+
+    ROS_INFO_STREAM("thrustIntermediate before: " << thrustIntermediate);
     if(thrustIntermediate > saturationThrust)
         thrustIntermediate = saturationThrust;
     else if(thrustIntermediate < -saturationThrust)

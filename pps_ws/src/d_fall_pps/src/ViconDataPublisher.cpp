@@ -149,9 +149,9 @@ int main(int argc, char* argv[]) {
             ViconData viconData;
             viconData.crazyflieName = subjectName;
 
-            viconData.x = outputTranslation.Translation[0];
-            viconData.y = outputTranslation.Translation[1];
-            viconData.z = outputTranslation.Translation[2];
+            viconData.x = outputTranslation.Translation[0] / 1000.0f;
+            viconData.y = outputTranslation.Translation[1] / 1000.0f;
+            viconData.z = outputTranslation.Translation[2] / 1000.0f;
             viconData.roll = roll;
             viconData.pitch = pitch;
             viconData.yaw = yaw;

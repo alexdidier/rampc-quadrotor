@@ -65,9 +65,10 @@ void ppsClientToController(ViconData data, bool autocontrolOn){
 			Controller srvRate;
 			Setpoint goalLocation;
 
-			goalLocation.x = 90; //testvalue
-			goalLocation.y = 180; //testvalue
-			goalLocation.z = 300; //testvalue
+			goalLocation.x = 0; //testvalue
+			goalLocation.y = 0; //testvalue
+			goalLocation.z = 0.3; //testvalue
+			goalLocation.yaw = 0;
 
 			srvRate.request.crazyflieLocation = data;
 			srvRate.request.setpoint = goalLocation;
@@ -75,7 +76,7 @@ void ppsClientToController(ViconData data, bool autocontrolOn){
 			//TODO:
 			//return control commands
 			if(safeController.call(srvRate)){
-				ROS_INFO("Received control input");
+				ROS_INFO("Received control output");
 				ROS_INFO_STREAM(srvRate.response.controlOutput);
 				
 				controlCommandPublisher.publish(srvRate.response.controlOutput);
