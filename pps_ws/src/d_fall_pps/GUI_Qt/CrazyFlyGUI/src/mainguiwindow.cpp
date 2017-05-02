@@ -11,42 +11,19 @@
 
 #include <string>
 
-#ifdef CATKIN_MAKE
+#define N_MAX_CRAZYFLIES           20 // protection number
 
 using namespace d_fall_pps;
 
-void viconCallback(const ViconData& data)
-{
-    ROS_INFO("in viconCallback");
-    qDebug("in viconCallback");
-}
-#endif
-
-
-#define N_MAX_CRAZYFLIES           20 // protection number
-
-#ifdef CATKIN_MAKE
-MainGUIWindow::MainGUIWindow(ros::NodeHandle* pNodeHandle, QWidget *parent) :
+MainGUIWindow::MainGUIWindow(int argc, char **argv, QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainGUIWindow),
-    _pNodeHandle(pNodeHandle)
-{
-    ui->setupUi(this);
-    _init();
-}
-
-
-#else
-MainGUIWindow::MainGUIWindow(QWidget *parent) :
-    QMainWindow(parent),
-    ui(new Ui::MainGUIWindow)
+    _rosNodeThread(argc, argv, "/ViconDataPublisher/ViconData")
 {
 
     ui->setupUi(this);
     _init();
 }
-
-#endif
 
 
 MainGUIWindow::~MainGUIWindow()
@@ -69,12 +46,12 @@ void MainGUIWindow::set_tabs(int n)
 
 void MainGUIWindow::_init()
 {
-    sleep(1000);
-    #ifdef CATKIN_MAKE
-    ViconSubscriber = new ros::Subscriber(_pNodeHandle->subscribe("/ViconDataPublisher/ViconData", 1, viconCallback));
-    ROS_INFO("successfully subscribed to ViconData from GUI");
-    qDebug("successfully subscribed to ViconData from GUI");
-    #endif
+    // #ifdef CATKIN_MAKE
+    // ViconSubscriber = new ros::Subscriber(_pNodeHandle->subscribe("/ViconDataPublisher/ViconData", 1, viconCallback));
+    // ros::spin();
+    // ROS_INFO("successfully subscribed to ViconData from GUI");
+    // qDebug("successfully subscribed to ViconData from GUI");
+    // #endif
 
     ui->graphicsView->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
 
@@ -94,12 +71,9 @@ void MainGUIWindow::_init()
     QObject::connect(scene, SIGNAL(numTablePiecesChanged(int)), this, SLOT(handleTablePiecesNumChanged(int)));
 
     ui->checkBox_vicon_highlight_markers->setEnabled(false);
+
+    _rosNodeThread.init();
 }
-
-#ifndef CATKIN_MAKE
-
-
-#endif
 
 
 

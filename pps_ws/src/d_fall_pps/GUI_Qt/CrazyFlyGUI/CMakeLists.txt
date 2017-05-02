@@ -46,6 +46,7 @@ set(SRC_HDRS_QOBJECT
   ${MY_LIB_PATH_INC}/myGraphicsScene.h
   ${MY_LIB_PATH_INC}/myGraphicsView.h
   ${MY_LIB_PATH_INC}/mainguiwindow.h
+  ${MY_LIB_PATH_INC}/rosNodeThread.h
   )
 
 # GUI -- wrap UI file and QOBJECT files
@@ -173,14 +174,10 @@ include_directories(
 # add_executable(${PROJECT_NAME}_node src/d_fall_gui_node.cpp)
 
 
-# Add executables here
-add_executable(my_GUI GUI_Qt/CrazyFlyGUI/src/mainguiwindow.cpp GUI_Qt/CrazyFlyGUI/src/main.cpp ${UIS_HDRS} ${SRC_HDRS_QOBJECT})
-qt5_use_modules(my_GUI Widgets)
-
-
-
 # Add sources here
-set(MY_LIB_SOURCES              # compilation of sources
+set(MY_CPP_SOURCES              # compilation of sources
+    ${MY_LIB_PATH_SRC}/mainguiwindow.cpp
+    ${MY_LIB_PATH_SRC}/main.cpp
     ${MY_LIB_PATH_SRC}/cornergrabber.cpp
     ${MY_LIB_PATH_SRC}/crazyFlyZone.cpp
     ${MY_LIB_PATH_SRC}/crazyFlyZoneTab.cpp
@@ -189,16 +186,25 @@ set(MY_LIB_SOURCES              # compilation of sources
     ${MY_LIB_PATH_SRC}/myGraphicsView.cpp
     ${MY_LIB_PATH_SRC}/tablePiece.cpp
     ${MY_LIB_PATH_SRC}/marker.cpp
+    ${MY_LIB_PATH_SRC}/rosNodeThread.cpp
     )
 
 
-# Add libraries
-add_library(my_library ${MY_LIB_SOURCES})
+# Add executables here
+add_executable(my_GUI ${MY_CPP_SOURCES} ${UIS_HDRS} ${SRC_MOC_HDRS})
+qt5_use_modules(my_GUI Widgets)
+
+
+
+
+
+# # Add libraries
+# add_library(my_library ${MY_CPP_SOURCES})
 
 # Link libraries
 target_link_libraries(my_GUI Qt5::Widgets) # let my_GUI have acesss to Qt stuff
-target_link_libraries(my_library Qt5::Widgets) # let my_library have access to Qt stuff
-target_link_libraries(my_GUI my_library)
+# target_link_libraries(my_library Qt5::Widgets) # let my_library have access to Qt stuff
+# target_link_libraries(my_GUI my_library)
 target_link_libraries(my_GUI ${catkin_LIBRARIES})
 
 ## Rename C++ executable without prefix
