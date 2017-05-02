@@ -333,7 +333,7 @@ void myGraphicsScene::drawBackground(QPainter *painter, const QRectF &rect)
 
     if(grid_enable)
     {
-        const int gridSize = 1 * TO_METERS;
+        const int gridSize = 1 * FROM_METERS_TO_UNITS;
 
         qreal left = int(rect.left()) - (int(rect.left()) % gridSize);
         qreal top = int(rect.top()) - (int(rect.top()) % gridSize);

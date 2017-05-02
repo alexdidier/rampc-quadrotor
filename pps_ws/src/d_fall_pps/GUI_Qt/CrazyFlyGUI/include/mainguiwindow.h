@@ -97,6 +97,8 @@ private slots:
 
     void on_checkBox_vicon_highlight_markers_toggled(bool checked);
 
+    void setPosMarker(double x, double y);
+
 private:
 
     Ui::MainGUIWindow *ui;
@@ -106,7 +108,7 @@ private:
     Marker* marker;
 
     #ifdef CATKIN_MAKE
-    rosNodeThread _rosNodeThread;
+    rosNodeThread* _rosNodeThread;
     #endif
 };
 

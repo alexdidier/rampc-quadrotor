@@ -1,7 +1,8 @@
 #include "rosNodeThread.h"
 
-rosNodeThread::rosNodeThread(int argc, char** pArgv, const char * topic)
-    :	m_Init_argc(argc),
+rosNodeThread::rosNodeThread(int argc, char** pArgv, const char * topic, QObject* parent)
+    :   QObject(parent),
+        m_Init_argc(argc),
         m_pInit_argv(pArgv),
         m_topic(topic)
 
@@ -25,8 +26,8 @@ bool rosNodeThread::init()
     m_pThread = new QThread();
     this->moveToThread(m_pThread); // QObject method
 
-    connect(m_pThread, &QThread::started, this, &rosNodeThread::run);
-    ros::init(m_Init_argc, m_pInit_argv, "my_GUI"); // GUI is the name of this node
+    connect(m_pThread, SIGNAL(started()), this, SLOT(run()));
+    ros::init(m_Init_argc, m_pInit_argv, "my_GUI"); // my_GUI is the name of this node
 
     if (!ros::master::check())
         return false;           // do not start without ros.
@@ -36,7 +37,7 @@ bool rosNodeThread::init()
     ros::NodeHandle nh("~");
 
     // sim_velocity  = nh.advertise<geometry_msgs::Twist>("/cmd_vel", 100);
-    test = nh.subscribe(m_topic, 10, &rosNodeThread::messageCallback, this);
+    m_vicon_subscriber = nh.subscribe(m_topic, 100, &rosNodeThread::messageCallback, this);
 
     m_pThread->start();
     return true;
@@ -47,9 +48,16 @@ void rosNodeThread::messageCallback(const ViconData& data) // When a message arr
     QMutex * pMutex = new QMutex();
     pMutex->lock();
     ROS_INFO_STREAM("ViconData: " << data.x << ", " << data.y << ", " << data.z);
+    m_vicon_data.x = data.x;
+    m_vicon_data.y = data.y;
+    m_vicon_data.z = data.z;
+    m_vicon_data.yaw = data.yaw;
+    m_vicon_data.pitch = data.pitch;
+    m_vicon_data.roll = data.roll;
     pMutex->unlock();
     delete pMutex;
-    // Q_EMIT newPose(m_xPos, m_yPos, m_aPos);
+    // Q_EMIT newViconData(m_vicon_data.x, m_vicon_data.y, m_vicon_data.z, m_vicon_data.yaw, m_vicon_data.pitch, m_vicon_data.roll);
+    emit newViconData(m_vicon_data.x, m_vicon_data.y);
 }
 
 void rosNodeThread::run()

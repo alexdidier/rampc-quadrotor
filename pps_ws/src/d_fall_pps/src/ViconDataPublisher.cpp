@@ -46,17 +46,19 @@ int main(int argc, char* argv[]) {
     //publish something random if no viconData is available for testing
 
     ViconData viconData;
-    int i = 1;
+    float f = 0;
+    int i = 0;
     while(ros::ok())
     {
         if(i % 1000 == 0)
         {
         	ROS_INFO("iteration #%d",i);
     	}
-    	viconData.x  = i;
+    	viconData.x  = f;
         viconDataPublisher.publish(viconData);
-        ros::Duration(0.001).sleep();
-        ++i;
+        ros::Duration(0.1).sleep();
+        f += 0.01;
+        i++;
     }
     //the code will not go further than here if testing without real ViconData
 
@@ -105,7 +107,7 @@ int main(int argc, char* argv[]) {
 
 
 
-
+        // Output_GetUnlabeledMarkerCount GetUnlabeledMarkerCount() const;
         // Get a frame
         while (client.GetFrame().Result != Result::Success) {
             // Sleep a little so that we don't lumber the CPU with a busy poll

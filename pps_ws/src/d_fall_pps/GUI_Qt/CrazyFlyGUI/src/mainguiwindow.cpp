@@ -20,9 +20,10 @@ using namespace d_fall_pps;
 #ifdef CATKIN_MAKE
 MainGUIWindow::MainGUIWindow(int argc, char **argv, QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainGUIWindow),
-    _rosNodeThread(argc, argv, "/ViconDataPublisher/ViconData")
+    ui(new Ui::MainGUIWindow)//,
+    // _rosNodeThread(argc, argv, "/ViconDataPublisher/ViconData")
 {
+    _rosNodeThread = new rosNodeThread(argc, argv, "/ViconDataPublisher/ViconData");
 
     ui->setupUi(this);
     _init();
@@ -59,19 +60,15 @@ void MainGUIWindow::set_tabs(int n)
 
 void MainGUIWindow::_init()
 {
-    // #ifdef CATKIN_MAKE
-    // ViconSubscriber = new ros::Subscriber(_pNodeHandle->subscribe("/ViconDataPublisher/ViconData", 1, viconCallback));
-    // ros::spin();
-    // ROS_INFO("successfully subscribed to ViconData from GUI");
-    // qDebug("successfully subscribed to ViconData from GUI");
-    // #endif
 
     ui->graphicsView->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
 
     scene = new myGraphicsScene(ui->frame_drawing);
-    scene->setSceneRect(-100 * TO_METERS, -100 * TO_METERS, 200 * TO_METERS, 200 * TO_METERS);
+    scene->setSceneRect(-100 * FROM_METERS_TO_UNITS, -100 * FROM_METERS_TO_UNITS, 200 * FROM_METERS_TO_UNITS, 200 * FROM_METERS_TO_UNITS);
 
-    // Marker* marker = new Marker(0, 0);
+    marker = new Marker(1 * FROM_METERS_TO_UNITS, 1 * FROM_METERS_TO_UNITS);
+    // marker->setPos(0,0);
+    setPosMarker(0, 0);
     // scene->addItem(marker);
 
     ui->graphicsView->setScene(scene);
@@ -85,10 +82,15 @@ void MainGUIWindow::_init()
 
     ui->checkBox_vicon_highlight_markers->setEnabled(false);
     #ifdef CATKIN_MAKE
-    _rosNodeThread.init();
+    _rosNodeThread->init();
+    QObject::connect(_rosNodeThread, SIGNAL(newViconData(double, double)), this, SLOT(setPosMarker(double, double)));
     #endif
 }
 
+void MainGUIWindow::setPosMarker(double x, double y)
+{
+    marker->setPosMarker(scene->mapFromWorldToScene(QPointF(FROM_METERS_TO_UNITS * x, FROM_METERS_TO_UNITS * y)));
+}
 
 
 void MainGUIWindow::on_removeTable_clicked()
@@ -243,15 +245,16 @@ void MainGUIWindow::on_checkBox_vicon_markers_toggled(bool checked)
     // This is temporal, just to see effect. In the end the marker will be created with data from vicon
     if(checked)
     {
-        marker = new Marker(0, 0);
+        // marker = new Marker(0, 0);
         scene->addItem(marker);
         ui->checkBox_vicon_highlight_markers->setCheckable(true);
         ui->checkBox_vicon_highlight_markers->setEnabled(true);
     }
     else
     {
-        marker->setParentItem(NULL);
-        delete marker;
+        scene->removeItem(marker);
+        // marker->setParentItem(NULL);
+        // delete marker;
         ui->checkBox_vicon_highlight_markers->setChecked(false);
         ui->checkBox_vicon_highlight_markers->setCheckable(false);
         ui->checkBox_vicon_highlight_markers->setEnabled(false);
