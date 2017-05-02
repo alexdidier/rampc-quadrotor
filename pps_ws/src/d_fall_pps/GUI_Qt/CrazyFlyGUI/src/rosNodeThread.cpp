@@ -6,7 +6,7 @@ rosNodeThread::rosNodeThread(int argc, char** pArgv, const char * topic)
         m_topic(topic)
 
 {
-    /** Constructor for the robot thread **/
+    /** Constructor for the node thread **/
 }
 
 rosNodeThread::~rosNodeThread()
@@ -15,10 +15,10 @@ rosNodeThread::~rosNodeThread()
     {
         ros::shutdown();
         ros::waitForShutdown();
-    }//end if
+    } // end if
 
     m_pThread->wait();
-}//end destructor
+} // end destructor
 
 bool rosNodeThread::init()
 {
@@ -26,7 +26,7 @@ bool rosNodeThread::init()
     this->moveToThread(m_pThread); // QObject method
 
     connect(m_pThread, &QThread::started, this, &rosNodeThread::run);
-    ros::init(m_Init_argc, m_pInit_argv, "GUI"); // GUI is the name of this node
+    ros::init(m_Init_argc, m_pInit_argv, "my_GUI"); // GUI is the name of this node
 
     if (!ros::master::check())
         return false;           // do not start without ros.
@@ -45,16 +45,9 @@ bool rosNodeThread::init()
 void rosNodeThread::messageCallback(const ViconData& data) // When a message arrives to the topic, this callback is executed
 {
     QMutex * pMutex = new QMutex();
-
     pMutex->lock();
-
-    // m_xPos = msg.pose.pose.position.x;
-    // m_yPos = msg.pose.pose.position.y;
-    // m_aPos = msg.pose.pose.orientation.w;
-
+    ROS_INFO_STREAM("ViconData: " << data.x << ", " << data.y << ", " << data.z);
     pMutex->unlock();
-    ROS_INFO("in viconCallback");
-    qDebug("in viconCallback");
     delete pMutex;
     // Q_EMIT newPose(m_xPos, m_yPos, m_aPos);
 }

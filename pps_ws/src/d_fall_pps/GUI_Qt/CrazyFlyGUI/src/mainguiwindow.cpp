@@ -17,18 +17,26 @@
 using namespace d_fall_pps;
 #endif
 
+#ifdef CATKIN_MAKE
 MainGUIWindow::MainGUIWindow(int argc, char **argv, QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainGUIWindow)
-    #ifdef CATKING_MAKE
-    ,
+    ui(new Ui::MainGUIWindow),
     _rosNodeThread(argc, argv, "/ViconDataPublisher/ViconData")
-    #endif
 {
 
     ui->setupUi(this);
     _init();
 }
+#else
+MainGUIWindow::MainGUIWindow(int argc, char **argv, QWidget *parent) :
+    QMainWindow(parent),
+    ui(new Ui::MainGUIWindow)
+{
+
+    ui->setupUi(this);
+    _init();
+}
+#endif
 
 
 MainGUIWindow::~MainGUIWindow()

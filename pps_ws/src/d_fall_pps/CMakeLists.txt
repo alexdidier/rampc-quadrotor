@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(d_fall_pps)
 
-
-# GUI -- CMakeLists.txt
-include(${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/CMakeLists.txt)
-
 ## Add support for C++11, supported in ROS Kinetic and newer
 # add_definitions(-std=c++11)
 
@@ -19,14 +15,46 @@ find_package(catkin REQUIRED COMPONENTS
   genmsg
 )
 
+
+# GUI -- Add precompiler definitions to include ROS things in GUI compilation
+add_definitions(-DCATKIN_MAKE)
+
+# GUI -- Things needed for Qt wrapper build process
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_AUTOMOC ON)
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
+
+# GUI -- Add Qt support
+find_package(Qt5Widgets REQUIRED)
+find_package(Qt5Core REQUIRED)
+find_package(Qt5Gui REQUIRED)
+
+# GUI -- Add src and includes
+set(MY_LIB_PATH_SRC ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/src)
+set(MY_LIB_PATH_INC ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/include)
 
 # #set the default path for built executables to the "bin" directory
 # set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 # #set the default path for built libraries to the "lib" directory
 # set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
+# GUI -- need c++11 for some things
+add_definitions(-std=c++11)
+
+# GUI -- Special Qt sources that need to be wrapped before being compiled
+# they have the Qt macro QOBJECT inside, the MOC cpp file needs to be done manually
+set(SRC_HDRS_QOBJECT
+  ${MY_LIB_PATH_INC}/crazyFlyZoneTab.h
+  ${MY_LIB_PATH_INC}/myGraphicsScene.h
+  ${MY_LIB_PATH_INC}/myGraphicsView.h
+  ${MY_LIB_PATH_INC}/mainguiwindow.h
+  ${MY_LIB_PATH_INC}/rosNodeThread.h
+  )
+# GUI -- wrap UI file and QOBJECT files
+qt5_wrap_ui(UIS_HDRS GUI_Qt/CrazyFlyGUI/src/mainguiwindow.ui)
+qt5_wrap_cpp(SRC_MOC_HDRS ${SRC_HDRS_QOBJECT})
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -136,7 +164,7 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include
+  INCLUDE_DIRS include ${MY_LIB_PATH_INC} # GUI -- include headers from GUI in package
   LIBRARIES
   CATKIN_DEPENDS roscpp rospy std_msgs
   DEPENDS
@@ -150,6 +178,7 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
+  ${MY_LIB_PATH_INC}            # GUI -- include directory inside GUI folder
   ${catkin_INCLUDE_DIRS}
   include
 )
@@ -174,10 +203,38 @@ add_executable(SafeControllerService src/SafeControllerService.cpp)
 add_executable(CentralManagerService src/CentralManagerService.cpp)
 
 
+
+# Add sources here
+set(MY_CPP_SOURCES              # compilation of sources
+    ${MY_LIB_PATH_SRC}/mainguiwindow.cpp
+    ${MY_LIB_PATH_SRC}/main.cpp
+    ${MY_LIB_PATH_SRC}/cornergrabber.cpp
+    ${MY_LIB_PATH_SRC}/crazyFlyZone.cpp
+    ${MY_LIB_PATH_SRC}/crazyFlyZoneTab.cpp
+    ${MY_LIB_PATH_SRC}/myGraphicsRectItem.cpp
+    ${MY_LIB_PATH_SRC}/myGraphicsScene.cpp
+    ${MY_LIB_PATH_SRC}/myGraphicsView.cpp
+    ${MY_LIB_PATH_SRC}/tablePiece.cpp
+    ${MY_LIB_PATH_SRC}/marker.cpp
+    ${MY_LIB_PATH_SRC}/rosNodeThread.cpp
+    )
+
+
+# Add executables here
+add_executable(my_GUI ${MY_CPP_SOURCES} ${UIS_HDRS} ${SRC_MOC_HDRS})
+qt5_use_modules(my_GUI Widgets)
+
+
+
+
 add_dependencies(ViconDataPublisher d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(PPSClient d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(SafeControllerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(CentralManagerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+
+
+# GUI-- dependencies
+add_dependencies(my_GUI d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -205,6 +262,12 @@ target_link_libraries(SafeControllerService ${catkin_LIBRARIES})
 
 target_link_libraries(CentralManagerService ${catkin_LIBRARIES})
 
+
+# GUI -- link libraries
+target_link_libraries(my_GUI Qt5::Widgets) # GUI -- let my_GUI have acesss to Qt stuff
+# target_link_libraries(my_library Qt5::Widgets) # GUI -- let my_library have access to Qt stuff
+# target_link_libraries(my_GUI my_library)
+target_link_libraries(my_GUI ${catkin_LIBRARIES})
 
 #############
 ## Install ##

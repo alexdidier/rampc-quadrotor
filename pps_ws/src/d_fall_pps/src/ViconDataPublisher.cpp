@@ -53,7 +53,7 @@ int main(int argc, char* argv[]) {
         {
         	ROS_INFO("iteration #%d",i);
     	}
-    	viconData.roll  = i;
+    	viconData.x  = i;
         viconDataPublisher.publish(viconData);
         ros::Duration(0.001).sleep();
         ++i;
