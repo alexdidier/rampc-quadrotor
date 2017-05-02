@@ -13,12 +13,17 @@
 
 #define N_MAX_CRAZYFLIES           20 // protection number
 
+#ifdef CATKIN_MAKE
 using namespace d_fall_pps;
+#endif
 
 MainGUIWindow::MainGUIWindow(int argc, char **argv, QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainGUIWindow),
+    ui(new Ui::MainGUIWindow)
+    #ifdef CATKING_MAKE
+    ,
     _rosNodeThread(argc, argv, "/ViconDataPublisher/ViconData")
+    #endif
 {
 
     ui->setupUi(this);
@@ -71,8 +76,9 @@ void MainGUIWindow::_init()
     QObject::connect(scene, SIGNAL(numTablePiecesChanged(int)), this, SLOT(handleTablePiecesNumChanged(int)));
 
     ui->checkBox_vicon_highlight_markers->setEnabled(false);
-
+    #ifdef CATKIN_MAKE
     _rosNodeThread.init();
+    #endif
 }
 
 
