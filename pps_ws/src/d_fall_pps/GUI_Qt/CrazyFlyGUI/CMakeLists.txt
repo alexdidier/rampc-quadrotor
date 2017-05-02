@@ -195,8 +195,9 @@ add_executable(my_GUI ${MY_CPP_SOURCES} ${UIS_HDRS} ${SRC_MOC_HDRS})
 qt5_use_modules(my_GUI Widgets)
 
 
+# add dependencies
 
-
+add_dependencies(my_GUI d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 # # Add libraries
 # add_library(my_library ${MY_CPP_SOURCES})
