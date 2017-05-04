@@ -75,15 +75,7 @@ void ppsClientToController(ViconData data, bool autocontrolOn){
 			//for the moment use safecontroller for TESTING
 		
 		Controller srvRate;
-		Setpoint goalLocation;
-
-		goalLocation.x = 0; //testvalue
-		goalLocation.y = 0.5; //testvalue
-		goalLocation.z = 0.4; //testvalue
-		goalLocation.yaw = 0;
-
 		srvRate.request.crazyflieLocation = data;
-		srvRate.request.setpoint = goalLocation;
 
 		//TODO:
 		//return control commands
@@ -132,7 +124,7 @@ void viconCallback(const ViconData& data){
 	if(data.crazyflieName == cflie){	
 		ROS_INFO_STREAM(data);
 		//forward data to safety check
-		bool autocontrolOn = safetyCheck(data);
+		bool autocontrolOn = false;//safetyCheck(data);
 		ppsClientToController(data, autocontrolOn);
 	}
 	else {

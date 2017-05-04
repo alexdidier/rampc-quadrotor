@@ -89,7 +89,6 @@ add_message_files(
   FILES
   ViconData.msg
   ControlCommand.msg
-  Setpoint.msg
   CrazyflieContext.msg
   AreaBounds.msg
 )

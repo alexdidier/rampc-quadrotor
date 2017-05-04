@@ -25,6 +25,7 @@
 #define PI 3.1415926535
 #define RATE_CONTROLLER 0
 #define RAD2DEG 57.3
+#define VEL_AVERAGE_SIZE 10
 
 using namespace d_fall_pps;
 
@@ -36,7 +37,13 @@ std::vector<float>  gainMatrixRoll(9);
 std::vector<float>  gainMatrixPitch(9);
 std::vector<float>  gainMatrixYaw(9);
 std::vector<float>  gainMatrixThrust(9);
+
+std::vector<float>  setpoint(4);
 float saturationThrust;
+
+//averaging test, will probably be replaced by Kalman filter
+//float prevVelocities[VEL_AVERAGE_SIZE * 3];
+//int velocityIndex = 0;
 
 ViconData previousLocation;
 
@@ -62,6 +69,7 @@ void loadParameters(ros::NodeHandle& nodeHandle) {
     loadParameterFloatVector(nodeHandle, "gainMatrixPitch", gainMatrixPitch, 9);
     loadParameterFloatVector(nodeHandle, "gainMatrixYaw", gainMatrixYaw, 9);
     loadParameterFloatVector(nodeHandle, "gainMatrixThrust", gainMatrixThrust, 9);
+    loadParameterFloatVector(nodeHandle, "setpoint", setpoint, 4);
 }
 
 float computeMotorPolyBackward(float thrust) {
@@ -69,20 +77,39 @@ float computeMotorPolyBackward(float thrust) {
 }
 
 void estimateState(Controller::Request &request, float (&est)[9]) {
-    est[0] = request.crazyflieLocation.x - request.setpoint.x;
-    est[1] = request.crazyflieLocation.y - request.setpoint.y;
-    est[2] = request.crazyflieLocation.z - request.setpoint.z;
+    est[0] = request.crazyflieLocation.x - setpoint[0];
+    est[1] = request.crazyflieLocation.y - setpoint[1];
+    est[2] = request.crazyflieLocation.z - setpoint[2];
 
     //linear approximation of derivative of position (no Estimator implemented...)
+    /*prevVelocities[3 * velocityIndex + 0] = (request.crazyflieLocation.x - previousLocation.x) / request.crazyflieLocation.acquiringTime;
+    prevVelocities[3 * velocityIndex + 1] = (request.crazyflieLocation.y - previousLocation.y) / request.crazyflieLocation.acquiringTime;
+    prevVelocities[3 * velocityIndex + 2] = (request.crazyflieLocation.z - previousLocation.z) / request.crazyflieLocation.acquiringTime;
+    velocityIndex = (velocityIndex + 1) % VEL_AVERAGE_SIZE;
+
+    est[3] = 0;
+    est[4] = 0;
+    est[5] = 0;
+    for(int i = 0; i < VEL_AVERAGE_SIZE; ++i) {
+        est[3] += prevVelocities[3 * i + 0] / ((float) VEL_AVERAGE_SIZE);
+        est[4] += prevVelocities[3 * i + 1] / ((float) VEL_AVERAGE_SIZE);
+        est[5] += prevVelocities[3 * i + 2] / ((float) VEL_AVERAGE_SIZE);
+    }*/
+
     est[3] = (request.crazyflieLocation.x - previousLocation.x) / request.crazyflieLocation.acquiringTime;
     est[4] = (request.crazyflieLocation.y - previousLocation.y) / request.crazyflieLocation.acquiringTime;
     est[5] = (request.crazyflieLocation.z - previousLocation.z) / request.crazyflieLocation.acquiringTime;
+
+    //ROS_INFO_STREAM("velocityIndex: " << velocityIndex);
+    ROS_INFO_STREAM("vx: " << est[3]);
+    ROS_INFO_STREAM("vy: " << est[4]);
+    ROS_INFO_STREAM("vz: " << est[5]);
 
     est[6] = request.crazyflieLocation.roll;
     est[7] = request.crazyflieLocation.pitch;
     //ROS_INFO_STREAM("crazyflieyaw: " << request.crazyflieLocation.yaw);
     //ROS_INFO_STREAM("setpointyaw: " << request.setpoint.yaw);
-    float yaw = request.crazyflieLocation.yaw - request.setpoint.yaw;
+    float yaw = request.crazyflieLocation.yaw - setpoint[4];
     //ROS_INFO_STREAM("differenceyaw: " << yaw);
 
     while(yaw > PI) yaw -= 2 * PI;
@@ -109,7 +136,6 @@ void convertIntoBodyFrame(Controller::Request &request, float est[9], float (&st
 
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response) {
     ViconData vicon = request.crazyflieLocation;
-    Setpoint goal = request.setpoint;
 
     float est[9]; //px, py, pz, vx, vy, vz, roll, pitch, yaw
     estimateState(request, est);
