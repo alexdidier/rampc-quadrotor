@@ -109,7 +109,7 @@ void estimateState(Controller::Request &request, float (&est)[9]) {
     est[7] = request.crazyflieLocation.pitch;
     //ROS_INFO_STREAM("crazyflieyaw: " << request.crazyflieLocation.yaw);
     //ROS_INFO_STREAM("setpointyaw: " << request.setpoint.yaw);
-    float yaw = request.crazyflieLocation.yaw - setpoint[4];
+    float yaw = request.crazyflieLocation.yaw - setpoint[3];
     //ROS_INFO_STREAM("differenceyaw: " << yaw);
 
     while(yaw > PI) yaw -= 2 * PI;

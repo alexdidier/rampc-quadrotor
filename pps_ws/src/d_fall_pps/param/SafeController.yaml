@@ -11,5 +11,5 @@ gainMatrixYaw: [0, 0, 0, 0, 0, 0, 0, 0, 2.843099534]
 gainMatrixThrust: [0, 0, 0.22195826, 0, 0, 0.12362477, 0, 0, 0]
 
 #setpoint in meters (x, y, z, yaw)
-setpoint: [0.2, 0.2, 0.6, 0]
+setpoint: [0.2, 0.2, 0.6, 0.7]
 
