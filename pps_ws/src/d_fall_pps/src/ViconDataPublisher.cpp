@@ -34,11 +34,19 @@
 using namespace ViconDataStreamSDK::CPP;
 using namespace d_fall_pps;
 
+std::string cflie;
+
 int main(int argc, char* argv[]) {
     ros::init(argc, argv, "ViconDataPublisher");
 
     ros::NodeHandle nodeHandle("~");
     ros::Time::init();
+
+
+    //get Crazyflie Name from Params, so we can filter the Vicon data by the name
+    if(!nodeHandle.getParam("CrazyFlieName",cflie)){
+        ROS_ERROR("Failed to get CrazyFlieName");
+    }
 
     ros::Publisher viconDataPublisher =
             nodeHandle.advertise<ViconData>("ViconData", 1);
@@ -95,7 +103,7 @@ int main(int argc, char* argv[]) {
     	//if you want to see at least some output in the terminal
     	//to see that you are still publishing
     	if(iterations % 1000 == 0){
-        	ROS_INFO("iteration #%d",iterations);
+        	ROS_INFO("iteration #%d of ViconDataPublisher",iterations);
     	}
     	iterations++;
 
@@ -114,6 +122,13 @@ int main(int argc, char* argv[]) {
         for (int index = 0; index < subjectCount; index++) {
        		std::string subjectName = client.GetSubjectName(index).SubjectName;
             std::string segmentName = client.GetSegmentName(subjectName, 0).SegmentName; //last value had to be changed to 0 instead of index, 27.03.17
+
+
+            //continue only if the received frame is for the correct crazyflie
+            if(subjectName != cflie){
+                //no publishing needed
+                ROS_INFO_STREAM("Not publishing Vicon because data is from flie: " << subjectName);
+            } else {
 
 
             Output_GetSegmentGlobalTranslation outputTranslation =
@@ -145,7 +160,7 @@ int main(int argc, char* argv[]) {
                 totalViconLatency = 0;
             }
 
-            //build and publish message
+            //build message
             ViconData viconData;
             viconData.crazyflieName = subjectName;
 
@@ -159,6 +174,7 @@ int main(int argc, char* argv[]) {
 
             //finally publish
             viconDataPublisher.publish(viconData);
+            }
 
         }
 

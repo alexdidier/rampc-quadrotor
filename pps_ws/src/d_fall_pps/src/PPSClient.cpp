@@ -85,9 +85,7 @@ void ppsClientToController(ViconData data, bool autocontrolOn){
 			
 			//check attitude an 
 
-			controlCommandPublisher.publish(srvRate.response.controlOutput);
-				//onboardControllerType = ??????????????????????
-			
+			controlCommandPublisher.publish(srvRate.response.controlOutput);			
 			
 		} else {
 			ROS_ERROR("Failed to call SafeControllerService");
@@ -128,7 +126,7 @@ void viconCallback(const ViconData& data){
 		ppsClientToController(data, autocontrolOn);
 	}
 	else {
-		ROS_INFO("ViconData from other crazyflie received");
+		ROS_INFO_STREAM("ViconData from other crazyflie received: " << data.crazyflieName);
 	}
 
 
@@ -140,7 +138,7 @@ int main(int argc, char* argv[]){
 	ros::init(argc, argv, "PPSClient");
 	ros::NodeHandle nodeHandle("~");
 
-	//get the params defined in studentParams.yaml
+	//get the params defined in ClientConfig.yaml
 	if(!nodeHandle.getParam("TeamName",team)){
 		ROS_ERROR("Failed to get TeamName");
 	}

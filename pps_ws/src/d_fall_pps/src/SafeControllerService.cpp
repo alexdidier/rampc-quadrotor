@@ -81,6 +81,7 @@ float computeMotorPolyBackward(float thrust) {
     return (-motorPoly[1] + sqrt(motorPoly[1] * motorPoly[1] - 4 * motorPoly[2] * (motorPoly[0] - thrust))) / (2 * motorPoly[2]);
 }
 
+//Kalman
 void estimateState(Controller::Request &request, float (&est)[9]) {
     // attitude
     est[6] = request.crazyflieLocation.roll;
@@ -94,6 +95,7 @@ void estimateState(Controller::Request &request, float (&est)[9]) {
     ahat_x[4] = estimatorMatrix[0] * prevEstimate[1] + estimatorMatrix[1] * prevEstimate[4];
     ahat_x[5] = estimatorMatrix[0] * prevEstimate[2] + estimatorMatrix[1] * prevEstimate[5];
 
+    
     ROS_INFO_STREAM("est prevEstimate[0]: " << prevEstimate[0]);
     ROS_INFO_STREAM("est prevEstimate[3]: " << prevEstimate[3]);
     ROS_INFO_STREAM("est prevEstimate[1]: " << prevEstimate[1]);
@@ -104,6 +106,7 @@ void estimateState(Controller::Request &request, float (&est)[9]) {
     ROS_INFO_STREAM("est request.crazyflieLocation.x: " << request.crazyflieLocation.x);
     ROS_INFO_STREAM("est request.crazyflieLocation.y: " << request.crazyflieLocation.y);
     ROS_INFO_STREAM("est request.crazyflieLocation.z: " << request.crazyflieLocation.z);
+    
 
     float k_x[6]; //filterGain times state
     k_x[0] = request.crazyflieLocation.x * filterGain[0];
@@ -113,6 +116,7 @@ void estimateState(Controller::Request &request, float (&est)[9]) {
     k_x[4] = request.crazyflieLocation.y * filterGain[4];
     k_x[5] = request.crazyflieLocation.z * filterGain[5];
 
+    
     ROS_INFO_STREAM("est k_x x: " << k_x[0]);
     ROS_INFO_STREAM("est k_x y: " << k_x[1]);
     ROS_INFO_STREAM("est k_x z: " << k_x[2]);
@@ -126,6 +130,7 @@ void estimateState(Controller::Request &request, float (&est)[9]) {
     ROS_INFO_STREAM("est ahat_x vx: " << ahat_x[3]);
     ROS_INFO_STREAM("est ahat_x vy: " << ahat_x[4]);
     ROS_INFO_STREAM("est ahat_x vz: " << ahat_x[5]);
+    
 
     est[0] = ahat_x[0] + k_x[0];
     est[1] = ahat_x[1] + k_x[1];
@@ -136,6 +141,7 @@ void estimateState(Controller::Request &request, float (&est)[9]) {
 
     memcpy(prevEstimate, est, 9 * sizeof(float));
 
+    
     ROS_INFO_STREAM("est x: " << est[0]);
     ROS_INFO_STREAM("est y: " << est[1]);
     ROS_INFO_STREAM("est z: " << est[2]);
@@ -147,8 +153,10 @@ void estimateState(Controller::Request &request, float (&est)[9]) {
     ROS_INFO_STREAM("est r: " << est[6]);
     ROS_INFO_STREAM("est p: " << est[7]);
     ROS_INFO_STREAM("est y: " << est[8]);
+    
 }
 
+//simple derivative
 /*void estimateState(Controller::Request &request, float (&est)[9]) {
     est[0] = request.crazyflieLocation.x;
     est[1] = request.crazyflieLocation.y;
@@ -217,7 +225,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 
     //HINWEIS: übersteuern beim outYaw wenn man 180 Grad zum yaw-Setpoint startet
     //nach Multiplikation mit 0.5 gibt es den Effekt nicht mehr -> mit Paul besprechen....
-    //outYaw = outYaw * 0.5;
+    outYaw *= 0.5;
 
     response.controlOutput.roll = outRoll;
     response.controlOutput.pitch = outPitch;

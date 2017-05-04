@@ -8,6 +8,7 @@
 	</node>
 
 	<node pkg="d_fall_pps" name="ViconDataPublisher" output="screen" type="ViconDataPublisher">
+		<rosparam command="load" file="$(find d_fall_pps)/param/ClientConfig.yaml" />	
 	</node>
 
 	<node pkg="d_fall_pps" name="PPSClient" output="screen" type="PPSClient">
