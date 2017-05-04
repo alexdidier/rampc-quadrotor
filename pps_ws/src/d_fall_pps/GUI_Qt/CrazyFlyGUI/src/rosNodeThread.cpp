@@ -43,22 +43,33 @@ bool rosNodeThread::init()
     return true;
 } // set up the thread
 
-void rosNodeThread::messageCallback(const ViconData& data) // When a message arrives to the topic, this callback is executed
+void rosNodeThread::messageCallback(const UnlabeledMarkersArray::ConstPtr& p_msg) // When a message arrives to the topic, this callback is executed
 {
-    QMutex * pMutex = new QMutex();
-    pMutex->lock();
-    ROS_INFO_STREAM("ViconData: " << data.x << ", " << data.y << ", " << data.z);
-    m_vicon_data.x = data.x;
-    m_vicon_data.y = data.y;
-    m_vicon_data.z = data.z;
-    m_vicon_data.yaw = data.yaw;
-    m_vicon_data.pitch = data.pitch;
-    m_vicon_data.roll = data.roll;
-    pMutex->unlock();
-    delete pMutex;
-    // Q_EMIT newViconData(m_vicon_data.x, m_vicon_data.y, m_vicon_data.z, m_vicon_data.yaw, m_vicon_data.pitch, m_vicon_data.roll);
-    emit newViconData(m_vicon_data.x, m_vicon_data.y);
+    for(int i = 0; i < p_msg->markers.size(); i++)
+    {
+        const UnlabeledMarker &marker = p_msg->markers[i];
+        emit newViconData(p_msg);
+        ROS_INFO_STREAM("index: " << marker.index << " x: " << marker.x <<
+                      " y: " << marker.y << " z: " << marker.z);
+    }
 }
+
+// void rosNodeThread::messageCallback(const ViconData& data) // When a message arrives to the topic, this callback is executed
+// {
+//     QMutex * pMutex = new QMutex();
+//     pMutex->lock();
+//     ROS_INFO_STREAM("ViconData: " << data.x << ", " << data.y << ", " << data.z);
+//     m_vicon_data.x = data.x;
+//     m_vicon_data.y = data.y;
+//     m_vicon_data.z = data.z;
+//     m_vicon_data.yaw = data.yaw;
+//     m_vicon_data.pitch = data.pitch;
+//     m_vicon_data.roll = data.roll;
+//     pMutex->unlock();
+//     delete pMutex;
+//     // Q_EMIT newViconData(m_vicon_data.x, m_vicon_data.y, m_vicon_data.z, m_vicon_data.yaw, m_vicon_data.pitch, m_vicon_data.roll);
+//     emit newViconData(m_vicon_data.x, m_vicon_data.y);
+// }
 
 void rosNodeThread::run()
 {

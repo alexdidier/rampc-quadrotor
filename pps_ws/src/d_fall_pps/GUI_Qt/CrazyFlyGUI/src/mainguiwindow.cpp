@@ -23,7 +23,7 @@ MainGUIWindow::MainGUIWindow(int argc, char **argv, QWidget *parent) :
     ui(new Ui::MainGUIWindow)//,
     // _rosNodeThread(argc, argv, "/ViconDataPublisher/ViconData")
 {
-    _rosNodeThread = new rosNodeThread(argc, argv, "/ViconDataPublisher/ViconData");
+    _rosNodeThread = new rosNodeThread(argc, argv, "/ViconDataPublisher/UnlabeledMarkersArray");
 
     ui->setupUi(this);
     _init();
@@ -66,9 +66,9 @@ void MainGUIWindow::_init()
     scene = new myGraphicsScene(ui->frame_drawing);
     scene->setSceneRect(-100 * FROM_METERS_TO_UNITS, -100 * FROM_METERS_TO_UNITS, 200 * FROM_METERS_TO_UNITS, 200 * FROM_METERS_TO_UNITS);
 
-    marker = new Marker(1 * FROM_METERS_TO_UNITS, 1 * FROM_METERS_TO_UNITS);
+    marker = new Marker(1 * FROM_METERS_TO_UNITS, - 1 * FROM_METERS_TO_UNITS);
     // marker->setPos(0,0);
-    setPosMarker(1, 1);
+    // setPosMarkers(1, 1);
     // scene->addItem(marker);
 
     ui->graphicsView->setScene(scene);
@@ -83,14 +83,16 @@ void MainGUIWindow::_init()
     ui->checkBox_vicon_highlight_markers->setEnabled(false);
     #ifdef CATKIN_MAKE
     _rosNodeThread->init();
-    QObject::connect(_rosNodeThread, SIGNAL(newViconData(double, double)), this, SLOT(setPosMarker(double, double)));
+    QObject::connect(_rosNodeThread, SIGNAL(newViconData(const UnlabeledMarkersArray::ConstPtr&)), this, SLOT(setPosMarkers(const UnlabeledMarkersArray::ConstPtr&)));
     #endif
 }
 
-void MainGUIWindow::setPosMarker(double x, double y)
+#ifdef CATKIN_MAKE
+void MainGUIWindow::setPosMarkers(const UnlabeledMarkersArray::ConstPtr&)
 {
-    marker->setPosMarker(scene->mapFromWorldToScene(QPointF(FROM_METERS_TO_UNITS * x, FROM_METERS_TO_UNITS * y)));
+    // marker->setPosMarker(scene->mapFromWorldToScene(QPointF(FROM_METERS_TO_UNITS * x, FROM_METERS_TO_UNITS * y)));
 }
+#endif
 
 
 void MainGUIWindow::on_removeTable_clicked()

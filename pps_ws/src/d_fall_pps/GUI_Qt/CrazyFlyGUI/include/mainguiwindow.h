@@ -9,6 +9,8 @@
 
 #ifdef CATKIN_MAKE
 #include "rosNodeThread.h"
+#include "d_fall_pps/UnlabeledMarker.h"
+#include "d_fall_pps/UnlabeledMarkersArray.h"
 #endif
 
 #include "ui_mainguiwindow.h"
@@ -30,7 +32,6 @@ struct setpoint
     double y;
     double z;
     double yaw;
-
 };
 
 class CSetpointQueue
@@ -97,8 +98,9 @@ private slots:
 
     void on_checkBox_vicon_highlight_markers_toggled(bool checked);
 
-    void setPosMarker(double x, double y);
-
+    #ifdef CATKIN_MAKE
+    void setPosMarkers(const UnlabeledMarkersArray::ConstPtr&);
+    #endif
 private:
 
     Ui::MainGUIWindow *ui;

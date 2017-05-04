@@ -12,6 +12,8 @@
 #include <ros/ros.h>
 #include <ros/network.h>
 #include "d_fall_pps/ViconData.h"
+#include "d_fall_pps/UnlabeledMarker.h"
+#include "d_fall_pps/UnlabeledMarkersArray.h"
 
 using namespace d_fall_pps;
 
@@ -23,13 +25,15 @@ public:
 
     bool init();
 
-    void messageCallback(const ViconData& data);
-
+    // void messageCallback(const ViconData& data);
+    void messageCallback(const UnlabeledMarkersArray::ConstPtr& p_msg);
 
 
 signals:
     // void newViconData(double, double, double, double, double, double);
-    void newViconData(double, double);
+    // void newViconData(double, double);
+
+    void newViconData(const UnlabeledMarkersArray::ConstPtr& p_msg);
 
 public slots:
     void run();

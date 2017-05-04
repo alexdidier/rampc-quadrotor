@@ -30,6 +30,8 @@
 #include "DataStreamClient.h"
 #include "ros/ros.h"
 #include "d_fall_pps/ViconData.h"
+#include "d_fall_pps/UnlabeledMarker.h"
+#include "d_fall_pps/UnlabeledMarkersArray.h"
 
 using namespace ViconDataStreamSDK::CPP;
 using namespace d_fall_pps;
@@ -41,26 +43,46 @@ int main(int argc, char* argv[]) {
     ros::Time::init();
 
     ros::Publisher viconDataPublisher =
-            nodeHandle.advertise<ViconData>("ViconData", 1);
+        nodeHandle.advertise<ViconData>("ViconData", 1);
 
-    //publish something random if no viconData is available for testing
+    ros::Publisher unlabeledMarkersPublisher =
+        nodeHandle.advertise<UnlabeledMarkersArray>("UnlabeledMarkersArray", 1);
 
-    ViconData viconData;
     float f = 0;
     int i = 0;
-    while(ros::ok())
+    // while(ros::ok())
+    while(true)
     {
         if(i % 1000 == 0)
         {
         	ROS_INFO("iteration #%d",i);
     	}
-    	viconData.x  = f;
-        viconDataPublisher.publish(viconData);
+
+        // Testing piece of code
+        UnlabeledMarker marker;
+        UnlabeledMarkersArray markersArray;
+
+        marker.index = 0;
+        marker.x = f;
+        marker.y = 0;
+        marker.z = 0;
+
+        markersArray.markers.push_back(marker);
+
+        marker.index = 1;
+        marker.x = 0;
+        marker.y = f;
+        marker.z = 0;
+
+        markersArray.markers.push_back(marker);
+        unlabeledMarkersPublisher.publish(markersArray);
         ros::Duration(0.1).sleep();
         f += 0.01;
         i++;
     }
-    //the code will not go further than here if testing without real ViconData
+
+
+    //the testing code will not go further than here if testing without real ViconData
 
     Client client;
 
@@ -113,6 +135,29 @@ int main(int argc, char* argv[]) {
             // Sleep a little so that we don't lumber the CPU with a busy poll
             ros::Duration(0.001).sleep();
         }
+
+        // Unlabeled markers, for GUI
+        unsigned int unlabeledMarkerCount = client.GetUnlabeledMarkerCount().MarkerCount;
+
+        UnlabeledMarker marker;
+        UnlabeledMarkersArray markersArray;
+
+
+        for(int unlabeledMarkerIndex = 0; i < unlabeledMarkerCount; i++)
+        {
+
+            Output_GetUnlabeledMarkerGlobalTranslation OutputTranslation =
+                client.GetUnlabeledMarkerGlobalTranslation(unlabeledMarkerIndex);
+
+            marker.index = unlabeledMarkerIndex;
+            marker.x = OutputTranslation.Translation[0];
+            marker.y = OutputTranslation.Translation[1];
+            marker.z = OutputTranslation.Translation[2];
+
+            markersArray.markers.push_back(marker);
+        }
+
+        unlabeledMarkersPublisher.publish(markersArray);
 
         unsigned int subjectCount = client.GetSubjectCount().SubjectCount;
 
