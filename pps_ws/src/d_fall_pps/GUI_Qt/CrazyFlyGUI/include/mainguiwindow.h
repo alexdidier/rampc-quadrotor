@@ -99,7 +99,7 @@ private slots:
     void on_checkBox_vicon_highlight_markers_toggled(bool checked);
 
     #ifdef CATKIN_MAKE
-    void setPosMarkers(const UnlabeledMarkersArray::ConstPtr&);
+    void setPosMarkers(const UnlabeledMarkersArray::ConstPtr& p_msg);
     #endif
 private:
 

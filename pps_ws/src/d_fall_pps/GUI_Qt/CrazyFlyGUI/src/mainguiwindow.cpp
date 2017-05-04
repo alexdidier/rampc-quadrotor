@@ -88,7 +88,7 @@ void MainGUIWindow::_init()
 }
 
 #ifdef CATKIN_MAKE
-void MainGUIWindow::setPosMarkers(const UnlabeledMarkersArray::ConstPtr&)
+void MainGUIWindow::setPosMarkers(const UnlabeledMarkersArray::ConstPtr& p_msg)
 {
     // marker->setPosMarker(scene->mapFromWorldToScene(QPointF(FROM_METERS_TO_UNITS * x, FROM_METERS_TO_UNITS * y)));
 }
