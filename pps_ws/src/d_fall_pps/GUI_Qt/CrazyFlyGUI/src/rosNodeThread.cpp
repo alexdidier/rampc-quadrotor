@@ -48,10 +48,10 @@ void rosNodeThread::messageCallback(const UnlabeledMarkersArray::ConstPtr& p_msg
     for(int i = 0; i < p_msg->markers.size(); i++)
     {
         const UnlabeledMarker &marker = p_msg->markers[i];
-        emit newViconData(p_msg);
         ROS_INFO_STREAM("index: " << marker.index << " x: " << marker.x <<
                       " y: " << marker.y << " z: " << marker.z);
     }
+    emit newViconData(p_msg);
 }
 
 // void rosNodeThread::messageCallback(const ViconData& data) // When a message arrives to the topic, this callback is executed

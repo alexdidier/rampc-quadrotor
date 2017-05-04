@@ -67,9 +67,7 @@ void MainGUIWindow::_init()
     scene->setSceneRect(-100 * FROM_METERS_TO_UNITS, -100 * FROM_METERS_TO_UNITS, 200 * FROM_METERS_TO_UNITS, 200 * FROM_METERS_TO_UNITS);
 
     marker = new Marker(1 * FROM_METERS_TO_UNITS, - 1 * FROM_METERS_TO_UNITS);
-    // marker->setPos(0,0);
-    // setPosMarkers(1, 1);
-    // scene->addItem(marker);
+    marker->setPos(100, -200);
 
     ui->graphicsView->setScene(scene);
 
@@ -90,6 +88,30 @@ void MainGUIWindow::_init()
 #ifdef CATKIN_MAKE
 void MainGUIWindow::setPosMarkers(const UnlabeledMarkersArray::ConstPtr& p_msg)
 {
+    // TODO: Create/edit vector of markers depending on p_msg.
+    // Delete previous markers and plot new? or change position of related indexes?
+
+    if(p_msg->markers.size() < markers_vector.size()) // some markers have dissapeared
+    {
+        for(int i = p_msg->markers.size(); i < markers_vector.size(); i++)
+        {
+            scene->removeItem(markers_vector[i]);
+        }
+        markers_vector.erase(markers_vector.begin() + p_msg->markers.size(), markers_vector.end());
+    }
+
+    for(int i = 0; i < p_msg->markers.size(); i++) // here, or new markers message is equal to current messages, or greater (some new markers)
+    {
+        if(i >= markers_vector.size()) //some new markers coming
+        {
+            markers_vector[i] = new Marker(p_msg->markers[i].x * FROM_METERS_TO_UNITS, p_msg->markers[i].y * FROM_METERS_TO_UNITS);
+            scene->addItem(markers_vector[i]);
+        }
+        else
+        {
+            markers_vector[i]->setPosMarker(QPointF(p_msg->markers[i].x * FROM_METERS_TO_UNITS, p_msg->markers[i].y * FROM_METERS_TO_UNITS));
+        }
+    }
     // marker->setPosMarker(scene->mapFromWorldToScene(QPointF(FROM_METERS_TO_UNITS * x, FROM_METERS_TO_UNITS * y)));
 }
 #endif

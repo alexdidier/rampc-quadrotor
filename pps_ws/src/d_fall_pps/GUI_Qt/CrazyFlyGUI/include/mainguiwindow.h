@@ -107,6 +107,8 @@ private:
     myGraphicsScene* scene;
     void _init();
 
+    std::vector<Marker*> markers_vector;
+
     Marker* marker;
 
     #ifdef CATKIN_MAKE
