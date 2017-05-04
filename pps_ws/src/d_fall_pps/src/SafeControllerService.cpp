@@ -24,7 +24,6 @@
 
 #define PI 3.1415926535
 #define RATE_CONTROLLER 0
-#define RAD2DEG 57.3
 #define VEL_AVERAGE_SIZE 10
 
 using namespace d_fall_pps;
@@ -38,12 +37,14 @@ std::vector<float>  gainMatrixPitch(9);
 std::vector<float>  gainMatrixYaw(9);
 std::vector<float>  gainMatrixThrust(9);
 
+//K_infinite of feedback
+std::vector<float> filterGain(6);
+//only for velocity calculation
+std::vector<float> estimatorMatrix(2);
+float prevEstimate[9];
+
 std::vector<float>  setpoint(4);
 float saturationThrust;
-
-//averaging test, will probably be replaced by Kalman filter
-//float prevVelocities[VEL_AVERAGE_SIZE * 3];
-//int velocityIndex = 0;
 
 ViconData previousLocation;
 
@@ -69,6 +70,10 @@ void loadParameters(ros::NodeHandle& nodeHandle) {
     loadParameterFloatVector(nodeHandle, "gainMatrixPitch", gainMatrixPitch, 9);
     loadParameterFloatVector(nodeHandle, "gainMatrixYaw", gainMatrixYaw, 9);
     loadParameterFloatVector(nodeHandle, "gainMatrixThrust", gainMatrixThrust, 9);
+
+    loadParameterFloatVector(nodeHandle, "filterGain", filterGain, 6);
+    loadParameterFloatVector(nodeHandle, "estimatorMatrix", estimatorMatrix, 2);
+
     loadParameterFloatVector(nodeHandle, "setpoint", setpoint, 4);
 }
 
@@ -77,45 +82,90 @@ float computeMotorPolyBackward(float thrust) {
 }
 
 void estimateState(Controller::Request &request, float (&est)[9]) {
-    est[0] = request.crazyflieLocation.x - setpoint[0];
-    est[1] = request.crazyflieLocation.y - setpoint[1];
-    est[2] = request.crazyflieLocation.z - setpoint[2];
+    // attitude
+    est[6] = request.crazyflieLocation.roll;
+    est[7] = request.crazyflieLocation.pitch;
+    est[8] = request.crazyflieLocation.yaw;
 
-    //linear approximation of derivative of position (no Estimator implemented...)
-    /*prevVelocities[3 * velocityIndex + 0] = (request.crazyflieLocation.x - previousLocation.x) / request.crazyflieLocation.acquiringTime;
-    prevVelocities[3 * velocityIndex + 1] = (request.crazyflieLocation.y - previousLocation.y) / request.crazyflieLocation.acquiringTime;
-    prevVelocities[3 * velocityIndex + 2] = (request.crazyflieLocation.z - previousLocation.z) / request.crazyflieLocation.acquiringTime;
-    velocityIndex = (velocityIndex + 1) % VEL_AVERAGE_SIZE;
+    //velocity & filtering
+    float ahat_x[6]; //estimator matrix times state (x, y, z, vx, vy, vz)
+    ahat_x[0] = 0; ahat_x[1]=0; ahat_x[2]=0;
+    ahat_x[3] = estimatorMatrix[0] * prevEstimate[0] + estimatorMatrix[1] * prevEstimate[3];
+    ahat_x[4] = estimatorMatrix[0] * prevEstimate[1] + estimatorMatrix[1] * prevEstimate[4];
+    ahat_x[5] = estimatorMatrix[0] * prevEstimate[2] + estimatorMatrix[1] * prevEstimate[5];
 
-    est[3] = 0;
-    est[4] = 0;
-    est[5] = 0;
-    for(int i = 0; i < VEL_AVERAGE_SIZE; ++i) {
-        est[3] += prevVelocities[3 * i + 0] / ((float) VEL_AVERAGE_SIZE);
-        est[4] += prevVelocities[3 * i + 1] / ((float) VEL_AVERAGE_SIZE);
-        est[5] += prevVelocities[3 * i + 2] / ((float) VEL_AVERAGE_SIZE);
-    }*/
+    ROS_INFO_STREAM("est prevEstimate[0]: " << prevEstimate[0]);
+    ROS_INFO_STREAM("est prevEstimate[3]: " << prevEstimate[3]);
+    ROS_INFO_STREAM("est prevEstimate[1]: " << prevEstimate[1]);
+    ROS_INFO_STREAM("est prevEstimate[4]: " << prevEstimate[4]);
+    ROS_INFO_STREAM("est prevEstimate[2]: " << prevEstimate[2]);
+    ROS_INFO_STREAM("est prevEstimate[5]: " << prevEstimate[5]);
+
+    ROS_INFO_STREAM("est request.crazyflieLocation.x: " << request.crazyflieLocation.x);
+    ROS_INFO_STREAM("est request.crazyflieLocation.y: " << request.crazyflieLocation.y);
+    ROS_INFO_STREAM("est request.crazyflieLocation.z: " << request.crazyflieLocation.z);
+
+    float k_x[6]; //filterGain times state
+    k_x[0] = request.crazyflieLocation.x * filterGain[0];
+    k_x[1] = request.crazyflieLocation.y * filterGain[1];
+    k_x[2] = request.crazyflieLocation.z * filterGain[2];
+    k_x[3] = request.crazyflieLocation.x * filterGain[3];
+    k_x[4] = request.crazyflieLocation.y * filterGain[4];
+    k_x[5] = request.crazyflieLocation.z * filterGain[5];
+
+    ROS_INFO_STREAM("est k_x x: " << k_x[0]);
+    ROS_INFO_STREAM("est k_x y: " << k_x[1]);
+    ROS_INFO_STREAM("est k_x z: " << k_x[2]);
+    ROS_INFO_STREAM("est k_x vx: " << k_x[3]);
+    ROS_INFO_STREAM("est k_x vy: " << k_x[4]);
+    ROS_INFO_STREAM("est k_x vz: " << k_x[5]);
+
+    ROS_INFO_STREAM("est ahat_x x: " << ahat_x[0]);
+    ROS_INFO_STREAM("est ahat_x y: " << ahat_x[1]);
+    ROS_INFO_STREAM("est ahat_x z: " << ahat_x[2]);
+    ROS_INFO_STREAM("est ahat_x vx: " << ahat_x[3]);
+    ROS_INFO_STREAM("est ahat_x vy: " << ahat_x[4]);
+    ROS_INFO_STREAM("est ahat_x vz: " << ahat_x[5]);
+
+    est[0] = ahat_x[0] + k_x[0];
+    est[1] = ahat_x[1] + k_x[1];
+    est[2] = ahat_x[2] + k_x[2];
+    est[3] = ahat_x[3] + k_x[3];
+    est[4] = ahat_x[4] + k_x[4];
+    est[5] = ahat_x[5] + k_x[5];
+
+    memcpy(prevEstimate, est, 9 * sizeof(float));
+
+    ROS_INFO_STREAM("est x: " << est[0]);
+    ROS_INFO_STREAM("est y: " << est[1]);
+    ROS_INFO_STREAM("est z: " << est[2]);
+
+    ROS_INFO_STREAM("est vx: " << est[3]);
+    ROS_INFO_STREAM("est vy: " << est[4]);
+    ROS_INFO_STREAM("est vz: " << est[5]);
+
+    ROS_INFO_STREAM("est r: " << est[6]);
+    ROS_INFO_STREAM("est p: " << est[7]);
+    ROS_INFO_STREAM("est y: " << est[8]);
+}
+
+/*void estimateState(Controller::Request &request, float (&est)[9]) {
+    est[0] = request.crazyflieLocation.x;
+    est[1] = request.crazyflieLocation.y;
+    est[2] = request.crazyflieLocation.z;
 
     est[3] = (request.crazyflieLocation.x - previousLocation.x) / request.crazyflieLocation.acquiringTime;
     est[4] = (request.crazyflieLocation.y - previousLocation.y) / request.crazyflieLocation.acquiringTime;
     est[5] = (request.crazyflieLocation.z - previousLocation.z) / request.crazyflieLocation.acquiringTime;
 
-    //ROS_INFO_STREAM("velocityIndex: " << velocityIndex);
     ROS_INFO_STREAM("vx: " << est[3]);
     ROS_INFO_STREAM("vy: " << est[4]);
     ROS_INFO_STREAM("vz: " << est[5]);
 
     est[6] = request.crazyflieLocation.roll;
     est[7] = request.crazyflieLocation.pitch;
-    //ROS_INFO_STREAM("crazyflieyaw: " << request.crazyflieLocation.yaw);
-    //ROS_INFO_STREAM("setpointyaw: " << request.setpoint.yaw);
-    float yaw = request.crazyflieLocation.yaw - setpoint[3];
-    //ROS_INFO_STREAM("differenceyaw: " << yaw);
-
-    while(yaw > PI) yaw -= 2 * PI;
-    while(yaw < -PI) yaw += 2 * PI;
-    est[8] = yaw;
-}
+    est[8] = request.crazyflieLocation.yaw;
+}*/
 
 void convertIntoBodyFrame(Controller::Request &request, float est[9], float (&state)[9]) {
     float sinYaw = sin(request.crazyflieLocation.yaw);
@@ -137,6 +187,16 @@ void convertIntoBodyFrame(Controller::Request &request, float est[9], float (&st
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response) {
     ViconData vicon = request.crazyflieLocation;
 
+    //move coordinate system to make setpoint origin
+    request.crazyflieLocation.x -= setpoint[0];
+    request.crazyflieLocation.y -= setpoint[1];
+    request.crazyflieLocation.z -= setpoint[2];
+    float yaw = request.crazyflieLocation.yaw - setpoint[3];
+
+    while(yaw > PI) yaw -= 2 * PI;
+    while(yaw < -PI) yaw += 2 * PI;
+    request.crazyflieLocation.yaw = yaw;
+
     float est[9]; //px, py, pz, vx, vy, vz, roll, pitch, yaw
     estimateState(request, est);
 
@@ -157,12 +217,11 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 
     //HINWEIS: übersteuern beim outYaw wenn man 180 Grad zum yaw-Setpoint startet
     //nach Multiplikation mit 0.5 gibt es den Effekt nicht mehr -> mit Paul besprechen....
-    outYaw = outYaw * 0.5;
+    //outYaw = outYaw * 0.5;
 
-    //multiply by RAD2DEG as OnBoard Controller expects degrees
-    response.controlOutput.roll = outRoll*RAD2DEG;
-    response.controlOutput.pitch = outPitch* RAD2DEG;
-    response.controlOutput.yaw = outYaw * RAD2DEG;
+    response.controlOutput.roll = outRoll;
+    response.controlOutput.pitch = outPitch;
+    response.controlOutput.yaw = outYaw;
 
     if(thrustIntermediate > saturationThrust)
         thrustIntermediate = saturationThrust;

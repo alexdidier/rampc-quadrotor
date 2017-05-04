@@ -31,6 +31,7 @@ logging.basicConfig(level=logging.ERROR)
 CONTROLLER_MOTOR = 2
 CONTROLLER_ANGLE = 1
 CONTROLLER_RATE = 0
+RAD_TO_DEG = 57.296
 
 class PPSRadioClient:
     """
@@ -87,7 +88,7 @@ class PPSRadioClient:
     def _send_to_commander(self,roll, pitch, yaw, thrust, cmd1, cmd2, cmd3, cmd4, mode):
         pk = CRTPPacket()
         pk.port = CRTPPort.COMMANDER
-        pk.data = struct.pack('<fffHHHHHH', roll, pitch, yaw, thrust, cmd1, cmd2, cmd3, cmd4, mode)
+        pk.data = struct.pack('<fffHHHHHH', roll * RAD_TO_DEG, pitch * RAD_TO_DEG, yaw * RAD_TO_DEG, thrust, cmd1, cmd2, cmd3, cmd4, mode)
         self._cf.send_packet(pk)
 
 def controlCommandCallback(data):
