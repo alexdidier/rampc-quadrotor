@@ -10,6 +10,7 @@
 #define HIGHLIGHT_DIAMETER     20
 #define HIGHLIGHT_WIDTH         5
 
+
 class Marker : public QGraphicsEllipseItem
 {
 public:

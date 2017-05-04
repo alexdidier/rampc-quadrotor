@@ -68,7 +68,7 @@ void MainGUIWindow::_init()
 
     marker = new Marker(1 * FROM_METERS_TO_UNITS, 1 * FROM_METERS_TO_UNITS);
     // marker->setPos(0,0);
-    setPosMarker(0, 0);
+    setPosMarker(1, 1);
     // scene->addItem(marker);
 
     ui->graphicsView->setScene(scene);
