@@ -81,6 +81,7 @@ float computeMotorPolyBackward(float thrust) {
     return (-motorPoly[1] + sqrt(motorPoly[1] * motorPoly[1] - 4 * motorPoly[2] * (motorPoly[0] - thrust))) / (2 * motorPoly[2]);
 }
 
+
 //Kalman
 void estimateState(Controller::Request &request, float (&est)[9]) {
     // attitude
@@ -150,14 +151,16 @@ void estimateState(Controller::Request &request, float (&est)[9]) {
     ROS_INFO_STREAM("est vy: " << est[4]);
     ROS_INFO_STREAM("est vz: " << est[5]);
 
+    ROS_INFO_STREAM("est y: " << est[8]);
     ROS_INFO_STREAM("est r: " << est[6]);
     ROS_INFO_STREAM("est p: " << est[7]);
-    ROS_INFO_STREAM("est y: " << est[8]);
     
 }
 
+
 //simple derivative
-/*void estimateState(Controller::Request &request, float (&est)[9]) {
+/*
+void estimateState(Controller::Request &request, float (&est)[9]) {
     est[0] = request.crazyflieLocation.x;
     est[1] = request.crazyflieLocation.y;
     est[2] = request.crazyflieLocation.z;
@@ -173,11 +176,14 @@ void estimateState(Controller::Request &request, float (&est)[9]) {
     est[6] = request.crazyflieLocation.roll;
     est[7] = request.crazyflieLocation.pitch;
     est[8] = request.crazyflieLocation.yaw;
-}*/
+}
+*/
 
-void convertIntoBodyFrame(Controller::Request &request, float est[9], float (&state)[9]) {
-    float sinYaw = sin(request.crazyflieLocation.yaw);
-    float cosYaw = cos(request.crazyflieLocation.yaw);
+void convertIntoBodyFrame(Controller::Request &request, float est[9], float (&state)[9], int yaw_measured) {
+    //float sinYaw = sin(request.crazyflieLocation.yaw);
+    //float cosYaw = cos(request.crazyflieLocation.yaw);
+	float sinYaw = sin(yaw_measured);
+    float cosYaw = cos(yaw_measured);
 
     state[0] = est[0] * cosYaw + est[1] * sinYaw;
     state[1] = -est[0] * sinYaw + est[1] * cosYaw;
@@ -194,6 +200,10 @@ void convertIntoBodyFrame(Controller::Request &request, float est[9], float (&st
 
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response) {
     ViconData vicon = request.crazyflieLocation;
+	
+	//trial>>>>>>>
+	int yaw_measured = request.crazyflieLocation.yaw;
+	//<<<<<<
 
     //move coordinate system to make setpoint origin
     request.crazyflieLocation.x -= setpoint[0];
@@ -209,7 +219,8 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     estimateState(request, est);
 
     float state[9]; //px, py, pz, vx, vy, vz, roll, pitch, yaw
-    convertIntoBodyFrame(request, est, state);
+    convertIntoBodyFrame(request, est, state, yaw_measured);
+	//convertIntoBodyFrame(request, est, state, yaw);
 
     //calculate feedback
     float outRoll = 0;
@@ -225,7 +236,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 
     //HINWEIS: übersteuern beim outYaw wenn man 180 Grad zum yaw-Setpoint startet
     //nach Multiplikation mit 0.5 gibt es den Effekt nicht mehr -> mit Paul besprechen....
-    outYaw *= 0.5;
+    //outYaw *= 0.5;
 
     response.controlOutput.roll = outRoll;
     response.controlOutput.pitch = outPitch;

@@ -122,7 +122,7 @@ void viconCallback(const ViconData& data){
 	if(data.crazyflieName == cflie){	
 		ROS_INFO_STREAM(data);
 		//forward data to safety check
-		bool autocontrolOn = false;//safetyCheck(data);
+		bool autocontrolOn = safetyCheck(data);
 		ppsClientToController(data, autocontrolOn);
 	}
 	else {

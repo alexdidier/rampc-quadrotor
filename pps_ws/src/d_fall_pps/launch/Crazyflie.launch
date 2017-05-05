@@ -21,6 +21,9 @@
 	</node>
 
 
+	<node pkg="rqt_plot" name="commandplotter" type="rqt_plot" args="/PPSClient/ControlCommand/roll /PPSClient/ControlCommand/pitch /PPSClient/ControlCommand/yaw" />
+
+
 	<!-- When we have a GUI, this has to be adapted and included
 	<node pkg="d_fall_pps" name="GUI" output="screen" type="GUI">
 		<rosparam command="load" file="$(find d_fall_pps)/launch/ControlParams.yaml" />

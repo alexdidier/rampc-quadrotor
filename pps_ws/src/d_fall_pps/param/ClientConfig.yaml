@@ -1,6 +1,6 @@
 TeamName: 'Two'
-CrazyFlieName: "cfThree"
-CrazyFlieAddress: "radio://0/72/2M"
+CrazyFlieName: "cfFour"
+CrazyFlieAddress: "radio://0/99/2M"
 SafeController: ""
 SafeControllerType: ""
 CustomController: ""
