@@ -179,9 +179,7 @@ void estimateState(Controller::Request &request, float (&est)[9]) {
 }
 */
 
-void convertIntoBodyFrame(Controller::Request &request, float est[9], float (&state)[9], int yaw_measured) {
-    //float sinYaw = sin(request.crazyflieLocation.yaw);
-    //float cosYaw = cos(request.crazyflieLocation.yaw);
+void convertIntoBodyFrame(float est[9], float (&state)[9], float yaw_measured) {
 	float sinYaw = sin(yaw_measured);
     float cosYaw = cos(yaw_measured);
 
@@ -219,8 +217,8 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     estimateState(request, est);
 
     float state[9]; //px, py, pz, vx, vy, vz, roll, pitch, yaw
-    convertIntoBodyFrame(request, est, state, yaw_measured);
-	//convertIntoBodyFrame(request, est, state, yaw);
+    convertIntoBodyFrame(est, state, yaw_measured);
+	//convertIntoBodyFrame(est, state, yaw);
 
     //calculate feedback
     float outRoll = 0;
