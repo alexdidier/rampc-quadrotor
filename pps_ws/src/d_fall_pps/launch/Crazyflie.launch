@@ -20,6 +20,10 @@
 		<rosparam command="load" file="$(find d_fall_pps)/param/SafeController.yaml" />
 	</node>
 
+	<node pkg="d_fall_pps" name="CustomControllerService" output="screen" type="CustomControllerService">
+		
+	</node>
+
 
 	<node pkg="rqt_plot" name="commandplotter" type="rqt_plot" args="/PPSClient/ControlCommand/roll /PPSClient/ControlCommand/pitch /PPSClient/ControlCommand/yaw" />
 

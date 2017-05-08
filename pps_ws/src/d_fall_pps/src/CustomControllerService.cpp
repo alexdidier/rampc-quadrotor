@@ -19,11 +19,11 @@
 #define ANGLE_MODE 1
 #define MOTOR_MODE 2
 
-//constats that you most probably need for your controller to work properly
+//constants that you most probably need for your controller to work properly
 //see: 2015-08 - Forster - System ID of Crazyflie 2.pdf Chapter 3.3.1: Input Command → Thrust
-const std::vector<float> FEEDFORWARD_MOTOR() = {37000, 37000, 37000, 37000};
-const std::vector<float> MOTOR_REGRESSION_POLYNOMIAL() = {5.484560e-4, 1.032633e-6, 2.130295e-11};
-const float SATURATION_THRUST = MOTOR_REGRESSION_POLYNOMIAL(2) * 12000 * 12000 + MOTOR_REGRESSION_POLYNOMIAL(1) * 12000 + MOTOR_REGRESSION_POLYNOMIAL(0);
+const float FEEDFORWARD_MOTOR[4] = {37000, 37000, 37000, 37000};
+const float MOTOR_REGRESSION_POLYNOMIAL[3] = {5.484560e-4, 1.032633e-6, 2.130295e-11};
+const float SATURATION_THRUST = MOTOR_REGRESSION_POLYNOMIAL[2] * 12000 * 12000 + MOTOR_REGRESSION_POLYNOMIAL[1] * 12000 + MOTOR_REGRESSION_POLYNOMIAL[1];
 
 //namespacing the package
 using namespace d_fall_pps;
@@ -38,17 +38,17 @@ void convertIntoBodyFrame(float est[9], float (&estBody)[9], int yaw_measured) {
     float sinYaw = sin(yaw_measured);
     float cosYaw = cos(yaw_measured);
 
-    state[0] = est[0] * cosYaw + est[1] * sinYaw;
-    state[1] = -est[0] * sinYaw + est[1] * cosYaw;
-    state[2] = est[2];
+    estBody[0] = est[0] * cosYaw + est[1] * sinYaw;
+    estBody[1] = -est[0] * sinYaw + est[1] * cosYaw;
+    estBody[2] = est[2];
 
-    state[3] = est[3] * cosYaw + est[4] * sinYaw;
-    state[4] = -est[3] * sinYaw + est[4] * cosYaw;
-    state[5] = est[5];
+    estBody[3] = est[3] * cosYaw + est[4] * sinYaw;
+    estBody[4] = -est[3] * sinYaw + est[4] * cosYaw;
+    estBody[5] = est[5];
 
-    state[6] = est[6];
-    state[7] = est[7];
-    state[8] = est[8];
+    estBody[6] = est[6];
+    estBody[7] = est[7];
+    estBody[8] = est[8];
 }
 
 
