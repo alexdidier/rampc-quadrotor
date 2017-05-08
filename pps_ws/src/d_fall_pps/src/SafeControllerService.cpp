@@ -97,18 +97,6 @@ void estimateState(Controller::Request &request, float (&est)[9]) {
     ahat_x[5] = estimatorMatrix[0] * prevEstimate[2] + estimatorMatrix[1] * prevEstimate[5];
 
     
-    ROS_INFO_STREAM("est prevEstimate[0]: " << prevEstimate[0]);
-    ROS_INFO_STREAM("est prevEstimate[3]: " << prevEstimate[3]);
-    ROS_INFO_STREAM("est prevEstimate[1]: " << prevEstimate[1]);
-    ROS_INFO_STREAM("est prevEstimate[4]: " << prevEstimate[4]);
-    ROS_INFO_STREAM("est prevEstimate[2]: " << prevEstimate[2]);
-    ROS_INFO_STREAM("est prevEstimate[5]: " << prevEstimate[5]);
-
-    ROS_INFO_STREAM("est request.crazyflieLocation.x: " << request.crazyflieLocation.x);
-    ROS_INFO_STREAM("est request.crazyflieLocation.y: " << request.crazyflieLocation.y);
-    ROS_INFO_STREAM("est request.crazyflieLocation.z: " << request.crazyflieLocation.z);
-    
-
     float k_x[6]; //filterGain times state
     k_x[0] = request.crazyflieLocation.x * filterGain[0];
     k_x[1] = request.crazyflieLocation.y * filterGain[1];
@@ -116,23 +104,7 @@ void estimateState(Controller::Request &request, float (&est)[9]) {
     k_x[3] = request.crazyflieLocation.x * filterGain[3];
     k_x[4] = request.crazyflieLocation.y * filterGain[4];
     k_x[5] = request.crazyflieLocation.z * filterGain[5];
-
-    
-    ROS_INFO_STREAM("est k_x x: " << k_x[0]);
-    ROS_INFO_STREAM("est k_x y: " << k_x[1]);
-    ROS_INFO_STREAM("est k_x z: " << k_x[2]);
-    ROS_INFO_STREAM("est k_x vx: " << k_x[3]);
-    ROS_INFO_STREAM("est k_x vy: " << k_x[4]);
-    ROS_INFO_STREAM("est k_x vz: " << k_x[5]);
-
-    ROS_INFO_STREAM("est ahat_x x: " << ahat_x[0]);
-    ROS_INFO_STREAM("est ahat_x y: " << ahat_x[1]);
-    ROS_INFO_STREAM("est ahat_x z: " << ahat_x[2]);
-    ROS_INFO_STREAM("est ahat_x vx: " << ahat_x[3]);
-    ROS_INFO_STREAM("est ahat_x vy: " << ahat_x[4]);
-    ROS_INFO_STREAM("est ahat_x vz: " << ahat_x[5]);
-    
-
+   
     est[0] = ahat_x[0] + k_x[0];
     est[1] = ahat_x[1] + k_x[1];
     est[2] = ahat_x[2] + k_x[2];
@@ -141,19 +113,6 @@ void estimateState(Controller::Request &request, float (&est)[9]) {
     est[5] = ahat_x[5] + k_x[5];
 
     memcpy(prevEstimate, est, 9 * sizeof(float));
-
-    
-    ROS_INFO_STREAM("est x: " << est[0]);
-    ROS_INFO_STREAM("est y: " << est[1]);
-    ROS_INFO_STREAM("est z: " << est[2]);
-
-    ROS_INFO_STREAM("est vx: " << est[3]);
-    ROS_INFO_STREAM("est vy: " << est[4]);
-    ROS_INFO_STREAM("est vz: " << est[5]);
-
-    ROS_INFO_STREAM("est y: " << est[8]);
-    ROS_INFO_STREAM("est r: " << est[6]);
-    ROS_INFO_STREAM("est p: " << est[7]);
     
 }
 
