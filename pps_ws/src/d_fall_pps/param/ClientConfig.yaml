@@ -1,10 +1,6 @@
-TeamName: 'Two'
-CrazyFlieName: "cfFour"
-CrazyFlieAddress: "radio://0/99/2M"
-SafeController: ""
-SafeControllerType: ""
-CustomController: ""
-CustomControllerType: ""
+teamName: "Two"
+crazyFlieName: "cfFour"
+crazyFlieAddress: "radio://0/99/2M"
+safeController: "/SafeControllerService/RateController"
+customController: ""
 
-#controllertypes to add with adjustable
-#motor, angle and rate

@@ -104,8 +104,8 @@ if __name__ == '__main__':
     # Initialize the low-level drivers (don't list the debug drivers)
     cflib.crtp.init_drivers(enable_debug_driver=False)
 
-    if rospy.has_param("/CrazyRadio/CrazyFlieAddress"):
-        radio_address = rospy.get_param("/CrazyRadio/CrazyFlieAddress")
+    if rospy.has_param("/CrazyRadio/crazyFlieAddress"):
+        radio_address = rospy.get_param("/CrazyRadio/crazyFlieAddress")
         rospy.loginfo("Crazyradio connecting to %s" % radio_address)
         global cf_client
 

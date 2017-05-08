@@ -34,8 +34,6 @@
 using namespace ViconDataStreamSDK::CPP;
 using namespace d_fall_pps;
 
-std::string cflie;
-
 int main(int argc, char* argv[]) {
     ros::init(argc, argv, "ViconDataPublisher");
 
@@ -44,9 +42,6 @@ int main(int argc, char* argv[]) {
 
 
     //get Crazyflie Name from Params, so we can filter the Vicon data by the name
-    if(!nodeHandle.getParam("CrazyFlieName",cflie)){
-        ROS_ERROR("Failed to get CrazyFlieName");
-    }
 
     ros::Publisher viconDataPublisher =
             nodeHandle.advertise<ViconData>("ViconData", 1);
@@ -125,12 +120,6 @@ int main(int argc, char* argv[]) {
 
 
             //continue only if the received frame is for the correct crazyflie
-            if(subjectName != cflie){
-                //no publishing needed
-                ROS_INFO_STREAM("Not publishing Vicon because data is from flie: " << subjectName);
-            } else {
-
-
             Output_GetSegmentGlobalTranslation outputTranslation =
                     client.GetSegmentGlobalTranslation(subjectName, segmentName);
             //ROS_INFO_STREAM("translation occluded: " << outputTranslation.Occluded);
@@ -138,7 +127,6 @@ int main(int argc, char* argv[]) {
             Output_GetSegmentGlobalRotationQuaternion outputRotation =
                     client.GetSegmentGlobalRotationQuaternion(subjectName, segmentName);
             //ROS_INFO_STREAM("translation occluded: " << outputRotation.Occluded);
-
 
             //calculate position and rotation of Crazyflie
             double quat_x = outputRotation.Rotation[0];
@@ -174,7 +162,6 @@ int main(int argc, char* argv[]) {
 
             //finally publish
             viconDataPublisher.publish(viconData);
-            }
 
         }
 
