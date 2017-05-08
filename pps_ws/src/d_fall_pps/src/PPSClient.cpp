@@ -71,8 +71,6 @@ bool safetyCheck(ViconData data, ControlCommand controlCommand) {
 //is called when new data from Vicon arrives
 void viconCallback(const ViconData& data) {
 	if(data.crazyflieName == crazyflieName) {	
-		ROS_INFO_STREAM(data);
-
 		Controller controllerCall;
 		controllerCall.request.crazyflieLocation = data;
 
@@ -95,8 +93,6 @@ void viconCallback(const ViconData& data) {
 		}
 
 		controlCommandPublisher.publish(controllerCall.response.controlOutput);
-	} else {
-		ROS_INFO_STREAM("Ignoring data from other crazyflie '" << data.crazyflieName << "'");
 	}
 }
 

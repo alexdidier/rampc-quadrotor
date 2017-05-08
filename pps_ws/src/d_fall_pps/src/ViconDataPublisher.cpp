@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
     	//if you want to see at least some output in the terminal
     	//to see that you are still publishing
     	if(iterations % 1000 == 0){
-        	ROS_INFO("iteration #%d of ViconDataPublisher",iterations);
+        	ROS_INFO("iteration #%d of ViconDataPublisher", iterations);
     	}
     	iterations++;
 
