@@ -128,8 +128,6 @@ void viconCallback(const ViconData& data){
 	else {
 		ROS_INFO_STREAM("ViconData from other crazyflie received: " << data.crazyflieName);
 	}
-
-
 }
 
 int main(int argc, char* argv[]){
@@ -147,7 +145,7 @@ int main(int argc, char* argv[]){
 		ROS_ERROR("Failed to get CrazyFlieName");
 	}
 	
-	ros::Subscriber ViconSubscriber = nodeHandle.subscribe("/ViconDataPublisher/ViconData", 1, viconCallback);
+	ros::Subscriber viconSubscriber = nodeHandle.subscribe("/ViconDataPublisher/ViconData", 1, viconCallback);
 	ROS_INFO_STREAM("successfully subscribed to ViconData");
 	
 	//ros::Publishers to advertise the control output

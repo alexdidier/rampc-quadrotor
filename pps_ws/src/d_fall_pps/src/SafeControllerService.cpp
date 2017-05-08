@@ -74,7 +74,7 @@ void loadParameters(ros::NodeHandle& nodeHandle) {
     loadParameterFloatVector(nodeHandle, "filterGain", filterGain, 6);
     loadParameterFloatVector(nodeHandle, "estimatorMatrix", estimatorMatrix, 2);
 
-    loadParameterFloatVector(nodeHandle, "setpoint", setpoint, 4);
+    loadParameterFloatVector(nodeHandle, "defaultSetpoint", setpoint, 4);
 }
 
 float computeMotorPolyBackward(float thrust) {
@@ -259,12 +259,27 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	return true;
 }
 
+void setpointCallback(const Setpoint& newSetpoint) {
+    setpoint[0] = newSetpoint.x;
+    setpoint[1] = newSetpoint.y;
+    setpoint[2] = newSetpoint.z;
+    setpoint[3] = newSetpoint.yaw;
+}
+
+
+//ros::Publisher pub;
 
 int main(int argc, char* argv[]) {
     ros::init(argc, argv, "SafeControllerService");
 
     ros::NodeHandle nodeHandle("~");
     loadParameters(nodeHandle);
+
+    ROS_INFO("<aaaaaaaa");
+    ros::Publisher setpointPublisher = nodeHandle.advertise<Setpoint>("Setpoint", 1);
+    ros::Subscriber setpointSubscriber = nodeHandle.subscribe("/SafeControllerService/Setpoint", 1, setpointCallback);
+
+    ROS_INFO("<aaaaaaabbbbbbbb");
 
     ros::ServiceServer service = nodeHandle.advertiseService("RateController", calculateControlOutput);
     ROS_INFO("SafeControllerService ready");

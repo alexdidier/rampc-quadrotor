@@ -91,6 +91,7 @@ add_message_files(
   ControlCommand.msg
   CrazyflieContext.msg
   AreaBounds.msg
+  Setpoint.msg
 )
 
 ## Generate services in the 'srv' folder

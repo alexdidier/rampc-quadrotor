@@ -15,5 +15,5 @@ filterGain: [1, 1, 1, 22.3384, 22.3384, 22.3384] #K_infinite of feedback
 estimatorMatrix: [-22.3384, 0.9106] #only for velocity calculation
 
 #setpoint in meters (x, y, z, yaw)
-setpoint: [0.0, 0.0, 0.3, 1]
+defaultSetpoint: [0.0, 0.0, 0.3, 1]
 
