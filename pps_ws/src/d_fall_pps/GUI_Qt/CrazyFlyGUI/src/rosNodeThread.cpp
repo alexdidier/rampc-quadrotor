@@ -1,5 +1,6 @@
 #include "rosNodeThread.h"
 
+
 rosNodeThread::rosNodeThread(int argc, char** pArgv, const char * topic, QObject* parent)
     :   QObject(parent),
         m_Init_argc(argc),
@@ -45,13 +46,7 @@ bool rosNodeThread::init()
 
 void rosNodeThread::messageCallback(const UnlabeledMarkersArray::ConstPtr& p_msg) // When a message arrives to the topic, this callback is executed
 {
-    for(int i = 0; i < p_msg->markers.size(); i++)
-    {
-        const UnlabeledMarker &marker = p_msg->markers[i];
-        ROS_INFO_STREAM("index: " << marker.index << " x: " << marker.x <<
-                      " y: " << marker.y << " z: " << marker.z);
-    }
-    emit newViconData(p_msg);
+    emit newViconData(p_msg);   //pass the message to other places
 }
 
 // void rosNodeThread::messageCallback(const ViconData& data) // When a message arrives to the topic, this callback is executed

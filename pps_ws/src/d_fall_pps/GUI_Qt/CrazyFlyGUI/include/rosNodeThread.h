@@ -17,6 +17,11 @@
 
 using namespace d_fall_pps;
 
+typedef UnlabeledMarkersArray::ConstPtr ptrToMessage;
+
+Q_DECLARE_METATYPE(ptrToMessage)
+
+
 class rosNodeThread : public QObject {
 	Q_OBJECT
 public:
@@ -33,7 +38,7 @@ signals:
     // void newViconData(double, double, double, double, double, double);
     // void newViconData(double, double);
 
-    void newViconData(const UnlabeledMarkersArray::ConstPtr& p_msg);
+    void newViconData(const ptrToMessage& p_msg);
 
 public slots:
     void run();

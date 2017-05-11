@@ -75,6 +75,16 @@ int main(int argc, char* argv[]) {
         marker.z = 0;
 
         markersArray.markers.push_back(marker);
+
+        if(i > 50 && i < 100)
+        {
+            marker.index = 2;
+            marker.x = f;
+            marker.y = f;
+            marker.z = 0;
+            markersArray.markers.push_back(marker);
+        }
+
         unlabeledMarkersPublisher.publish(markersArray);
         ros::Duration(0.1).sleep();
         f += 0.01;

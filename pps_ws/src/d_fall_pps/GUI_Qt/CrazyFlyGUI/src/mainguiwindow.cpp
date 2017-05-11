@@ -8,6 +8,7 @@
 #include <QDoubleSpinBox>
 #include <QTextEdit>
 #include <QString>
+#include <QMetaType>
 
 #include <string>
 
@@ -79,40 +80,53 @@ void MainGUIWindow::_init()
     QObject::connect(scene, SIGNAL(numTablePiecesChanged(int)), this, SLOT(handleTablePiecesNumChanged(int)));
 
     ui->checkBox_vicon_highlight_markers->setEnabled(false);
+
     #ifdef CATKIN_MAKE
     _rosNodeThread->init();
-    QObject::connect(_rosNodeThread, SIGNAL(newViconData(const UnlabeledMarkersArray::ConstPtr&)), this, SLOT(setPosMarkers(const UnlabeledMarkersArray::ConstPtr&)));
+    qRegisterMetaType<ptrToMessage>("ptrToMessage");
+    QObject::connect(_rosNodeThread, SIGNAL(newViconData(const ptrToMessage&)), this, SLOT(setPosMarkers(const ptrToMessage&)));
     #endif
 }
 
 #ifdef CATKIN_MAKE
-void MainGUIWindow::setPosMarkers(const UnlabeledMarkersArray::ConstPtr& p_msg)
+void MainGUIWindow::setPosMarkers(const ptrToMessage& p_msg) //connected to newViconData, from node
 {
-    // TODO: Create/edit vector of markers depending on p_msg.
-    // Delete previous markers and plot new? or change position of related indexes?
 
-    if(p_msg->markers.size() < markers_vector.size()) // some markers have dissapeared
+    if(p_msg->markers.size() < markers_vector.size()) // some markers have dissapeared, received stuff is smaller than what we have
     {
         for(int i = p_msg->markers.size(); i < markers_vector.size(); i++)
         {
-            scene->removeItem(markers_vector[i]);
+            scene->removeItem(markers_vector[i]); // remove objects from scene
+            ROS_INFO_STREAM("element index: " << i << " removed");
         }
-        markers_vector.erase(markers_vector.begin() + p_msg->markers.size(), markers_vector.end());
+        markers_vector.erase(markers_vector.begin() + p_msg->markers.size(), markers_vector.end()); //delete them
     }
+
+    ROS_INFO_STREAM("markers.size: " << p_msg->markers.size());
 
     for(int i = 0; i < p_msg->markers.size(); i++) // here, or new markers message is equal to current messages, or greater (some new markers)
     {
         if(i >= markers_vector.size()) //some new markers coming
         {
-            markers_vector[i] = new Marker(p_msg->markers[i].x * FROM_METERS_TO_UNITS, p_msg->markers[i].y * FROM_METERS_TO_UNITS);
-            scene->addItem(markers_vector[i]);
+            ROS_INFO_STREAM("element index: " << i << " added");
+            Marker* tmp_p_marker = new Marker(p_msg->markers[i].x * FROM_METERS_TO_UNITS, p_msg->markers[i].y * FROM_METERS_TO_UNITS);
+            markers_vector.push_back(tmp_p_marker); // what happens with the new indexes? check if this is correct
+
+            if(ui->checkBox_vicon_markers->checkState() == Qt::Checked)                                    //only if markers checkbox info is checked..
+            {
+                scene->addItem(markers_vector[i]);
+                if(ui->checkBox_vicon_highlight_markers->checkState() == Qt::Checked)
+                {
+                    markers_vector[i]->setHighlighted();
+                }
+            }
         }
         else
         {
+            ROS_INFO_STREAM("element index: " << i << " moved, already existed");
             markers_vector[i]->setPosMarker(QPointF(p_msg->markers[i].x * FROM_METERS_TO_UNITS, p_msg->markers[i].y * FROM_METERS_TO_UNITS));
         }
     }
-    // marker->setPosMarker(scene->mapFromWorldToScene(QPointF(FROM_METERS_TO_UNITS * x, FROM_METERS_TO_UNITS * y)));
 }
 #endif
 
@@ -269,16 +283,19 @@ void MainGUIWindow::on_checkBox_vicon_markers_toggled(bool checked)
     // This is temporal, just to see effect. In the end the marker will be created with data from vicon
     if(checked)
     {
-        // marker = new Marker(0, 0);
-        scene->addItem(marker);
+        for(int i = 0; i < markers_vector.size(); i++)
+        {
+            scene->addItem(markers_vector[i]);
+        }
         ui->checkBox_vicon_highlight_markers->setCheckable(true);
         ui->checkBox_vicon_highlight_markers->setEnabled(true);
     }
     else
     {
-        scene->removeItem(marker);
-        // marker->setParentItem(NULL);
-        // delete marker;
+        for(int i = 0; i < markers_vector.size(); i++)
+        {
+            scene->removeItem(markers_vector[i]);
+        }
         ui->checkBox_vicon_highlight_markers->setChecked(false);
         ui->checkBox_vicon_highlight_markers->setCheckable(false);
         ui->checkBox_vicon_highlight_markers->setEnabled(false);
@@ -289,10 +306,16 @@ void MainGUIWindow::on_checkBox_vicon_highlight_markers_toggled(bool checked)
 {
     if(checked)
     {
-        marker->setHighlighted();
+        for(int i = 0; i < markers_vector.size(); i++)
+        {
+            markers_vector[i]->setHighlighted();
+        }
     }
     else
     {
-        marker->clearHighlighted();
+        for(int i = 0; i < markers_vector.size(); i++)
+        {
+            markers_vector[i]->clearHighlighted();
+        }
     }
 }
