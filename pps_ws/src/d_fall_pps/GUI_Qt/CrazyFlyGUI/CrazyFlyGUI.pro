@@ -14,6 +14,8 @@ TEMPLATE = app
 INCLUDEPATH += $$PWD/include
 CONFIG += c++11
 
+RESOURCES = CrazyFlyGUI.qrc
+
 
 SOURCES += \
     src/cornergrabber.cpp \

@@ -108,6 +108,7 @@ private:
     void _init();
 
     std::vector<Marker*> markers_vector;
+    QGraphicsPixmapItem* drone_image;
 
     #ifdef CATKIN_MAKE
     rosNodeThread* _rosNodeThread;

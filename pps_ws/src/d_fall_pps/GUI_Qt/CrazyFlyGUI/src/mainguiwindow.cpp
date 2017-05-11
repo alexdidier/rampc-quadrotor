@@ -9,6 +9,7 @@
 #include <QTextEdit>
 #include <QString>
 #include <QMetaType>
+#include <QDir>
 
 #include <string>
 
@@ -68,6 +69,11 @@ void MainGUIWindow::_init()
     scene->setSceneRect(-100 * FROM_METERS_TO_UNITS, -100 * FROM_METERS_TO_UNITS, 200 * FROM_METERS_TO_UNITS, 200 * FROM_METERS_TO_UNITS);
 
     ui->graphicsView->setScene(scene);
+
+    QPixmap pixmap(":/images/drone.png");
+    drone_image = new QGraphicsPixmapItem(pixmap);
+    drone_image->setPos(0,0);
+    scene->addItem(drone_image);
 
     QObject::connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)), scene, SLOT(removeCrazyFlyZone(int)));
     QObject::connect(scene, SIGNAL(numCrazyFlyZonesChanged(int)), this, SLOT(set_tabs(int)));
