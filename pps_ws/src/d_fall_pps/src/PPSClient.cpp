@@ -74,7 +74,7 @@ bool safetyCheck(ViconData data, ControlCommand controlCommand) {
 
 //is called when new data from Vicon arrives
 void viconCallback(const ViconData& data) {
-	if(data.crazyflieName == crazyflieName) {	
+	if(data.crazyflieName == crazyflieName) {
 		Controller controllerCall;
 		controllerCall.request.crazyflieLocation = data;
 

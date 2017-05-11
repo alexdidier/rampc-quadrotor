@@ -8,8 +8,9 @@
 #include <QGraphicsRectItem>
 
 #ifdef CATKIN_MAKE
-#include "ros/callback_queue.h"
-#include "ros/ros.h"
+#include "rosNodeThread.h"
+#include "d_fall_pps/UnlabeledMarker.h"
+#include "d_fall_pps/UnlabeledMarkersArray.h"
 #endif
 
 #include "ui_mainguiwindow.h"
@@ -31,7 +32,6 @@ struct setpoint
     double y;
     double z;
     double yaw;
-
 };
 
 class CSetpointQueue
@@ -61,7 +61,8 @@ class MainGUIWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainGUIWindow(QWidget *parent = 0);
+    explicit MainGUIWindow(int argc, char **argv, QWidget *parent = 0);
+
     ~MainGUIWindow();
 
 public slots:
@@ -97,16 +98,19 @@ private slots:
 
     void on_checkBox_vicon_highlight_markers_toggled(bool checked);
 
+    #ifdef CATKIN_MAKE
+    void setPosMarkers(const ptrToMessage& p_msg);
+    #endif
 private:
 
     Ui::MainGUIWindow *ui;
     myGraphicsScene* scene;
     void _init();
 
-    Marker* marker;
+    std::vector<Marker*> markers_vector;
 
     #ifdef CATKIN_MAKE
-
+    rosNodeThread* _rosNodeThread;
     #endif
 };
 
