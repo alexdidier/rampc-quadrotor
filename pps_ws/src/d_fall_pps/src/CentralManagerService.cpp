@@ -19,7 +19,11 @@
 #include "d_fall_pps/CentralManager.h"
 #include "d_fall_pps/CrazyflieContext.h"
 #include "d_fall_pps/CrazyflieDB.h"
-#include "d_fall_pps/CrazyflieContext.h"
+
+#include "d_fall_pps/CMRead.h"
+#include "d_fall_pps/CMQuery.h"
+#include "d_fall_pps/CMUpdate.h"
+#include "d_fall_pps/CMCommand.h"
 
 using namespace d_fall_pps;
 using namespace std;
@@ -33,67 +37,37 @@ using namespace std;
 void writeCrazyflieDB(CrazyflieDB& cfDB) {
 
 }
-/*
-
-//receive request from students (containing (maybe among other things) their name)
-//send them back the CrazyflieContext (containing (maybe among other things) the area to fly in)
-bool returnCrazyflieContext(CentralManager::Request &request, CentralManager::Response &response) {
-    ROS_INFO("central manager");
-	
-	
-	//TBD: crazyflie-dependent area assignment instead of hardcoding
-		//request contains string crazyflieName
-	//respond with area boundaries upon request
-	response.context.localArea.xmin = -1.5;
-	response.context.localArea.xmax = 1.5;
-	response.context.localArea.ymin = -1.5;
-	response.context.localArea.ymax = 1.5;
-	response.context.localArea.zmin = -0.25;
-	response.context.localArea.zmax = 0.8;
-
-	return true;
-}
 
 bool cmRead(CMRead::Request &request, CMRead::Response &response) {
-    ROS_INFO("central manager");
-	
-	
-	//TBD: crazyflie-dependent area assignment instead of hardcoding
-		//request contains string crazyflieName
-	//respond with area boundaries upon request
-	response.context.localArea.xmin = -1.5;
-	response.context.localArea.xmax = 1.5;
-	response.context.localArea.ymin = -1.5;
-	response.context.localArea.ymax = 1.5;
-	response.context.localArea.zmin = -0.25;
-	response.context.localArea.zmax = 0.8;
 
 	return true;
 }
 
 bool cmQuery(CMQuery::Request &request, CMQuery::Response &response) {
-    ROS_INFO("central manager");
-	
-	
-	//TBD: crazyflie-dependent area assignment instead of hardcoding
-		//request contains string crazyflieName
-	//respond with area boundaries upon request
-	response.context.localArea.xmin = -1.5;
-	response.context.localArea.xmax = 1.5;
-	response.context.localArea.ymin = -1.5;
-	response.context.localArea.ymax = 1.5;
-	response.context.localArea.zmin = -0.25;
-	response.context.localArea.zmax = 0.8;
 
 	return true;
-}*/
+}
+
+bool cmUpdate(CMUpdate::Request &request, CMUpdate::Response &response) {
+
+	return true;
+}
+
+bool cmCommand(CMCommand::Request &request, CMCommand::Response &response) {
+
+	return true;
+}
 
 int main(int argc, char* argv[]) {
     ros::init(argc, argv, "CentralManagerService");
 
     ros::NodeHandle nodeHandle("~");
 
-    //ros::ServiceServer service = nodeHandle.advertiseService("CMRead", cmRead);
+    ros::ServiceServer readService = nodeHandle.advertiseService("Read", cmRead);
+    ros::ServiceServer queryService = nodeHandle.advertiseService("Query", cmQuery);
+    ros::ServiceServer updateService = nodeHandle.advertiseService("Update", cmUpdate);
+    ros::ServiceServer commandService = nodeHandle.advertiseService("Command", cmCommand);
+
     ROS_INFO("CentralManagerService ready");
     ros::spin();
 
