@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   genmsg
+  rosbag
 )
 
 ## System dependencies are found with CMake's conventions
@@ -134,7 +135,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES
-  CATKIN_DEPENDS roscpp rospy std_msgs
+  CATKIN_DEPENDS roscpp rospy std_msgs rosbag
   DEPENDS
 )
 

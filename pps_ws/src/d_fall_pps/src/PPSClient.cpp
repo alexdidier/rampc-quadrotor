@@ -16,6 +16,8 @@
 
 #include "ros/ros.h"
 #include <stdlib.h>
+#include <rosbag/bag.h>
+#include <std_msgs/String.h>
 
 #include "d_fall_pps/Controller.h"
 #include "d_fall_pps/CentralManager.h"
@@ -45,27 +47,34 @@ ros::ServiceClient customController;
 ros::ServiceClient centralManager;
 ros::Publisher controlCommandPublisher;
 
+rosbag::Bag bag;
+
 //describes the area of the crazyflie and other parameters
 CrazyflieContext context;
 //wheter to use safe of custom controller
 bool usingSafeController;
 
+int safetyDelay;
+
 //checks if crazyflie is within allowed area and if custom controller returns no data
 bool safetyCheck(ViconData data, ControlCommand controlCommand) {
-	CrazyflieContext CrazyflieContext;
 	
 	//position check
 	if((data.x < context.localArea.xmin) or (data.x > context.localArea.xmax)) {
-		return true;
+		safetyDelay--;
+		return false;
 	}
 	if((data.y < context.localArea.ymin) or (data.y > context.localArea.ymax)) {
-		return true;
+		safetyDelay--;
+		return false;
 	}
 	if((data.z < context.localArea.zmin) or (data.z > context.localArea.zmax)) {
-		return true;
+		safetyDelay--;
+		return false;
 	}
 
-	return false;
+	
+	return true;
 }
 
 //is called when new data from Vicon arrives
@@ -73,6 +82,8 @@ void viconCallback(const ViconData& data) {
 	if(data.crazyflieName == crazyflieName) {	
 		Controller controllerCall;
 		controllerCall.request.crazyflieLocation = data;
+		
+
 
 		if(!usingSafeController) {
 			bool success = customController.call(controllerCall);
@@ -81,7 +92,6 @@ void viconCallback(const ViconData& data) {
 				usingSafeController = true;
 			}
 
-			//usingSafeController = !safetyCheck(data, controllerCall.response.controlOutput);
 			usingSafeController = true; //debug
 		}
 
@@ -91,8 +101,40 @@ void viconCallback(const ViconData& data) {
 				ROS_ERROR("Failed to call safe controller");
 			}
 		}
+		
+		if(!safetyCheck(data, controllerCall.response.controlOutput)){
+			ROS_INFO_STREAM("AutocontrolOn >>>>>> SWITCHED OFF");
+			if(safetyDelay == 0){
+				ROS_INFO_STREAM("ROS Shutdown");
+				//bag.close();
+				ros::shutdown();
+			}
+			ControlCommand switchOffControls;
+			switchOffControls.roll = 0;
+			switchOffControls.pitch = 0;
+			switchOffControls.yaw = 0;
+			switchOffControls.motorCmd1 = 0;
+			switchOffControls.motorCmd2 = 0;
+			switchOffControls.motorCmd3 = 0;
+			switchOffControls.motorCmd4 = 0;
+			switchOffControls.onboardControllerType = 0;
+			
+			controllerCall.response.controlOutput = switchOffControls;
+		}
+		else{
+			safetyDelay=20;
+		}
 
 		controlCommandPublisher.publish(controllerCall.response.controlOutput);
+		
+		std_msgs::String str;
+		str.data = std::string("foo");
+		
+		std_msgs::Int32 i;
+		i.data = 42;
+
+		bag.write("testfoo: ", ros::Time::now(), str);
+		bag.write("test42: ", ros::Time::now(), i);
 	}
 }
 
@@ -167,6 +209,11 @@ int main(int argc, char* argv[]){
 	ros::NodeHandle nodeHandle("~");
 	loadParameters(nodeHandle);
 	
+	
+	//ros::service::waitForService("/CentralManagerService/CentralManager");
+	centralManager = nodeHandle.serviceClient<CentralManager>("/CentralManagerService/CentralManager");
+	loadCrazyflieContext();
+	
 	//keeps 100 messages because otherwise ViconDataPublisher would override the data immediately
 	ros::Subscriber viconSubscriber = nodeHandle.subscribe("/ViconDataPublisher/ViconData", 100, viconCallback);
 	ROS_INFO_STREAM("successfully subscribed to ViconData");
@@ -182,9 +229,8 @@ int main(int argc, char* argv[]){
 	usingSafeController = true;
 	loadSafeController();
 
-	//ros::service::waitForService("/CentralManagerService/CentralManager");
-	centralManager = nodeHandle.serviceClient<CentralManager>("/CentralManagerService/CentralManager");
-	loadCrazyflieContext();
+	
+	bag.open("testbag.bag", rosbag::bagmode::Write);
 
     ros::spin();
     return 0;
