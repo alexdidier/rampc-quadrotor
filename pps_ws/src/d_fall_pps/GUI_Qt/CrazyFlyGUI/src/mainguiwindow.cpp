@@ -106,7 +106,7 @@ void MainGUIWindow::setPosMarkers(const ptrToMessage& p_msg) //connected to newV
         if(i >= markers_vector.size()) //some new markers coming
         {
             ROS_INFO_STREAM("element index: " << i << " added");
-            QPointF p(p_msg->markers[i].x * FROM_METERS_TO_UNITS, p_msg->markers[i].y * FROM_METERS_TO_UNITS);
+            QPointF p(p_msg->markers[i].x * FROM_MILIMETERS_TO_UNITS, p_msg->markers[i].y * FROM_MILIMETERS_TO_UNITS);
             Marker* tmp_p_marker = new Marker(scene->mapFromWorldToScene(p));
             markers_vector.push_back(tmp_p_marker); // what happens with the new indexes? check if this is correct
 
@@ -122,7 +122,7 @@ void MainGUIWindow::setPosMarkers(const ptrToMessage& p_msg) //connected to newV
         else
         {
             ROS_INFO_STREAM("element index: " << i << " moved, already existed");
-            markers_vector[i]->setPosMarker(scene->mapFromWorldToScene(QPointF(p_msg->markers[i].x * FROM_METERS_TO_UNITS, p_msg->markers[i].y * FROM_METERS_TO_UNITS)));
+            markers_vector[i]->setPosMarker(scene->mapFromWorldToScene(QPointF(p_msg->markers[i].x * FROM_MILIMETERS_TO_UNITS, p_msg->markers[i].y * FROM_MILIMETERS_TO_UNITS)));
         }
     }
 }

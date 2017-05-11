@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
     float f = 0;
     int i = 0;
     // while(ros::ok())
-    while(true)
+    /*while(true)
     {
         if(i % 1000 == 0)
         {
@@ -89,7 +89,7 @@ int main(int argc, char* argv[]) {
         ros::Duration(0.1).sleep();
         f += 0.01;
         i++;
-    }
+    }*/
 
 
     //the testing code will not go further than here if testing without real ViconData
@@ -151,9 +151,9 @@ int main(int argc, char* argv[]) {
 
         UnlabeledMarker marker;
         UnlabeledMarkersArray markersArray;
+        ROS_INFO_STREAM("unlabeledMarkerCount: " << unlabeledMarkerCount);
 
-
-        for(int unlabeledMarkerIndex = 0; i < unlabeledMarkerCount; i++)
+        for(int unlabeledMarkerIndex = 0; unlabeledMarkerIndex < unlabeledMarkerCount; unlabeledMarkerIndex++)
         {
 
             Output_GetUnlabeledMarkerGlobalTranslation OutputTranslation =
@@ -165,6 +165,7 @@ int main(int argc, char* argv[]) {
             marker.z = OutputTranslation.Translation[2];
 
             markersArray.markers.push_back(marker);
+            ROS_INFO_STREAM("inside marker loop, index: " << unlabeledMarkerIndex);
         }
 
         unlabeledMarkersPublisher.publish(markersArray);
