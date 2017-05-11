@@ -33,6 +33,9 @@
 #include "d_fall_pps/UnlabeledMarker.h"
 #include "d_fall_pps/UnlabeledMarkersArray.h"
 
+// #define TESTING_FAKE_DATA
+
+// notice that unit here are in milimeters
 using namespace ViconDataStreamSDK::CPP;
 using namespace d_fall_pps;
 
@@ -48,10 +51,12 @@ int main(int argc, char* argv[]) {
     ros::Publisher unlabeledMarkersPublisher =
         nodeHandle.advertise<UnlabeledMarkersArray>("UnlabeledMarkersArray", 1);
 
+    #ifdef TESTING_FAKE_DATA
+    // Test faking data part
     float f = 0;
     int i = 0;
-    // while(ros::ok())
-    /*while(true)
+
+    while(ros::ok())
     {
         if(i % 1000 == 0)
         {
@@ -87,13 +92,10 @@ int main(int argc, char* argv[]) {
 
         unlabeledMarkersPublisher.publish(markersArray);
         ros::Duration(0.1).sleep();
-        f += 0.01;
+        f += 10;
         i++;
-    }*/
-
-
-    //the testing code will not go further than here if testing without real ViconData
-
+    }
+    #else
     Client client;
 
     //connect client to Vicon computer
@@ -165,7 +167,6 @@ int main(int argc, char* argv[]) {
             marker.z = OutputTranslation.Translation[2];
 
             markersArray.markers.push_back(marker);
-            ROS_INFO_STREAM("inside marker loop, index: " << unlabeledMarkerIndex);
         }
 
         unlabeledMarkersPublisher.publish(markersArray);
@@ -230,4 +231,6 @@ int main(int argc, char* argv[]) {
     client.DisableDeviceData();
 
     client.Disconnect();
+
+    #endif
 }
