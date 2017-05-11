@@ -1,0 +1,7 @@
+#!/bin/bash
+
+if [ "$#" -ne 0 ] 
+then echo "usage: enable_crazyflie <no arguments>"
+else rostopic pub -1 /PPSClient/Command std_msgs/Int32 3;
+fi
+
