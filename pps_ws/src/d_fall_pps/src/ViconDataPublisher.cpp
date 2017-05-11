@@ -18,7 +18,12 @@
 #include "DataStreamClient.h"
 #include "ros/ros.h"
 #include "d_fall_pps/ViconData.h"
+#include "d_fall_pps/UnlabeledMarker.h"
+#include "d_fall_pps/UnlabeledMarkersArray.h"
 
+// #define TESTING_FAKE_DATA
+
+// notice that unit here are in milimeters
 using namespace ViconDataStreamSDK::CPP;
 using namespace d_fall_pps;
 
@@ -29,8 +34,56 @@ int main(int argc, char* argv[]) {
     ros::Time::init();
 
     ros::Publisher viconDataPublisher =
-            nodeHandle.advertise<ViconData>("ViconData", 1);
+        nodeHandle.advertise<ViconData>("ViconData", 1);
 
+    ros::Publisher unlabeledMarkersPublisher =
+        nodeHandle.advertise<UnlabeledMarkersArray>("UnlabeledMarkersArray", 1);
+
+    #ifdef TESTING_FAKE_DATA
+    // Test faking data part
+    float f = 0;
+    int i = 0;
+
+    while(ros::ok())
+    {
+        if(i % 1000 == 0)
+        {
+        	ROS_INFO("iteration #%d",i);
+    	}
+
+        // Testing piece of code
+        UnlabeledMarker marker;
+        UnlabeledMarkersArray markersArray;
+
+        marker.index = 0;
+        marker.x = f;
+        marker.y = 0;
+        marker.z = 0;
+
+        markersArray.markers.push_back(marker);
+
+        marker.index = 1;
+        marker.x = 0;
+        marker.y = f;
+        marker.z = 0;
+
+        markersArray.markers.push_back(marker);
+
+        if(i > 50 && i < 100)
+        {
+            marker.index = 2;
+            marker.x = f;
+            marker.y = f;
+            marker.z = 0;
+            markersArray.markers.push_back(marker);
+        }
+
+        unlabeledMarkersPublisher.publish(markersArray);
+        ros::Duration(0.1).sleep();
+        f += 10;
+        i++;
+    }
+    #else
     Client client;
 
     std::string hostName = "10.42.00.15:801";
@@ -64,12 +117,46 @@ int main(int argc, char* argv[]) {
             Direction::Left,
             Direction::Up);
 
+    int iterations = 0;
     while (ros::ok()) {
+    	//if you want to see at least some output in the terminal
+    	//to see that you are still publishing
+    	if(iterations % 1000 == 0){
+        	ROS_INFO("iteration #%d",iterations);
+    	}
+    	iterations++;
+
+
+
+        // Output_GetUnlabeledMarkerCount GetUnlabeledMarkerCount() const;
         // Get a frame
         while (client.GetFrame().Result != Result::Success) {
             // Sleep a little so that we don't lumber the CPU with a busy poll
             ros::Duration(0.001).sleep();
         }
+
+        // Unlabeled markers, for GUI
+        unsigned int unlabeledMarkerCount = client.GetUnlabeledMarkerCount().MarkerCount;
+
+        UnlabeledMarker marker;
+        UnlabeledMarkersArray markersArray;
+        ROS_INFO_STREAM("unlabeledMarkerCount: " << unlabeledMarkerCount);
+
+        for(int unlabeledMarkerIndex = 0; unlabeledMarkerIndex < unlabeledMarkerCount; unlabeledMarkerIndex++)
+        {
+
+            Output_GetUnlabeledMarkerGlobalTranslation OutputTranslation =
+                client.GetUnlabeledMarkerGlobalTranslation(unlabeledMarkerIndex);
+
+            marker.index = unlabeledMarkerIndex;
+            marker.x = OutputTranslation.Translation[0];
+            marker.y = OutputTranslation.Translation[1];
+            marker.z = OutputTranslation.Translation[2];
+
+            markersArray.markers.push_back(marker);
+        }
+
+        unlabeledMarkersPublisher.publish(markersArray);
 
         unsigned int subjectCount = client.GetSubjectCount().SubjectCount;
 
@@ -133,4 +220,6 @@ int main(int argc, char* argv[]) {
     client.DisableDeviceData();
 
     client.Disconnect();
+
+    #endif
 }
