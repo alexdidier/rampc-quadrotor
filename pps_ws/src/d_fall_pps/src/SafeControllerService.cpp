@@ -14,88 +14,229 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <math.h>
+#include <stdlib.h>
 #include "ros/ros.h"
 #include "d_fall_pps/ViconData.h"
 #include "d_fall_pps/Setpoint.h"
-#include "d_fall_pps/RateCommand.h"
-#include "d_fall_pps/RateController.h"
+#include "d_fall_pps/ControlCommand.h"
+#include "d_fall_pps/Controller.h"
+
+#define PI 3.1415926535
+#define RATE_CONTROLLER 0
+#define VEL_AVERAGE_SIZE 10
 
 using namespace d_fall_pps;
 
+std::vector<float>  ffThrust(4);
+std::vector<float>  feedforwardMotor(4);
+std::vector<float>  motorPoly(3);
+
+std::vector<float>  gainMatrixRoll(9);
+std::vector<float>  gainMatrixPitch(9);
+std::vector<float>  gainMatrixYaw(9);
+std::vector<float>  gainMatrixThrust(9);
+
+//K_infinite of feedback
+std::vector<float> filterGain(6);
+//only for velocity calculation
+std::vector<float> estimatorMatrix(2);
+float prevEstimate[9];
+
+std::vector<float>  setpoint(4);
+float saturationThrust;
 
 ViconData previousLocation;
 
-bool calculateControlOutput(RateController::Request &request, RateController::Response &response) {
-    ROS_INFO("calculate control output");
+void loadParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length) {
+    if(!nodeHandle.getParam(name, val)){
+        ROS_ERROR_STREAM("missing parameter '" << name << "'");
+    }
+    if(val.size() != length) {
+        ROS_ERROR_STREAM("parameter '" << name << "' has wrong array length, " << length << " needed");
+    }
+}
 
-    //Philipp: I have put this here, because in the first call, we wouldnt have previousLocation initialized
-    //save previous data for calculating velocities in next step
+void loadParameters(ros::NodeHandle& nodeHandle) {
+    loadParameterFloatVector(nodeHandle, "feedforwardMotor", feedforwardMotor, 4);
+    loadParameterFloatVector(nodeHandle, "motorPoly", motorPoly, 3);
+
+    for(int i = 0; i < 4; ++i) {
+        ffThrust[i] = motorPoly[2] * feedforwardMotor[i] * feedforwardMotor[i] + motorPoly[1] * feedforwardMotor[i] + motorPoly[0];
+    }
+    saturationThrust = motorPoly[2] * 12000 * 12000 + motorPoly[1] * 12000 + motorPoly[0];
+
+    loadParameterFloatVector(nodeHandle, "gainMatrixRoll", gainMatrixRoll, 9);
+    loadParameterFloatVector(nodeHandle, "gainMatrixPitch", gainMatrixPitch, 9);
+    loadParameterFloatVector(nodeHandle, "gainMatrixYaw", gainMatrixYaw, 9);
+    loadParameterFloatVector(nodeHandle, "gainMatrixThrust", gainMatrixThrust, 9);
+
+    loadParameterFloatVector(nodeHandle, "filterGain", filterGain, 6);
+    loadParameterFloatVector(nodeHandle, "estimatorMatrix", estimatorMatrix, 2);
+
+    loadParameterFloatVector(nodeHandle, "defaultSetpoint", setpoint, 4);
+}
+
+float computeMotorPolyBackward(float thrust) {
+    return (-motorPoly[1] + sqrt(motorPoly[1] * motorPoly[1] - 4 * motorPoly[2] * (motorPoly[0] - thrust))) / (2 * motorPoly[2]);
+}
+
+
+//Kalman
+void estimateState(Controller::Request &request, float (&est)[9]) {
+    // attitude
+    est[6] = request.crazyflieLocation.roll;
+    est[7] = request.crazyflieLocation.pitch;
+    est[8] = request.crazyflieLocation.yaw;
+
+    //velocity & filtering
+    float ahat_x[6]; //estimator matrix times state (x, y, z, vx, vy, vz)
+    ahat_x[0] = 0; ahat_x[1]=0; ahat_x[2]=0;
+    ahat_x[3] = estimatorMatrix[0] * prevEstimate[0] + estimatorMatrix[1] * prevEstimate[3];
+    ahat_x[4] = estimatorMatrix[0] * prevEstimate[1] + estimatorMatrix[1] * prevEstimate[4];
+    ahat_x[5] = estimatorMatrix[0] * prevEstimate[2] + estimatorMatrix[1] * prevEstimate[5];
+
+    
+    float k_x[6]; //filterGain times state
+    k_x[0] = request.crazyflieLocation.x * filterGain[0];
+    k_x[1] = request.crazyflieLocation.y * filterGain[1];
+    k_x[2] = request.crazyflieLocation.z * filterGain[2];
+    k_x[3] = request.crazyflieLocation.x * filterGain[3];
+    k_x[4] = request.crazyflieLocation.y * filterGain[4];
+    k_x[5] = request.crazyflieLocation.z * filterGain[5];
+   
+    est[0] = ahat_x[0] + k_x[0];
+    est[1] = ahat_x[1] + k_x[1];
+    est[2] = ahat_x[2] + k_x[2];
+    est[3] = ahat_x[3] + k_x[3];
+    est[4] = ahat_x[4] + k_x[4];
+    est[5] = ahat_x[5] + k_x[5];
+
+    memcpy(prevEstimate, est, 9 * sizeof(float));
+    
+}
+
+
+//simple derivative
+/*
+void estimateState(Controller::Request &request, float (&est)[9]) {
+    est[0] = request.crazyflieLocation.x;
+    est[1] = request.crazyflieLocation.y;
+    est[2] = request.crazyflieLocation.z;
+
+    est[3] = (request.crazyflieLocation.x - previousLocation.x) / request.crazyflieLocation.acquiringTime;
+    est[4] = (request.crazyflieLocation.y - previousLocation.y) / request.crazyflieLocation.acquiringTime;
+    est[5] = (request.crazyflieLocation.z - previousLocation.z) / request.crazyflieLocation.acquiringTime;
+
+    ROS_INFO_STREAM("vx: " << est[3]);
+    ROS_INFO_STREAM("vy: " << est[4]);
+    ROS_INFO_STREAM("vz: " << est[5]);
+
+    est[6] = request.crazyflieLocation.roll;
+    est[7] = request.crazyflieLocation.pitch;
+    est[8] = request.crazyflieLocation.yaw;
+}
+*/
+
+void convertIntoBodyFrame(float est[9], float (&state)[9], float yaw_measured) {
+	float sinYaw = sin(yaw_measured);
+    float cosYaw = cos(yaw_measured);
+
+    state[0] = est[0] * cosYaw + est[1] * sinYaw;
+    state[1] = -est[0] * sinYaw + est[1] * cosYaw;
+    state[2] = est[2];
+
+    state[3] = est[3] * cosYaw + est[4] * sinYaw;
+    state[4] = -est[3] * sinYaw + est[4] * cosYaw;
+    state[5] = est[5];
+
+    state[6] = est[6];
+    state[7] = est[7];
+    state[8] = est[8];
+}
+
+bool calculateControlOutput(Controller::Request &request, Controller::Response &response) {
+    ViconData vicon = request.crazyflieLocation;
+	
+	//trial>>>>>>>
+	int yaw_measured = request.crazyflieLocation.yaw;
+	//<<<<<<
+
+    //move coordinate system to make setpoint origin
+    request.crazyflieLocation.x -= setpoint[0];
+    request.crazyflieLocation.y -= setpoint[1];
+    request.crazyflieLocation.z -= setpoint[2];
+    float yaw = request.crazyflieLocation.yaw - setpoint[3];
+
+    while(yaw > PI) yaw -= 2 * PI;
+    while(yaw < -PI) yaw += 2 * PI;
+    request.crazyflieLocation.yaw = yaw;
+
+    float est[9]; //px, py, pz, vx, vy, vz, roll, pitch, yaw
+    estimateState(request, est);
+
+    float state[9]; //px, py, pz, vx, vy, vz, roll, pitch, yaw
+    convertIntoBodyFrame(est, state, yaw_measured);
+	//convertIntoBodyFrame(est, state, yaw);
+
+    //calculate feedback
+    float outRoll = 0;
+    float outPitch = 0;
+    float outYaw = 0;
+    float thrustIntermediate = 0;
+    for(int i = 0; i < 9; ++i) {
+    	outRoll -= gainMatrixRoll[i] * state[i];
+    	outPitch -= gainMatrixPitch[i] * state[i];
+    	outYaw -= gainMatrixYaw[i] * state[i];
+    	thrustIntermediate -= gainMatrixThrust[i] * state[i];
+    }
+
+    //HINWEIS: übersteuern beim outYaw wenn man 180 Grad zum yaw-Setpoint startet
+    //nach Multiplikation mit 0.5 gibt es den Effekt nicht mehr -> mit Paul besprechen....
+    //outYaw *= 0.5;
+
+    response.controlOutput.roll = outRoll;
+    response.controlOutput.pitch = outPitch;
+    response.controlOutput.yaw = outYaw;
+
+    if(thrustIntermediate > saturationThrust)
+        thrustIntermediate = saturationThrust;
+    else if(thrustIntermediate < -saturationThrust)
+        thrustIntermediate = -saturationThrust;
+
+    response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrustIntermediate + ffThrust[0]);
+    response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrustIntermediate + ffThrust[1]);
+    response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrustIntermediate + ffThrust[2]);
+    response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrustIntermediate + ffThrust[3]);
+
+    response.controlOutput.onboardControllerType = RATE_CONTROLLER;
+
     previousLocation = request.crazyflieLocation;
     
-    ViconData vicon = request.crazyflieLocation;
-    Setpoint goal = request.setpoint;
-
-
-    ROS_INFO("request received with following ViconData");
-    ROS_INFO_STREAM(vicon);
-    ROS_INFO("the goal setpoint is:");
-    ROS_INFO_STREAM(request.setpoint);
-
-
-
-
-    //add/calculate safeController
-    //K matrix for kLqrOuter
-    const float k[] = {
-        0,            -1.714330725,            0,             0,   -1.337107465,              0,      5.115369735,             0,            0,
-        1.714330725,             0,            0,   1.337107465,              0,              0,                0,   5.115369735,            0,
-        0,                       0,            0,             0,              0,              0,                0,             0,  3.843099534,
-        0,                       0,   0.22195826,             0,              0,     0.12362477,                0,             0,            0
-    };
-
-    float px = request.crazyflieLocation.x - request.setpoint.x;
-    float py = request.crazyflieLocation.y - request.setpoint.y;
-    float pz = request.crazyflieLocation.z - request.setpoint.z;
-
-    //linear approximation of derivative of position
-    float vx = (request.crazyflieLocation.x - previousLocation.x) / request.crazyflieLocation.acquiringTime;
-    float vy = (request.crazyflieLocation.y - previousLocation.y) / request.crazyflieLocation.acquiringTime;
-    float vz = (request.crazyflieLocation.z - previousLocation.z) / request.crazyflieLocation.acquiringTime;
-
-    float roll = request.crazyflieLocation.roll;
-    float pitch = request.crazyflieLocation.pitch;
-    float yaw = request.crazyflieLocation.yaw - request.setpoint.yaw;
-
-    response.controlOutput.rollRate = -(k[0] * px + k[1] * py + k[2] * pz + k[3] * vx + k[4] * vy + k[5] * vz + k[6] * roll + k[7] * pitch + k[8] * yaw);
-    response.controlOutput.pitchRate = -(k[9] * px + k[10] * py + k[11] * pz + k[12] * vx + k[13] * vy + k[14] * vz + k[15] * roll + k[16] * pitch + k[17] * yaw);
-    response.controlOutput.yawRate = -(k[18] * px + k[19] * py + k[20] * pz + k[21] * vx + k[22] * vy + k[23] * vz + k[24] * roll + k[25] * pitch + k[26] * yaw);
-    float thrustIntermediate = -(k[27] * px + k[28] * py + k[29] * pz + k[30] * vx + k[31] * vy + k[32] * vz + k[33] * roll + k[34] * pitch + k[35] * yaw);
-    //idea: linerazie plot and apply on sum of thrust instead of on each motor
-    if(thrustIntermediate < 0) {thrustIntermediate = 0;}
-    response.controlOutput.thrust = 65000;
-
-    ROS_INFO("??????????????????????????????????????????????????????????????????????????????????????");
-    ROS_INFO_STREAM(thrustIntermediate);
-    ROS_INFO_STREAM(response.controlOutput.thrust);
-
-
-    /*cmd1Thrust=(-m_a1+sqrt(m_a1*m_a1-4*m_a2*(m_a0-(thrust+m_ffCmd1Thrust))))/(2*m_a2);
-    cmd2Thrust=(-m_a1+sqrt(m_a1*m_a1-4*m_a2*(m_a0-(thrust+m_ffCmd2Thrust))))/(2*m_a2);
-    cmd3Thrust=(-m_a1+sqrt(m_a1*m_a1-4*m_a2*(m_a0-(thrust+m_ffCmd3Thrust))))/(2*m_a2);
-    cmd4Thrust=(-m_a1+sqrt(m_a1*m_a1-4*m_a2*(m_a0-(thrust+m_ffCmd4Thrust))))/(2*m_a2);
-    */
-
-
 	return true;
 }
+
+void setpointCallback(const Setpoint& newSetpoint) {
+    setpoint[0] = newSetpoint.x;
+    setpoint[1] = newSetpoint.y;
+    setpoint[2] = newSetpoint.z;
+    setpoint[3] = newSetpoint.yaw;
+}
+
+
+//ros::Publisher pub;
 
 int main(int argc, char* argv[]) {
     ros::init(argc, argv, "SafeControllerService");
 
     ros::NodeHandle nodeHandle("~");
+    loadParameters(nodeHandle);
+
+    ros::Publisher setpointPublisher = nodeHandle.advertise<Setpoint>("Setpoint", 1);
+    ros::Subscriber setpointSubscriber = nodeHandle.subscribe("/SafeControllerService/Setpoint", 1, setpointCallback);
 
     ros::ServiceServer service = nodeHandle.advertiseService("RateController", calculateControlOutput);
-    ROS_INFO("SafeControllerService ready to send");
+    ROS_INFO("SafeControllerService ready");
     ros::spin();
 
     return 0;

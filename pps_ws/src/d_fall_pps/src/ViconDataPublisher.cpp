@@ -14,18 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
-
-
-//TODO:
-//CentralManager: extract data about room from vicon data
-//CentralManager: assign area for each group and those coordinates to PPSClients
-//ViconDataPublisher: extract data about room from vicon data in and send also to PPSClient
-//PPSClient: Compare data received from CentralManager and ViconDataPublisher and determine in which area you are
-//PPSClient: Choose correct controller accoring to current area
-
-
-
 #include <string.h>
 #include "DataStreamClient.h"
 #include "ros/ros.h"
@@ -43,23 +31,14 @@ int main(int argc, char* argv[]) {
     ros::Publisher viconDataPublisher =
             nodeHandle.advertise<ViconData>("ViconData", 1);
 
-    //publish something random if no viconData is available for testing
-    /*
-    ViconData viconData; 
-    double i = 1; 
-    while(true)
-    {
-    	viconData.roll  = i;
-    	 viconDataPublisher.publish(viconData);
-    	 ++i;
-    }
-    //the code will not go further than here if testing without real ViconData
-    */
-
     Client client;
 
-    //connect client to Vicon computer
     std::string hostName = "10.42.00.15:801";
+    if(!nodeHandle.getParam("hostName", hostName)) {
+        ROS_ERROR("Failed to get hostName");
+        return 1;
+    }
+
     ROS_INFO_STREAM("Connecting to " << hostName << " ...");
     while (!client.IsConnected().Connected) {
         bool ok = (client.Connect(hostName).Result == Result::Success);
@@ -73,7 +52,7 @@ int main(int argc, char* argv[]) {
     }
 
     //set data stream parameters
-    client.SetStreamMode(ViconDataStreamSDK::CPP::StreamMode::ClientPull); //phfriedl: maybe ServerPush instead of ClientPull for less latency?
+    client.SetStreamMode(ViconDataStreamSDK::CPP::StreamMode::ServerPush); //maybe ServerPush instead of ClientPull for less latency
 
     client.EnableSegmentData();
     client.EnableMarkerData();
@@ -85,23 +64,7 @@ int main(int argc, char* argv[]) {
             Direction::Left,
             Direction::Up);
 
-    //TODO
-    //maybe we need a loop rate?---------e.g. 0.5 MHz -----------------------------
-    //ros::Rate loop_rate(500000)
-
-
-    int iterations = 0;
     while (ros::ok()) {
-    	//if you want to see at least some output in the terminal
-    	//to see that you are still publishing
-    	if(iterations % 1000 == 0){
-        	ROS_INFO("iteration #%d",iterations);
-    	}
-    	iterations++;
-
-
-
-
         // Get a frame
         while (client.GetFrame().Result != Result::Success) {
             // Sleep a little so that we don't lumber the CPU with a busy poll
@@ -113,15 +76,17 @@ int main(int argc, char* argv[]) {
         // //Process the data and publish on topic
         for (int index = 0; index < subjectCount; index++) {
        		std::string subjectName = client.GetSubjectName(index).SubjectName;
-            std::string segmentName = client.GetSegmentName(subjectName, 0).SegmentName; //last value had to be changed to 0 instead of index, 27.03.17
+            std::string segmentName = client.GetSegmentName(subjectName, 0).SegmentName;
 
 
+            //continue only if the received frame is for the correct crazyflie
             Output_GetSegmentGlobalTranslation outputTranslation =
                     client.GetSegmentGlobalTranslation(subjectName, segmentName);
+            //ROS_INFO_STREAM("translation occluded: " << outputTranslation.Occluded);
 
             Output_GetSegmentGlobalRotationQuaternion outputRotation =
                     client.GetSegmentGlobalRotationQuaternion(subjectName, segmentName);
-
+            //ROS_INFO_STREAM("translation occluded: " << outputRotation.Occluded);
 
             //calculate position and rotation of Crazyflie
             double quat_x = outputRotation.Rotation[0];
@@ -143,13 +108,13 @@ int main(int argc, char* argv[]) {
                 totalViconLatency = 0;
             }
 
-            //build and publish message
+            //build message
             ViconData viconData;
             viconData.crazyflieName = subjectName;
 
-            viconData.x = outputTranslation.Translation[0];
-            viconData.y = outputTranslation.Translation[1];
-            viconData.z = outputTranslation.Translation[2];
+            viconData.x = outputTranslation.Translation[0] / 1000.0f;
+            viconData.y = outputTranslation.Translation[1] / 1000.0f;
+            viconData.z = outputTranslation.Translation[2] / 1000.0f;
             viconData.roll = roll;
             viconData.pitch = pitch;
             viconData.yaw = yaw;

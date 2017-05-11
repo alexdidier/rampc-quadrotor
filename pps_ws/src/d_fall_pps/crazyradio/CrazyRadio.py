@@ -3,9 +3,7 @@
 
 import roslib; roslib.load_manifest('d_fall_pps')
 import rospy
-from d_fall_pps.msg import AngleCommand
-from d_fall_pps.msg import RateCommand
-from d_fall_pps.msg import MotorCommand
+from d_fall_pps.msg import ControlCommand
 
 
 # General import
@@ -33,6 +31,7 @@ logging.basicConfig(level=logging.ERROR)
 CONTROLLER_MOTOR = 2
 CONTROLLER_ANGLE = 1
 CONTROLLER_RATE = 0
+RAD_TO_DEG = 57.296
 
 class PPSRadioClient:
     """
@@ -86,51 +85,42 @@ class PPSRadioClient:
         """Callback when the Crazyflie is disconnected (called in all cases)"""
         rospy.logwarn("Disconnected from %s" % link_uri)
 
-    def _send_to_commander(self,roll, pitch, yaw, thrust,cmd1,cmd2,cmd3,cmd4,mode):
+    def _send_to_commander(self,roll, pitch, yaw, thrust, cmd1, cmd2, cmd3, cmd4, mode):
         pk = CRTPPacket()
         pk.port = CRTPPort.COMMANDER
-        pk.data = struct.pack('<fffHHHHHH', roll, pitch, yaw, thrust,cmd1,cmd2,cmd3,cmd4,mode)
+        pk.data = struct.pack('<fffHHHHHH', roll * RAD_TO_DEG, pitch * RAD_TO_DEG, yaw * RAD_TO_DEG, thrust, cmd1, cmd2, cmd3, cmd4, mode)
         self._cf.send_packet(pk)
 
-def motorCommandCallback(data):
-    """Callback for motor controller actions"""
-    rospy.loginfo("motor controller callback: %s, %s, %s, %s", data.cmd1, data.cmd2, data.cmd3, data.cmd4)
-    #cf_client._send_to_commander(0, 0, 0, 0, data.cmd1, data.cmd2, data.cmd3, data.cmd4, CONTROLLER_MOTOR)
+def controlCommandCallback(data):
+    """Callback for controller actions"""
+    #rospy.loginfo("controller callback : %s, %s, %s", data.roll, data.pitch, data.yaw)
 
-def angleCommandCallback(data):
-    """Callback for angle controller actions"""
-    rospy.loginfo("angle controller callback: %s, %s, %s, %s", data.rollAngle, data.pitchAngle ,data.yawAngle, data.thrust)
-    #cmd1..4 must not be 0, as crazyflie onboard controller resets
-    #cf_client._send_to_commander(data.rollAngle,data.pitchAngle,data.yawAngle,data.thrust, 1, 1, 1, 1, CONTROLLER_ANGLE)
-
-def rateCommandCallback(data):
-    """Callback for rate controller actions"""
     #cmd1..4 must not be 0, as crazyflie onboard controller resets!
-    rospy.loginfo("rate controller callback : %s, %s, %s, %s", data.rollRate, data.pitchRate, data.yawRate, data.thrust)
-    cf_client._send_to_commander(data.rollRate,data.pitchRate,data.yawRate,data.thrust, 1, 1, 1, 1, CONTROLLER_RATE)
+    #pitch and yaw are inverted on crazyflie controller
+    cf_client._send_to_commander(data.roll, -data.pitch, -data.yaw, 0, data.motorCmd1, data.motorCmd2, data.motorCmd3, data.motorCmd4, data.onboardControllerType)
 
 if __name__ == '__main__':
     rospy.init_node('CrazyRadio', anonymous=True)
     # Initialize the low-level drivers (don't list the debug drivers)
     cflib.crtp.init_drivers(enable_debug_driver=False)
 
-    if rospy.has_param("/CrazyRadio/CrazyFlieAddress"):
-        radio_address = rospy.get_param("/CrazyRadio/CrazyFlieAddress")
+    if rospy.has_param("/CrazyRadio/crazyFlieAddress"):
+        radio_address = rospy.get_param("/CrazyRadio/crazyFlieAddress")
         rospy.loginfo("Crazyradio connecting to %s" % radio_address)
         global cf_client
 
         cf_client = PPSRadioClient(radio_address)
         time.sleep(1.0)
 
-        rospy.Subscriber("/PPSClient/MotorCommand", MotorCommand, motorCommandCallback)
-        rospy.Subscriber("/PPSClient/AngleCommand", AngleCommand, angleCommandCallback)
-        rospy.Subscriber("/PPSClient/RateCommand", RateCommand, rateCommandCallback)
+        rospy.Subscriber("/PPSClient/ControlCommand", ControlCommand, controlCommandCallback)
 
         rospy.spin()
         rospy.loginfo("Turning off crazyflie")
+
         cf_client._send_to_commander(0, 0, 0, 0, 0, 0, 0, 0, CONTROLLER_MOTOR)
         #wait for client to send its commands
         time.sleep(1.0)
+
         cf_client._cf.close_link()
         rospy.loginfo("Link closed")
     else:

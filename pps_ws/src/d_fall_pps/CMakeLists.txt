@@ -67,12 +67,10 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
   FILES
   ViconData.msg
-  MotorCommand.msg
-  AngleCommand.msg
-  RateCommand.msg
-  Setpoint.msg
+  ControlCommand.msg
   CrazyflieContext.msg
   AreaBounds.msg
+  Setpoint.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -83,9 +81,7 @@ add_message_files(
 # )
 add_service_files(
   FILES
-  MotorController.srv
-  AngleController.srv
-  RateController.srv
+  Controller.srv
   CentralManager.srv
 )
 
@@ -171,12 +167,14 @@ include_directories(
 add_executable(ViconDataPublisher src/ViconDataPublisher.cpp)
 add_executable(PPSClient src/PPSClient.cpp)
 add_executable(SafeControllerService src/SafeControllerService.cpp)
+add_executable(CustomControllerService src/CustomControllerService.cpp)
 add_executable(CentralManagerService src/CentralManagerService.cpp)
 
 
 add_dependencies(ViconDataPublisher d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(PPSClient d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(SafeControllerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(CustomControllerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(CentralManagerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 ## Rename C++ executable without prefix
@@ -202,6 +200,8 @@ target_link_libraries(ViconDataPublisher ${VICON_LIBRARY})
 target_link_libraries(PPSClient ${catkin_LIBRARIES})
 
 target_link_libraries(SafeControllerService ${catkin_LIBRARIES})
+
+target_link_libraries(CustomControllerService ${catkin_LIBRARIES})
 
 target_link_libraries(CentralManagerService ${catkin_LIBRARIES})
 
