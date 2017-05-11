@@ -1,1 +1,3 @@
+string crazyflieName
+string crazyflieAddress
 AreaBounds localArea
