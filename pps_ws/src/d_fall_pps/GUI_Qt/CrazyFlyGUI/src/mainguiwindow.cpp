@@ -67,9 +67,6 @@ void MainGUIWindow::_init()
     scene = new myGraphicsScene(ui->frame_drawing);
     scene->setSceneRect(-100 * FROM_METERS_TO_UNITS, -100 * FROM_METERS_TO_UNITS, 200 * FROM_METERS_TO_UNITS, 200 * FROM_METERS_TO_UNITS);
 
-    marker = new Marker(1 * FROM_METERS_TO_UNITS, - 1 * FROM_METERS_TO_UNITS);
-    marker->setPos(100, -200);
-
     ui->graphicsView->setScene(scene);
 
     QObject::connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)), scene, SLOT(removeCrazyFlyZone(int)));
@@ -109,7 +106,8 @@ void MainGUIWindow::setPosMarkers(const ptrToMessage& p_msg) //connected to newV
         if(i >= markers_vector.size()) //some new markers coming
         {
             ROS_INFO_STREAM("element index: " << i << " added");
-            Marker* tmp_p_marker = new Marker(p_msg->markers[i].x * FROM_METERS_TO_UNITS, p_msg->markers[i].y * FROM_METERS_TO_UNITS);
+            QPointF p(p_msg->markers[i].x * FROM_METERS_TO_UNITS, p_msg->markers[i].y * FROM_METERS_TO_UNITS);
+            Marker* tmp_p_marker = new Marker(scene->mapFromWorldToScene(p));
             markers_vector.push_back(tmp_p_marker); // what happens with the new indexes? check if this is correct
 
             if(ui->checkBox_vicon_markers->checkState() == Qt::Checked)                                    //only if markers checkbox info is checked..
@@ -124,7 +122,7 @@ void MainGUIWindow::setPosMarkers(const ptrToMessage& p_msg) //connected to newV
         else
         {
             ROS_INFO_STREAM("element index: " << i << " moved, already existed");
-            markers_vector[i]->setPosMarker(QPointF(p_msg->markers[i].x * FROM_METERS_TO_UNITS, p_msg->markers[i].y * FROM_METERS_TO_UNITS));
+            markers_vector[i]->setPosMarker(scene->mapFromWorldToScene(QPointF(p_msg->markers[i].x * FROM_METERS_TO_UNITS, p_msg->markers[i].y * FROM_METERS_TO_UNITS)));
         }
     }
 }

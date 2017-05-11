@@ -4,15 +4,15 @@
 #include <QBrush>
 
 
-Marker::Marker(qreal x, qreal y, QGraphicsItem * parent)
+Marker::Marker(QPointF p, QGraphicsItem * parent)
     : QGraphicsEllipseItem(-MARKER_DIAMETER/2, - MARKER_DIAMETER/2, MARKER_DIAMETER, MARKER_DIAMETER, parent)
 {
     _highlighted = false;
     _highlight_diameter = HIGHLIGHT_DIAMETER;
 
     // save original x and y
-    _center_x = x;
-    _center_y = y;
+    _center_x = p.x();
+    _center_y = p.y();
 
     _diameter = MARKER_DIAMETER; // x and y are top left coordinates
     this->setPos(_center_x, _center_y);          //where it is now, it is the center

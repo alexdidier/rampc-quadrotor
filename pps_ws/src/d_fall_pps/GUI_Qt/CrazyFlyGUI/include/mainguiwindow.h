@@ -109,8 +109,6 @@ private:
 
     std::vector<Marker*> markers_vector;
 
-    Marker* marker;
-
     #ifdef CATKIN_MAKE
     rosNodeThread* _rosNodeThread;
     #endif
