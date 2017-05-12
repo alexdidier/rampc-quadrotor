@@ -16,8 +16,8 @@
 
 #include "ros/ros.h"
 #include <stdlib.h>
-#include <rosbag/bag.h>
 #include <std_msgs/String.h>
+#include <rosbag/bag.h>
 #include <ros/package.h>
 
 #include "d_fall_pps/Controller.h"
@@ -28,7 +28,7 @@
 #include "d_fall_pps/ControlCommand.h"
 #include "d_fall_pps/CrazyflieContext.h"
 #include "std_msgs/Int32.h"
-#include "std_msgs/UInt32.h"
+
 
 #include "d_fall_pps/ControlCommand.h"
 
@@ -85,9 +85,12 @@ bool safetyCheck(CrazyflieData data, ControlCommand controlCommand) {
 }
 
 //is called when new data from Vicon arrives
-void viconCallback(const ViconData& viconData) {
+void viconCallback(const ViconData& viconData) {	
 	for(std::vector<CrazyflieData>::const_iterator it = viconData.crazyflies.begin(); it != viconData.crazyflies.end(); ++it) {
 		CrazyflieData data = *it;
+		
+		ROS_INFO_STREAM(data);
+		
 		if(data.crazyflieName == crazyflieName) {
 			Controller controllerCall;
 			controllerCall.request.ownCrazyflie = data;
@@ -112,20 +115,20 @@ void viconCallback(const ViconData& viconData) {
 						ROS_ERROR("Failed to call safe controller");
 					}
 				}
-			}
 
-			controlCommandPublisher.publish(controllerCall.response.controlOutput);
+				controlCommandPublisher.publish(controllerCall.response.controlOutput);
+
+				bag.write("ViconData", ros::Time::now(), data);
+				bag.write("ControlOutput", ros::Time::now(), controllerCall.response.controlOutput);
 			
-			
-		} else { //crazyflie disabled
-			ControlCommand zeroOutput = ControlCommand(); //everything set to zero
-			zeroOutput.onboardControllerType = 2; //set to motor_mode
-			controlCommandPublisher.publish(zeroOutput);
+			} else { //crazyflie disabled
+				ControlCommand zeroOutput = ControlCommand(); //everything set to zero
+				zeroOutput.onboardControllerType = 2; //set to motor_mode
+				controlCommandPublisher.publish(zeroOutput);
+				bag.write("ViconData", ros::Time::now(), data);
+				bag.write("ControlOutput", ros::Time::now(), zeroOutput);
+			}
 		}
-		
-		bag.write("ViconData", ros::Time::now(), data);
-		//bag.write("ControlOutput", ros::Time::now(), controllerCall.response.controlOutput);
-		
 	}
 }
 
