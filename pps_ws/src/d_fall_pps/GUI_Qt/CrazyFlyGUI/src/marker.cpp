@@ -4,34 +4,35 @@
 #include <QBrush>
 
 
-Marker::Marker(QPointF p, QGraphicsItem * parent)
+Marker::Marker(const UnlabeledMarker::ConstPtr& marker_msg, QGraphicsItem * parent)
     : QGraphicsEllipseItem(-MARKER_DIAMETER/2, - MARKER_DIAMETER/2, MARKER_DIAMETER, MARKER_DIAMETER, parent)
 {
+    updateMarker(marker_msg);
+
     _highlighted = false;
     _highlight_diameter = HIGHLIGHT_DIAMETER;
 
-    // save original x and y
-    _center_x = p.x();
-    _center_y = p.y();
+
+    QPointF p(m_x, m_y);
 
     _diameter = MARKER_DIAMETER; // x and y are top left coordinates
-    this->setPos(_center_x, _center_y);          //where it is now, it is the center
+    this->setPos(m_x, m_y);          //where it is now, it is the center
 
-    _x_highlight = _center_x - _highlight_diameter/2; // update top-left corner coordinates of highlighing circle
-    _y_highlight = _center_y - _highlight_diameter/2;
+    _x_highlight = m_x - _highlight_diameter/2; // update top-left corner coordinates of highlighing circle
+    _y_highlight = m_y - _highlight_diameter/2;
     this->setPen(Qt::NoPen);
     this->setBrush(QColor(255, 0, 0));
     this->setZValue(10);        // max z value, should always be seen
 }
 
-void Marker::setPosMarker(QPointF new_p)
+void Marker::updateMarker(const UnlabeledMarker::ConstPtr& marker_msg)
 {
-    prepareGeometryChange();
-    this->setPos(_center_x, _center_y);
-
-    _center_x = new_p.x();              // update center coordinates
-    _center_y = new_p.y();
+    m_x = marker_msg->x;
+    m_y = marker_msg->y;
+    m_z = marker_msg->z;
+    this->setPos(m_x * FROM_MILIMETERS_TO_UNITS, -m_y * FROM_MILIMETERS_TO_UNITS);    // - y because of coordinates
 }
+
 
 void Marker::setHighlighted(void)
 {

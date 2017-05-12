@@ -11,6 +11,10 @@
 #include <QMetaType>
 #include <QDir>
 
+#ifdef CATKIN_MAKE
+#include "d_fall_pps/UnlabeledMarker.h"
+#endif
+
 #include <string>
 
 #define N_MAX_CRAZYFLIES           20 // protection number
@@ -69,8 +73,6 @@ void MainGUIWindow::_init()
     scene->setSceneRect(-100 * FROM_METERS_TO_UNITS, -100 * FROM_METERS_TO_UNITS, 200 * FROM_METERS_TO_UNITS, 200 * FROM_METERS_TO_UNITS);
 
     ui->graphicsView->setScene(scene);
-    crazyFly_1 = new crazyFly(QPointF(50,50));
-    scene->addItem(crazyFly_1);
 
     QObject::connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)), scene, SLOT(removeCrazyFlyZone(int)));
     QObject::connect(scene, SIGNAL(numCrazyFlyZonesChanged(int)), this, SLOT(set_tabs(int)));
@@ -84,13 +86,15 @@ void MainGUIWindow::_init()
     #ifdef CATKIN_MAKE
     _rosNodeThread->init();
     qRegisterMetaType<ptrToMessage>("ptrToMessage");
-    QObject::connect(_rosNodeThread, SIGNAL(newViconData(const ptrToMessage&)), this, SLOT(setPosMarkers(const ptrToMessage&)));
+    QObject::connect(_rosNodeThread, SIGNAL(newViconData(const ptrToMessage&)), this, SLOT(updateNewViconData(const ptrToMessage&)));
     #endif
 }
 
 #ifdef CATKIN_MAKE
-void MainGUIWindow::setPosMarkers(const ptrToMessage& p_msg) //connected to newViconData, from node
+void MainGUIWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to newViconData, from node
 {
+
+    // update Markers
 
     if(p_msg->markers.size() < markers_vector.size()) // some markers have dissapeared, received stuff is smaller than what we have
     {
@@ -110,10 +114,10 @@ void MainGUIWindow::setPosMarkers(const ptrToMessage& p_msg) //connected to newV
         {
             ROS_INFO_STREAM("element index: " << i << " added");
             QPointF p(p_msg->markers[i].x * FROM_MILIMETERS_TO_UNITS, p_msg->markers[i].y * FROM_MILIMETERS_TO_UNITS);
-            Marker* tmp_p_marker = new Marker(scene->mapFromWorldToScene(p));
+            Marker* tmp_p_marker = new Marker(&(p_msg->markers[i]));
             markers_vector.push_back(tmp_p_marker); // what happens with the new indexes? check if this is correct
 
-            if(ui->checkBox_vicon_markers->checkState() == Qt::Checked)                                    //only if markers checkbox info is checked..
+            if(ui->checkBox_vicon_markers->checkState() == Qt::Checked) //only if markers checkbox info is checked..
             {
                 scene->addItem(markers_vector[i]);
                 if(ui->checkBox_vicon_highlight_markers->checkState() == Qt::Checked)
@@ -125,9 +129,16 @@ void MainGUIWindow::setPosMarkers(const ptrToMessage& p_msg) //connected to newV
         else
         {
             ROS_INFO_STREAM("element index: " << i << " moved, already existed");
-            markers_vector[i]->setPosMarker(scene->mapFromWorldToScene(QPointF(p_msg->markers[i].x * FROM_MILIMETERS_TO_UNITS, p_msg->markers[i].y * FROM_MILIMETERS_TO_UNITS)));
+            markers_vector[i]->updateMarker(&(p_msg->markers[i]));
         }
     }
+
+    // update Crazyflies
+
+    // TODO: create a vector of pointers to CFs with all the info inside. Update this vector with new coming data
+    // To access this vector by name, we should maybe create a second array of strings (names), that are located at the
+    // same position as the information of CFs is
+
 }
 #endif
 

@@ -5,6 +5,15 @@
 
 #include <QGraphicsEllipseItem>
 
+#ifdef CATKIN_MAKE
+#include "d_fall_pps/UnlabeledMarker.h"
+#endif
+
+
+#ifdef CATKIN_MAKE
+using namespace d_fall_pps;
+#endif
+
 #define MARKER_DIAMETER        20 * FROM_MILIMETERS_TO_UNITS
 
 #define HIGHLIGHT_DIAMETER     20
@@ -14,7 +23,7 @@
 class Marker : public QGraphicsEllipseItem
 {
 public:
-    explicit Marker(QPointF p, QGraphicsItem *parent = 0);
+    explicit Marker(const UnlabeledMarker::ConstPtr& marker_msg, QGraphicsItem *parent = 0);
     ~Marker();
 
     void setHighlighted(void);
@@ -23,13 +32,17 @@ public:
 
     bool getHighlighted(void);
 
-    void setPosMarker(QPointF new_p);
-
+    void updateMarker(const UnlabeledMarker::ConstPtr& marker_msg);
 private:
+
+    // info to fill by message
+
+    qreal m_x;
+    qreal m_y;
+    qreal m_z;
+
     // properties of marker itself
     qreal _diameter;
-    qreal _x;                   // coordinates of top-left corner of marker
-    qreal _y;
 
     qreal _center_x;              // coordinates of center of marker
     qreal _center_y;

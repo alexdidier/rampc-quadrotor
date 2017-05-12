@@ -10,8 +10,6 @@
 
 #ifdef CATKIN_MAKE
 #include "rosNodeThread.h"
-#include "d_fall_pps/UnlabeledMarker.h"
-#include "d_fall_pps/UnlabeledMarkersArray.h"
 #endif
 
 #include "ui_mainguiwindow.h"
@@ -100,7 +98,7 @@ private slots:
     void on_checkBox_vicon_highlight_markers_toggled(bool checked);
 
     #ifdef CATKIN_MAKE
-    void setPosMarkers(const ptrToMessage& p_msg);
+    void updateNewViconData(const ptrToMessage& p_msg);
     #endif
 private:
 
@@ -109,8 +107,7 @@ private:
     void _init();
 
     std::vector<Marker*> markers_vector;
-
-    crazyFly* crazyFly_1;
+    std::vector<crazyFly*> crazyflies_vector;
 
     #ifdef CATKIN_MAKE
     rosNodeThread* _rosNodeThread;
