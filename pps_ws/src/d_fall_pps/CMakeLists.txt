@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   genmsg
   rosbag
+  roslib
 )
 
 
@@ -31,10 +32,14 @@ set(CMAKE_AUTOMOC ON)
 find_package(Qt5Widgets REQUIRED)
 find_package(Qt5Core REQUIRED)
 find_package(Qt5Gui REQUIRED)
+find_package(Qt5Svg REQUIRED)
 
 # GUI -- Add src and includes
 set(MY_LIB_PATH_SRC ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/src)
 set(MY_LIB_PATH_INC ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/include)
+
+# GUI -- Resource file
+set(MY_RESOURCE_FILE_QRC ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/CrazyFlyGUI.qrc)
 
 # #set the default path for built executables to the "bin" directory
 # set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
@@ -56,6 +61,9 @@ set(SRC_HDRS_QOBJECT
 # GUI -- wrap UI file and QOBJECT files
 qt5_wrap_ui(UIS_HDRS GUI_Qt/CrazyFlyGUI/src/mainguiwindow.ui)
 qt5_wrap_cpp(SRC_MOC_HDRS ${SRC_HDRS_QOBJECT})
+
+# GUI -- wrap resource file qrc->rcc
+qt5_add_resources(MY_RESOURCE_FILE_RCC ${MY_RESOURCE_FILE_QRC})
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -170,7 +178,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include ${MY_LIB_PATH_INC} # GUI -- include headers from GUI in package
   LIBRARIES
-  CATKIN_DEPENDS roscpp rospy std_msgs rosbag
+  CATKIN_DEPENDS roscpp rospy std_msgs rosbag roslib
   DEPENDS
 )
 
@@ -209,7 +217,7 @@ add_executable(CentralManagerService src/CentralManagerService.cpp)
 
 
 
-# Add sources here
+# GUI -- Add sources here
 set(MY_CPP_SOURCES              # compilation of sources
     ${MY_LIB_PATH_SRC}/mainguiwindow.cpp
     ${MY_LIB_PATH_SRC}/main.cpp
@@ -222,11 +230,12 @@ set(MY_CPP_SOURCES              # compilation of sources
     ${MY_LIB_PATH_SRC}/tablePiece.cpp
     ${MY_LIB_PATH_SRC}/marker.cpp
     ${MY_LIB_PATH_SRC}/rosNodeThread.cpp
+    ${MY_LIB_PATH_SRC}/crazyFly.cpp
     )
 
 
-# Add executables here
-add_executable(my_GUI ${MY_CPP_SOURCES} ${UIS_HDRS} ${SRC_MOC_HDRS})
+# GUI -- Add executables here
+add_executable(my_GUI ${MY_CPP_SOURCES} ${UIS_HDRS} ${SRC_MOC_HDRS} ${MY_RESOURCE_FILE_RCC})
 qt5_use_modules(my_GUI Widgets)
 
 
@@ -273,9 +282,12 @@ target_link_libraries(CentralManagerService ${catkin_LIBRARIES})
 
 # GUI -- link libraries
 target_link_libraries(my_GUI Qt5::Widgets) # GUI -- let my_GUI have acesss to Qt stuff
+target_link_libraries(my_GUI Qt5::Svg)
+
 # target_link_libraries(my_library Qt5::Widgets) # GUI -- let my_library have access to Qt stuff
 # target_link_libraries(my_GUI my_library)
 target_link_libraries(my_GUI ${catkin_LIBRARIES})
+
 
 #############
 ## Install ##
