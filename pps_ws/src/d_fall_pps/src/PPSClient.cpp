@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <rosbag/bag.h>
 #include <std_msgs/String.h>
+#include <ros/package.h>
 
 #include "d_fall_pps/Controller.h"
 #include "d_fall_pps/CentralManager.h"
@@ -26,6 +27,7 @@
 #include "d_fall_pps/ControlCommand.h"
 #include "d_fall_pps/CrazyflieContext.h"
 #include "std_msgs/Int32.h"
+#include "std_msgs/UInt32.h"
 
 #include "d_fall_pps/ControlCommand.h"
 
@@ -133,21 +135,29 @@ void viconCallback(const ViconData& data) {
 		else{
 			safetyDelay=20;
 		}
-
-		controlCommandPublisher.publish(controllerCall.response.controlOutput);
-		
-		std_msgs::String str;
-		str.data = std::string("foo");
-		
-		std_msgs::Int32 i;
-		i.data = 42;
-
-		bag.write("testfoo: ", ros::Time::now(), str);
-		bag.write("test42: ", ros::Time::now(), i);
 		*/
+		
+
+/*
+float32 roll
+float32 pitch
+float32 yaw
+uint16 motorCmd1
+uint16 motorCmd2
+uint16 motorCmd3
+uint16 motorCmd4
+*/		
+		std_msgs::UInt32 i;
+		i.data = controllerCall.response.controlOutput.roll;
+		
+
+		bag.write("test: ", ros::Time::now(), controllerCall.response.controlOutput);
+		
 
 		controlCommandPublisher.publish(controllerCall.response.controlOutput);
-		} else{ //crazyflie disabled
+			
+			
+		} else { //crazyflie disabled
 			ControlCommand zeroOutput = ControlCommand(); //everything set to zero
 			zeroOutput.onboardControllerType = 2; //set to motor_mode
 			controlCommandPublisher.publish(zeroOutput);
@@ -255,9 +265,14 @@ int main(int argc, char* argv[]){
 	usingSafeController = true;
 	loadSafeController();
 
-	
-	bag.open("testbag.bag", rosbag::bagmode::Write);
+	std::string package_path;
+	package_path = ros::package::getPath("d_fall_pps") + "/";
+	ROS_INFO_STREAM(package_path);
+	std::string testbag_file = package_path + "datarecord.bag";
+	bag.open(testbag_file, rosbag::bagmode::Write);
+	//bag.close();
 
     ros::spin();
-    return 0;
+    //ros::shutdown();
+	return 0;
 }

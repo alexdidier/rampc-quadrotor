@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   genmsg
   rosbag
+  roslib
 )
 
 
@@ -170,7 +171,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include ${MY_LIB_PATH_INC} # GUI -- include headers from GUI in package
   LIBRARIES
-  CATKIN_DEPENDS roscpp rospy std_msgs rosbag
+  CATKIN_DEPENDS roscpp rospy std_msgs rosbag roslib
   DEPENDS
 )
 
