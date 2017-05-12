@@ -1,31 +1,31 @@
 <launch>
-	<node pkg="d_fall_pps" name="CentralManagerService" output="screen" type="CentralManagerService">
-	</node>
-	
-	<node pkg="d_fall_pps" name="CrazyRadio" output="screen" type="CrazyRadio.py">
-		<rosparam command="load" file="$(find d_fall_pps)/param/ClientConfig.yaml" />
-	</node>
+	<!-- <node pkg="d_fall_pps" name="CentralManagerService" output="screen" type="CentralManagerService"> -->
+	<!-- </node> -->
+
+	<!-- <node pkg="d_fall_pps" name="CrazyRadio" output="screen" type="CrazyRadio.py"> -->
+	<!-- 	<rosparam command="load" file="$(find d_fall_pps)/param/ClientConfig.yaml" /> -->
+	<!-- </node> -->
 
 	<node pkg="d_fall_pps" name="ViconDataPublisher" output="screen" type="ViconDataPublisher">
-		<rosparam command="load" file="$(find d_fall_pps)/param/ViconConfig.yaml" />	
+		<rosparam command="load" file="$(find d_fall_pps)/param/ViconConfig.yaml" />
 	</node>
 
-	<node pkg="d_fall_pps" name="PPSClient" output="screen" type="PPSClient">
-		<rosparam command="load" file="$(find d_fall_pps)/param/ClientConfig.yaml" />	
-	</node>
+	<!-- <node pkg="d_fall_pps" name="PPSClient" output="screen" type="PPSClient"> -->
+	<!-- 	<rosparam command="load" file="$(find d_fall_pps)/param/ClientConfig.yaml" />	 -->
+	<!-- </node> -->
 
 
-	<node pkg="d_fall_pps" name="SafeControllerService" output="screen" type="SafeControllerService">
-		<rosparam command="load" file="$(find d_fall_pps)/param/SafeController.yaml" />
-	</node>
+	<!-- <node pkg="d_fall_pps" name="SafeControllerService" output="screen" type="SafeControllerService"> -->
+	<!-- 	<rosparam command="load" file="$(find d_fall_pps)/param/SafeController.yaml" /> -->
+	<!-- </node> -->
 
-	<node pkg="d_fall_pps" name="CustomControllerService" output="screen" type="CustomControllerService">
-	</node>
+	<!-- <node pkg="d_fall_pps" name="CustomControllerService" output="screen" type="CustomControllerService"> -->
+	<!-- </node> -->
 
 
-	<node pkg="rqt_plot" name="commandplotter" type="rqt_plot" args="/PPSClient/ControlCommand/roll /PPSClient/ControlCommand/pitch /PPSClient/ControlCommand/yaw" />
+	<!-- <node pkg="rqt_plot" name="commandplotter" type="rqt_plot" args="/PPSClient/ControlCommand/roll /PPSClient/ControlCommand/pitch /PPSClient/ControlCommand/yaw" /> -->
 
-        <node pkg="rosbag" type="record" name="testbag" />
+    <!--     <node pkg="rosbag" type="record" name="testbag" /> -->
 
 
 	<!-- When we have a GUI, this has to be adapted and included -->

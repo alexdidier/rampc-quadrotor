@@ -44,7 +44,7 @@ bool rosNodeThread::init()
     return true;
 } // set up the thread
 
-void rosNodeThread::messageCallback(const UnlabeledMarkersArray::ConstPtr& p_msg) // When a message arrives to the topic, this callback is executed
+void rosNodeThread::messageCallback(const ptrToMessage& p_msg) // When a message arrives to the topic, this callback is executed
 {
     emit newViconData(p_msg);   //pass the message to other places
 }
