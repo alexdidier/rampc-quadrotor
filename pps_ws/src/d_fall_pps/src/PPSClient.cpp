@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <rosbag/bag.h>
 #include <std_msgs/String.h>
+#include <ros/package.h>
 
 #include "d_fall_pps/Controller.h"
 #include "d_fall_pps/CentralManager.h"
@@ -27,6 +28,7 @@
 #include "d_fall_pps/ControlCommand.h"
 #include "d_fall_pps/CrazyflieContext.h"
 #include "std_msgs/Int32.h"
+#include "std_msgs/UInt32.h"
 
 #include "d_fall_pps/ControlCommand.h"
 
@@ -110,31 +112,6 @@ void viconCallback(const ViconData& viconData) {
 						ROS_ERROR("Failed to call safe controller");
 					}
 				}
-
-			
-			/*
-			
-			if(!safetyCheck(data, controllerCall.response.controlOutput)){
-				ROS_INFO_STREAM("AutocontrolOn >>>>>> SWITCHED OFF");
-				if(safetyDelay == 0){
-					ROS_INFO_STREAM("ROS Shutdown");
-					//bag.close();
-					ros::shutdown();
-				}
-				ControlCommand switchOffControls;
-				switchOffControls.roll = 0;
-				switchOffControls.pitch = 0;
-				switchOffControls.yaw = 0;
-				switchOffControls.motorCmd1 = 0;
-				switchOffControls.motorCmd2 = 0;
-				switchOffControls.motorCmd3 = 0;
-				switchOffControls.motorCmd4 = 0;
-				switchOffControls.onboardControllerType = 0;
-				
-				controllerCall.response.controlOutput = switchOffControls;
-			}
-			else{
-				safetyDelay=20;
 			}
 
 			controlCommandPublisher.publish(controllerCall.response.controlOutput);
@@ -145,16 +122,29 @@ void viconCallback(const ViconData& viconData) {
 			std_msgs::Int32 i;
 			i.data = 42;
 
-			bag.write("testfoo: ", ros::Time::now(), str);
-			bag.write("test42: ", ros::Time::now(), i);
-			*/
+/*
+float32 roll
+float32 pitch
+float32 yaw
+uint16 motorCmd1
+uint16 motorCmd2
+uint16 motorCmd3
+uint16 motorCmd4
+*/		
+		std_msgs::UInt32 i;
+		i.data = controllerCall.response.controlOutput.roll;
+		
 
-			controlCommandPublisher.publish(controllerCall.response.controlOutput);
-			} else{ //crazyflie disabled
-				ControlCommand zeroOutput = ControlCommand(); //everything set to zero
-				zeroOutput.onboardControllerType = 2; //set to motor_mode
-				controlCommandPublisher.publish(zeroOutput);
-			}
+		bag.write("test: ", ros::Time::now(), controllerCall.response.controlOutput);
+		
+
+		controlCommandPublisher.publish(controllerCall.response.controlOutput);
+			
+			
+		} else { //crazyflie disabled
+			ControlCommand zeroOutput = ControlCommand(); //everything set to zero
+			zeroOutput.onboardControllerType = 2; //set to motor_mode
+			controlCommandPublisher.publish(zeroOutput);
 		}
 	}
 }
@@ -259,8 +249,12 @@ int main(int argc, char* argv[]){
 	usingSafeController = true;
 	loadSafeController();
 
-	
-	bag.open("testbag.bag", rosbag::bagmode::Write);
+	std::string package_path;
+	package_path = ros::package::getPath("d_fall_pps") + "/";
+	ROS_INFO_STREAM(package_path);
+	std::string testbag_file = package_path + "datarecord.bag";
+	bag.open(testbag_file, rosbag::bagmode::Write);
+	//bag.close();
 
     ros::spin();
     return 0;

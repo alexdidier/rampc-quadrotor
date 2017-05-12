@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   genmsg
   rosbag
+  roslib
 )
 
 
@@ -177,7 +178,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include ${MY_LIB_PATH_INC} # GUI -- include headers from GUI in package
   LIBRARIES
-  CATKIN_DEPENDS roscpp rospy std_msgs rosbag
+  CATKIN_DEPENDS roscpp rospy std_msgs rosbag roslib
   DEPENDS
 )
 
@@ -195,9 +196,9 @@ include_directories(
 )
 
 ## Declare a C++ library
-# add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/d_fall_pps.cpp
-# )
+##add_library(${PROJECT_NAME}
+##  src/blablalba.cpp
+##)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
