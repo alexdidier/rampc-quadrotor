@@ -25,38 +25,91 @@
 #include "d_fall_pps/CMQuery.h"
 #include "d_fall_pps/CMUpdate.h"
 #include "d_fall_pps/CMCommand.h"
+#include "CentralManagerService.h"
 
 using namespace d_fall_pps;
 using namespace std;
 
-//reads crazyflie db from the file specified in params
-/*CrazyflieDB readCrazyflieDB() {
-	return 0;
-}*/
-
-//writes crazyflie db to the file specified in params
-void writeCrazyflieDB(CrazyflieDB& cfDB) {
-
-}
+CrazyflieDB crazyflieDB;
 
 bool cmRead(CMRead::Request &request, CMRead::Response &response) {
-
+    response.crazyflieDB = crazyflieDB;
 	return true;
+}
+
+int findEntryByStudID(unsigned int studID) {
+    for(int i = 0; i < crazyflieDB.crazyflieEntries.size(); i++) {
+        CrazyflieEntry entry = crazyflieDB.crazyflieEntries[i];
+        if(entry.studentID == studID) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 bool cmQuery(CMQuery::Request &request, CMQuery::Response &response) {
+    int cfIndex = findEntryByStudID(request.studentID);
+    if(cfIndex != -1) {
+        response.crazyflieContext = crazyflieDB.crazyflieEntries[cfIndex].crazyflieContext;
+        return true;
+    } else {
+        return false;
+    }
+}
 
-    return true;
+int findEntryByCF(string name) {
+    for(int i = 0; i < crazyflieDB.crazyflieEntries.size(); i++) {
+        CrazyflieEntry entry = crazyflieDB.crazyflieEntries[i];
+        string cfName = entry.crazyflieContext.crazyflieName;
+        if(cfName == name) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 bool cmUpdate(CMUpdate::Request &request, CMUpdate::Response &response) {
+    switch(request.mode) {
+        case ENTRY_INSERT_OR_UPDATE: {
+            string cfName = request.crazyflieEntry.crazyflieContext.crazyflieName;
+            int cfIndex = findEntryByCF(cfName);
+            if(cfIndex == -1) {
+                crazyflieDB.crazyflieEntries.push_back(request.crazyflieEntry);
+            } else {
+                crazyflieDB.crazyflieEntries[cfIndex] = request.crazyflieEntry;
+            }
+            return true;
+        }
 
-	return true;
+        case ENTRY_REMOVE: {
+            string cfName = request.crazyflieEntry.crazyflieContext.crazyflieName;
+            int cfIndex = findEntryByCF(cfName);
+            if(cfIndex == -1) {
+                return false;
+            } else {
+                crazyflieDB.crazyflieEntries.erase(crazyflieDB.crazyflieEntries.begin() +cfIndex);
+                return true;
+            }
+        }
+
+        default: return false;
+    }
 }
 
 bool cmCommand(CMCommand::Request &request, CMCommand::Response &response) {
+    switch(request.command) {
+        case CMD_SAVE: {
+            //writeCrazyflieDB(crazyflieDB);
+            return true;
+        }
 
-	return true;
+        case CMD_RELOAD: {
+            //crazyflieDB = readCrazyflieDB();
+            return true;
+        }
+
+        default: return false;
+    }
 }
 
 int main(int argc, char* argv[]) {
