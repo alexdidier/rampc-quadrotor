@@ -83,7 +83,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     //for students to set the newly calculated commands for the controller
     response.controlOutput.roll = 0;
     response.controlOutput.pitch = 0;
-    response.controlOutput.yaw = 0;
+    response.controlOutput.yaw = 0; //in [rad] --> will be converted to degree in CrazyRadio.py before sending to Crazyflie
     response.controlOutput.motorCmd1 = 0;
     response.controlOutput.motorCmd2 = 0;
     response.controlOutput.motorCmd3 = 0;

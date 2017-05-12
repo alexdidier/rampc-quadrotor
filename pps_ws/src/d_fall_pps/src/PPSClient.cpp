@@ -31,6 +31,8 @@
 
 #define CMD_USE_SAFE_CONTROLLER 1
 #define CMD_USE_CUSTOM_CONTROLLER 2
+#define CMD_USE_CRAZYFLY_ENABLE 3
+#define CMD_USE_CRAZYFLY_DISABLE 4
 
 using namespace d_fall_pps;
 
@@ -53,6 +55,8 @@ rosbag::Bag bag;
 CrazyflieContext context;
 //wheter to use safe of custom controller
 bool usingSafeController;
+//wheter crazyflie is enabled (ready to fly) or disabled (motors off)
+bool crazyflieEnabled;
 
 int safetyDelay;
 
@@ -79,27 +83,36 @@ bool safetyCheck(ViconData data, ControlCommand controlCommand) {
 
 //is called when new data from Vicon arrives
 void viconCallback(const ViconData& data) {
-	if(data.crazyflieName == crazyflieName) {	
+	if(data.crazyflieName == crazyflieName) {
 		Controller controllerCall;
 		controllerCall.request.crazyflieLocation = data;
 		
 
 
-		if(!usingSafeController) {
-			bool success = customController.call(controllerCall);
-			if(!success) {
-				ROS_ERROR("Failed to call custom controller, switching to safe controller");
-				usingSafeController = true;
-			}
+		if(crazyflieEnabled){
+			if(!usingSafeController) {
+				bool success = customController.call(controllerCall);
+				if(!success) {
+					ROS_ERROR("Failed to call custom controller, switching to safe controller");
+					usingSafeController = true;
+				}
 
+<<<<<<< HEAD
 			usingSafeController = true; //debug
 		}
-
-		if(usingSafeController) {
-			bool success = safeController.call(controllerCall);
-			if(!success) {
-				ROS_ERROR("Failed to call safe controller");
+=======
+				//usingSafeController = !safetyCheck(data, controllerCall.response.controlOutput);
+				usingSafeController = true; //debug
 			}
+>>>>>>> 35ebc7a2596fd78d41ddf285cf809c7b0991afb5
+
+			if(usingSafeController) {
+				bool success = safeController.call(controllerCall);
+				if(!success) {
+					ROS_ERROR("Failed to call safe controller");
+				}
+			}
+<<<<<<< HEAD
 		}
 		
 		if(!safetyCheck(data, controllerCall.response.controlOutput)){
@@ -135,6 +148,15 @@ void viconCallback(const ViconData& data) {
 
 		bag.write("testfoo: ", ros::Time::now(), str);
 		bag.write("test42: ", ros::Time::now(), i);
+=======
+
+			controlCommandPublisher.publish(controllerCall.response.controlOutput);
+		} else{ //crazyflie disabled
+			ControlCommand zeroOutput = ControlCommand(); //everything set to zero
+			zeroOutput.onboardControllerType = 2; //set to motor_mode
+			controlCommandPublisher.publish(zeroOutput);
+		}
+>>>>>>> 35ebc7a2596fd78d41ddf285cf809c7b0991afb5
 	}
 }
 
@@ -198,6 +220,14 @@ void commandCallback(const std_msgs::Int32& commandMsg) {
     		usingSafeController = false;
     		break;
 
+    	case CMD_USE_CRAZYFLY_ENABLE:
+    		crazyflieEnabled = true;
+    		break;
+
+    	case CMD_USE_CRAZYFLY_DISABLE:
+    		crazyflieEnabled = false;
+    		break;
+
     	default:
     		ROS_ERROR_STREAM("unexpected command number: " << cmd);
     		break;
@@ -226,6 +256,7 @@ int main(int argc, char* argv[]){
     ros::Subscriber commandSubscriber = nodeHandle.subscribe("/PPSClient/Command", 1, commandCallback);
 
 	//start with safe controller
+	crazyflieEnabled = true;
 	usingSafeController = true;
 	loadSafeController();
 

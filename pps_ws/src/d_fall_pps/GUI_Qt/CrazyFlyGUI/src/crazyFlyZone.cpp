@@ -24,8 +24,8 @@ void crazyFlyZone::setLabel(QString string)
 
 void crazyFlyZone::setLabelPosition()
 {
-    qreal x_offset = 0.1 * TO_METERS;
-    qreal y_offset = 0.05 * TO_METERS;
+    qreal x_offset = 0.1 * FROM_METERS_TO_UNITS;
+    qreal y_offset = 0.05 * FROM_METERS_TO_UNITS;
     label->setPos(this->rect().topLeft().x() + x_offset,this->rect().topLeft().y() + y_offset);
 }
 
