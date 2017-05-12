@@ -33,6 +33,7 @@ using namespace d_fall_pps;
 using namespace std;
 
 CrazyflieDB crazyflieDB;
+rosbag::Bag bag;
 
 void saveCrazyflieDB() {
     string packagePath = ros::package::getPath("d_fall_pps") + "/";
