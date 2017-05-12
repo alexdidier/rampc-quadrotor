@@ -61,13 +61,13 @@ void convertIntoBodyFrame(float est[9], float (&estBody)[9], int yaw_measured) {
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response) {
     //writing the data from -request- to command line
     //might be useful for debugging
-    ROS_INFO_STREAM("x-coordinates: " << request.crazyflieLocation.x);
-    ROS_INFO_STREAM("y-coordinates: " << request.crazyflieLocation.y);
-    ROS_INFO_STREAM("z-coordinates: " << request.crazyflieLocation.z);
-    ROS_INFO_STREAM("roll: " << request.crazyflieLocation.roll);
-    ROS_INFO_STREAM("pitch: " << request.crazyflieLocation.pitch);
-    ROS_INFO_STREAM("yaw: " << request.crazyflieLocation.yaw);
-    ROS_INFO_STREAM("Delta t: " << request.crazyflieLocation.acquiringTime);
+    ROS_INFO_STREAM("x-coordinates: " << request.ownCrazyflie.x);
+    ROS_INFO_STREAM("y-coordinates: " << request.ownCrazyflie.y);
+    ROS_INFO_STREAM("z-coordinates: " << request.ownCrazyflie.z);
+    ROS_INFO_STREAM("roll: " << request.ownCrazyflie.roll);
+    ROS_INFO_STREAM("pitch: " << request.ownCrazyflie.pitch);
+    ROS_INFO_STREAM("yaw: " << request.ownCrazyflie.yaw);
+    ROS_INFO_STREAM("Delta t: " << request.ownCrazyflie.acquiringTime);
 
 
 

@@ -17,7 +17,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include "ros/ros.h"
-#include "d_fall_pps/ViconData.h"
+#include "d_fall_pps/CrazyflieData.h"
 #include "d_fall_pps/Setpoint.h"
 #include "d_fall_pps/ControlCommand.h"
 #include "d_fall_pps/Controller.h"
@@ -46,7 +46,7 @@ float prevEstimate[9];
 std::vector<float>  setpoint(4);
 float saturationThrust;
 
-ViconData previousLocation;
+CrazyflieData previousLocation;
 
 void loadParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length) {
     if(!nodeHandle.getParam(name, val)){
@@ -85,9 +85,9 @@ float computeMotorPolyBackward(float thrust) {
 //Kalman
 void estimateState(Controller::Request &request, float (&est)[9]) {
     // attitude
-    est[6] = request.crazyflieLocation.roll;
-    est[7] = request.crazyflieLocation.pitch;
-    est[8] = request.crazyflieLocation.yaw;
+    est[6] = request.ownCrazyflie.roll;
+    est[7] = request.ownCrazyflie.pitch;
+    est[8] = request.ownCrazyflie.yaw;
 
     //velocity & filtering
     float ahat_x[6]; //estimator matrix times state (x, y, z, vx, vy, vz)
@@ -98,12 +98,12 @@ void estimateState(Controller::Request &request, float (&est)[9]) {
 
     
     float k_x[6]; //filterGain times state
-    k_x[0] = request.crazyflieLocation.x * filterGain[0];
-    k_x[1] = request.crazyflieLocation.y * filterGain[1];
-    k_x[2] = request.crazyflieLocation.z * filterGain[2];
-    k_x[3] = request.crazyflieLocation.x * filterGain[3];
-    k_x[4] = request.crazyflieLocation.y * filterGain[4];
-    k_x[5] = request.crazyflieLocation.z * filterGain[5];
+    k_x[0] = request.ownCrazyflie.x * filterGain[0];
+    k_x[1] = request.ownCrazyflie.y * filterGain[1];
+    k_x[2] = request.ownCrazyflie.z * filterGain[2];
+    k_x[3] = request.ownCrazyflie.x * filterGain[3];
+    k_x[4] = request.ownCrazyflie.y * filterGain[4];
+    k_x[5] = request.ownCrazyflie.z * filterGain[5];
    
     est[0] = ahat_x[0] + k_x[0];
     est[1] = ahat_x[1] + k_x[1];
@@ -120,21 +120,21 @@ void estimateState(Controller::Request &request, float (&est)[9]) {
 //simple derivative
 /*
 void estimateState(Controller::Request &request, float (&est)[9]) {
-    est[0] = request.crazyflieLocation.x;
-    est[1] = request.crazyflieLocation.y;
-    est[2] = request.crazyflieLocation.z;
+    est[0] = request.ownCrazyflie.x;
+    est[1] = request.ownCrazyflie.y;
+    est[2] = request.ownCrazyflie.z;
 
-    est[3] = (request.crazyflieLocation.x - previousLocation.x) / request.crazyflieLocation.acquiringTime;
-    est[4] = (request.crazyflieLocation.y - previousLocation.y) / request.crazyflieLocation.acquiringTime;
-    est[5] = (request.crazyflieLocation.z - previousLocation.z) / request.crazyflieLocation.acquiringTime;
+    est[3] = (request.ownCrazyflie.x - previousLocation.x) / request.ownCrazyflie.acquiringTime;
+    est[4] = (request.ownCrazyflie.y - previousLocation.y) / request.ownCrazyflie.acquiringTime;
+    est[5] = (request.ownCrazyflie.z - previousLocation.z) / request.ownCrazyflie.acquiringTime;
 
     ROS_INFO_STREAM("vx: " << est[3]);
     ROS_INFO_STREAM("vy: " << est[4]);
     ROS_INFO_STREAM("vz: " << est[5]);
 
-    est[6] = request.crazyflieLocation.roll;
-    est[7] = request.crazyflieLocation.pitch;
-    est[8] = request.crazyflieLocation.yaw;
+    est[6] = request.ownCrazyflie.roll;
+    est[7] = request.ownCrazyflie.pitch;
+    est[8] = request.ownCrazyflie.yaw;
 }
 */
 
@@ -156,21 +156,21 @@ void convertIntoBodyFrame(float est[9], float (&state)[9], float yaw_measured) {
 }
 
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response) {
-    ViconData vicon = request.crazyflieLocation;
+    CrazyflieData vicon = request.ownCrazyflie;
 	
 	//trial>>>>>>>
-	int yaw_measured = request.crazyflieLocation.yaw;
+	int yaw_measured = request.ownCrazyflie.yaw;
 	//<<<<<<
 
     //move coordinate system to make setpoint origin
-    request.crazyflieLocation.x -= setpoint[0];
-    request.crazyflieLocation.y -= setpoint[1];
-    request.crazyflieLocation.z -= setpoint[2];
-    float yaw = request.crazyflieLocation.yaw - setpoint[3];
+    request.ownCrazyflie.x -= setpoint[0];
+    request.ownCrazyflie.y -= setpoint[1];
+    request.ownCrazyflie.z -= setpoint[2];
+    float yaw = request.ownCrazyflie.yaw - setpoint[3];
 
     while(yaw > PI) yaw -= 2 * PI;
     while(yaw < -PI) yaw += 2 * PI;
-    request.crazyflieLocation.yaw = yaw;
+    request.ownCrazyflie.yaw = yaw;
 
     float est[9]; //px, py, pz, vx, vy, vz, roll, pitch, yaw
     estimateState(request, est);
@@ -211,7 +211,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 
     response.controlOutput.onboardControllerType = RATE_CONTROLLER;
 
-    previousLocation = request.crazyflieLocation;
+    previousLocation = request.ownCrazyflie;
     
 	return true;
 }

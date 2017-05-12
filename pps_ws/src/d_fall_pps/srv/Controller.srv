@@ -1,3 +1,4 @@
-ViconData crazyflieLocation
+CrazyflieData ownCrazyflie
+CrazyflieData[] otherCrazyflies
 ---
 ControlCommand controlOutput
