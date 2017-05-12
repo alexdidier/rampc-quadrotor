@@ -43,7 +43,7 @@ void saveCrazyflieDB() {
 }
 
 void loadCrazyflieDB() {
-
+//
 }
 
 bool cmRead(CMRead::Request &request, CMRead::Response &response) {
