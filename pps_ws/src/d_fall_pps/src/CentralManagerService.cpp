@@ -16,6 +16,8 @@
 
 #include <stdlib.h>
 #include "ros/ros.h"
+#include <ros/package.h>
+#include "rosbag/bag.h"
 #include "d_fall_pps/CentralManager.h"
 #include "d_fall_pps/CrazyflieContext.h"
 #include "d_fall_pps/CrazyflieDB.h"
@@ -31,6 +33,18 @@ using namespace d_fall_pps;
 using namespace std;
 
 CrazyflieDB crazyflieDB;
+rosbag::Bag bag;
+
+void saveCrazyflieDB() {
+    string packagePath = ros::package::getPath("d_fall_pps") + "/";
+    string dbFile = packagePath + "crazyflie.db";
+    bag.open(dbFile, rosbag::bagmode::Write);
+    bag.write("crazyflie_db", ros::Time::now(), crazyflieDB);
+}
+
+void loadCrazyflieDB() {
+
+}
 
 bool cmRead(CMRead::Request &request, CMRead::Response &response) {
     response.crazyflieDB = crazyflieDB;
@@ -99,12 +113,12 @@ bool cmUpdate(CMUpdate::Request &request, CMUpdate::Response &response) {
 bool cmCommand(CMCommand::Request &request, CMCommand::Response &response) {
     switch(request.command) {
         case CMD_SAVE: {
-            //writeCrazyflieDB(crazyflieDB);
+            saveCrazyflieDB();
             return true;
         }
 
         case CMD_RELOAD: {
-            //crazyflieDB = readCrazyflieDB();
+            loadCrazyflieDB();
             return true;
         }
 

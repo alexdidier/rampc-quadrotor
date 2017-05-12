@@ -20,7 +20,7 @@
 #include "d_fall_pps/ViconData.h"
 #include "d_fall_pps/UnlabeledMarker.h"
 
-// #define TESTING_FAKE_DATA
+#define TESTING_FAKE_DATA
 
 // notice that unit here are in milimeters
 using namespace ViconDataStreamSDK::CPP;
@@ -48,22 +48,23 @@ int main(int argc, char* argv[]) {
     	}
 
         // Testing piece of code
+        ViconData viconData;
         UnlabeledMarker marker;
-        UnlabeledMarkersArray markersArray;
 
         marker.index = 0;
         marker.x = f;
         marker.y = 0;
         marker.z = 0;
 
-        markersArray.markers.push_back(marker);
+        viconData.markers.push_back(marker);
+
 
         marker.index = 1;
         marker.x = 0;
         marker.y = f;
         marker.z = 0;
 
-        markersArray.markers.push_back(marker);
+        viconData.markers.push_back(marker);
 
         if(i > 50 && i < 100)
         {
@@ -71,13 +72,15 @@ int main(int argc, char* argv[]) {
             marker.x = f;
             marker.y = f;
             marker.z = 0;
-            markersArray.markers.push_back(marker);
+            viconData.markers.push_back(marker);
         }
 
-        unlabeledMarkersPublisher.publish(markersArray);
         ros::Duration(0.1).sleep();
         f += 10;
         i++;
+        // TODO: Fake CF data
+
+        viconDataPublisher.publish(viconData); // testing data
     }
     #else
 
