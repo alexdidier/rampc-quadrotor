@@ -72,6 +72,8 @@ add_message_files(
   CrazyflieContext.msg
   AreaBounds.msg
   Setpoint.msg
+  CrazyflieEntry.msg
+  CrazyflieDB.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -83,7 +85,10 @@ add_message_files(
 add_service_files(
   FILES
   Controller.srv
-  CentralManager.srv
+  CMRead.srv
+  CMQuery.srv
+  CMUpdate.srv
+  CMCommand.srv
 )
 
 ## Generate actions in the 'action' folder
