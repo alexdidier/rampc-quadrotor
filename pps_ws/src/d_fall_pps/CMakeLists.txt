@@ -96,7 +96,7 @@ qt5_wrap_cpp(SRC_MOC_HDRS ${SRC_HDRS_QOBJECT})
 add_message_files(
   FILES
   UnlabeledMarker.msg
-  UnlabeledMarkersArray.msg
+  CrazyflieData.msg
   ViconData.msg
   ControlCommand.msg
   CrazyflieContext.msg

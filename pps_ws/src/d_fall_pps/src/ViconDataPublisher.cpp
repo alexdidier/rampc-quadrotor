@@ -19,7 +19,6 @@
 #include "ros/ros.h"
 #include "d_fall_pps/ViconData.h"
 #include "d_fall_pps/UnlabeledMarker.h"
-#include "d_fall_pps/UnlabeledMarkersArray.h"
 
 // #define TESTING_FAKE_DATA
 
@@ -35,9 +34,6 @@ int main(int argc, char* argv[]) {
 
     ros::Publisher viconDataPublisher =
         nodeHandle.advertise<ViconData>("ViconData", 1);
-
-    ros::Publisher unlabeledMarkersPublisher =
-        nodeHandle.advertise<UnlabeledMarkersArray>("UnlabeledMarkersArray", 1);
 
     #ifdef TESTING_FAKE_DATA
     // Test faking data part
@@ -84,9 +80,11 @@ int main(int argc, char* argv[]) {
         i++;
     }
     #else
+
+
     Client client;
 
-    std::string hostName = "10.42.00.15:801";
+    std::string hostName;
     if(!nodeHandle.getParam("hostName", hostName)) {
         ROS_ERROR("Failed to get hostName");
         return 1;
@@ -113,33 +111,21 @@ int main(int argc, char* argv[]) {
     client.EnableDeviceData();
 
     // Set the global up axis, such that Z is up
-    client.SetAxisMapping(Direction::Forward,
-            Direction::Left,
-            Direction::Up);
+    client.SetAxisMapping(Direction::Forward, Direction::Left, Direction::Up);
 
-    int iterations = 0;
     while (ros::ok()) {
-    	//if you want to see at least some output in the terminal
-    	//to see that you are still publishing
-    	if(iterations % 1000 == 0){
-        	ROS_INFO("iteration #%d",iterations);
-    	}
-    	iterations++;
-
-
-
-        // Output_GetUnlabeledMarkerCount GetUnlabeledMarkerCount() const;
         // Get a frame
         while (client.GetFrame().Result != Result::Success) {
             // Sleep a little so that we don't lumber the CPU with a busy poll
             ros::Duration(0.001).sleep();
         }
 
+        ViconData viconData;
+
         // Unlabeled markers, for GUI
         unsigned int unlabeledMarkerCount = client.GetUnlabeledMarkerCount().MarkerCount;
 
         UnlabeledMarker marker;
-        UnlabeledMarkersArray markersArray;
         ROS_INFO_STREAM("unlabeledMarkerCount: " << unlabeledMarkerCount);
 
         for(int unlabeledMarkerIndex = 0; unlabeledMarkerIndex < unlabeledMarkerCount; unlabeledMarkerIndex++)
@@ -153,10 +139,8 @@ int main(int argc, char* argv[]) {
             marker.y = OutputTranslation.Translation[1];
             marker.z = OutputTranslation.Translation[2];
 
-            markersArray.markers.push_back(marker);
+            viconData.markers.push_back(marker);
         }
-
-        unlabeledMarkersPublisher.publish(markersArray);
 
         unsigned int subjectCount = client.GetSubjectCount().SubjectCount;
 
@@ -196,22 +180,20 @@ int main(int argc, char* argv[]) {
             }
 
             //build message
-            ViconData viconData;
-            viconData.crazyflieName = subjectName;
+            CrazyflieData cfData;
+            cfData.crazyflieName = subjectName;
 
-            viconData.x = outputTranslation.Translation[0] / 1000.0f;
-            viconData.y = outputTranslation.Translation[1] / 1000.0f;
-            viconData.z = outputTranslation.Translation[2] / 1000.0f;
-            viconData.roll = roll;
-            viconData.pitch = pitch;
-            viconData.yaw = yaw;
-            viconData.acquiringTime = totalViconLatency;
+            cfData.x = outputTranslation.Translation[0] / 1000.0f;
+            cfData.y = outputTranslation.Translation[1] / 1000.0f;
+            cfData.z = outputTranslation.Translation[2] / 1000.0f;
+            cfData.roll = roll;
+            cfData.pitch = pitch;
+            cfData.yaw = yaw;
+            cfData.acquiringTime = totalViconLatency;
 
-            //finally publish
-            viconDataPublisher.publish(viconData);
-
+            viconData.crazyflies.push_back(cfData);
         }
-
+        viconDataPublisher.publish(viconData);
     }
 
     client.DisableSegmentData();

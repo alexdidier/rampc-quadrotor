@@ -23,6 +23,7 @@
 #include "d_fall_pps/CentralManager.h"
 
 #include "d_fall_pps/ViconData.h"
+#include "d_fall_pps/CrazyflieData.h"
 #include "d_fall_pps/ControlCommand.h"
 #include "d_fall_pps/CrazyflieContext.h"
 #include "std_msgs/Int32.h"
@@ -61,7 +62,7 @@ bool crazyflieEnabled;
 int safetyDelay;
 
 //checks if crazyflie is within allowed area and if custom controller returns no data
-bool safetyCheck(ViconData data, ControlCommand controlCommand) {
+bool safetyCheck(CrazyflieData data, ControlCommand controlCommand) {
 	
 	//position check
 	if((data.x < context.localArea.xmin) or (data.x > context.localArea.xmax)) {
@@ -82,75 +83,78 @@ bool safetyCheck(ViconData data, ControlCommand controlCommand) {
 }
 
 //is called when new data from Vicon arrives
-void viconCallback(const ViconData& data) {
-	if(data.crazyflieName == crazyflieName) {
-		Controller controllerCall;
-		controllerCall.request.crazyflieLocation = data;
-		
-
-		if(crazyflieEnabled){
-			if(!usingSafeController) {
-				bool success = customController.call(controllerCall);
-				if(!success) {
-					ROS_ERROR("Failed to call custom controller, switching to safe controller");
-					usingSafeController = true;
-				}
-
-
-			usingSafeController = true; //debug
-			}
-
-		
-			if(usingSafeController) {
-				bool success = safeController.call(controllerCall);
-				if(!success) {
-					ROS_ERROR("Failed to call safe controller");
-				}
-			}
-
-		
-		/*
-		
-		if(!safetyCheck(data, controllerCall.response.controlOutput)){
-			ROS_INFO_STREAM("AutocontrolOn >>>>>> SWITCHED OFF");
-			if(safetyDelay == 0){
-				ROS_INFO_STREAM("ROS Shutdown");
-				//bag.close();
-				ros::shutdown();
-			}
-			ControlCommand switchOffControls;
-			switchOffControls.roll = 0;
-			switchOffControls.pitch = 0;
-			switchOffControls.yaw = 0;
-			switchOffControls.motorCmd1 = 0;
-			switchOffControls.motorCmd2 = 0;
-			switchOffControls.motorCmd3 = 0;
-			switchOffControls.motorCmd4 = 0;
-			switchOffControls.onboardControllerType = 0;
+void viconCallback(const ViconData& viconData) {
+	for(std::vector<CrazyflieData>::const_iterator it = viconData.crazyflies.begin(); it != viconData.crazyflies.end(); ++it) {
+		CrazyflieData data = *it;
+		if(data.crazyflieName == crazyflieName) {
+			Controller controllerCall;
+			controllerCall.request.ownCrazyflie = data;
 			
-			controllerCall.response.controlOutput = switchOffControls;
-		}
-		else{
-			safetyDelay=20;
-		}
 
-		controlCommandPublisher.publish(controllerCall.response.controlOutput);
-		
-		std_msgs::String str;
-		str.data = std::string("foo");
-		
-		std_msgs::Int32 i;
-		i.data = 42;
+			if(crazyflieEnabled){
+				if(!usingSafeController) {
+					bool success = customController.call(controllerCall);
+					if(!success) {
+						ROS_ERROR("Failed to call custom controller, switching to safe controller");
+						usingSafeController = true;
+					}
 
-		bag.write("testfoo: ", ros::Time::now(), str);
-		bag.write("test42: ", ros::Time::now(), i);
-		*/
 
-		controlCommandPublisher.publish(controllerCall.response.controlOutput);
-		} else{ //crazyflie disabled
-			ControlCommand zeroOutput = ControlCommand(); //everything set to zero
-			zeroOutput.onboardControllerType = 2; //set to motor_mode
-			controlCommandPublisher.publish(zeroOutput);
+				usingSafeController = true; //debug
+				}
+
+			
+				if(usingSafeController) {
+					bool success = safeController.call(controllerCall);
+					if(!success) {
+						ROS_ERROR("Failed to call safe controller");
+					}
+				}
+
+			
+			/*
+			
+			if(!safetyCheck(data, controllerCall.response.controlOutput)){
+				ROS_INFO_STREAM("AutocontrolOn >>>>>> SWITCHED OFF");
+				if(safetyDelay == 0){
+					ROS_INFO_STREAM("ROS Shutdown");
+					//bag.close();
+					ros::shutdown();
+				}
+				ControlCommand switchOffControls;
+				switchOffControls.roll = 0;
+				switchOffControls.pitch = 0;
+				switchOffControls.yaw = 0;
+				switchOffControls.motorCmd1 = 0;
+				switchOffControls.motorCmd2 = 0;
+				switchOffControls.motorCmd3 = 0;
+				switchOffControls.motorCmd4 = 0;
+				switchOffControls.onboardControllerType = 0;
+				
+				controllerCall.response.controlOutput = switchOffControls;
+			}
+			else{
+				safetyDelay=20;
+			}
+
+			controlCommandPublisher.publish(controllerCall.response.controlOutput);
+			
+			std_msgs::String str;
+			str.data = std::string("foo");
+			
+			std_msgs::Int32 i;
+			i.data = 42;
+
+			bag.write("testfoo: ", ros::Time::now(), str);
+			bag.write("test42: ", ros::Time::now(), i);
+			*/
+
+			controlCommandPublisher.publish(controllerCall.response.controlOutput);
+			} else{ //crazyflie disabled
+				ControlCommand zeroOutput = ControlCommand(); //everything set to zero
+				zeroOutput.onboardControllerType = 2; //set to motor_mode
+				controlCommandPublisher.publish(zeroOutput);
+			}
 		}
 	}
 }
