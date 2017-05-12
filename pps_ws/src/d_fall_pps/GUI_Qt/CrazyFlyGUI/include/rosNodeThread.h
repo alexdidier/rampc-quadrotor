@@ -11,13 +11,13 @@
 
 #include <ros/ros.h>
 #include <ros/network.h>
-#include "d_fall_pps/ViconData.h"
 #include "d_fall_pps/UnlabeledMarker.h"
-#include "d_fall_pps/UnlabeledMarkersArray.h"
+#include "d_fall_pps/CrazyflieData.h"
+#include "d_fall_pps/ViconData.h"
 
 using namespace d_fall_pps;
 
-typedef UnlabeledMarkersArray::ConstPtr ptrToMessage;
+typedef ViconData::ConstPtr ptrToMessage;
 
 Q_DECLARE_METATYPE(ptrToMessage)
 
@@ -31,12 +31,10 @@ public:
     bool init();
 
     // void messageCallback(const ViconData& data);
-    void messageCallback(const UnlabeledMarkersArray::ConstPtr& p_msg);
+    void messageCallback(const ptrToMessage& p_msg);
 
 
 signals:
-    // void newViconData(double, double, double, double, double, double);
-    // void newViconData(double, double);
 
     void newViconData(const ptrToMessage& p_msg);
 

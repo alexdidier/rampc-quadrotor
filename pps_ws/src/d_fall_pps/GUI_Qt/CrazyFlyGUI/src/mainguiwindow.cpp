@@ -25,7 +25,7 @@ MainGUIWindow::MainGUIWindow(int argc, char **argv, QWidget *parent) :
     ui(new Ui::MainGUIWindow)//,
     // _rosNodeThread(argc, argv, "/ViconDataPublisher/ViconData")
 {
-    _rosNodeThread = new rosNodeThread(argc, argv, "/ViconDataPublisher/UnlabeledMarkersArray");
+    _rosNodeThread = new rosNodeThread(argc, argv, "/ViconDataPublisher/ViconData");
 
     ui->setupUi(this);
     _init();
