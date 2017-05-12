@@ -43,7 +43,7 @@ void saveCrazyflieDB() {
 }
 
 void loadCrazyflieDB() {
-
+//
 }
 
 bool cmRead(CMRead::Request &request, CMRead::Response &response) {
@@ -113,12 +113,12 @@ bool cmUpdate(CMUpdate::Request &request, CMUpdate::Response &response) {
 bool cmCommand(CMCommand::Request &request, CMCommand::Response &response) {
     switch(request.command) {
         case CMD_SAVE: {
-            saveCrazyflieDB();
+            //writeCrazyflieDB(crazyflieDB);
             return true;
         }
 
         case CMD_RELOAD: {
-            loadCrazyflieDB();
+            //crazyflieDB = readCrazyflieDB();
             return true;
         }
 
