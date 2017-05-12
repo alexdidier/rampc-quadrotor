@@ -14,6 +14,10 @@ TEMPLATE = app
 INCLUDEPATH += $$PWD/include
 CONFIG += c++11
 
+RESOURCES = CrazyFlyGUI.qrc
+
+QT+= svg
+
 
 SOURCES += \
     src/cornergrabber.cpp \
@@ -25,7 +29,8 @@ SOURCES += \
     src/myGraphicsScene.cpp \
     src/myGraphicsView.cpp \
     src/tablePiece.cpp \
-    src/marker.cpp
+    src/marker.cpp \
+    src/crazyFly.cpp
 
 HEADERS  += \
     include/cornergrabber.h \
@@ -37,7 +42,8 @@ HEADERS  += \
     include/myGraphicsView.h \
     include/tablePiece.h \
     include/globalDefinitions.h \
-    include/marker.h
+    include/marker.h \
+    include/crazyFly.h
 
 FORMS    += \
     src/mainguiwindow.ui

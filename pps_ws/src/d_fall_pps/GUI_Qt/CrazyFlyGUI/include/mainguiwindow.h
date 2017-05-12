@@ -7,6 +7,7 @@
 #include <QGridLayout>
 #include <QGraphicsRectItem>
 
+
 #ifdef CATKIN_MAKE
 #include "rosNodeThread.h"
 #include "d_fall_pps/UnlabeledMarker.h"
@@ -18,7 +19,7 @@
 #include "globalDefinitions.h"
 
 #include "marker.h"             // temporal, just to check
-
+#include "crazyFly.h"
 
 namespace Ui {
 class MainGUIWindow;
@@ -108,6 +109,8 @@ private:
     void _init();
 
     std::vector<Marker*> markers_vector;
+
+    crazyFly* crazyFly_1;
 
     #ifdef CATKIN_MAKE
     rosNodeThread* _rosNodeThread;

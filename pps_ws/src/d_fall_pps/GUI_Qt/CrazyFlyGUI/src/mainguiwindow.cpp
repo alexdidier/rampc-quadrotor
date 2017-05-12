@@ -9,6 +9,7 @@
 #include <QTextEdit>
 #include <QString>
 #include <QMetaType>
+#include <QDir>
 
 #include <string>
 
@@ -68,6 +69,8 @@ void MainGUIWindow::_init()
     scene->setSceneRect(-100 * FROM_METERS_TO_UNITS, -100 * FROM_METERS_TO_UNITS, 200 * FROM_METERS_TO_UNITS, 200 * FROM_METERS_TO_UNITS);
 
     ui->graphicsView->setScene(scene);
+    crazyFly_1 = new crazyFly(QPointF(50,50));
+    scene->addItem(crazyFly_1);
 
     QObject::connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)), scene, SLOT(removeCrazyFlyZone(int)));
     QObject::connect(scene, SIGNAL(numCrazyFlyZonesChanged(int)), this, SLOT(set_tabs(int)));

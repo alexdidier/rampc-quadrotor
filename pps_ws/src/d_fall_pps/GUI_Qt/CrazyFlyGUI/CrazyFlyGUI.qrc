@@ -1,0 +1,7 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+  <file>images/drone.png</file>
+  <file>images/drone.svg</file>
+  <file>images/drone_fixed.svg</file>
+</qresource>
+</RCC>
