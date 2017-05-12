@@ -70,10 +70,22 @@ void MainGUIWindow::_init()
 
     ui->graphicsView->setScene(scene);
 
-    QPixmap pixmap(":/images/drone.png");
-    drone_image = new QGraphicsPixmapItem(pixmap);
-    drone_image->setPos(0,0);
-    scene->addItem(drone_image);
+    // QPixmap pixmap(":/images/drone.png");
+    // drone_image = new QGraphicsPixmapItem(pixmap);
+    // drone_image->setPos(-200,200);
+
+    // drone_image_svg->setTransformOriginPoint(b_rect.width()/2, b_rect.height()/2);
+    // // drone_image_svg->setScale(0.25);
+    // drone_image_svg->setRotation(20);
+
+    // scene->addItem(drone_image_svg);
+    // scene->addItem(drone_image);
+
+    crazyFly_1 = new crazyFly(QPointF(50,50));
+    // crazyFly_1->setRotation(45);
+    // crazyFly_1->setPos(0,0);
+
+    scene->addItem(crazyFly_1);
 
     QObject::connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)), scene, SLOT(removeCrazyFlyZone(int)));
     QObject::connect(scene, SIGNAL(numCrazyFlyZonesChanged(int)), this, SLOT(set_tabs(int)));
