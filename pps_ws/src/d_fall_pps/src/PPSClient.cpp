@@ -116,36 +116,16 @@ void viconCallback(const ViconData& viconData) {
 
 			controlCommandPublisher.publish(controllerCall.response.controlOutput);
 			
-			std_msgs::String str;
-			str.data = std::string("foo");
-			
-			std_msgs::Int32 i;
-			i.data = 42;
-
-/*
-float32 roll
-float32 pitch
-float32 yaw
-uint16 motorCmd1
-uint16 motorCmd2
-uint16 motorCmd3
-uint16 motorCmd4
-*/		
-		std_msgs::UInt32 i;
-		i.data = controllerCall.response.controlOutput.roll;
-		
-
-		bag.write("test: ", ros::Time::now(), controllerCall.response.controlOutput);
-		
-
-		controlCommandPublisher.publish(controllerCall.response.controlOutput);
-			
 			
 		} else { //crazyflie disabled
 			ControlCommand zeroOutput = ControlCommand(); //everything set to zero
 			zeroOutput.onboardControllerType = 2; //set to motor_mode
 			controlCommandPublisher.publish(zeroOutput);
 		}
+		
+		bag.write("ViconData", ros::Time::now(), data);
+		//bag.write("ControlOutput", ros::Time::now(), controllerCall.response.controlOutput);
+		
 	}
 }
 
@@ -252,10 +232,11 @@ int main(int argc, char* argv[]){
 	std::string package_path;
 	package_path = ros::package::getPath("d_fall_pps") + "/";
 	ROS_INFO_STREAM(package_path);
-	std::string testbag_file = package_path + "datarecord.bag";
-	bag.open(testbag_file, rosbag::bagmode::Write);
-	//bag.close();
+	std::string record_file = package_path + "datarecord.bag";
+	bag.open(record_file, rosbag::bagmode::Write);
+
 
     ros::spin();
+	bag.close();
     return 0;
 }
