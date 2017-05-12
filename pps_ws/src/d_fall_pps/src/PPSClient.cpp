@@ -88,7 +88,6 @@ void viconCallback(const ViconData& data) {
 		controllerCall.request.crazyflieLocation = data;
 		
 
-
 		if(crazyflieEnabled){
 			if(!usingSafeController) {
 				bool success = customController.call(controllerCall);
@@ -97,23 +96,20 @@ void viconCallback(const ViconData& data) {
 					usingSafeController = true;
 				}
 
-<<<<<<< HEAD
-			usingSafeController = true; //debug
-		}
-=======
-				//usingSafeController = !safetyCheck(data, controllerCall.response.controlOutput);
-				usingSafeController = true; //debug
-			}
->>>>>>> 35ebc7a2596fd78d41ddf285cf809c7b0991afb5
 
+			usingSafeController = true; //debug
+			}
+
+		
 			if(usingSafeController) {
 				bool success = safeController.call(controllerCall);
 				if(!success) {
 					ROS_ERROR("Failed to call safe controller");
 				}
 			}
-<<<<<<< HEAD
-		}
+
+		
+		/*
 		
 		if(!safetyCheck(data, controllerCall.response.controlOutput)){
 			ROS_INFO_STREAM("AutocontrolOn >>>>>> SWITCHED OFF");
@@ -148,15 +144,14 @@ void viconCallback(const ViconData& data) {
 
 		bag.write("testfoo: ", ros::Time::now(), str);
 		bag.write("test42: ", ros::Time::now(), i);
-=======
+		*/
 
-			controlCommandPublisher.publish(controllerCall.response.controlOutput);
+		controlCommandPublisher.publish(controllerCall.response.controlOutput);
 		} else{ //crazyflie disabled
 			ControlCommand zeroOutput = ControlCommand(); //everything set to zero
 			zeroOutput.onboardControllerType = 2; //set to motor_mode
 			controlCommandPublisher.publish(zeroOutput);
 		}
->>>>>>> 35ebc7a2596fd78d41ddf285cf809c7b0991afb5
 	}
 }
 
