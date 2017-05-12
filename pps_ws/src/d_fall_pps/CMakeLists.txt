@@ -228,6 +228,7 @@ set(MY_CPP_SOURCES              # compilation of sources
     ${MY_LIB_PATH_SRC}/tablePiece.cpp
     ${MY_LIB_PATH_SRC}/marker.cpp
     ${MY_LIB_PATH_SRC}/rosNodeThread.cpp
+    ${MY_LIB_PATH_SRC}/crazyFly.cpp
     )
 
 
