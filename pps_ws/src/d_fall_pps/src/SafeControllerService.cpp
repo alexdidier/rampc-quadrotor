@@ -26,6 +26,7 @@
 #include "d_fall_pps/Setpoint.h"
 #include "d_fall_pps/ControlCommand.h"
 #include "d_fall_pps/Controller.h"
+#include "d_fall_pps/Debugging.h" //---------------------------------------------------------------------------
 
 #define PI 3.1415926535
 #define RATE_CONTROLLER 0
@@ -169,7 +170,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	//bag.write("ViconData", ros::Time::now(), request.ownCrazyflie);
 	
 	//trial>>>>>>>
-	int yaw_measured = request.ownCrazyflie.yaw;
+	float yaw_measured = request.ownCrazyflie.yaw;
 	//<<<<<<
 
     //move coordinate system to make setpoint origin
@@ -180,21 +181,48 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	
 	//bag.write("Offset", ros::Time::now(), request.ownCrazyflie);
 
-    while(yaw > PI) yaw -= 2 * PI;
-    while(yaw < -PI) yaw += 2 * PI;
+    while(yaw > PI) {yaw -= 2 * PI;}
+    while(yaw < -PI) {yaw += 2 * PI;}
     request.ownCrazyflie.yaw = yaw;
 
     float est[9]; //px, py, pz, vx, vy, vz, roll, pitch, yaw
     estimateState(request, est);
 	
-	std_msgs::Float32 EstXTest;
-	EstXTest.data = est[0];
+    //CONTROLLER DEBUGGING--------------------------------------------------------------------------------------------------
+    Debugging estTests;
+    estTests.x = est[0];
+    estTests.y = est[1];
+    estTests.z = est[2];
+    estTests.vx = est[3];
+    estTests.vy = est[4];
+    estTests.vz = est[5];
+    estTests.roll = est[6];
+    estTests.pitch = est[7];
+    estTests.yaw = est[8];
 	
-	bag.write("EstimateX", ros::Time::now(), EstXTest);
+	bag.write("Debugging est", ros::Time::now(), estTests);
+    //CONTROLLER DEBUGGING END----------------------------------------------------------------------------------------------
 
     float state[9]; //px, py, pz, vx, vy, vz, roll, pitch, yaw
     convertIntoBodyFrame(est, state, yaw_measured);
-	//convertIntoBodyFrame(est, state, yaw);
+
+    //CONTROLLER DEBUGGING--------------------------------------------------------------------------------------------------
+    estTests.x = state[0];
+    estTests.y = state[1];
+    estTests.z = state[2];
+    estTests.vx = state[3];
+    estTests.vy = state[4];
+    estTests.vz = state[5];
+    estTests.roll = state[6];
+    estTests.pitch = state[7];
+    estTests.yaw = state[8];
+    
+    bag.write("Debugging state", ros::Time::now(), estTests);
+
+    std_msgs::Float32 f32;
+    f32.data = yaw_measured;
+    bag.write("yaw measured", ros::Time::now(), f32);
+    //CONTROLLER DEBUGGING END----------------------------------------------------------------------------------------------
 
     //calculate feedback
     float outRoll = 0;

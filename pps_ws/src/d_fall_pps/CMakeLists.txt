@@ -112,6 +112,8 @@ add_message_files(
   Setpoint.msg
   CrazyflieEntry.msg
   CrazyflieDB.msg
+  #----------------------------------------------------------------------
+  Debugging.msg
 )
 
 ## Generate services in the 'srv' folder
