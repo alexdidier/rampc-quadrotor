@@ -23,7 +23,7 @@ using namespace d_fall_pps;
 class Marker : public QGraphicsEllipseItem
 {
 public:
-    explicit Marker(const UnlabeledMarker::ConstPtr& marker_msg, QGraphicsItem *parent = 0);
+    explicit Marker(const UnlabeledMarker* p_marker_msg, QGraphicsItem *parent = 0);
     ~Marker();
 
     void setHighlighted(void);
@@ -32,7 +32,7 @@ public:
 
     bool getHighlighted(void);
 
-    void updateMarker(const UnlabeledMarker::ConstPtr& marker_msg);
+    void updateMarker(const UnlabeledMarker* p_marker_msg);
 private:
 
     // info to fill by message

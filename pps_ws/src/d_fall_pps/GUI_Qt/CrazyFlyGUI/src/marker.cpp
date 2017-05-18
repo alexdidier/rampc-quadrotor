@@ -4,10 +4,10 @@
 #include <QBrush>
 
 
-Marker::Marker(const UnlabeledMarker::ConstPtr& marker_msg, QGraphicsItem * parent)
+Marker::Marker(const UnlabeledMarker* p_marker_msg, QGraphicsItem * parent)
     : QGraphicsEllipseItem(-MARKER_DIAMETER/2, - MARKER_DIAMETER/2, MARKER_DIAMETER, MARKER_DIAMETER, parent)
 {
-    updateMarker(marker_msg);
+    updateMarker(p_marker_msg);
 
     _highlighted = false;
     _highlight_diameter = HIGHLIGHT_DIAMETER;
@@ -25,11 +25,11 @@ Marker::Marker(const UnlabeledMarker::ConstPtr& marker_msg, QGraphicsItem * pare
     this->setZValue(10);        // max z value, should always be seen
 }
 
-void Marker::updateMarker(const UnlabeledMarker::ConstPtr& marker_msg)
+void Marker::updateMarker(const UnlabeledMarker* p_marker_msg)
 {
-    m_x = marker_msg->x;
-    m_y = marker_msg->y;
-    m_z = marker_msg->z;
+    m_x = p_marker_msg->x;
+    m_y = p_marker_msg->y;
+    m_z = p_marker_msg->z;
     this->setPos(m_x * FROM_MILIMETERS_TO_UNITS, -m_y * FROM_MILIMETERS_TO_UNITS);    // - y because of coordinates
 }
 
