@@ -112,7 +112,7 @@ void viconCallback(const ViconData& viconData) {
 				if(usingSafeController) {
 					bool success = safeController.call(controllerCall);
 					if(!success) {
-						ROS_ERROR("Failed to call safe controller");
+						ROS_ERROR_STREAM("Failed to call safe controller, " << safeController.isValid() << ", " << safeController.exists() << ", " << safeController.isPersistent());
 					}
 				}
 
@@ -162,8 +162,8 @@ void loadSafeController() {
 	}
 
 	ros::service::waitForService(safeControllerName);
-	safeController = nodeHandle.serviceClient<Controller>(safeControllerName, true);
-    ROS_INFO_STREAM("loaded safe controller " << safeControllerName);
+	safeController = ros::service::createClient<Controller>(safeControllerName, true);
+    ROS_INFO_STREAM("loaded safe controller: " << safeController.getService());
 }
 
 void loadCustomController() {
@@ -237,7 +237,6 @@ int main(int argc, char* argv[]){
 	ROS_INFO_STREAM(package_path);
 	std::string record_file = package_path + "datarecord.bag";
 	bag.open(record_file, rosbag::bagmode::Write);
-
 
     ros::spin();
 	bag.close();
