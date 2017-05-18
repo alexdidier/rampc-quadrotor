@@ -66,8 +66,18 @@ void MainGUIWindow::set_tabs(int n)
 
 void MainGUIWindow::_init()
 {
+    // initialize checkboxes, spinboxes,....
+    ui->scaleSpinBox->setRange(0.1, 100);
+    ui->scaleSpinBox->setSingleStep(0.1);
+    ui->scaleSpinBox->setValue(1);
+
+    ui->checkBox_vicon_crazyflies->setChecked(false);
+    ui->scaleSpinBox->setEnabled(false);
+
 
     ui->graphicsView->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
+    ui->graphicsView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    ui->graphicsView->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 
     scene = new myGraphicsScene(ui->frame_drawing);
     scene->setSceneRect(-100 * FROM_METERS_TO_UNITS, -100 * FROM_METERS_TO_UNITS, 200 * FROM_METERS_TO_UNITS, 200 * FROM_METERS_TO_UNITS);
@@ -113,7 +123,6 @@ void MainGUIWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to
         if(i >= markers_vector.size()) //some new markers coming
         {
             ROS_INFO_STREAM("element index: " << i << " added");
-            QPointF p(p_msg->markers[i].x * FROM_MILIMETERS_TO_UNITS, p_msg->markers[i].y * FROM_MILIMETERS_TO_UNITS);
             Marker* tmp_p_marker = new Marker(&(p_msg->markers[i]));
             markers_vector.push_back(tmp_p_marker); // what happens with the new indexes? check if this is correct
 
@@ -157,7 +166,10 @@ void MainGUIWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to
         else
         {
             crazyFly* tmp_p_crazyfly = new crazyFly(&(p_msg->crazyflies[i]));
-            scene->addItem(tmp_p_crazyfly);
+            if(ui->checkBox_vicon_crazyflies->checkState() == Qt::Checked)
+            {
+                scene->addItem(tmp_p_crazyfly);
+            }
             crazyflies_vector.push_back(tmp_p_crazyfly);
         }
     }
@@ -334,45 +346,83 @@ void MainGUIWindow::on_pushButton_fitAll_clicked()
 
 void MainGUIWindow::on_checkBox_vicon_markers_toggled(bool checked)
 {
-    #ifdef CATKIN_MAKE
     if(checked)
     {
+        #ifdef CATKIN_MAKE
         for(int i = 0; i < markers_vector.size(); i++)
         {
             scene->addItem(markers_vector[i]);
         }
+        #endif
         ui->checkBox_vicon_highlight_markers->setCheckable(true);
         ui->checkBox_vicon_highlight_markers->setEnabled(true);
     }
     else
     {
+        #ifdef CATKIN_MAKE
         for(int i = 0; i < markers_vector.size(); i++)
         {
             scene->removeItem(markers_vector[i]);
         }
+        #endif
         ui->checkBox_vicon_highlight_markers->setChecked(false);
         ui->checkBox_vicon_highlight_markers->setCheckable(false);
         ui->checkBox_vicon_highlight_markers->setEnabled(false);
     }
-    #endif
 }
 
 void MainGUIWindow::on_checkBox_vicon_highlight_markers_toggled(bool checked)
 {
-    #ifdef CATKIN_MAKE
     if(checked)
     {
+        #ifdef CATKIN_MAKE
         for(int i = 0; i < markers_vector.size(); i++)
         {
             markers_vector[i]->setHighlighted();
         }
+        #endif
     }
     else
     {
+        #ifdef CATKIN_MAKE
         for(int i = 0; i < markers_vector.size(); i++)
         {
             markers_vector[i]->clearHighlighted();
         }
+        #endif
+    }
+}
+
+void MainGUIWindow::on_checkBox_vicon_crazyflies_toggled(bool checked)
+{
+    if(checked)
+    {
+        #ifdef CATKIN_MAKE
+        for(int i = 0; i < crazyflies_vector.size(); i++)
+        {
+            scene->addItem(crazyflies_vector[i]);
+        }
+        #endif
+        ui->scaleSpinBox->setEnabled(true);
+    }
+    else
+    {
+        #ifdef CATKIN_MAKE
+        for(int i = 0; i < crazyflies_vector.size(); i++)
+        {
+            scene->removeItem(crazyflies_vector[i]);
+        }
+        #endif
+        ui->scaleSpinBox->setEnabled(false);
+    }
+}
+
+void MainGUIWindow::on_scaleSpinBox_valueChanged(double arg1)
+{
+    #ifdef CATKIN_MAKE
+    for(int i = 0; i < crazyflies_vector.size(); i++)
+    {
+        crazyflies_vector[i]->setScaleCFs(arg1);
     }
     #endif
 }

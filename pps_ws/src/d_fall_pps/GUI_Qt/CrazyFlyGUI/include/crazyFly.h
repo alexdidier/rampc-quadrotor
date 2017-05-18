@@ -32,6 +32,8 @@ public:
 
     std::string getName();
 
+    void setScaleCFs(double scale);
+
 private:
 
     // info to fill by message

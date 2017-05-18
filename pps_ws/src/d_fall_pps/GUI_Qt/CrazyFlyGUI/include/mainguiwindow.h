@@ -100,6 +100,10 @@ private slots:
     #ifdef CATKIN_MAKE
     void updateNewViconData(const ptrToMessage& p_msg);
     #endif
+    void on_checkBox_vicon_crazyflies_toggled(bool checked);
+
+    void on_scaleSpinBox_valueChanged(double arg1);
+
 private:
 
     Ui::MainGUIWindow *ui;

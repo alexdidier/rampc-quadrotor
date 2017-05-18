@@ -35,7 +35,7 @@ void myGraphicsView::wheelEvent(QWheelEvent *event)
 
 void myGraphicsView::mousePressEvent(QMouseEvent *mouseEvent)
 {
-    if (mouseEvent->button() == Qt::MiddleButton)
+    if (mouseEvent->button() == Qt::RightButton)
     {
         translation_mode = true;
         tmp_point = new QPointF(mouseEvent->localPos());
