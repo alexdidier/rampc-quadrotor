@@ -16,6 +16,11 @@ crazyFly::~crazyFly()
 {
 }
 
+void crazyFly::setScaleCFs(double scale)
+{
+    this->setScale(scale);
+}
+
 std::string crazyFly::getName()
 {
     return m_name;
