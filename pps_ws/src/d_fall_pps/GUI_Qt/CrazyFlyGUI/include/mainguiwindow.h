@@ -70,7 +70,7 @@ private slots:
     #ifdef CATKIN_MAKE
     #endif
 
-    void set_tabs(int n);
+    void doNumCrazyFlyZonesChanged(int n);
     void transitionToMode(int mode);
     void on_removeTable_clicked();
 

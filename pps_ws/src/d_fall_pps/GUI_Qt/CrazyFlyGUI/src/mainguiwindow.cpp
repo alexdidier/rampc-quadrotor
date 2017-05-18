@@ -51,8 +51,9 @@ MainGUIWindow::~MainGUIWindow()
     delete ui;
 }
 
-void MainGUIWindow::set_tabs(int n)
+void MainGUIWindow::doNumCrazyFlyZonesChanged(int n)
 {
+    // tabs number management, maybe do it in a different way so we dont have to remove and add everything?
     ui->tabWidget->clear();
     for (int i = 0; i < n; i++)
     {
@@ -62,6 +63,26 @@ void MainGUIWindow::set_tabs(int n)
         ui->tabWidget->addTab(widget, qstr);
         connect(widget, SIGNAL(centerButtonClickedSignal(int)), this, SLOT(centerViewIndex(int)));
     }
+
+    // add options to QComboBox of CFZones
+    int current_count = ui->comboBoxCFZones->count();
+    if(n > current_count)
+    {
+        for(int i = current_count; i < n; i++)
+        {
+            QString qstr = "CrazyFlyZone ";
+            qstr.append(QString::number(i+1));
+            ui->comboBoxCFZones->addItem(qstr);
+        }
+    }
+    else if(n < current_count)
+    {
+        for(int i = current_count; i >= n; i--)
+        {
+            ui->comboBoxCFZones->removeItem(i);
+        }
+    }
+
 }
 
 void MainGUIWindow::_init()
@@ -85,7 +106,7 @@ void MainGUIWindow::_init()
     ui->graphicsView->setScene(scene);
 
     QObject::connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)), scene, SLOT(removeCrazyFlyZone(int)));
-    QObject::connect(scene, SIGNAL(numCrazyFlyZonesChanged(int)), this, SLOT(set_tabs(int)));
+    QObject::connect(scene, SIGNAL(numCrazyFlyZonesChanged(int)), this, SLOT(doNumCrazyFlyZonesChanged(int)));
     QObject::connect(ui->tabWidget, SIGNAL(currentChanged(int)), scene, SLOT(setSelectedCrazyFlyZone(int)));
     QObject::connect(scene, SIGNAL(crazyFlyZoneSelected(int)), ui->tabWidget, SLOT(setCurrentIndex(int)));
     QObject::connect(scene, SIGNAL(modeChanged(int)), this, SLOT(transitionToMode(int)));

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1043</width>
-    <height>658</height>
+    <width>866</width>
+    <height>563</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -96,19 +96,6 @@
            </widget>
           </item>
          </layout>
-        </widget>
-       </item>
-       <item row="0" column="0" rowspan="2">
-        <widget class="myGraphicsView" name="graphicsView">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="mouseTracking">
-          <bool>true</bool>
-         </property>
         </widget>
        </item>
        <item row="1" column="1">
@@ -231,14 +218,25 @@
          </layout>
         </widget>
        </item>
+       <item row="0" column="0" rowspan="2">
+        <widget class="myGraphicsView" name="graphicsView">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="mouseTracking">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
       </layout>
       <zorder>graphicsView</zorder>
       <zorder>removeTable</zorder>
       <zorder>groupBox</zorder>
       <zorder>groupBox_2</zorder>
       <zorder>pushButton_fitAll</zorder>
-      <zorder>frame_3</zorder>
-      <zorder>tabWidget</zorder>
      </widget>
     </item>
     <item row="0" column="1">
@@ -255,6 +253,49 @@
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QTabWidget" name="tabWidget_2">
+         <property name="currentIndex">
+          <number>0</number>
+         </property>
+         <widget class="QWidget" name="links_tab">
+          <attribute name="title">
+           <string>Links</string>
+          </attribute>
+          <layout class="QGridLayout" name="gridLayout">
+           <item row="4" column="1">
+            <widget class="QPushButton" name="pushButton">
+             <property name="text">
+              <string>Link!</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QComboBox" name="comboBoxCFs"/>
+           </item>
+           <item row="3" column="1">
+            <widget class="QComboBox" name="comboBoxCFZones"/>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLabel" name="label_2">
+             <property name="text">
+              <string>Choose CF to link:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QLabel" name="label_3">
+             <property name="text">
+              <string>Choose CF Zone to link:</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+      </layout>
      </widget>
     </item>
     <item row="1" column="0" colspan="2">
@@ -301,7 +342,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1043</width>
+     <width>866</width>
      <height>19</height>
     </rect>
    </property>
@@ -311,7 +352,7 @@
     <enum>TopToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
-    <bool>true</bool>
+    <bool>false</bool>
    </attribute>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
