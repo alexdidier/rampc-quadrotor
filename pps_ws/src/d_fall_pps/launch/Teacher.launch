@@ -1,0 +1,14 @@
+<launch>
+	<node pkg="d_fall_pps" name="CentralManagerService" output="screen" type="CentralManagerService">
+	</node>
+
+	<node pkg="d_fall_pps" name="ViconDataPublisher" output="screen" type="ViconDataPublisher">
+		<rosparam command="load" file="$(find d_fall_pps)/param/ViconConfig.yaml" />
+	</node>
+
+	<!-- When we have a GUI, this has to be adapted and included -->
+	<node pkg="d_fall_pps" name="my_GUI" output="screen" type="my_GUI">
+		<!-- <rosparam command="load" file="$(find d_fall_pps)/launch/ControlParams.yaml" /> -->
+	</node>
+
+</launch>

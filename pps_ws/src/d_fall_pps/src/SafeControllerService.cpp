@@ -17,10 +17,16 @@
 #include <math.h>
 #include <stdlib.h>
 #include "ros/ros.h"
+#include <std_msgs/String.h>
+#include <rosbag/bag.h>
+#include <ros/package.h>
+#include "std_msgs/Float32.h"
+
 #include "d_fall_pps/CrazyflieData.h"
 #include "d_fall_pps/Setpoint.h"
 #include "d_fall_pps/ControlCommand.h"
 #include "d_fall_pps/Controller.h"
+#include "d_fall_pps/Debugging.h" //---------------------------------------------------------------------------
 
 #define PI 3.1415926535
 #define RATE_CONTROLLER 0
@@ -47,6 +53,9 @@ std::vector<float>  setpoint(4);
 float saturationThrust;
 
 CrazyflieData previousLocation;
+
+rosbag::Bag bag;
+
 
 void loadParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length) {
     if(!nodeHandle.getParam(name, val)){
@@ -107,7 +116,7 @@ void estimateState(Controller::Request &request, float (&est)[9]) {
    
     est[0] = ahat_x[0] + k_x[0];
     est[1] = ahat_x[1] + k_x[1];
-    est[2] = ahat_x[2] + k_x[2];
+	est[2] = ahat_x[2] + k_x[2];
     est[3] = ahat_x[3] + k_x[3];
     est[4] = ahat_x[4] + k_x[4];
     est[5] = ahat_x[5] + k_x[5];
@@ -158,8 +167,10 @@ void convertIntoBodyFrame(float est[9], float (&state)[9], float yaw_measured) {
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response) {
     CrazyflieData vicon = request.ownCrazyflie;
 	
+	//bag.write("ViconData", ros::Time::now(), request.ownCrazyflie);
+	
 	//trial>>>>>>>
-	int yaw_measured = request.ownCrazyflie.yaw;
+	float yaw_measured = request.ownCrazyflie.yaw;
 	//<<<<<<
 
     //move coordinate system to make setpoint origin
@@ -167,17 +178,51 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     request.ownCrazyflie.y -= setpoint[1];
     request.ownCrazyflie.z -= setpoint[2];
     float yaw = request.ownCrazyflie.yaw - setpoint[3];
+	
+	//bag.write("Offset", ros::Time::now(), request.ownCrazyflie);
 
-    while(yaw > PI) yaw -= 2 * PI;
-    while(yaw < -PI) yaw += 2 * PI;
+    while(yaw > PI) {yaw -= 2 * PI;}
+    while(yaw < -PI) {yaw += 2 * PI;}
     request.ownCrazyflie.yaw = yaw;
 
     float est[9]; //px, py, pz, vx, vy, vz, roll, pitch, yaw
     estimateState(request, est);
+	
+    //CONTROLLER DEBUGGING--------------------------------------------------------------------------------------------------
+    Debugging estTests;
+    estTests.x = est[0];
+    estTests.y = est[1];
+    estTests.z = est[2];
+    estTests.vx = est[3];
+    estTests.vy = est[4];
+    estTests.vz = est[5];
+    estTests.roll = est[6];
+    estTests.pitch = est[7];
+    estTests.yaw = est[8];
+	
+	bag.write("Debugging est", ros::Time::now(), estTests);
+    //CONTROLLER DEBUGGING END----------------------------------------------------------------------------------------------
 
     float state[9]; //px, py, pz, vx, vy, vz, roll, pitch, yaw
     convertIntoBodyFrame(est, state, yaw_measured);
-	//convertIntoBodyFrame(est, state, yaw);
+
+    //CONTROLLER DEBUGGING--------------------------------------------------------------------------------------------------
+    estTests.x = state[0];
+    estTests.y = state[1];
+    estTests.z = state[2];
+    estTests.vx = state[3];
+    estTests.vy = state[4];
+    estTests.vz = state[5];
+    estTests.roll = state[6];
+    estTests.pitch = state[7];
+    estTests.yaw = state[8];
+    
+    bag.write("Debugging state", ros::Time::now(), estTests);
+
+    std_msgs::Float32 f32;
+    f32.data = yaw_measured;
+    bag.write("yaw measured", ros::Time::now(), f32);
+    //CONTROLLER DEBUGGING END----------------------------------------------------------------------------------------------
 
     //calculate feedback
     float outRoll = 0;
@@ -193,7 +238,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 
     //HINWEIS: übersteuern beim outYaw wenn man 180 Grad zum yaw-Setpoint startet
     //nach Multiplikation mit 0.5 gibt es den Effekt nicht mehr -> mit Paul besprechen....
-    //outYaw *= 0.5;
+    outYaw *= 0.5;
 
     response.controlOutput.roll = outRoll;
     response.controlOutput.pitch = outPitch;
@@ -212,6 +257,8 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     response.controlOutput.onboardControllerType = RATE_CONTROLLER;
 
     previousLocation = request.ownCrazyflie;
+
+	bag.write("ControlOutput", ros::Time::now(), response.controlOutput);
     
 	return true;
 }
@@ -237,7 +284,18 @@ int main(int argc, char* argv[]) {
 
     ros::ServiceServer service = nodeHandle.advertiseService("RateController", calculateControlOutput);
     ROS_INFO("SafeControllerService ready");
+    
+	std::string package_path;
+	package_path = ros::package::getPath("d_fall_pps") + "/";
+	ROS_INFO_STREAM(package_path);
+	std::string record_file = package_path + "recordSafeController.bag";
+	bag.open(record_file, rosbag::bagmode::Write);
+
+
     ros::spin();
+	bag.close();
+	
+	
 
     return 0;
 }
