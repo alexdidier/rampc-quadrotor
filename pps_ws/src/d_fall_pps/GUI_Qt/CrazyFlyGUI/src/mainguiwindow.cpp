@@ -11,6 +11,10 @@
 #include <QMetaType>
 #include <QDir>
 
+#ifdef CATKIN_MAKE
+#include "d_fall_pps/UnlabeledMarker.h"
+#endif
+
 #include <string>
 
 #define N_MAX_CRAZYFLIES           20 // protection number
@@ -69,8 +73,6 @@ void MainGUIWindow::_init()
     scene->setSceneRect(-100 * FROM_METERS_TO_UNITS, -100 * FROM_METERS_TO_UNITS, 200 * FROM_METERS_TO_UNITS, 200 * FROM_METERS_TO_UNITS);
 
     ui->graphicsView->setScene(scene);
-    crazyFly_1 = new crazyFly(QPointF(50,50));
-    scene->addItem(crazyFly_1);
 
     QObject::connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)), scene, SLOT(removeCrazyFlyZone(int)));
     QObject::connect(scene, SIGNAL(numCrazyFlyZonesChanged(int)), this, SLOT(set_tabs(int)));
@@ -84,13 +86,15 @@ void MainGUIWindow::_init()
     #ifdef CATKIN_MAKE
     _rosNodeThread->init();
     qRegisterMetaType<ptrToMessage>("ptrToMessage");
-    QObject::connect(_rosNodeThread, SIGNAL(newViconData(const ptrToMessage&)), this, SLOT(setPosMarkers(const ptrToMessage&)));
+    QObject::connect(_rosNodeThread, SIGNAL(newViconData(const ptrToMessage&)), this, SLOT(updateNewViconData(const ptrToMessage&)));
     #endif
 }
 
 #ifdef CATKIN_MAKE
-void MainGUIWindow::setPosMarkers(const ptrToMessage& p_msg) //connected to newViconData, from node
+void MainGUIWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to newViconData, from node
 {
+
+    // update Markers
 
     if(p_msg->markers.size() < markers_vector.size()) // some markers have dissapeared, received stuff is smaller than what we have
     {
@@ -110,10 +114,10 @@ void MainGUIWindow::setPosMarkers(const ptrToMessage& p_msg) //connected to newV
         {
             ROS_INFO_STREAM("element index: " << i << " added");
             QPointF p(p_msg->markers[i].x * FROM_MILIMETERS_TO_UNITS, p_msg->markers[i].y * FROM_MILIMETERS_TO_UNITS);
-            Marker* tmp_p_marker = new Marker(scene->mapFromWorldToScene(p));
+            Marker* tmp_p_marker = new Marker(&(p_msg->markers[i]));
             markers_vector.push_back(tmp_p_marker); // what happens with the new indexes? check if this is correct
 
-            if(ui->checkBox_vicon_markers->checkState() == Qt::Checked)                                    //only if markers checkbox info is checked..
+            if(ui->checkBox_vicon_markers->checkState() == Qt::Checked) //only if markers checkbox info is checked..
             {
                 scene->addItem(markers_vector[i]);
                 if(ui->checkBox_vicon_highlight_markers->checkState() == Qt::Checked)
@@ -125,7 +129,56 @@ void MainGUIWindow::setPosMarkers(const ptrToMessage& p_msg) //connected to newV
         else
         {
             ROS_INFO_STREAM("element index: " << i << " moved, already existed");
-            markers_vector[i]->setPosMarker(scene->mapFromWorldToScene(QPointF(p_msg->markers[i].x * FROM_MILIMETERS_TO_UNITS, p_msg->markers[i].y * FROM_MILIMETERS_TO_UNITS)));
+            markers_vector[i]->updateMarker(&(p_msg->markers[i]));
+        }
+    }
+
+    // update Crazyflies
+    // also: what happens if we dont go through one of the names? we need to remove that crazyfly
+    int crazyfly_vector_size_before = crazyflies_vector.size(); //initial size of vector
+    // in this loop, add new ones and update old ones
+    for(int i = 0; i < p_msg->crazyflies.size(); i++)
+    {
+        bool name_found = false; // for each iteration, name_found starts in false
+        int index_name_found;
+        for(int j = 0; j < crazyfly_vector_size_before; j++)
+        {
+            if(crazyflies_vector[j]->getName() == p_msg->crazyflies[i].crazyflieName)
+            {
+                name_found = true; // name found. This can only happen once per i-iteration, names are unique
+                index_name_found = j; // index in already existing vector, to update it later (really needed?)
+            }
+        }
+
+        if(name_found)
+        {
+            crazyflies_vector[index_name_found]->updateCF(&(p_msg->crazyflies[i]));
+        }
+        else
+        {
+            crazyFly* tmp_p_crazyfly = new crazyFly(&(p_msg->crazyflies[i]));
+            scene->addItem(tmp_p_crazyfly);
+            crazyflies_vector.push_back(tmp_p_crazyfly);
+        }
+    }
+
+    // in this loop, clean the ones that are not present anymore
+    int crazyfly_vector_size_after = crazyflies_vector.size();
+
+    for(int j = 0; j < crazyfly_vector_size_after; j++)
+    {
+        bool name_found = false;
+        for(int i = 0; i < p_msg->crazyflies.size(); i++)
+        {
+            if(crazyflies_vector[j]->getName() == p_msg->crazyflies[i].crazyflieName)
+            {
+                name_found = true;
+            }
+        }
+        if(!name_found)
+        {
+            scene->removeItem(crazyflies_vector[j]);
+            crazyflies_vector.erase(crazyflies_vector.begin() + j);
         }
     }
 }
@@ -281,7 +334,7 @@ void MainGUIWindow::on_pushButton_fitAll_clicked()
 
 void MainGUIWindow::on_checkBox_vicon_markers_toggled(bool checked)
 {
-    // This is temporal, just to see effect. In the end the marker will be created with data from vicon
+    #ifdef CATKIN_MAKE
     if(checked)
     {
         for(int i = 0; i < markers_vector.size(); i++)
@@ -301,10 +354,12 @@ void MainGUIWindow::on_checkBox_vicon_markers_toggled(bool checked)
         ui->checkBox_vicon_highlight_markers->setCheckable(false);
         ui->checkBox_vicon_highlight_markers->setEnabled(false);
     }
+    #endif
 }
 
 void MainGUIWindow::on_checkBox_vicon_highlight_markers_toggled(bool checked)
 {
+    #ifdef CATKIN_MAKE
     if(checked)
     {
         for(int i = 0; i < markers_vector.size(); i++)
@@ -319,4 +374,5 @@ void MainGUIWindow::on_checkBox_vicon_highlight_markers_toggled(bool checked)
             markers_vector[i]->clearHighlighted();
         }
     }
+    #endif
 }
