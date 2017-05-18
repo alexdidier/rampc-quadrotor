@@ -20,7 +20,7 @@
 #include "d_fall_pps/ViconData.h"
 #include "d_fall_pps/UnlabeledMarker.h"
 
-//#define TESTING_FAKE_DATA
+#define TESTING_FAKE_DATA
 
 // notice that unit here are in milimeters
 using namespace ViconDataStreamSDK::CPP;
@@ -79,7 +79,14 @@ int main(int argc, char* argv[]) {
         f += 10;
         i++;
         // TODO: Fake CF data
+        CrazyflieData crazyfly;
+        crazyfly.crazyflieName = "CF1";
+        crazyfly.x = 0;
+        crazyfly.y = 0;
+        crazyfly.z = 0;
 
+        crazyfly.yaw = 3.14159/600 * f;
+        viconData.crazyflies.push_back(crazyfly);
         viconDataPublisher.publish(viconData); // testing data
     }
     #else

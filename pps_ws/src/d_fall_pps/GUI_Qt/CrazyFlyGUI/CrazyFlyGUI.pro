@@ -28,9 +28,7 @@ SOURCES += \
     src/myGraphicsRectItem.cpp \
     src/myGraphicsScene.cpp \
     src/myGraphicsView.cpp \
-    src/tablePiece.cpp \
-    src/marker.cpp \
-    src/crazyFly.cpp
+    src/tablePiece.cpp
 
 HEADERS  += \
     include/cornergrabber.h \
