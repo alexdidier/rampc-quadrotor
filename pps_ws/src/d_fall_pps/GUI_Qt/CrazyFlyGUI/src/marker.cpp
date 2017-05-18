@@ -12,11 +12,7 @@ Marker::Marker(const UnlabeledMarker* p_marker_msg, QGraphicsItem * parent)
     _highlighted = false;
     _highlight_diameter = HIGHLIGHT_DIAMETER;
 
-
-    QPointF p(m_x, m_y);
-
     _diameter = MARKER_DIAMETER; // x and y are top left coordinates
-    this->setPos(m_x, m_y);          //where it is now, it is the center
 
     _x_highlight = m_x - _highlight_diameter/2; // update top-left corner coordinates of highlighing circle
     _y_highlight = m_y - _highlight_diameter/2;

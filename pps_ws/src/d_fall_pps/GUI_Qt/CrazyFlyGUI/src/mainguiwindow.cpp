@@ -134,11 +134,53 @@ void MainGUIWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to
     }
 
     // update Crazyflies
+    // also: what happens if we dont go through one of the names? we need to remove that crazyfly
+    int crazyfly_vector_size_before = crazyflies_vector.size(); //initial size of vector
+    // in this loop, add new ones and update old ones
+    for(int i = 0; i < p_msg->crazyflies.size(); i++)
+    {
+        bool name_found = false; // for each iteration, name_found starts in false
+        int index_name_found;
+        for(int j = 0; j < crazyfly_vector_size_before; j++)
+        {
+            if(crazyflies_vector[j]->getName() == p_msg->crazyflies[i].crazyflieName)
+            {
+                name_found = true; // name found. This can only happen once per i-iteration, names are unique
+                index_name_found = j; // index in already existing vector, to update it later (really needed?)
+            }
+        }
 
-    // TODO: create a vector of pointers to CFs with all the info inside. Update this vector with new coming data
-    // To access this vector by name, we should maybe create a second array of strings (names), that are located at the
-    // same position as the information of CFs is
+        if(name_found)
+        {
+            crazyflies_vector[index_name_found]->updateCF(&(p_msg->crazyflies[i]));
+        }
+        else
+        {
+            crazyFly* tmp_p_crazyfly = new crazyFly(&(p_msg->crazyflies[i]));
+            scene->addItem(tmp_p_crazyfly);
+            crazyflies_vector.push_back(tmp_p_crazyfly);
+        }
+    }
 
+    // in this loop, clean the ones that are not present anymore
+    int crazyfly_vector_size_after = crazyflies_vector.size();
+
+    for(int j = 0; j < crazyfly_vector_size_after; j++)
+    {
+        bool name_found = false;
+        for(int i = 0; i < p_msg->crazyflies.size(); i++)
+        {
+            if(crazyflies_vector[j]->getName() == p_msg->crazyflies[i].crazyflieName)
+            {
+                name_found = true;
+            }
+        }
+        if(!name_found)
+        {
+            scene->removeItem(crazyflies_vector[j]);
+            crazyflies_vector.erase(crazyflies_vector.begin() + j);
+        }
+    }
 }
 #endif
 
@@ -292,7 +334,7 @@ void MainGUIWindow::on_pushButton_fitAll_clicked()
 
 void MainGUIWindow::on_checkBox_vicon_markers_toggled(bool checked)
 {
-    // This is temporal, just to see effect. In the end the marker will be created with data from vicon
+    #ifdef CATKIN_MAKE
     if(checked)
     {
         for(int i = 0; i < markers_vector.size(); i++)
@@ -312,10 +354,12 @@ void MainGUIWindow::on_checkBox_vicon_markers_toggled(bool checked)
         ui->checkBox_vicon_highlight_markers->setCheckable(false);
         ui->checkBox_vicon_highlight_markers->setEnabled(false);
     }
+    #endif
 }
 
 void MainGUIWindow::on_checkBox_vicon_highlight_markers_toggled(bool checked)
 {
+    #ifdef CATKIN_MAKE
     if(checked)
     {
         for(int i = 0; i < markers_vector.size(); i++)
@@ -330,4 +374,5 @@ void MainGUIWindow::on_checkBox_vicon_highlight_markers_toggled(bool checked)
             markers_vector[i]->clearHighlighted();
         }
     }
+    #endif
 }

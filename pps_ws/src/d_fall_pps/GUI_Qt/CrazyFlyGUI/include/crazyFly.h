@@ -6,6 +6,13 @@
 #include <QGraphicsSvgItem>
 #include <QSvgRenderer>
 
+#ifdef CATKIN_MAKE
+#include "d_fall_pps/CrazyflieData.h"
+#endif
+
+#ifdef CATKIN_MAKE
+using namespace d_fall_pps;
+#endif
 
 #define DRONE_HEIGHT         100 * FROM_MILIMETERS_TO_UNITS
 #define DRONE_WIDTH          100 * FROM_MILIMETERS_TO_UNITS
@@ -13,14 +20,31 @@
 class crazyFly : public QGraphicsSvgItem
 {
 public:
-    explicit crazyFly(QPointF position, QGraphicsItem * parent = 0);
+    explicit crazyFly(const CrazyflieData* p_crazyfly_msg, QGraphicsItem * parent = 0);
     ~crazyFly();
     QRectF boundingRect() const;
 
     void paint(QPainter * painter,
                const QStyleOptionGraphicsItem * option,
                QWidget * widget);
+
+    void updateCF(const CrazyflieData* p_crazyfly_msg);
+
+    std::string getName();
+
 private:
+
+    // info to fill by message
+    std::string m_name;
+    qreal m_x;
+    qreal m_y;
+    qreal m_z;
+
+    qreal m_roll;
+    qreal m_pitch;
+    qreal m_yaw;
+
+    // info for plotting CF
     qreal m_width;
     qreal m_height;
 };

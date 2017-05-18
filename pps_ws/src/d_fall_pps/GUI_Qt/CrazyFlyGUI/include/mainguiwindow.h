@@ -10,14 +10,14 @@
 
 #ifdef CATKIN_MAKE
 #include "rosNodeThread.h"
+#include "marker.h"
+#include "crazyFly.h"
 #endif
 
 #include "ui_mainguiwindow.h"
 #include "myGraphicsScene.h"
 #include "globalDefinitions.h"
 
-#include "marker.h"             // temporal, just to check
-#include "crazyFly.h"
 
 namespace Ui {
 class MainGUIWindow;
@@ -106,11 +106,10 @@ private:
     myGraphicsScene* scene;
     void _init();
 
-    std::vector<Marker*> markers_vector;
-    std::vector<crazyFly*> crazyflies_vector;
-
     #ifdef CATKIN_MAKE
     rosNodeThread* _rosNodeThread;
+    std::vector<Marker*> markers_vector;
+    std::vector<crazyFly*> crazyflies_vector;
     #endif
 };
 
