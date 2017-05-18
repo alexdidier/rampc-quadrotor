@@ -280,7 +280,7 @@ int main(int argc, char* argv[]) {
     loadParameters(nodeHandle);
 
     ros::Publisher setpointPublisher = nodeHandle.advertise<Setpoint>("Setpoint", 1);
-    ros::Subscriber setpointSubscriber = nodeHandle.subscribe("SafeControllerService/Setpoint", 1, setpointCallback);
+    ros::Subscriber setpointSubscriber = nodeHandle.subscribe("Setpoint", 1, setpointCallback);
 
     ros::ServiceServer service = nodeHandle.advertiseService("RateController", calculateControlOutput);
     ROS_INFO("SafeControllerService ready");
