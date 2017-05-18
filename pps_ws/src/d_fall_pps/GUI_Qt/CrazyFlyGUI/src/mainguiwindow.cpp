@@ -76,6 +76,8 @@ void MainGUIWindow::_init()
 
 
     ui->graphicsView->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
+    ui->graphicsView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    ui->graphicsView->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 
     scene = new myGraphicsScene(ui->frame_drawing);
     scene->setSceneRect(-100 * FROM_METERS_TO_UNITS, -100 * FROM_METERS_TO_UNITS, 200 * FROM_METERS_TO_UNITS, 200 * FROM_METERS_TO_UNITS);
@@ -121,7 +123,6 @@ void MainGUIWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to
         if(i >= markers_vector.size()) //some new markers coming
         {
             ROS_INFO_STREAM("element index: " << i << " added");
-            QPointF p(p_msg->markers[i].x * FROM_MILIMETERS_TO_UNITS, p_msg->markers[i].y * FROM_MILIMETERS_TO_UNITS);
             Marker* tmp_p_marker = new Marker(&(p_msg->markers[i]));
             markers_vector.push_back(tmp_p_marker); // what happens with the new indexes? check if this is correct
 

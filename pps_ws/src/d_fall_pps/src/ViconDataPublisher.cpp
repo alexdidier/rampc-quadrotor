@@ -20,7 +20,7 @@
 #include "d_fall_pps/ViconData.h"
 #include "d_fall_pps/UnlabeledMarker.h"
 
-// #define TESTING_FAKE_DATA
+#define TESTING_FAKE_DATA
 
 // notice that unit here are in milimeters
 using namespace ViconDataStreamSDK::CPP;
@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
         }
 
         ros::Duration(0.1).sleep();
-        f += 10;
+        f += 10/1000.0f;
         i++;
         // TODO: Fake CF data
         CrazyflieData crazyfly;
@@ -88,8 +88,8 @@ int main(int argc, char* argv[]) {
         viconData.crazyflies.push_back(crazyfly);
 
         crazyfly.crazyflieName = "CF2";
-        crazyfly.x = 1000;
-        crazyfly.y = 1000;
+        crazyfly.x = 1;
+        crazyfly.y = 1;
         crazyfly.z = 0;
         crazyfly.yaw = -3.14159/600 * f;
         viconData.crazyflies.push_back(crazyfly);
@@ -97,8 +97,8 @@ int main(int argc, char* argv[]) {
         if(i > 50 && i < 100)
         {
             crazyfly.crazyflieName = "CF3";
-            crazyfly.x = 1000;
-            crazyfly.y = -1000;
+            crazyfly.x = 1;
+            crazyfly.y = -1;
             crazyfly.z = 0;
             crazyfly.yaw = -3.14159/600 * f;
             viconData.crazyflies.push_back(crazyfly);
@@ -162,9 +162,9 @@ int main(int argc, char* argv[]) {
                 client.GetUnlabeledMarkerGlobalTranslation(unlabeledMarkerIndex);
 
             marker.index = unlabeledMarkerIndex;
-            marker.x = OutputTranslation.Translation[0];
-            marker.y = OutputTranslation.Translation[1];
-            marker.z = OutputTranslation.Translation[2];
+            marker.x = OutputTranslation.Translation[0]/1000.0f;
+            marker.y = OutputTranslation.Translation[1]/1000.0f;
+            marker.z = OutputTranslation.Translation[2]/1000.0f;
 
             viconData.markers.push_back(marker);
         }

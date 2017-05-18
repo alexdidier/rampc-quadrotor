@@ -26,7 +26,7 @@ void Marker::updateMarker(const UnlabeledMarker* p_marker_msg)
     m_x = p_marker_msg->x;
     m_y = p_marker_msg->y;
     m_z = p_marker_msg->z;
-    this->setPos(m_x * FROM_MILIMETERS_TO_UNITS, -m_y * FROM_MILIMETERS_TO_UNITS);    // - y because of coordinates
+    this->setPos(m_x * FROM_METERS_TO_UNITS, -m_y * FROM_METERS_TO_UNITS);    // - y because of coordinates
 }
 
 
