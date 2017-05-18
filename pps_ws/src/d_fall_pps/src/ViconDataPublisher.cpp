@@ -84,14 +84,14 @@ int main(int argc, char* argv[]) {
         crazyfly.x = 0;
         crazyfly.y = 0;
         crazyfly.z = 0;
-        crazyfly.yaw = 3.14159/600 * f;
+        crazyfly.yaw = 3.14159 * f;
         viconData.crazyflies.push_back(crazyfly);
 
         crazyfly.crazyflieName = "CF2";
         crazyfly.x = 1;
         crazyfly.y = 1;
         crazyfly.z = 0;
-        crazyfly.yaw = -3.14159/600 * f;
+        crazyfly.yaw = -3.14159 * f;
         viconData.crazyflies.push_back(crazyfly);
 
         if(i > 50 && i < 100)
@@ -100,7 +100,7 @@ int main(int argc, char* argv[]) {
             crazyfly.x = 1;
             crazyfly.y = -1;
             crazyfly.z = 0;
-            crazyfly.yaw = -3.14159/600 * f;
+            crazyfly.yaw = -3.14159 * f;
             viconData.crazyflies.push_back(crazyfly);
         }
 
