@@ -112,7 +112,7 @@ if __name__ == '__main__':
         cf_client = PPSRadioClient(radio_address)
         time.sleep(1.0)
 
-        rospy.Subscriber("/PPSClient/ControlCommand", ControlCommand, controlCommandCallback)
+        rospy.Subscriber("PPSClient/ControlCommand", ControlCommand, controlCommandCallback)
 
         rospy.spin()
         rospy.loginfo("Turning off crazyflie")

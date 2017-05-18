@@ -1,6 +1,6 @@
 teamName: "Two"
 crazyFlieName: "cfFour"
 crazyFlieAddress: "radio://0/99/2M"
-safeController: "/SafeControllerService/RateController"
+safeController: "SafeControllerService/RateController"
 customController: ""
 

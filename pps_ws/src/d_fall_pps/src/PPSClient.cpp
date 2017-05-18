@@ -225,7 +225,7 @@ int main(int argc, char* argv[]){
 
 	//this topic lets the PPSClient listen to the terminal commands
     ros::Publisher commandPublisher = nodeHandle.advertise<std_msgs::Int32>("Command", 1);
-    ros::Subscriber commandSubscriber = nodeHandle.subscribe("/PPSClient/Command", 1, commandCallback);
+    ros::Subscriber commandSubscriber = nodeHandle.subscribe("PPSClient/Command", 1, commandCallback);
 
 	//start with safe controller
 	crazyflieEnabled = true;
