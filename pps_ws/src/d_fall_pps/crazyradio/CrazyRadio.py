@@ -11,6 +11,10 @@ import time, sys
 import struct
 import logging
 
+import rosbag
+from std_msgs.msg import Float32
+from std_msgs.msg import String
+
 # Add library
 #sys.path.append("lib")
 
@@ -22,7 +26,7 @@ from cflib.crtp.crtpstack import CRTPPacket, CRTPPort
 
 import cflib.drivers.crazyradio
 
-# Logging import
+# Logging import(*
 from cflib.crazyflie.log import LogConfig
 
 # Logging settings
@@ -32,6 +36,8 @@ CONTROLLER_MOTOR = 2
 CONTROLLER_ANGLE = 1
 CONTROLLER_RATE = 0
 RAD_TO_DEG = 57.296
+
+bag = rosbag.Bag('/home/d-fall/D-FaLL-System/pps_ws/src/d_fall_pps/test.bag', 'w')
 
 class PPSRadioClient:
     """
@@ -62,7 +68,21 @@ class PPSRadioClient:
         # Connect to the Crazyflie
         print "Connecting to %s" % link_uri
         self._cf.open_link(link_uri)
-
+        
+                
+    def _data_received_callback(self, timestamp, data, logconf):
+        print "log of stabilizer and battery: [%d][%s]: %s" % (timestamp, logconf.name, data)
+        batteryVolt = Float32()
+        batteryVolt.data = data["pm.vbat"]
+        str = String()
+        str.data = 'foo'
+        bag.write('onboard', str)
+        bag.write('onboard', batteryVolt)
+        print "status check"
+        
+        
+    def _logging_error(self, logconf, msg):
+        print "Error when logging %s" % logconf.name
 
     def _connected(self, link_uri):
         """
@@ -70,6 +90,24 @@ class PPSRadioClient:
             quadrotor is established.
         """
         rospy.loginfo("Connection to %s successful: " % link_uri)
+        
+                
+        # Config for Logging
+        logconf = LogConfig("LoggingTest", 1000)
+        logconf.add_variable("stabilizer.roll", "float");
+        logconf.add_variable("stabilizer.pitch", "float");
+        logconf.add_variable("stabilizer.yaw", "float");
+        logconf.add_variable("pm.vbat", "float");
+        
+        self._cf.log.add_config(logconf)
+        if logconf.valid:
+            logconf.data_received_cb.add_callback(self._data_received_callback)
+            logconf.error_cb.add_callback(self._logging_error)
+            logconf.start()
+            print "logconf valid"
+        else:
+            print "logconf invalid"
+        
 
     def _connection_failed(self, link_uri, msg):
         """Callback when connection initial connection fails (i.e no Crazyflie
@@ -84,6 +122,9 @@ class PPSRadioClient:
     def _disconnected(self, link_uri):
         """Callback when the Crazyflie is disconnected (called in all cases)"""
         rospy.logwarn("Disconnected from %s" % link_uri)
+        bag.close()
+        rospy.loginfo("bag closed")
+
 
     def _send_to_commander(self,roll, pitch, yaw, thrust, cmd1, cmd2, cmd3, cmd4, mode):
         pk = CRTPPacket()
@@ -98,6 +139,8 @@ def controlCommandCallback(data):
     #cmd1..4 must not be 0, as crazyflie onboard controller resets!
     #pitch and yaw are inverted on crazyflie controller
     cf_client._send_to_commander(data.roll, -data.pitch, -data.yaw, 0, data.motorCmd1, data.motorCmd2, data.motorCmd3, data.motorCmd4, data.onboardControllerType)
+    
+    
 
 if __name__ == '__main__':
     rospy.init_node('CrazyRadio', anonymous=True)
