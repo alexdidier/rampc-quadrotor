@@ -150,10 +150,13 @@ void loadCrazyflieContext() {
 
 	if(centralManager.call(contextCall)) {
 		context = contextCall.response.crazyflieContext;
-		ROS_INFO_STREAM("CrazyflieContext:" << context);
+		ROS_INFO_STREAM("CrazyflieContext:\n" << context);
 	} else {
 		ROS_ERROR("Failed to load context");
 	}
+
+	ros::NodeHandle nh("CrazyRadio");
+	nh.setParam("crazyFlieAddress", context.crazyflieAddress);
 }
 
 void loadSafeController() {

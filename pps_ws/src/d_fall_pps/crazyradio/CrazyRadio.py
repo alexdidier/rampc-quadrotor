@@ -37,8 +37,6 @@ CONTROLLER_ANGLE = 1
 CONTROLLER_RATE = 0
 RAD_TO_DEG = 57.296
 
-bag = rosbag.Bag('/home/d-fall/D-FaLL-System/pps_ws/src/d_fall_pps/test.bag', 'w')
-
 class PPSRadioClient:
     """
        CrazyRadio client that recieves the commands from the controller and 
@@ -147,24 +145,25 @@ if __name__ == '__main__':
     # Initialize the low-level drivers (don't list the debug drivers)
     cflib.crtp.init_drivers(enable_debug_driver=False)
 
-    if rospy.has_param("~crazyFlieAddress"):
-        radio_address = rospy.get_param("~crazyFlieAddress")
-        rospy.loginfo("Crazyradio connecting to %s" % radio_address)
-        global cf_client
+    while not rospy.has_param("~crazyFlieAddress"):
+	time.sleep(0.05)
+	#wait until address parameter is set by PPSClient
 
-        cf_client = PPSRadioClient(radio_address)
-        time.sleep(1.0)
+    radio_address = "radio://" + rospy.get_param("~crazyFlieAddress")
+    rospy.loginfo("Crazyradio connecting to %s" % radio_address)
+    global cf_client
 
-        rospy.Subscriber("PPSClient/ControlCommand", ControlCommand, controlCommandCallback)
+    cf_client = PPSRadioClient(radio_address)
+    time.sleep(1.0)
 
-        rospy.spin()
-        rospy.loginfo("Turning off crazyflie")
+    rospy.Subscriber("PPSClient/ControlCommand", ControlCommand, controlCommandCallback)
 
-        cf_client._send_to_commander(0, 0, 0, 0, 0, 0, 0, 0, CONTROLLER_MOTOR)
-        #wait for client to send its commands
-        time.sleep(1.0)
+    rospy.spin()
+    rospy.loginfo("Turning off crazyflie")
 
-        cf_client._cf.close_link()
-        rospy.loginfo("Link closed")
-    else:
-        rospy.logerr("No radio address provided")
+    cf_client._send_to_commander(0, 0, 0, 0, 0, 0, 0, 0, CONTROLLER_MOTOR)
+    #wait for client to send its commands
+    time.sleep(1.0)
+
+    cf_client._cf.close_link()
+    rospy.loginfo("Link closed")
