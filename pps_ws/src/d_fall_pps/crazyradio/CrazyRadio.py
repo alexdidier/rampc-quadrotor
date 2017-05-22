@@ -37,6 +37,8 @@ CONTROLLER_ANGLE = 1
 CONTROLLER_RATE = 0
 RAD_TO_DEG = 57.296
 
+bag = rosbag.Bag('~/D-Fall-System/pps_ws/src/d_fall_pps/test.bag', 'w')
+
 class PPSRadioClient:
     """
        CrazyRadio client that recieves the commands from the controller and 
