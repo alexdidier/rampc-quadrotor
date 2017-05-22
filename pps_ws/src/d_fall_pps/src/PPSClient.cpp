@@ -91,7 +91,7 @@ void viconCallback(const ViconData& viconData) {
 	for(std::vector<CrazyflieData>::const_iterator it = viconData.crazyflies.begin(); it != viconData.crazyflies.end(); ++it) {
 		CrazyflieData data = *it;
 		
-		ROS_INFO_STREAM(data);
+		//ROS_INFO_STREAM(data);
 		
 		if(data.crazyflieName == crazyflieName) {
 			Controller controllerCall;

@@ -238,7 +238,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 
     //HINWEIS: übersteuern beim outYaw wenn man 180 Grad zum yaw-Setpoint startet
     //nach Multiplikation mit 0.5 gibt es den Effekt nicht mehr -> mit Paul besprechen....
-    outYaw *= 0.5;
+    //outYaw *= 0.5;
 
     response.controlOutput.roll = outRoll;
     response.controlOutput.pitch = outPitch;
