@@ -84,16 +84,28 @@ bool safetyCheck(CrazyflieData data, ControlCommand controlCommand) {
 	return true;
 }
 
+void coordinatesToLocal(CrazyflieData& cf) {
+	AreaBounds area = context.localArea;
+	float originX = (area.xmin + area.xmax) / 2.0;
+	float originY = (area.ymin + area.ymax) / 2.0;
+	float originZ = (area.zmin + area.zmax) / 2.0;
+
+	cf.x -= originX;
+	cf.y -= originY;
+	cf.z -= originZ;
+}
+
 //is called when new data from Vicon arrives
-void viconCallback(const ViconData& viconData) {	
+void viconCallback(const ViconData& viconData) {
 	for(std::vector<CrazyflieData>::const_iterator it = viconData.crazyflies.begin(); it != viconData.crazyflies.end(); ++it) {
-		CrazyflieData data = *it;
+		CrazyflieData global = *it;
 		
-		//ROS_INFO_STREAM(data);
-		
-		if(data.crazyflieName == context.crazyflieName) {
+		if(global.crazyflieName == context.crazyflieName) {
 			Controller controllerCall;
-			controllerCall.request.ownCrazyflie = data;
+
+			CrazyflieData local = global;
+			coordinatesToLocal(local);
+			controllerCall.request.ownCrazyflie = local;
 			
 
 			if(crazyflieEnabled){
@@ -101,31 +113,35 @@ void viconCallback(const ViconData& viconData) {
 					bool success = customController.call(controllerCall);
 					if(!success) {
 						ROS_ERROR("Failed to call custom controller, switching to safe controller");
+						ROS_ERROR_STREAM("custom controller status: valid: " << customController.isValid() << ", exists: " << customController.exists());
+						ROS_ERROR_STREAM("custom controller name: valid: " << customController.getService());
 						usingSafeController = true;
+					} else {
+						usingSafeController = safetyCheck(global, controllerCall.response.controlOutput);
+						if(usingSafeController) {
+							ROS_INFO_STREAM("safety check failed, switching to safe controller");
+						}
 					}
-
-
-				usingSafeController = true; //debug
 				}
 
 			
 				if(usingSafeController) {
 					bool success = safeController.call(controllerCall);
 					if(!success) {
-						ROS_ERROR_STREAM("Failed to call safe controller, " << safeController.isValid() << ", " << safeController.exists() << ", " << safeController.isPersistent());
+						ROS_ERROR_STREAM("Failed to call safe controller, valid: " << safeController.isValid() << ", exists: " << safeController.exists());
 					}
 				}
 
 				controlCommandPublisher.publish(controllerCall.response.controlOutput);
 
-				bag.write("ViconData", ros::Time::now(), data);
+				bag.write("ViconData", ros::Time::now(), local);
 				bag.write("ControlOutput", ros::Time::now(), controllerCall.response.controlOutput);
 			
 			} else { //crazyflie disabled
 				ControlCommand zeroOutput = ControlCommand(); //everything set to zero
 				zeroOutput.onboardControllerType = 2; //set to motor_mode
 				controlCommandPublisher.publish(zeroOutput);
-				bag.write("ViconData", ros::Time::now(), data);
+				bag.write("ViconData", ros::Time::now(), local);
 				bag.write("ControlOutput", ros::Time::now(), zeroOutput);
 			}
 		}
@@ -133,10 +149,6 @@ void viconCallback(const ViconData& viconData) {
 }
 
 void loadParameters(ros::NodeHandle& nodeHandle) {
-	if(!nodeHandle.getParam("crazyFlieName", crazyflieName)) {
-		ROS_ERROR("Failed to get crazyFlieName");
-	}
-
 	if(!nodeHandle.getParam("studentID", studentID)) {
 		ROS_ERROR("Failed to get studentID");
 	}
@@ -182,7 +194,7 @@ void loadCustomController() {
 		return;
 	}
 
-	customController = nodeHandle.serviceClient<Controller>(customControllerName, true);
+	customController = ros::service::createClient<Controller>(customControllerName, true);
     ROS_INFO_STREAM("loaded custom controller " << customControllerName);
 }
 
