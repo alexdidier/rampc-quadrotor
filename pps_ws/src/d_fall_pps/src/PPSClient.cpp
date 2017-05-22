@@ -39,8 +39,6 @@
 
 using namespace d_fall_pps;
 
-//name of the student team
-std::string teamName;
 //name of the crazyflie, as specified in Vicon
 std::string crazyflieName;
 //studentID, gives namespace and identifier in CentralManagerService
@@ -93,7 +91,7 @@ void viconCallback(const ViconData& viconData) {
 		
 		//ROS_INFO_STREAM(data);
 		
-		if(data.crazyflieName == crazyflieName) {
+		if(data.crazyflieName == context.crazyflieName) {
 			Controller controllerCall;
 			controllerCall.request.ownCrazyflie = data;
 			
@@ -135,10 +133,6 @@ void viconCallback(const ViconData& viconData) {
 }
 
 void loadParameters(ros::NodeHandle& nodeHandle) {
-	if(!nodeHandle.getParam("teamName", teamName)) {
-		ROS_ERROR("Failed to get teamName");
-	}
-
 	if(!nodeHandle.getParam("crazyFlieName", crazyflieName)) {
 		ROS_ERROR("Failed to get crazyFlieName");
 	}
