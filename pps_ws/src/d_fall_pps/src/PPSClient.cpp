@@ -21,7 +21,7 @@
 #include <ros/package.h>
 
 #include "d_fall_pps/Controller.h"
-#include "d_fall_pps/CentralManager.h"
+#include "d_fall_pps/CMQuery.h"
 
 #include "d_fall_pps/ViconData.h"
 #include "d_fall_pps/CrazyflieData.h"
@@ -43,6 +43,8 @@ using namespace d_fall_pps;
 std::string teamName;
 //name of the crazyflie, as specified in Vicon
 std::string crazyflieName;
+//studentID, gives namespace and identifier in CentralManagerService
+int studentID;
 
 //the safe controller specified in the ClientConfig.yaml, is considered trusted
 ros::ServiceClient safeController;
@@ -140,15 +142,23 @@ void loadParameters(ros::NodeHandle& nodeHandle) {
 	if(!nodeHandle.getParam("crazyFlieName", crazyflieName)) {
 		ROS_ERROR("Failed to get crazyFlieName");
 	}
+
+	if(!nodeHandle.getParam("studentID", studentID)) {
+		ROS_ERROR("Failed to get studentID");
+	}
 }
 
 void loadCrazyflieContext() {
-	CentralManager centralManagerCall;
-	if(centralManager.call(centralManagerCall)) {
-		context = centralManagerCall.response.context;
-		ROS_INFO("CrazyflieContext obtained");
+	CMQuery contextCall;
+	contextCall.request.studentID = studentID;
+
+	centralManager.waitForExistence(ros::Duration(-1));
+
+	if(centralManager.call(contextCall)) {
+		context = contextCall.response.crazyflieContext;
+		ROS_INFO_STREAM("CrazyflieContext:" << context);
 	} else {
-		ROS_ERROR("Failed to call CentralManagerService");
+		ROS_ERROR("Failed to load context");
 	}
 }
 
@@ -213,7 +223,7 @@ int main(int argc, char* argv[]){
 	
 	
 	//ros::service::waitForService("/CentralManagerService/CentralManager");
-	centralManager = nodeHandle.serviceClient<CentralManager>("/CentralManagerService/CentralManager");
+	centralManager = nodeHandle.serviceClient<CMQuery>("/CentralManagerService/Query", false);
 	loadCrazyflieContext();
 	
 	//keeps 100 messages because otherwise ViconDataPublisher would override the data immediately

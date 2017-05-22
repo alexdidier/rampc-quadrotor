@@ -6,6 +6,7 @@
 
 	<node pkg="d_fall_pps" name="PPSClient" output="screen" type="PPSClient">
 		<rosparam command="load" file="$(find d_fall_pps)/param/ClientConfig.yaml" />
+		<param name="studentID" value="$(optenv ROS_NAMESPACE)" />
 	</node>
 
 	<node pkg="d_fall_pps" name="SafeControllerService" output="screen" type="SafeControllerService">
