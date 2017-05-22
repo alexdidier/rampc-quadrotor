@@ -215,7 +215,7 @@ add_executable(ViconDataPublisher src/ViconDataPublisher.cpp)
 add_executable(PPSClient src/PPSClient.cpp)
 add_executable(SafeControllerService src/SafeControllerService.cpp)
 add_executable(CustomControllerService src/CustomControllerService.cpp)
-add_executable(CentralManagerService src/CentralManagerService.cpp)
+add_executable(CentralManagerService src/CentralManagerService.cpp src/CrazyflieIO.cpp)
 
 
 
