@@ -105,7 +105,7 @@ void readCrazyflieDB(CrazyflieDB& db) {
             AreaBounds area;
 
             area.xmin = stof(dataRow[3]);
-            area.xmin = stof(dataRow[4]);
+            area.ymin = stof(dataRow[4]);
             area.zmin = stof(dataRow[5]);
 
             area.xmax = stof(dataRow[6]);
