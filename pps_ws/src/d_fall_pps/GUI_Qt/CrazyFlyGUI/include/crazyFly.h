@@ -34,12 +34,18 @@ public:
 
     void setScaleCFs(double scale);
 
+    bool isOccluded();
+
     // linking stuff
     void assignCFZone(int cf_zone_index);
     void removeAssigned();
     bool isAssigned();
+    bool isAddedToScene();
+    void setAddedToScene(bool added);
 
 private:
+    // item added to scene already:
+    bool m_added_to_scene;
 
     // info to fill by message
     std::string m_name;
@@ -50,6 +56,8 @@ private:
     qreal m_roll;
     qreal m_pitch;
     qreal m_yaw;
+
+    bool m_occluded;
 
     // info for plotting CF
     qreal m_width;

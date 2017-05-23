@@ -28,7 +28,7 @@ MainGUIWindow::MainGUIWindow(int argc, char **argv, QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainGUIWindow)
     #ifdef CATKIN_MAKE
-    ,cf_linker()
+    ,cf_linker(ui->table_links)
     #endif
 {
     #ifdef CATKIN_MAKE
@@ -152,18 +152,18 @@ void MainGUIWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to
         for(int i = p_msg->markers.size(); i < markers_vector.size(); i++)
         {
             scene->removeItem(markers_vector[i]); // remove objects from scene
-            ROS_INFO_STREAM("element index: " << i << " removed");
+            // ROS_INFO_STREAM("element index: " << i << " removed");
         }
         markers_vector.erase(markers_vector.begin() + p_msg->markers.size(), markers_vector.end()); //delete them
     }
 
-    ROS_INFO_STREAM("markers.size: " << p_msg->markers.size());
+    // ROS_INFO_STREAM("markers.size: " << p_msg->markers.size());
 
     for(int i = 0; i < p_msg->markers.size(); i++) // here, or new markers message is equal to current messages, or greater (some new markers)
     {
         if(i >= markers_vector.size()) //some new markers coming
         {
-            ROS_INFO_STREAM("element index: " << i << " added");
+            // ROS_INFO_STREAM("element index: " << i << " added");
             Marker* tmp_p_marker = new Marker(&(p_msg->markers[i]));
             markers_vector.push_back(tmp_p_marker); // what happens with the new indexes? check if this is correct
 
@@ -178,7 +178,7 @@ void MainGUIWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to
         }
         else
         {
-            ROS_INFO_STREAM("element index: " << i << " moved, already existed");
+            // ROS_INFO_STREAM("element index: " << i << " moved, already existed");
             markers_vector[i]->updateMarker(&(p_msg->markers[i]));
         }
     }
@@ -204,18 +204,38 @@ void MainGUIWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to
         {
             crazyflies_vector[index_name_found]->updateCF(&(p_msg->crazyflies[i]));
         }
-        else
+        else                    //name not found, newly arrived, add it to the vector
         {
             crazyFly* tmp_p_crazyfly = new crazyFly(&(p_msg->crazyflies[i]));
-            if(ui->checkBox_vicon_crazyflies->checkState() == Qt::Checked)
-            {
-                scene->addItem(tmp_p_crazyfly);
-            }
             crazyflies_vector.push_back(tmp_p_crazyfly);
+        }
+
+        if(ui->checkBox_vicon_crazyflies->checkState() == Qt::Checked)
+        {
+            for(int i = 0; i < crazyflies_vector.size(); i++) //check for occlussion
+            {
+                if(crazyflies_vector[i]->isOccluded())
+                {
+                    ROS_INFO("===================OCCLUDED");
+                    if(crazyflies_vector[i]->isAddedToScene())
+                    {
+                        scene->removeItem(crazyflies_vector[i]);
+                        crazyflies_vector[i]->setAddedToScene(false);
+                    }
+                }
+                else
+                {
+                    if(!crazyflies_vector[i]->isAddedToScene())
+                    {
+                        scene->addItem(crazyflies_vector[i]);
+                        crazyflies_vector[i]->setAddedToScene(true);
+                    }
+                }
+            }
         }
     }
 
-    // in this loop, clean the ones that are not present anymore
+    // in this loop, clean the ones that are not present anymore. UPDATE: this will apparently only happen when we tick and untick in Vicon
     int crazyfly_vector_size_after = crazyflies_vector.size();
 
     for(int j = 0; j < crazyfly_vector_size_after; j++)
@@ -441,7 +461,11 @@ void MainGUIWindow::on_checkBox_vicon_crazyflies_toggled(bool checked)
         #ifdef CATKIN_MAKE
         for(int i = 0; i < crazyflies_vector.size(); i++)
         {
-            scene->addItem(crazyflies_vector[i]);
+            if(!crazyflies_vector[i]->isAddedToScene())
+            {
+                scene->addItem(crazyflies_vector[i]);
+                crazyflies_vector[i]->setAddedToScene(true);
+            }
         }
         #endif
         ui->scaleSpinBox->setEnabled(true);
@@ -451,7 +475,11 @@ void MainGUIWindow::on_checkBox_vicon_crazyflies_toggled(bool checked)
         #ifdef CATKIN_MAKE
         for(int i = 0; i < crazyflies_vector.size(); i++)
         {
-            scene->removeItem(crazyflies_vector[i]);
+            if(crazyflies_vector[i]->isAddedToScene())
+            {
+                scene->removeItem(crazyflies_vector[i]);
+                crazyflies_vector[i]->setAddedToScene(false);
+            }
         }
         #endif
         ui->scaleSpinBox->setEnabled(false);

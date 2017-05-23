@@ -5,14 +5,15 @@
 #include "crazyFly.h"
 #include "crazyFlyZone.h"
 
+#include <QTableWidget>
+
 class CFLinker
 {
 public:
-    explicit CFLinker();
+    explicit CFLinker(QTableWidget* p_table);
     ~CFLinker();
 
-    void link(crazyFly* crazyfly, crazyFlyZone* crazyfly_zone);
-    void link(crazyFlyZone* crazyfly_zone, crazyFly* crazyfly);
+    void link(int student_id, crazyFly* crazyfly, crazyFlyZone* crazyfly_zone);
 
     void unlink(crazyFly* crazyfly,  crazyFlyZone* crazyfly_zone);
 
@@ -24,6 +25,9 @@ private:
     };
 
     std::vector<struct link> links;
+
+    // table
+    QTableWidget* m_p_table;
 };
 
 
