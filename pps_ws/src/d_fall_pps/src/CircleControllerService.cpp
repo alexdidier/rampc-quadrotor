@@ -51,9 +51,9 @@ float saturationThrust;
 CrazyflieData previousLocation;
 
 //circle stuff
-float time;
-const float OMEGA = 0.1*2*PI;
-const float RADIUS = 0.2;
+float currentTime;
+const float OMEGA = 0.5*2*PI;
+const float RADIUS = 0.35;
 
 
 void loadParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length) {
@@ -141,17 +141,17 @@ void convertIntoBodyFrame(float est[9], float (&state)[9], float yaw_measured) {
 }
 
 void calculateCircle(Setpoint &circlePoint){
-    circlePoint.x = RADIUS*cos(OMEGA*time);
-    circlePoint.y = RADIUS*sin(OMEGA*time);
+    circlePoint.x = RADIUS*cos(OMEGA*currentTime);
+    circlePoint.y = RADIUS*sin(OMEGA*currentTime);
     circlePoint.z = 0.5;
-    circlePoint.yaw = OMEGA*time;
+    circlePoint.yaw = OMEGA*currentTime;
 
 }
 
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response) {
     CrazyflieData vicon = request.ownCrazyflie;
 	
-    time += request.ownCrazyflie.acquiringTime;
+    currentTime += request.ownCrazyflie.acquiringTime;
 
 	Setpoint circlePoint;
     calculateCircle(circlePoint);
@@ -212,7 +212,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 int main(int argc, char* argv[]) {
     ros::init(argc, argv, "CircleControllerService");
 
-    time = 0;
+    currentTime = 0;
 
     ros::NodeHandle nodeHandle("~");
     loadParameters(nodeHandle);
