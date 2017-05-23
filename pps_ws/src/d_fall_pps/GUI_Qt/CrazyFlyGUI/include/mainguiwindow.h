@@ -12,7 +12,9 @@
 #include "rosNodeThread.h"
 #include "marker.h"
 #include "crazyFly.h"
+#include "CFLinker.h"
 #endif
+
 
 #include "ui_mainguiwindow.h"
 #include "myGraphicsScene.h"
@@ -110,10 +112,12 @@ private:
     myGraphicsScene* scene;
     void _init();
 
+
     #ifdef CATKIN_MAKE
     rosNodeThread* _rosNodeThread;
     std::vector<Marker*> markers_vector;
     std::vector<crazyFly*> crazyflies_vector;
+    CFLinker cf_linker;
     #endif
 };
 

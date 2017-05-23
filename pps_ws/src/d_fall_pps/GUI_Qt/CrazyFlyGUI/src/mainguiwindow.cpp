@@ -23,27 +23,19 @@
 using namespace d_fall_pps;
 #endif
 
-#ifdef CATKIN_MAKE
-MainGUIWindow::MainGUIWindow(int argc, char **argv, QWidget *parent) :
-    QMainWindow(parent),
-    ui(new Ui::MainGUIWindow)//,
-    // _rosNodeThread(argc, argv, "/ViconDataPublisher/ViconData")
-{
-    _rosNodeThread = new rosNodeThread(argc, argv, "/ViconDataPublisher/ViconData");
-
-    ui->setupUi(this);
-    _init();
-}
-#else
 MainGUIWindow::MainGUIWindow(int argc, char **argv, QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainGUIWindow)
+    #ifdef CATKIN_MAKE
+    ,cf_linker()
+    #endif
 {
-
+    #ifdef CATKIN_MAKE
+    _rosNodeThread = new rosNodeThread(argc, argv, "/ViconDataPublisher/ViconData");
+    #endif
     ui->setupUi(this);
     _init();
 }
-#endif
 
 
 MainGUIWindow::~MainGUIWindow()
@@ -100,11 +92,14 @@ void MainGUIWindow::_init()
     ui->graphicsView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     ui->graphicsView->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 
+
+    // scene
     scene = new myGraphicsScene(ui->frame_drawing);
     scene->setSceneRect(-100 * FROM_METERS_TO_UNITS, -100 * FROM_METERS_TO_UNITS, 200 * FROM_METERS_TO_UNITS, 200 * FROM_METERS_TO_UNITS);
 
     ui->graphicsView->setScene(scene);
 
+    // connections
     QObject::connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)), scene, SLOT(removeCrazyFlyZone(int)));
     QObject::connect(scene, SIGNAL(numCrazyFlyZonesChanged(int)), this, SLOT(doNumCrazyFlyZonesChanged(int)));
     QObject::connect(ui->tabWidget, SIGNAL(currentChanged(int)), scene, SLOT(setSelectedCrazyFlyZone(int)));

@@ -34,6 +34,11 @@ public:
 
     void setScaleCFs(double scale);
 
+    // linking stuff
+    void assignCFZone(int cf_zone_index);
+    void removeAssigned();
+    bool isAssigned();
+
 private:
 
     // info to fill by message
@@ -49,6 +54,10 @@ private:
     // info for plotting CF
     qreal m_width;
     qreal m_height;
+
+    // linking stuff
+    bool m_assigned;
+    int m_assigned_cf_zone_index;
 };
 
 

@@ -10,6 +10,7 @@ crazyFly::crazyFly(const CrazyflieData* p_crazyfly_msg, QGraphicsItem * parent)
     updateCF(p_crazyfly_msg);
     m_width = DRONE_WIDTH;
     m_height = DRONE_HEIGHT;
+    m_assigned = false;
 }
 
 crazyFly::~crazyFly()
@@ -53,4 +54,24 @@ QRectF crazyFly::boundingRect() const
 void crazyFly::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
     this->renderer()->render(painter,this->boundingRect());
+}
+
+void crazyFly::assignCFZone(int cf_zone_index)
+{
+    m_assigned = true;
+    m_assigned_cf_zone_index = cf_zone_index;
+}
+
+void crazyFly::removeAssigned()
+{
+    if(m_assigned)
+    {
+        m_assigned = false;
+        m_assigned_cf_zone_index = -1;
+    }
+}
+
+bool crazyFly::isAssigned()
+{
+    return m_assigned;
 }
