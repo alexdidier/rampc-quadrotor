@@ -105,6 +105,9 @@ private slots:
     void on_checkBox_vicon_crazyflies_toggled(bool checked);
 
     void on_scaleSpinBox_valueChanged(double arg1);
+    void on_refresh_cfs_button_clicked();
+
+    void on_refresh_student_ids_button_clicked();
 
 private:
 

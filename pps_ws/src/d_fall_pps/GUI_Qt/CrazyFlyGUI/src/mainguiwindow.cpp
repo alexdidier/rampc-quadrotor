@@ -10,6 +10,7 @@
 #include <QString>
 #include <QMetaType>
 #include <QDir>
+#include <regex>
 
 #ifdef CATKIN_MAKE
 #include "d_fall_pps/UnlabeledMarker.h"
@@ -91,6 +92,30 @@ void MainGUIWindow::_init()
     ui->graphicsView->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
     ui->graphicsView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     ui->graphicsView->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+
+    // initialize table_links
+
+    ui->table_links->setColumnCount(3);
+    QStringList horizontal_header;
+    horizontal_header << "Student ID" << "CrazyFly" << "CrazyFly Zone";
+    ui->table_links->setHorizontalHeaderLabels(horizontal_header);
+    QFont fnt;
+    fnt.setPointSize(7);
+    ui->table_links->horizontalHeader()->setFont(fnt);
+
+    ui->table_links->horizontalHeader()->setDefaultSectionSize(90);
+    ui->table_links->verticalHeader()->setDefaultSectionSize(90);
+
+    const int rowCount = ui->table_links->rowCount();
+    const int columnCount = ui->table_links->columnCount();
+    for(int i = 0; i < rowCount; ++i)
+    {
+    	for(int j = 0; j < columnCount; ++j)
+        {
+    		QTableWidgetItem* selectedItem = ui->table_links->item(i, j);
+    		selectedItem->setFont(fnt);
+    	}
+    }
 
 
     // scene
@@ -439,6 +464,54 @@ void MainGUIWindow::on_scaleSpinBox_valueChanged(double arg1)
     for(int i = 0; i < crazyflies_vector.size(); i++)
     {
         crazyflies_vector[i]->setScaleCFs(arg1);
+    }
+    #endif
+}
+
+void MainGUIWindow::on_refresh_cfs_button_clicked()
+{
+    #ifdef CATKIN_MAKE
+    ui->comboBoxCFs->clear();
+    for(int i = 0; i < crazyflies_vector.size(); i++)
+    {
+        QString qstr = QString::fromStdString(crazyflies_vector[i]->getName());
+        ui->comboBoxCFs->addItem(qstr);
+    }
+    #endif
+}
+
+void MainGUIWindow::on_refresh_student_ids_button_clicked()
+{
+    #ifdef CATKIN_MAKE
+    ui->list_discovered_student_ids->clear();
+
+    // \/(\d)\/PPSClient
+    ros::V_string v_str;
+    ros::master::getNodes(v_str);
+    for(int i = 0; i < v_str.size(); i++)
+    {
+        std::string s = v_str[i];
+        std::smatch m;
+        std::regex e ("\\/(\\d)\\/PPSClient");
+
+        // std::regex e("\\/PPSClien(.)");
+
+        // while(std::regex_search(s, m, e))
+        // {
+        //     for (int i = 0; i < m.size(); i++)
+        //     {
+        //         ROS_INFO("FOUND: %s", m[i].str().c_str());
+        //         // std::cout << "FOUND" << m[i] << "\n";
+        //     }
+        //     s = m.suffix().str();
+        // }
+
+        if(std::regex_search(s, m, e))
+        {
+            // ROS_INFO("===============================================FOUND: %s", m[1].str().c_str()); // one because we are interested ONLY in the first match
+            std::string found_string = m[1].str();
+            ui->list_discovered_student_ids->addItem(found_string.c_str());
+        }
     }
     #endif
 }
