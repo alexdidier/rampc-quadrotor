@@ -46,18 +46,10 @@ std::vector<float> filterGain(6);
 std::vector<float> estimatorMatrix(2);
 float prevEstimate[9];
 
+std::vector<float>  setpoint(4);
 float saturationThrust;
 
 CrazyflieData previousLocation;
-
-//circle stuff
-float currentTime;
-const float OMEGA = 0.5*2*PI;
-const float RADIUS = 0.35;
-
-//point publisher for FollowCrazyflieService
-ros::Publisher followPublisher;
-
 
 void loadParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length) {
     if(!nodeHandle.getParam(name, val)){
@@ -85,6 +77,7 @@ void loadParameters(ros::NodeHandle& nodeHandle) {
     loadParameterFloatVector(nodeHandle, "filterGain", filterGain, 6);
     loadParameterFloatVector(nodeHandle, "estimatorMatrix", estimatorMatrix, 2);
 
+    loadParameterFloatVector(nodeHandle, "defaultSetpoint", setpoint, 4);
 }
 
 float computeMotorPolyBackward(float thrust) {
@@ -126,6 +119,7 @@ void estimateState(Controller::Request &request, float (&est)[9]) {
     
 }
 
+
 void convertIntoBodyFrame(float est[9], float (&state)[9], float yaw_measured) {
 	float sinYaw = sin(yaw_measured);
     float cosYaw = cos(yaw_measured);
@@ -143,30 +137,17 @@ void convertIntoBodyFrame(float est[9], float (&state)[9], float yaw_measured) {
     state[8] = est[8];
 }
 
-void calculateCircle(Setpoint &circlePoint){
-    circlePoint.x = RADIUS*cos(OMEGA*currentTime);
-    circlePoint.y = RADIUS*sin(OMEGA*currentTime);
-    circlePoint.z = 0.5;
-    circlePoint.yaw = OMEGA*currentTime;
-
-}
-
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response) {
     CrazyflieData vicon = request.ownCrazyflie;
 	
-    currentTime += request.ownCrazyflie.acquiringTime;
-
-	Setpoint circlePoint;
-    calculateCircle(circlePoint);
-
 	float yaw_measured = request.ownCrazyflie.yaw;
 
     //move coordinate system to make setpoint origin
-    request.ownCrazyflie.x -= circlePoint.x;
-    request.ownCrazyflie.y -= circlePoint.y;
-    request.ownCrazyflie.z -= circlePoint.z;
-    float yaw = request.ownCrazyflie.yaw - circlePoint.yaw;
-	
+    request.ownCrazyflie.x -= setpoint[0];
+    request.ownCrazyflie.y -= setpoint[1];
+    request.ownCrazyflie.z -= setpoint[2];
+    float yaw = request.ownCrazyflie.yaw - setpoint[3];
+
     while(yaw > PI) {yaw -= 2 * PI;}
     while(yaw < -PI) {yaw += 2 * PI;}
     request.ownCrazyflie.yaw = yaw;
@@ -189,6 +170,9 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     	thrustIntermediate -= gainMatrixThrust[i] * state[i];
     }
 
+    //INFORMATION: this ugly fix was needed for the older firmware
+    //outYaw *= 0.5;
+
     response.controlOutput.roll = outRoll;
     response.controlOutput.pitch = outPitch;
     response.controlOutput.yaw = outYaw;
@@ -206,26 +190,29 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     response.controlOutput.onboardControllerType = RATE_CONTROLLER;
 
     previousLocation = request.ownCrazyflie;
-
-    followPublisher.publish(previousLocation);
-    
+   
 	return true;
+}
+
+void followCallback(const Setpoint& newSetpoint) {
+    setpoint[0] = newSetpoint.x-0.1;
+    setpoint[1] = newSetpoint.y-0.1;
+    setpoint[2] = newSetpoint.z;
+    setpoint[3] = newSetpoint.yaw;
 }
 
 
 int main(int argc, char* argv[]) {
-    ros::init(argc, argv, "CircleControllerService");
-
-    currentTime = 0;
+    ros::init(argc, argv, "FollowControllerService");
 
     ros::NodeHandle nodeHandle("~");
     loadParameters(nodeHandle);
 
-    followPublisher = nodeHandle.advertise<Setpoint>("FollowTopic", 1);
+    ros::Subscriber followSubscriber = nodeHandle.subscribe("/3/CircleControllerService/FollowTopic", 1, followCallback);
 
-    ros::ServiceServer service = nodeHandle.advertiseService("CircleController", calculateControlOutput);
-    ROS_INFO("CircleControllerService ready");
-    
+    ros::ServiceServer service = nodeHandle.advertiseService("FollowController", calculateControlOutput);
+    ROS_INFO("FollowCrazyflieService ready");
+
     ros::spin();
 
     return 0;

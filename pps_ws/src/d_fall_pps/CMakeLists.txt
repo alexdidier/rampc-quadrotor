@@ -217,6 +217,7 @@ add_executable(SafeControllerService src/SafeControllerService.cpp)
 add_executable(CustomControllerService src/CustomControllerService.cpp)
 add_executable(CentralManagerService src/CentralManagerService.cpp src/CrazyflieIO.cpp)
 add_executable(CircleControllerService src/CircleControllerService.cpp)
+add_executable(FollowCrazyflieService src/FollowCrazyflieService.cpp)
 
 
 
@@ -250,7 +251,7 @@ add_dependencies(SafeControllerService d_fall_pps_generate_messages_cpp ${catkin
 add_dependencies(CustomControllerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(CentralManagerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(CircleControllerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-
+add_dependencies(FollowCrazyflieService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 # GUI-- dependencies
 add_dependencies(my_GUI d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
@@ -285,6 +286,7 @@ target_link_libraries(CentralManagerService ${catkin_LIBRARIES})
 
 target_link_libraries(CircleControllerService ${catkin_LIBRARIES})
 
+target_link_libraries(FollowCrazyflieService ${catkin_LIBRARIES})
 
 # GUI -- link libraries
 target_link_libraries(my_GUI Qt5::Widgets) # GUI -- let my_GUI have acesss to Qt stuff
