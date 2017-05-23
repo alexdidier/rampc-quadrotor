@@ -216,8 +216,7 @@ int main(int argc, char* argv[]) {
             cfData.pitch = pitch;
             cfData.yaw = yaw;
             cfData.acquiringTime = totalViconLatency;
-
-            viconData.crazyflies.push_back(cfData);
+            if(!outputTranslation.Occluded) viconData.crazyflies.push_back(cfData);
         }
         viconDataPublisher.publish(viconData);
     }
