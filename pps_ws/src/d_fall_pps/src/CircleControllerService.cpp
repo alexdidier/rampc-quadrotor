@@ -52,8 +52,8 @@ CrazyflieData previousLocation;
 
 //circle stuff
 float currentTime;
-const float OMEGA = 0.5*2*PI;
-const float RADIUS = 0.35;
+const float OMEGA = 0.25*2*PI;
+const float RADIUS = 0.25;
 
 //point publisher for FollowCrazyflieService
 ros::Publisher followPublisher;
@@ -146,7 +146,7 @@ void convertIntoBodyFrame(float est[9], float (&state)[9], float yaw_measured) {
 void calculateCircle(Setpoint &circlePoint){
     circlePoint.x = RADIUS*cos(OMEGA*currentTime);
     circlePoint.y = RADIUS*sin(OMEGA*currentTime);
-    circlePoint.z = 0.5;
+    circlePoint.z = 0;
     circlePoint.yaw = OMEGA*currentTime;
 
 }
@@ -207,7 +207,13 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 
     previousLocation = request.ownCrazyflie;
 
-    followPublisher.publish(previousLocation);
+    Setpoint pubSetpoint;
+    pubSetpoint.x = previousLocation.x;
+    pubSetpoint.y = previousLocation.y;
+    pubSetpoint.z = previousLocation.z;
+    pubSetpoint.yaw = previousLocation.yaw;
+
+    followPublisher.publish(pubSetpoint);
     
 	return true;
 }
