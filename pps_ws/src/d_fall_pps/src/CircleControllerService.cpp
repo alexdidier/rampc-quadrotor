@@ -18,7 +18,6 @@
 #include <stdlib.h>
 #include "ros/ros.h"
 #include <std_msgs/String.h>
-#include <rosbag/bag.h>
 #include <ros/package.h>
 #include "std_msgs/Float32.h"
 
@@ -26,7 +25,6 @@
 #include "d_fall_pps/Setpoint.h"
 #include "d_fall_pps/ControlCommand.h"
 #include "d_fall_pps/Controller.h"
-#include "d_fall_pps/Debugging.h" //---------------------------------------------------------------------------
 
 #define PI 3.1415926535
 #define RATE_CONTROLLER 0
@@ -48,12 +46,14 @@ std::vector<float> filterGain(6);
 std::vector<float> estimatorMatrix(2);
 float prevEstimate[9];
 
-std::vector<float>  setpoint(4);
 float saturationThrust;
 
 CrazyflieData previousLocation;
 
-rosbag::Bag bag;
+//circle stuff
+float time;
+const float OMEGA = 0.1*2*PI;
+const float RADIUS = 0.2;
 
 
 void loadParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length) {
@@ -82,7 +82,6 @@ void loadParameters(ros::NodeHandle& nodeHandle) {
     loadParameterFloatVector(nodeHandle, "filterGain", filterGain, 6);
     loadParameterFloatVector(nodeHandle, "estimatorMatrix", estimatorMatrix, 2);
 
-    loadParameterFloatVector(nodeHandle, "defaultSetpoint", setpoint, 4);
 }
 
 float computeMotorPolyBackward(float thrust) {
@@ -124,28 +123,6 @@ void estimateState(Controller::Request &request, float (&est)[9]) {
     
 }
 
-
-//simple derivative
-/*
-void estimateState(Controller::Request &request, float (&est)[9]) {
-    est[0] = request.ownCrazyflie.x;
-    est[1] = request.ownCrazyflie.y;
-    est[2] = request.ownCrazyflie.z;
-
-    est[3] = (request.ownCrazyflie.x - previousLocation.x) / request.ownCrazyflie.acquiringTime;
-    est[4] = (request.ownCrazyflie.y - previousLocation.y) / request.ownCrazyflie.acquiringTime;
-    est[5] = (request.ownCrazyflie.z - previousLocation.z) / request.ownCrazyflie.acquiringTime;
-
-    ROS_INFO_STREAM("vx: " << est[3]);
-    ROS_INFO_STREAM("vy: " << est[4]);
-    ROS_INFO_STREAM("vz: " << est[5]);
-
-    est[6] = request.ownCrazyflie.roll;
-    est[7] = request.ownCrazyflie.pitch;
-    est[8] = request.ownCrazyflie.yaw;
-}
-*/
-
 void convertIntoBodyFrame(float est[9], float (&state)[9], float yaw_measured) {
 	float sinYaw = sin(yaw_measured);
     float cosYaw = cos(yaw_measured);
@@ -163,23 +140,30 @@ void convertIntoBodyFrame(float est[9], float (&state)[9], float yaw_measured) {
     state[8] = est[8];
 }
 
+void calculateCircle(Setpoint &circlePoint){
+    circlePoint.x = RADIUS*cos(OMEGA*time);
+    circlePoint.y = RADIUS*sin(OMEGA*time);
+    circlePoint.z = 0.5;
+    circlePoint.yaw = OMEGA*time;
+
+}
+
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response) {
     CrazyflieData vicon = request.ownCrazyflie;
 	
-	//bag.write("ViconData", ros::Time::now(), request.ownCrazyflie);
-	
-	//trial>>>>>>>
+    time += request.ownCrazyflie.acquiringTime;
+
+	Setpoint circlePoint;
+    calculateCircle(circlePoint);
+
 	float yaw_measured = request.ownCrazyflie.yaw;
-	//<<<<<<
 
     //move coordinate system to make setpoint origin
-    request.ownCrazyflie.x -= setpoint[0];
-    request.ownCrazyflie.y -= setpoint[1];
-    request.ownCrazyflie.z -= setpoint[2];
-    float yaw = request.ownCrazyflie.yaw - setpoint[3];
+    request.ownCrazyflie.x -= circlePoint.x;
+    request.ownCrazyflie.y -= circlePoint.y;
+    request.ownCrazyflie.z -= circlePoint.z;
+    float yaw = request.ownCrazyflie.yaw - circlePoint.yaw;
 	
-	//bag.write("Offset", ros::Time::now(), request.ownCrazyflie);
-
     while(yaw > PI) {yaw -= 2 * PI;}
     while(yaw < -PI) {yaw += 2 * PI;}
     request.ownCrazyflie.yaw = yaw;
@@ -187,41 +171,8 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     float est[9]; //px, py, pz, vx, vy, vz, roll, pitch, yaw
     estimateState(request, est);
 	
-    //CONTROLLER DEBUGGING--------------------------------------------------------------------------------------------------
-    Debugging estTests;
-    estTests.x = est[0];
-    estTests.y = est[1];
-    estTests.z = est[2];
-    estTests.vx = est[3];
-    estTests.vy = est[4];
-    estTests.vz = est[5];
-    estTests.roll = est[6];
-    estTests.pitch = est[7];
-    estTests.yaw = est[8];
-	
-	bag.write("Debugging est", ros::Time::now(), estTests);
-    //CONTROLLER DEBUGGING END----------------------------------------------------------------------------------------------
-
     float state[9]; //px, py, pz, vx, vy, vz, roll, pitch, yaw
     convertIntoBodyFrame(est, state, yaw_measured);
-
-    //CONTROLLER DEBUGGING--------------------------------------------------------------------------------------------------
-    estTests.x = state[0];
-    estTests.y = state[1];
-    estTests.z = state[2];
-    estTests.vx = state[3];
-    estTests.vy = state[4];
-    estTests.vz = state[5];
-    estTests.roll = state[6];
-    estTests.pitch = state[7];
-    estTests.yaw = state[8];
-    
-    bag.write("Debugging state", ros::Time::now(), estTests);
-
-    std_msgs::Float32 f32;
-    f32.data = yaw_measured;
-    bag.write("yaw measured", ros::Time::now(), f32);
-    //CONTROLLER DEBUGGING END----------------------------------------------------------------------------------------------
 
     //calculate feedback
     float outRoll = 0;
@@ -234,9 +185,6 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     	outYaw -= gainMatrixYaw[i] * state[i];
     	thrustIntermediate -= gainMatrixThrust[i] * state[i];
     }
-
-    //INFORMATION: this ugly fix was needed for the older firmware
-    //outYaw *= 0.5;
 
     response.controlOutput.roll = outRoll;
     response.controlOutput.pitch = outPitch;
@@ -256,44 +204,23 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 
     previousLocation = request.ownCrazyflie;
 
-	bag.write("ControlOutput", ros::Time::now(), response.controlOutput);
     
 	return true;
 }
 
-void setpointCallback(const Setpoint& newSetpoint) {
-    setpoint[0] = newSetpoint.x;
-    setpoint[1] = newSetpoint.y;
-    setpoint[2] = newSetpoint.z;
-    setpoint[3] = newSetpoint.yaw;
-}
-
-
-//ros::Publisher pub;
 
 int main(int argc, char* argv[]) {
-    ros::init(argc, argv, "SafeControllerService");
+    ros::init(argc, argv, "CircleControllerService");
+
+    time = 0;
 
     ros::NodeHandle nodeHandle("~");
     loadParameters(nodeHandle);
 
-    ros::Publisher setpointPublisher = nodeHandle.advertise<Setpoint>("Setpoint", 1);
-    ros::Subscriber setpointSubscriber = nodeHandle.subscribe("Setpoint", 1, setpointCallback);
-
-    ros::ServiceServer service = nodeHandle.advertiseService("RateController", calculateControlOutput);
-    ROS_INFO("SafeControllerService ready");
+    ros::ServiceServer service = nodeHandle.advertiseService("CircleController", calculateControlOutput);
+    ROS_INFO("CircleControllerService ready");
     
-	std::string package_path;
-	package_path = ros::package::getPath("d_fall_pps") + "/";
-	ROS_INFO_STREAM(package_path);
-	std::string record_file = package_path + "recordSafeController.bag";
-	bag.open(record_file, rosbag::bagmode::Write);
-
-
     ros::spin();
-	bag.close();
-	
-	
 
     return 0;
 }

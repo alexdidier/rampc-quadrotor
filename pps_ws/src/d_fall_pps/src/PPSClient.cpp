@@ -56,6 +56,14 @@ rosbag::Bag bag;
 
 //describes the area of the crazyflie and other parameters
 CrazyflieContext context;
+
+//gather information about other crazyflies --------------------------------------------------------------------------------
+/*bool getOtherCrazyflies;
+bool getAllCrazyflies;
+std::vector<Setpoint> otherSetpoints;
+*/
+//------------------------------------------------------------------------------------
+
 //wheter to use safe of custom controller
 bool usingSafeController;
 //wheter crazyflie is enabled (ready to fly) or disabled (motors off)

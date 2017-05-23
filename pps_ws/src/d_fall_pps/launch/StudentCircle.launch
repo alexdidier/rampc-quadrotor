@@ -1,0 +1,23 @@
+<launch>
+
+	<node pkg="d_fall_pps" name="CrazyRadio" output="screen" type="CrazyRadio.py">
+		<rosparam command="load" file="$(find d_fall_pps)/param/ClientConfig.yaml" />
+	</node>
+
+	<node pkg="d_fall_pps" name="PPSClient" output="screen" type="PPSClient">
+		<rosparam command="load" file="$(find d_fall_pps)/param/ClientConfig.yaml" />
+		<param name="studentID" value="$(optenv ROS_NAMESPACE)" />
+	</node>
+
+	<node pkg="d_fall_pps" name="SafeControllerService" output="screen" type="SafeControllerService">
+		<rosparam command="load" file="$(find d_fall_pps)/param/SafeController.yaml" />
+	</node>
+
+	<node pkg="d_fall_pps" name="CircleControllerService" output="screen" type="CircleControllerService">
+		<rosparam command="load" file="$(find d_fall_pps)/param/SafeController.yaml" />
+	</node>
+
+
+	<!-- <node pkg="rqt_plot" name="commandplotter" type="rqt_plot" args="/PPSClient/ControlCommand/roll /PPSClient/ControlCommand/pitch /PPSClient/ControlCommand/yaw" /> -->
+
+</launch>
