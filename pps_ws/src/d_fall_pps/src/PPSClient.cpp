@@ -122,7 +122,7 @@ void viconCallback(const ViconData& viconData) {
 					if(!success) {
 						ROS_ERROR("Failed to call custom controller, switching to safe controller");
 						ROS_ERROR_STREAM("custom controller status: valid: " << customController.isValid() << ", exists: " << customController.exists());
-						ROS_ERROR_STREAM("custom controller name: valid: " << customController.getService());
+						ROS_ERROR_STREAM("custom controller name: " << customController.getService());
 						usingSafeController = true;
 					} else {
 						usingSafeController = safetyCheck(global, controllerCall.response.controlOutput);
