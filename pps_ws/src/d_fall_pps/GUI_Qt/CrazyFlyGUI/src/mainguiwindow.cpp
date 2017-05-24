@@ -54,24 +54,36 @@ void MainGUIWindow::doNumCrazyFlyZonesChanged(int n)
         connect(widget, SIGNAL(centerButtonClickedSignal(int)), this, SLOT(centerViewIndex(int)));
     }
 
-    // add options to QComboBox of CFZones
-    int current_count = ui->comboBoxCFZones->count();
-    if(n > current_count)
+    ui->comboBoxCFZones->clear();
+    #ifdef CATKIN_MAKE
+    for(int i = 0; i < scene->crazyfly_zones.size(); i++)
     {
-        for(int i = current_count; i < n; i++)
+        if(!cf_linker->isCFZoneLinked(scene->crazyfly_zones[i]->getIndex()))
         {
             QString qstr = "CrazyFlyZone ";
             qstr.append(QString::number(i+1));
             ui->comboBoxCFZones->addItem(qstr);
         }
     }
-    else if(n < current_count)
-    {
-        for(int i = current_count; i >= n; i--)
-        {
-            ui->comboBoxCFZones->removeItem(i);
-        }
-    }
+    #endif
+    // add options to QComboBox of CFZones
+    // int current_count = ui->comboBoxCFZones->count();
+    // if(n > current_count)
+    // {
+    //     for(int i = current_count; i < n; i++)
+    //     {
+    //         QString qstr = "CrazyFlyZone ";
+    //         qstr.append(QString::number(i+1));
+    //         ui->comboBoxCFZones->addItem(qstr);
+    //     }
+    // }
+    // else if(n < current_count)
+    // {
+    //     for(int i = current_count; i >= n; i--)
+    //     {
+    //         ui->comboBoxCFZones->removeItem(i);
+    //     }
+    // }
 
 }
 
@@ -89,6 +101,19 @@ void MainGUIWindow::_init()
     ui->graphicsView->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
     ui->graphicsView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     ui->graphicsView->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+
+    // error messages
+    // ui->err_message_cf->hide();
+    // ui->err_message_cf_zone->hide();
+    // ui->err_message_student_id->hide();
+
+    ui->err_message_cf->setStyleSheet("QLabel { color : red; }");
+    ui->err_message_cf_zone->setStyleSheet("QLabel { color : red; }");
+    ui->err_message_student_id->setStyleSheet("QLabel { color : red; }");
+
+    ui->err_message_cf->clear();
+    ui->err_message_cf_zone->clear();
+    ui->err_message_student_id->clear();
 
     // initialize table_links
     ui->table_links->setColumnCount(3);
@@ -122,8 +147,9 @@ void MainGUIWindow::_init()
     ui->graphicsView->setScene(scene);
 
     // after scene is created, create CFlinker
+    #ifdef CATKIN_MAKE
     cf_linker = new CFLinker(ui, &crazyflies_vector, &scene->crazyfly_zones);
-
+    #endif
     // connections
     QObject::connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)), scene, SLOT(removeCrazyFlyZone(int)));
     QObject::connect(scene, SIGNAL(numCrazyFlyZonesChanged(int)), this, SLOT(doNumCrazyFlyZonesChanged(int)));
@@ -500,11 +526,13 @@ void MainGUIWindow::on_refresh_cfs_button_clicked()
 {
     #ifdef CATKIN_MAKE
     ui->comboBoxCFs->clear();
-    // TODO: grey out the ones that are already linked
     for(int i = 0; i < crazyflies_vector.size(); i++)
     {
-        QString qstr = QString::fromStdString(crazyflies_vector[i]->getName());
-        ui->comboBoxCFs->addItem(qstr);
+        if(!cf_linker->isCFLinked(crazyflies_vector[i]->getName()))
+        {
+            QString qstr = QString::fromStdString(crazyflies_vector[i]->getName());
+            ui->comboBoxCFs->addItem(qstr);
+        }
     }
     #endif
 }
@@ -555,28 +583,45 @@ void MainGUIWindow::on_link_button_clicked()
     if(ui->comboBoxCFs->count() == 0)
     {
         // plot error message
+        ui->err_message_cf->setText("CF box is empty");
         error = true;
+    }
+    else
+    {
+        ui->err_message_cf->clear();
     }
     if(ui->comboBoxCFZones->count() == 0)
     {
         // plot error message
+        ui->err_message_cf_zone->setText("CFZone box is empty");
         error = true;
     }
-
-    for(int i = 0; i < cf_linker->links.size(); i++)
+    else
     {
-        if(cf_linker->links[i].student_id == ui->spinBox_student_ids->value())
-        {
-            // value already linked, choose different one
-            // plot error message
-            error = true;
-        }
+        ui->err_message_cf_zone->clear();
+    }
+
+    if(cf_linker->isStudentIDLinked(ui->spinBox_student_ids->value()))
+    {
+        // plot error message
+        ui->err_message_student_id->setText("This StudentID has already been linked");
+        error = true;
+    }
+    else
+    {
+        ui->err_message_student_id->clear();
     }
 
     if(!error)
     {
-        // remove error messages
         cf_linker->link();
     }
+    #endif
+}
+
+void MainGUIWindow::on_unlink_button_clicked()
+{
+    #ifdef CATKIN_MAKE
+    cf_linker->unlink();
     #endif
 }

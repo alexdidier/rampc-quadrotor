@@ -18,14 +18,18 @@ public:
         int cf_zone_index;
         std::string cf_name;
     };
+
     explicit CFLinker(Ui::MainGUIWindow* ui, std::vector<crazyFly*> *crazyflies_vector, std::vector<crazyFlyZone*> *crazyfly_zones);
     ~CFLinker();
 
     void link();
-
     void unlink();
 
     std::vector<struct link> links;
+
+    bool isStudentIDLinked(int student_id);
+    bool isCFZoneLinked(int cf_zone_index);
+    bool isCFLinked(std::string cf_name);
 
 private:
 

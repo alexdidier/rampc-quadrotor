@@ -111,6 +111,8 @@ private slots:
 
     void on_link_button_clicked();
 
+    void on_unlink_button_clicked();
+
 private:
 
     Ui::MainGUIWindow *ui;

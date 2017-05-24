@@ -29,6 +29,48 @@ int CFLinker::getCFIndexFromName(std::string name)
     }
 }
 
+bool CFLinker::isStudentIDLinked(int student_id)
+{
+    bool is_linked = false;
+    for(int i = 0; i < links.size(); i++)
+    {
+        if(links[i].student_id == student_id)
+        {
+            is_linked = true;
+        }
+    }
+
+    return is_linked;
+}
+
+bool CFLinker::isCFZoneLinked(int cf_zone_index)
+{
+    bool is_linked = false;
+    for(int i = 0; i < links.size(); i++)
+    {
+        if(links[i].cf_zone_index == cf_zone_index)
+        {
+            is_linked = true;
+        }
+    }
+
+    return is_linked;
+}
+
+bool CFLinker::isCFLinked(std::string cf_name)
+{
+    bool is_linked = false;
+    for(int i = 0; i < links.size(); i++)
+    {
+        if(links[i].cf_name == cf_name)
+        {
+            is_linked = true;
+        }
+    }
+    return is_linked;
+}
+
+
 void CFLinker::addNewRow(int student_id, std::string crazyfly_name, int cf_zone_index)
 {
     m_ui->table_links->insertRow(m_ui->table_links->rowCount());
@@ -74,24 +116,5 @@ void CFLinker::link()
 
 void CFLinker::unlink()
 {
-    // bool found = false;
-    // int index_found;
-    // for(int i = 0; i < links.size(); i++)
-    // {
-    //     if(links[i].cf_zone_index == crazyfly_zone->getIndex())
-    //     {
-    //         if(crazyfly->getName() == links[i].cf_name)
-    //         {
-    //             found = true;
-    //             index_found = i;
-    //         }
-    //     }
-    // }
-
-    // if(found)
-    // {
-    //     crazyfly_zone->removeLink();
-    //     crazyfly->removeAssigned();
-    //     links.erase(links.begin() + index_found);
-    // }
+    
 }
