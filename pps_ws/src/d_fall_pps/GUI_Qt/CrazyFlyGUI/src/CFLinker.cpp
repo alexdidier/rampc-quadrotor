@@ -3,6 +3,7 @@
 #include <QHeaderView>
 
 CFLinker::CFLinker(Ui::MainGUIWindow* ui, std::vector<crazyFly*> *crazyflies_vector, std::vector<crazyFlyZone*> *crazyfly_zones)
+    : QObject(0)
 {
     m_ui = ui;
     m_crazyflies_vector = crazyflies_vector;
@@ -157,4 +158,7 @@ void CFLinker::unlink()
         // remove them graphically
         m_ui->table_links->removeRow(ordered_row_indexes[i]);
     }
+
+    // update combo boxes
+    emit updateComboBoxes();
 }

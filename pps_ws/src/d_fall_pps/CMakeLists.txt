@@ -57,6 +57,7 @@ set(SRC_HDRS_QOBJECT
   ${MY_LIB_PATH_INC}/myGraphicsView.h
   ${MY_LIB_PATH_INC}/mainguiwindow.h
   ${MY_LIB_PATH_INC}/rosNodeThread.h
+  ${MY_LIB_PATH_INC}/CFLinker.h
   )
 # GUI -- wrap UI file and QOBJECT files
 qt5_wrap_ui(UIS_HDRS GUI_Qt/CrazyFlyGUI/src/mainguiwindow.ui)

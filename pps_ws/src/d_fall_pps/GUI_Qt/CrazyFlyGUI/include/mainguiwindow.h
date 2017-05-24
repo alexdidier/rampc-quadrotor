@@ -113,6 +113,8 @@ private slots:
 
     void on_unlink_button_clicked();
 
+    void updateComboBoxes();
+
 private:
 
     Ui::MainGUIWindow *ui;
@@ -126,6 +128,11 @@ private:
     std::vector<crazyFly*> crazyflies_vector;
     CFLinker* cf_linker;
     #endif
+
+    void updateComboBoxesCFs();
+
+    void updateComboBoxesCFZones();
+
 };
 
 

@@ -41,6 +41,7 @@ MainGUIWindow::~MainGUIWindow()
     delete ui;
 }
 
+
 void MainGUIWindow::doNumCrazyFlyZonesChanged(int n)
 {
     // tabs number management, maybe do it in a different way so we dont have to remove and add everything?
@@ -54,37 +55,7 @@ void MainGUIWindow::doNumCrazyFlyZonesChanged(int n)
         connect(widget, SIGNAL(centerButtonClickedSignal(int)), this, SLOT(centerViewIndex(int)));
     }
 
-    ui->comboBoxCFZones->clear();
-    #ifdef CATKIN_MAKE
-    for(int i = 0; i < scene->crazyfly_zones.size(); i++)
-    {
-        if(!cf_linker->isCFZoneLinked(scene->crazyfly_zones[i]->getIndex()))
-        {
-            QString qstr = "CrazyFlyZone ";
-            qstr.append(QString::number(i+1));
-            ui->comboBoxCFZones->addItem(qstr);
-        }
-    }
-    #endif
-    // add options to QComboBox of CFZones
-    // int current_count = ui->comboBoxCFZones->count();
-    // if(n > current_count)
-    // {
-    //     for(int i = current_count; i < n; i++)
-    //     {
-    //         QString qstr = "CrazyFlyZone ";
-    //         qstr.append(QString::number(i+1));
-    //         ui->comboBoxCFZones->addItem(qstr);
-    //     }
-    // }
-    // else if(n < current_count)
-    // {
-    //     for(int i = current_count; i >= n; i--)
-    //     {
-    //         ui->comboBoxCFZones->removeItem(i);
-    //     }
-    // }
-
+    updateComboBoxesCFZones();
 }
 
 void MainGUIWindow::_init()
@@ -164,8 +135,46 @@ void MainGUIWindow::_init()
     _rosNodeThread->init();
     qRegisterMetaType<ptrToMessage>("ptrToMessage");
     QObject::connect(_rosNodeThread, SIGNAL(newViconData(const ptrToMessage&)), this, SLOT(updateNewViconData(const ptrToMessage&)));
+    QObject::connect(cf_linker, SIGNAL(updateComboBoxes()), this, SLOT(updateComboBoxes()));
     #endif
 }
+
+void MainGUIWindow::updateComboBoxes()
+{
+    updateComboBoxesCFs();
+    updateComboBoxesCFZones();
+}
+void MainGUIWindow::updateComboBoxesCFs()
+{
+    #ifdef CATKIN_MAKE
+    ui->comboBoxCFs->clear();
+    for(int i = 0; i < crazyflies_vector.size(); i++)
+    {
+        if(!cf_linker->isCFLinked(crazyflies_vector[i]->getName()))
+        {
+            QString qstr = QString::fromStdString(crazyflies_vector[i]->getName());
+            ui->comboBoxCFs->addItem(qstr);
+        }
+    }
+    #endif
+}
+
+void MainGUIWindow::updateComboBoxesCFZones()
+{
+    ui->comboBoxCFZones->clear();
+    #ifdef CATKIN_MAKE
+    for(int i = 0; i < scene->crazyfly_zones.size(); i++)
+    {
+        if(!cf_linker->isCFZoneLinked(scene->crazyfly_zones[i]->getIndex()))
+        {
+            QString qstr = "CrazyFlyZone ";
+            qstr.append(QString::number(i+1));
+            ui->comboBoxCFZones->addItem(qstr);
+        }
+    }
+    #endif
+}
+
 
 #ifdef CATKIN_MAKE
 void MainGUIWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to newViconData, from node
@@ -524,17 +533,7 @@ void MainGUIWindow::on_scaleSpinBox_valueChanged(double arg1)
 
 void MainGUIWindow::on_refresh_cfs_button_clicked()
 {
-    #ifdef CATKIN_MAKE
-    ui->comboBoxCFs->clear();
-    for(int i = 0; i < crazyflies_vector.size(); i++)
-    {
-        if(!cf_linker->isCFLinked(crazyflies_vector[i]->getName()))
-        {
-            QString qstr = QString::fromStdString(crazyflies_vector[i]->getName());
-            ui->comboBoxCFs->addItem(qstr);
-        }
-    }
-    #endif
+    updateComboBoxesCFs();
 }
 
 void MainGUIWindow::on_refresh_student_ids_button_clicked()

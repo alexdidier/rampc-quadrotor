@@ -8,9 +8,12 @@
 
 #include "rosNodeThread.h"
 
+#include <QObject>
 
-class CFLinker
+
+class CFLinker : public QObject
 {
+    Q_OBJECT
 public:
 
     struct link {
@@ -30,6 +33,9 @@ public:
     bool isStudentIDLinked(int student_id);
     bool isCFZoneLinked(int cf_zone_index);
     bool isCFLinked(std::string cf_name);
+
+signals:
+    void updateComboBoxes();
 
 private:
 
