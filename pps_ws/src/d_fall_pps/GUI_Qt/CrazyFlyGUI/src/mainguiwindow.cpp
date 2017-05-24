@@ -117,15 +117,12 @@ void MainGUIWindow::_init()
 
     // initialize table_links
     ui->table_links->setColumnCount(3);
-    QStringList horizontal_header;
-    horizontal_header << "Student ID" << "CrazyFly" << "CrazyFly Zone";
-    ui->table_links->setHorizontalHeaderLabels(horizontal_header);
+
     QFont fnt;
     fnt.setPointSize(7);
     ui->table_links->horizontalHeader()->setFont(fnt);
 
     ui->table_links->horizontalHeader()->setDefaultSectionSize(90);
-    // ui->table_links->verticalHeader()->setDefaultSectionSize(20);
     ui->table_links->verticalHeader()->setDefaultSectionSize(20);
 
     const int rowCount = ui->table_links->rowCount();
@@ -138,7 +135,10 @@ void MainGUIWindow::_init()
     		selectedItem->setFont(fnt);
     	}
     }
-    ui->table_links->setSelectionBehavior(QAbstractItemView::SelectRows);
+    // ui->table_links->setSelectionBehavior(QAbstractItemView::SelectRows);
+    QStringList horizontal_header;
+    horizontal_header << "Student ID" << "CrazyFly" << "CrazyFly Zone";
+    ui->table_links->setHorizontalHeaderLabels(horizontal_header);
 
     // scene
     scene = new myGraphicsScene(ui->frame_drawing);

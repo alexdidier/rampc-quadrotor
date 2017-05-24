@@ -75,11 +75,19 @@ void CFLinker::addNewRow(int student_id, std::string crazyfly_name, int cf_zone_
 {
     m_ui->table_links->insertRow(m_ui->table_links->rowCount());
     QString str_id = QString::number(student_id);
-    m_ui->table_links->setItem(m_ui->table_links->rowCount() - 1, 0, new QTableWidgetItem(str_id));
+    QTableWidgetItem *item_id = new QTableWidgetItem(str_id);
+    item_id->setFlags(item_id->flags() & ~Qt::ItemIsEditable);
+    m_ui->table_links->setItem(m_ui->table_links->rowCount() - 1, 0, item_id);
+
     QString str_cf_name = QString::fromStdString(crazyfly_name);
-    m_ui->table_links->setItem(m_ui->table_links->rowCount() - 1, 1, new QTableWidgetItem(str_cf_name));
+    QTableWidgetItem *item_cf = new QTableWidgetItem(str_cf_name);
+    item_cf->setFlags(item_cf->flags() & ~Qt::ItemIsEditable);
+    m_ui->table_links->setItem(m_ui->table_links->rowCount() - 1, 1, item_cf);
+
     QString str_cf_zone_index = QString("CrazyFlyZone ").append(QString::number(cf_zone_index + 1));
-    m_ui->table_links->setItem(m_ui->table_links->rowCount() - 1, 2, new QTableWidgetItem(str_cf_zone_index));
+    QTableWidgetItem *item_cf_zone = new QTableWidgetItem(str_cf_zone_index);
+    item_cf_zone->setFlags(item_cf_zone->flags() & ~Qt::ItemIsEditable);
+    m_ui->table_links->setItem(m_ui->table_links->rowCount() - 1, 2, item_cf_zone);
 }
 
 void CFLinker::link()
@@ -116,5 +124,37 @@ void CFLinker::link()
 
 void CFLinker::unlink()
 {
-    
+    QModelIndexList selection = m_ui->table_links->selectionModel()->selectedRows();
+
+
+    // first, get an ordered from greater to lesser vector of indexes of selected rows
+    std::vector<int> ordered_row_indexes;
+
+    for(int i = selection.count() - 1; i >= 0; i--) // fill vector first
+    {
+        QModelIndex index = selection.at(i);
+        ordered_row_indexes.push_back(index.row());
+    }
+
+    // sort using a standard library compare function object, greater to lesser
+    std::sort(ordered_row_indexes.begin(), ordered_row_indexes.end(), std::greater<int>());
+
+    // now, unlink them in data structure and graphically removing rows from the table
+
+    for(int i = 0; i < ordered_row_indexes.size(); i++)
+    {
+        // TODO: unset linked status in its corresponding objects
+        // remove them from links vector. We will look for student as unique key.. Maybe in a future the CF is the unique key?
+        int student_id = m_ui->table_links->item(ordered_row_indexes[i], 0)->text().toInt(); // 0: student ID
+        for(int i = 0; i < links.size(); i++)
+        {
+            if(links[i].student_id == student_id)
+            {
+                links.erase(links.begin() + i);
+                break;
+            }
+        }
+        // remove them graphically
+        m_ui->table_links->removeRow(ordered_row_indexes[i]);
+    }
 }
