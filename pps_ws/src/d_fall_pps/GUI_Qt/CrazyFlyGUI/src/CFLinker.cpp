@@ -45,6 +45,7 @@ void CFLinker::link()
     m_ui->table_links->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     struct link tmp_link;
 
+    tmp_link.student_id = m_ui->spinBox_student_ids->value();
     tmp_link.cf_zone_index = getCFZoneIndexFromName(m_ui->comboBoxCFZones->currentText());
     tmp_link.cf_name = m_ui->comboBoxCFs->currentText().toStdString();
 
@@ -58,6 +59,17 @@ void CFLinker::link()
 
     links.push_back(tmp_link);
     // TODO: remove options linked from available ones
+
+    int index = m_ui->comboBoxCFs->currentIndex();
+    // remove items
+    m_ui->comboBoxCFs->removeItem(index);
+    index = m_ui->comboBoxCFZones->currentIndex();
+    m_ui->comboBoxCFZones->removeItem(index);
+
+    // disable item
+    // m_ui->comboBoxCFs->setItemData(index, 0, Qt::UserRole - 1);
+    // enable item
+    // ui->comboBox->setItemData(index, 33, Qt::UserRole - 1);
 }
 
 void CFLinker::unlink()

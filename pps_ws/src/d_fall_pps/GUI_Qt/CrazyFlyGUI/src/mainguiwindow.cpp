@@ -113,6 +113,7 @@ void MainGUIWindow::_init()
     		selectedItem->setFont(fnt);
     	}
     }
+    ui->table_links->setSelectionBehavior(QAbstractItemView::SelectRows);
 
     // scene
     scene = new myGraphicsScene(ui->frame_drawing);
@@ -549,6 +550,33 @@ void MainGUIWindow::on_refresh_student_ids_button_clicked()
 void MainGUIWindow::on_link_button_clicked()
 {
     #ifdef CATKIN_MAKE
-    cf_linker->link();
+
+    bool error = false;
+    if(ui->comboBoxCFs->count() == 0)
+    {
+        // plot error message
+        error = true;
+    }
+    if(ui->comboBoxCFZones->count() == 0)
+    {
+        // plot error message
+        error = true;
+    }
+
+    for(int i = 0; i < cf_linker->links.size(); i++)
+    {
+        if(cf_linker->links[i].student_id == ui->spinBox_student_ids->value())
+        {
+            // value already linked, choose different one
+            // plot error message
+            error = true;
+        }
+    }
+
+    if(!error)
+    {
+        // remove error messages
+        cf_linker->link();
+    }
     #endif
 }

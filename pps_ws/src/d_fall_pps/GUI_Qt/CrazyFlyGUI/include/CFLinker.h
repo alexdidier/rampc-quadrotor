@@ -12,6 +12,12 @@
 class CFLinker
 {
 public:
+
+    struct link {
+        int student_id;
+        int cf_zone_index;
+        std::string cf_name;
+    };
     explicit CFLinker(Ui::MainGUIWindow* ui, std::vector<crazyFly*> *crazyflies_vector, std::vector<crazyFlyZone*> *crazyfly_zones);
     ~CFLinker();
 
@@ -19,14 +25,9 @@ public:
 
     void unlink();
 
-private:
-
-    struct link {
-        int cf_zone_index;
-        std::string cf_name;
-    };
-
     std::vector<struct link> links;
+
+private:
 
     // QTableWidget m_p_table;
 
