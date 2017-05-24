@@ -4,13 +4,15 @@
 #include "globalDefinitions.h"
 #include "crazyFly.h"
 #include "crazyFlyZone.h"
+#include "ui_mainguiwindow.h"
 
-#include <QTableWidget>
+#include "rosNodeThread.h"
+
 
 class CFLinker
 {
 public:
-    explicit CFLinker(QTableWidget* p_table);
+    explicit CFLinker(Ui::MainGUIWindow* ui);
     ~CFLinker();
 
     void link(int student_id, crazyFly* crazyfly, crazyFlyZone* crazyfly_zone);
@@ -26,8 +28,9 @@ private:
 
     std::vector<struct link> links;
 
-    // table
-    QTableWidget* m_p_table;
+    // QTableWidget m_p_table;
+
+    Ui::MainGUIWindow* m_ui;
 };
 
 

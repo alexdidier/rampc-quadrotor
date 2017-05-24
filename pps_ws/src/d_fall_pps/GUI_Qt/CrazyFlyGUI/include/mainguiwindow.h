@@ -109,6 +109,8 @@ private slots:
 
     void on_refresh_student_ids_button_clicked();
 
+    void on_link_button_clicked();
+
 private:
 
     Ui::MainGUIWindow *ui;
@@ -120,7 +122,7 @@ private:
     rosNodeThread* _rosNodeThread;
     std::vector<Marker*> markers_vector;
     std::vector<crazyFly*> crazyflies_vector;
-    CFLinker cf_linker;
+    CFLinker* cf_linker;
     #endif
 };
 
