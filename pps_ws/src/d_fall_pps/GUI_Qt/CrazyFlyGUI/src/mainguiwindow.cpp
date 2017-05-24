@@ -30,7 +30,6 @@ MainGUIWindow::MainGUIWindow(int argc, char **argv, QWidget *parent) :
 {
     #ifdef CATKIN_MAKE
     _rosNodeThread = new rosNodeThread(argc, argv, "/ViconDataPublisher/ViconData");
-    cf_linker = new CFLinker(ui);
     #endif
     ui->setupUi(this);
     _init();
@@ -101,6 +100,7 @@ void MainGUIWindow::_init()
     ui->table_links->horizontalHeader()->setFont(fnt);
 
     ui->table_links->horizontalHeader()->setDefaultSectionSize(90);
+    // ui->table_links->verticalHeader()->setDefaultSectionSize(20);
     ui->table_links->verticalHeader()->setDefaultSectionSize(20);
 
     const int rowCount = ui->table_links->rowCount();
@@ -119,6 +119,9 @@ void MainGUIWindow::_init()
     scene->setSceneRect(-100 * FROM_METERS_TO_UNITS, -100 * FROM_METERS_TO_UNITS, 200 * FROM_METERS_TO_UNITS, 200 * FROM_METERS_TO_UNITS);
 
     ui->graphicsView->setScene(scene);
+
+    // after scene is created, create CFlinker
+    cf_linker = new CFLinker(ui, &crazyflies_vector, &scene->crazyfly_zones);
 
     // connections
     QObject::connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)), scene, SLOT(removeCrazyFlyZone(int)));
@@ -496,6 +499,7 @@ void MainGUIWindow::on_refresh_cfs_button_clicked()
 {
     #ifdef CATKIN_MAKE
     ui->comboBoxCFs->clear();
+    // TODO: grey out the ones that are already linked
     for(int i = 0; i < crazyflies_vector.size(); i++)
     {
         QString qstr = QString::fromStdString(crazyflies_vector[i]->getName());
@@ -545,21 +549,6 @@ void MainGUIWindow::on_refresh_student_ids_button_clicked()
 void MainGUIWindow::on_link_button_clicked()
 {
     #ifdef CATKIN_MAKE
-    QString cfzone_str = ui->comboBoxCFZones->currentText();
-    crazyFly* p_tmp_cf;
-
-    for(int i = 0; i < crazyflies_vector.size(); i++)
-    {
-        if(ui->comboBoxCFs->currentText().toStdString() == crazyflies_vector[i]->getName())
-        {
-            ROS_INFO("crazyfly to link found!--------------------------");
-            p_tmp_cf = crazyflies_vector[i];
-        }
-    }
-
-    int cf_zone_index = cfzone_str.split(" ")[1].toInt() - 1;
-    crazyFlyZone* p_tmp_cf_zone = scene->crazyfly_zones[cf_zone_index];
-    ROS_INFO("cf_zone_index: %d", cf_zone_index);
-    cf_linker->link(ui->spinBox_student_ids->value(), p_tmp_cf, p_tmp_cf_zone);
+    cf_linker->link();
     #endif
 }

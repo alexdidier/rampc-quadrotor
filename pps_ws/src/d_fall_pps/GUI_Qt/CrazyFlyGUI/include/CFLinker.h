@@ -12,12 +12,12 @@
 class CFLinker
 {
 public:
-    explicit CFLinker(Ui::MainGUIWindow* ui);
+    explicit CFLinker(Ui::MainGUIWindow* ui, std::vector<crazyFly*> *crazyflies_vector, std::vector<crazyFlyZone*> *crazyfly_zones);
     ~CFLinker();
 
-    void link(int student_id, crazyFly* crazyfly, crazyFlyZone* crazyfly_zone);
+    void link();
 
-    void unlink(crazyFly* crazyfly,  crazyFlyZone* crazyfly_zone);
+    void unlink();
 
 private:
 
@@ -31,6 +31,12 @@ private:
     // QTableWidget m_p_table;
 
     Ui::MainGUIWindow* m_ui;
+    std::vector<crazyFly*>* m_crazyflies_vector;
+    std::vector<crazyFlyZone*>* m_crazyfly_zones;
+
+    int getCFZoneIndexFromName(QString name);
+    int getCFIndexFromName(std::string name);
+    void addNewRow(int student_id, std::string crazyfly_name, int cf_zone_index);
 };
 
 
