@@ -107,13 +107,13 @@ void MainGUIWindow::_init()
     // ui->err_message_cf_zone->hide();
     // ui->err_message_student_id->hide();
 
-    ui->err_message_cf->setStyleSheet("QLabel { color : red; }");
-    ui->err_message_cf_zone->setStyleSheet("QLabel { color : red; }");
-    ui->err_message_student_id->setStyleSheet("QLabel { color : red; }");
+   ui->err_message_cf->setStyleSheet("QLabel { color : red; }");
+   ui->err_message_cf_zone->setStyleSheet("QLabel { color : red; }");
+   ui->err_message_student_id->setStyleSheet("QLabel { color : red; }");
 
-    ui->err_message_cf->clear();
-    ui->err_message_cf_zone->clear();
-    ui->err_message_student_id->clear();
+   ui->err_message_cf->clear();
+   ui->err_message_cf_zone->clear();
+   ui->err_message_student_id->clear();
 
     // initialize table_links
     ui->table_links->setColumnCount(3);
@@ -135,7 +135,7 @@ void MainGUIWindow::_init()
     		selectedItem->setFont(fnt);
     	}
     }
-    // ui->table_links->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->table_links->setSelectionBehavior(QAbstractItemView::SelectRows);
     QStringList horizontal_header;
     horizontal_header << "Student ID" << "CrazyFly" << "CrazyFly Zone";
     ui->table_links->setHorizontalHeaderLabels(horizontal_header);
