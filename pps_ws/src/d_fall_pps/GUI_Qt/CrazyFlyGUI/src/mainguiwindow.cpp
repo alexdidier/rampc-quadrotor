@@ -10,6 +10,7 @@
 #include <QString>
 #include <QMetaType>
 #include <QDir>
+#include <regex>
 
 #ifdef CATKIN_MAKE
 #include "d_fall_pps/UnlabeledMarker.h"
@@ -23,27 +24,16 @@
 using namespace d_fall_pps;
 #endif
 
-#ifdef CATKIN_MAKE
-MainGUIWindow::MainGUIWindow(int argc, char **argv, QWidget *parent) :
-    QMainWindow(parent),
-    ui(new Ui::MainGUIWindow)//,
-    // _rosNodeThread(argc, argv, "/ViconDataPublisher/ViconData")
-{
-    _rosNodeThread = new rosNodeThread(argc, argv, "/ViconDataPublisher/ViconData");
-
-    ui->setupUi(this);
-    _init();
-}
-#else
 MainGUIWindow::MainGUIWindow(int argc, char **argv, QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainGUIWindow)
 {
-
+    #ifdef CATKIN_MAKE
+    _rosNodeThread = new rosNodeThread(argc, argv, "/ViconDataPublisher/ViconData");
+    #endif
     ui->setupUi(this);
     _init();
 }
-#endif
 
 
 MainGUIWindow::~MainGUIWindow()
@@ -51,8 +41,10 @@ MainGUIWindow::~MainGUIWindow()
     delete ui;
 }
 
-void MainGUIWindow::set_tabs(int n)
+
+void MainGUIWindow::doNumCrazyFlyZonesChanged(int n)
 {
+    // tabs number management, maybe do it in a different way so we dont have to remove and add everything?
     ui->tabWidget->clear();
     for (int i = 0; i < n; i++)
     {
@@ -62,6 +54,8 @@ void MainGUIWindow::set_tabs(int n)
         ui->tabWidget->addTab(widget, qstr);
         connect(widget, SIGNAL(centerButtonClickedSignal(int)), this, SLOT(centerViewIndex(int)));
     }
+
+    updateComboBoxesCFZones();
 }
 
 void MainGUIWindow::_init()
@@ -79,13 +73,57 @@ void MainGUIWindow::_init()
     ui->graphicsView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     ui->graphicsView->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 
+    // error messages
+    // ui->err_message_cf->hide();
+    // ui->err_message_cf_zone->hide();
+    // ui->err_message_student_id->hide();
+
+   ui->err_message_cf->setStyleSheet("QLabel { color : red; }");
+   ui->err_message_cf_zone->setStyleSheet("QLabel { color : red; }");
+   ui->err_message_student_id->setStyleSheet("QLabel { color : red; }");
+
+   ui->err_message_cf->clear();
+   ui->err_message_cf_zone->clear();
+   ui->err_message_student_id->clear();
+
+    // initialize table_links
+    ui->table_links->setColumnCount(3);
+
+    QFont fnt;
+    fnt.setPointSize(7);
+    ui->table_links->horizontalHeader()->setFont(fnt);
+
+    ui->table_links->horizontalHeader()->setDefaultSectionSize(90);
+    ui->table_links->verticalHeader()->setDefaultSectionSize(20);
+
+    const int rowCount = ui->table_links->rowCount();
+    const int columnCount = ui->table_links->columnCount();
+    for(int i = 0; i < rowCount; ++i)
+    {
+    	for(int j = 0; j < columnCount; ++j)
+        {
+    		QTableWidgetItem* selectedItem = ui->table_links->item(i, j);
+    		selectedItem->setFont(fnt);
+    	}
+    }
+    ui->table_links->setSelectionBehavior(QAbstractItemView::SelectRows);
+    QStringList horizontal_header;
+    horizontal_header << "Student ID" << "CrazyFly" << "CrazyFly Zone";
+    ui->table_links->setHorizontalHeaderLabels(horizontal_header);
+
+    // scene
     scene = new myGraphicsScene(ui->frame_drawing);
     scene->setSceneRect(-100 * FROM_METERS_TO_UNITS, -100 * FROM_METERS_TO_UNITS, 200 * FROM_METERS_TO_UNITS, 200 * FROM_METERS_TO_UNITS);
 
     ui->graphicsView->setScene(scene);
 
+    // after scene is created, create CFlinker
+    #ifdef CATKIN_MAKE
+    cf_linker = new CFLinker(ui, &crazyflies_vector, &scene->crazyfly_zones);
+    #endif
+    // connections
     QObject::connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)), scene, SLOT(removeCrazyFlyZone(int)));
-    QObject::connect(scene, SIGNAL(numCrazyFlyZonesChanged(int)), this, SLOT(set_tabs(int)));
+    QObject::connect(scene, SIGNAL(numCrazyFlyZonesChanged(int)), this, SLOT(doNumCrazyFlyZonesChanged(int)));
     QObject::connect(ui->tabWidget, SIGNAL(currentChanged(int)), scene, SLOT(setSelectedCrazyFlyZone(int)));
     QObject::connect(scene, SIGNAL(crazyFlyZoneSelected(int)), ui->tabWidget, SLOT(setCurrentIndex(int)));
     QObject::connect(scene, SIGNAL(modeChanged(int)), this, SLOT(transitionToMode(int)));
@@ -97,8 +135,46 @@ void MainGUIWindow::_init()
     _rosNodeThread->init();
     qRegisterMetaType<ptrToMessage>("ptrToMessage");
     QObject::connect(_rosNodeThread, SIGNAL(newViconData(const ptrToMessage&)), this, SLOT(updateNewViconData(const ptrToMessage&)));
+    QObject::connect(cf_linker, SIGNAL(updateComboBoxes()), this, SLOT(updateComboBoxes()));
     #endif
 }
+
+void MainGUIWindow::updateComboBoxes()
+{
+    updateComboBoxesCFs();
+    updateComboBoxesCFZones();
+}
+void MainGUIWindow::updateComboBoxesCFs()
+{
+    #ifdef CATKIN_MAKE
+    ui->comboBoxCFs->clear();
+    for(int i = 0; i < crazyflies_vector.size(); i++)
+    {
+        if(!cf_linker->isCFLinked(crazyflies_vector[i]->getName()))
+        {
+            QString qstr = QString::fromStdString(crazyflies_vector[i]->getName());
+            ui->comboBoxCFs->addItem(qstr);
+        }
+    }
+    #endif
+}
+
+void MainGUIWindow::updateComboBoxesCFZones()
+{
+    ui->comboBoxCFZones->clear();
+    #ifdef CATKIN_MAKE
+    for(int i = 0; i < scene->crazyfly_zones.size(); i++)
+    {
+        if(!cf_linker->isCFZoneLinked(scene->crazyfly_zones[i]->getIndex()))
+        {
+            QString qstr = "CrazyFlyZone ";
+            qstr.append(QString::number(i+1));
+            ui->comboBoxCFZones->addItem(qstr);
+        }
+    }
+    #endif
+}
+
 
 #ifdef CATKIN_MAKE
 void MainGUIWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to newViconData, from node
@@ -111,18 +187,18 @@ void MainGUIWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to
         for(int i = p_msg->markers.size(); i < markers_vector.size(); i++)
         {
             scene->removeItem(markers_vector[i]); // remove objects from scene
-            ROS_INFO_STREAM("element index: " << i << " removed");
+            // ROS_INFO_STREAM("element index: " << i << " removed");
         }
         markers_vector.erase(markers_vector.begin() + p_msg->markers.size(), markers_vector.end()); //delete them
     }
 
-    ROS_INFO_STREAM("markers.size: " << p_msg->markers.size());
+    // ROS_INFO_STREAM("markers.size: " << p_msg->markers.size());
 
     for(int i = 0; i < p_msg->markers.size(); i++) // here, or new markers message is equal to current messages, or greater (some new markers)
     {
         if(i >= markers_vector.size()) //some new markers coming
         {
-            ROS_INFO_STREAM("element index: " << i << " added");
+            // ROS_INFO_STREAM("element index: " << i << " added");
             Marker* tmp_p_marker = new Marker(&(p_msg->markers[i]));
             markers_vector.push_back(tmp_p_marker); // what happens with the new indexes? check if this is correct
 
@@ -137,7 +213,7 @@ void MainGUIWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to
         }
         else
         {
-            ROS_INFO_STREAM("element index: " << i << " moved, already existed");
+            // ROS_INFO_STREAM("element index: " << i << " moved, already existed");
             markers_vector[i]->updateMarker(&(p_msg->markers[i]));
         }
     }
@@ -163,18 +239,38 @@ void MainGUIWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to
         {
             crazyflies_vector[index_name_found]->updateCF(&(p_msg->crazyflies[i]));
         }
-        else
+        else                    //name not found, newly arrived, add it to the vector
         {
             crazyFly* tmp_p_crazyfly = new crazyFly(&(p_msg->crazyflies[i]));
-            if(ui->checkBox_vicon_crazyflies->checkState() == Qt::Checked)
-            {
-                scene->addItem(tmp_p_crazyfly);
-            }
             crazyflies_vector.push_back(tmp_p_crazyfly);
+        }
+
+        if(ui->checkBox_vicon_crazyflies->checkState() == Qt::Checked)
+        {
+            for(int i = 0; i < crazyflies_vector.size(); i++) //check for occlussion
+            {
+                if(crazyflies_vector[i]->isOccluded())
+                {
+                    ROS_INFO("===================OCCLUDED");
+                    if(crazyflies_vector[i]->isAddedToScene())
+                    {
+                        scene->removeItem(crazyflies_vector[i]);
+                        crazyflies_vector[i]->setAddedToScene(false);
+                    }
+                }
+                else
+                {
+                    if(!crazyflies_vector[i]->isAddedToScene())
+                    {
+                        scene->addItem(crazyflies_vector[i]);
+                        crazyflies_vector[i]->setAddedToScene(true);
+                    }
+                }
+            }
         }
     }
 
-    // in this loop, clean the ones that are not present anymore
+    // in this loop, clean the ones that are not present anymore. UPDATE: this will apparently only happen when we tick and untick in Vicon
     int crazyfly_vector_size_after = crazyflies_vector.size();
 
     for(int j = 0; j < crazyfly_vector_size_after; j++)
@@ -400,7 +496,11 @@ void MainGUIWindow::on_checkBox_vicon_crazyflies_toggled(bool checked)
         #ifdef CATKIN_MAKE
         for(int i = 0; i < crazyflies_vector.size(); i++)
         {
-            scene->addItem(crazyflies_vector[i]);
+            if(!crazyflies_vector[i]->isAddedToScene())
+            {
+                scene->addItem(crazyflies_vector[i]);
+                crazyflies_vector[i]->setAddedToScene(true);
+            }
         }
         #endif
         ui->scaleSpinBox->setEnabled(true);
@@ -410,7 +510,11 @@ void MainGUIWindow::on_checkBox_vicon_crazyflies_toggled(bool checked)
         #ifdef CATKIN_MAKE
         for(int i = 0; i < crazyflies_vector.size(); i++)
         {
-            scene->removeItem(crazyflies_vector[i]);
+            if(crazyflies_vector[i]->isAddedToScene())
+            {
+                scene->removeItem(crazyflies_vector[i]);
+                crazyflies_vector[i]->setAddedToScene(false);
+            }
         }
         #endif
         ui->scaleSpinBox->setEnabled(false);
@@ -424,5 +528,99 @@ void MainGUIWindow::on_scaleSpinBox_valueChanged(double arg1)
     {
         crazyflies_vector[i]->setScaleCFs(arg1);
     }
+    #endif
+}
+
+void MainGUIWindow::on_refresh_cfs_button_clicked()
+{
+    updateComboBoxesCFs();
+}
+
+void MainGUIWindow::on_refresh_student_ids_button_clicked()
+{
+    #ifdef CATKIN_MAKE
+    ui->list_discovered_student_ids->clear();
+
+    // \/(\d)\/PPSClient
+    ros::V_string v_str;
+    ros::master::getNodes(v_str);
+    for(int i = 0; i < v_str.size(); i++)
+    {
+        std::string s = v_str[i];
+        std::smatch m;
+        std::regex e ("\\/(\\d)\\/PPSClient");
+
+        // std::regex e("\\/PPSClien(.)");
+
+        // while(std::regex_search(s, m, e))
+        // {
+        //     for (int i = 0; i < m.size(); i++)
+        //     {
+        //         ROS_INFO("FOUND: %s", m[i].str().c_str());
+        //         // std::cout << "FOUND" << m[i] << "\n";
+        //     }
+        //     s = m.suffix().str();
+        // }
+
+        if(std::regex_search(s, m, e))
+        {
+            // ROS_INFO("===============================================FOUND: %s", m[1].str().c_str()); // one because we are interested ONLY in the first match
+            std::string found_string = m[1].str();
+            ui->list_discovered_student_ids->addItem(found_string.c_str());
+        }
+    }
+    #endif
+}
+
+
+
+void MainGUIWindow::on_link_button_clicked()
+{
+    #ifdef CATKIN_MAKE
+
+    bool error = false;
+    if(ui->comboBoxCFs->count() == 0)
+    {
+        // plot error message
+        ui->err_message_cf->setText("CF box is empty");
+        error = true;
+    }
+    else
+    {
+        ui->err_message_cf->clear();
+    }
+    if(ui->comboBoxCFZones->count() == 0)
+    {
+        // plot error message
+        ui->err_message_cf_zone->setText("CFZone box is empty");
+        error = true;
+    }
+    else
+    {
+        ui->err_message_cf_zone->clear();
+    }
+
+    if(cf_linker->isStudentIDLinked(ui->spinBox_student_ids->value()))
+    {
+        // plot error message
+        ui->err_message_student_id->setText("This StudentID has already been linked");
+        error = true;
+    }
+    else
+    {
+        ui->err_message_student_id->clear();
+    }
+
+    if(!error)
+    {
+        cf_linker->link();
+    }
+    #endif
+}
+
+void MainGUIWindow::on_unlink_button_clicked()
+{
+    #ifdef CATKIN_MAKE
+    cf_linker->unlink();
     #endif
 }

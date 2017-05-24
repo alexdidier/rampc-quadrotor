@@ -6,6 +6,11 @@ crazyFlyZone::crazyFlyZone(const QRectF & rect, int index,  QGraphicsItem * pare
 {
     this->setPen(QPen(Qt::black, 0));
     setIndex(index);
+    m_linked = false;
+}
+
+crazyFlyZone::~crazyFlyZone()
+{
 }
 
 void crazyFlyZone::updateLabel(QString string)
@@ -44,4 +49,24 @@ void crazyFlyZone::setIndex(int index)
 void crazyFlyZone::rectSizeChanged() // pure virtual coming from parent
 {
     setLabelPosition();
+}
+
+void crazyFlyZone::linkCF(std::string cf_name)
+{
+    m_crazyfly_linked_name = cf_name;
+    m_linked = true;
+}
+
+bool crazyFlyZone::isLinked()
+{
+    return m_linked;
+}
+
+void crazyFlyZone::removeLink()
+{
+    if(m_linked)
+    {
+        m_crazyfly_linked_name = "";
+        m_linked = false;
+    }
 }

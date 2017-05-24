@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1043</width>
-    <height>658</height>
+    <width>866</width>
+    <height>587</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -46,6 +46,12 @@
        </item>
        <item row="0" column="1">
         <widget class="QGroupBox" name="groupBox">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="title">
           <string>Creation Modes</string>
          </property>
@@ -96,19 +102,6 @@
            </widget>
           </item>
          </layout>
-        </widget>
-       </item>
-       <item row="0" column="0" rowspan="2">
-        <widget class="myGraphicsView" name="graphicsView">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="mouseTracking">
-          <bool>true</bool>
-         </property>
         </widget>
        </item>
        <item row="1" column="1">
@@ -192,7 +185,7 @@
             </property>
            </widget>
           </item>
-          <item row="7" column="2">
+          <item row="7" column="1">
            <widget class="QDoubleSpinBox" name="scaleSpinBox">
             <property name="font">
              <font>
@@ -201,19 +194,7 @@
             </property>
            </widget>
           </item>
-          <item row="7" column="1">
-           <widget class="QLabel" name="label">
-            <property name="font">
-             <font>
-              <pointsize>7</pointsize>
-             </font>
-            </property>
-            <property name="text">
-             <string>Scale:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="2">
+          <item row="1" column="1">
            <widget class="QCheckBox" name="checkBox_vicon_highlight_markers">
             <property name="font">
              <font>
@@ -231,14 +212,25 @@
          </layout>
         </widget>
        </item>
+       <item row="0" column="0" rowspan="2">
+        <widget class="myGraphicsView" name="graphicsView">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="mouseTracking">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
       </layout>
       <zorder>graphicsView</zorder>
       <zorder>removeTable</zorder>
       <zorder>groupBox</zorder>
       <zorder>groupBox_2</zorder>
       <zorder>pushButton_fitAll</zorder>
-      <zorder>frame_3</zorder>
-      <zorder>tabWidget</zorder>
      </widget>
     </item>
     <item row="0" column="1">
@@ -255,6 +247,164 @@
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QTabWidget" name="tabWidget_2">
+         <property name="currentIndex">
+          <number>0</number>
+         </property>
+         <widget class="QWidget" name="links_tab">
+          <attribute name="title">
+           <string>Links</string>
+          </attribute>
+          <layout class="QGridLayout" name="gridLayout">
+           <item row="12" column="1" colspan="2">
+            <widget class="QLabel" name="err_message_cf_zone">
+             <property name="font">
+              <font>
+               <pointsize>7</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>TextLabel</string>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="1" colspan="2">
+            <widget class="QLabel" name="err_message_cf">
+             <property name="font">
+              <font>
+               <pointsize>7</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>TextLabel</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="1" colspan="2">
+            <widget class="QLabel" name="err_message_student_id">
+             <property name="font">
+              <font>
+               <pointsize>7</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>TextLabel</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QSpinBox" name="spinBox_student_ids">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <number>20</number>
+             </property>
+             <property name="value">
+              <number>1</number>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QListWidget" name="list_discovered_student_ids">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QLabel" name="label_4">
+             <property name="text">
+              <string>Choose Student ID:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="8" column="1">
+            <widget class="QComboBox" name="comboBoxCFs"/>
+           </item>
+           <item row="11" column="1">
+            <widget class="QComboBox" name="comboBoxCFZones"/>
+           </item>
+           <item row="6" column="1">
+            <widget class="QLabel" name="label_2">
+             <property name="text">
+              <string>Choose CF to link:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="10" column="1">
+            <widget class="QLabel" name="label_3">
+             <property name="text">
+              <string>Choose CF Zone to link:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="8" column="2">
+            <widget class="QPushButton" name="refresh_cfs_button">
+             <property name="text">
+              <string>Refresh CFs</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="2">
+            <widget class="QPushButton" name="refresh_student_ids_button">
+             <property name="text">
+              <string>Refresh IDs</string>
+             </property>
+            </widget>
+           </item>
+           <item row="11" column="2">
+            <widget class="QPushButton" name="link_button">
+             <property name="text">
+              <string>Link!</string>
+             </property>
+            </widget>
+           </item>
+           <item row="13" column="1" colspan="2">
+            <widget class="QTableWidget" name="table_links">
+             <property name="minimumSize">
+              <size>
+               <width>273</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="wordWrap">
+              <bool>true</bool>
+             </property>
+             <property name="rowCount">
+              <number>0</number>
+             </property>
+             <property name="columnCount">
+              <number>0</number>
+             </property>
+             <attribute name="horizontalHeaderVisible">
+              <bool>true</bool>
+             </attribute>
+            </widget>
+           </item>
+           <item row="14" column="2">
+            <widget class="QPushButton" name="unlink_button">
+             <property name="text">
+              <string>Unlink!</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+      </layout>
      </widget>
     </item>
     <item row="1" column="0" colspan="2">
@@ -301,7 +451,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1043</width>
+     <width>866</width>
      <height>19</height>
     </rect>
    </property>
@@ -311,7 +461,7 @@
     <enum>TopToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
-    <bool>true</bool>
+    <bool>false</bool>
    </attribute>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>

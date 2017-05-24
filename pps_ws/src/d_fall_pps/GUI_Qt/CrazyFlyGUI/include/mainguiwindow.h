@@ -12,7 +12,9 @@
 #include "rosNodeThread.h"
 #include "marker.h"
 #include "crazyFly.h"
+#include "CFLinker.h"
 #endif
+
 
 #include "ui_mainguiwindow.h"
 #include "myGraphicsScene.h"
@@ -70,7 +72,7 @@ private slots:
     #ifdef CATKIN_MAKE
     #endif
 
-    void set_tabs(int n);
+    void doNumCrazyFlyZonesChanged(int n);
     void transitionToMode(int mode);
     void on_removeTable_clicked();
 
@@ -103,6 +105,15 @@ private slots:
     void on_checkBox_vicon_crazyflies_toggled(bool checked);
 
     void on_scaleSpinBox_valueChanged(double arg1);
+    void on_refresh_cfs_button_clicked();
+
+    void on_refresh_student_ids_button_clicked();
+
+    void on_link_button_clicked();
+
+    void on_unlink_button_clicked();
+
+    void updateComboBoxes();
 
 private:
 
@@ -110,11 +121,18 @@ private:
     myGraphicsScene* scene;
     void _init();
 
+
     #ifdef CATKIN_MAKE
     rosNodeThread* _rosNodeThread;
     std::vector<Marker*> markers_vector;
     std::vector<crazyFly*> crazyflies_vector;
+    CFLinker* cf_linker;
     #endif
+
+    void updateComboBoxesCFs();
+
+    void updateComboBoxesCFZones();
+
 };
 
 

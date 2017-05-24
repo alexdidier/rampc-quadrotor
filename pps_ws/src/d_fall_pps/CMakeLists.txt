@@ -57,6 +57,7 @@ set(SRC_HDRS_QOBJECT
   ${MY_LIB_PATH_INC}/myGraphicsView.h
   ${MY_LIB_PATH_INC}/mainguiwindow.h
   ${MY_LIB_PATH_INC}/rosNodeThread.h
+  ${MY_LIB_PATH_INC}/CFLinker.h
   )
 # GUI -- wrap UI file and QOBJECT files
 qt5_wrap_ui(UIS_HDRS GUI_Qt/CrazyFlyGUI/src/mainguiwindow.ui)
@@ -235,6 +236,7 @@ set(MY_CPP_SOURCES              # compilation of sources
     ${MY_LIB_PATH_SRC}/marker.cpp
     ${MY_LIB_PATH_SRC}/rosNodeThread.cpp
     ${MY_LIB_PATH_SRC}/crazyFly.cpp
+    ${MY_LIB_PATH_SRC}/CFLinker.cpp
     )
 
 

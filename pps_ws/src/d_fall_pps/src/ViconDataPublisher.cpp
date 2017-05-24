@@ -79,6 +79,9 @@ int main(int argc, char* argv[]) {
         i++;
         // TODO: Fake CF data
         CrazyflieData crazyfly;
+
+        crazyfly.occluded = false;
+
         crazyfly.crazyflieName = "CF1";
         crazyfly.x = 0;
         crazyfly.y = 0;
@@ -93,15 +96,19 @@ int main(int argc, char* argv[]) {
         crazyfly.yaw = -3.14159 * f;
         viconData.crazyflies.push_back(crazyfly);
 
-        if(i > 50 && i < 100)
+        crazyfly.crazyflieName = "CF3";
+        crazyfly.x = 1;
+        crazyfly.y = -1;
+        crazyfly.z = 0;
+        crazyfly.yaw = -3.14159 * f;
+
+
+        if(i > 50 && i < 200)
         {
-            crazyfly.crazyflieName = "CF3";
-            crazyfly.x = 1;
-            crazyfly.y = -1;
-            crazyfly.z = 0;
-            crazyfly.yaw = -3.14159 * f;
-            viconData.crazyflies.push_back(crazyfly);
+            crazyfly.occluded = true;
         }
+
+        viconData.crazyflies.push_back(crazyfly);
 
         viconDataPublisher.publish(viconData); // testing data
     }
@@ -152,7 +159,7 @@ int main(int argc, char* argv[]) {
         unsigned int unlabeledMarkerCount = client.GetUnlabeledMarkerCount().MarkerCount;
 
         UnlabeledMarker marker;
-        ROS_INFO_STREAM("unlabeledMarkerCount: " << unlabeledMarkerCount);
+        // ROS_INFO_STREAM("unlabeledMarkerCount: " << unlabeledMarkerCount);
 
         for(int unlabeledMarkerIndex = 0; unlabeledMarkerIndex < unlabeledMarkerCount; unlabeledMarkerIndex++)
         {
@@ -208,6 +215,8 @@ int main(int argc, char* argv[]) {
             //build message
             CrazyflieData cfData;
             cfData.crazyflieName = subjectName;
+
+            cfData.occluded = outputTranslation.Occluded;
 
             cfData.x = outputTranslation.Translation[0] / 1000.0f;
             cfData.y = outputTranslation.Translation[1] / 1000.0f;
