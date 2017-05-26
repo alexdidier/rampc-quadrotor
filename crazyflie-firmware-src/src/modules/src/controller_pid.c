@@ -79,6 +79,12 @@ void stateController(control_t *control, setpoint_t *setpoint,
       rateDesired.pitch = setpoint->attitudeRate.pitch;
     }
 
+//added for PPSSafeController to make the Onboard Controller using the external YawRate
+    if (setpoint->mode.yaw == modeVelocity) {
+      rateDesired.yaw = (-1) * setpoint->attitudeRate.yaw;
+    }
+
+
     // TODO: Investigate possibility to subtract gyro drift.
     attitudeControllerCorrectRatePID(sensors->gyro.x, -sensors->gyro.y, sensors->gyro.z,
                              rateDesired.roll, rateDesired.pitch, rateDesired.yaw);
