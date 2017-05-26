@@ -26,13 +26,16 @@ public:
     ~CFLinker();
 
     void link();
-    void unlink();
+    void unlink_selection();
+    void unlink_cf_zone(int cf_zone_index);
 
     std::vector<struct link> links;
 
     bool isStudentIDLinked(int student_id);
     bool isCFZoneLinked(int cf_zone_index);
     bool isCFLinked(std::string cf_name);
+    int getCFZoneIndexFromName(QString name);
+    int getCFIndexFromName(std::string name);
 
 signals:
     void updateComboBoxes();
@@ -45,8 +48,6 @@ private:
     std::vector<crazyFly*>* m_crazyflies_vector;
     std::vector<crazyFlyZone*>* m_crazyfly_zones;
 
-    int getCFZoneIndexFromName(QString name);
-    int getCFIndexFromName(std::string name);
     void addNewRow(int student_id, std::string crazyfly_name, int cf_zone_index);
 };
 

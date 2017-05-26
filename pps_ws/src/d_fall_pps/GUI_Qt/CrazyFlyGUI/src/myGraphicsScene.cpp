@@ -71,10 +71,13 @@ void myGraphicsScene::setSelectedCrazyFlyZone(int index)
 {
     for(unsigned int i = 0; i < crazyfly_zones.size(); i++)
     {
+        qDebug("index: %d", index);
+        qDebug("i: %d", i);
+        qDebug("getIndex: %d", crazyfly_zones[i]->getIndex());
         crazyfly_zones[i]->setSelected(false);
-        if(index == i)
+        if(index == crazyfly_zones[i]->getIndex())
         {
-            crazyfly_zones[index]->setSelected(true);
+            crazyfly_zones[i]->setSelected(true);
         }
     }
 }
@@ -85,8 +88,8 @@ int myGraphicsScene::checkSelectedCrazyFlyZone()
     {
         if(crazyfly_zones[i]->isSelected())
         {
-            qDebug("rectangle selected index = %d", i);
-            return i;
+            qDebug("rectangle selected index = %d", crazyfly_zones[i]->getIndex());
+            return crazyfly_zones[i]->getIndex();
         }
     }
     return -1;
@@ -115,8 +118,38 @@ void myGraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent)
                 startedRect = true;
                 p1 = new QPointF(mouseEvent->scenePos());
                 tmp_rect = new QRectF(*p1, *p1);
-                int index = crazyfly_zones.size();
-                tmp_crazyfly_zone_item = new crazyFlyZone(*tmp_rect, index);
+                // look for first available index here
+                bool first_available_value_found = false;
+                int first_available_value = 0;
+                while(!first_available_value_found)
+                {
+                    if(crazyfly_zones.size() == 0)
+                    {
+                        first_available_value_found = true;
+                        break;
+                    }
+                    else        // we enter the for loop for sure
+                    {
+                        bool index_is_present = false;
+                        for(int i = 0; i < crazyfly_zones.size(); i++)
+                        {
+                            if(crazyfly_zones[i]->getIndex() == first_available_value)
+                            {
+                                index_is_present = true;
+                                break; // break because we finish searching here
+                            }
+                        }
+                        if(!index_is_present)
+                        {
+                            first_available_value_found = true; // finish loop here, found value
+                            break;
+                        }
+                    }
+
+                    first_available_value++; //first iteration 0
+                }
+                qDebug("---------------------------first available value: %d", first_available_value);
+                tmp_crazyfly_zone_item = new crazyFlyZone(*tmp_rect, first_available_value);
                 addItem(tmp_crazyfly_zone_item);
                 break;
             }
@@ -163,25 +196,13 @@ void myGraphicsScene::mouseMoveEvent(QGraphicsSceneMouseEvent *mouseEvent)
 void myGraphicsScene::addCrazyFlyZoneToVector(crazyFlyZone* rect)
 {
     crazyfly_zones.push_back(rect);
-    emit numCrazyFlyZonesChanged(crazyfly_zones.size());
+    emit numCrazyFlyZonesChanged(rect->getIndex());
 }
 
 void myGraphicsScene::addTablePieceToVector(tablePiece* rect)
 {
     table_pieces.push_back(rect);
     emit numTablePiecesChanged(table_pieces.size());
-}
-
-void myGraphicsScene::updateIndexesAndLabelsCrazyFlyZones()
-{
-    for(int i = 0; i < crazyfly_zones.size(); i++)
-    {
-        crazyfly_zones[i]->setIndex(i);
-        std::string str = std::to_string(i + 1);
-        crazyfly_zones[i]->updateLabel(str.c_str());
-        qDebug("reset Index %d and update label",i);
-
-    }
 }
 
 void myGraphicsScene::changeModeTo(int next_mode)
@@ -302,11 +323,11 @@ QRectF myGraphicsScene::getRectFCrazyFlyZone(int index)
 
 void myGraphicsScene::removeCrazyFlyZone(int index)
 {
+    int n = crazyfly_zones[index]->getIndex();
     this->removeItem(crazyfly_zones[index]);
     crazyfly_zones.erase(crazyfly_zones.begin() + index);
     qDebug("removed CFzone %d", index);
-    updateIndexesAndLabelsCrazyFlyZones();
-    emit numCrazyFlyZonesChanged(crazyfly_zones.size()); // for tab managing
+    emit numCrazyFlyZonesChanged(n); // for tab managing
 }
 
 void myGraphicsScene::removeTable()
@@ -386,7 +407,8 @@ void myGraphicsScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent)
                 {
                     tmp_crazyfly_zone_item->setRect(tmp_crazyfly_zone_item->rect().normalized());
                     addCrazyFlyZoneToVector(tmp_crazyfly_zone_item);
-                    std::string str = std::to_string(crazyfly_zones.size());
+                    // TODO: set first available number, not size of vector. Index + 1
+                    std::string str = std::to_string(tmp_crazyfly_zone_item->getIndex() + 1);
                     tmp_crazyfly_zone_item->setLabel(str.c_str());
                     setSelectedCrazyFlyZone(crazyfly_zones.size() - 1); //select just created rectangle
                     tmp_rect = 0;

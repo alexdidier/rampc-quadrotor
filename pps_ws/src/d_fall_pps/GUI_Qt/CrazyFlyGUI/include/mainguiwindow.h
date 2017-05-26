@@ -115,6 +115,9 @@ private slots:
 
     void updateComboBoxes();
 
+    void setTabIndex(int index);
+    void doTabClosed(int tab_index);
+
 private:
 
     Ui::MainGUIWindow *ui;
@@ -132,6 +135,8 @@ private:
     void updateComboBoxesCFs();
 
     void updateComboBoxesCFZones();
+
+    int getTabIndexFromName(QString name);
 
 };
 

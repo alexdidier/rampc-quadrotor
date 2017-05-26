@@ -123,7 +123,31 @@ void CFLinker::link()
     // ui->comboBox->setItemData(index, 33, Qt::UserRole - 1);
 }
 
-void CFLinker::unlink()
+void CFLinker::unlink_cf_zone(int cf_zone_index)
+{
+    for(int i = 0; i < links.size(); i++)
+    {
+        if(links[i].cf_zone_index == cf_zone_index)
+        {
+            links.erase(links.begin() + i);
+            break;
+        }
+    }
+    // remove them graphically
+    for(int i = 0; i < m_ui->table_links->rowCount(); i++)
+    {
+        QString name = m_ui->table_links->item(i, 2)->text(); //2 because cf zone
+        if(getCFZoneIndexFromName(name) == cf_zone_index)
+        {
+            m_ui->table_links->removeRow(i);
+            break;
+        }
+    }
+    // update combo boxes
+    emit updateComboBoxes();
+}
+
+void CFLinker::unlink_selection()
 {
     QModelIndexList selection = m_ui->table_links->selectionModel()->selectedRows();
 

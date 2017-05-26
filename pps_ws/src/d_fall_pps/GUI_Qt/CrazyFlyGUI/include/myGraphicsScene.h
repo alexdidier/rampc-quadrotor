@@ -72,7 +72,6 @@ private:
     void addCrazyFlyZoneToVector(crazyFlyZone* rect);
     void addTablePieceToVector(tablePiece* rect);
     int checkSelectedCrazyFlyZone();
-    void updateIndexesAndLabelsCrazyFlyZones();
     void removeTablePiece(int index);
 
     QPen* pen;

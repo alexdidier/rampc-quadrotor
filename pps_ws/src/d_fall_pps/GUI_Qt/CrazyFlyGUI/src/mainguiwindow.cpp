@@ -41,19 +41,64 @@ MainGUIWindow::~MainGUIWindow()
     delete ui;
 }
 
+int MainGUIWindow::getTabIndexFromName(QString name)
+{
+    int found_name = -1;
+    for(int i = 0; i < ui->tabWidget->count(); i++)
+    {
+        qDebug("name: %s", name.toStdString().c_str());
+        qDebug("tabText: %s", ui->tabWidget->tabText(i).toStdString().c_str());
+        if(name == ui->tabWidget->tabText(i))
+        {
+            found_name = i;
+        }
+    }
+    return found_name;
+}
 
 void MainGUIWindow::doNumCrazyFlyZonesChanged(int n)
 {
     // tabs number management, maybe do it in a different way so we dont have to remove and add everything?
-    ui->tabWidget->clear();
-    for (int i = 0; i < n; i++)
+    // first check if size of tabs is greater than size of vector or viceversa. Have we removed or added a zone?
+    qDebug("tabWidgetCount : %d", ui->tabWidget->count());
+    if(ui->tabWidget->count() > scene->crazyfly_zones.size())
     {
+        // we removed one crazyfly_zone, n means index of the one we removed. Look for that index tab and remove it
         QString qstr = "CrazyFly ";
-        qstr.append(QString::number(i+1));
-        crazyFlyZoneTab* widget = new crazyFlyZoneTab(i);
-        ui->tabWidget->addTab(widget, qstr);
+        qstr.append(QString::number(n+1));
+        if(scene->crazyfly_zones.size() == 0)
+        {
+            ui->tabWidget->clear();
+        }
+        int found_index = getTabIndexFromName(qstr);
+        if(found_index != -1)
+        {
+            ui->tabWidget->removeTab(found_index);
+        }
+
+        //  now unlink it from table also:
+        if(cf_linker->isCFZoneLinked(n))
+        {
+            cf_linker->unlink_cf_zone(n);
+        }
+    }
+    else if(ui->tabWidget->count() < scene->crazyfly_zones.size())
+    {
+        // we added one crazyfly_zone, n means index of the new one. New tab will be labeld index + 1
+        QString qstr = "CrazyFly ";
+        qstr.append(QString::number(n+1));
+        crazyFlyZoneTab* widget = new crazyFlyZoneTab(n);
+        ui->tabWidget->insertTab(n, widget, qstr);
         connect(widget, SIGNAL(centerButtonClickedSignal(int)), this, SLOT(centerViewIndex(int)));
     }
+    // for (int i = 0; i < n; i++)
+    // {
+    //     QString qstr = "CrazyFly ";
+    //     qstr.append(QString::number(i+1));
+    //     crazyFlyZoneTab* widget = new crazyFlyZoneTab(i);
+    //     ui->tabWidget->addTab(widget, qstr);
+    //     connect(widget, SIGNAL(centerButtonClickedSignal(int)), this, SLOT(centerViewIndex(int)));
+    // }
 
     updateComboBoxesCFZones();
 }
@@ -122,10 +167,9 @@ void MainGUIWindow::_init()
     cf_linker = new CFLinker(ui, &crazyflies_vector, &scene->crazyfly_zones);
     #endif
     // connections
-    QObject::connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)), scene, SLOT(removeCrazyFlyZone(int)));
+    QObject::connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)), this, SLOT(doTabClosed(int)));
     QObject::connect(scene, SIGNAL(numCrazyFlyZonesChanged(int)), this, SLOT(doNumCrazyFlyZonesChanged(int)));
-    QObject::connect(ui->tabWidget, SIGNAL(currentChanged(int)), scene, SLOT(setSelectedCrazyFlyZone(int)));
-    QObject::connect(scene, SIGNAL(crazyFlyZoneSelected(int)), ui->tabWidget, SLOT(setCurrentIndex(int)));
+    QObject::connect(scene, SIGNAL(crazyFlyZoneSelected(int)), this, SLOT(setTabIndex(int)));
     QObject::connect(scene, SIGNAL(modeChanged(int)), this, SLOT(transitionToMode(int)));
     QObject::connect(scene, SIGNAL(numTablePiecesChanged(int)), this, SLOT(handleTablePiecesNumChanged(int)));
 
@@ -137,6 +181,20 @@ void MainGUIWindow::_init()
     QObject::connect(_rosNodeThread, SIGNAL(newViconData(const ptrToMessage&)), this, SLOT(updateNewViconData(const ptrToMessage&)));
     QObject::connect(cf_linker, SIGNAL(updateComboBoxes()), this, SLOT(updateComboBoxes()));
     #endif
+}
+
+void MainGUIWindow::doTabClosed(int tab_index)
+{
+    QString name = ui->tabWidget->tabText(tab_index);
+    int cf_index = cf_linker->getCFZoneIndexFromName(name);
+    scene->removeCrazyFlyZone(cf_index);
+}
+
+void MainGUIWindow::setTabIndex(int index)
+{
+    QString qstr = "CrazyFly ";
+    qstr.append(QString::number(index + 1));
+    ui->tabWidget->setCurrentIndex(getTabIndexFromName(qstr));
 }
 
 void MainGUIWindow::updateComboBoxes()
@@ -167,8 +225,9 @@ void MainGUIWindow::updateComboBoxesCFZones()
     {
         if(!cf_linker->isCFZoneLinked(scene->crazyfly_zones[i]->getIndex()))
         {
+            int cf_zone_index = scene->crazyfly_zones[i]->getIndex();
             QString qstr = "CrazyFlyZone ";
-            qstr.append(QString::number(i+1));
+            qstr.append(QString::number(cf_zone_index + 1));
             ui->comboBoxCFZones->addItem(qstr);
         }
     }
@@ -421,10 +480,10 @@ void MainGUIWindow::on_checkBox_crazyfly_zones_toggled(bool checked)
 
 void MainGUIWindow::on_tabWidget_currentChanged(int index)
 {
-    if(index >= 0)
-    {
-        scene->setSelectedCrazyFlyZone(index);
-    }
+    // this index is tab index. Need to go to cf index
+    QString name = ui->tabWidget->tabText(index);
+    int cf_index = cf_linker->getCFZoneIndexFromName(name);
+    scene->setSelectedCrazyFlyZone(cf_index);
 }
 
 void MainGUIWindow::centerViewIndex(int index)
@@ -621,6 +680,6 @@ void MainGUIWindow::on_link_button_clicked()
 void MainGUIWindow::on_unlink_button_clicked()
 {
     #ifdef CATKIN_MAKE
-    cf_linker->unlink();
+    cf_linker->unlink_selection();
     #endif
 }
