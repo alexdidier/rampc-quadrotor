@@ -166,11 +166,7 @@ void convertIntoBodyFrame(float est[9], float (&state)[9], float yaw_measured) {
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response) {
     CrazyflieData vicon = request.ownCrazyflie;
 	
-	//bag.write("ViconData", ros::Time::now(), request.ownCrazyflie);
-	
-	//trial>>>>>>>
 	float yaw_measured = request.ownCrazyflie.yaw;
-	//<<<<<<
 
     //move coordinate system to make setpoint origin
     request.ownCrazyflie.x -= setpoint[0];
@@ -286,7 +282,7 @@ int main(int argc, char* argv[]) {
 	std::string package_path;
 	package_path = ros::package::getPath("d_fall_pps") + "/";
 	ROS_INFO_STREAM(package_path);
-	std::string record_file = package_path + "recordSafeController.bag";
+	std::string record_file = package_path + "LoggingSafeController.bag";
 	bag.open(record_file, rosbag::bagmode::Write);
 
 

@@ -110,15 +110,15 @@ void viconCallback(const ViconData& viconData) {
 		
 		if(global.crazyflieName == context.crazyflieName) {
 			Controller controllerCall;
-
+			
 			CrazyflieData local = global;
 			coordinatesToLocal(local);
 			controllerCall.request.ownCrazyflie = local;
 			
-
 			if(crazyflieEnabled){
 				if(!usingSafeController) {
 					bool success = customController.call(controllerCall);
+					
 					if(!success) {
 						ROS_ERROR("Failed to call custom controller, switching to safe controller");
 						ROS_ERROR_STREAM("custom controller status: valid: " << customController.isValid() << ", exists: " << customController.exists());
@@ -126,19 +126,19 @@ void viconCallback(const ViconData& viconData) {
 						usingSafeController = true;
 					} else {
 						usingSafeController = !safetyCheck(global, controllerCall.response.controlOutput);
-						if(usingSafeController) {
-							ROS_INFO_STREAM("safety check failed, switching to safe controller");
-						}
+						ROS_INFO_STREAM("safety check failed, switching to safe controller");
 					}
 				}
 
-			
+				
 				if(usingSafeController) {
 					bool success = safeController.call(controllerCall);
 					if(!success) {
 						ROS_ERROR_STREAM("Failed to call safe controller, valid: " << safeController.isValid() << ", exists: " << safeController.exists());
 					}
 				}
+				
+				//ROS_INFO_STREAM("safe controller active: " << usingSafeController);
 
 				controlCommandPublisher.publish(controllerCall.response.controlOutput);
 
@@ -159,13 +159,16 @@ void viconCallback(const ViconData& viconData) {
 void loadParameters(ros::NodeHandle& nodeHandle) {
 	if(!nodeHandle.getParam("studentID", studentID)) {
 		ROS_ERROR("Failed to get studentID");
+		studentID = 5;
 	}
 }
 
 void loadCrazyflieContext() {
 	CMQuery contextCall;
 	contextCall.request.studentID = studentID;
-
+	studentID = 5;
+	ROS_INFO_STREAM("myID:" << studentID);
+	
 	centralManager.waitForExistence(ros::Duration(-1));
 
 	if(centralManager.call(contextCall)) {
@@ -258,11 +261,11 @@ int main(int argc, char* argv[]){
 	crazyflieEnabled = true;
 	usingSafeController = true;
 	loadSafeController();
-
+	
 	std::string package_path;
 	package_path = ros::package::getPath("d_fall_pps") + "/";
 	ROS_INFO_STREAM(package_path);
-	std::string record_file = package_path + "datarecord.bag";
+	std::string record_file = package_path + "LoggingPPSClient.bag";
 	bag.open(record_file, rosbag::bagmode::Write);
 
     ros::spin();

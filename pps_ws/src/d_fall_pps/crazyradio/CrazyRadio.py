@@ -12,6 +12,7 @@ import struct
 import logging
 
 import rosbag
+from rospkg import RosPack
 from std_msgs.msg import Float32
 from std_msgs.msg import String
 
@@ -37,7 +38,9 @@ CONTROLLER_ANGLE = 1
 CONTROLLER_RATE = 0
 RAD_TO_DEG = 57.296
 
-#bag = rosbag.Bag('~/D-Fall-System/pps_ws/src/d_fall_pps/test.bag', 'w')
+rp = RosPack()
+record_file = rp.get_path('d_fall_pps') + '/LoggingOnboard.bag'
+bag = rosbag.Bag(record_file, 'w')
 
 class PPSRadioClient:
     """
@@ -71,15 +74,19 @@ class PPSRadioClient:
         
                 
     def _data_received_callback(self, timestamp, data, logconf):
-        print "log of stabilizer and battery: [%d][%s]: %s" % (timestamp, logconf.name, data)
+        #print "log of stabilizer and battery: [%d][%s]: %s" % (timestamp, logconf.name, data)
         batteryVolt = Float32()
+        stabilizerYaw = Float32()
+        stabilizerPitch = Float32()
+        stabilizerRoll = Float32()
         batteryVolt.data = data["pm.vbat"]
-        str = String()
-        str.data = 'foo'
-        bag.write('onboard', str)
-        bag.write('onboard', batteryVolt)
-        print "status check"
-        
+        stabilizerYaw.data = data["stabilizer.yaw"]
+        stabilizerPitch.data = data["stabilizer.pitch"]
+        bag.write('batteryVoltage', batteryVolt)
+        bag.write('stabilizerYaw', stabilizerYaw)
+        bag.write('stabilizerPitch', stabilizerPitch)
+        bag.write('stabilizerRoll', stabilizerRoll)
+               
         
     def _logging_error(self, logconf, msg):
         print "Error when logging %s" % logconf.name
@@ -93,7 +100,7 @@ class PPSRadioClient:
         
                 
         # Config for Logging
-        logconf = LogConfig("LoggingTest", 1000)
+        logconf = LogConfig("LoggingTest", 100)
         logconf.add_variable("stabilizer.roll", "float");
         logconf.add_variable("stabilizer.pitch", "float");
         logconf.add_variable("stabilizer.yaw", "float");
@@ -147,12 +154,15 @@ if __name__ == '__main__':
     # Initialize the low-level drivers (don't list the debug drivers)
     cflib.crtp.init_drivers(enable_debug_driver=False)
 
+    #wait until address parameter is set by PPSClient
     while not rospy.has_param("~crazyFlieAddress"):
-	time.sleep(0.05)
-	#wait until address parameter is set by PPSClient
-
+    time.sleep(0.05)
     radio_address = "radio://" + rospy.get_param("~crazyFlieAddress")
     rospy.loginfo("Crazyradio connecting to %s" % radio_address)
+    
+    #use this following two lines to connect without data from CentralManager
+    #radio_address = "radio://0/72/2M"
+    #rospy.loginfo("manual address loaded")
     global cf_client
 
     cf_client = PPSRadioClient(radio_address)
