@@ -77,10 +77,12 @@ void MainGUIWindow::doNumCrazyFlyZonesChanged(int n)
         }
 
         //  now unlink it from table also:
+        #ifdef CATKIN_MAKE
         if(cf_linker->isCFZoneLinked(n))
         {
             cf_linker->unlink_cf_zone(n);
         }
+        #endif
     }
     else if(ui->tabWidget->count() < scene->crazyfly_zones.size())
     {
@@ -186,8 +188,10 @@ void MainGUIWindow::_init()
 void MainGUIWindow::doTabClosed(int tab_index)
 {
     QString name = ui->tabWidget->tabText(tab_index);
+    #ifdef CATKIN_MAKE
     int cf_zone_index = cf_linker->getCFZoneIndexFromName(name);
     scene->removeCrazyFlyZone(cf_zone_index);
+    #endif
 }
 
 void MainGUIWindow::setTabIndex(int index)
@@ -482,8 +486,10 @@ void MainGUIWindow::on_tabWidget_currentChanged(int index)
 {
     // this index is tab index. Need to go to cf index
     QString name = ui->tabWidget->tabText(index);
+    #ifdef CATKIN_MAKE
     int cf_index = cf_linker->getCFZoneIndexFromName(name);
     scene->setSelectedCrazyFlyZone(cf_index);
+    #endif
 }
 
 void MainGUIWindow::centerViewIndex(int index)
