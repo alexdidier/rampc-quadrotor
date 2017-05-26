@@ -321,13 +321,19 @@ QRectF myGraphicsScene::getRectFCrazyFlyZone(int index)
     return rect;
 }
 
-void myGraphicsScene::removeCrazyFlyZone(int index)
+void myGraphicsScene::removeCrazyFlyZone(int cf_zone_index)
 {
-    int n = crazyfly_zones[index]->getIndex();
-    this->removeItem(crazyfly_zones[index]);
-    crazyfly_zones.erase(crazyfly_zones.begin() + index);
-    qDebug("removed CFzone %d", index);
-    emit numCrazyFlyZonesChanged(n); // for tab managing
+    for(int i = 0; i < crazyfly_zones.size(); i++)
+    {
+        if(crazyfly_zones[i]->getIndex() == cf_zone_index)
+        {
+            this->removeItem(crazyfly_zones[i]);
+            crazyfly_zones.erase(crazyfly_zones.begin() + i);
+            qDebug("removed CFzone %d", cf_zone_index);
+            emit numCrazyFlyZonesChanged(cf_zone_index); // for tab managing
+            break;
+        }
+    }
 }
 
 void myGraphicsScene::removeTable()

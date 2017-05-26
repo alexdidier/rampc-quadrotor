@@ -45,7 +45,7 @@ public:
     void removeTable();
 
 public slots:
-    void removeCrazyFlyZone(int index);
+    void removeCrazyFlyZone(int cf_zone_index);
     void setSelectedCrazyFlyZone(int index);
     void changeModeTo(int next_mode);
 

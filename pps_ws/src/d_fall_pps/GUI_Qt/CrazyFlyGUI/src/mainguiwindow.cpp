@@ -186,8 +186,8 @@ void MainGUIWindow::_init()
 void MainGUIWindow::doTabClosed(int tab_index)
 {
     QString name = ui->tabWidget->tabText(tab_index);
-    int cf_index = cf_linker->getCFZoneIndexFromName(name);
-    scene->removeCrazyFlyZone(cf_index);
+    int cf_zone_index = cf_linker->getCFZoneIndexFromName(name);
+    scene->removeCrazyFlyZone(cf_zone_index);
 }
 
 void MainGUIWindow::setTabIndex(int index)
