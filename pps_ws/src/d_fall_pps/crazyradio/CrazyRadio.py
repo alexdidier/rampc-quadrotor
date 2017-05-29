@@ -40,6 +40,8 @@ RAD_TO_DEG = 57.296
 
 rp = RosPack()
 record_file = rp.get_path('d_fall_pps') + '/LoggingOnboard.bag'
+rospy.loginfo('afdsasdfasdfsadfasdfasdfasdfasdfasdfasdf')
+rospy.loginfo(record_file)
 bag = rosbag.Bag(record_file, 'w')
 
 class PPSRadioClient:
@@ -156,7 +158,8 @@ if __name__ == '__main__':
 
     #wait until address parameter is set by PPSClient
     while not rospy.has_param("~crazyFlieAddress"):
-    time.sleep(0.05)
+        time.sleep(0.05)
+
     radio_address = "radio://" + rospy.get_param("~crazyFlieAddress")
     rospy.loginfo("Crazyradio connecting to %s" % radio_address)
     
