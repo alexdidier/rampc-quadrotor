@@ -25,7 +25,7 @@ public:
     explicit CFLinker(Ui::MainGUIWindow* ui, std::vector<crazyFly*> *crazyflies_vector, std::vector<crazyFlyZone*> *crazyfly_zones);
     ~CFLinker();
 
-    void link();
+    void link(int student_id, int cf_zone_index, std::string cf_name);
     void unlink_selection();
     void unlink_cf_zone(int cf_zone_index);
 
@@ -36,6 +36,8 @@ public:
     bool isCFLinked(std::string cf_name);
     int getCFZoneIndexFromName(QString name);
     int getCFIndexFromName(std::string name);
+
+    void clear_all_links();
 
 signals:
     void updateComboBoxes();

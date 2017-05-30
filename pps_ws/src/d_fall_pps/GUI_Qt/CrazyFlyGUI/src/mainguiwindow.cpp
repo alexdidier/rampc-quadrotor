@@ -14,6 +14,7 @@
 
 #ifdef CATKIN_MAKE
 #include "d_fall_pps/UnlabeledMarker.h"
+#include "d_fall_pps/CMRead.h"
 #endif
 
 #include <string>
@@ -678,7 +679,7 @@ void MainGUIWindow::on_link_button_clicked()
 
     if(!error)
     {
-        cf_linker->link();
+        cf_linker->link(ui->spinBox_student_ids->value(), cf_linker->getCFZoneIndexFromName(ui->comboBoxCFZones->currentText()), ui->comboBoxCFs->currentText().toStdString());
     }
     #endif
 }
@@ -688,4 +689,35 @@ void MainGUIWindow::on_unlink_button_clicked()
     #ifdef CATKIN_MAKE
     cf_linker->unlink_selection();
     #endif
+}
+
+void MainGUIWindow::on_save_in_DB_button_clicked()
+{
+    // we need to update and then save?
+}
+
+void MainGUIWindow::on_load_from_DB_button_clicked()
+{
+    // need to reload and then read?
+    CMRead getDBCall;
+    _rosNodeThread->m_read_db_client.waitForExistence(ros::Duration(-1));
+    if(_rosNodeThread->m_read_db_client.call(getDBCall))
+    {
+        m_data_base = getDBCall.response.crazyflieDB;
+		ROS_INFO_STREAM("database:\n" << m_data_base);
+        // TODO: update links table
+        cf_linker->clear_all_links();
+        for(int i = 0; i < m_data_base.crazyflieEntries.size(); i++)
+        {
+            std::string cf_name = m_data_base.crazyflieEntries[i].crazyflieContext.crazyflieName;
+            int cf_zone_index = m_data_base.crazyflieEntries[i].crazyflieContext.localArea.crazyfly_zone_index;
+            // we should first create the cf zones that are in the database?
+            int student_id = m_data_base.crazyflieEntries[i].studentID;
+            cf_linker->link(student_id, cf_zone_index, cf_name);
+        }
+    }
+    else
+    {
+        ROS_ERROR("Failed to read DB");
+    }
 }

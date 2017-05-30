@@ -33,6 +33,8 @@ public:
     // void messageCallback(const ViconData& data);
     void messageCallback(const ptrToMessage& p_msg);
 
+    ros::ServiceClient m_read_db_client;
+
 
 signals:
 

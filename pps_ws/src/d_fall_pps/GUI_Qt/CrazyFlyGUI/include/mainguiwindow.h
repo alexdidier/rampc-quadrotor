@@ -13,6 +13,11 @@
 #include "marker.h"
 #include "crazyFly.h"
 #include "CFLinker.h"
+
+#include "d_fall_pps/CrazyflieDB.h"
+
+
+using namespace d_fall_pps;
 #endif
 
 
@@ -99,6 +104,10 @@ private slots:
 
     void on_checkBox_vicon_highlight_markers_toggled(bool checked);
 
+    void on_save_in_DB_button_clicked();
+
+    void on_load_from_DB_button_clicked();
+
     #ifdef CATKIN_MAKE
     void updateNewViconData(const ptrToMessage& p_msg);
     #endif
@@ -138,6 +147,7 @@ private:
 
     int getTabIndexFromName(QString name);
 
+    CrazyflieDB m_data_base;
 };
 
 

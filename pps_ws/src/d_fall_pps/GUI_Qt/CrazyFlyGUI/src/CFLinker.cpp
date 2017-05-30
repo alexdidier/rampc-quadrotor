@@ -91,20 +91,20 @@ void CFLinker::addNewRow(int student_id, std::string crazyfly_name, int cf_zone_
     m_ui->table_links->setItem(m_ui->table_links->rowCount() - 1, 2, item_cf_zone);
 }
 
-void CFLinker::link()
+void CFLinker::link(int student_id, int cf_zone_index, std::string cf_name)
 {
     m_ui->table_links->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     struct link tmp_link;
 
-    tmp_link.student_id = m_ui->spinBox_student_ids->value();
-    tmp_link.cf_zone_index = getCFZoneIndexFromName(m_ui->comboBoxCFZones->currentText());
-    tmp_link.cf_name = m_ui->comboBoxCFs->currentText().toStdString();
+    tmp_link.student_id = student_id;
+    tmp_link.cf_zone_index = cf_zone_index;
+    tmp_link.cf_name = cf_name;
 
     ROS_INFO("tmp_link.cf_zone_index %d", tmp_link.cf_zone_index);
     ROS_INFO("tmp_link.cf_name %s", tmp_link.cf_name.c_str());
 
-    (*m_crazyfly_zones)[tmp_link.cf_zone_index]->linkCF(tmp_link.cf_name);
-    (*m_crazyflies_vector)[getCFIndexFromName(tmp_link.cf_name)]->assignCFZone(tmp_link.cf_zone_index);
+    // (*m_crazyfly_zones)[tmp_link.cf_zone_index]->linkCF(tmp_link.cf_name);
+    // (*m_crazyflies_vector)[getCFIndexFromName(tmp_link.cf_name)]->assignCFZone(tmp_link.cf_zone_index);
 
     addNewRow(m_ui->spinBox_student_ids->value(), tmp_link.cf_name, tmp_link.cf_zone_index);
 
@@ -121,6 +121,13 @@ void CFLinker::link()
     // m_ui->comboBoxCFs->setItemData(index, 0, Qt::UserRole - 1);
     // enable item
     // ui->comboBox->setItemData(index, 33, Qt::UserRole - 1);
+}
+
+void CFLinker::clear_all_links()
+{
+    links.clear();
+    m_ui->table_links->setRowCount(0);
+    emit updateComboBoxes();
 }
 
 void CFLinker::unlink_cf_zone(int cf_zone_index)
