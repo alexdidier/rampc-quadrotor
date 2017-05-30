@@ -144,9 +144,9 @@ void convertIntoBodyFrame(float est[9], float (&state)[9], float yaw_measured) {
 }
 
 void calculateCircle(Setpoint &circlePoint){
-    circlePoint.x = RADIUS*cos(OMEGA*currentTime);
+    circlePoint.x = 0;
     circlePoint.y = RADIUS*sin(OMEGA*currentTime);
-    circlePoint.z = 0;
+    circlePoint.z = RADIUS*cos(OMEGA*currentTime);
     circlePoint.yaw = OMEGA*currentTime;
 
 }
