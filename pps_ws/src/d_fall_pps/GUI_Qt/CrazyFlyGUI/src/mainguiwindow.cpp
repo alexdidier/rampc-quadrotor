@@ -694,6 +694,26 @@ void MainGUIWindow::on_unlink_button_clicked()
 void MainGUIWindow::on_save_in_DB_button_clicked()
 {
     // we need to update and then save?
+    CrazyflieDB tmp_db;
+    for(int i = 0; cf_linker->links.size(); i++)
+    {
+        tmp_db.crazyflieEntries[i].crazyflieContext.crazyflieName = cf_linker->links[i].cf_name;
+        tmp_db.crazyflieEntries[i].crazyflieContext.localArea.crazyfly_zone_index = cf_linker->links[i].cf_zone_index;
+        for(int j = 0; j < scene->crazyfly_zones.size(); j++)
+        {
+            if(cf_linker->links[i].cf_zone_index == scene->crazyfly_zones[j]->getIndex())
+            {
+                QRectF rect = scene->crazyfly_zones[j]->rect();
+                tmp_db.crazyflieEntries[i].crazyflieContext.localArea.xmin = rect.x() * FROM_UNITS_TO_METERS;
+                tmp_db.crazyflieEntries[i].crazyflieContext.localArea.xmax = (rect.x() + rect.width()) * FROM_UNITS_TO_METERS;
+                tmp_db.crazyflieEntries[i].crazyflieContext.localArea.ymin = (rect.y() - rect.height()) * FROM_UNITS_TO_METERS;
+                tmp_db.crazyflieEntries[i].crazyflieContext.localArea.ymax = rect.y() * FROM_UNITS_TO_METERS;
+                break;
+            }
+        }
+        tmp_db.crazyflieEntries[i].studentID = cf_linker->links[i].student_id;
+    }
+    m_data_base = tmp_db;
 }
 
 void MainGUIWindow::on_load_from_DB_button_clicked()
@@ -715,10 +735,10 @@ void MainGUIWindow::on_load_from_DB_button_clicked()
             bool cf_zone_exists;
             qreal width = m_data_base.crazyflieEntries[i].crazyflieContext.localArea.xmax - m_data_base.crazyflieEntries[i].crazyflieContext.localArea.xmin;
             qreal height = m_data_base.crazyflieEntries[i].crazyflieContext.localArea.ymax - m_data_base.crazyflieEntries[i].crazyflieContext.localArea.ymin;
-            QRectF tmp_rect(m_data_base.crazyflieEntries[i].crazyflieContext.localArea.xmin,
-                            m_data_base.crazyflieEntries[i].crazyflieContext.localArea.ymax,
-                            width,
-                            height);
+            QRectF tmp_rect(m_data_base.crazyflieEntries[i].crazyflieContext.localArea.xmin * FROM_METERS_TO_UNITS,
+                            m_data_base.crazyflieEntries[i].crazyflieContext.localArea.ymax * FROM_METERS_TO_UNITS,
+                            width * FROM_METERS_TO_UNITS,
+                            height * FROM_METERS_TO_UNITS);
             int found_j;
             for(int j = 0; j < scene->crazyfly_zones.size(); j++)
             {
