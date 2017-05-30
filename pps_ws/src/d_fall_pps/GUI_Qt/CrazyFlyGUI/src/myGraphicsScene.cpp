@@ -49,7 +49,7 @@ void myGraphicsScene::keyPressEvent(QKeyEvent * keyEvent)
                     if(crazyfly_zones[i]->isSelected())
                     {
                         qDebug("selectedRectangle: %d", i);
-                        removeCrazyFlyZone(i);
+                        removeCrazyFlyZone(crazyfly_zones[i]->getIndex());
                     }
                 }
             }
