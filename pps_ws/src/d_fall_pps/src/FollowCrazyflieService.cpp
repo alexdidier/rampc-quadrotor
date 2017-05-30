@@ -194,6 +194,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	return true;
 }
 
+//the setpoint is copied from the other crazyflie. This crazyflie should then make the same figure in its own area
 void followCallback(const Setpoint& newSetpoint) {
     setpoint[0] = newSetpoint.x-0.1;
     setpoint[1] = newSetpoint.y-0.1;
