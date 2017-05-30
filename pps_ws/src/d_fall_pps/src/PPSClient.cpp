@@ -124,8 +124,8 @@ void viconCallback(const ViconData& viconData) {
 						ROS_ERROR_STREAM("custom controller status: valid: " << customController.isValid() << ", exists: " << customController.exists());
 						ROS_ERROR_STREAM("custom controller name: " << customController.getService());
 						usingSafeController = true;
-					} else {
-						usingSafeController = !safetyCheck(global, controllerCall.response.controlOutput);
+					} else if(!safetyCheck(global, controllerCall.response.controlOutput)) {
+						usingSafeController = true;
 						ROS_INFO_STREAM("safety check failed, switching to safe controller");
 					}
 				}

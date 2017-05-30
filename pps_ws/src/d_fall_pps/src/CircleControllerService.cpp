@@ -144,10 +144,10 @@ void convertIntoBodyFrame(float est[9], float (&state)[9], float yaw_measured) {
 }
 
 void calculateCircle(Setpoint &circlePoint){
-    circlePoint.x = RADIUS*cos(OMEGA*currentTime);
+    circlePoint.x = 0;
     circlePoint.y = RADIUS*sin(OMEGA*currentTime);
-    circlePoint.z = 0;
-    circlePoint.yaw = OMEGA*currentTime;
+    circlePoint.z = RADIUS*cos(OMEGA*currentTime);
+    circlePoint.yaw = 0;//OMEGA*currentTime;
 
 }
 
@@ -156,6 +156,15 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	
     currentTime += request.ownCrazyflie.acquiringTime;
 
+    //publish setpoint for FollowController of another student group
+    Setpoint pubSetpoint;
+    pubSetpoint.x = request.ownCrazyflie.x;
+    pubSetpoint.y = request.ownCrazyflie.y;
+    pubSetpoint.z = request.ownCrazyflie.z;
+    pubSetpoint.yaw = request.ownCrazyflie.yaw;
+    followPublisher.publish(pubSetpoint);
+
+    //actual Circle Controller stuff follows
 	Setpoint circlePoint;
     calculateCircle(circlePoint);
 
@@ -207,13 +216,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 
     previousLocation = request.ownCrazyflie;
 
-    Setpoint pubSetpoint;
-    pubSetpoint.x = previousLocation.x;
-    pubSetpoint.y = previousLocation.y;
-    pubSetpoint.z = previousLocation.z;
-    pubSetpoint.yaw = previousLocation.yaw;
 
-    followPublisher.publish(pubSetpoint);
     
 	return true;
 }
@@ -227,6 +230,7 @@ int main(int argc, char* argv[]) {
     ros::NodeHandle nodeHandle("~");
     loadParameters(nodeHandle);
 
+    //publisher for Follow Controller of another student group
     followPublisher = nodeHandle.advertise<Setpoint>("FollowTopic", 1);
 
     ros::ServiceServer service = nodeHandle.advertiseService("CircleController", calculateControlOutput);
