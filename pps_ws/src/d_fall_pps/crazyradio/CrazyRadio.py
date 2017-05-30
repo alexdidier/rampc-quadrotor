@@ -88,6 +88,9 @@ class PPSRadioClient:
         bag.write('stabilizerYaw', stabilizerYaw)
         bag.write('stabilizerPitch', stabilizerPitch)
         bag.write('stabilizerRoll', stabilizerRoll)
+
+        #publish battery voltage for GUI
+        status_pub.publish(std_msgs.msg.Float32(batteryVolt))
                
         
     def _logging_error(self, logconf, msg):
@@ -166,6 +169,9 @@ if __name__ == '__main__':
     #use this following two lines to connect without data from CentralManager
     #radio_address = "radio://0/72/2M"
     #rospy.loginfo("manual address loaded")
+    global status_pub
+    status_pub = rospy.Publisher("CrazyflieStatus")
+
     global cf_client
 
     cf_client = PPSRadioClient(radio_address)

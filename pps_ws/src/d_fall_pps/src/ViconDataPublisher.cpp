@@ -228,6 +228,7 @@ int main(int argc, char* argv[]) {
             if(!outputTranslation.Occluded) viconData.crazyflies.push_back(cfData);
         }
         viconDataPublisher.publish(viconData);
+        ROS_INFO_STREAM("ViconDataPublisher: " << viconData);
     }
 
     client.DisableSegmentData();
