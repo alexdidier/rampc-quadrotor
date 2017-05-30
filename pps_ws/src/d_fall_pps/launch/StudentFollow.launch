@@ -13,7 +13,7 @@
 		<rosparam command="load" file="$(find d_fall_pps)/param/SafeController.yaml" />
 	</node>
 
-	<node pkg="d_fall_pps" name="FollowControllerService" output="screen" type="FollowControllerService">
+	<node pkg="d_fall_pps" name="FollowCrazyflieService" output="screen" type="FollowCrazyflieService">
 		<rosparam command="load" file="$(find d_fall_pps)/param/SafeController.yaml" />
 	</node>
 

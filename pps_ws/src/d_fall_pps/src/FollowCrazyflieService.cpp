@@ -195,8 +195,8 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 }
 
 void followCallback(const Setpoint& newSetpoint) {
-    setpoint[0] = newSetpoint.x-0.1;
-    setpoint[1] = newSetpoint.y-0.1;
+    setpoint[0] = newSetpoint.x;
+    setpoint[1] = newSetpoint.y;
     setpoint[2] = newSetpoint.z;
     setpoint[3] = newSetpoint.yaw;
 }
@@ -208,7 +208,7 @@ int main(int argc, char* argv[]) {
     ros::NodeHandle nodeHandle("~");
     loadParameters(nodeHandle);
 
-    ros::Subscriber followSubscriber = nodeHandle.subscribe("/3/CircleControllerService/FollowTopic", 1, followCallback);
+    ros::Subscriber followSubscriber = nodeHandle.subscribe("/3/CircleControllerService/FollowTopic", 5, followCallback);
 
     ros::ServiceServer service = nodeHandle.advertiseService("FollowController", calculateControlOutput);
     ROS_INFO("FollowCrazyflieService ready");
