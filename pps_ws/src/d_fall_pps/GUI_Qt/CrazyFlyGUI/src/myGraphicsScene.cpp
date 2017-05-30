@@ -95,6 +95,17 @@ int myGraphicsScene::checkSelectedCrazyFlyZone()
     return -1;
 }
 
+void myGraphicsScene::addCFZone(QRectF rect, int index)
+{
+    tmp_crazyfly_zone_item = new crazyFlyZone(rect, index);
+    addItem(tmp_crazyfly_zone_item);
+    tmp_crazyfly_zone_item->setRect(tmp_crazyfly_zone_item->rect().normalized());
+    addCrazyFlyZoneToVector(tmp_crazyfly_zone_item);
+    std::string str = std::to_string(tmp_crazyfly_zone_item->getIndex() + 1);
+    tmp_crazyfly_zone_item->setLabel(str.c_str());
+    setSelectedCrazyFlyZone(crazyfly_zones.size() - 1); //select just created rectangle
+}
+
 void myGraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent)
 {
     if (mouseEvent->button() != Qt::LeftButton)
@@ -413,7 +424,6 @@ void myGraphicsScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent)
                 {
                     tmp_crazyfly_zone_item->setRect(tmp_crazyfly_zone_item->rect().normalized());
                     addCrazyFlyZoneToVector(tmp_crazyfly_zone_item);
-                    // TODO: set first available number, not size of vector. Index + 1
                     std::string str = std::to_string(tmp_crazyfly_zone_item->getIndex() + 1);
                     tmp_crazyfly_zone_item->setLabel(str.c_str());
                     setSelectedCrazyFlyZone(crazyfly_zones.size() - 1); //select just created rectangle

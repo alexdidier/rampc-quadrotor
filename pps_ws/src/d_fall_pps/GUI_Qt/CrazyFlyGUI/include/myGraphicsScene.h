@@ -44,6 +44,8 @@ public:
 
     void removeTable();
 
+    void addCFZone(QRectF rect, int index);
+
 public slots:
     void removeCrazyFlyZone(int cf_zone_index);
     void setSelectedCrazyFlyZone(int index);

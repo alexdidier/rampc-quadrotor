@@ -712,6 +712,32 @@ void MainGUIWindow::on_load_from_DB_button_clicked()
             std::string cf_name = m_data_base.crazyflieEntries[i].crazyflieContext.crazyflieName;
             int cf_zone_index = m_data_base.crazyflieEntries[i].crazyflieContext.localArea.crazyfly_zone_index;
             // we should first create the cf zones that are in the database?
+            bool cf_zone_exists;
+            qreal width = m_data_base.crazyflieEntries[i].crazyflieContext.localArea.xmax - m_data_base.crazyflieEntries[i].crazyflieContext.localArea.xmin;
+            qreal height = m_data_base.crazyflieEntries[i].crazyflieContext.localArea.ymax - m_data_base.crazyflieEntries[i].crazyflieContext.localArea.ymin;
+            QRectF tmp_rect(m_data_base.crazyflieEntries[i].crazyflieContext.localArea.xmin,
+                            m_data_base.crazyflieEntries[i].crazyflieContext.localArea.ymax,
+                            width,
+                            height);
+            int found_j;
+            for(int j = 0; j < scene->crazyfly_zones.size(); j++)
+            {
+                if(cf_zone_index == scene->crazyfly_zones[j]->getIndex())
+                {
+                    cf_zone_exists = true;
+                    found_j = j;
+                    break;
+                }
+            }
+            if(!cf_zone_exists)
+            {
+                scene->addCFZone(tmp_rect, cf_zone_index);
+            }
+            else
+            {
+                scene->crazyfly_zones[found_j]->setRect(tmp_rect);
+                scene->crazyfly_zones[found_j]->rectSizeChanged();
+            }
             int student_id = m_data_base.crazyflieEntries[i].studentID;
             cf_linker->link(student_id, cf_zone_index, cf_name);
         }
