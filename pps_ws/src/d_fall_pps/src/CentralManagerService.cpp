@@ -16,7 +16,6 @@
 
 #include <stdlib.h>
 #include <ros/ros.h>
-#include "d_fall_pps/CentralManager.h"
 #include "d_fall_pps/CrazyflieContext.h"
 #include "d_fall_pps/CrazyflieDB.h"
 
