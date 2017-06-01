@@ -42,4 +42,5 @@ source ~/pps_ws/devel/setup.bash
 echo "source ~/pps_ws/src/d_fall_pps/launch/Config.sh" >> ~/.bashrc
 source ~/pps_ws/src/d_fall_pps/launch/Config.sh
 
-#don't forget to copy crazyflie rules to /etc/udev/rules.d/
+sudo mv ./99-crazyflie.rules /etc/udev/rules.d
+sudo mv ./99-crazyradio.rules /etc/udev/rules.d
