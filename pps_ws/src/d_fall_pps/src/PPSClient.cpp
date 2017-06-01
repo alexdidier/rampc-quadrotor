@@ -39,8 +39,6 @@
 
 using namespace d_fall_pps;
 
-//name of the crazyflie, as specified in Vicon
-std::string crazyflieName;
 //studentID, gives namespace and identifier in CentralManagerService
 int studentID;
 
