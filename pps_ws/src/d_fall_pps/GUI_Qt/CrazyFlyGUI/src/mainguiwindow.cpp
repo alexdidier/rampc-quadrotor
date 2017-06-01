@@ -16,6 +16,9 @@
 #include "d_fall_pps/UnlabeledMarker.h"
 #include "d_fall_pps/CMRead.h"
 #include "d_fall_pps/CrazyflieEntry.h"
+#include "d_fall_pps/CMUpdate.h"
+#include "d_fall_pps/CMCommand.h"
+#include "CentralManagerService.h"
 #endif
 
 #include <string>
@@ -699,7 +702,6 @@ void MainGUIWindow::on_save_in_DB_button_clicked()
     for(int i = 0; i < cf_linker->links.size(); i++)
     {
         CrazyflieEntry tmp_entry;
-        ROS_INFO("for loop iteration");
         tmp_entry.crazyflieContext.crazyflieName = cf_linker->links[i].cf_name;
         tmp_entry.crazyflieContext.localArea.crazyfly_zone_index = cf_linker->links[i].cf_zone_index;
         tmp_entry.studentID = cf_linker->links[i].student_id;
@@ -708,11 +710,16 @@ void MainGUIWindow::on_save_in_DB_button_clicked()
         {
             if(cf_linker->links[i].cf_zone_index == scene->crazyfly_zones[j]->getIndex())
             {
-                QRectF rect = scene->crazyfly_zones[j]->rect();
-                tmp_entry.crazyflieContext.localArea.xmin = rect.x() * FROM_UNITS_TO_METERS;
-                tmp_entry.crazyflieContext.localArea.xmax = (rect.x() + rect.width()) * FROM_UNITS_TO_METERS;
-                tmp_entry.crazyflieContext.localArea.ymin = (rect.y() - rect.height()) * FROM_UNITS_TO_METERS;
-                tmp_entry.crazyflieContext.localArea.ymax = rect.y() * FROM_UNITS_TO_METERS;
+                double x_min = scene->crazyfly_zones[j]->sceneBoundingRect().bottomLeft().x();
+                double y_min = - scene->crazyfly_zones[j]->sceneBoundingRect().bottomLeft().y();
+
+                double x_max = scene->crazyfly_zones[j]->sceneBoundingRect().topRight().x();
+                double y_max = -scene->crazyfly_zones[j]->sceneBoundingRect().topRight().y();
+
+                tmp_entry.crazyflieContext.localArea.xmin = x_min * FROM_UNITS_TO_METERS;
+                tmp_entry.crazyflieContext.localArea.xmax = x_max * FROM_UNITS_TO_METERS;
+                tmp_entry.crazyflieContext.localArea.ymin = y_min * FROM_UNITS_TO_METERS;
+                tmp_entry.crazyflieContext.localArea.ymax = y_max * FROM_UNITS_TO_METERS;
             }
         }
         tmp_db.crazyflieEntries.push_back(tmp_entry);
@@ -721,17 +728,96 @@ void MainGUIWindow::on_save_in_DB_button_clicked()
     m_data_base = tmp_db;
 
     ROS_INFO_STREAM("database:\n" << m_data_base);
+
+    // save the database in the file
+
+    fill_database_file();
 }
 
-void MainGUIWindow::on_load_from_DB_button_clicked()
+void MainGUIWindow::clear_database_file()
 {
-    // need to reload and then read?
+    CrazyflieDB tmp_db;
+    if(read_database_from_file(tmp_db) == 0)
+    {
+        for(int i = 0; i < tmp_db.crazyflieEntries.size(); i++)
+        {
+            CMUpdate updateCall;
+            updateCall.request.mode = ENTRY_REMOVE;
+            updateCall.request.crazyflieEntry.crazyflieContext.crazyflieName = tmp_db.crazyflieEntries[i].crazyflieContext.crazyflieName;
+            if(_rosNodeThread->m_update_db_client.call(updateCall))
+            {
+                ROS_INFO("database changed in central manager service");
+            }
+            else
+            {
+                ROS_ERROR("Failed to remove entry in DB");
+            }
+        }
+        save_database_file();
+    }
+    else
+    {
+        ROS_INFO("Failed to read DB");
+    }
+}
+
+void MainGUIWindow::fill_database_file()
+{
+    clear_database_file();
+    ROS_INFO("cleared data base file");
+    ROS_INFO_STREAM("database:\n" << m_data_base);
+    for(int i = 0; i < m_data_base.crazyflieEntries.size(); i++)
+    {
+        ROS_INFO("inserted 1 item in DB");
+        insert_or_update_entry_database(m_data_base.crazyflieEntries[i]);
+    }
+    save_database_file();
+}
+
+void MainGUIWindow::save_database_file()
+{
+    CMCommand commandCall;
+    commandCall.request.command = CMD_SAVE;
+    if(_rosNodeThread->m_command_db_client.call(commandCall))
+    {
+        ROS_INFO("successfully saved db");
+    }
+    else
+    {
+        ROS_ERROR("failed to save db");
+    }
+}
+
+void MainGUIWindow::insert_or_update_entry_database(CrazyflieEntry entry)
+{
+    CMUpdate updateCall;
+    updateCall.request.mode = ENTRY_INSERT_OR_UPDATE;
+    updateCall.request.crazyflieEntry = entry;
+    _rosNodeThread->m_update_db_client.call(updateCall);
+}
+
+int MainGUIWindow::read_database_from_file(CrazyflieDB &read_db)
+{
     CMRead getDBCall;
     _rosNodeThread->m_read_db_client.waitForExistence(ros::Duration(-1));
     if(_rosNodeThread->m_read_db_client.call(getDBCall))
     {
-        m_data_base = getDBCall.response.crazyflieDB;
-		ROS_INFO_STREAM("database:\n" << m_data_base);
+        read_db = getDBCall.response.crazyflieDB;
+        return 0;
+    }
+    else
+    {
+        return -1;
+    }
+}
+
+void MainGUIWindow::on_load_from_DB_button_clicked()
+{
+    CrazyflieDB tmp_db;
+    if(read_database_from_file(tmp_db) == 0)
+    {
+		ROS_INFO_STREAM("database:\n" << tmp_db);
+        m_data_base = tmp_db;
         // TODO: update links table
         cf_linker->clear_all_links();
         for(int i = 0; i < m_data_base.crazyflieEntries.size(); i++)
@@ -743,7 +829,7 @@ void MainGUIWindow::on_load_from_DB_button_clicked()
             qreal width = m_data_base.crazyflieEntries[i].crazyflieContext.localArea.xmax - m_data_base.crazyflieEntries[i].crazyflieContext.localArea.xmin;
             qreal height = m_data_base.crazyflieEntries[i].crazyflieContext.localArea.ymax - m_data_base.crazyflieEntries[i].crazyflieContext.localArea.ymin;
             QRectF tmp_rect(m_data_base.crazyflieEntries[i].crazyflieContext.localArea.xmin * FROM_METERS_TO_UNITS,
-                            m_data_base.crazyflieEntries[i].crazyflieContext.localArea.ymax * FROM_METERS_TO_UNITS,
+                            - m_data_base.crazyflieEntries[i].crazyflieContext.localArea.ymax * FROM_METERS_TO_UNITS, // minus sign because qt has y-axis inverted
                             width * FROM_METERS_TO_UNITS,
                             height * FROM_METERS_TO_UNITS);
             int found_j;
@@ -762,7 +848,8 @@ void MainGUIWindow::on_load_from_DB_button_clicked()
             }
             else
             {
-                scene->crazyfly_zones[found_j]->setRect(tmp_rect);
+                scene->crazyfly_zones[found_j]->setPos(tmp_rect.topLeft());
+                // scene->crazyfly_zones[found_j]->setRect(tmp_rect);
                 scene->crazyfly_zones[found_j]->rectSizeChanged();
             }
             int student_id = m_data_base.crazyflieEntries[i].studentID;

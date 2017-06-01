@@ -15,6 +15,7 @@
 #include "CFLinker.h"
 
 #include "d_fall_pps/CrazyflieDB.h"
+#include "d_fall_pps/CrazyflieEntry.h"
 
 
 using namespace d_fall_pps;
@@ -148,6 +149,17 @@ private:
     int getTabIndexFromName(QString name);
 
     CrazyflieDB m_data_base;
+
+    void clear_database_file();
+
+    void fill_database_file();
+
+    int read_database_from_file(CrazyflieDB &read_db);
+
+    void save_database_file();
+
+    void insert_or_update_entry_database(CrazyflieEntry entry);
+
 };
 
 

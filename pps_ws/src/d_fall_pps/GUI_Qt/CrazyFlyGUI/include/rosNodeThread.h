@@ -34,6 +34,8 @@ public:
     void messageCallback(const ptrToMessage& p_msg);
 
     ros::ServiceClient m_read_db_client;
+    ros::ServiceClient m_update_db_client;
+    ros::ServiceClient m_command_db_client;
 
 
 signals:

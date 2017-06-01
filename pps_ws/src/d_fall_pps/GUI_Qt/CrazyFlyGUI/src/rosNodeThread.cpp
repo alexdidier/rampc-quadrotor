@@ -1,6 +1,8 @@
 #include "rosNodeThread.h"
 
 #include "d_fall_pps/CMRead.h"
+#include "d_fall_pps/CMUpdate.h"
+#include "d_fall_pps/CMCommand.h"
 
 
 rosNodeThread::rosNodeThread(int argc, char** pArgv, const char * topic, QObject* parent)
@@ -43,6 +45,8 @@ bool rosNodeThread::init()
 
     // clients for db services:
     m_read_db_client = nh.serviceClient<CMRead>("/CentralManagerService/Read", false);
+    m_update_db_client = nh.serviceClient<CMUpdate>("/CentralManagerService/Update", false);
+    m_command_db_client = nh.serviceClient<CMCommand>("/CentralManagerService/Command", false);
 
     m_pThread->start();
     return true;

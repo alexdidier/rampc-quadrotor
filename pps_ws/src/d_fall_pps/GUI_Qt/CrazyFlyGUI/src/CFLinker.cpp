@@ -100,13 +100,14 @@ void CFLinker::link(int student_id, int cf_zone_index, std::string cf_name)
     tmp_link.cf_zone_index = cf_zone_index;
     tmp_link.cf_name = cf_name;
 
+    ROS_INFO("tmp_link.student_id %d", tmp_link.student_id);
     ROS_INFO("tmp_link.cf_zone_index %d", tmp_link.cf_zone_index);
     ROS_INFO("tmp_link.cf_name %s", tmp_link.cf_name.c_str());
 
     // (*m_crazyfly_zones)[tmp_link.cf_zone_index]->linkCF(tmp_link.cf_name);
     // (*m_crazyflies_vector)[getCFIndexFromName(tmp_link.cf_name)]->assignCFZone(tmp_link.cf_zone_index);
 
-    addNewRow(m_ui->spinBox_student_ids->value(), tmp_link.cf_name, tmp_link.cf_zone_index);
+    addNewRow(tmp_link.student_id, tmp_link.cf_name, tmp_link.cf_zone_index);
 
     links.push_back(tmp_link);
     // TODO: remove options linked from available ones
