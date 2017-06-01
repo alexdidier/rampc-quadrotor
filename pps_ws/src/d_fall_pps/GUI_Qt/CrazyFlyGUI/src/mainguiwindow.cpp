@@ -696,28 +696,31 @@ void MainGUIWindow::on_save_in_DB_button_clicked()
 {
     // we need to update and then save?
     CrazyflieDB tmp_db;
-    for(int i = 0; cf_linker->links.size(); i++)
+    for(int i = 0; i < cf_linker->links.size(); i++)
     {
         CrazyflieEntry tmp_entry;
         ROS_INFO("for loop iteration");
         tmp_entry.crazyflieContext.crazyflieName = cf_linker->links[i].cf_name;
-        // tmp_entry.crazyflieContext.localArea.crazyfly_zone_index = cf_linker->links[i].cf_zone_index;
-        // tmp_entry.studentID = cf_linker->links[i].student_id;
+        tmp_entry.crazyflieContext.localArea.crazyfly_zone_index = cf_linker->links[i].cf_zone_index;
+        tmp_entry.studentID = cf_linker->links[i].student_id;
 
-        // for(int j = 0; j < scene->crazyfly_zones.size(); j++)
-        // {
-        //     if(cf_linker->links[i].cf_zone_index == scene->crazyfly_zones[j]->getIndex())
-        //     {
-        //         QRectF rect = scene->crazyfly_zones[j]->rect();
-        //         tmp_entry.crazyflieContext.localArea.xmin = rect.x() * FROM_UNITS_TO_METERS;
-        //         tmp_entry.crazyflieContext.localArea.xmax = (rect.x() + rect.width()) * FROM_UNITS_TO_METERS;
-        //         tmp_entry.crazyflieContext.localArea.ymin = (rect.y() - rect.height()) * FROM_UNITS_TO_METERS;
-        //         tmp_entry.crazyflieContext.localArea.ymax = rect.y() * FROM_UNITS_TO_METERS;
-        //     }
-        // }
-        // tmp_db.crazyflieEntries.push_back(tmp_entry);
+        for(int j = 0; j < scene->crazyfly_zones.size(); j++)
+        {
+            if(cf_linker->links[i].cf_zone_index == scene->crazyfly_zones[j]->getIndex())
+            {
+                QRectF rect = scene->crazyfly_zones[j]->rect();
+                tmp_entry.crazyflieContext.localArea.xmin = rect.x() * FROM_UNITS_TO_METERS;
+                tmp_entry.crazyflieContext.localArea.xmax = (rect.x() + rect.width()) * FROM_UNITS_TO_METERS;
+                tmp_entry.crazyflieContext.localArea.ymin = (rect.y() - rect.height()) * FROM_UNITS_TO_METERS;
+                tmp_entry.crazyflieContext.localArea.ymax = rect.y() * FROM_UNITS_TO_METERS;
+            }
+        }
+        tmp_db.crazyflieEntries.push_back(tmp_entry);
     }
-    // m_data_base = tmp_db;
+
+    m_data_base = tmp_db;
+
+    ROS_INFO_STREAM("database:\n" << m_data_base);
 }
 
 void MainGUIWindow::on_load_from_DB_button_clicked()
