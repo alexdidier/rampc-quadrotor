@@ -1,5 +1,5 @@
 # Crazyflie PPS Wiki
 - Setup
-- Installation
+- [Installation](installation)
 - ROS structure
 - [Workflow for students](Workflow for students)
