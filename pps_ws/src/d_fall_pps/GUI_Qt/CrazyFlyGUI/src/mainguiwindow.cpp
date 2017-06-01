@@ -133,13 +133,15 @@ void MainGUIWindow::_init()
    ui->err_message_cf->setStyleSheet("QLabel { color : red; }");
    ui->err_message_cf_zone->setStyleSheet("QLabel { color : red; }");
    ui->err_message_student_id->setStyleSheet("QLabel { color : red; }");
+   ui->err_message_radio_address->setStyleSheet("QLabel { color : red; }");
 
    ui->err_message_cf->clear();
    ui->err_message_cf_zone->clear();
    ui->err_message_student_id->clear();
+   ui->err_message_radio_address->clear();
 
     // initialize table_links
-    ui->table_links->setColumnCount(3);
+    ui->table_links->setColumnCount(4);
 
     QFont fnt;
     fnt.setPointSize(7);
@@ -160,7 +162,7 @@ void MainGUIWindow::_init()
     }
     ui->table_links->setSelectionBehavior(QAbstractItemView::SelectRows);
     QStringList horizontal_header;
-    horizontal_header << "Student ID" << "CrazyFly" << "CrazyFly Zone";
+    horizontal_header << "Student ID" << "CrazyFly" << "CrazyFly Zone" << "Radio Address";
     ui->table_links->setHorizontalHeaderLabels(horizontal_header);
 
     // scene
@@ -659,6 +661,7 @@ void MainGUIWindow::on_link_button_clicked()
     {
         ui->err_message_cf->clear();
     }
+
     if(ui->comboBoxCFZones->count() == 0)
     {
         // plot error message
@@ -668,6 +671,21 @@ void MainGUIWindow::on_link_button_clicked()
     else
     {
         ui->err_message_cf_zone->clear();
+    }
+
+    if(cf_linker->isRadioAddressLinked(ui->radioAddress_text->text().toStdString()))
+    {
+        ui->err_message_radio_address->setText("Already in use");
+        error = true;
+    }
+    else if(ui->radioAddress_text->text().toStdString() == "")
+    {
+        ui->err_message_radio_address->setText("Field is empty");
+        error = true;
+    }
+    else
+    {
+        ui->err_message_radio_address->clear();
     }
 
     if(cf_linker->isStudentIDLinked(ui->spinBox_student_ids->value()))
@@ -683,7 +701,7 @@ void MainGUIWindow::on_link_button_clicked()
 
     if(!error)
     {
-        cf_linker->link(ui->spinBox_student_ids->value(), cf_linker->getCFZoneIndexFromName(ui->comboBoxCFZones->currentText()), ui->comboBoxCFs->currentText().toStdString());
+        cf_linker->link(ui->spinBox_student_ids->value(), cf_linker->getCFZoneIndexFromName(ui->comboBoxCFZones->currentText()), ui->comboBoxCFs->currentText().toStdString(), ui->radioAddress_text->text().toStdString());
     }
     #endif
 }
@@ -703,6 +721,7 @@ void MainGUIWindow::on_save_in_DB_button_clicked()
     {
         CrazyflieEntry tmp_entry;
         tmp_entry.crazyflieContext.crazyflieName = cf_linker->links[i].cf_name;
+        tmp_entry.crazyflieContext.crazyflieAddress = cf_linker->links[i].radio_address;
         tmp_entry.crazyflieContext.localArea.crazyfly_zone_index = cf_linker->links[i].cf_zone_index;
         tmp_entry.studentID = cf_linker->links[i].student_id;
 
@@ -829,6 +848,7 @@ void MainGUIWindow::on_load_from_DB_button_clicked()
         for(int i = 0; i < m_data_base.crazyflieEntries.size(); i++)
         {
             std::string cf_name = m_data_base.crazyflieEntries[i].crazyflieContext.crazyflieName;
+            std::string radio_address = m_data_base.crazyflieEntries[i].crazyflieContext.crazyflieAddress;
             int cf_zone_index = m_data_base.crazyflieEntries[i].crazyflieContext.localArea.crazyfly_zone_index;
             // we should first create the cf zones that are in the database?
             bool cf_zone_exists;
@@ -844,7 +864,7 @@ void MainGUIWindow::on_load_from_DB_button_clicked()
             scene->addCFZone(tmp_rect, cf_zone_index);
 
 
-            cf_linker->link(student_id, cf_zone_index, cf_name);
+            cf_linker->link(student_id, cf_zone_index, cf_name, radio_address);
 
         }
     }
