@@ -821,11 +821,7 @@ void MainGUIWindow::on_load_from_DB_button_clicked()
 
         cf_linker->clear_all_links();
         // remove all cf_zones existing
-
-        for(int j = scene->crazyfly_zones.size() - 1; j >= 0; j--)
-        {
-            scene->removeCrazyFlyZone(scene->crazyfly_zones[j]->getIndex());
-        }
+        scene->removeAllCFZones();
 
         int size = scene->crazyfly_zones.size();
         ROS_INFO("vector_cf_zones_size %d", size);

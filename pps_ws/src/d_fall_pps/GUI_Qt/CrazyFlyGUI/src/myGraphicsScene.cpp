@@ -349,6 +349,16 @@ void myGraphicsScene::removeCrazyFlyZone(int cf_zone_index)
     }
 }
 
+void myGraphicsScene::removeAllCFZones()
+{
+    for(int i = 0; i < crazyfly_zones.size(); i++)
+    {
+        this->removeItem(crazyfly_zones[i]);
+    }
+    crazyfly_zones.clear();
+    emit numCrazyFlyZonesChanged(0);
+}
+
 void myGraphicsScene::removeTable()
 {
     for(int i = 0; i < table_pieces.size(); i++)
