@@ -343,7 +343,7 @@ void MainGUIWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to
     // in this loop, clean the ones that are not present anymore. UPDATE: this will apparently only happen when we tick and untick in Vicon
     int crazyfly_vector_size_after = crazyflies_vector.size();
 
-    for(int j = 0; j < crazyfly_vector_size_after; j++)
+    for(int j = crazyfly_vector_size_after - 1; j >= 0; j--)
     {
         bool name_found = false;
         for(int i = 0; i < p_msg->crazyflies.size(); i++)
