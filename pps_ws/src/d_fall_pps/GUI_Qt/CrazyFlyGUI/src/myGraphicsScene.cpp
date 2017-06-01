@@ -103,7 +103,7 @@ void myGraphicsScene::addCFZone(QRectF rect, int index)
     addCrazyFlyZoneToVector(tmp_crazyfly_zone_item);
     std::string str = std::to_string(tmp_crazyfly_zone_item->getIndex() + 1);
     tmp_crazyfly_zone_item->setLabel(str.c_str());
-    setSelectedCrazyFlyZone(crazyfly_zones.size() - 1); //select just created rectangle
+    // setSelectedCrazyFlyZone(crazyfly_zones.size() - 1); //select just created rectangle
 }
 
 void myGraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent)
@@ -207,6 +207,8 @@ void myGraphicsScene::mouseMoveEvent(QGraphicsSceneMouseEvent *mouseEvent)
 void myGraphicsScene::addCrazyFlyZoneToVector(crazyFlyZone* rect)
 {
     crazyfly_zones.push_back(rect);
+    int size = crazyfly_zones.size();
+    qDebug("size crazyflyzones %d", size);
     emit numCrazyFlyZonesChanged(rect->getIndex());
 }
 

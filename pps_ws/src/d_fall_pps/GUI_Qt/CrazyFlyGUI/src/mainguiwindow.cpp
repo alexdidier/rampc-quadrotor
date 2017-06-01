@@ -818,8 +818,18 @@ void MainGUIWindow::on_load_from_DB_button_clicked()
     {
 		ROS_INFO_STREAM("database:\n" << tmp_db);
         m_data_base = tmp_db;
-        // TODO: update links table
+
         cf_linker->clear_all_links();
+        // remove all cf_zones existing
+
+        for(int j = scene->crazyfly_zones.size() - 1; j >= 0; j--)
+        {
+            scene->removeCrazyFlyZone(scene->crazyfly_zones[j]->getIndex());
+        }
+
+        int size = scene->crazyfly_zones.size();
+        ROS_INFO("vector_cf_zones_size %d", size);
+
         for(int i = 0; i < m_data_base.crazyflieEntries.size(); i++)
         {
             std::string cf_name = m_data_base.crazyflieEntries[i].crazyflieContext.crazyflieName;
@@ -832,28 +842,14 @@ void MainGUIWindow::on_load_from_DB_button_clicked()
                             - m_data_base.crazyflieEntries[i].crazyflieContext.localArea.ymax * FROM_METERS_TO_UNITS, // minus sign because qt has y-axis inverted
                             width * FROM_METERS_TO_UNITS,
                             height * FROM_METERS_TO_UNITS);
-            int found_j;
-            for(int j = 0; j < scene->crazyfly_zones.size(); j++)
-            {
-                if(cf_zone_index == scene->crazyfly_zones[j]->getIndex())
-                {
-                    cf_zone_exists = true;
-                    found_j = j;
-                    break;
-                }
-            }
-            if(!cf_zone_exists)
-            {
-                scene->addCFZone(tmp_rect, cf_zone_index);
-            }
-            else
-            {
-                scene->crazyfly_zones[found_j]->setPos(tmp_rect.topLeft());
-                // scene->crazyfly_zones[found_j]->setRect(tmp_rect);
-                scene->crazyfly_zones[found_j]->rectSizeChanged();
-            }
             int student_id = m_data_base.crazyflieEntries[i].studentID;
+
+
+            scene->addCFZone(tmp_rect, cf_zone_index);
+
+
             cf_linker->link(student_id, cf_zone_index, cf_name);
+
         }
     }
     else
