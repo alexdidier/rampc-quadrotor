@@ -39,6 +39,14 @@ The workspace setup script will only appear after the first compilation of the c
 If you are not sure at any point you can check out the install script.
 
 ## Additional Steps for Teacher
+
+### Removing Config.sh
+As the teacher must not source the script ``config.sh``, the ``.bashrc`` must be edited and the last line
+```
+source ~/pps_ws/src/d_fall_pps/launch/Config.sh
+```
+must be removed.
+
 ### Installation of cfclient
 The steps to install the crazyflie client are taken from [here](https://github.com/bitcraze/crazyflie-clients-python). To install the cfclient you need to install its dependencies:
 ```
