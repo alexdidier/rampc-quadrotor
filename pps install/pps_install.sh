@@ -15,7 +15,8 @@ sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C
 #system update and installation
 sudo apt-get update
 sudo apt-get -y upgrade
-sudo apt-get -y install ros-kinetic-desktop-full
+sudo apt-get -y install ros-kinetic-desktop-full python-pip
+sudo pip install pyusb
 
 #rosdep
 sudo rosdep init
