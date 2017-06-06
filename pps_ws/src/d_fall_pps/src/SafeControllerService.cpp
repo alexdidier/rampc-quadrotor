@@ -136,10 +136,6 @@ void estimateState(Controller::Request &request, float (&est)[9]) {
     est[4] = (request.ownCrazyflie.y - previousLocation.y) / request.ownCrazyflie.acquiringTime;
     est[5] = (request.ownCrazyflie.z - previousLocation.z) / request.ownCrazyflie.acquiringTime;
 
-    ROS_INFO_STREAM("vx: " << est[3]);
-    ROS_INFO_STREAM("vy: " << est[4]);
-    ROS_INFO_STREAM("vz: " << est[5]);
-
     est[6] = request.ownCrazyflie.roll;
     est[7] = request.ownCrazyflie.pitch;
     est[8] = request.ownCrazyflie.yaw;
