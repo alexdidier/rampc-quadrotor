@@ -157,15 +157,13 @@ void viconCallback(const ViconData& viconData) {
 void loadParameters(ros::NodeHandle& nodeHandle) {
 	if(!nodeHandle.getParam("studentID", studentID)) {
 		ROS_ERROR("Failed to get studentID");
-		studentID = 5;
 	}
 }
 
 void loadCrazyflieContext() {
 	CMQuery contextCall;
 	contextCall.request.studentID = studentID;
-	studentID = 5;
-	ROS_INFO_STREAM("myID:" << studentID);
+	ROS_INFO_STREAM("StudentID:" << studentID);
 	
 	centralManager.waitForExistence(ros::Duration(-1));
 
