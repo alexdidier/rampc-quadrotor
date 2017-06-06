@@ -37,15 +37,20 @@
 #define CMD_USE_CRAZYFLY_ENABLE 3
 #define CMD_USE_CRAZYFLY_DISABLE 4
 
+#define PI 3.141592653589
+
 using namespace d_fall_pps;
 
 //studentID, gives namespace and identifier in CentralManagerService
 int studentID;
 
-//the safe controller specified in the ClientConfig.yaml, is considered trusted
+//the safe controller specified in the ClientConfig.yaml, is considered stable
 ros::ServiceClient safeController;
-//the custom controller specified in the ClientConfig.yaml, is considered untrusted
+//the custom controller specified in the ClientConfig.yaml, is considered potentially unstable
 ros::ServiceClient customController;
+//values for safteyCheck
+bool strictSafety;
+float angleMargin;
 
 ros::ServiceClient centralManager;
 ros::Publisher controlCommandPublisher;
@@ -55,37 +60,40 @@ rosbag::Bag bag;
 //describes the area of the crazyflie and other parameters
 CrazyflieContext context;
 
-//gather information about other crazyflies --------------------------------------------------------------------------------
-/*bool getOtherCrazyflies;
-bool getAllCrazyflies;
-std::vector<Setpoint> otherSetpoints;
-*/
-//------------------------------------------------------------------------------------
-
 //wheter to use safe of custom controller
 bool usingSafeController;
 //wheter crazyflie is enabled (ready to fly) or disabled (motors off)
 bool crazyflieEnabled;
 
-int safetyDelay;
-
 //checks if crazyflie is within allowed area and if custom controller returns no data
 bool safetyCheck(CrazyflieData data, ControlCommand controlCommand) {
-	
 	//position check
 	if((data.x < context.localArea.xmin) or (data.x > context.localArea.xmax)) {
-		safetyDelay--;
+		ROS_INFO_STREAM("x safety failed");
 		return false;
 	}
 	if((data.y < context.localArea.ymin) or (data.y > context.localArea.ymax)) {
-		safetyDelay--;
+		ROS_INFO_STREAM("y safety failed");
 		return false;
 	}
 	if((data.z < context.localArea.zmin) or (data.z > context.localArea.zmax)) {
-		safetyDelay--;
+		ROS_INFO_STREAM("z safety failed");
 		return false;
 	}
 
+	//attitude check
+	//if strictSafety is set to true in ClientConfig.yaml the SafeController takes also over if the roll and pitch angles get to large
+	//the angleMargin is a value in the range (0,1). The closer to 1, the closer to 90 deg are the roll and pitch angles allowed to become before the safeController takes over
+	if(strictSafety){
+		if((data.roll > PI/2*angleMargin) or (data.roll < -PI/2*angleMargin)) {
+			ROS_INFO_STREAM("roll too big.");
+			return false;
+		}
+		if((data.pitch > PI/2*angleMargin) or (data.pitch < -PI/2*angleMargin)) {
+			ROS_INFO_STREAM("pitch too big.");
+			return false;
+		}
+	}
 	
 	return true;
 }
@@ -158,6 +166,16 @@ void loadParameters(ros::NodeHandle& nodeHandle) {
 	if(!nodeHandle.getParam("studentID", studentID)) {
 		ROS_ERROR("Failed to get studentID");
 	}
+	if(!nodeHandle.getParam("strictSafety", strictSafety)) {
+		ROS_ERROR("Failed to get strictSafety param");
+		return;
+	}
+	if(!nodeHandle.getParam("angleMargin", angleMargin)) {
+		ROS_ERROR("Failed to get angleMargin param");
+		return;
+	}
+
+
 }
 
 void loadCrazyflieContext() {

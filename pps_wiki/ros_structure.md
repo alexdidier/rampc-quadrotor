@@ -39,6 +39,8 @@ The ``PPSClient`` subscribes to a local topic with which a certain controller ca
 In file ``ClientConfig.yaml``:
 - ``safeController``: the relative ros path to the safe controller
 - ``customController``: the relative ros path to the custom controller
+- ``strictSafety``: turns angle safety check on and off
+- ``angleMargin``: defines maximal allowed angle when strict safety is on, 1 means 90 degrees
 
 ### CrazyRadio
 

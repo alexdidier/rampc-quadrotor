@@ -1,3 +1,5 @@
 safeController: "SafeControllerService/RateController"
-customController: "SafeControllerService/RateController"
+customController: "CircleControllerService/CircleController"
+strictSafety: true
+angleMargin: 0.6
 

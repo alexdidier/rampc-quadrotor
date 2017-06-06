@@ -739,6 +739,9 @@ void MainGUIWindow::on_save_in_DB_button_clicked()
                 tmp_entry.crazyflieContext.localArea.xmax = x_max * FROM_UNITS_TO_METERS;
                 tmp_entry.crazyflieContext.localArea.ymin = y_min * FROM_UNITS_TO_METERS;
                 tmp_entry.crazyflieContext.localArea.ymax = y_max * FROM_UNITS_TO_METERS;
+
+                tmp_entry.crazyflieContext.localArea.zmin = -0.2;
+                tmp_entry.crazyflieContext.localArea.zmax = 2.0;
             }
         }
         tmp_db.crazyflieEntries.push_back(tmp_entry);
