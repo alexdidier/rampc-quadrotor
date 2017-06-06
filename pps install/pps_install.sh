@@ -33,6 +33,10 @@ source /opt/ros/kinetic/setup.bash
 sudo sh -c "echo '10.42.0.32	teacher' >> /etc/hosts"
 sudo sh -c "echo $1 >> /etc/StudentID"
 
+#copy rules before cd
+sudo cp ./99-crazyflie.rules /etc/udev/rules.d
+sudo cp ./99-crazyradio.rules /etc/udev/rules.d
+
 #build workspace
 cd ~/pps_ws
 catkin_make -j4
@@ -41,6 +45,3 @@ echo "source ~/pps_ws/devel/setup.bash" >> ~/.bashrc
 source ~/pps_ws/devel/setup.bash
 echo "source ~/pps_ws/src/d_fall_pps/launch/Config.sh" >> ~/.bashrc
 source ~/pps_ws/src/d_fall_pps/launch/Config.sh
-
-sudo mv ./99-crazyflie.rules /etc/udev/rules.d
-sudo mv ./99-crazyradio.rules /etc/udev/rules.d
