@@ -58,3 +58,4 @@ in
 Was the antenna of the crazyflie facing in the *opposite* direction of the defined Vicon x-axis? --> Define it again! <br>
 The crazyflie has to lie on the table when you turn it on because the gyro sensor is initialized upon start-up. <br>
 Is the crazyflie still properly showing in the ViconTracker software? --> Define it again and check that the markers don't move!
+- Config.sh sourced? <br>
