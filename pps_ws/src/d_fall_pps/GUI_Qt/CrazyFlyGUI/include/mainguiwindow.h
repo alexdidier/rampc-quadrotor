@@ -13,6 +13,12 @@
 #include "marker.h"
 #include "crazyFly.h"
 #include "CFLinker.h"
+
+#include "d_fall_pps/CrazyflieDB.h"
+#include "d_fall_pps/CrazyflieEntry.h"
+
+
+using namespace d_fall_pps;
 #endif
 
 
@@ -99,6 +105,10 @@ private slots:
 
     void on_checkBox_vicon_highlight_markers_toggled(bool checked);
 
+    void on_save_in_DB_button_clicked();
+
+    void on_load_from_DB_button_clicked();
+
     #ifdef CATKIN_MAKE
     void updateNewViconData(const ptrToMessage& p_msg);
     #endif
@@ -114,6 +124,9 @@ private slots:
     void on_unlink_button_clicked();
 
     void updateComboBoxes();
+
+    void setTabIndex(int index);
+    void doTabClosed(int tab_index);
 
 private:
 
@@ -132,6 +145,20 @@ private:
     void updateComboBoxesCFs();
 
     void updateComboBoxesCFZones();
+
+    int getTabIndexFromName(QString name);
+
+    CrazyflieDB m_data_base;
+
+    void clear_database_file();
+
+    void fill_database_file();
+
+    int read_database_from_file(CrazyflieDB &read_db);
+
+    void save_database_file();
+
+    void insert_or_update_entry_database(CrazyflieEntry entry);
 
 };
 

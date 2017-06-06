@@ -44,6 +44,19 @@ bool CFLinker::isStudentIDLinked(int student_id)
     return is_linked;
 }
 
+bool CFLinker::isRadioAddressLinked(std::string radio_address)
+{
+    bool is_linked = false;
+    for(int i = 0; i < links.size(); i++)
+    {
+        if(links[i].radio_address == radio_address)
+        {
+            is_linked = true;
+        }
+    }
+    return is_linked;
+}
+
 bool CFLinker::isCFZoneLinked(int cf_zone_index)
 {
     bool is_linked = false;
@@ -72,7 +85,7 @@ bool CFLinker::isCFLinked(std::string cf_name)
 }
 
 
-void CFLinker::addNewRow(int student_id, std::string crazyfly_name, int cf_zone_index)
+void CFLinker::addNewRow(int student_id, std::string crazyfly_name, int cf_zone_index, std::string radio_address)
 {
     m_ui->table_links->insertRow(m_ui->table_links->rowCount());
     QString str_id = QString::number(student_id);
@@ -89,24 +102,32 @@ void CFLinker::addNewRow(int student_id, std::string crazyfly_name, int cf_zone_
     QTableWidgetItem *item_cf_zone = new QTableWidgetItem(str_cf_zone_index);
     item_cf_zone->setFlags(item_cf_zone->flags() & ~Qt::ItemIsEditable);
     m_ui->table_links->setItem(m_ui->table_links->rowCount() - 1, 2, item_cf_zone);
+
+    QString str_radio_address = QString::fromStdString(radio_address);
+    QTableWidgetItem *item_radio_address = new QTableWidgetItem(str_radio_address);
+    item_cf->setFlags(item_radio_address->flags() & ~Qt::ItemIsEditable);
+    m_ui->table_links->setItem(m_ui->table_links->rowCount() - 1, 3, item_radio_address);
 }
 
-void CFLinker::link()
+void CFLinker::link(int student_id, int cf_zone_index, std::string cf_name, std::string radio_address)
 {
     m_ui->table_links->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     struct link tmp_link;
 
-    tmp_link.student_id = m_ui->spinBox_student_ids->value();
-    tmp_link.cf_zone_index = getCFZoneIndexFromName(m_ui->comboBoxCFZones->currentText());
-    tmp_link.cf_name = m_ui->comboBoxCFs->currentText().toStdString();
+    tmp_link.student_id = student_id;
+    tmp_link.cf_zone_index = cf_zone_index;
+    tmp_link.cf_name = cf_name;
+    tmp_link.radio_address = radio_address;
 
+    ROS_INFO("tmp_link.student_id %d", tmp_link.student_id);
     ROS_INFO("tmp_link.cf_zone_index %d", tmp_link.cf_zone_index);
     ROS_INFO("tmp_link.cf_name %s", tmp_link.cf_name.c_str());
+    ROS_INFO("tmp_link.radio_address %s", tmp_link.radio_address.c_str());
 
-    (*m_crazyfly_zones)[tmp_link.cf_zone_index]->linkCF(tmp_link.cf_name);
-    (*m_crazyflies_vector)[getCFIndexFromName(tmp_link.cf_name)]->assignCFZone(tmp_link.cf_zone_index);
+    // (*m_crazyfly_zones)[tmp_link.cf_zone_index]->linkCF(tmp_link.cf_name);
+    // (*m_crazyflies_vector)[getCFIndexFromName(tmp_link.cf_name)]->assignCFZone(tmp_link.cf_zone_index);
 
-    addNewRow(m_ui->spinBox_student_ids->value(), tmp_link.cf_name, tmp_link.cf_zone_index);
+    addNewRow(tmp_link.student_id, tmp_link.cf_name, tmp_link.cf_zone_index, tmp_link.radio_address);
 
     links.push_back(tmp_link);
     // TODO: remove options linked from available ones
@@ -123,7 +144,38 @@ void CFLinker::link()
     // ui->comboBox->setItemData(index, 33, Qt::UserRole - 1);
 }
 
-void CFLinker::unlink()
+void CFLinker::clear_all_links()
+{
+    links.clear();
+    m_ui->table_links->setRowCount(0);
+    emit updateComboBoxes();
+}
+
+void CFLinker::unlink_cf_zone(int cf_zone_index)
+{
+    for(int i = 0; i < links.size(); i++)
+    {
+        if(links[i].cf_zone_index == cf_zone_index)
+        {
+            links.erase(links.begin() + i);
+            break;
+        }
+    }
+    // remove them graphically
+    for(int i = 0; i < m_ui->table_links->rowCount(); i++)
+    {
+        QString name = m_ui->table_links->item(i, 2)->text(); //2 because cf zone
+        if(getCFZoneIndexFromName(name) == cf_zone_index)
+        {
+            m_ui->table_links->removeRow(i);
+            break;
+        }
+    }
+    // update combo boxes
+    emit updateComboBoxes();
+}
+
+void CFLinker::unlink_selection()
 {
     QModelIndexList selection = m_ui->table_links->selectionModel()->selectedRows();
 

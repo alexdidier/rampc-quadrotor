@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>866</width>
-    <height>587</height>
+    <height>719</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -258,7 +258,19 @@
            <string>Links</string>
           </attribute>
           <layout class="QGridLayout" name="gridLayout">
-           <item row="12" column="1" colspan="2">
+           <item row="5" column="1" colspan="6">
+            <widget class="QLabel" name="err_message_student_id">
+             <property name="font">
+              <font>
+               <pointsize>7</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>TextLabel</string>
+             </property>
+            </widget>
+           </item>
+           <item row="14" column="1" colspan="6">
             <widget class="QLabel" name="err_message_cf_zone">
              <property name="font">
               <font>
@@ -270,20 +282,8 @@
              </property>
             </widget>
            </item>
-           <item row="9" column="1" colspan="2">
+           <item row="9" column="1" colspan="6">
             <widget class="QLabel" name="err_message_cf">
-             <property name="font">
-              <font>
-               <pointsize>7</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>TextLabel</string>
-             </property>
-            </widget>
-           </item>
-           <item row="5" column="1" colspan="2">
-            <widget class="QLabel" name="err_message_student_id">
              <property name="font">
               <font>
                <pointsize>7</pointsize>
@@ -323,18 +323,18 @@
              </property>
             </widget>
            </item>
+           <item row="13" column="1">
+            <widget class="QComboBox" name="comboBoxCFZones"/>
+           </item>
+           <item row="8" column="1">
+            <widget class="QComboBox" name="comboBoxCFs"/>
+           </item>
            <item row="3" column="1">
             <widget class="QLabel" name="label_4">
              <property name="text">
               <string>Choose Student ID:</string>
              </property>
             </widget>
-           </item>
-           <item row="8" column="1">
-            <widget class="QComboBox" name="comboBoxCFs"/>
-           </item>
-           <item row="11" column="1">
-            <widget class="QComboBox" name="comboBoxCFZones"/>
            </item>
            <item row="6" column="1">
             <widget class="QLabel" name="label_2">
@@ -343,35 +343,28 @@
              </property>
             </widget>
            </item>
-           <item row="10" column="1">
+           <item row="12" column="1">
             <widget class="QLabel" name="label_3">
              <property name="text">
               <string>Choose CF Zone to link:</string>
              </property>
             </widget>
            </item>
-           <item row="8" column="2">
+           <item row="8" column="6">
             <widget class="QPushButton" name="refresh_cfs_button">
              <property name="text">
               <string>Refresh CFs</string>
              </property>
             </widget>
            </item>
-           <item row="2" column="2">
+           <item row="2" column="6">
             <widget class="QPushButton" name="refresh_student_ids_button">
              <property name="text">
               <string>Refresh IDs</string>
              </property>
             </widget>
            </item>
-           <item row="11" column="2">
-            <widget class="QPushButton" name="link_button">
-             <property name="text">
-              <string>Link!</string>
-             </property>
-            </widget>
-           </item>
-           <item row="13" column="1" colspan="2">
+           <item row="15" column="1" colspan="6">
             <widget class="QTableWidget" name="table_links">
              <property name="minimumSize">
               <size>
@@ -393,10 +386,53 @@
              </attribute>
             </widget>
            </item>
-           <item row="14" column="2">
+           <item row="13" column="6">
+            <widget class="QPushButton" name="link_button">
+             <property name="text">
+              <string>Link!</string>
+             </property>
+            </widget>
+           </item>
+           <item row="17" column="6">
             <widget class="QPushButton" name="unlink_button">
              <property name="text">
               <string>Unlink!</string>
+             </property>
+            </widget>
+           </item>
+           <item row="19" column="6">
+            <widget class="QPushButton" name="save_in_DB_button">
+             <property name="text">
+              <string>Save in DB</string>
+             </property>
+            </widget>
+           </item>
+           <item row="18" column="6">
+            <widget class="QPushButton" name="load_from_DB_button">
+             <property name="text">
+              <string>Load from DB</string>
+             </property>
+            </widget>
+           </item>
+           <item row="10" column="1">
+            <widget class="QLabel" name="label">
+             <property name="text">
+              <string>Radio Address:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="10" column="6">
+            <widget class="QLineEdit" name="radioAddress_text"/>
+           </item>
+           <item row="11" column="6">
+            <widget class="QLabel" name="err_message_radio_address">
+             <property name="font">
+              <font>
+               <pointsize>7</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>TextLabel</string>
              </property>
             </widget>
            </item>

@@ -14,6 +14,11 @@
 
 #ifdef CATKIN_MAKE
 #include "d_fall_pps/UnlabeledMarker.h"
+#include "d_fall_pps/CMRead.h"
+#include "d_fall_pps/CrazyflieEntry.h"
+#include "d_fall_pps/CMUpdate.h"
+#include "d_fall_pps/CMCommand.h"
+#include "CentralManagerService.h"
 #endif
 
 #include <string>
@@ -41,19 +46,66 @@ MainGUIWindow::~MainGUIWindow()
     delete ui;
 }
 
+int MainGUIWindow::getTabIndexFromName(QString name)
+{
+    int found_name = -1;
+    for(int i = 0; i < ui->tabWidget->count(); i++)
+    {
+        qDebug("name: %s", name.toStdString().c_str());
+        qDebug("tabText: %s", ui->tabWidget->tabText(i).toStdString().c_str());
+        if(name == ui->tabWidget->tabText(i))
+        {
+            found_name = i;
+        }
+    }
+    return found_name;
+}
 
 void MainGUIWindow::doNumCrazyFlyZonesChanged(int n)
 {
     // tabs number management, maybe do it in a different way so we dont have to remove and add everything?
-    ui->tabWidget->clear();
-    for (int i = 0; i < n; i++)
+    // first check if size of tabs is greater than size of vector or viceversa. Have we removed or added a zone?
+    qDebug("tabWidgetCount : %d", ui->tabWidget->count());
+    if(ui->tabWidget->count() > scene->crazyfly_zones.size())
     {
+        // we removed one crazyfly_zone, n means index of the one we removed. Look for that index tab and remove it
         QString qstr = "CrazyFly ";
-        qstr.append(QString::number(i+1));
-        crazyFlyZoneTab* widget = new crazyFlyZoneTab(i);
-        ui->tabWidget->addTab(widget, qstr);
+        qstr.append(QString::number(n+1));
+        if(scene->crazyfly_zones.size() == 0)
+        {
+            ui->tabWidget->clear();
+        }
+        int found_index = getTabIndexFromName(qstr);
+        if(found_index != -1)
+        {
+            ui->tabWidget->removeTab(found_index);
+        }
+
+        //  now unlink it from table also:
+        #ifdef CATKIN_MAKE
+        if(cf_linker->isCFZoneLinked(n))
+        {
+            cf_linker->unlink_cf_zone(n);
+        }
+        #endif
+    }
+    else if(ui->tabWidget->count() < scene->crazyfly_zones.size())
+    {
+        // we added one crazyfly_zone, n means index of the new one. New tab will be labeld index + 1
+        QString qstr = "CrazyFly ";
+        qstr.append(QString::number(n+1));
+        crazyFlyZoneTab* widget = new crazyFlyZoneTab(n);
+        ui->tabWidget->insertTab(n, widget, qstr);
         connect(widget, SIGNAL(centerButtonClickedSignal(int)), this, SLOT(centerViewIndex(int)));
     }
+    // for (int i = 0; i < n; i++)
+    // {
+    //     QString qstr = "CrazyFly ";
+    //     qstr.append(QString::number(i+1));
+    //     crazyFlyZoneTab* widget = new crazyFlyZoneTab(i);
+    //     ui->tabWidget->addTab(widget, qstr);
+    //     connect(widget, SIGNAL(centerButtonClickedSignal(int)), this, SLOT(centerViewIndex(int)));
+    // }
 
     updateComboBoxesCFZones();
 }
@@ -81,13 +133,15 @@ void MainGUIWindow::_init()
    ui->err_message_cf->setStyleSheet("QLabel { color : red; }");
    ui->err_message_cf_zone->setStyleSheet("QLabel { color : red; }");
    ui->err_message_student_id->setStyleSheet("QLabel { color : red; }");
+   ui->err_message_radio_address->setStyleSheet("QLabel { color : red; }");
 
    ui->err_message_cf->clear();
    ui->err_message_cf_zone->clear();
    ui->err_message_student_id->clear();
+   ui->err_message_radio_address->clear();
 
     // initialize table_links
-    ui->table_links->setColumnCount(3);
+    ui->table_links->setColumnCount(4);
 
     QFont fnt;
     fnt.setPointSize(7);
@@ -108,7 +162,7 @@ void MainGUIWindow::_init()
     }
     ui->table_links->setSelectionBehavior(QAbstractItemView::SelectRows);
     QStringList horizontal_header;
-    horizontal_header << "Student ID" << "CrazyFly" << "CrazyFly Zone";
+    horizontal_header << "Student ID" << "CrazyFly" << "CrazyFly Zone" << "Radio Address";
     ui->table_links->setHorizontalHeaderLabels(horizontal_header);
 
     // scene
@@ -122,10 +176,9 @@ void MainGUIWindow::_init()
     cf_linker = new CFLinker(ui, &crazyflies_vector, &scene->crazyfly_zones);
     #endif
     // connections
-    QObject::connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)), scene, SLOT(removeCrazyFlyZone(int)));
+    QObject::connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)), this, SLOT(doTabClosed(int)));
     QObject::connect(scene, SIGNAL(numCrazyFlyZonesChanged(int)), this, SLOT(doNumCrazyFlyZonesChanged(int)));
-    QObject::connect(ui->tabWidget, SIGNAL(currentChanged(int)), scene, SLOT(setSelectedCrazyFlyZone(int)));
-    QObject::connect(scene, SIGNAL(crazyFlyZoneSelected(int)), ui->tabWidget, SLOT(setCurrentIndex(int)));
+    QObject::connect(scene, SIGNAL(crazyFlyZoneSelected(int)), this, SLOT(setTabIndex(int)));
     QObject::connect(scene, SIGNAL(modeChanged(int)), this, SLOT(transitionToMode(int)));
     QObject::connect(scene, SIGNAL(numTablePiecesChanged(int)), this, SLOT(handleTablePiecesNumChanged(int)));
 
@@ -137,6 +190,22 @@ void MainGUIWindow::_init()
     QObject::connect(_rosNodeThread, SIGNAL(newViconData(const ptrToMessage&)), this, SLOT(updateNewViconData(const ptrToMessage&)));
     QObject::connect(cf_linker, SIGNAL(updateComboBoxes()), this, SLOT(updateComboBoxes()));
     #endif
+}
+
+void MainGUIWindow::doTabClosed(int tab_index)
+{
+    QString name = ui->tabWidget->tabText(tab_index);
+    #ifdef CATKIN_MAKE
+    int cf_zone_index = cf_linker->getCFZoneIndexFromName(name);
+    scene->removeCrazyFlyZone(cf_zone_index);
+    #endif
+}
+
+void MainGUIWindow::setTabIndex(int index)
+{
+    QString qstr = "CrazyFly ";
+    qstr.append(QString::number(index + 1));
+    ui->tabWidget->setCurrentIndex(getTabIndexFromName(qstr));
 }
 
 void MainGUIWindow::updateComboBoxes()
@@ -167,8 +236,9 @@ void MainGUIWindow::updateComboBoxesCFZones()
     {
         if(!cf_linker->isCFZoneLinked(scene->crazyfly_zones[i]->getIndex()))
         {
+            int cf_zone_index = scene->crazyfly_zones[i]->getIndex();
             QString qstr = "CrazyFlyZone ";
-            qstr.append(QString::number(i+1));
+            qstr.append(QString::number(cf_zone_index + 1));
             ui->comboBoxCFZones->addItem(qstr);
         }
     }
@@ -273,7 +343,7 @@ void MainGUIWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to
     // in this loop, clean the ones that are not present anymore. UPDATE: this will apparently only happen when we tick and untick in Vicon
     int crazyfly_vector_size_after = crazyflies_vector.size();
 
-    for(int j = 0; j < crazyfly_vector_size_after; j++)
+    for(int j = crazyfly_vector_size_after - 1; j >= 0; j--)
     {
         bool name_found = false;
         for(int i = 0; i < p_msg->crazyflies.size(); i++)
@@ -421,10 +491,12 @@ void MainGUIWindow::on_checkBox_crazyfly_zones_toggled(bool checked)
 
 void MainGUIWindow::on_tabWidget_currentChanged(int index)
 {
-    if(index >= 0)
-    {
-        scene->setSelectedCrazyFlyZone(index);
-    }
+    // this index is tab index. Need to go to cf index
+    QString name = ui->tabWidget->tabText(index);
+    #ifdef CATKIN_MAKE
+    int cf_index = cf_linker->getCFZoneIndexFromName(name);
+    scene->setSelectedCrazyFlyZone(cf_index);
+    #endif
 }
 
 void MainGUIWindow::centerViewIndex(int index)
@@ -589,6 +661,7 @@ void MainGUIWindow::on_link_button_clicked()
     {
         ui->err_message_cf->clear();
     }
+
     if(ui->comboBoxCFZones->count() == 0)
     {
         // plot error message
@@ -598,6 +671,21 @@ void MainGUIWindow::on_link_button_clicked()
     else
     {
         ui->err_message_cf_zone->clear();
+    }
+
+    if(cf_linker->isRadioAddressLinked(ui->radioAddress_text->text().toStdString()))
+    {
+        ui->err_message_radio_address->setText("Already in use");
+        error = true;
+    }
+    else if(ui->radioAddress_text->text().toStdString() == "")
+    {
+        ui->err_message_radio_address->setText("Field is empty");
+        error = true;
+    }
+    else
+    {
+        ui->err_message_radio_address->clear();
     }
 
     if(cf_linker->isStudentIDLinked(ui->spinBox_student_ids->value()))
@@ -613,7 +701,7 @@ void MainGUIWindow::on_link_button_clicked()
 
     if(!error)
     {
-        cf_linker->link();
+        cf_linker->link(ui->spinBox_student_ids->value(), cf_linker->getCFZoneIndexFromName(ui->comboBoxCFZones->currentText()), ui->comboBoxCFs->currentText().toStdString(), ui->radioAddress_text->text().toStdString());
     }
     #endif
 }
@@ -621,6 +709,167 @@ void MainGUIWindow::on_link_button_clicked()
 void MainGUIWindow::on_unlink_button_clicked()
 {
     #ifdef CATKIN_MAKE
-    cf_linker->unlink();
+    cf_linker->unlink_selection();
     #endif
+}
+
+void MainGUIWindow::on_save_in_DB_button_clicked()
+{
+    // we need to update and then save?
+    CrazyflieDB tmp_db;
+    for(int i = 0; i < cf_linker->links.size(); i++)
+    {
+        CrazyflieEntry tmp_entry;
+        tmp_entry.crazyflieContext.crazyflieName = cf_linker->links[i].cf_name;
+        tmp_entry.crazyflieContext.crazyflieAddress = cf_linker->links[i].radio_address;
+        tmp_entry.crazyflieContext.localArea.crazyfly_zone_index = cf_linker->links[i].cf_zone_index;
+        tmp_entry.studentID = cf_linker->links[i].student_id;
+
+        for(int j = 0; j < scene->crazyfly_zones.size(); j++)
+        {
+            if(cf_linker->links[i].cf_zone_index == scene->crazyfly_zones[j]->getIndex())
+            {
+                double x_min = scene->crazyfly_zones[j]->sceneBoundingRect().bottomLeft().x();
+                double y_min = - scene->crazyfly_zones[j]->sceneBoundingRect().bottomLeft().y();
+
+                double x_max = scene->crazyfly_zones[j]->sceneBoundingRect().topRight().x();
+                double y_max = -scene->crazyfly_zones[j]->sceneBoundingRect().topRight().y();
+
+                tmp_entry.crazyflieContext.localArea.xmin = x_min * FROM_UNITS_TO_METERS;
+                tmp_entry.crazyflieContext.localArea.xmax = x_max * FROM_UNITS_TO_METERS;
+                tmp_entry.crazyflieContext.localArea.ymin = y_min * FROM_UNITS_TO_METERS;
+                tmp_entry.crazyflieContext.localArea.ymax = y_max * FROM_UNITS_TO_METERS;
+            }
+        }
+        tmp_db.crazyflieEntries.push_back(tmp_entry);
+    }
+
+    m_data_base = tmp_db;
+
+    ROS_INFO_STREAM("database:\n" << m_data_base);
+
+    // save the database in the file
+
+    fill_database_file();
+}
+
+void MainGUIWindow::clear_database_file()
+{
+    CrazyflieDB tmp_db;
+    if(read_database_from_file(tmp_db) == 0)
+    {
+        for(int i = 0; i < tmp_db.crazyflieEntries.size(); i++)
+        {
+            CMUpdate updateCall;
+            updateCall.request.mode = ENTRY_REMOVE;
+            updateCall.request.crazyflieEntry.crazyflieContext.crazyflieName = tmp_db.crazyflieEntries[i].crazyflieContext.crazyflieName;
+            if(_rosNodeThread->m_update_db_client.call(updateCall))
+            {
+                ROS_INFO("database changed in central manager service");
+            }
+            else
+            {
+                ROS_ERROR("Failed to remove entry in DB");
+            }
+        }
+        save_database_file();
+    }
+    else
+    {
+        ROS_INFO("Failed to read DB");
+    }
+}
+
+void MainGUIWindow::fill_database_file()
+{
+    clear_database_file();
+    ROS_INFO("cleared data base file");
+    ROS_INFO_STREAM("database:\n" << m_data_base);
+    for(int i = 0; i < m_data_base.crazyflieEntries.size(); i++)
+    {
+        ROS_INFO("inserted 1 item in DB");
+        insert_or_update_entry_database(m_data_base.crazyflieEntries[i]);
+    }
+    save_database_file();
+}
+
+void MainGUIWindow::save_database_file()
+{
+    CMCommand commandCall;
+    commandCall.request.command = CMD_SAVE;
+    if(_rosNodeThread->m_command_db_client.call(commandCall))
+    {
+        ROS_INFO("successfully saved db");
+    }
+    else
+    {
+        ROS_ERROR("failed to save db");
+    }
+}
+
+void MainGUIWindow::insert_or_update_entry_database(CrazyflieEntry entry)
+{
+    CMUpdate updateCall;
+    updateCall.request.mode = ENTRY_INSERT_OR_UPDATE;
+    updateCall.request.crazyflieEntry = entry;
+    _rosNodeThread->m_update_db_client.call(updateCall);
+}
+
+int MainGUIWindow::read_database_from_file(CrazyflieDB &read_db)
+{
+    CMRead getDBCall;
+    _rosNodeThread->m_read_db_client.waitForExistence(ros::Duration(-1));
+    if(_rosNodeThread->m_read_db_client.call(getDBCall))
+    {
+        read_db = getDBCall.response.crazyflieDB;
+        return 0;
+    }
+    else
+    {
+        return -1;
+    }
+}
+
+void MainGUIWindow::on_load_from_DB_button_clicked()
+{
+    CrazyflieDB tmp_db;
+    if(read_database_from_file(tmp_db) == 0)
+    {
+		ROS_INFO_STREAM("database:\n" << tmp_db);
+        m_data_base = tmp_db;
+
+        cf_linker->clear_all_links();
+        // remove all cf_zones existing
+        scene->removeAllCFZones();
+
+        int size = scene->crazyfly_zones.size();
+        ROS_INFO("vector_cf_zones_size %d", size);
+
+        for(int i = 0; i < m_data_base.crazyflieEntries.size(); i++)
+        {
+            std::string cf_name = m_data_base.crazyflieEntries[i].crazyflieContext.crazyflieName;
+            std::string radio_address = m_data_base.crazyflieEntries[i].crazyflieContext.crazyflieAddress;
+            int cf_zone_index = m_data_base.crazyflieEntries[i].crazyflieContext.localArea.crazyfly_zone_index;
+            // we should first create the cf zones that are in the database?
+            bool cf_zone_exists;
+            qreal width = m_data_base.crazyflieEntries[i].crazyflieContext.localArea.xmax - m_data_base.crazyflieEntries[i].crazyflieContext.localArea.xmin;
+            qreal height = m_data_base.crazyflieEntries[i].crazyflieContext.localArea.ymax - m_data_base.crazyflieEntries[i].crazyflieContext.localArea.ymin;
+            QRectF tmp_rect(m_data_base.crazyflieEntries[i].crazyflieContext.localArea.xmin * FROM_METERS_TO_UNITS,
+                            - m_data_base.crazyflieEntries[i].crazyflieContext.localArea.ymax * FROM_METERS_TO_UNITS, // minus sign because qt has y-axis inverted
+                            width * FROM_METERS_TO_UNITS,
+                            height * FROM_METERS_TO_UNITS);
+            int student_id = m_data_base.crazyflieEntries[i].studentID;
+
+
+            scene->addCFZone(tmp_rect, cf_zone_index);
+
+
+            cf_linker->link(student_id, cf_zone_index, cf_name, radio_address);
+
+        }
+    }
+    else
+    {
+        ROS_ERROR("Failed to read DB");
+    }
 }

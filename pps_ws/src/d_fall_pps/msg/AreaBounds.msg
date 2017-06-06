@@ -1,3 +1,4 @@
+uint32 crazyfly_zone_index
 float32 xmin
 float32 xmax
 float32 ymin

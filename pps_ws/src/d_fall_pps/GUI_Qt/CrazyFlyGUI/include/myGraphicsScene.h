@@ -44,8 +44,12 @@ public:
 
     void removeTable();
 
+    void addCFZone(QRectF rect, int index);
+
+    void removeAllCFZones();
+
 public slots:
-    void removeCrazyFlyZone(int index);
+    void removeCrazyFlyZone(int cf_zone_index);
     void setSelectedCrazyFlyZone(int index);
     void changeModeTo(int next_mode);
 
@@ -72,7 +76,6 @@ private:
     void addCrazyFlyZoneToVector(crazyFlyZone* rect);
     void addTablePieceToVector(tablePiece* rect);
     int checkSelectedCrazyFlyZone();
-    void updateIndexesAndLabelsCrazyFlyZones();
     void removeTablePiece(int index);
 
     QPen* pen;

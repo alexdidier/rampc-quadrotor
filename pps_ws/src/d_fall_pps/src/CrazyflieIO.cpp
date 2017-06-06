@@ -91,7 +91,7 @@ void readCrazyflieDB(CrazyflieDB& db) {
         vector<string> dataRow = nextLine(dbFile);
 
         if(dataRow.size() == 0) {
-        } else if(dataRow.size() != 9) {
+        } else if(dataRow.size() != 10) {
             ROS_ERROR_STREAM("row in csv file has not the right amount of data fields, skipped");
         } else {
 
@@ -103,14 +103,14 @@ void readCrazyflieDB(CrazyflieDB& db) {
             context.crazyflieAddress = unescape(dataRow[2]);
 
             AreaBounds area;
+            area.crazyfly_zone_index = stof(dataRow[3]);
+            area.xmin = stof(dataRow[4]);
+            area.ymin = stof(dataRow[5]);
+            area.zmin = stof(dataRow[6]);
 
-            area.xmin = stof(dataRow[3]);
-            area.ymin = stof(dataRow[4]);
-            area.zmin = stof(dataRow[5]);
-
-            area.xmax = stof(dataRow[6]);
-            area.ymax = stof(dataRow[7]);
-            area.zmax = stof(dataRow[8]);
+            area.xmax = stof(dataRow[7]);
+            area.ymax = stof(dataRow[8]);
+            area.zmax = stof(dataRow[9]);
 
             context.localArea = area;
             entry.crazyflieContext = context;
@@ -133,7 +133,9 @@ void writeCrazyflieDB(CrazyflieDB& db) {
 
     	AreaBounds area = context.localArea;
 
-    	dbFile << area.xmin << ',';
+        dbFile << area.crazyfly_zone_index << ',';
+
+        dbFile << area.xmin << ',';
     	dbFile << area.ymin << ',';
     	dbFile << area.zmin << ',';
 
