@@ -1,5 +1,5 @@
 # ROS structure
-
+<br><img src="./pics/ros_pics/GraphicalRepresentations.png"/> <br>
 ## Teacher Nodes
 The following are the ros nodes that run on the teacher's computer. They are located in the root namespace.
 
