@@ -3,7 +3,8 @@
 ### Prerequisite:
 * Make sure you are connected to the network (cable inserted and check if connected to Vicon in the settings)
 * Insert a CrazyRadio into one of your USB-ports on your Laptop
-* The Crazyflie atennas had to face the right direction (antenna facing positive x-axis) upon defining the object in ViconTracker!!
+* The Crazyflie must be started on a flat surface, as the gyrosensor needs to initialize
+* The Crazyflie atennas had to face the right direction (antenna facing positive x-axis) upon defining the object in ViconTracker!
 
 ---
 
@@ -47,8 +48,8 @@ To start the whole thing type the following in a terminal whilst being in the la
 `roslaunch filename.launch`
 
 * _Teacher.launch_<br>
-This doesn't concern the students. This launches the GUI for the teacher and the services he needs.
-* _Student.launch_ !!!<br>
+This doesn't concern the students, nor will it work. This launches the GUI for the teacher and the services he needs.
+* _Student.launch_<br>
 This launches the nodes for the CrazyRadio, the PPSClient, SafeController and CustomController. Make sure that __ClientConfig__ is correctly set up.
 <br><br>
 * _StudentCirlce.launch_ : as an example<br>
