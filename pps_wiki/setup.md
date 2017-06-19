@@ -1,4 +1,8 @@
 # Setup
+Contents:
+- Vicon
+- Firmware and channel
+- Network
 
 ## Vicon
 ### What is Vicon
@@ -35,6 +39,17 @@ Click on *SET ORIGIN* and you're set.<br>
 
 4. That's how it looks afterwards <br>
 <br><img src="./pics/setup_pics/defining3.png" style="width: 500px;"/> <br><br>
+
+
+## Firmware and channel
+The firmware of a crazyflie is updated by the teacher. Additionally, the teacher can set the channel of the crazyflies to prevent interference.<br>
+### Firmware
+See https://wiki.bitcraze.io/doc:crazyflie:client:pycfclient:index#firmware_upgrade for instructions on changing the firmware with the Crazyflie client. If you have installed it properly as described in the installation section, it can be started in a terminal by typing `cfclient`.
+### Channel changing
+This is also described on the page linked above. Use the following format: 0/__xx__/2M where __xx__ stands for the radio channel.<br>
+The crazyflie has to be restared for the changes to take effect.<br>
+![channel_config](https://wiki.bitcraze.io/_media/doc:crazyflie:client:pycfclient:cfclient_cf2_config.png?w=500&tok=74d1d3)
+
 
 ## Network
 ### Setting up the Vicon network
