@@ -68,7 +68,7 @@ As the circle launcher, this starts another service that enables one crazyflie t
 <br>
 **Working**
 1.  Adjust your custom controller
-2.  Use `make CustomController.cpp` to compile your controller implementation
+2.  Use `catkin_make` in the pps_ws directory to compile your controller implementation
 3.  Start your crazyflie
 4.  Launch the correct file in the launch directory as described above. ClientConfig.yaml has to be correct.
 5. Use the scripts to change from the safe to your custom controller.
