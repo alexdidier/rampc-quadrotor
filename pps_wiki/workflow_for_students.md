@@ -26,6 +26,13 @@ where TOPICNAME is the defined name for the topic which is defined insided the c
 There are two additional values. By setting _strictSafety_ to true you limit your custom controller from assuming certain angles before the safe controller takes over. Set it to false and the safe controller only takes over when the crazyflie flies out of its defined range. <br>
 The _angleMargin_ value can be used to change the acceptable angles for pitch and roll. angleMargin=1 means that your crazyflie could flip 90°. The safe controller might not recover from such angles. Therefore you should use values in the range of 0.4 to 0.7.
 
+
+in `pps_ws/src/d_fall_pps/`
+*  _CMakeLists.txt_ <br>
+This file defines all important things that are needed for build process.
+You need this file, if you for example choose to add a new controller with a new name. You then need to add several lines in this file.
+Easiest way is to search for a file that exists and just add all the same things for your new file. <br>
+
 ##### -- Useful files:
 in `pps_ws/src/d_fall_pps/scripts`
 --> call scripts in terminal by going to the above path and then typing ./SCRIPTNAME, e.g.: `./enable_crazyflie`
@@ -82,3 +89,4 @@ As the circle launcher, this starts another service that enables one crazyflie t
 Was the antenna of the crazyflie facing in the *opposite* direction of the defined Vicon x-axis? --> Define it again! <br>
 The crazyflie has to lie on the table when you turn it on because the gyro sensor is initialized upon start-up. <br>
 Is the crazyflie still properly showing in the ViconTracker software? --> Define it again and check that the markers don't move!
+- If you have added a new controller. Don't forget to adjust the CMakeList.txt file and use catkin_make again.
