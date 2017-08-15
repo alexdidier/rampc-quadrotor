@@ -66,122 +66,67 @@ void MainGUIWindow::doNumCrazyFlyZonesChanged(int n)
     // FIXME: when we load CF Zones from database, more than one at a time. Change way of updating tabs!
     // Maybe remove everything and create new ones always?
 
+    // PROBLEM is related to removing of the last tab, not to anything else. WHY?
+
 
     // tabs number management, maybe do it in a different way so we dont have to remove and add everything?
     // first check if size of tabs is greater than size of vector or viceversa. Have we removed or added a zone?
 
     qDebug("tabWidgetCount : %d", ui->tabWidget->count());
-    if(ui->tabWidget->count() > scene->crazyfly_zones.size())
-    {
-        // we removed one crazyfly_zone, n means index of the one we removed. Look for that index tab and remove it
-        QString qstr = "CrazyFly ";
-        qstr.append(QString::number(n+1));
-        if(scene->crazyfly_zones.size() == 0)
-        {
-            ui->tabWidget->clear();
-        }
-        int found_index = getTabIndexFromName(qstr);
-        if(found_index != -1)
-        {
-            ui->tabWidget->removeTab(found_index);
-        }
-
-        //  now unlink it from table also:
-        #ifdef CATKIN_MAKE
-        if(cf_linker->isCFZoneLinked(n))
-        {
-            cf_linker->unlink_cf_zone(n);
-        }
-        #endif
-    }
-    else if(ui->tabWidget->count() < scene->crazyfly_zones.size())
-    {
-        // we added one crazyfly_zone, n means index of the new one. New tab will be labeld index + 1
-        QString qstr = "CrazyFly ";
-        qstr.append(QString::number(n+1));
-        crazyFlyZoneTab* widget = new crazyFlyZoneTab(n);
-        ui->tabWidget->insertTab(n, widget, qstr);
-        connect(widget, SIGNAL(centerButtonClickedSignal(int)), this, SLOT(centerViewIndex(int)));
-    }
-
-    // for(int ind = 0; ind < ui->tabWidget->count(); ind++)
+    // if(ui->tabWidget->count() > scene->crazyfly_zones.size())
     // {
+    //     // we removed one crazyfly_zone, n means index of the one we removed. Look for that index tab and remove it
     //     QString qstr = "CrazyFly ";
-    //     qstr.append(QString::number(ind+1));
+    //     qstr.append(QString::number(n+1));
+    //     if(scene->crazyfly_zones.size() == 0)
+    //     {
+    //         ui->tabWidget->clear();
+    //     }
     //     int found_index = getTabIndexFromName(qstr);
-
     //     if(found_index != -1)
     //     {
     //         ui->tabWidget->removeTab(found_index);
     //     }
 
-    //     if(cf_linker->isCFZoneLinked(ind))
+    //     //  now unlink it from table also:
+    //     #ifdef CATKIN_MAKE
+    //     if(cf_linker->isCFZoneLinked(n))
     //     {
-    //         cf_linker->unlink_cf_zone(ind);
+    //         cf_linker->unlink_cf_zone(n);
     //     }
+    //     #endif
     // }
-
-//     else
-//     {
-//         for(int i = 0; i < ui->tabWidget->count(); i++)
-//             {
-//                 int CF_index = scene->crazyfly_zones[i]->getIndex();
-//                 QString qstr = "CrazyFly ";
-//                 qstr.append(QString::number(CF_index + 1));
-
-//                 int found_index = getTabIndexFromName(qstr);
-//                 if(found_index != -1)
-//                 {
-//                     ui->tabWidget->removeTab(found_index);
-//                 }
-
-//                 //  now unlink it from table also:
-// #ifdef CATKIN_MAKE
-//                 if(cf_linker->isCFZoneLinked(n))
-//                 {
-//                     cf_linker->unlink_cf_zone(n);
-//                 }
-// #endif
-//                 // ROS_INFO("inside first for loop");
-
-//                 // ui->tabWidget->removeTab(i);
-//                 // ROS_INFO("removed tab");
-
-//                 // delete ui->tabWidget->widget(i);
-//                 // ROS_INFO("deleted widget");
-//             }
-//     }
-
-
-    // while(ui->tabWidget->count() > 0)
+    // else if(ui->tabWidget->count() < scene->crazyfly_zones.size())
     // {
-    //     ui->tabWidget->removeTab(0);
+    //     // we added one crazyfly_zone, n means index of the new one. New tab will be labeld index + 1
+    //     QString qstr = "CrazyFly ";
+    //     qstr.append(QString::number(n+1));
+    //     crazyFlyZoneTab* widget = new crazyFlyZoneTab(n);
+    //     ui->tabWidget->insertTab(n, widget, qstr);
+    //     connect(widget, SIGNAL(centerButtonClickedSignal(int)), this, SLOT(centerViewIndex(int)));
     // }
+
+    for(int index = 0; index < ui->tabWidget->count(); index++)
+    {
+        // ui->tabWidget->removeTab(index);
+        ui->tabWidget->widget(index)->deleteLater();
+    }
 
     // unlink all?
     // cf_linker->clear_all_links();
 
-    // for(int i = 0; i < scene->crazyfly_zones.size(); i++)
-    // {
-    //     ROS_INFO("inside for loop");
-    //     QString qstr = "CrazyFly ";
-    //     int CF_index = scene->crazyfly_zones[i]->getIndex();
-    //     qstr.append(QString::number(CF_index + 1));
-    //     crazyFlyZoneTab* widget = new crazyFlyZoneTab(CF_index);
-    //     ui->tabWidget->insertTab(CF_index, widget, qstr);
-    //     // ui->tabWidget->addTab(widget, qstr);
-    //     ROS_INFO("Added tab");
-    //     connect(widget, SIGNAL(centerButtonClickedSignal(int)), this, SLOT(centerViewIndex(int)));
-    // }
-
-    // for (int i = 0; i < n; i++)
-    // {
-    //     QString qstr = "CrazyFly ";
-    //     qstr.append(QString::number(i+1));
-    //     crazyFlyZoneTab* widget = new crazyFlyZoneTab(i);
-    //     ui->tabWidget->addTab(widget, qstr);
-    //     connect(widget, SIGNAL(centerButtonClickedSignal(int)), this, SLOT(centerViewIndex(int)));
-    // }
+    for(int i = 0; i < scene->crazyfly_zones.size(); i++)
+    {
+        ROS_INFO("inside for loop");
+        QString qstr = "CrazyFly ";
+        int CF_index = scene->crazyfly_zones[i]->getIndex();
+        qstr.append(QString::number(CF_index + 1));
+        crazyFlyZoneTab* widget = new crazyFlyZoneTab(CF_index);
+        ui->tabWidget->insertTab(CF_index + 1, widget, qstr);
+        // ui->tabWidget->addTab(widget, qstr);
+        ROS_INFO("Added tab");
+        connect(widget, SIGNAL(centerButtonClickedSignal(int)), this, SLOT(centerViewIndex(int)));
+    }
 
     updateComboBoxesCFZones();
 }
@@ -206,15 +151,15 @@ void MainGUIWindow::_init()
     // ui->err_message_cf_zone->hide();
     // ui->err_message_student_id->hide();
 
-   ui->err_message_cf->setStyleSheet("QLabel { color : red; }");
-   ui->err_message_cf_zone->setStyleSheet("QLabel { color : red; }");
-   ui->err_message_student_id->setStyleSheet("QLabel { color : red; }");
-   ui->err_message_radio_address->setStyleSheet("QLabel { color : red; }");
+    ui->err_message_cf->setStyleSheet("QLabel { color : red; }");
+    ui->err_message_cf_zone->setStyleSheet("QLabel { color : red; }");
+    ui->err_message_student_id->setStyleSheet("QLabel { color : red; }");
+    ui->err_message_radio_address->setStyleSheet("QLabel { color : red; }");
 
-   ui->err_message_cf->clear();
-   ui->err_message_cf_zone->clear();
-   ui->err_message_student_id->clear();
-   ui->err_message_radio_address->clear();
+    ui->err_message_cf->clear();
+    ui->err_message_cf_zone->clear();
+    ui->err_message_student_id->clear();
+    ui->err_message_radio_address->clear();
 
     // initialize table_links
     ui->table_links->setColumnCount(4);
