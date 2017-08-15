@@ -3,6 +3,7 @@
 #include "crazyFlyZoneTab.h"
 #include "myGraphicsScene.h"
 #include "myGraphicsView.h"
+#include "addressLUT.h"
 
 #include <QObject>
 #include <QDoubleSpinBox>
@@ -123,6 +124,13 @@ void MainGUIWindow::_init()
     // ui->err_message_cf->hide();
     // ui->err_message_cf_zone->hide();
     // ui->err_message_student_id->hide();
+
+    ui->radioAddress_text->setReadOnly(true);
+
+    QPalette *palette = new QPalette();
+    palette->setColor(QPalette::Base,Qt::lightGray);
+    palette->setColor(QPalette::Text,Qt::darkGray);
+    ui->radioAddress_text->setPalette(*palette);
 
     ui->err_message_cf->setStyleSheet("QLabel { color : red; }");
     ui->err_message_cf_zone->setStyleSheet("QLabel { color : red; }");
@@ -870,5 +878,21 @@ void MainGUIWindow::on_load_from_DB_button_clicked()
     else
     {
         ROS_ERROR("Failed to read DB");
+    }
+}
+
+void MainGUIWindow::on_comboBoxCFs_currentTextChanged(const QString &arg1)
+{
+    std::string key = arg1.toStdString();
+    auto it = address_LUT.find(key);
+    if(it != address_LUT.end())
+    {
+        std::string found = it->second;
+        QString found_qstr = QString::fromStdString(found);
+        ui->radioAddress_text->setText(found_qstr);
+    }
+    else
+    {
+        ROS_INFO("name not found in LUT");
     }
 }

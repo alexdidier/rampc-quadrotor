@@ -128,6 +128,8 @@ private slots:
     void setTabIndex(int index);
     void doTabClosed(int tab_index);
 
+    void on_comboBoxCFs_currentTextChanged(const QString &arg1);
+
 private:
 
     Ui::MainGUIWindow *ui;
