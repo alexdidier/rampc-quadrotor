@@ -85,7 +85,8 @@ void MainGUIWindow::doNumCrazyFlyZonesChanged(int n)
     //     int found_index = getTabIndexFromName(qstr);
     //     if(found_index != -1)
     //     {
-    //         ui->tabWidget->removeTab(found_index);
+    //         ui->tabWidget->widget(found_index)->deleteLater();
+    //         // ui->tabWidget->removeTab(found_index);
     //     }
 
     //     //  now unlink it from table also:
@@ -106,14 +107,16 @@ void MainGUIWindow::doNumCrazyFlyZonesChanged(int n)
     //     connect(widget, SIGNAL(centerButtonClickedSignal(int)), this, SLOT(centerViewIndex(int)));
     // }
 
-    for(int index = 0; index < ui->tabWidget->count(); index++)
-    {
-        // ui->tabWidget->removeTab(index);
-        ui->tabWidget->widget(index)->deleteLater();
-    }
+    // for(int index = 0; index < ui->tabWidget->count(); index++)
+    // {
+    //     // ui->tabWidget->removeTab(index);
+    //     ui->tabWidget->widget(index)->deleteLater();
+    // }
 
-    // unlink all?
-    // cf_linker->clear_all_links();
+    // // unlink all?
+    // // cf_linker->clear_all_links();
+
+    ui->tabWidget->clear();
 
     for(int i = 0; i < scene->crazyfly_zones.size(); i++)
     {
@@ -121,12 +124,22 @@ void MainGUIWindow::doNumCrazyFlyZonesChanged(int n)
         QString qstr = "CrazyFly ";
         int CF_index = scene->crazyfly_zones[i]->getIndex();
         qstr.append(QString::number(CF_index + 1));
-        crazyFlyZoneTab* widget = new crazyFlyZoneTab(CF_index);
-        ui->tabWidget->insertTab(CF_index + 1, widget, qstr);
-        // ui->tabWidget->addTab(widget, qstr);
+        crazyFlyZoneTab* widget = new crazyFlyZoneTab(i);
+        // ui->tabWidget->insertTab(i, widget, qstr);
+        ui->tabWidget->addTab(widget, qstr);
         ROS_INFO("Added tab");
         connect(widget, SIGNAL(centerButtonClickedSignal(int)), this, SLOT(centerViewIndex(int)));
     }
+
+
+    // for(int i = 0; i < n; i++)
+    // {
+    //     QString qstr = "Crazyfly ";
+    //     qstr.append(QString::number(i+1));
+    //     crazyFlyZoneTab* widget = new crazyFlyZoneTab(i);
+    //     ui->tabWidget->insertTab(i, widget, qstr);
+    //     connect(widget, SIGNAL(centerButtonClickedSignal(int)), this, SLOT(centerViewIndex(int)));
+    // }
 
     updateComboBoxesCFZones();
 }
@@ -512,12 +525,12 @@ void MainGUIWindow::on_checkBox_crazyfly_zones_toggled(bool checked)
 
 void MainGUIWindow::on_tabWidget_currentChanged(int index)
 {
-    // this index is tab index. Need to go to cf index
-    QString name = ui->tabWidget->tabText(index);
-    #ifdef CATKIN_MAKE
-    int cf_index = cf_linker->getCFZoneIndexFromName(name);
-    scene->setSelectedCrazyFlyZone(cf_index);
-    #endif
+    // // this index is tab index. Need to go to cf index
+    // QString name = ui->tabWidget->tabText(index);
+    // #ifdef CATKIN_MAKE
+    // int cf_index = cf_linker->getCFZoneIndexFromName(name);
+    // scene->setSelectedCrazyFlyZone(cf_index);
+    // #endif
 }
 
 void MainGUIWindow::centerViewIndex(int index)
