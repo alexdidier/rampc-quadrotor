@@ -63,12 +63,6 @@ int MainGUIWindow::getTabIndexFromName(QString name)
 
 void MainGUIWindow::doNumCrazyFlyZonesChanged(int n)
 {
-    // FIXME: when we load CF Zones from database, more than one at a time. Change way of updating tabs!
-    // Maybe remove everything and create new ones always?
-
-    // PROBLEM is related to removing of the last tab, not to anything else. WHY?
-
-
     // tabs number management, maybe do it in a different way so we dont have to remove and add everything?
     // first check if size of tabs is greater than size of vector or viceversa. Have we removed or added a zone?
 
@@ -106,40 +100,6 @@ void MainGUIWindow::doNumCrazyFlyZonesChanged(int n)
         ui->tabWidget->insertTab(n, widget, qstr);
         connect(widget, SIGNAL(centerButtonClickedSignal(int)), this, SLOT(centerViewIndex(int)));
     }
-
-    // for(int index = 0; index < ui->tabWidget->count(); index++)
-    // {
-    //     // ui->tabWidget->removeTab(index);
-    //     ui->tabWidget->widget(index)->deleteLater();
-    // }
-
-    // // unlink all?
-    // // cf_linker->clear_all_links();
-
-    // ui->tabWidget->clear();
-
-    // for(int i = 0; i < scene->crazyfly_zones.size(); i++)
-    // {
-    //     ROS_INFO("inside for loop");
-    //     QString qstr = "CrazyFly ";
-    //     int CF_index = scene->crazyfly_zones[i]->getIndex();
-    //     qstr.append(QString::number(CF_index + 1));
-    //     crazyFlyZoneTab* widget = new crazyFlyZoneTab(i);
-    //     // ui->tabWidget->insertTab(i, widget, qstr);
-    //     ui->tabWidget->addTab(widget, qstr);
-    //     ROS_INFO("Added tab");
-    //     connect(widget, SIGNAL(centerButtonClickedSignal(int)), this, SLOT(centerViewIndex(int)));
-    // }
-
-
-    // for(int i = 0; i < n; i++)
-    // {
-    //     QString qstr = "Crazyfly ";
-    //     qstr.append(QString::number(i+1));
-    //     crazyFlyZoneTab* widget = new crazyFlyZoneTab(i);
-    //     ui->tabWidget->insertTab(i, widget, qstr);
-    //     connect(widget, SIGNAL(centerButtonClickedSignal(int)), this, SLOT(centerViewIndex(int)));
-    // }
 
     updateComboBoxesCFZones();
 }
