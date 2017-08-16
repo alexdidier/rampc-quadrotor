@@ -5,6 +5,6 @@
 #include <map>
 
 
-extern std::map<std::string, std::string> address_LUT;
+extern std::map<std::string, std::string> channel_LUT;
 
 #endif

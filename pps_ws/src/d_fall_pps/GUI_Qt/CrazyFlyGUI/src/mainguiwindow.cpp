@@ -3,7 +3,7 @@
 #include "crazyFlyZoneTab.h"
 #include "myGraphicsScene.h"
 #include "myGraphicsView.h"
-#include "addressLUT.h"
+#include "channelLUT.h"
 
 #include <QObject>
 #include <QDoubleSpinBox>
@@ -884,8 +884,8 @@ void MainGUIWindow::on_load_from_DB_button_clicked()
 void MainGUIWindow::on_comboBoxCFs_currentTextChanged(const QString &arg1)
 {
     std::string key = arg1.toStdString();
-    auto it = address_LUT.find(key);
-    if(it != address_LUT.end())
+    auto it = channel_LUT.find(key);
+    if(it != channel_LUT.end())
     {
         std::string found = it->second;
         QString found_qstr = QString::fromStdString(found);
