@@ -14,8 +14,8 @@
 using namespace d_fall_pps;
 #endif
 
-#define DRONE_HEIGHT         100 * FROM_MILIMETERS_TO_UNITS
-#define DRONE_WIDTH          100 * FROM_MILIMETERS_TO_UNITS
+#define DRONE_HEIGHT         100 * FROM_MILIMETERS_TO_UNITS * 1.2
+#define DRONE_WIDTH          100 * FROM_MILIMETERS_TO_UNITS * 1.2
 
 class crazyFly : public QGraphicsSvgItem
 {

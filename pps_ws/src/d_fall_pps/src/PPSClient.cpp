@@ -94,7 +94,7 @@ bool safetyCheck(CrazyflieData data, ControlCommand controlCommand) {
 			return false;
 		}
 	}
-	
+
 	return true;
 }
 
@@ -102,7 +102,9 @@ void coordinatesToLocal(CrazyflieData& cf) {
 	AreaBounds area = context.localArea;
 	float originX = (area.xmin + area.xmax) / 2.0;
 	float originY = (area.ymin + area.ymax) / 2.0;
-	float originZ = (area.zmin + area.zmax) / 2.0;
+    // change Z origin to zero, i.e., to the table height, zero of global coordinates, instead of middle of the box
+    float originZ = 0.0;
+	// float originZ = (area.zmin + area.zmax) / 2.0;
 
 	cf.x -= originX;
 	cf.y -= originY;
@@ -113,52 +115,55 @@ void coordinatesToLocal(CrazyflieData& cf) {
 void viconCallback(const ViconData& viconData) {
 	for(std::vector<CrazyflieData>::const_iterator it = viconData.crazyflies.begin(); it != viconData.crazyflies.end(); ++it) {
 		CrazyflieData global = *it;
-		
-		if(global.crazyflieName == context.crazyflieName) {
-			Controller controllerCall;
-			
-			CrazyflieData local = global;
-			coordinatesToLocal(local);
-			controllerCall.request.ownCrazyflie = local;
-			
-			if(crazyflieEnabled){
-				if(!usingSafeController) {
-					bool success = customController.call(controllerCall);
-					
-					if(!success) {
-						ROS_ERROR("Failed to call custom controller, switching to safe controller");
-						ROS_ERROR_STREAM("custom controller status: valid: " << customController.isValid() << ", exists: " << customController.exists());
-						ROS_ERROR_STREAM("custom controller name: " << customController.getService());
-						usingSafeController = true;
-					} else if(!safetyCheck(global, controllerCall.response.controlOutput)) {
-						usingSafeController = true;
-						ROS_INFO_STREAM("safety check failed, switching to safe controller");
-					}
-				}
 
-				
-				if(usingSafeController) {
-					bool success = safeController.call(controllerCall);
-					if(!success) {
-						ROS_ERROR_STREAM("Failed to call safe controller, valid: " << safeController.isValid() << ", exists: " << safeController.exists());
-					}
-				}
-				
-				//ROS_INFO_STREAM("safe controller active: " << usingSafeController);
+        if(!global.occluded)    //if it is not occluded, then proceed to compute the controller output
+        {
+            if(global.crazyflieName == context.crazyflieName) {
+                Controller controllerCall;
 
-				controlCommandPublisher.publish(controllerCall.response.controlOutput);
+                CrazyflieData local = global;
+                coordinatesToLocal(local);
+                controllerCall.request.ownCrazyflie = local;
 
-				bag.write("ViconData", ros::Time::now(), local);
-				bag.write("ControlOutput", ros::Time::now(), controllerCall.response.controlOutput);
-			
-			} else { //crazyflie disabled
-				ControlCommand zeroOutput = ControlCommand(); //everything set to zero
-				zeroOutput.onboardControllerType = 2; //set to motor_mode
-				controlCommandPublisher.publish(zeroOutput);
-				bag.write("ViconData", ros::Time::now(), local);
-				bag.write("ControlOutput", ros::Time::now(), zeroOutput);
-			}
-		}
+                if(crazyflieEnabled){
+                    if(!usingSafeController) {
+                        bool success = customController.call(controllerCall);
+
+                        if(!success) {
+                            ROS_ERROR("Failed to call custom controller, switching to safe controller");
+                            ROS_ERROR_STREAM("custom controller status: valid: " << customController.isValid() << ", exists: " << customController.exists());
+                            ROS_ERROR_STREAM("custom controller name: " << customController.getService());
+                            usingSafeController = true;
+                        } else if(!safetyCheck(global, controllerCall.response.controlOutput)) {
+                            usingSafeController = true;
+                            ROS_INFO_STREAM("safety check failed, switching to safe controller");
+                        }
+                    }
+
+
+                    if(usingSafeController) {
+                        bool success = safeController.call(controllerCall);
+                        if(!success) {
+                            ROS_ERROR_STREAM("Failed to call safe controller, valid: " << safeController.isValid() << ", exists: " << safeController.exists());
+                        }
+                    }
+
+                    //ROS_INFO_STREAM("safe controller active: " << usingSafeController);
+
+                    controlCommandPublisher.publish(controllerCall.response.controlOutput);
+
+                    bag.write("ViconData", ros::Time::now(), local);
+                    bag.write("ControlOutput", ros::Time::now(), controllerCall.response.controlOutput);
+
+                } else { //crazyflie disabled
+                    ControlCommand zeroOutput = ControlCommand(); //everything set to zero
+                    zeroOutput.onboardControllerType = 2; //set to motor_mode
+                    controlCommandPublisher.publish(zeroOutput);
+                    bag.write("ViconData", ros::Time::now(), local);
+                    bag.write("ControlOutput", ros::Time::now(), zeroOutput);
+                }
+            }
+        }
 	}
 }
 
@@ -182,7 +187,7 @@ void loadCrazyflieContext() {
 	CMQuery contextCall;
 	contextCall.request.studentID = studentID;
 	ROS_INFO_STREAM("StudentID:" << studentID);
-	
+
 	centralManager.waitForExistence(ros::Duration(-1));
 
 	if(centralManager.call(contextCall)) {
@@ -254,16 +259,16 @@ int main(int argc, char* argv[]){
 	ros::init(argc, argv, "PPSClient");
 	ros::NodeHandle nodeHandle("~");
 	loadParameters(nodeHandle);
-	
-	
+
+
 	//ros::service::waitForService("/CentralManagerService/CentralManager");
 	centralManager = nodeHandle.serviceClient<CMQuery>("/CentralManagerService/Query", false);
 	loadCrazyflieContext();
-	
+
 	//keeps 100 messages because otherwise ViconDataPublisher would override the data immediately
 	ros::Subscriber viconSubscriber = nodeHandle.subscribe("/ViconDataPublisher/ViconData", 100, viconCallback);
 	ROS_INFO_STREAM("successfully subscribed to ViconData");
-	
+
 	//ros::Publishers to advertise the control output
 	controlCommandPublisher = nodeHandle.advertise <ControlCommand>("ControlCommand", 1);
 
@@ -275,7 +280,7 @@ int main(int argc, char* argv[]){
 	crazyflieEnabled = true;
 	usingSafeController = true;
 	loadSafeController();
-	
+
 	std::string package_path;
 	package_path = ros::package::getPath("d_fall_pps") + "/";
 	ROS_INFO_STREAM(package_path);
