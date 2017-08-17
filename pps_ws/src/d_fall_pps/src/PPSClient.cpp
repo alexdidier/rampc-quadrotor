@@ -277,7 +277,7 @@ int main(int argc, char* argv[]){
     ros::Subscriber commandSubscriber = nodeHandle.subscribe("Command", 1, commandCallback);
 
 	//start with safe controller
-	crazyflieEnabled = true;
+	crazyflieEnabled = false;
 	usingSafeController = true;
 	loadSafeController();
 
