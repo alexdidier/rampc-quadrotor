@@ -11,10 +11,15 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = studentGUI
 TEMPLATE = app
 
+INCLUDEPATH += $$PWD/include
+CONFIG += c++11
 
-SOURCES += main.cpp\
-        MainWindow.cpp
+SOURCES += \
+         src/main.cpp \
+         src/MainWindow.cpp
 
-HEADERS  += MainWindow.h
+HEADERS  += \
+         include/MainWindow.h \
 
-FORMS    += MainWindow.ui
+FORMS    += \
+         src/MainWindow.ui
