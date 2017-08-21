@@ -6,6 +6,8 @@
 
 #include "rosNodeThread.h"
 
+#define CMD_RECONNECT  0
+
 namespace Ui {
 class MainWindow;
 }
@@ -20,6 +22,8 @@ public:
 
 private slots:
     void updateNewViconData(const ptrToMessage& p_msg);
+
+    void on_RF_Connect_button_clicked();
 
 private:
     Ui::MainWindow *ui;

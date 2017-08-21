@@ -276,6 +276,9 @@ int main(int argc, char* argv[]){
     ros::Publisher commandPublisher = nodeHandle.advertise<std_msgs::Int32>("Command", 1);
     ros::Subscriber commandSubscriber = nodeHandle.subscribe("Command", 1, commandCallback);
 
+    //this topic lets us use the terminal to communicate with crazyRadio node.
+    ros::Publisher crazyRadioCommandPublisher = nodeHandle.advertise<std_msgs::Int32>("crazyRadioCommand", 1);
+
 	//start with safe controller
 	crazyflieEnabled = false;
 	usingSafeController = true;

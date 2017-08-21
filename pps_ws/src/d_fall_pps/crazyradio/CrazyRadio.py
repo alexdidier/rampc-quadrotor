@@ -4,6 +4,7 @@
 import roslib; roslib.load_manifest('d_fall_pps')
 import rospy
 from d_fall_pps.msg import ControlCommand
+from std_msgs.msg import Int32
 
 
 # General import
@@ -38,6 +39,14 @@ CONTROLLER_ANGLE = 1
 CONTROLLER_RATE = 0
 RAD_TO_DEG = 57.296
 
+# CrazyRadio states:
+CONNECTED = 0
+CONNECTING = 1
+DISCONNECTED = 2
+
+# Commands coming
+CMD_RECONNECT = 0
+
 rp = RosPack()
 record_file = rp.get_path('d_fall_pps') + '/LoggingOnboard.bag'
 rospy.loginfo('afdsasdfasdfsadfasdfasdfasdfasdfasdfasdf')
@@ -46,8 +55,8 @@ bag = rosbag.Bag(record_file, 'w')
 
 class PPSRadioClient:
     """
-       CrazyRadio client that recieves the commands from the controller and 
-       sends them in a CRTP package to the crazyflie with the specified 
+       CrazyRadio client that recieves the commands from the controller and
+       sends them in a CRTP package to the crazyflie with the specified
        address.
     """
     def __init__(self, link_uri):
@@ -60,6 +69,7 @@ class PPSRadioClient:
         self.motor2cmd = 0.0
         self.motor3cmd = 0.0
         self.motor4cmd = 0.0
+        self.status = DISCONNECTED
 
         # Initialize the CrazyFlie and add callbacks
         self._cf = Crazyflie()
@@ -72,9 +82,12 @@ class PPSRadioClient:
 
         # Connect to the Crazyflie
         print "Connecting to %s" % link_uri
+
+        self.connect();
+
+    def connect(self):
+        self.status = CONNECTING
         self._cf.open_link(link_uri)
-        
-                
     def _data_received_callback(self, timestamp, data, logconf):
         #print "log of stabilizer and battery: [%d][%s]: %s" % (timestamp, logconf.name, data)
         batteryVolt = Float32()
@@ -93,8 +106,8 @@ class PPSRadioClient:
         #cfbattery_pub.publish(std_msgs.Float32(batteryVolt.data))
         cfbattery_pub.publish(batteryVolt)
 
-               
-        
+
+
     def _logging_error(self, logconf, msg):
         print "Error when logging %s" % logconf.name
 
@@ -103,16 +116,17 @@ class PPSRadioClient:
             This callback is executed as soon as the connection to the
             quadrotor is established.
         """
+        self.status = CONNECTED
         rospy.loginfo("Connection to %s successful: " % link_uri)
-        
-                
+
+
         # Config for Logging
         logconf = LogConfig("LoggingTest", 100)
         logconf.add_variable("stabilizer.roll", "float");
         logconf.add_variable("stabilizer.pitch", "float");
         logconf.add_variable("stabilizer.yaw", "float");
         logconf.add_variable("pm.vbat", "float");
-        
+
         self._cf.log.add_config(logconf)
         if logconf.valid:
             logconf.data_received_cb.add_callback(self._data_received_callback)
@@ -121,7 +135,7 @@ class PPSRadioClient:
             print "logconf valid"
         else:
             print "logconf invalid"
-        
+
 
     def _connection_failed(self, link_uri, msg):
         """Callback when connection initial connection fails (i.e no Crazyflie
@@ -135,6 +149,8 @@ class PPSRadioClient:
 
     def _disconnected(self, link_uri):
         """Callback when the Crazyflie is disconnected (called in all cases)"""
+
+        self.status = DISCONNECTED
         rospy.logwarn("Disconnected from %s" % link_uri)
         bag.close()
         rospy.loginfo("bag closed")
@@ -146,6 +162,12 @@ class PPSRadioClient:
         pk.data = struct.pack('<fffHHHHHH', roll * RAD_TO_DEG, pitch * RAD_TO_DEG, yaw * RAD_TO_DEG, thrust, cmd1, cmd2, cmd3, cmd4, mode)
         self._cf.send_packet(pk)
 
+    def crazyRadioCommandCallback(data):
+        """Callback to tell CrazyRadio to reconnect"""
+        if data = CMD_RECONNECT:            # reconnect, check status first and then do whatever needs to be done
+            if self.status = DISCONNECTED:
+                self.connect()
+
 def controlCommandCallback(data):
     """Callback for controller actions"""
     #rospy.loginfo("controller callback : %s, %s, %s", data.roll, data.pitch, data.yaw)
@@ -153,8 +175,10 @@ def controlCommandCallback(data):
     #cmd1..4 must not be 0, as crazyflie onboard controller resets!
     #pitch and yaw are inverted on crazyflie controller
     cf_client._send_to_commander(data.roll, -data.pitch, -data.yaw, 0, data.motorCmd1, data.motorCmd2, data.motorCmd3, data.motorCmd4, data.onboardControllerType)
-    
-    
+
+
+
+
 
 if __name__ == '__main__':
     rospy.init_node('CrazyRadio', anonymous=True)
@@ -167,7 +191,7 @@ if __name__ == '__main__':
 
     radio_address = "radio://" + rospy.get_param("~crazyFlieAddress")
     rospy.loginfo("Crazyradio connecting to %s" % radio_address)
-    
+
     #use this following two lines to connect without data from CentralManager
     #radio_address = "radio://0/72/2M"
     #rospy.loginfo("manual address loaded")
@@ -177,6 +201,8 @@ if __name__ == '__main__':
     global cf_client
 
     cf_client = PPSRadioClient(radio_address)
+    rospy.Subscriber("PPSClient/crazyRadioCommand", Int32, cf_client.crazyRadioCommandCallback)
+
     time.sleep(1.0)
 
     rospy.Subscriber("PPSClient/ControlCommand", ControlCommand, controlCommandCallback)
