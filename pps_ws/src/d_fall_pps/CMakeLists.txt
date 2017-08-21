@@ -77,6 +77,7 @@ qt5_add_resources(MY_RESOURCE_FILE_RCC ${MY_RESOURCE_FILE_QRC})
 
 set(SRC_HDRS_QOBJECT_STUDENT_GUI
   ${STUDENT_GUI_LIB_PATH_INC}/MainWindow.h
+  ${STUDENT_GUI_LIB_PATH_INC}/rosNodeThread.h
   )
 
 # StudentGUI -- wrap UI file and QOBJECT files
@@ -264,6 +265,7 @@ set(MY_CPP_SOURCES_GUI              # compilation of sources
 set(MY_CPP_SOURCES_STUDENT_GUI              # compilation of sources
     ${STUDENT_GUI_LIB_PATH_SRC}/MainWindow.cpp
     ${STUDENT_GUI_LIB_PATH_SRC}/main.cpp
+    ${STUDENT_GUI_LIB_PATH_SRC}/rosNodeThread.cpp
     )
 
 

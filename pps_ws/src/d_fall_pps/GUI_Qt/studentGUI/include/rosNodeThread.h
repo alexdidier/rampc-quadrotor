@@ -37,6 +37,7 @@ public:
     ros::ServiceClient m_update_db_client;
     ros::ServiceClient m_command_db_client;
 
+
 signals:
 
     void newViconData(const ptrToMessage& p_msg);

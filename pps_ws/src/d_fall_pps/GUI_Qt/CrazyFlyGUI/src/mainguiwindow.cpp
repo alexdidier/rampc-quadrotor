@@ -35,7 +35,7 @@ MainGUIWindow::MainGUIWindow(int argc, char **argv, QWidget *parent) :
     ui(new Ui::MainGUIWindow)
 {
     #ifdef CATKIN_MAKE
-    _rosNodeThread = new rosNodeThread(argc, argv, "/ViconDataPublisher/ViconData");
+    _rosNodeThread = new rosNodeThread(argc, argv, "my_GUI");
     #endif
     ui->setupUi(this);
     _init();
