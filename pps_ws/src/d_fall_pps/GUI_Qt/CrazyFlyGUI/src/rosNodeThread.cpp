@@ -34,7 +34,10 @@ bool rosNodeThread::init()
     ros::init(m_Init_argc, m_pInit_argv, m_node_name); // my_GUI is the name of this node
 
     if (!ros::master::check())
+    {
+        ROS_ERROR("No master found. Please make sure that there is a master roscore running");
         return false;           // do not start without ros.
+    }
 
     ros::start();
     ros::Time::init();
