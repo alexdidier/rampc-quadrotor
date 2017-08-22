@@ -20,8 +20,8 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     qRegisterMetaType<ptrToMessage>("ptrToMessage");
     QObject::connect(m_rosNodeThread, SIGNAL(newViconData(const ptrToMessage&)), this, SLOT(updateNewViconData(const ptrToMessage&)));
 
-    ros::NodeHandle nodeHandle("~");
-    crazyRadioStatusSubscriber = nodeHandle.subscribe(ros_namespace + "/CrazyRadioStatus", 1, &MainWindow::crazyRadioStatusCallback, this);
+    ros::NodeHandle nodeHandle(ros_namespace);
+    crazyRadioStatusSubscriber = nodeHandle.subscribe("CrazyRadio/CrazyRadioStatus", 1, &MainWindow::crazyRadioStatusCallback, this);
 
     // communication with PPS Client, just to make it possible to communicate through terminal also we use PPSClient's name
     ros::NodeHandle nh_PPSClient(ros_namespace + "/PPSClient");

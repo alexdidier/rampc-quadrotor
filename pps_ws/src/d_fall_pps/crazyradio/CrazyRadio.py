@@ -72,7 +72,7 @@ class PPSRadioClient:
         self._status = DISCONNECTED
         self.link_uri = link_uri
 
-        self.status_pub = rospy.Publisher('CrazyRadioStatus', Int32, queue_size=1)
+        self.status_pub = rospy.Publisher(node_name + '/CrazyRadioStatus', Int32, queue_size=1)
 
         # Initialize the CrazyFlie and add callbacks
         self._cf = Crazyflie()
@@ -202,7 +202,9 @@ def controlCommandCallback(data):
 
 
 if __name__ == '__main__':
-    rospy.init_node('CrazyRadio', anonymous=True)
+    global node_name
+    node_name = "CrazyRadio"
+    rospy.init_node(node_name, anonymous=True)
     # Initialize the low-level drivers (don't list the debug drivers)
     cflib.crtp.init_drivers(enable_debug_driver=False)
 
@@ -218,7 +220,7 @@ if __name__ == '__main__':
     # rospy.loginfo("manual address loaded")
 
     global cfbattery_pub
-    cfbattery_pub = rospy.Publisher('cfbattery', Float32, queue_size=10)
+    cfbattery_pub = rospy.Publisher(node_name + '/cfbattery', Float32, queue_size=10)
 
     global cf_client
 
