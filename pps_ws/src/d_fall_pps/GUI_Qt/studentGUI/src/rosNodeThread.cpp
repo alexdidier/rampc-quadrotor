@@ -72,7 +72,7 @@ void rosNodeThread::run()
         // cmd_msg.linear.x = m_speed;
         // cmd_msg.angular.z = m_angle;
         pMutex->unlock();
-        ROS_INFO("RUNNING");
+        // ROS_INFO("RUNNING");
 
         // sim_velocity.publish(cmd_msg);
         ros::spinOnce();

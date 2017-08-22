@@ -33,4 +33,5 @@ void MainWindow::on_RF_Connect_button_clicked()
     std_msgs::Int32 msg;
     msg.data = CMD_RECONNECT;
     crazyRadioCommandPublisher.publish(msg);
+    ROS_INFO("command reconnect published");
 }

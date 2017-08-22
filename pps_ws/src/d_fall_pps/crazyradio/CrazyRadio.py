@@ -83,7 +83,7 @@ class PPSRadioClient:
         # Connect to the Crazyflie
         print "Connecting to %s" % link_uri
 
-        self.connect();
+        # self.connect();
 
     def connect(self):
         self.status = CONNECTING
@@ -163,11 +163,12 @@ class PPSRadioClient:
         pk.data = struct.pack('<fffHHHHHH', roll * RAD_TO_DEG, pitch * RAD_TO_DEG, yaw * RAD_TO_DEG, thrust, cmd1, cmd2, cmd3, cmd4, mode)
         self._cf.send_packet(pk)
 
-    def crazyRadioCommandCallback(data):
+def crazyRadioCommandCallback(data):
         """Callback to tell CrazyRadio to reconnect"""
+        print "crazyRadio command received"
         if data == CMD_RECONNECT:            # reconnect, check status first and then do whatever needs to be done
-            if self.status == DISCONNECTED:
-                self.connect()
+            if cf_client.status == DISCONNECTED:
+                cf_client.connect()
 
 def controlCommandCallback(data):
     """Callback for controller actions"""
@@ -194,15 +195,16 @@ if __name__ == '__main__':
     rospy.loginfo("Crazyradio connecting to %s" % radio_address)
 
     #use this following two lines to connect without data from CentralManager
-    #radio_address = "radio://0/72/2M"
-    #rospy.loginfo("manual address loaded")
+    # radio_address = "radio://0/72/2M"
+    # rospy.loginfo("manual address loaded")
+
     global cfbattery_pub
     cfbattery_pub = rospy.Publisher('cfbattery', Float32, queue_size=10)
 
     global cf_client
 
     cf_client = PPSRadioClient(radio_address)
-    rospy.Subscriber("PPSClient/crazyRadioCommand", Int32, cf_client.crazyRadioCommandCallback)
+    rospy.Subscriber("PPSClient/crazyRadioCommand", Int32, crazyRadioCommandCallback)
 
     time.sleep(1.0)
 
