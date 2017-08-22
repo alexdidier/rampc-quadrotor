@@ -88,6 +88,7 @@ class PPSRadioClient:
     def connect(self):
         self.status = CONNECTING
         self._cf.open_link(link_uri)
+
     def _data_received_callback(self, timestamp, data, logconf):
         #print "log of stabilizer and battery: [%d][%s]: %s" % (timestamp, logconf.name, data)
         batteryVolt = Float32()
@@ -164,8 +165,8 @@ class PPSRadioClient:
 
     def crazyRadioCommandCallback(data):
         """Callback to tell CrazyRadio to reconnect"""
-        if data = CMD_RECONNECT:            # reconnect, check status first and then do whatever needs to be done
-            if self.status = DISCONNECTED:
+        if data == CMD_RECONNECT:            # reconnect, check status first and then do whatever needs to be done
+            if self.status == DISCONNECTED:
                 self.connect()
 
 def controlCommandCallback(data):
