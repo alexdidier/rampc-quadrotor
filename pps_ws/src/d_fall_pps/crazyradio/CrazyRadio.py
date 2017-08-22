@@ -70,6 +70,7 @@ class PPSRadioClient:
         self.motor3cmd = 0.0
         self.motor4cmd = 0.0
         self.status = DISCONNECTED
+        self.link_uri = link_uri
 
         # Initialize the CrazyFlie and add callbacks
         self._cf = Crazyflie()
@@ -87,7 +88,8 @@ class PPSRadioClient:
 
     def connect(self):
         self.status = CONNECTING
-        self._cf.open_link(link_uri)
+        rospy.loginfo("connecting...")
+        self._cf.open_link(self.link_uri)
 
     def _data_received_callback(self, timestamp, data, logconf):
         #print "log of stabilizer and battery: [%d][%s]: %s" % (timestamp, logconf.name, data)
@@ -141,11 +143,13 @@ class PPSRadioClient:
     def _connection_failed(self, link_uri, msg):
         """Callback when connection initial connection fails (i.e no Crazyflie
         at the specified address)"""
+        self.status = DISCONNECTED
         rospy.logerr("Connection to %s failed: %s" % (link_uri, msg))
 
     def _connection_lost(self, link_uri, msg):
         """Callback when disconnected after a connection has been made (i.e
         Crazyflie moves out of range)"""
+        self.status = DISCONNECTED
         rospy.logerr("Connection to %s lost: %s" % (link_uri, msg))
 
     def _disconnected(self, link_uri):
@@ -163,12 +167,15 @@ class PPSRadioClient:
         pk.data = struct.pack('<fffHHHHHH', roll * RAD_TO_DEG, pitch * RAD_TO_DEG, yaw * RAD_TO_DEG, thrust, cmd1, cmd2, cmd3, cmd4, mode)
         self._cf.send_packet(pk)
 
-def crazyRadioCommandCallback(data):
+    def crazyRadioCommandCallback(self, msg):
         """Callback to tell CrazyRadio to reconnect"""
-        print "crazyRadio command received"
-        if data == CMD_RECONNECT:            # reconnect, check status first and then do whatever needs to be done
-            if cf_client.status == DISCONNECTED:
-                cf_client.connect()
+        print "crazyRadio command received %s" % msg.data
+        if msg.data == CMD_RECONNECT:            # reconnect, check status first and then do whatever needs to be done
+            print "entered reconnect"
+            print "status: %s" % self.status
+            if self.status == DISCONNECTED:
+                print "entered disconnected"
+                self.connect()
 
 def controlCommandCallback(data):
     """Callback for controller actions"""
@@ -204,7 +211,8 @@ if __name__ == '__main__':
     global cf_client
 
     cf_client = PPSRadioClient(radio_address)
-    rospy.Subscriber("PPSClient/crazyRadioCommand", Int32, crazyRadioCommandCallback)
+    rospy.Subscriber("student_GUI/crazyRadioCommand", Int32, cf_client.crazyRadioCommandCallback) # allows commands from student_GUI
+    rospy.Subscriber("PPSClient/crazyRadioCommand", Int32, cf_client.crazyRadioCommandCallback) # allows commands from scripts
 
     time.sleep(1.0)
 

@@ -29,6 +29,8 @@ private:
     Ui::MainWindow *ui;
 
     rosNodeThread* m_rosNodeThread;
+
+    ros::Publisher crazyRadioCommandPublisher;
 };
 
 #endif // MAINWINDOW_H
