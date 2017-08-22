@@ -220,7 +220,7 @@ if __name__ == '__main__':
     # rospy.loginfo("manual address loaded")
 
     global cfbattery_pub
-    cfbattery_pub = rospy.Publisher(node_name + '/cfbattery', Float32, queue_size=10)
+    cfbattery_pub = rospy.Publisher(node_name + '/CFBattery', Float32, queue_size=10)
 
     global cf_client
 
