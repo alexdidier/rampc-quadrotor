@@ -13,19 +13,20 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     m_rosNodeThread = new rosNodeThread(argc, argv, "student_GUI");
     ui->setupUi(this);
     m_rosNodeThread->init();
-    qRegisterMetaType<ptrToMessage>("ptrToMessage");
-    QObject::connect(m_rosNodeThread, SIGNAL(newViconData(const ptrToMessage&)), this, SLOT(updateNewViconData(const ptrToMessage&)));
-
-    ros::NodeHandle nodeHandle("~");
-    crazyRadioStatusSubscriber = nodeHandle.subscribe("/CrazyRadio/CrazyRadioStatus", 1, &MainWindow::crazyRadioStatusCallback, this);
 
     std::string ros_namespace = ros::this_node::getNamespace();
     ROS_INFO("namespace: %s", ros_namespace.c_str());
 
+    qRegisterMetaType<ptrToMessage>("ptrToMessage");
+    QObject::connect(m_rosNodeThread, SIGNAL(newViconData(const ptrToMessage&)), this, SLOT(updateNewViconData(const ptrToMessage&)));
+
+    ros::NodeHandle nodeHandle("~");
+    crazyRadioStatusSubscriber = nodeHandle.subscribe(ros_namespace + "/CrazyRadioStatus", 1, &MainWindow::crazyRadioStatusCallback, this);
+
     // communication with PPS Client, just to make it possible to communicate through terminal also we use PPSClient's name
     ros::NodeHandle nh_PPSClient(ros_namespace + "/PPSClient");
     crazyRadioCommandPublisher = nh_PPSClient.advertise<std_msgs::Int32>("crazyRadioCommand", 1);
-    PPSClientCommadPublisher = nodeHandle.advertise<std_msgs::Int32>("Command", 1);
+    PPSClientCommadPublisher = nh_PPSClient.advertise<std_msgs::Int32>("Command", 1);
 
     disableGUI();
 }
@@ -54,6 +55,7 @@ void MainWindow::setCrazyRadioStatus(int radio_status)
         case CONNECTED:
             // change icon, the rest of the GUI is available now
             ui->connected_disconnected_label->setText("Connected!");
+            enableGUI();
             break;
         case CONNECTING:
             // change icon
@@ -62,6 +64,7 @@ void MainWindow::setCrazyRadioStatus(int radio_status)
         case DISCONNECTED:
             // change icon, the rest of the GUI is disabled
             ui->connected_disconnected_label->setText("Disconnected");
+            disableGUI();
             break;
         default:
     		ROS_ERROR_STREAM("unexpected radio status: " << m_radio_status);
@@ -72,6 +75,7 @@ void MainWindow::setCrazyRadioStatus(int radio_status)
 
 void MainWindow::crazyRadioStatusCallback(const std_msgs::Int32& msg)
 {
+    ROS_INFO("Callback CrazyRadioStatus called");
     this->setCrazyRadioStatus(msg.data);
 }
 

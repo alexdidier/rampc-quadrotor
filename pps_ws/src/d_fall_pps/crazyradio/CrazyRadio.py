@@ -89,6 +89,7 @@ class PPSRadioClient:
         self.connect()
 
     def change_status_to(self, new_status):
+        print "status changed to: %s" % new_status
         self._status = new_status
         self.status_pub.publish(new_status)
 
@@ -116,6 +117,7 @@ class PPSRadioClient:
 
         #publish battery voltage for GUI
         #cfbattery_pub.publish(std_msgs.Float32(batteryVolt.data))
+        print "batteryVolt: %s" % batteryVolt
         cfbattery_pub.publish(batteryVolt)
 
 
@@ -133,7 +135,7 @@ class PPSRadioClient:
 
 
         # Config for Logging
-        logconf = LogConfig("LoggingTest", 100)
+        logconf = LogConfig("LoggingTest", 100) # second variable is freq in ms
         logconf.add_variable("stabilizer.roll", "float");
         logconf.add_variable("stabilizer.pitch", "float");
         logconf.add_variable("stabilizer.yaw", "float");
@@ -184,6 +186,8 @@ class PPSRadioClient:
             if self.get_status() == DISCONNECTED:
                 print "entered disconnected"
                 self.connect()
+            if self.get_status() == CONNECTED:
+                self.status_pub.publish(CONNECTED)
 
 def controlCommandCallback(data):
     """Callback for controller actions"""
