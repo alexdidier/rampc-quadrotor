@@ -211,7 +211,6 @@ if __name__ == '__main__':
     global cf_client
 
     cf_client = PPSRadioClient(radio_address)
-    rospy.Subscriber("student_GUI/crazyRadioCommand", Int32, cf_client.crazyRadioCommandCallback) # allows commands from student_GUI
     rospy.Subscriber("PPSClient/crazyRadioCommand", Int32, cf_client.crazyRadioCommandCallback) # allows commands from scripts
 
     time.sleep(1.0)

@@ -1,5 +1,6 @@
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
+#include <string>
 
 #include <ros/ros.h>
 #include <ros/network.h>
@@ -15,9 +16,12 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     qRegisterMetaType<ptrToMessage>("ptrToMessage");
     QObject::connect(m_rosNodeThread, SIGNAL(newViconData(const ptrToMessage&)), this, SLOT(updateNewViconData(const ptrToMessage&)));
 
-    ros::NodeHandle nh("~");
+    std::string ros_namespace = ros::this_node::getNamespace();
+    ROS_INFO("namespace: %s", ros_namespace.c_str());
 
-    crazyRadioCommandPublisher = nh.advertise<std_msgs::Int32>("crazyRadioCommand", 1);
+    ros::NodeHandle nh_PPSClient(ros_namespace + "/PPSClient");
+
+    crazyRadioCommandPublisher = nh_PPSClient.advertise<std_msgs::Int32>("crazyRadioCommand", 1);
 }
 
 MainWindow::~MainWindow()
