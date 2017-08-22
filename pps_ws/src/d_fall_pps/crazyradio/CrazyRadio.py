@@ -69,25 +69,34 @@ class PPSRadioClient:
         self.motor2cmd = 0.0
         self.motor3cmd = 0.0
         self.motor4cmd = 0.0
-        self.status = DISCONNECTED
+        self._status = DISCONNECTED
         self.link_uri = link_uri
+
+        self.status_pub = rospy.Publisher('CrazyRadioStatus', Int32, queue_size=1)
 
         # Initialize the CrazyFlie and add callbacks
         self._cf = Crazyflie()
 
-        # Add callbacks that get executed depending on the connection status.
+        # Add callbacks that get executed depending on the connection _status.
         self._cf.connected.add_callback(self._connected)
         self._cf.disconnected.add_callback(self._disconnected)
         self._cf.connection_failed.add_callback(self._connection_failed)
         self._cf.connection_lost.add_callback(self._connection_lost)
 
+        self.change_status_to(DISCONNECTED)
         # Connect to the Crazyflie
         print "Connecting to %s" % link_uri
+        self.connect()
 
-        self.connect();
+    def change_status_to(self, new_status):
+        self._status = new_status
+        self.status_pub.publish(new_status)
+
+    def get_status(self):
+        return self._status
 
     def connect(self):
-        self.status = CONNECTING
+        self.change_status_to(CONNECTING)
         rospy.loginfo("connecting...")
         self._cf.open_link(self.link_uri)
 
@@ -119,7 +128,7 @@ class PPSRadioClient:
             This callback is executed as soon as the connection to the
             quadrotor is established.
         """
-        self.status = CONNECTED
+        self.change_status_to(CONNECTED)
         rospy.loginfo("Connection to %s successful: " % link_uri)
 
 
@@ -143,19 +152,18 @@ class PPSRadioClient:
     def _connection_failed(self, link_uri, msg):
         """Callback when connection initial connection fails (i.e no Crazyflie
         at the specified address)"""
-        self.status = DISCONNECTED
+        self.change_status_to(DISCONNECTED)
         rospy.logerr("Connection to %s failed: %s" % (link_uri, msg))
 
     def _connection_lost(self, link_uri, msg):
         """Callback when disconnected after a connection has been made (i.e
         Crazyflie moves out of range)"""
-        self.status = DISCONNECTED
+        self.change_status_to(DISCONNECTED)
         rospy.logerr("Connection to %s lost: %s" % (link_uri, msg))
 
     def _disconnected(self, link_uri):
         """Callback when the Crazyflie is disconnected (called in all cases)"""
-
-        self.status = DISCONNECTED
+        self.change_status_to(DISCONNECTED)
         rospy.logwarn("Disconnected from %s" % link_uri)
         bag.close()
         rospy.loginfo("bag closed")
@@ -170,10 +178,10 @@ class PPSRadioClient:
     def crazyRadioCommandCallback(self, msg):
         """Callback to tell CrazyRadio to reconnect"""
         print "crazyRadio command received %s" % msg.data
-        if msg.data == CMD_RECONNECT:            # reconnect, check status first and then do whatever needs to be done
+        if msg.data == CMD_RECONNECT:            # reconnect, check _status first and then do whatever needs to be done
             print "entered reconnect"
-            print "status: %s" % self.status
-            if self.status == DISCONNECTED:
+            print "_status: %s" % self._status
+            if self.get_status() == DISCONNECTED:
                 print "entered disconnected"
                 self.connect()
 
