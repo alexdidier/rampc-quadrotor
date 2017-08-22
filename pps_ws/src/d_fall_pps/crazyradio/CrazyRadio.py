@@ -84,7 +84,7 @@ class PPSRadioClient:
         # Connect to the Crazyflie
         print "Connecting to %s" % link_uri
 
-        # self.connect();
+        self.connect();
 
     def connect(self):
         self.status = CONNECTING
