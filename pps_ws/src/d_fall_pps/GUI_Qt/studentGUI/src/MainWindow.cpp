@@ -30,7 +30,7 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     // communication with PPS Client, just to make it possible to communicate through terminal also we use PPSClient's name
     ros::NodeHandle nh_PPSClient(ros_namespace + "/PPSClient");
     crazyRadioCommandPublisher = nh_PPSClient.advertise<std_msgs::Int32>("crazyRadioCommand", 1);
-    PPSClientCommadPublisher = nh_PPSClient.advertise<std_msgs::Int32>("Command", 1);
+    PPSClientCommandPublisher = nh_PPSClient.advertise<std_msgs::Int32>("Command", 1);
 
     disableGUI();
 }
@@ -134,14 +134,14 @@ void MainWindow::on_enable_disable_CF_button_clicked()
     {
         std_msgs::Int32 msg;
         msg.data = CMD_USE_CRAZYFLY_ENABLE;
-        this->PPSClientCommadPublisher.publish(msg);
+        this->PPSClientCommandPublisher.publish(msg);
         ui->enable_disable_CF_button->setText("DisableCF");
     }
     else                        //disabled, enable if success
     {
         std_msgs::Int32 msg;
         msg.data = CMD_USE_CRAZYFLY_DISABLE;
-        this->PPSClientCommadPublisher.publish(msg);
+        this->PPSClientCommandPublisher.publish(msg);
         ui->enable_disable_CF_button->setText("EnableCF");
     }
 }
