@@ -116,7 +116,7 @@ void viconCallback(const ViconData& viconData) {
 	for(std::vector<CrazyflieData>::const_iterator it = viconData.crazyflies.begin(); it != viconData.crazyflies.end(); ++it) {
 		CrazyflieData global = *it;
 
-        if(!global.occluded)    //if it is not occluded, then proceed to compute the controller output
+        if(!global.occluded || !crazyflieEnabled)    //if it is not occluded, then proceed to compute the controller output. If the command is disabled, even if it is occluded, disable crazyflie
         {
             if(global.crazyflieName == context.crazyflieName) {
                 Controller controllerCall;
