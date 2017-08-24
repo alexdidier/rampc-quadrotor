@@ -75,6 +75,12 @@ class PPSRadioClient:
         self.status_pub = rospy.Publisher(node_name + '/CrazyRadioStatus', Int32, queue_size=1)
 
         # Initialize the CrazyFlie and add callbacks
+        self._init_cf()
+
+        # Connect to the Crazyflie
+        self.connect()
+
+    def _init_cf(self):
         self._cf = Crazyflie()
 
         # Add callbacks that get executed depending on the connection _status.
@@ -84,9 +90,6 @@ class PPSRadioClient:
         self._cf.connection_lost.add_callback(self._connection_lost)
 
         self.change_status_to(DISCONNECTED)
-        # Connect to the Crazyflie
-        print "Connecting to %s" % link_uri
-        self.connect()
 
     def change_status_to(self, new_status):
         print "status changed to: %s" % new_status
@@ -97,6 +100,7 @@ class PPSRadioClient:
         return self._status
 
     def connect(self):
+        print "Connecting to %s" % self.link_uri
         self.change_status_to(CONNECTING)
         rospy.loginfo("connecting...")
         self._cf.open_link(self.link_uri)
@@ -125,6 +129,26 @@ class PPSRadioClient:
     def _logging_error(self, logconf, msg):
         print "Error when logging %s" % logconf.name
 
+    # def _init_logging(self):
+
+    def _start_logging(self):
+        self.logconf = LogConfig("LoggingTest", 100) # second variable is freq in ms
+        self.logconf.add_variable("stabilizer.roll", "float");
+        self.logconf.add_variable("stabilizer.pitch", "float");
+        self.logconf.add_variable("stabilizer.yaw", "float");
+        self.logconf.add_variable("pm.vbat", "float");
+
+        self._cf.log.add_config(self.logconf)
+        if self.logconf.valid:
+            self.logconf.data_received_cb.add_callback(self._data_received_callback)
+            self.logconf.error_cb.add_callback(self._logging_error)
+            print "logconf valid"
+        else:
+            print "logconf invalid"
+
+        self.logconf.start()
+        print "logconf start"
+
     def _connected(self, link_uri):
         """
             This callback is executed as soon as the connection to the
@@ -132,23 +156,8 @@ class PPSRadioClient:
         """
         self.change_status_to(CONNECTED)
         rospy.loginfo("Connection to %s successful: " % link_uri)
-
-
         # Config for Logging
-        logconf = LogConfig("LoggingTest", 100) # second variable is freq in ms
-        logconf.add_variable("stabilizer.roll", "float");
-        logconf.add_variable("stabilizer.pitch", "float");
-        logconf.add_variable("stabilizer.yaw", "float");
-        logconf.add_variable("pm.vbat", "float");
-
-        self._cf.log.add_config(logconf)
-        if logconf.valid:
-            logconf.data_received_cb.add_callback(self._data_received_callback)
-            logconf.error_cb.add_callback(self._logging_error)
-            logconf.start()
-            print "logconf valid"
-        else:
-            print "logconf invalid"
+        self._start_logging()
 
 
     def _connection_failed(self, link_uri, msg):
@@ -167,8 +176,11 @@ class PPSRadioClient:
         """Callback when the Crazyflie is disconnected (called in all cases)"""
         self.change_status_to(DISCONNECTED)
         rospy.logwarn("Disconnected from %s" % link_uri)
-        bag.close()
-        rospy.loginfo("bag closed")
+
+        self.logconf.stop()
+        rospy.loginfo("logconf stopped")
+        self.logconf.delete()
+        rospy.loginfo("logconf deleted")
 
 
     def _send_to_commander(self,roll, pitch, yaw, thrust, cmd1, cmd2, cmd3, cmd4, mode):
@@ -237,6 +249,9 @@ if __name__ == '__main__':
     cf_client._send_to_commander(0, 0, 0, 0, 0, 0, 0, 0, CONTROLLER_MOTOR)
     #wait for client to send its commands
     time.sleep(1.0)
+
+    bag.close()
+    rospy.loginfo("bag closed")
 
     cf_client._cf.close_link()
     rospy.loginfo("Link closed")
