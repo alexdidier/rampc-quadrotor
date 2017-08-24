@@ -28,7 +28,14 @@
        <string>StudentID # connected to CF #</string>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
-       <item row="2" column="1">
+       <item row="0" column="3">
+        <widget class="QLabel" name="raw_voltage">
+         <property name="text">
+          <string>Raw voltage: </string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
         <widget class="QGroupBox" name="groupBox_2">
          <property name="title">
           <string>Current Position</string>
@@ -72,21 +79,21 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="2">
+       <item row="2" column="3">
         <widget class="QProgressBar" name="battery_bar">
          <property name="value">
           <number>24</number>
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
+       <item row="2" column="1">
         <widget class="QLabel" name="label">
          <property name="text">
           <string>Battery level</string>
          </property>
         </widget>
        </item>
-       <item row="2" column="2">
+       <item row="3" column="3">
         <widget class="QGroupBox" name="groupBox_3">
          <property name="title">
           <string>Controller and current set point</string>

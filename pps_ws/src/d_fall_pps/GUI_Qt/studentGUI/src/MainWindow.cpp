@@ -103,6 +103,9 @@ void MainWindow::updateBatteryVoltage(float battery_voltage)
     m_battery_voltage = battery_voltage;
     // Need to take voltage, display it and transform it to percentage
     ui->battery_bar->setValue(fromVoltageToPercent(m_battery_voltage));
+    QString qstr = "Raw voltage: ";
+    qstr.append(QString::number(battery_voltage));
+    ui->raw_voltage->setText(qstr);
 }
 
 void MainWindow::CFBatteryCallback(const std_msgs::Float32& msg)

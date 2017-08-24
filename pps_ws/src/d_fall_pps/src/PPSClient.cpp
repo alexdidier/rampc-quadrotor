@@ -27,15 +27,27 @@
 #include "d_fall_pps/CrazyflieData.h"
 #include "d_fall_pps/ControlCommand.h"
 #include "d_fall_pps/CrazyflieContext.h"
+#include "d_fall_pps/Setpoint.h"
 #include "std_msgs/Int32.h"
 
 
 #include "d_fall_pps/ControlCommand.h"
 
-#define CMD_USE_SAFE_CONTROLLER 1
+#define CMD_USE_SAFE_CONTROLLER   1
 #define CMD_USE_CUSTOM_CONTROLLER 2
-#define CMD_USE_CRAZYFLY_ENABLE 3
-#define CMD_USE_CRAZYFLY_DISABLE 4
+#define CMD_CRAZYFLY_TAKE_OFF     3
+#define CMD_CRAZYFLY_LAND         4
+#define CMD_CRAZYFLY_MOTORS_OFF   5
+
+// Flying states
+
+#define STATE_MOTORS_OFF 1
+#define STATE_TAKE_OFF   2
+#define STATE_FLYING     3
+#define STATE_LAND       4
+
+#define TAKE_OFF_OFFSET  0.7    //in meters
+#define LANDING_DISTANCE 0.3    //in meters
 
 #define PI 3.141592653589
 
@@ -48,6 +60,7 @@ int studentID;
 ros::ServiceClient safeController;
 //the custom controller specified in the ClientConfig.yaml, is considered potentially unstable
 ros::ServiceClient customController;
+
 //values for safteyCheck
 bool strictSafety;
 float angleMargin;
@@ -55,15 +68,49 @@ float angleMargin;
 ros::ServiceClient centralManager;
 ros::Publisher controlCommandPublisher;
 
+// communicate with safeControllerService, setpoint, etc...
+ros::Publisher safeControllerServiceSetpointPublisher;
+
 rosbag::Bag bag;
+
+// variables for the states:
+int flying_state;
+bool changed_state_flag;
 
 //describes the area of the crazyflie and other parameters
 CrazyflieContext context;
 
 //wheter to use safe of custom controller
 bool usingSafeController;
-//wheter crazyflie is enabled (ready to fly) or disabled (motors off)
-bool crazyflieEnabled;
+
+
+void loadSafeController() {
+	ros::NodeHandle nodeHandle("~");
+
+	std::string safeControllerName;
+	if(!nodeHandle.getParam("safeController", safeControllerName)) {
+		ROS_ERROR("Failed to get safe controller name");
+		return;
+	}
+
+	ros::service::waitForService(safeControllerName);
+	safeController = ros::service::createClient<Controller>(safeControllerName, true);
+    ROS_INFO_STREAM("loaded safe controller: " << safeController.getService());
+}
+
+void loadCustomController() {
+	ros::NodeHandle nodeHandle("~");
+
+	std::string customControllerName;
+	if(!nodeHandle.getParam("customController", customControllerName)) {
+		ROS_ERROR("Failed to get custom controller name");
+		return;
+	}
+
+	customController = ros::service::createClient<Controller>(customControllerName, true);
+    ROS_INFO_STREAM("loaded custom controller " << customControllerName);
+}
+
 
 //checks if crazyflie is within allowed area and if custom controller returns no data
 bool safetyCheck(CrazyflieData data, ControlCommand controlCommand) {
@@ -111,37 +158,143 @@ void coordinatesToLocal(CrazyflieData& cf) {
 	cf.z -= originZ;
 }
 
+
+
+void takeOffCF(CrazyflieData& current_local_coordinates) //local because the setpoint is in local coordinates
+{
+    // set the setpoint and call safe controller
+    Setpoint setpoint_msg;
+    setpoint_msg.x = current_local_coordinates.x;           // previous one
+    setpoint_msg.y = current_local_coordinates.y;           //previous one
+    setpoint_msg.z = current_local_coordinates.z + TAKE_OFF_OFFSET;           //previous one plus some offset
+    setpoint_msg.yaw = current_local_coordinates.yaw;          //previous one
+    safeControllerServiceSetpointPublisher.publish(setpoint_msg);
+
+    // now, use safe controller to go to that setpoint
+    usingSafeController = true;
+    loadSafeController();
+    // when do we finish? after some time with delay?
+}
+
+void landCF(CrazyflieData& current_local_coordinates)
+{
+    // set the setpoint and call safe controller
+    Setpoint setpoint_msg;
+    setpoint_msg.x = current_local_coordinates.x;           // previous one
+    setpoint_msg.y = current_local_coordinates.y;           //previous one
+    setpoint_msg.z = LANDING_DISTANCE;           //previous one plus some offset
+    setpoint_msg.yaw = current_local_coordinates.yaw;          //previous one
+    safeControllerServiceSetpointPublisher.publish(setpoint_msg);
+
+    // now, use safe controller to go to that setpoint
+    usingSafeController = true;
+    loadSafeController();
+}
+
+void changeFlyingStateTo(int new_state)
+{
+    flying_state = new_state;
+    changed_state_flag = true;
+}
+
+int counter = 0;
+bool finished_take_off = false;
+bool finished_land = false;
+
 //is called when new data from Vicon arrives
 void viconCallback(const ViconData& viconData) {
 	for(std::vector<CrazyflieData>::const_iterator it = viconData.crazyflies.begin(); it != viconData.crazyflies.end(); ++it) {
 		CrazyflieData global = *it;
 
-        if(!global.occluded || !crazyflieEnabled)    //if it is not occluded, then proceed to compute the controller output. If the command is disabled, even if it is occluded, disable crazyflie
+        if(global.crazyflieName == context.crazyflieName)
         {
-            if(global.crazyflieName == context.crazyflieName) {
-                Controller controllerCall;
+            Controller controllerCall;
+            CrazyflieData local = global;
+            coordinatesToLocal(local);
+            controllerCall.request.ownCrazyflie = local;
 
-                CrazyflieData local = global;
-                coordinatesToLocal(local);
-                controllerCall.request.ownCrazyflie = local;
+            switch(flying_state) //things here repeat every X ms, non-blocking stuff
+            {
+                case STATE_MOTORS_OFF: // here we will put the code of current disabled button
+                    if(changed_state_flag) // stuff that will be run only once when changing state
+                    {
+                        changed_state_flag = false;
+                    }
+                    break;
+                case STATE_TAKE_OFF: //we need to move up from where we are now.
+                    if(changed_state_flag) // stuff that will be run only once when changing state
+                    {
+                        changed_state_flag = false;
+                        takeOffCF(local);
+                        counter = 0;
+                        finished_take_off = false;
+                    }
+                    counter++;
+                    if(counter >= 200)
+                    {
+                        counter = 0;
+                        finished_take_off = true;
+                    }
+                    if(finished_take_off)
+                    {
+                        finished_take_off = false;
+                        changeFlyingStateTo(STATE_FLYING);
+                    }
+                    break;
+                case STATE_FLYING:
+                    if(changed_state_flag) // stuff that will be run only once when changing state
+                    {
+                        changed_state_flag = false;
+                    }
+                    break;
+                case STATE_LAND:
+                    if(changed_state_flag) // stuff that will be run only once when changing state
+                    {
+                        changed_state_flag = false;
+                        landCF(local);
+                        counter = 0;
+                        finished_land = false;
+                    }
+                    counter++;
+                    if(counter >= 200)
+                    {
+                        counter = 0;
+                        finished_land = true;
+                    }
+                    if(finished_land)
+                    {
+                        finished_land = false;
+                        changeFlyingStateTo(STATE_MOTORS_OFF);
+                    }
+                    break;
+                default:
+                    break;
+            }
 
-                if(crazyflieEnabled){
-                    if(!usingSafeController) {
+
+            // control part that should always be running, calls to controller, computation of control output
+            if(flying_state != STATE_MOTORS_OFF)
+            {
+                if(!global.occluded)    //if it is not occluded, then proceed to compute the controller output.
+                {
+                    if(!usingSafeController && flying_state == STATE_FLYING) // only enter in custom controller if we are not using safe controller AND the flying state is FLYING
+                    {
                         bool success = customController.call(controllerCall);
-
-                        if(!success) {
+                        if(!success)
+                        {
                             ROS_ERROR("Failed to call custom controller, switching to safe controller");
                             ROS_ERROR_STREAM("custom controller status: valid: " << customController.isValid() << ", exists: " << customController.exists());
                             ROS_ERROR_STREAM("custom controller name: " << customController.getService());
                             usingSafeController = true;
-                        } else if(!safetyCheck(global, controllerCall.response.controlOutput)) {
+                        }
+                        else if(!safetyCheck(global, controllerCall.response.controlOutput))
+                        {
                             usingSafeController = true;
                             ROS_INFO_STREAM("safety check failed, switching to safe controller");
                         }
                     }
-
-
-                    if(usingSafeController) {
+                    else
+                    {
                         bool success = safeController.call(controllerCall);
                         if(!success) {
                             ROS_ERROR_STREAM("Failed to call safe controller, valid: " << safeController.isValid() << ", exists: " << safeController.exists());
@@ -154,14 +307,15 @@ void viconCallback(const ViconData& viconData) {
 
                     bag.write("ViconData", ros::Time::now(), local);
                     bag.write("ControlOutput", ros::Time::now(), controllerCall.response.controlOutput);
-
-                } else { //crazyflie disabled
-                    ControlCommand zeroOutput = ControlCommand(); //everything set to zero
-                    zeroOutput.onboardControllerType = 2; //set to motor_mode
-                    controlCommandPublisher.publish(zeroOutput);
-                    bag.write("ViconData", ros::Time::now(), local);
-                    bag.write("ControlOutput", ros::Time::now(), zeroOutput);
                 }
+            }
+            else
+            {
+                ControlCommand zeroOutput = ControlCommand(); //everything set to zero
+                zeroOutput.onboardControllerType = 2; //set to motor_mode
+                controlCommandPublisher.publish(zeroOutput);
+                bag.write("ViconData", ros::Time::now(), local);
+                bag.write("ControlOutput", ros::Time::now(), zeroOutput);
             }
         }
 	}
@@ -201,35 +355,11 @@ void loadCrazyflieContext() {
 	nh.setParam("crazyFlieAddress", context.crazyflieAddress);
 }
 
-void loadSafeController() {
-	ros::NodeHandle nodeHandle("~");
 
-	std::string safeControllerName;
-	if(!nodeHandle.getParam("safeController", safeControllerName)) {
-		ROS_ERROR("Failed to get safe controller name");
-		return;
-	}
-
-	ros::service::waitForService(safeControllerName);
-	safeController = ros::service::createClient<Controller>(safeControllerName, true);
-    ROS_INFO_STREAM("loaded safe controller: " << safeController.getService());
-}
-
-void loadCustomController() {
-	ros::NodeHandle nodeHandle("~");
-
-	std::string customControllerName;
-	if(!nodeHandle.getParam("customController", customControllerName)) {
-		ROS_ERROR("Failed to get custom controller name");
-		return;
-	}
-
-	customController = ros::service::createClient<Controller>(customControllerName, true);
-    ROS_INFO_STREAM("loaded custom controller " << customControllerName);
-}
 
 void commandCallback(const std_msgs::Int32& commandMsg) {
 	int cmd = commandMsg.data;
+
 	switch(cmd) {
     	case CMD_USE_SAFE_CONTROLLER:
     		loadSafeController();
@@ -241,13 +371,16 @@ void commandCallback(const std_msgs::Int32& commandMsg) {
     		usingSafeController = false;
     		break;
 
-    	case CMD_USE_CRAZYFLY_ENABLE:
-    		crazyflieEnabled = true;
+    	case CMD_CRAZYFLY_TAKE_OFF:
+            changeFlyingStateTo(STATE_TAKE_OFF);
     		break;
 
-    	case CMD_USE_CRAZYFLY_DISABLE:
-    		crazyflieEnabled = false;
+    	case CMD_CRAZYFLY_LAND:
+            changeFlyingStateTo(STATE_LAND);
     		break;
+        case CMD_CRAZYFLY_MOTORS_OFF:
+            changeFlyingStateTo(STATE_MOTORS_OFF);
+            break;
 
     	default:
     		ROS_ERROR_STREAM("unexpected command number: " << cmd);
@@ -255,7 +388,8 @@ void commandCallback(const std_msgs::Int32& commandMsg) {
 	}
 }
 
-int main(int argc, char* argv[]){
+int main(int argc, char* argv[])
+{
 	ros::init(argc, argv, "PPSClient");
 	ros::NodeHandle nodeHandle("~");
 	loadParameters(nodeHandle);
@@ -279,8 +413,12 @@ int main(int argc, char* argv[]){
     //this topic lets us use the terminal to communicate with crazyRadio node.
     ros::Publisher crazyRadioCommandPublisher = nodeHandle.advertise<std_msgs::Int32>("crazyRadioCommand", 1);
 
+    // SafeControllerServicePublisher:
+    ros::NodeHandle namespaceNodeHandle = ros::NodeHandle();
+    safeControllerServiceSetpointPublisher = namespaceNodeHandle.advertise<d_fall_pps::Setpoint>("SafeControllerService/Setpoint", 1);
+
 	//start with safe controller
-	crazyflieEnabled = false;
+    flying_state = STATE_MOTORS_OFF;
 	usingSafeController = true;
 	loadSafeController();
 
