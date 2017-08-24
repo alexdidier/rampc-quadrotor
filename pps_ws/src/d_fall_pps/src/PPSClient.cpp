@@ -46,8 +46,10 @@
 #define STATE_FLYING     3
 #define STATE_LAND       4
 
-#define TAKE_OFF_OFFSET  0.7    //in meters
-#define LANDING_DISTANCE 0.3    //in meters
+#define TAKE_OFF_OFFSET  1    //in meters
+#define LANDING_DISTANCE 0.15    //in meters
+#define DURATION_TAKE_OFF  300   //100 is 1 second
+#define DURATION_LANDING   300   //100 is 1 second
 
 #define PI 3.141592653589
 
@@ -167,8 +169,14 @@ void takeOffCF(CrazyflieData& current_local_coordinates) //local because the set
     setpoint_msg.x = current_local_coordinates.x;           // previous one
     setpoint_msg.y = current_local_coordinates.y;           //previous one
     setpoint_msg.z = current_local_coordinates.z + TAKE_OFF_OFFSET;           //previous one plus some offset
-    setpoint_msg.yaw = current_local_coordinates.yaw;          //previous one
+    // setpoint_msg.yaw = current_local_coordinates.yaw;          //previous one
+    setpoint_msg.yaw = 0.0;
     safeControllerServiceSetpointPublisher.publish(setpoint_msg);
+    ROS_INFO("Take OFF:");
+    ROS_INFO("------Current coordinates:");
+    ROS_INFO("X: %f, Y: %f, Z: %f", current_local_coordinates.x, current_local_coordinates.y, current_local_coordinates.z);
+    ROS_INFO("------New coordinates:");
+    ROS_INFO("X: %f, Y: %f, Z: %f", setpoint_msg.x, setpoint_msg.y, setpoint_msg.z);
 
     // now, use safe controller to go to that setpoint
     usingSafeController = true;
@@ -191,8 +199,19 @@ void landCF(CrazyflieData& current_local_coordinates)
     loadSafeController();
 }
 
+void goToOrigin()
+{
+    Setpoint setpoint_msg;
+    setpoint_msg.x = 0;
+    setpoint_msg.y = 0;
+    setpoint_msg.z = 0.4;
+    setpoint_msg.yaw = 0;
+    safeControllerServiceSetpointPublisher.publish(setpoint_msg);
+}
+
 void changeFlyingStateTo(int new_state)
 {
+    ROS_INFO("Change state to: %d", new_state);
     flying_state = new_state;
     changed_state_flag = true;
 }
@@ -230,7 +249,7 @@ void viconCallback(const ViconData& viconData) {
                         finished_take_off = false;
                     }
                     counter++;
-                    if(counter >= 200)
+                    if(counter >= DURATION_TAKE_OFF)
                     {
                         counter = 0;
                         finished_take_off = true;
@@ -245,6 +264,8 @@ void viconCallback(const ViconData& viconData) {
                     if(changed_state_flag) // stuff that will be run only once when changing state
                     {
                         changed_state_flag = false;
+                        // need to change setpoint to the one from file
+                        goToOrigin();
                     }
                     break;
                 case STATE_LAND:
@@ -256,7 +277,7 @@ void viconCallback(const ViconData& viconData) {
                         finished_land = false;
                     }
                     counter++;
-                    if(counter >= 200)
+                    if(counter >= DURATION_LANDING)
                     {
                         counter = 0;
                         finished_land = true;

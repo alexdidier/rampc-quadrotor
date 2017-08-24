@@ -121,7 +121,7 @@ class PPSRadioClient:
 
         #publish battery voltage for GUI
         #cfbattery_pub.publish(std_msgs.Float32(batteryVolt.data))
-        print "batteryVolt: %s" % batteryVolt
+        # print "batteryVolt: %s" % batteryVolt
         cfbattery_pub.publish(batteryVolt)
 
 
