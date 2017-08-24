@@ -51,7 +51,7 @@ private:
 
     ros::Publisher crazyRadioCommandPublisher;
     ros::Subscriber crazyRadioStatusSubscriber;
-    ros::Publisher PPSClientCommadPublisher;
+    ros::Publisher PPSClientCommandPublisher;
     ros::Subscriber CFBatterySubscriber;
 
     // callbacks
