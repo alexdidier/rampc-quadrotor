@@ -5,6 +5,10 @@
 #include <ros/ros.h>
 #include <ros/network.h>
 
+#include "d_fall_pps/CMQuery.h"
+
+#include "d_fall_pps/ViconData.h"
+
 MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
@@ -15,7 +19,6 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     m_rosNodeThread->init();
 
     setCrazyRadioStatus(DISCONNECTED);
-
 
     std::string ros_namespace = ros::this_node::getNamespace();
     ROS_INFO("namespace: %s", ros_namespace.c_str());
@@ -35,6 +38,12 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     ros::NodeHandle nh_PPSClient(ros_namespace + "/PPSClient");
     crazyRadioCommandPublisher = nh_PPSClient.advertise<std_msgs::Int32>("crazyRadioCommand", 1);
     PPSClientCommandPublisher = nh_PPSClient.advertise<std_msgs::Int32>("Command", 1);
+
+    // get student ID
+    if(!nh_PPSClient.getParam("studentID", m_student_id))
+    {
+		ROS_ERROR("Failed to get studentID");
+	}
 
     disableGUI();
 }
@@ -148,8 +157,46 @@ void MainWindow::crazyRadioStatusCallback(const std_msgs::Int32& msg)
     this->setCrazyRadioStatus(msg.data);
 }
 
+void MainWindow::loadCrazyflieContext()
+{
+	CMQuery contextCall;
+	contextCall.request.studentID = m_student_id;
+	ROS_INFO_STREAM("StudentID:" << m_student_id);
+
+	centralManager.waitForExistence(ros::Duration(-1));
+
+	if(centralManager.call(contextCall)) {
+		m_context = contextCall.response.crazyflieContext;
+		ROS_INFO_STREAM("CrazyflieContext:\n" << m_context);
+	} else {
+		ROS_ERROR("Failed to load context");
+	}
+
+	ros::NodeHandle nh("CrazyRadio");
+	nh.setParam("crazyFlieAddress", m_context.crazyflieAddress);
+}
+
+void MainWindow::coordinatesToLocal(CrazyflieData& cf)
+{
+	AreaBounds area = m_context.localArea;
+	float originX = (area.xmin + area.xmax) / 2.0;
+	float originY = (area.ymin + area.ymax) / 2.0;
+    // change Z origin to zero, i.e., to the table height, zero of global coordinates, instead of middle of the box
+    float originZ = 0.0;
+	// float originZ = (area.zmin + area.zmax) / 2.0;
+
+	cf.x -= originX;
+	cf.y -= originY;
+	cf.z -= originZ;
+}
+
+
 void MainWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to newViconData, from node
 {
+    for(std::vector<CrazyflieData>::const_iterator it = p_msg->crazyflies.begin(); it != p_msg->crazyflies.end(); ++it)
+    {
+		CrazyflieData global = *it;
+    }
 }
 
 void MainWindow::on_RF_Connect_button_clicked()

@@ -8,6 +8,10 @@
 
 #include "rosNodeThread.h"
 
+#include "d_fall_pps/CrazyflieContext.h"
+#include "d_fall_pps/CrazyflieData.h"
+
+
 // commands for CrazyRadio
 #define CMD_RECONNECT  0
 
@@ -58,14 +62,18 @@ private:
     rosNodeThread* m_rosNodeThread;
     int m_radio_status;
     float m_battery_voltage;
-
     int m_battery_level;
+
+    int m_student_id;
+    CrazyflieContext m_context;
 
     ros::Publisher crazyRadioCommandPublisher;
     ros::Subscriber crazyRadioStatusSubscriber;
     ros::Publisher PPSClientCommandPublisher;
     ros::Subscriber CFBatterySubscriber;
     ros::Subscriber flyingStateSubscriber;
+
+    ros::ServiceClient centralManager;
 
     // callbacks
     void crazyRadioStatusCallback(const std_msgs::Int32& msg);
@@ -75,6 +83,9 @@ private:
     float fromVoltageToPercent(float voltage);
     void updateBatteryVoltage(float battery_voltage);
     void setCrazyRadioStatus(int radio_status);
+    void loadCrazyflieContext();
+    void coordinatesToLocal(CrazyflieData& cf);
+
 
     void disableGUI();
     void enableGUI();
