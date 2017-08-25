@@ -26,6 +26,8 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
 
     CFBatterySubscriber = nodeHandle.subscribe("CrazyRadio/CFBattery", 1, &MainWindow::CFBatteryCallback, this);
 
+    flyingStateSubscriber = nodeHandle.subscribe("PPSClient/flyingState", 1, &MainWindow::flyingStateChangedCallback, this);
+
 
     // communication with PPS Client, just to make it possible to communicate through terminal also we use PPSClient's name
     ros::NodeHandle nh_PPSClient(ros_namespace + "/PPSClient");
@@ -43,15 +45,36 @@ MainWindow::~MainWindow()
 
 void MainWindow::disableGUI()
 {
-    ui->enable_disable_CF_button->setEnabled(false);
     ui->battery_bar->setValue(0);
     ui->battery_bar->setEnabled(false);
 }
 
 void MainWindow::enableGUI()
 {
-    ui->enable_disable_CF_button->setEnabled(true);
     ui->battery_bar->setEnabled(true);
+}
+
+void MainWindow::flyingStateChangedCallback(const std_msgs::Int32& msg)
+{
+    QString qstr = "Flying State: ";
+    switch(msg.data)
+    {
+        case STATE_MOTORS_OFF:
+            qstr.append("Motors OFF");
+            break;
+        case STATE_TAKE_OFF:
+            qstr.append("Take OFF");
+            break;
+        case STATE_FLYING:
+            qstr.append("Flying");
+            break;
+        case STATE_LAND:
+            qstr.append("Land");
+            break;
+        default:
+            break;
+    }
+    ui->flying_state_label->setText(qstr);
 }
 
 void MainWindow::setCrazyRadioStatus(int radio_status)
@@ -131,20 +154,23 @@ void MainWindow::on_RF_Connect_button_clicked()
     ROS_INFO("command reconnect published");
 }
 
-void MainWindow::on_enable_disable_CF_button_clicked()
+void MainWindow::on_take_off_button_clicked()
 {
-    if(ui->enable_disable_CF_button->text().toStdString() == "EnableCF") //enabled, disable if success
-    {
-        std_msgs::Int32 msg;
-        msg.data = CMD_USE_CRAZYFLY_ENABLE;
-        this->PPSClientCommandPublisher.publish(msg);
-        ui->enable_disable_CF_button->setText("DisableCF");
-    }
-    else                        //disabled, enable if success
-    {
-        std_msgs::Int32 msg;
-        msg.data = CMD_USE_CRAZYFLY_DISABLE;
-        this->PPSClientCommandPublisher.publish(msg);
-        ui->enable_disable_CF_button->setText("EnableCF");
-    }
+    std_msgs::Int32 msg;
+    msg.data = CMD_CRAZYFLY_TAKE_OFF;
+    this->PPSClientCommandPublisher.publish(msg);
+}
+
+void MainWindow::on_land_button_clicked()
+{
+    std_msgs::Int32 msg;
+    msg.data = CMD_CRAZYFLY_LAND;
+    this->PPSClientCommandPublisher.publish(msg);
+}
+
+void MainWindow::on_motors_OFF_button_clicked()
+{
+    std_msgs::Int32 msg;
+    msg.data = CMD_CRAZYFLY_MOTORS_OFF;
+    this->PPSClientCommandPublisher.publish(msg);
 }

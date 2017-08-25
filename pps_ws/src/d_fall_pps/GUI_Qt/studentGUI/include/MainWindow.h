@@ -18,10 +18,17 @@
 #define DISCONNECTED     2
 
 // Commands for PPSClient
-#define CMD_USE_SAFE_CONTROLLER 1
+#define CMD_USE_SAFE_CONTROLLER   1
 #define CMD_USE_CUSTOM_CONTROLLER 2
-#define CMD_USE_CRAZYFLY_ENABLE 3
-#define CMD_USE_CRAZYFLY_DISABLE 4
+#define CMD_CRAZYFLY_TAKE_OFF     3
+#define CMD_CRAZYFLY_LAND         4
+#define CMD_CRAZYFLY_MOTORS_OFF   5
+
+// Flying States
+#define STATE_MOTORS_OFF 1
+#define STATE_TAKE_OFF   2
+#define STATE_FLYING     3
+#define STATE_LAND       4
 
 namespace Ui {
 class MainWindow;
@@ -38,7 +45,12 @@ public:
 private slots:
     void updateNewViconData(const ptrToMessage& p_msg);
     void on_RF_Connect_button_clicked();
-    void on_enable_disable_CF_button_clicked();
+
+    void on_take_off_button_clicked();
+
+    void on_land_button_clicked();
+
+    void on_motors_OFF_button_clicked();
 
 private:
     Ui::MainWindow *ui;
@@ -53,10 +65,12 @@ private:
     ros::Subscriber crazyRadioStatusSubscriber;
     ros::Publisher PPSClientCommandPublisher;
     ros::Subscriber CFBatterySubscriber;
+    ros::Subscriber flyingStateSubscriber;
 
     // callbacks
     void crazyRadioStatusCallback(const std_msgs::Int32& msg);
     void CFBatteryCallback(const std_msgs::Float32& msg);
+    void flyingStateChangedCallback(const std_msgs::Int32& msg);
 
     float fromVoltageToPercent(float voltage);
     void updateBatteryVoltage(float battery_voltage);

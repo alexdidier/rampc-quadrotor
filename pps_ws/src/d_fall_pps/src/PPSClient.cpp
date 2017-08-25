@@ -40,7 +40,6 @@
 #define CMD_CRAZYFLY_MOTORS_OFF   5
 
 // Flying states
-
 #define STATE_MOTORS_OFF 1
 #define STATE_TAKE_OFF   2
 #define STATE_FLYING     3
@@ -70,6 +69,9 @@ ros::Publisher controlCommandPublisher;
 
 // communicate with safeControllerService, setpoint, etc...
 ros::Publisher safeControllerServiceSetpointPublisher;
+
+// publisher for flying state
+ros::Publisher flyingStatePublisher;
 
 rosbag::Bag bag;
 
@@ -195,6 +197,9 @@ void changeFlyingStateTo(int new_state)
 {
     flying_state = new_state;
     changed_state_flag = true;
+    std_msgs::Int32 flying_state_msg;
+    flying_state_msg.data = flying_state;
+    flyingStatePublisher.publish(flying_state_msg);
 }
 
 int counter = 0;
@@ -372,11 +377,17 @@ void commandCallback(const std_msgs::Int32& commandMsg) {
     		break;
 
     	case CMD_CRAZYFLY_TAKE_OFF:
-            changeFlyingStateTo(STATE_TAKE_OFF);
+            if(flying_state == STATE_MOTORS_OFF)
+            {
+                changeFlyingStateTo(STATE_TAKE_OFF);
+            }
     		break;
 
     	case CMD_CRAZYFLY_LAND:
-            changeFlyingStateTo(STATE_LAND);
+            if(flying_state != STATE_MOTORS_OFF)
+            {
+                changeFlyingStateTo(STATE_LAND);
+            }
     		break;
         case CMD_CRAZYFLY_MOTORS_OFF:
             changeFlyingStateTo(STATE_MOTORS_OFF);
@@ -412,6 +423,13 @@ int main(int argc, char* argv[])
 
     //this topic lets us use the terminal to communicate with crazyRadio node.
     ros::Publisher crazyRadioCommandPublisher = nodeHandle.advertise<std_msgs::Int32>("crazyRadioCommand", 1);
+
+    // this topic will publish flying state whenever it changes.
+    flyingStatePublisher = nodeHandle.advertise<std_msgs::Int32>("flyingState", 1);
+    // publish first flying state data
+    std_msgs::Int32 flying_state_msg;
+    flying_state_msg.data = flying_state;
+    flyingStatePublisher.publish(flying_state_msg);
 
     // SafeControllerServicePublisher:
     ros::NodeHandle namespaceNodeHandle = ros::NodeHandle();
