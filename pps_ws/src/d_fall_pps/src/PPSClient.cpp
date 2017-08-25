@@ -243,6 +243,7 @@ void viconCallback(const ViconData& viconData) {
                     if(changed_state_flag) // stuff that will be run only once when changing state
                     {
                         changed_state_flag = false;
+                        ROS_INFO("STATE_MOTORS_OFF");
                     }
                     break;
                 case STATE_TAKE_OFF: //we need to move up from where we are now.
@@ -252,6 +253,7 @@ void viconCallback(const ViconData& viconData) {
                         takeOffCF(local);
                         counter = 0;
                         finished_take_off = false;
+                        ROS_INFO("STATE_TAKE_OFF");
                     }
                     counter++;
                     if(counter >= DURATION_TAKE_OFF)
@@ -271,6 +273,7 @@ void viconCallback(const ViconData& viconData) {
                         changed_state_flag = false;
                         // need to change setpoint to the one from file
                         goToOrigin();
+                        ROS_INFO("STATE_FLYING");
                     }
                     break;
                 case STATE_LAND:
@@ -280,6 +283,7 @@ void viconCallback(const ViconData& viconData) {
                         landCF(local);
                         counter = 0;
                         finished_land = false;
+                        ROS_INFO("STATE_LAND");
                     }
                     counter++;
                     if(counter >= DURATION_LANDING)
@@ -296,7 +300,6 @@ void viconCallback(const ViconData& viconData) {
                 default:
                     break;
             }
-
 
             // control part that should always be running, calls to controller, computation of control output
             if(flying_state != STATE_MOTORS_OFF)

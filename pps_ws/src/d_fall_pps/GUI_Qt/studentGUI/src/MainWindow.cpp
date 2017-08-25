@@ -8,12 +8,14 @@
 MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    m_radio_status(DISCONNECTED),
     m_battery_level(0)
 {
     m_rosNodeThread = new rosNodeThread(argc, argv, "student_GUI");
     ui->setupUi(this);
     m_rosNodeThread->init();
+
+    setCrazyRadioStatus(DISCONNECTED);
+
 
     std::string ros_namespace = ros::this_node::getNamespace();
     ROS_INFO("namespace: %s", ros_namespace.c_str());
@@ -45,13 +47,10 @@ MainWindow::~MainWindow()
 
 void MainWindow::disableGUI()
 {
-    ui->battery_bar->setValue(0);
-    ui->battery_bar->setEnabled(false);
 }
 
 void MainWindow::enableGUI()
 {
-    ui->battery_bar->setEnabled(true);
 }
 
 void MainWindow::flyingStateChangedCallback(const std_msgs::Int32& msg)
@@ -118,6 +117,13 @@ float MainWindow::fromVoltageToPercent(float voltage)
     }
 
     float percentage = 100.0 * m_battery_level/num_cutoffs;
+
+    // should not hapen, but just in case...
+    if(percentage > 100)
+        percentage = 100;
+    if(percentage < 0)
+        percentage = 0;
+
     return percentage;
 }
 

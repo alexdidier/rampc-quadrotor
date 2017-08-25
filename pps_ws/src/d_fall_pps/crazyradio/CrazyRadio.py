@@ -47,6 +47,13 @@ DISCONNECTED = 2
 # Commands coming
 CMD_RECONNECT = 0
 
+# Commands for PPSClient
+CMD_USE_SAFE_CONTROLLER =   1
+CMD_USE_CUSTOM_CONTROLLER = 2
+CMD_CRAZYFLY_TAKE_OFF =     3
+CMD_CRAZYFLY_LAND =         4
+CMD_CRAZYFLY_MOTORS_OFF =   5
+
 rp = RosPack()
 record_file = rp.get_path('d_fall_pps') + '/LoggingOnboard.bag'
 rospy.loginfo('afdsasdfasdfsadfasdfasdfasdfasdfasdfasdf')
@@ -73,6 +80,7 @@ class PPSRadioClient:
         self.link_uri = link_uri
 
         self.status_pub = rospy.Publisher(node_name + '/CrazyRadioStatus', Int32, queue_size=1)
+        self.PPSClient_command_pub = rospy.Publisher('PPSClient/Command', Int32, queue_size=1)
 
         # Initialize the CrazyFlie and add callbacks
         self._init_cf()
@@ -155,9 +163,14 @@ class PPSRadioClient:
             quadrotor is established.
         """
         self.change_status_to(CONNECTED)
+        # change state to motors OFF
+        cf_client.PPSClient_command_pub.publish(CMD_CRAZYFLY_MOTORS_OFF)
+
         rospy.loginfo("Connection to %s successful: " % link_uri)
         # Config for Logging
         self._start_logging()
+
+
 
 
     def _connection_failed(self, link_uri, msg):
@@ -176,6 +189,9 @@ class PPSRadioClient:
         """Callback when the Crazyflie is disconnected (called in all cases)"""
         self.change_status_to(DISCONNECTED)
         rospy.logwarn("Disconnected from %s" % link_uri)
+
+        # change state to motors OFF
+        self.PPSClient_command_pub.publish(CMD_CRAZYFLY_MOTORS_OFF)
 
         self.logconf.stop()
         rospy.loginfo("logconf stopped")
@@ -247,8 +263,12 @@ if __name__ == '__main__':
     rospy.loginfo("Turning off crazyflie")
 
     cf_client._send_to_commander(0, 0, 0, 0, 0, 0, 0, 0, CONTROLLER_MOTOR)
+    # change state to motors OFF
+    cf_client.PPSClient_command_pub.publish(CMD_CRAZYFLY_MOTORS_OFF)
     #wait for client to send its commands
     time.sleep(1.0)
+
+
 
     bag.close()
     rospy.loginfo("bag closed")
