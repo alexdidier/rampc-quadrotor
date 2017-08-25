@@ -1,5 +1,10 @@
 <launch>
 
+    <!-- When we have a GUI, this has to be adapted and included -->
+	<node pkg="d_fall_pps" name="student_GUI" output="screen" type="student_GUI">
+		<!-- <rosparam command="load" file="$(find d_fall_pps)/launch/ControlParams.yaml" /> -->
+	</node>
+
 	<node pkg="d_fall_pps" name="CrazyRadio" output="screen" type="CrazyRadio.py">
 		<rosparam command="load" file="$(find d_fall_pps)/param/ClientConfig.yaml" />
 	</node>
@@ -16,9 +21,6 @@
 	<node pkg="d_fall_pps" name="CustomControllerService" output="screen" type="CustomControllerService">
 	</node>
 
-    <!-- When we have a GUI, this has to be adapted and included -->
-	<node pkg="d_fall_pps" name="student_GUI" output="screen" type="student_GUI">
-		<!-- <rosparam command="load" file="$(find d_fall_pps)/launch/ControlParams.yaml" /> -->
-	</node>
+
 
 </launch>

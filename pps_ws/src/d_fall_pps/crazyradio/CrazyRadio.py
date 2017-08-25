@@ -81,6 +81,7 @@ class PPSRadioClient:
 
         self.status_pub = rospy.Publisher(node_name + '/CrazyRadioStatus', Int32, queue_size=1)
         self.PPSClient_command_pub = rospy.Publisher('PPSClient/Command', Int32, queue_size=1)
+        time.sleep(1.0)
 
         # Initialize the CrazyFlie and add callbacks
         self._init_cf()
