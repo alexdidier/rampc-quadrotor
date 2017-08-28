@@ -81,6 +81,8 @@ private:
     ros::Publisher setpointPublisher;
     ros::Subscriber setpointSubscriber;
 
+    ros::Subscriber DBChangedSubscriber;
+
     ros::ServiceClient centralManager;
 
     // callbacks
@@ -88,6 +90,7 @@ private:
     void CFBatteryCallback(const std_msgs::Float32& msg);
     void flyingStateChangedCallback(const std_msgs::Int32& msg);
     void setpointCallback(const Setpoint& newSetpoint);
+    void DBChangedCallback(const std_msgs::Int32& msg);
 
     float fromVoltageToPercent(float voltage);
     void updateBatteryVoltage(float battery_voltage);

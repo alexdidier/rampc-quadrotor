@@ -17,6 +17,8 @@
 #include "d_fall_pps/CrazyflieDB.h"
 #include "d_fall_pps/CrazyflieEntry.h"
 
+#include <std_msgs/Int32.h>
+
 
 using namespace d_fall_pps;
 #endif
@@ -142,6 +144,8 @@ private:
     std::vector<Marker*> markers_vector;
     std::vector<crazyFly*> crazyflies_vector;
     CFLinker* cf_linker;
+
+    ros::Publisher DBChangedPublisher;
     #endif
 
     void updateComboBoxesCFs();

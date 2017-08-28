@@ -20,6 +20,10 @@
 #include "d_fall_pps/CMUpdate.h"
 #include "d_fall_pps/CMCommand.h"
 #include "CentralManagerService.h"
+
+#include <ros/ros.h>
+#include <ros/network.h>
+
 #endif
 
 #include <string>
@@ -191,6 +195,9 @@ void MainGUIWindow::_init()
     qRegisterMetaType<ptrToMessage>("ptrToMessage");
     QObject::connect(_rosNodeThread, SIGNAL(newViconData(const ptrToMessage&)), this, SLOT(updateNewViconData(const ptrToMessage&)));
     QObject::connect(cf_linker, SIGNAL(updateComboBoxes()), this, SLOT(updateComboBoxes()));
+
+    ros::NodeHandle nodeHandle("~");
+    DBChangedPublisher = nodeHandle.advertise<std_msgs::Int32>("DBChanged", 1);
     #endif
 }
 
@@ -756,6 +763,11 @@ void MainGUIWindow::on_save_in_DB_button_clicked()
     // save the database in the file
 
     fill_database_file();
+
+    // Now also publish a ROS message stating that we changed the DB, so the nodes can update it
+    std_msgs::Int32 msg;
+    msg.data = 1;
+    this->DBChangedPublisher.publish(msg);
 }
 
 void MainGUIWindow::clear_database_file()

@@ -423,6 +423,11 @@ void commandCallback(const std_msgs::Int32& commandMsg) {
 	}
 }
 
+void DBChangedCallback(const std_msgs::Int32& msg)
+{
+    loadCrazyflieContext();
+}
+
 int main(int argc, char* argv[])
 {
 	ros::init(argc, argv, "PPSClient");
@@ -449,6 +454,9 @@ int main(int argc, char* argv[])
 
     // this topic will publish flying state whenever it changes.
     flyingStatePublisher = nodeHandle.advertise<std_msgs::Int32>("flyingState", 1);
+
+
+
     // publish first flying state data
     std_msgs::Int32 flying_state_msg;
     flying_state_msg.data = flying_state;
@@ -457,6 +465,9 @@ int main(int argc, char* argv[])
     // SafeControllerServicePublisher:
     ros::NodeHandle namespaceNodeHandle = ros::NodeHandle();
     safeControllerServiceSetpointPublisher = namespaceNodeHandle.advertise<d_fall_pps::Setpoint>("SafeControllerService/Setpoint", 1);
+
+    // subscriber for DBChanged
+    ros::Subscriber DBChangedSubscriber = namespaceNodeHandle.subscribe("my_GUI/DBChanged", 1, DBChangedCallback);
 
 	//start with safe controller
     flying_state = STATE_MOTORS_OFF;
