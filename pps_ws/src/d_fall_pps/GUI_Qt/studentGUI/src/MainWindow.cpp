@@ -180,7 +180,7 @@ void MainWindow::updateBatteryVoltage(float battery_voltage)
     }
 
     QString qstr = "Raw voltage: ";
-    qstr.append(QString::number(battery_voltage));
+    qstr.append(QString::number(battery_voltage, 'f', 2));
     ui->raw_voltage->setText(qstr);
 }
 
@@ -243,18 +243,18 @@ void MainWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to ne
             coordinatesToLocal(local);
 
             // now we have the local coordinates, put them in the labels
-            ui->current_x->setText(QString::number(local.x));
-            ui->current_y->setText(QString::number(local.y));
-            ui->current_z->setText(QString::number(local.z));
-            ui->current_yaw->setText(QString::number(local.yaw));
-            ui->current_pitch->setText(QString::number(local.pitch));
-            ui->current_roll->setText(QString::number(local.roll));
+            ui->current_x->setText(QString::number(local.x, 'f', 3));
+            ui->current_y->setText(QString::number(local.y, 'f', 3));
+            ui->current_z->setText(QString::number(local.z, 'f', 3));
+            ui->current_yaw->setText(QString::number(local.yaw, 'f', 3));
+            ui->current_pitch->setText(QString::number(local.pitch, 'f', 3));
+            ui->current_roll->setText(QString::number(local.roll, 'f', 3));
 
             // also update diff
-            ui->diff_x->setText(QString::number(m_setpoint.x - local.x));
-            ui->diff_y->setText(QString::number(m_setpoint.y - local.y));
-            ui->diff_z->setText(QString::number(m_setpoint.z - local.z));
-            ui->diff_yaw->setText(QString::number(m_setpoint.yaw - local.yaw));
+            ui->diff_x->setText(QString::number(m_setpoint.x - local.x, 'f', 3));
+            ui->diff_y->setText(QString::number(m_setpoint.y - local.y, 'f', 3));
+            ui->diff_z->setText(QString::number(m_setpoint.z - local.z, 'f', 3));
+            ui->diff_yaw->setText(QString::number(m_setpoint.yaw - local.yaw, 'f', 3));
         }
     }
 }
