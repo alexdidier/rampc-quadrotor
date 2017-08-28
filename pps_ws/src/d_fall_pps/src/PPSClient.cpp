@@ -429,7 +429,6 @@ int main(int argc, char* argv[])
 	ros::NodeHandle nodeHandle("~");
 	loadParameters(nodeHandle);
 
-
 	//ros::service::waitForService("/CentralManagerService/CentralManager");
 	centralManager = nodeHandle.serviceClient<CMQuery>("/CentralManagerService/Query", false);
 	loadCrazyflieContext();

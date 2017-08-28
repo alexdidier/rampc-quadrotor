@@ -39,11 +39,27 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     crazyRadioCommandPublisher = nh_PPSClient.advertise<std_msgs::Int32>("crazyRadioCommand", 1);
     PPSClientCommandPublisher = nh_PPSClient.advertise<std_msgs::Int32>("Command", 1);
 
-    // get student ID
+
+    // First get student ID
     if(!nh_PPSClient.getParam("studentID", m_student_id))
     {
 		ROS_ERROR("Failed to get studentID");
 	}
+
+
+
+
+    // Then, Central manager
+    centralManager = nodeHandle.serviceClient<CMQuery>("/CentralManagerService/Query", false);
+    loadCrazyflieContext();
+
+    // we now have the m_context variable with the current context. Put CF Name in label
+
+    QString qstr = "StudentID ";
+    qstr.append(QString::number(m_student_id));
+    qstr.append(" connected to CF ");
+    qstr.append(QString::fromStdString(m_context.crazyflieName));
+    ui->groupBox->setTitle(qstr);
 
     disableGUI();
 }
@@ -165,10 +181,13 @@ void MainWindow::loadCrazyflieContext()
 
 	centralManager.waitForExistence(ros::Duration(-1));
 
-	if(centralManager.call(contextCall)) {
+	if(centralManager.call(contextCall))
+    {
 		m_context = contextCall.response.crazyflieContext;
 		ROS_INFO_STREAM("CrazyflieContext:\n" << m_context);
-	} else {
+	}
+    else
+    {
 		ROS_ERROR("Failed to load context");
 	}
 
@@ -196,6 +215,28 @@ void MainWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to ne
     for(std::vector<CrazyflieData>::const_iterator it = p_msg->crazyflies.begin(); it != p_msg->crazyflies.end(); ++it)
     {
 		CrazyflieData global = *it;
+        if(global.crazyflieName == m_context.crazyflieName)
+        {
+            CrazyflieData local = global;
+            coordinatesToLocal(local);
+
+            // now we have the local coordinates, put them in the labels
+            QString qstr = "x = ";
+            qstr.append(QString::number(local.x));
+            ui->current_x->setText(qstr);
+
+            qstr = "y = ";
+            qstr.append(QString::number(local.y));
+            ui->current_y->setText(qstr);
+
+            qstr = "z = ";
+            qstr.append(QString::number(local.z));
+            ui->current_z->setText(qstr);
+
+            qstr = "yaw = ";
+            qstr.append(QString::number(local.yaw));
+            ui->current_yaw->setText(qstr);
+        }
     }
 }
 
