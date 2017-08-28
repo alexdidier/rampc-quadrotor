@@ -10,6 +10,7 @@
 
 #include "d_fall_pps/CrazyflieContext.h"
 #include "d_fall_pps/CrazyflieData.h"
+#include "d_fall_pps/Setpoint.h"
 
 
 // commands for CrazyRadio
@@ -56,6 +57,8 @@ private slots:
 
     void on_motors_OFF_button_clicked();
 
+    void on_set_setpoint_button_clicked();
+
 private:
     Ui::MainWindow *ui;
 
@@ -67,11 +70,16 @@ private:
     int m_student_id;
     CrazyflieContext m_context;
 
+    Setpoint m_setpoint;
+
     ros::Publisher crazyRadioCommandPublisher;
     ros::Subscriber crazyRadioStatusSubscriber;
     ros::Publisher PPSClientCommandPublisher;
     ros::Subscriber CFBatterySubscriber;
     ros::Subscriber flyingStateSubscriber;
+
+    ros::Publisher setpointPublisher;
+    ros::Subscriber setpointSubscriber;
 
     ros::ServiceClient centralManager;
 
@@ -79,6 +87,7 @@ private:
     void crazyRadioStatusCallback(const std_msgs::Int32& msg);
     void CFBatteryCallback(const std_msgs::Float32& msg);
     void flyingStateChangedCallback(const std_msgs::Int32& msg);
+    void setpointCallback(const Setpoint& newSetpoint);
 
     float fromVoltageToPercent(float voltage);
     void updateBatteryVoltage(float battery_voltage);

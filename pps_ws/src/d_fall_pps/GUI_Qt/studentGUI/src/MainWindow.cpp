@@ -29,11 +29,16 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     QObject::connect(m_rosNodeThread, SIGNAL(newViconData(const ptrToMessage&)), this, SLOT(updateNewViconData(const ptrToMessage&)));
 
     ros::NodeHandle nodeHandle(ros_namespace);
+
+    // subscribers
     crazyRadioStatusSubscriber = nodeHandle.subscribe("CrazyRadio/CrazyRadioStatus", 1, &MainWindow::crazyRadioStatusCallback, this);
 
     CFBatterySubscriber = nodeHandle.subscribe("CrazyRadio/CFBattery", 1, &MainWindow::CFBatteryCallback, this);
 
     flyingStateSubscriber = nodeHandle.subscribe("PPSClient/flyingState", 1, &MainWindow::flyingStateChangedCallback, this);
+
+    setpointPublisher = nodeHandle.advertise<Setpoint>("SafeControllerService/Setpoint", 1);
+    setpointSubscriber = nodeHandle.subscribe("SafeControllerService/Setpoint", 1, &MainWindow::setpointCallback, this);
 
 
     // communication with PPS Client, just to make it possible to communicate through terminal also we use PPSClient's name
@@ -47,9 +52,6 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     {
 		ROS_ERROR("Failed to get studentID");
 	}
-
-
-
 
     // Then, Central manager
     centralManager = nodeHandle.serviceClient<CMQuery>("/CentralManagerService/Query", false);
@@ -74,10 +76,22 @@ MainWindow::~MainWindow()
 
 void MainWindow::disableGUI()
 {
+    ui->groupBox->setEnabled(false);
 }
 
 void MainWindow::enableGUI()
 {
+    ui->groupBox->setEnabled(true);
+}
+
+void MainWindow::setpointCallback(const Setpoint& newSetpoint)
+{
+    m_setpoint = newSetpoint;
+    // here we get the new setpoint, need to update it in GUI
+    ui->current_setpoint_x->setText(QString::number(newSetpoint.x));
+    ui->current_setpoint_y->setText(QString::number(newSetpoint.y));
+    ui->current_setpoint_z->setText(QString::number(newSetpoint.z));
+    ui->current_setpoint_yaw->setText(QString::number(newSetpoint.yaw));
 }
 
 void MainWindow::flyingStateChangedCallback(const std_msgs::Int32& msg)
@@ -229,21 +243,18 @@ void MainWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to ne
             coordinatesToLocal(local);
 
             // now we have the local coordinates, put them in the labels
-            QString qstr = "x = ";
-            qstr.append(QString::number(local.x));
-            ui->current_x->setText(qstr);
+            ui->current_x->setText(QString::number(local.x));
+            ui->current_y->setText(QString::number(local.y));
+            ui->current_z->setText(QString::number(local.z));
+            ui->current_yaw->setText(QString::number(local.yaw));
+            ui->current_pitch->setText(QString::number(local.pitch));
+            ui->current_roll->setText(QString::number(local.roll));
 
-            qstr = "y = ";
-            qstr.append(QString::number(local.y));
-            ui->current_y->setText(qstr);
-
-            qstr = "z = ";
-            qstr.append(QString::number(local.z));
-            ui->current_z->setText(qstr);
-
-            qstr = "yaw = ";
-            qstr.append(QString::number(local.yaw));
-            ui->current_yaw->setText(qstr);
+            // also update diff
+            ui->diff_x->setText(QString::number(m_setpoint.x - local.x));
+            ui->diff_y->setText(QString::number(m_setpoint.y - local.y));
+            ui->diff_z->setText(QString::number(m_setpoint.z - local.z));
+            ui->diff_yaw->setText(QString::number(m_setpoint.yaw - local.yaw));
         }
     }
 }
@@ -275,4 +286,15 @@ void MainWindow::on_motors_OFF_button_clicked()
     std_msgs::Int32 msg;
     msg.data = CMD_CRAZYFLY_MOTORS_OFF;
     this->PPSClientCommandPublisher.publish(msg);
+}
+
+void MainWindow::on_set_setpoint_button_clicked()
+{
+    Setpoint msg_setpoint;
+    msg_setpoint.x = (ui->new_setpoint_x->text()).toFloat();
+    msg_setpoint.y = (ui->new_setpoint_y->text()).toFloat();
+    msg_setpoint.z = (ui->new_setpoint_z->text()).toFloat();
+    msg_setpoint.yaw = (ui->new_setpoint_yaw->text()).toFloat();
+
+    this->setpointPublisher.publish(msg_setpoint);
 }
