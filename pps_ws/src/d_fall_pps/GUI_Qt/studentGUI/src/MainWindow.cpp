@@ -14,8 +14,10 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     ui(new Ui::MainWindow),
     m_battery_level(0)
 {
-    m_rosNodeThread = new rosNodeThread(argc, argv, "student_GUI");
+
     ui->setupUi(this);
+
+    m_rosNodeThread = new rosNodeThread(argc, argv, "student_GUI");
     m_rosNodeThread->init();
 
     setCrazyRadioStatus(DISCONNECTED);
@@ -156,7 +158,13 @@ void MainWindow::updateBatteryVoltage(float battery_voltage)
 {
     m_battery_voltage = battery_voltage;
     // Need to take voltage, display it and transform it to percentage
-    ui->battery_bar->setValue(fromVoltageToPercent(m_battery_voltage));
+    int percentage = (int) fromVoltageToPercent(m_battery_voltage);
+
+    if(percentage != ui->battery_bar->value())
+    {
+        // ui->battery_bar->setValue(percentage);
+    }
+
     QString qstr = "Raw voltage: ";
     qstr.append(QString::number(battery_voltage));
     ui->raw_voltage->setText(qstr);
