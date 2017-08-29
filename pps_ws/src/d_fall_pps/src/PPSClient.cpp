@@ -58,8 +58,8 @@
 // parameters for take off and landing. Eventually will go in YAML file
 #define TAKE_OFF_OFFSET  1    //in meters
 #define LANDING_DISTANCE 0.15    //in meters
-#define DURATION_TAKE_OFF  300   //100 is 1 second
-#define DURATION_LANDING   300   //100 is 1 second
+#define DURATION_TAKE_OFF  3   // seconds
+#define DURATION_LANDING   3   // seconds
 
 #define PI 3.141592653589
 
@@ -250,9 +250,21 @@ void changeFlyingStateTo(int new_state)
     flyingStatePublisher.publish(flying_state_msg);
 }
 
-int counter = 0;
 bool finished_take_off = false;
 bool finished_land = false;
+
+ros::Timer timer_takeoff;
+ros::Timer timer_land;
+
+void takeOffTimerCallback(const ros::TimerEvent&)
+{
+    finished_take_off = true;
+}
+
+void landTimerCallback(const ros::TimerEvent&)
+{
+    finished_land = true;
+}
 
 //is called when new data from Vicon arrives
 void viconCallback(const ViconData& viconData) {
@@ -265,6 +277,8 @@ void viconCallback(const ViconData& viconData) {
             CrazyflieData local = global;
             coordinatesToLocal(local);
             controllerCall.request.ownCrazyflie = local;
+
+            ros::NodeHandle nodeHandle("~");
 
             switch(flying_state) //things here repeat every X ms, non-blocking stuff
             {
@@ -280,15 +294,9 @@ void viconCallback(const ViconData& viconData) {
                     {
                         changed_state_flag = false;
                         takeOffCF(local);
-                        counter = 0;
                         finished_take_off = false;
                         ROS_INFO("STATE_TAKE_OFF");
-                    }
-                    counter++;
-                    if(counter >= DURATION_TAKE_OFF)
-                    {
-                        counter = 0;
-                        finished_take_off = true;
+                        timer_takeoff = nodeHandle.createTimer(ros::Duration(DURATION_TAKE_OFF), takeOffTimerCallback, true);
                     }
                     if(finished_take_off)
                     {
@@ -310,15 +318,9 @@ void viconCallback(const ViconData& viconData) {
                     {
                         changed_state_flag = false;
                         landCF(local);
-                        counter = 0;
                         finished_land = false;
                         ROS_INFO("STATE_LAND");
-                    }
-                    counter++;
-                    if(counter >= DURATION_LANDING)
-                    {
-                        counter = 0;
-                        finished_land = true;
+                        timer_takeoff = nodeHandle.createTimer(ros::Duration(DURATION_LANDING), landTimerCallback, true);
                     }
                     if(finished_land)
                     {
