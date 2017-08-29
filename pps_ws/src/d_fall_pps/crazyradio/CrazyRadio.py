@@ -116,6 +116,10 @@ class PPSRadioClient:
         self._cf.open_link(self.link_uri)
 
     def disconnect(self):
+        print "Motors OFF"
+        self._send_to_commander(0, 0, 0, 0, 0, 0, 0, 0, CONTROLLER_MOTOR)
+        # change state to motors OFF
+        self.PPSClient_command_pub.publish(CMD_CRAZYFLY_MOTORS_OFF)
         print "Disconnecting from %s" % self.link_uri
         self._cf.close_link()
         self.change_status_to(DISCONNECTED)

@@ -413,13 +413,17 @@ void loadCrazyflieContext() {
 
     if((context.crazyflieName != "") && (new_context.crazyflieName != context.crazyflieName)) //linked crazyflie name changed and it was not empty before
     {
+
+        // Motors off is done in python script now everytime we disconnect
+
         // send motors OFF and disconnect before setting context = new_context
+        // std_msgs::Int32 msg;
+        // msg.data = CMD_CRAZYFLY_MOTORS_OFF;
+        // commandPublisher.publish(msg);
+
+        ROS_INFO("CF is now different for this student. Disconnect and turn it off");
+
         std_msgs::Int32 msg;
-        msg.data = CMD_CRAZYFLY_MOTORS_OFF;
-        commandPublisher.publish(msg);
-
-        // maybe some delay here?
-
         msg.data = CMD_DISCONNECT;
         crazyRadioCommandPublisher.publish(msg);
     }
