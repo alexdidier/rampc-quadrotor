@@ -67,7 +67,7 @@ class PPSRadioClient:
        sends them in a CRTP package to the crazyflie with the specified
        address.
     """
-    def __init__(self, link_uri):
+    def __init__(self):
 
         # Setpoints to be sent to the CrazyFlie
         self.roll = 0.0
@@ -78,7 +78,7 @@ class PPSRadioClient:
         self.motor3cmd = 0.0
         self.motor4cmd = 0.0
         self._status = DISCONNECTED
-        self.link_uri = link_uri
+        self.link_uri = ""
 
         self.status_pub = rospy.Publisher(node_name + '/CrazyRadioStatus', Int32, queue_size=1)
         self.PPSClient_command_pub = rospy.Publisher('PPSClient/Command', Int32, queue_size=1)
@@ -109,7 +109,13 @@ class PPSRadioClient:
     def get_status(self):
         return self._status
 
+    def update_link_uri(self):
+        self.link_uri = "radio://" + rospy.get_param("~crazyFlieAddress")
+
     def connect(self):
+        # update link from ros params
+        self.update_link_uri()
+
         print "Connecting to %s" % self.link_uri
         self.change_status_to(CONNECTING)
         rospy.loginfo("connecting...")
@@ -120,6 +126,7 @@ class PPSRadioClient:
         self._send_to_commander(0, 0, 0, 0, 0, 0, 0, 0, CONTROLLER_MOTOR)
         # change state to motors OFF
         self.PPSClient_command_pub.publish(CMD_CRAZYFLY_MOTORS_OFF)
+        time.sleep(0.1)
         print "Disconnecting from %s" % self.link_uri
         self._cf.close_link()
         self.change_status_to(DISCONNECTED)
@@ -259,9 +266,6 @@ if __name__ == '__main__':
     while not rospy.has_param("~crazyFlieAddress"):
         time.sleep(0.05)
 
-    radio_address = "radio://" + rospy.get_param("~crazyFlieAddress")
-    rospy.loginfo("Crazyradio connecting to %s" % radio_address)
-
     #use this following two lines to connect without data from CentralManager
     # radio_address = "radio://0/72/2M"
     # rospy.loginfo("manual address loaded")
@@ -271,7 +275,7 @@ if __name__ == '__main__':
 
     global cf_client
 
-    cf_client = PPSRadioClient(radio_address)
+    cf_client = PPSRadioClient()
     rospy.Subscriber("PPSClient/crazyRadioCommand", Int32, cf_client.crazyRadioCommandCallback) # allows commands from scripts
 
     time.sleep(1.0)
