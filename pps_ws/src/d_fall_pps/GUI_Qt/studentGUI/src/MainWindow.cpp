@@ -77,12 +77,12 @@ MainWindow::~MainWindow()
 
 void MainWindow::disableGUI()
 {
-    ui->groupBox->setEnabled(false);
+    ui->groupBox_general->setEnabled(false);
 }
 
 void MainWindow::enableGUI()
 {
-    ui->groupBox->setEnabled(true);
+    ui->groupBox_general->setEnabled(true);
 }
 
 void MainWindow::DBChangedCallback(const std_msgs::Int32& msg)
@@ -304,4 +304,12 @@ void MainWindow::on_set_setpoint_button_clicked()
     msg_setpoint.yaw = (ui->new_setpoint_yaw->text()).toFloat();
 
     this->setpointPublisher.publish(msg_setpoint);
+}
+
+void MainWindow::on_pushButton_3_clicked()
+{
+    std_msgs::Int32 msg;
+    msg.data = CMD_DISCONNECT;
+    this->crazyRadioCommandPublisher.publish(msg);
+    ROS_INFO("command disconnect published");
 }

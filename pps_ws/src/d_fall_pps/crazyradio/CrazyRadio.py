@@ -46,6 +46,7 @@ DISCONNECTED = 2
 
 # Commands coming
 CMD_RECONNECT = 0
+CMD_DISCONNECT = 1
 
 # Commands for PPSClient
 CMD_USE_SAFE_CONTROLLER =   1
@@ -113,6 +114,11 @@ class PPSRadioClient:
         self.change_status_to(CONNECTING)
         rospy.loginfo("connecting...")
         self._cf.open_link(self.link_uri)
+
+    def disconnect(self):
+        print "Disconnecting from %s" % self.link_uri
+        self._cf.close_link()
+        self.change_status_to(DISCONNECTED)
 
     def _data_received_callback(self, timestamp, data, logconf):
         #print "log of stabilizer and battery: [%d][%s]: %s" % (timestamp, logconf.name, data)
@@ -209,6 +215,7 @@ class PPSRadioClient:
     def crazyRadioCommandCallback(self, msg):
         """Callback to tell CrazyRadio to reconnect"""
         print "crazyRadio command received %s" % msg.data
+
         if msg.data == CMD_RECONNECT:            # reconnect, check _status first and then do whatever needs to be done
             print "entered reconnect"
             print "_status: %s" % self._status
@@ -217,6 +224,13 @@ class PPSRadioClient:
                 self.connect()
             if self.get_status() == CONNECTED:
                 self.status_pub.publish(CONNECTED)
+
+        elif msg.data == CMD_DISCONNECT:
+            print "disconnect received"
+            if self.get_status() != DISCONNECTED: # what happens if we disconnect while we are in connecting state?
+                self.disconnect()
+            else:
+                self.status_pub.publish(DISCONNECTED)
 
 def controlCommandCallback(data):
     """Callback for controller actions"""

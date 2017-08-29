@@ -15,6 +15,7 @@
 
 // commands for CrazyRadio
 #define CMD_RECONNECT  0
+#define CMD_DISCONNECT 1
 
 
 // CrazyRadio states:
@@ -58,6 +59,8 @@ private slots:
     void on_motors_OFF_button_clicked();
 
     void on_set_setpoint_button_clicked();
+
+    void on_pushButton_3_clicked();
 
 private:
     Ui::MainWindow *ui;

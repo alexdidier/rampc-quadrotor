@@ -45,6 +45,17 @@
 #define STATE_FLYING     3
 #define STATE_LAND       4
 
+// commands for CrazyRadio
+#define CMD_RECONNECT  0
+#define CMD_DISCONNECT 1
+
+
+// CrazyRadio states:
+#define CONNECTED        0
+#define CONNECTING       1
+#define DISCONNECTED     2
+
+// parameters for take off and landing. Eventually will go in YAML file
 #define TAKE_OFF_OFFSET  1    //in meters
 #define LANDING_DISTANCE 0.15    //in meters
 #define DURATION_TAKE_OFF  300   //100 is 1 second
@@ -75,11 +86,20 @@ ros::Publisher safeControllerServiceSetpointPublisher;
 // publisher for flying state
 ros::Publisher flyingStatePublisher;
 
+// publisher to send commands to itself.
+ros::Publisher commandPublisher;
+
+// communication with crazyRadio node. Connect and disconnect
+ros::Publisher crazyRadioCommandPublisher;
+
 rosbag::Bag bag;
 
 // variables for the states:
 int flying_state;
 bool changed_state_flag;
+
+// variable for crazyradio status
+int crazyradio_status;
 
 //describes the area of the crazyflie and other parameters
 CrazyflieContext context;
@@ -213,8 +233,17 @@ void goToOrigin()
 
 void changeFlyingStateTo(int new_state)
 {
-    ROS_INFO("Change state to: %d", new_state);
-    flying_state = new_state;
+    if(crazyradio_status == CONNECTED)
+    {
+        ROS_INFO("Change state to: %d", new_state);
+        flying_state = new_state;
+    }
+    else
+    {
+        ROS_INFO("Disconnected and trying to change state. Stays goes to MOTORS OFF");
+        flying_state = STATE_MOTORS_OFF;
+    }
+
     changed_state_flag = true;
     std_msgs::Int32 flying_state_msg;
     flying_state_msg.data = flying_state;
@@ -371,14 +400,31 @@ void loadCrazyflieContext() {
 	contextCall.request.studentID = studentID;
 	ROS_INFO_STREAM("StudentID:" << studentID);
 
+    CrazyflieContext new_context;
+
 	centralManager.waitForExistence(ros::Duration(-1));
 
 	if(centralManager.call(contextCall)) {
-		context = contextCall.response.crazyflieContext;
-		ROS_INFO_STREAM("CrazyflieContext:\n" << context);
+		new_context = contextCall.response.crazyflieContext;
+		ROS_INFO_STREAM("CrazyflieContext:\n" << new_context);
 	} else {
 		ROS_ERROR("Failed to load context");
 	}
+
+    if((context.crazyflieName != "") && (new_context.crazyflieName != context.crazyflieName)) //linked crazyflie name changed and it was not empty before
+    {
+        // send motors OFF and disconnect before setting context = new_context
+        std_msgs::Int32 msg;
+        msg.data = CMD_CRAZYFLY_MOTORS_OFF;
+        commandPublisher.publish(msg);
+
+        // maybe some delay here?
+
+        msg.data = CMD_DISCONNECT;
+        crazyRadioCommandPublisher.publish(msg);
+    }
+
+    context = new_context;
 
 	ros::NodeHandle nh("CrazyRadio");
 	nh.setParam("crazyFlieAddress", context.crazyflieAddress);
@@ -428,6 +474,11 @@ void DBChangedCallback(const std_msgs::Int32& msg)
     loadCrazyflieContext();
 }
 
+void crazyRadioStatusCallback(const std_msgs::Int32& msg)
+{
+    crazyradio_status = msg.data;
+}
+
 int main(int argc, char* argv[])
 {
 	ros::init(argc, argv, "PPSClient");
@@ -446,16 +497,17 @@ int main(int argc, char* argv[])
 	controlCommandPublisher = nodeHandle.advertise <ControlCommand>("ControlCommand", 1);
 
 	//this topic lets the PPSClient listen to the terminal commands
-    ros::Publisher commandPublisher = nodeHandle.advertise<std_msgs::Int32>("Command", 1);
+    commandPublisher = nodeHandle.advertise<std_msgs::Int32>("Command", 1);
     ros::Subscriber commandSubscriber = nodeHandle.subscribe("Command", 1, commandCallback);
 
     //this topic lets us use the terminal to communicate with crazyRadio node.
-    ros::Publisher crazyRadioCommandPublisher = nodeHandle.advertise<std_msgs::Int32>("crazyRadioCommand", 1);
+    crazyRadioCommandPublisher = nodeHandle.advertise<std_msgs::Int32>("crazyRadioCommand", 1);
 
     // this topic will publish flying state whenever it changes.
     flyingStatePublisher = nodeHandle.advertise<std_msgs::Int32>("flyingState", 1);
 
-
+    // crazy radio status
+    crazyradio_status = DISCONNECTED;
 
     // publish first flying state data
     std_msgs::Int32 flying_state_msg;
@@ -468,6 +520,9 @@ int main(int argc, char* argv[])
 
     // subscriber for DBChanged
     ros::Subscriber DBChangedSubscriber = namespaceNodeHandle.subscribe("/my_GUI/DBChanged", 1, DBChangedCallback);
+
+    // crazyradio status. Connected, connecting or disconnected
+    ros::Subscriber crazyRadioStatusSubscriber = namespaceNodeHandle.subscribe("CrazyRadio/CrazyRadioStatus", 1, crazyRadioStatusCallback);
 
 	//start with safe controller
     flying_state = STATE_MOTORS_OFF;
