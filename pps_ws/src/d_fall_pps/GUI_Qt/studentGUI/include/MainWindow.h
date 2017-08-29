@@ -36,6 +36,12 @@
 #define STATE_FLYING     3
 #define STATE_LAND       4
 
+
+#define PI 3.141592653589
+
+#define RAD2DEG 180.0/PI
+#define DEG2RAD PI/180.0
+
 namespace Ui {
 class MainWindow;
 }

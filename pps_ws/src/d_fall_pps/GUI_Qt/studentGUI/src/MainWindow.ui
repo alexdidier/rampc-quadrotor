@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>854</width>
-    <height>565</height>
+    <height>569</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -45,7 +45,7 @@
        <item row="1" column="0">
         <widget class="QTabWidget" name="tabWidget">
          <property name="currentIndex">
-          <number>1</number>
+          <number>0</number>
          </property>
          <widget class="QWidget" name="tab_3">
           <attribute name="title">
@@ -89,28 +89,28 @@
               <item row="1" column="0">
                <widget class="QLabel" name="current_x_label">
                 <property name="text">
-                 <string>x =</string>
+                 <string>x [m] =</string>
                 </property>
                </widget>
               </item>
               <item row="3" column="0">
                <widget class="QLabel" name="current_z_label">
                 <property name="text">
-                 <string>z =</string>
+                 <string>z [m] =</string>
                 </property>
                </widget>
               </item>
               <item row="2" column="0">
                <widget class="QLabel" name="current_y_label">
                 <property name="text">
-                 <string>y =</string>
+                 <string>y [m] =</string>
                 </property>
                </widget>
               </item>
               <item row="4" column="0">
                <widget class="QLabel" name="current_yaw_label">
                 <property name="text">
-                 <string>yaw = </string>
+                 <string>yaw [deg] = </string>
                 </property>
                </widget>
               </item>
@@ -124,14 +124,14 @@
               <item row="5" column="0">
                <widget class="QLabel" name="current_pitch_label">
                 <property name="text">
-                 <string>pitch =</string>
+                 <string>pitch [deg] =</string>
                 </property>
                </widget>
               </item>
               <item row="6" column="0">
                <widget class="QLabel" name="current_roll_label">
                 <property name="text">
-                 <string>roll =</string>
+                 <string>roll [deg] =</string>
                 </property>
                </widget>
               </item>
@@ -146,6 +146,9 @@
                <widget class="QLabel" name="label_4">
                 <property name="text">
                  <string>Current</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
                 </property>
                </widget>
               </item>
@@ -181,6 +184,9 @@
                <widget class="QLabel" name="label_5">
                 <property name="text">
                  <string>Difference</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
                 </property>
                </widget>
               </item>
@@ -219,7 +225,7 @@
               <item row="4" column="0">
                <widget class="QLabel" name="label_11">
                 <property name="text">
-                 <string>yaw =</string>
+                 <string>yaw [deg] =</string>
                 </property>
                </widget>
               </item>
@@ -241,21 +247,21 @@
               <item row="1" column="0">
                <widget class="QLabel" name="label_7">
                 <property name="text">
-                 <string>x =</string>
+                 <string>x [m] =</string>
                 </property>
                </widget>
               </item>
               <item row="3" column="0">
                <widget class="QLabel" name="label_9">
                 <property name="text">
-                 <string>z =</string>
+                 <string>z [m] =</string>
                 </property>
                </widget>
               </item>
               <item row="2" column="0">
                <widget class="QLabel" name="label_8">
                 <property name="text">
-                 <string>y =</string>
+                 <string>y [m] =</string>
                 </property>
                </widget>
               </item>
@@ -364,28 +370,28 @@
               <item row="1" column="0">
                <widget class="QLabel" name="current_x_label_2">
                 <property name="text">
-                 <string>x =</string>
+                 <string>x [m] =</string>
                 </property>
                </widget>
               </item>
               <item row="3" column="0">
                <widget class="QLabel" name="current_z_label_2">
                 <property name="text">
-                 <string>z =</string>
+                 <string>z [m] =</string>
                 </property>
                </widget>
               </item>
               <item row="2" column="0">
                <widget class="QLabel" name="current_y_label_2">
                 <property name="text">
-                 <string>y =</string>
+                 <string>y [m] =</string>
                 </property>
                </widget>
               </item>
               <item row="4" column="0">
                <widget class="QLabel" name="current_yaw_label_2">
                 <property name="text">
-                 <string>yaw = </string>
+                 <string>yaw [deg] = </string>
                 </property>
                </widget>
               </item>
@@ -399,14 +405,14 @@
               <item row="5" column="0">
                <widget class="QLabel" name="current_pitch_label_2">
                 <property name="text">
-                 <string>pitch =</string>
+                 <string>pitch [deg] =</string>
                 </property>
                </widget>
               </item>
               <item row="6" column="0">
                <widget class="QLabel" name="current_roll_label_2">
                 <property name="text">
-                 <string>roll =</string>
+                 <string>roll [deg] =</string>
                 </property>
                </widget>
               </item>
@@ -421,6 +427,9 @@
                <widget class="QLabel" name="label_6">
                 <property name="text">
                  <string>Current</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
                 </property>
                </widget>
               </item>
@@ -456,6 +465,9 @@
                <widget class="QLabel" name="label_10">
                 <property name="text">
                  <string>Difference</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
                 </property>
                </widget>
               </item>
@@ -494,7 +506,7 @@
               <item row="4" column="0">
                <widget class="QLabel" name="label_14">
                 <property name="text">
-                 <string>yaw =</string>
+                 <string>yaw [deg] =</string>
                 </property>
                </widget>
               </item>
@@ -516,21 +528,21 @@
               <item row="1" column="0">
                <widget class="QLabel" name="label_16">
                 <property name="text">
-                 <string>x =</string>
+                 <string>x [m] =</string>
                 </property>
                </widget>
               </item>
               <item row="3" column="0">
                <widget class="QLabel" name="label_17">
                 <property name="text">
-                 <string>z =</string>
+                 <string>z [m] =</string>
                 </property>
                </widget>
               </item>
               <item row="2" column="0">
                <widget class="QLabel" name="label_18">
                 <property name="text">
-                 <string>y =</string>
+                 <string>y [m] =</string>
                 </property>
                </widget>
               </item>

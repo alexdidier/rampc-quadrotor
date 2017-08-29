@@ -98,7 +98,7 @@ void MainWindow::setpointCallback(const Setpoint& newSetpoint)
     ui->current_setpoint_x->setText(QString::number(newSetpoint.x));
     ui->current_setpoint_y->setText(QString::number(newSetpoint.y));
     ui->current_setpoint_z->setText(QString::number(newSetpoint.z));
-    ui->current_setpoint_yaw->setText(QString::number(newSetpoint.yaw));
+    ui->current_setpoint_yaw->setText(QString::number(newSetpoint.yaw * RAD2DEG));
 }
 
 void MainWindow::flyingStateChangedCallback(const std_msgs::Int32& msg)
@@ -253,15 +253,15 @@ void MainWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to ne
             ui->current_x->setText(QString::number(local.x, 'f', 3));
             ui->current_y->setText(QString::number(local.y, 'f', 3));
             ui->current_z->setText(QString::number(local.z, 'f', 3));
-            ui->current_yaw->setText(QString::number(local.yaw, 'f', 3));
-            ui->current_pitch->setText(QString::number(local.pitch, 'f', 3));
-            ui->current_roll->setText(QString::number(local.roll, 'f', 3));
+            ui->current_yaw->setText(QString::number(local.yaw * RAD2DEG, 'f', 3));
+            ui->current_pitch->setText(QString::number(local.pitch * RAD2DEG, 'f', 3));
+            ui->current_roll->setText(QString::number(local.roll * RAD2DEG, 'f', 3));
 
             // also update diff
             ui->diff_x->setText(QString::number(m_setpoint.x - local.x, 'f', 3));
             ui->diff_y->setText(QString::number(m_setpoint.y - local.y, 'f', 3));
             ui->diff_z->setText(QString::number(m_setpoint.z - local.z, 'f', 3));
-            ui->diff_yaw->setText(QString::number(m_setpoint.yaw - local.yaw, 'f', 3));
+            ui->diff_yaw->setText(QString::number((m_setpoint.yaw - local.yaw) * RAD2DEG, 'f', 3));
         }
     }
 }
@@ -301,7 +301,7 @@ void MainWindow::on_set_setpoint_button_clicked()
     msg_setpoint.x = (ui->new_setpoint_x->text()).toFloat();
     msg_setpoint.y = (ui->new_setpoint_y->text()).toFloat();
     msg_setpoint.z = (ui->new_setpoint_z->text()).toFloat();
-    msg_setpoint.yaw = (ui->new_setpoint_yaw->text()).toFloat();
+    msg_setpoint.yaw = (ui->new_setpoint_yaw->text()).toFloat() * DEG2RAD;
 
     this->setpointPublisher.publish(msg_setpoint);
 }
