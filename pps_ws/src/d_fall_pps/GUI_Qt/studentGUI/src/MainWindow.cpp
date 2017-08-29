@@ -39,7 +39,7 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
 
     setpointPublisher = nodeHandle.advertise<Setpoint>("SafeControllerService/Setpoint", 1);
     setpointSubscriber = nodeHandle.subscribe("SafeControllerService/Setpoint", 1, &MainWindow::setpointCallback, this);
-    DBChangedSubscriber = nodeHandle.subscribe("my_GUI/DBChanged", 1, &MainWindow::DBChangedCallback, this);
+    DBChangedSubscriber = nodeHandle.subscribe("/my_GUI/DBChanged", 1, &MainWindow::DBChangedCallback, this);
 
 
     // communication with PPS Client, just to make it possible to communicate through terminal also we use PPSClient's name
@@ -88,6 +88,7 @@ void MainWindow::enableGUI()
 void MainWindow::DBChangedCallback(const std_msgs::Int32& msg)
 {
     loadCrazyflieContext();
+    ROS_INFO("context reloaded in student_GUI");
 }
 
 void MainWindow::setpointCallback(const Setpoint& newSetpoint)

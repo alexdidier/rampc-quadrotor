@@ -467,7 +467,7 @@ int main(int argc, char* argv[])
     safeControllerServiceSetpointPublisher = namespaceNodeHandle.advertise<d_fall_pps::Setpoint>("SafeControllerService/Setpoint", 1);
 
     // subscriber for DBChanged
-    ros::Subscriber DBChangedSubscriber = namespaceNodeHandle.subscribe("my_GUI/DBChanged", 1, DBChangedCallback);
+    ros::Subscriber DBChangedSubscriber = namespaceNodeHandle.subscribe("/my_GUI/DBChanged", 1, DBChangedCallback);
 
 	//start with safe controller
     flying_state = STATE_MOTORS_OFF;
