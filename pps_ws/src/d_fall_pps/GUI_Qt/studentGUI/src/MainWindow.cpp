@@ -67,6 +67,19 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     qstr.append(QString::fromStdString(m_context.crazyflieName));
     ui->groupBox->setTitle(qstr);
 
+    std::vector<float> default_setpoint(4);
+    ros::NodeHandle nh_safeControllerService(m_ros_namespace + "/SafeControllerService");
+    if(!nh_safeControllerService.getParam("defaultSetPoint", default_setpoint))
+    {
+        ROS_ERROR_STREAM("couldn't find parameter 'defaultSetPoint'");
+    }
+
+
+    ui->current_setpoint_x->setText(QString::number(default_setpoint[0]));
+    ui->current_setpoint_y->setText(QString::number(default_setpoint[1]));
+    ui->current_setpoint_z->setText(QString::number(default_setpoint[2]));
+    ui->current_setpoint_yaw->setText(QString::number(default_setpoint[3]));
+
     disableGUI();
 }
 
@@ -254,15 +267,15 @@ void MainWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to ne
             ui->current_x->setText(QString::number(local.x, 'f', 3));
             ui->current_y->setText(QString::number(local.y, 'f', 3));
             ui->current_z->setText(QString::number(local.z, 'f', 3));
-            ui->current_yaw->setText(QString::number(local.yaw * RAD2DEG, 'f', 3));
-            ui->current_pitch->setText(QString::number(local.pitch * RAD2DEG, 'f', 3));
-            ui->current_roll->setText(QString::number(local.roll * RAD2DEG, 'f', 3));
+            ui->current_yaw->setText(QString::number(local.yaw * RAD2DEG, 'f', 2));
+            ui->current_pitch->setText(QString::number(local.pitch * RAD2DEG, 'f', 2));
+            ui->current_roll->setText(QString::number(local.roll * RAD2DEG, 'f', 2));
 
             // also update diff
             ui->diff_x->setText(QString::number(m_setpoint.x - local.x, 'f', 3));
             ui->diff_y->setText(QString::number(m_setpoint.y - local.y, 'f', 3));
             ui->diff_z->setText(QString::number(m_setpoint.z - local.z, 'f', 3));
-            ui->diff_yaw->setText(QString::number((m_setpoint.yaw - local.yaw) * RAD2DEG, 'f', 3));
+            ui->diff_yaw->setText(QString::number((m_setpoint.yaw - local.yaw) * RAD2DEG, 'f', 2));
         }
     }
 }
@@ -315,28 +328,38 @@ void MainWindow::on_pushButton_3_clicked()
     ROS_INFO("command disconnect published");
 }
 
-void MainWindow::on_load_yaml_button_clicked()
+void MainWindow::yamlFileTimerCallback(const ros::TimerEvent&)
 {
-    
+
+    std::string d_fall_pps_path = ros::package::getPath("d_fall_pps");
+    ROS_INFO_STREAM(d_fall_pps_path);
+
+    // first, reload the name of the custom controller:
+    std::string cmd = "rosparam load " + d_fall_pps_path + "/param/ClientConfig.yaml " + m_ros_namespace + "/PPSClient";
+
+    system(cmd.c_str());
+    ROS_INFO_STREAM(cmd);
+
+    // then, reload the parameters of the custom controller:
+    cmd = "rosparam load " + d_fall_pps_path + "/param/CustomController.yaml " + m_ros_namespace + "/CustomControllerService";
+
+    system(cmd.c_str());
+    ROS_INFO_STREAM(cmd);
+    ui->load_yaml_button->setEnabled(true);
 }
 
-void loadParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length)
+void MainWindow::on_load_yaml_button_clicked()
 {
-    if(!nodeHandle.getParam(name, val))
-    {
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    if(val.size() != length)
-    {
-        ROS_ERROR_STREAM("parameter '" << name << "' has wrong array length, " << length << " needed");
-    }
+    ros::NodeHandle nodeHandle("~");
+    m_timer_yaml_file = nodeHandle.createTimer(ros::Duration(0.5), &MainWindow::yamlFileTimerCallback, this, true);
+    ui->load_yaml_button->setEnabled(false);
 }
 
 void MainWindow::on_en_custom_controller_clicked()
 {
     std_msgs::Int32 msg;
     msg.data = CMD_USE_CUSTOM_CONTROLLER;
-    // this->PPSClientCommandPublisher.publish(msg);
+    this->PPSClientCommandPublisher.publish(msg);
 }
 
 
@@ -344,19 +367,5 @@ void MainWindow::on_en_safe_controller_clicked()
 {
     std_msgs::Int32 msg;
     msg.data = CMD_USE_SAFE_CONTROLLER;
-
-
-    std::string d_fall_pps_path = ros::package::getPath("d_fall_pps");
-    ROS_INFO_STREAM(d_fall_pps_path);
-
-    std::string cmd = "rosparam load " + d_fall_pps_path + "/param/SafeController.yaml " + m_ros_namespace + "/SafeControllerService";
-
-    system(cmd.c_str());
-    ROS_INFO_STREAM(cmd);
-
-    std::vector<float> setpoint(4);
-    ros::NodeHandle nodeHandle(m_ros_namespace + "/SafeControllerService");
-    loadParameterFloatVector(nodeHandle, "defaultSetpoint", setpoint, 4);
-    ROS_INFO_STREAM("setpoint z:" << setpoint[2]);
-    // this->PPSClientCommandPublisher.publish(msg);
+    this->PPSClientCommandPublisher.publish(msg);
 }

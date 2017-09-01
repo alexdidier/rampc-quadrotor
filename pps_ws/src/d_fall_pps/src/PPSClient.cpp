@@ -223,16 +223,6 @@ void landCF(CrazyflieData& current_local_coordinates)
     loadSafeController();
 }
 
-void goToOrigin()
-{
-    Setpoint setpoint_msg;
-    setpoint_msg.x = 0;
-    setpoint_msg.y = 0;
-    setpoint_msg.z = 0.4;
-    setpoint_msg.yaw = 0;
-    safeControllerServiceSetpointPublisher.publish(setpoint_msg);
-}
-
 void changeFlyingStateTo(int new_state)
 {
     if(crazyradio_status == CONNECTED)
@@ -311,7 +301,6 @@ void viconCallback(const ViconData& viconData) {
                     {
                         changed_state_flag = false;
                         // need to change setpoint to the one from file
-                        goToOrigin();
                         ROS_INFO("STATE_FLYING");
                     }
                     break;

@@ -49,6 +49,7 @@ std::vector<float> estimatorMatrix(2);
 float prevEstimate[9];
 
 std::vector<float>  setpoint(4);
+std::vector<float> defaultSetpoint(4);
 float saturationThrust;
 
 CrazyflieData previousLocation;
@@ -82,7 +83,7 @@ void loadParameters(ros::NodeHandle& nodeHandle) {
     loadParameterFloatVector(nodeHandle, "filterGain", filterGain, 6);
     loadParameterFloatVector(nodeHandle, "estimatorMatrix", estimatorMatrix, 2);
 
-    loadParameterFloatVector(nodeHandle, "defaultSetpoint", setpoint, 4);
+    loadParameterFloatVector(nodeHandle, "defaultSetpoint", defaultSetpoint, 4);
 }
 
 float computeMotorPolyBackward(float thrust) {
@@ -159,7 +160,11 @@ void convertIntoBodyFrame(float est[9], float (&state)[9], float yaw_measured) {
     state[8] = est[8];
 }
 
-bool calculateControlOutput(Controller::Request &request, Controller::Response &response) {
+bool calculateControlOutput(Controller::Request &request, Controller::Response &response)
+{
+    ros::NodeHandle nodeHandle("~");
+    loadParameters(nodeHandle);
+
     CrazyflieData vicon = request.ownCrazyflie;
 	
 	float yaw_measured = request.ownCrazyflie.yaw;
@@ -249,7 +254,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     previousLocation = request.ownCrazyflie;
 
 	bag.write("ControlOutput", ros::Time::now(), response.controlOutput);
-    
+
 	return true;
 }
 
@@ -268,6 +273,7 @@ int main(int argc, char* argv[]) {
 
     ros::NodeHandle nodeHandle("~");
     loadParameters(nodeHandle);
+    setpoint = defaultSetpoint; // only first time setpoint is equal to default setpoint
 
     ros::Publisher setpointPublisher = nodeHandle.advertise<Setpoint>("Setpoint", 1);
     ros::Subscriber setpointSubscriber = nodeHandle.subscribe("Setpoint", 1, setpointCallback);

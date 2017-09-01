@@ -84,6 +84,8 @@ private:
 
     std::string m_ros_namespace;
 
+    ros::Timer m_timer_yaml_file;
+
     int m_student_id;
     CrazyflieContext m_context;
 
@@ -108,6 +110,7 @@ private:
     void flyingStateChangedCallback(const std_msgs::Int32& msg);
     void setpointCallback(const Setpoint& newSetpoint);
     void DBChangedCallback(const std_msgs::Int32& msg);
+    void yamlFileTimerCallback(const ros::TimerEvent&);
 
     float fromVoltageToPercent(float voltage);
     void updateBatteryVoltage(float battery_voltage);
