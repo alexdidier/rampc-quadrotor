@@ -82,6 +82,8 @@ private:
     float m_battery_voltage;
     int m_battery_level;
 
+    std::string m_ros_namespace;
+
     int m_student_id;
     CrazyflieContext m_context;
 

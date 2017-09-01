@@ -4,6 +4,7 @@
 
 #include <ros/ros.h>
 #include <ros/network.h>
+#include <ros/package.h>
 
 #include "d_fall_pps/CMQuery.h"
 
@@ -22,13 +23,13 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
 
     setCrazyRadioStatus(DISCONNECTED);
 
-    std::string ros_namespace = ros::this_node::getNamespace();
-    ROS_INFO("namespace: %s", ros_namespace.c_str());
+    m_ros_namespace = ros::this_node::getNamespace();
+    ROS_INFO("namespace: %s", m_ros_namespace.c_str());
 
     qRegisterMetaType<ptrToMessage>("ptrToMessage");
     QObject::connect(m_rosNodeThread, SIGNAL(newViconData(const ptrToMessage&)), this, SLOT(updateNewViconData(const ptrToMessage&)));
 
-    ros::NodeHandle nodeHandle(ros_namespace);
+    ros::NodeHandle nodeHandle(m_ros_namespace);
 
     // subscribers
     crazyRadioStatusSubscriber = nodeHandle.subscribe("CrazyRadio/CrazyRadioStatus", 1, &MainWindow::crazyRadioStatusCallback, this);
@@ -43,7 +44,7 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
 
 
     // communication with PPS Client, just to make it possible to communicate through terminal also we use PPSClient's name
-    ros::NodeHandle nh_PPSClient(ros_namespace + "/PPSClient");
+    ros::NodeHandle nh_PPSClient(m_ros_namespace + "/PPSClient");
     crazyRadioCommandPublisher = nh_PPSClient.advertise<std_msgs::Int32>("crazyRadioCommand", 1);
     PPSClientCommandPublisher = nh_PPSClient.advertise<std_msgs::Int32>("Command", 1);
 
@@ -319,16 +320,43 @@ void MainWindow::on_load_yaml_button_clicked()
     
 }
 
+void loadParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length)
+{
+    if(!nodeHandle.getParam(name, val))
+    {
+        ROS_ERROR_STREAM("missing parameter '" << name << "'");
+    }
+    if(val.size() != length)
+    {
+        ROS_ERROR_STREAM("parameter '" << name << "' has wrong array length, " << length << " needed");
+    }
+}
+
 void MainWindow::on_en_custom_controller_clicked()
 {
     std_msgs::Int32 msg;
     msg.data = CMD_USE_CUSTOM_CONTROLLER;
-    this->PPSClientCommandPublisher.publish(msg);
+    // this->PPSClientCommandPublisher.publish(msg);
 }
+
 
 void MainWindow::on_en_safe_controller_clicked()
 {
     std_msgs::Int32 msg;
     msg.data = CMD_USE_SAFE_CONTROLLER;
-    this->PPSClientCommandPublisher.publish(msg);
+
+
+    std::string d_fall_pps_path = ros::package::getPath("d_fall_pps");
+    ROS_INFO_STREAM(d_fall_pps_path);
+
+    std::string cmd = "rosparam load " + d_fall_pps_path + "/param/SafeController.yaml " + m_ros_namespace + "/SafeControllerService";
+
+    system(cmd.c_str());
+    ROS_INFO_STREAM(cmd);
+
+    std::vector<float> setpoint(4);
+    ros::NodeHandle nodeHandle(m_ros_namespace + "/SafeControllerService");
+    loadParameterFloatVector(nodeHandle, "defaultSetpoint", setpoint, 4);
+    ROS_INFO_STREAM("setpoint z:" << setpoint[2]);
+    // this->PPSClientCommandPublisher.publish(msg);
 }
