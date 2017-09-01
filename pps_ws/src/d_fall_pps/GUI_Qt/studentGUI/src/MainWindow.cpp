@@ -313,3 +313,22 @@ void MainWindow::on_pushButton_3_clicked()
     this->crazyRadioCommandPublisher.publish(msg);
     ROS_INFO("command disconnect published");
 }
+
+void MainWindow::on_load_yaml_button_clicked()
+{
+    
+}
+
+void MainWindow::on_en_custom_controller_clicked()
+{
+    std_msgs::Int32 msg;
+    msg.data = CMD_USE_CUSTOM_CONTROLLER;
+    this->PPSClientCommandPublisher.publish(msg);
+}
+
+void MainWindow::on_en_safe_controller_clicked()
+{
+    std_msgs::Int32 msg;
+    msg.data = CMD_USE_SAFE_CONTROLLER;
+    this->PPSClientCommandPublisher.publish(msg);
+}

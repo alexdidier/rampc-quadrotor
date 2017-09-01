@@ -122,16 +122,18 @@ void loadSafeController() {
     ROS_INFO_STREAM("loaded safe controller: " << safeController.getService());
 }
 
-void loadCustomController() {
+void loadCustomController()
+{
 	ros::NodeHandle nodeHandle("~");
 
 	std::string customControllerName;
-	if(!nodeHandle.getParam("customController", customControllerName)) {
+	if(!nodeHandle.getParam("customController", customControllerName))
+    {
 		ROS_ERROR("Failed to get custom controller name");
 		return;
 	}
 
-	customController = ros::service::createClient<Controller>(customControllerName, true);
+    customController = ros::service::createClient<Controller>(customControllerName, true);
     ROS_INFO_STREAM("loaded custom controller " << customControllerName);
 }
 
@@ -443,11 +445,13 @@ void commandCallback(const std_msgs::Int32& commandMsg) {
 
 	switch(cmd) {
     	case CMD_USE_SAFE_CONTROLLER:
+            ROS_INFO("USE_SAFE_CONTROLLER Command received");
     		loadSafeController();
     		usingSafeController = true;
     		break;
 
     	case CMD_USE_CUSTOM_CONTROLLER:
+            ROS_INFO("USE_CUSTOM_CONTROLLER Command received");
     		loadCustomController();
     		usingSafeController = false;
     		break;

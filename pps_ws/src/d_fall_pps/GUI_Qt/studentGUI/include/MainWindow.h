@@ -68,6 +68,12 @@ private slots:
 
     void on_pushButton_3_clicked();
 
+    void on_load_yaml_button_clicked();
+
+    void on_en_custom_controller_clicked();
+
+    void on_en_safe_controller_clicked();
+
 private:
     Ui::MainWindow *ui;
 
