@@ -14,6 +14,7 @@
 	</node>
 
 	<node pkg="d_fall_pps" name="CustomControllerService" output="screen" type="CustomControllerService">
+		<rosparam command="load" file="$(find d_fall_pps)/param/CustomController.yaml" />
 	</node>
 
     <!-- When we have a GUI, this has to be adapted and included -->

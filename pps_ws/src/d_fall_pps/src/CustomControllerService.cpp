@@ -1,5 +1,5 @@
 // Place for students to implement their controller
-// The ROS::service is set to work    
+// The ROS::service is set to work
 
 
 //some useful libraries
@@ -12,6 +12,8 @@
 #include "d_fall_pps/Setpoint.h"
 #include "d_fall_pps/ControlCommand.h"
 #include "d_fall_pps/Controller.h"
+
+#include <std_msgs/Int32.h>
 
 //constants
 #define PI 3.1415926535
@@ -28,6 +30,22 @@ const float SATURATION_THRUST = MOTOR_REGRESSION_POLYNOMIAL[2] * 12000 * 12000 +
 //namespacing the package
 using namespace d_fall_pps;
 
+
+// load parameters from corresponding YAML file
+
+void loadParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length) {
+    if(!nodeHandle.getParam(name, val)){
+        ROS_ERROR_STREAM("missing parameter '" << name << "'");
+    }
+    if(val.size() != length) {
+        ROS_ERROR_STREAM("parameter '" << name << "' has wrong array length, " << length << " needed");
+    }
+}
+
+void loadCustomParameters(ros::NodeHandle& nodeHandle)
+{
+    // here we load the parameters that are in the CustomController.yaml
+}
 
 
 // ********* important function that has to be used!! *********
@@ -56,7 +74,7 @@ void convertIntoBodyFrame(float est[9], float (&estBody)[9], int yaw_measured) {
 
 /* --- the data students can work with ---
     -request- contains data provided by Vicon. Check d_fall_pps/msg/ViconData.msg what it includes.
-    -response- is where you have to write your calculated data into. 
+    -response- is where you have to write your calculated data into.
 */
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response) {
     //writing the data from -request- to command line
@@ -71,7 +89,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 
 
 
-    // ********* do your calculations here ********* 
+    // ********* do your calculations here *********
     //Tip: create functions that you call here to keep you code cleaner
 
 
@@ -94,9 +112,16 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     it can either be Motor, Rate or Angle based */
     response.controlOutput.onboardControllerType = MOTOR_MODE;
     //response.controlOutput.onboardControllerType = RATE_MODE;
-    //response.controlOutput.onboardControllerType = ANGLE_MODE;    
-    
+    //response.controlOutput.onboardControllerType = ANGLE_MODE;
+
 	return true;
+}
+
+void customYAMLloadedCallback(const std_msgs::Int32& msg)
+{
+    ros::NodeHandle nodeHandle("~");
+    ROS_INFO("received msg custom loaded YAML");
+    loadCustomParameters(nodeHandle);
 }
 
 
@@ -104,8 +129,11 @@ int main(int argc, char* argv[]) {
     //starting the ROS-node
     ros::init(argc, argv, "CustomControllerService");
     ros::NodeHandle nodeHandle("~");
-
     ros::ServiceServer service = nodeHandle.advertiseService("CustomController", calculateControlOutput);
+
+    ros::NodeHandle namespace_nodeHandle(ros::this_node::getNamespace());
+    ros::Subscriber customYAMLloadedSubscriber = namespace_nodeHandle.subscribe("student_GUI/customYAMLloaded", 1, customYAMLloadedCallback);
+
     ROS_INFO("CustomControllerService ready");
     ros::spin();
 

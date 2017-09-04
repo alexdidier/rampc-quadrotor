@@ -111,6 +111,11 @@ bool usingSafeController;
 
 std::string ros_namespace;
 
+float take_off_distance;
+float landing_distance;
+float duration_take_off;
+float duration_landing;
+
 
 void loadSafeController() {
 	ros::NodeHandle nodeHandle("~");
@@ -196,7 +201,7 @@ void takeOffCF(CrazyflieData& current_local_coordinates) //local because the set
     Setpoint setpoint_msg;
     setpoint_msg.x = current_local_coordinates.x;           // previous one
     setpoint_msg.y = current_local_coordinates.y;           //previous one
-    setpoint_msg.z = current_local_coordinates.z + TAKE_OFF_OFFSET;           //previous one plus some offset
+    setpoint_msg.z = current_local_coordinates.z + take_off_distance;           //previous one plus some offset
     // setpoint_msg.yaw = current_local_coordinates.yaw;          //previous one
     setpoint_msg.yaw = 0.0;
     safeControllerServiceSetpointPublisher.publish(setpoint_msg);
@@ -218,7 +223,7 @@ void landCF(CrazyflieData& current_local_coordinates)
     Setpoint setpoint_msg;
     setpoint_msg.x = current_local_coordinates.x;           // previous one
     setpoint_msg.y = current_local_coordinates.y;           //previous one
-    setpoint_msg.z = LANDING_DISTANCE;           //previous one plus some offset
+    setpoint_msg.z = landing_distance;           //previous one plus some offset
     setpoint_msg.yaw = current_local_coordinates.yaw;          //previous one
     safeControllerServiceSetpointPublisher.publish(setpoint_msg);
 
@@ -312,7 +317,7 @@ void viconCallback(const ViconData& viconData) {
                         takeOffCF(local);
                         finished_take_off = false;
                         ROS_INFO("STATE_TAKE_OFF");
-                        timer_takeoff = nodeHandle.createTimer(ros::Duration(DURATION_TAKE_OFF), takeOffTimerCallback, true);
+                        timer_takeoff = nodeHandle.createTimer(ros::Duration(duration_take_off), takeOffTimerCallback, true);
                     }
                     if(finished_take_off)
                     {
@@ -336,7 +341,7 @@ void viconCallback(const ViconData& viconData) {
                         landCF(local);
                         finished_land = false;
                         ROS_INFO("STATE_LAND");
-                        timer_takeoff = nodeHandle.createTimer(ros::Duration(DURATION_LANDING), landTimerCallback, true);
+                        timer_takeoff = nodeHandle.createTimer(ros::Duration(duration_landing), landTimerCallback, true);
                     }
                     if(finished_land)
                     {
@@ -409,8 +414,30 @@ void loadParameters(ros::NodeHandle& nodeHandle) {
 		ROS_ERROR("Failed to get angleMargin param");
 		return;
 	}
+}
 
+void loadSafeControllerParameters()
+{
+    ros::NodeHandle nh_safeControllerService(ros_namespace + "/SafeControllerService");
+    if(!nh_safeControllerService.getParam("takeOffDistance", take_off_distance))
+    {
+		ROS_ERROR("Failed to get takeOffDistance");
+	}
 
+    if(!nh_safeControllerService.getParam("landingDistance", landing_distance))
+    {
+		ROS_ERROR("Failed to get landing_distance");
+	}
+
+    if(!nh_safeControllerService.getParam("durationTakeOff", duration_take_off))
+    {
+		ROS_ERROR("Failed to get duration_take_off");
+	}
+
+    if(!nh_safeControllerService.getParam("durationLanding", duration_landing))
+    {
+		ROS_ERROR("Failed to get duration_landing");
+	}
 }
 
 void loadCrazyflieContext() {
@@ -515,6 +542,13 @@ void controllerSetPointCallback(const Setpoint& newSetpoint)
     }
 }
 
+
+void safeYAMLloadedCallback(const std_msgs::Int32& msg)
+{
+    ROS_INFO("received msg safe loaded YAML");
+    loadSafeControllerParameters();
+}
+
 int main(int argc, char* argv[])
 {
 	ros::init(argc, argv, "PPSClient");
@@ -539,6 +573,7 @@ int main(int argc, char* argv[])
 
     // load context parameters
 	loadParameters(nodeHandle);
+    loadSafeControllerParameters();
 
 	//ros::service::waitForService("/CentralManagerService/CentralManager");
 	centralManager = nodeHandle.serviceClient<CMQuery>("/CentralManagerService/Query", false);
@@ -579,6 +614,8 @@ int main(int argc, char* argv[])
 
     // crazyradio status. Connected, connecting or disconnected
     ros::Subscriber crazyRadioStatusSubscriber = namespaceNodeHandle.subscribe("CrazyRadio/CrazyRadioStatus", 1, crazyRadioStatusCallback);
+
+    ros::Subscriber safeYAMloadedSubscriber = namespaceNodeHandle.subscribe("student_GUI/safeYAMLloaded", 1, safeYAMLloadedCallback);
 
 	//start with safe controller
     flying_state = STATE_MOTORS_OFF;

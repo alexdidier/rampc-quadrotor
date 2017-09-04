@@ -267,13 +267,6 @@ void setpointCallback(const Setpoint& newSetpoint) {
     setpoint[3] = newSetpoint.yaw;
 }
 
-void customYAMLloadedCallback(const std_msgs::Int32& msg)
-{
-    ros::NodeHandle nodeHandle("~");
-    ROS_INFO("received msg custom loaded YAML");
-    // loadSafeParameters(nodeHandle);
-}
-
 void safeYAMLloadedCallback(const std_msgs::Int32& msg)
 {
     ros::NodeHandle nodeHandle("~");
@@ -296,7 +289,6 @@ int main(int argc, char* argv[]) {
 
     ros::NodeHandle namespace_nodeHandle(ros::this_node::getNamespace());
 
-    ros::Subscriber customYAMloadedSubscriber = namespace_nodeHandle.subscribe("student_GUI/customYAMLloaded", 1, customYAMLloadedCallback);
     ros::Subscriber safeYAMloadedSubscriber = namespace_nodeHandle.subscribe("student_GUI/safeYAMLloaded", 1, safeYAMLloadedCallback);
 
     ros::ServiceServer service = nodeHandle.advertiseService("RateController", calculateControlOutput);
