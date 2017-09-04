@@ -68,7 +68,8 @@ private slots:
 
     void on_pushButton_3_clicked();
 
-    void on_load_yaml_button_clicked();
+    void on_load_custom_yaml_button_clicked();
+    void on_load_safe_yaml_button_clicked();
 
     void on_en_custom_controller_clicked();
 
@@ -84,7 +85,7 @@ private:
 
     std::string m_ros_namespace;
 
-    ros::Timer m_timer_yaml_file;
+    ros::Timer m_custom_timer_yaml_file;
 
     int m_student_id;
     CrazyflieContext m_context;
@@ -102,6 +103,9 @@ private:
 
     ros::Subscriber DBChangedSubscriber;
 
+    ros::Publisher customYAMLloadedPublisher;
+    ros::Publisher safeYAMLloadedPublisher;
+
     ros::ServiceClient centralManager;
 
     // callbacks
@@ -110,7 +114,8 @@ private:
     void flyingStateChangedCallback(const std_msgs::Int32& msg);
     void setpointCallback(const Setpoint& newSetpoint);
     void DBChangedCallback(const std_msgs::Int32& msg);
-    void yamlFileTimerCallback(const ros::TimerEvent&);
+    void customYamlFileTimerCallback(const ros::TimerEvent&);
+    void safeYamlFileTimerCallback(const ros::TimerEvent&);
 
     float fromVoltageToPercent(float voltage);
     void updateBatteryVoltage(float battery_voltage);

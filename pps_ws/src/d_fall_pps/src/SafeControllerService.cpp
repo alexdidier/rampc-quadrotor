@@ -28,6 +28,8 @@
 #include "d_fall_pps/Controller.h"
 #include "d_fall_pps/Debugging.h" //---------------------------------------------------------------------------
 
+#include <std_msgs/Int32.h>
+
 #define PI 3.1415926535
 #define RATE_CONTROLLER 0
 
@@ -66,7 +68,7 @@ void loadParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std
     }
 }
 
-void loadParameters(ros::NodeHandle& nodeHandle) {
+void loadSafeParameters(ros::NodeHandle& nodeHandle) {
     loadParameterFloatVector(nodeHandle, "feedforwardMotor", feedforwardMotor, 4);
     loadParameterFloatVector(nodeHandle, "motorPoly", motorPoly, 3);
 
@@ -162,8 +164,8 @@ void convertIntoBodyFrame(float est[9], float (&state)[9], float yaw_measured) {
 
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response)
 {
-    ros::NodeHandle nodeHandle("~");
-    loadParameters(nodeHandle);
+    // ros::NodeHandle nodeHandle("~");
+    // loadSafeParameters(nodeHandle);  // do not put this here, cannot control anymore
 
     CrazyflieData vicon = request.ownCrazyflie;
 	
@@ -265,6 +267,20 @@ void setpointCallback(const Setpoint& newSetpoint) {
     setpoint[3] = newSetpoint.yaw;
 }
 
+void customYAMLloadedCallback(const std_msgs::Int32& msg)
+{
+    ros::NodeHandle nodeHandle("~");
+    ROS_INFO("received msg custom loaded YAML");
+    // loadSafeParameters(nodeHandle);
+}
+
+void safeYAMLloadedCallback(const std_msgs::Int32& msg)
+{
+    ros::NodeHandle nodeHandle("~");
+    ROS_INFO("received msg safe loaded YAML");
+    loadSafeParameters(nodeHandle);
+}
+
 
 //ros::Publisher pub;
 
@@ -272,11 +288,16 @@ int main(int argc, char* argv[]) {
     ros::init(argc, argv, "SafeControllerService");
 
     ros::NodeHandle nodeHandle("~");
-    loadParameters(nodeHandle);
+    loadSafeParameters(nodeHandle);
     setpoint = defaultSetpoint; // only first time setpoint is equal to default setpoint
 
     ros::Publisher setpointPublisher = nodeHandle.advertise<Setpoint>("Setpoint", 1);
     ros::Subscriber setpointSubscriber = nodeHandle.subscribe("Setpoint", 1, setpointCallback);
+
+    ros::NodeHandle namespace_nodeHandle(ros::this_node::getNamespace());
+
+    ros::Subscriber customYAMloadedSubscriber = namespace_nodeHandle.subscribe("student_GUI/customYAMLloaded", 1, customYAMLloadedCallback);
+    ros::Subscriber safeYAMloadedSubscriber = namespace_nodeHandle.subscribe("student_GUI/safeYAMLloaded", 1, safeYAMLloadedCallback);
 
     ros::ServiceServer service = nodeHandle.advertiseService("RateController", calculateControlOutput);
     ROS_INFO("SafeControllerService ready");

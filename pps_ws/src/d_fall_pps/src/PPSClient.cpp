@@ -107,6 +107,8 @@ CrazyflieContext context;
 //wheter to use safe of custom controller
 bool usingSafeController;
 
+std::string ros_namespace;
+
 
 void loadSafeController() {
 	ros::NodeHandle nodeHandle("~");
@@ -258,6 +260,27 @@ void landTimerCallback(const ros::TimerEvent&)
     finished_land = true;
 }
 
+void goToDefaultSetpoint()
+{
+    std::vector<float> default_setpoint(4);
+    ros::NodeHandle nh_safeControllerService(ros_namespace + "/SafeControllerService");
+
+    ROS_INFO_STREAM(ros_namespace << "/SafeControllerService");
+
+    if(!nh_safeControllerService.getParam("defaultSetpoint", default_setpoint))
+    {
+        ROS_ERROR_STREAM("couldn't find parameter 'defaultSetpoint'");
+    }
+
+    Setpoint setpoint_msg;
+    setpoint_msg.x = default_setpoint[0];
+    setpoint_msg.y = default_setpoint[1];
+    setpoint_msg.z = default_setpoint[2];
+    ROS_INFO_STREAM("Z =" << default_setpoint[2]);
+    setpoint_msg.yaw = default_setpoint[3];
+    safeControllerServiceSetpointPublisher.publish(setpoint_msg);
+}
+
 //is called when new data from Vicon arrives
 void viconCallback(const ViconData& viconData) {
 	for(std::vector<CrazyflieData>::const_iterator it = viconData.crazyflies.begin(); it != viconData.crazyflies.end(); ++it) {
@@ -301,6 +324,7 @@ void viconCallback(const ViconData& viconData) {
                     {
                         changed_state_flag = false;
                         // need to change setpoint to the one from file
+                        goToDefaultSetpoint();
                         ROS_INFO("STATE_FLYING");
                     }
                     break;
@@ -482,6 +506,8 @@ int main(int argc, char* argv[])
 {
 	ros::init(argc, argv, "PPSClient");
 	ros::NodeHandle nodeHandle("~");
+    ros_namespace = ros::this_node::getNamespace();
+
 	loadParameters(nodeHandle);
 
 	//ros::service::waitForService("/CentralManagerService/CentralManager");

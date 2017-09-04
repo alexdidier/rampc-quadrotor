@@ -42,11 +42,16 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     setpointSubscriber = nodeHandle.subscribe("SafeControllerService/Setpoint", 1, &MainWindow::setpointCallback, this);
     DBChangedSubscriber = nodeHandle.subscribe("/my_GUI/DBChanged", 1, &MainWindow::DBChangedCallback, this);
 
+    ros::NodeHandle my_nodeHandle("~");
+    customYAMLloadedPublisher = my_nodeHandle.advertise<std_msgs::Int32>("customYAMLloaded", 1);
+    safeYAMLloadedPublisher = my_nodeHandle.advertise<std_msgs::Int32>("safeYAMLloaded", 1);
+
 
     // communication with PPS Client, just to make it possible to communicate through terminal also we use PPSClient's name
     ros::NodeHandle nh_PPSClient(m_ros_namespace + "/PPSClient");
     crazyRadioCommandPublisher = nh_PPSClient.advertise<std_msgs::Int32>("crazyRadioCommand", 1);
     PPSClientCommandPublisher = nh_PPSClient.advertise<std_msgs::Int32>("Command", 1);
+
 
 
     // First get student ID
@@ -69,9 +74,12 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
 
     std::vector<float> default_setpoint(4);
     ros::NodeHandle nh_safeControllerService(m_ros_namespace + "/SafeControllerService");
-    if(!nh_safeControllerService.getParam("defaultSetPoint", default_setpoint))
+
+    ROS_INFO_STREAM(m_ros_namespace << "/SafeControllerService");
+
+    if(!nh_safeControllerService.getParam("defaultSetpoint", default_setpoint))
     {
-        ROS_ERROR_STREAM("couldn't find parameter 'defaultSetPoint'");
+        ROS_ERROR_STREAM("couldn't find parameter 'defaultSetpoint'");
     }
 
 
@@ -109,10 +117,10 @@ void MainWindow::setpointCallback(const Setpoint& newSetpoint)
 {
     m_setpoint = newSetpoint;
     // here we get the new setpoint, need to update it in GUI
-    ui->current_setpoint_x->setText(QString::number(newSetpoint.x));
-    ui->current_setpoint_y->setText(QString::number(newSetpoint.y));
-    ui->current_setpoint_z->setText(QString::number(newSetpoint.z));
-    ui->current_setpoint_yaw->setText(QString::number(newSetpoint.yaw * RAD2DEG));
+    ui->current_setpoint_x->setText(QString::number(newSetpoint.x, 'f', 3));
+    ui->current_setpoint_y->setText(QString::number(newSetpoint.y, 'f', 3));
+    ui->current_setpoint_z->setText(QString::number(newSetpoint.z, 'f', 3));
+    ui->current_setpoint_yaw->setText(QString::number(newSetpoint.yaw * RAD2DEG, 'f', 1));
 }
 
 void MainWindow::flyingStateChangedCallback(const std_msgs::Int32& msg)
@@ -267,15 +275,15 @@ void MainWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to ne
             ui->current_x->setText(QString::number(local.x, 'f', 3));
             ui->current_y->setText(QString::number(local.y, 'f', 3));
             ui->current_z->setText(QString::number(local.z, 'f', 3));
-            ui->current_yaw->setText(QString::number(local.yaw * RAD2DEG, 'f', 2));
-            ui->current_pitch->setText(QString::number(local.pitch * RAD2DEG, 'f', 2));
-            ui->current_roll->setText(QString::number(local.roll * RAD2DEG, 'f', 2));
+            ui->current_yaw->setText(QString::number(local.yaw * RAD2DEG, 'f', 1));
+            ui->current_pitch->setText(QString::number(local.pitch * RAD2DEG, 'f', 1));
+            ui->current_roll->setText(QString::number(local.roll * RAD2DEG, 'f', 1));
 
             // also update diff
             ui->diff_x->setText(QString::number(m_setpoint.x - local.x, 'f', 3));
             ui->diff_y->setText(QString::number(m_setpoint.y - local.y, 'f', 3));
             ui->diff_z->setText(QString::number(m_setpoint.z - local.z, 'f', 3));
-            ui->diff_yaw->setText(QString::number((m_setpoint.yaw - local.yaw) * RAD2DEG, 'f', 2));
+            ui->diff_yaw->setText(QString::number((m_setpoint.yaw - local.yaw) * RAD2DEG, 'f', 1));
         }
     }
 }
@@ -328,31 +336,66 @@ void MainWindow::on_pushButton_3_clicked()
     ROS_INFO("command disconnect published");
 }
 
-void MainWindow::yamlFileTimerCallback(const ros::TimerEvent&)
+void MainWindow::safeYamlFileTimerCallback(const ros::TimerEvent&)
 {
+    // send msg that says that parameters have changed in YAML file
+    std_msgs::Int32 msg;
+    msg.data = 1;
+    this->safeYAMLloadedPublisher.publish(msg);
+    ROS_INFO("YALMloaded published");
+    ui->load_safe_yaml_button->setEnabled(true);
+}
+
+void MainWindow::on_load_safe_yaml_button_clicked()
+{
+    ui->load_safe_yaml_button->setEnabled(false);
+    ros::NodeHandle nodeHandle("~");
+    m_custom_timer_yaml_file = nodeHandle.createTimer(ros::Duration(1), &MainWindow::safeYamlFileTimerCallback, this, true);
 
     std::string d_fall_pps_path = ros::package::getPath("d_fall_pps");
     ROS_INFO_STREAM(d_fall_pps_path);
 
     // first, reload the name of the custom controller:
     std::string cmd = "rosparam load " + d_fall_pps_path + "/param/ClientConfig.yaml " + m_ros_namespace + "/PPSClient";
+    system(cmd.c_str());
+    ROS_INFO_STREAM(cmd);
 
+    // then, reload the parameters of the custom controller:
+    cmd = "rosparam load " + d_fall_pps_path + "/param/SafeController.yaml " + m_ros_namespace + "/SafeControllerService";
+    system(cmd.c_str());
+    ROS_INFO_STREAM(cmd);
+}
+
+
+
+void MainWindow::customYamlFileTimerCallback(const ros::TimerEvent&)
+{
+    // send msg that says that parameters have changed in YAML file
+    std_msgs::Int32 msg;
+    msg.data = 1;
+    this->customYAMLloadedPublisher.publish(msg);
+    ROS_INFO("YALMloaded published");
+    ui->load_custom_yaml_button->setEnabled(true);
+}
+
+void MainWindow::on_load_custom_yaml_button_clicked()
+{
+    ui->load_custom_yaml_button->setEnabled(false);
+    ros::NodeHandle nodeHandle("~");
+    m_custom_timer_yaml_file = nodeHandle.createTimer(ros::Duration(1), &MainWindow::customYamlFileTimerCallback, this, true);
+
+    std::string d_fall_pps_path = ros::package::getPath("d_fall_pps");
+    ROS_INFO_STREAM(d_fall_pps_path);
+
+    // first, reload the name of the custom controller:
+    std::string cmd = "rosparam load " + d_fall_pps_path + "/param/ClientConfig.yaml " + m_ros_namespace + "/PPSClient";
     system(cmd.c_str());
     ROS_INFO_STREAM(cmd);
 
     // then, reload the parameters of the custom controller:
     cmd = "rosparam load " + d_fall_pps_path + "/param/CustomController.yaml " + m_ros_namespace + "/CustomControllerService";
-
     system(cmd.c_str());
     ROS_INFO_STREAM(cmd);
-    ui->load_yaml_button->setEnabled(true);
-}
-
-void MainWindow::on_load_yaml_button_clicked()
-{
-    ros::NodeHandle nodeHandle("~");
-    m_timer_yaml_file = nodeHandle.createTimer(ros::Duration(0.5), &MainWindow::yamlFileTimerCallback, this, true);
-    ui->load_yaml_button->setEnabled(false);
 }
 
 void MainWindow::on_en_custom_controller_clicked()
