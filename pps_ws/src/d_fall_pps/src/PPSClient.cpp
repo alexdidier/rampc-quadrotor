@@ -77,6 +77,8 @@ ros::ServiceClient customController;
 bool strictSafety;
 float angleMargin;
 
+Setpoint controller_setpoint;
+
 ros::ServiceClient centralManager;
 ros::Publisher controlCommandPublisher;
 
@@ -260,25 +262,24 @@ void landTimerCallback(const ros::TimerEvent&)
     finished_land = true;
 }
 
-void goToDefaultSetpoint()
+void goToControllerSetpoint()
 {
-    std::vector<float> default_setpoint(4);
-    ros::NodeHandle nh_safeControllerService(ros_namespace + "/SafeControllerService");
+    // std::vector<float> default_setpoint(4);
+    // ros::NodeHandle nh_safeControllerService(ros_namespace + "/SafeControllerService");
 
-    ROS_INFO_STREAM(ros_namespace << "/SafeControllerService");
+    // ROS_INFO_STREAM(ros_namespace << "/SafeControllerService");
 
-    if(!nh_safeControllerService.getParam("defaultSetpoint", default_setpoint))
-    {
-        ROS_ERROR_STREAM("couldn't find parameter 'defaultSetpoint'");
-    }
+    // if(!nh_safeControllerService.getParam("defaultSetpoint", default_setpoint))
+    // {
+    //     ROS_ERROR_STREAM("couldn't find parameter 'defaultSetpoint'");
+    // }
 
-    Setpoint setpoint_msg;
-    setpoint_msg.x = default_setpoint[0];
-    setpoint_msg.y = default_setpoint[1];
-    setpoint_msg.z = default_setpoint[2];
-    ROS_INFO_STREAM("Z =" << default_setpoint[2]);
-    setpoint_msg.yaw = default_setpoint[3];
-    safeControllerServiceSetpointPublisher.publish(setpoint_msg);
+    // Setpoint setpoint_msg;
+    // setpoint_msg.y = default_setpoint[1];
+    // setpoint_msg.z = default_setpoint[2];
+    // ROS_INFO_STREAM("Z =" << default_setpoint[2]);
+    // setpoint_msg.yaw = default_setpoint[3];
+    safeControllerServiceSetpointPublisher.publish(controller_setpoint);
 }
 
 //is called when new data from Vicon arrives
@@ -323,8 +324,8 @@ void viconCallback(const ViconData& viconData) {
                     if(changed_state_flag) // stuff that will be run only once when changing state
                     {
                         changed_state_flag = false;
-                        // need to change setpoint to the one from file
-                        goToDefaultSetpoint();
+                        // need to change setpoint to the controller one
+                        goToControllerSetpoint();
                         ROS_INFO("STATE_FLYING");
                     }
                     break;
@@ -502,12 +503,41 @@ void crazyRadioStatusCallback(const std_msgs::Int32& msg)
     crazyradio_status = msg.data;
 }
 
+void controllerSetPointCallback(const Setpoint& newSetpoint)
+{
+    // load in variable the setpoint
+    controller_setpoint = newSetpoint;
+
+    // if we are in flying, set it up NOW
+    if(flying_state == STATE_FLYING)
+    {
+        goToControllerSetpoint();
+    }
+}
+
 int main(int argc, char* argv[])
 {
 	ros::init(argc, argv, "PPSClient");
 	ros::NodeHandle nodeHandle("~");
     ros_namespace = ros::this_node::getNamespace();
 
+    // load default setpoint
+    std::vector<float> default_setpoint(4);
+    ros::NodeHandle nh_safeControllerService(ros_namespace + "/SafeControllerService");
+
+    ROS_INFO_STREAM(ros_namespace << "/SafeControllerService");
+
+    if(!nh_safeControllerService.getParam("defaultSetpoint", default_setpoint))
+    {
+        ROS_ERROR_STREAM("couldn't find parameter 'defaultSetpoint'");
+    }
+
+    controller_setpoint.x = default_setpoint[0];
+    controller_setpoint.y = default_setpoint[1];
+    controller_setpoint.z = default_setpoint[2];
+    controller_setpoint.yaw = default_setpoint[3];
+
+    // load context parameters
 	loadParameters(nodeHandle);
 
 	//ros::service::waitForService("/CentralManagerService/CentralManager");
@@ -542,6 +572,7 @@ int main(int argc, char* argv[])
     // SafeControllerServicePublisher:
     ros::NodeHandle namespaceNodeHandle = ros::NodeHandle();
     safeControllerServiceSetpointPublisher = namespaceNodeHandle.advertise<d_fall_pps::Setpoint>("SafeControllerService/Setpoint", 1);
+    ros::Subscriber controllerSetpointSubscriber = namespaceNodeHandle.subscribe("student_GUI/ControllerSetpoint", 1, controllerSetPointCallback);
 
     // subscriber for DBChanged
     ros::Subscriber DBChangedSubscriber = namespaceNodeHandle.subscribe("/my_GUI/DBChanged", 1, DBChangedCallback);

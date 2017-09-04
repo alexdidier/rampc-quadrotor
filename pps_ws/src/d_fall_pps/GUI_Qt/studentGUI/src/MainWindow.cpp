@@ -38,11 +38,12 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
 
     flyingStateSubscriber = nodeHandle.subscribe("PPSClient/flyingState", 1, &MainWindow::flyingStateChangedCallback, this);
 
-    setpointPublisher = nodeHandle.advertise<Setpoint>("SafeControllerService/Setpoint", 1);
+
     setpointSubscriber = nodeHandle.subscribe("SafeControllerService/Setpoint", 1, &MainWindow::setpointCallback, this);
     DBChangedSubscriber = nodeHandle.subscribe("/my_GUI/DBChanged", 1, &MainWindow::DBChangedCallback, this);
 
     ros::NodeHandle my_nodeHandle("~");
+    controllerSetpointPublisher = my_nodeHandle.advertise<Setpoint>("ControllerSetpoint", 1);
     customYAMLloadedPublisher = my_nodeHandle.advertise<std_msgs::Int32>("customYAMLloaded", 1);
     safeYAMLloadedPublisher = my_nodeHandle.advertise<std_msgs::Int32>("safeYAMLloaded", 1);
 
@@ -325,7 +326,7 @@ void MainWindow::on_set_setpoint_button_clicked()
     msg_setpoint.z = (ui->new_setpoint_z->text()).toFloat();
     msg_setpoint.yaw = (ui->new_setpoint_yaw->text()).toFloat() * DEG2RAD;
 
-    this->setpointPublisher.publish(msg_setpoint);
+    this->controllerSetpointPublisher.publish(msg_setpoint);
 }
 
 void MainWindow::on_pushButton_3_clicked()

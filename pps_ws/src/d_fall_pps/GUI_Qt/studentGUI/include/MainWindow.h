@@ -98,7 +98,7 @@ private:
     ros::Subscriber CFBatterySubscriber;
     ros::Subscriber flyingStateSubscriber;
 
-    ros::Publisher setpointPublisher;
+    ros::Publisher controllerSetpointPublisher;
     ros::Subscriber setpointSubscriber;
 
     ros::Subscriber DBChangedSubscriber;
