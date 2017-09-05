@@ -65,6 +65,7 @@ private slots:
     void on_motors_OFF_button_clicked();
 
     void on_set_setpoint_button_clicked();
+    void on_set_setpoint_button_2_clicked();
 
     void on_pushButton_3_clicked();
 
@@ -90,7 +91,8 @@ private:
     int m_student_id;
     CrazyflieContext m_context;
 
-    Setpoint m_setpoint;
+    Setpoint m_safe_setpoint;
+    Setpoint m_custom_setpoint;
 
     ros::Publisher crazyRadioCommandPublisher;
     ros::Subscriber crazyRadioStatusSubscriber;
@@ -99,7 +101,10 @@ private:
     ros::Subscriber flyingStateSubscriber;
 
     ros::Publisher controllerSetpointPublisher;
-    ros::Subscriber setpointSubscriber;
+    ros::Subscriber safeSetpointSubscriber;
+
+    ros::Publisher customSetpointPublisher;
+    ros::Subscriber customSetpointSubscriber;
 
     ros::Subscriber DBChangedSubscriber;
 
@@ -112,7 +117,8 @@ private:
     void crazyRadioStatusCallback(const std_msgs::Int32& msg);
     void CFBatteryCallback(const std_msgs::Float32& msg);
     void flyingStateChangedCallback(const std_msgs::Int32& msg);
-    void setpointCallback(const Setpoint& newSetpoint);
+    void safeSetpointCallback(const Setpoint& newSetpoint);
+    void customSetpointCallback(const Setpoint& newSetpoint);
     void DBChangedCallback(const std_msgs::Int32& msg);
     void customYamlFileTimerCallback(const ros::TimerEvent&);
     void safeYamlFileTimerCallback(const ros::TimerEvent&);

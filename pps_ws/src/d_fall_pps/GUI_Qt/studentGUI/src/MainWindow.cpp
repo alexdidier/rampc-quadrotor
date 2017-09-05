@@ -31,6 +31,9 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
 
     ros::NodeHandle nodeHandle(m_ros_namespace);
 
+    customSetpointPublisher = nodeHandle.advertise<Setpoint>("CustomControllerService/Setpoint", 1);
+    customSetpointSubscriber = nodeHandle.subscribe("CustomControllerService/Setpoint", 1, &MainWindow::customSetpointCallback, this);
+
     // subscribers
     crazyRadioStatusSubscriber = nodeHandle.subscribe("CrazyRadio/CrazyRadioStatus", 1, &MainWindow::crazyRadioStatusCallback, this);
 
@@ -39,7 +42,7 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     flyingStateSubscriber = nodeHandle.subscribe("PPSClient/flyingState", 1, &MainWindow::flyingStateChangedCallback, this);
 
 
-    setpointSubscriber = nodeHandle.subscribe("SafeControllerService/Setpoint", 1, &MainWindow::setpointCallback, this);
+    safeSetpointSubscriber = nodeHandle.subscribe("SafeControllerService/Setpoint", 1, &MainWindow::safeSetpointCallback, this);
     DBChangedSubscriber = nodeHandle.subscribe("/my_GUI/DBChanged", 1, &MainWindow::DBChangedCallback, this);
 
     ros::NodeHandle my_nodeHandle("~");
@@ -114,14 +117,24 @@ void MainWindow::DBChangedCallback(const std_msgs::Int32& msg)
     ROS_INFO("context reloaded in student_GUI");
 }
 
-void MainWindow::setpointCallback(const Setpoint& newSetpoint)
+void MainWindow::safeSetpointCallback(const Setpoint& newSetpoint)
 {
-    m_setpoint = newSetpoint;
+    m_safe_setpoint = newSetpoint;
     // here we get the new setpoint, need to update it in GUI
     ui->current_setpoint_x->setText(QString::number(newSetpoint.x, 'f', 3));
     ui->current_setpoint_y->setText(QString::number(newSetpoint.y, 'f', 3));
     ui->current_setpoint_z->setText(QString::number(newSetpoint.z, 'f', 3));
     ui->current_setpoint_yaw->setText(QString::number(newSetpoint.yaw * RAD2DEG, 'f', 1));
+}
+
+void MainWindow::customSetpointCallback(const Setpoint& newSetpoint)
+{
+    m_custom_setpoint = newSetpoint;
+    // here we get the new setpoint, need to update it in GUI
+    ui->current_setpoint_x_2->setText(QString::number(newSetpoint.x, 'f', 3));
+    ui->current_setpoint_y_2->setText(QString::number(newSetpoint.y, 'f', 3));
+    ui->current_setpoint_z_2->setText(QString::number(newSetpoint.z, 'f', 3));
+    ui->current_setpoint_yaw_2->setText(QString::number(newSetpoint.yaw * RAD2DEG, 'f', 1));
 }
 
 void MainWindow::flyingStateChangedCallback(const std_msgs::Int32& msg)
@@ -280,11 +293,23 @@ void MainWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to ne
             ui->current_pitch->setText(QString::number(local.pitch * RAD2DEG, 'f', 1));
             ui->current_roll->setText(QString::number(local.roll * RAD2DEG, 'f', 1));
 
+            ui->current_x_2->setText(QString::number(local.x, 'f', 3));
+            ui->current_y_2->setText(QString::number(local.y, 'f', 3));
+            ui->current_z_2->setText(QString::number(local.z, 'f', 3));
+            ui->current_yaw_2->setText(QString::number(local.yaw * RAD2DEG, 'f', 1));
+            ui->current_pitch_2->setText(QString::number(local.pitch * RAD2DEG, 'f', 1));
+            ui->current_roll_2->setText(QString::number(local.roll * RAD2DEG, 'f', 1));
+
             // also update diff
-            ui->diff_x->setText(QString::number(m_setpoint.x - local.x, 'f', 3));
-            ui->diff_y->setText(QString::number(m_setpoint.y - local.y, 'f', 3));
-            ui->diff_z->setText(QString::number(m_setpoint.z - local.z, 'f', 3));
-            ui->diff_yaw->setText(QString::number((m_setpoint.yaw - local.yaw) * RAD2DEG, 'f', 1));
+            ui->diff_x->setText(QString::number(m_safe_setpoint.x - local.x, 'f', 3));
+            ui->diff_y->setText(QString::number(m_safe_setpoint.y - local.y, 'f', 3));
+            ui->diff_z->setText(QString::number(m_safe_setpoint.z - local.z, 'f', 3));
+            ui->diff_yaw->setText(QString::number((m_safe_setpoint.yaw - local.yaw) * RAD2DEG, 'f', 1));
+
+            ui->diff_x_2->setText(QString::number(m_custom_setpoint.x - local.x, 'f', 3));
+            ui->diff_y_2->setText(QString::number(m_custom_setpoint.y - local.y, 'f', 3));
+            ui->diff_z_2->setText(QString::number(m_custom_setpoint.z - local.z, 'f', 3));
+            ui->diff_yaw_2->setText(QString::number((m_custom_setpoint.yaw - local.yaw) * RAD2DEG, 'f', 1));
         }
     }
 }
@@ -327,6 +352,17 @@ void MainWindow::on_set_setpoint_button_clicked()
     msg_setpoint.yaw = (ui->new_setpoint_yaw->text()).toFloat() * DEG2RAD;
 
     this->controllerSetpointPublisher.publish(msg_setpoint);
+}
+
+void MainWindow::on_set_setpoint_button_2_clicked()
+{
+    Setpoint msg_setpoint;
+    msg_setpoint.x = (ui->new_setpoint_x_2->text()).toFloat();
+    msg_setpoint.y = (ui->new_setpoint_y_2->text()).toFloat();
+    msg_setpoint.z = (ui->new_setpoint_z_2->text()).toFloat();
+    msg_setpoint.yaw = (ui->new_setpoint_yaw_2->text()).toFloat() * DEG2RAD;
+
+    this->customSetpointPublisher.publish(msg_setpoint);
 }
 
 void MainWindow::on_pushButton_3_clicked()

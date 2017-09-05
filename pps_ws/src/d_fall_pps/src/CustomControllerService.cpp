@@ -124,11 +124,21 @@ void customYAMLloadedCallback(const std_msgs::Int32& msg)
     loadCustomParameters(nodeHandle);
 }
 
+void setpointCallback(const Setpoint& newSetpoint) {
+    // setpoint[0] = newSetpoint.x;
+    // setpoint[1] = newSetpoint.y;
+    // setpoint[2] = newSetpoint.z;
+    // setpoint[3] = newSetpoint.yaw;
+}
+
 
 int main(int argc, char* argv[]) {
     //starting the ROS-node
     ros::init(argc, argv, "CustomControllerService");
     ros::NodeHandle nodeHandle("~");
+
+    ros::Subscriber setpointSubscriber = nodeHandle.subscribe("Setpoint", 1, setpointCallback);
+
     ros::ServiceServer service = nodeHandle.advertiseService("CustomController", calculateControlOutput);
 
     ros::NodeHandle namespace_nodeHandle(ros::this_node::getNamespace());

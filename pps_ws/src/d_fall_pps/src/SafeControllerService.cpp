@@ -284,7 +284,6 @@ int main(int argc, char* argv[]) {
     loadSafeParameters(nodeHandle);
     setpoint = defaultSetpoint; // only first time setpoint is equal to default setpoint
 
-    ros::Publisher setpointPublisher = nodeHandle.advertise<Setpoint>("Setpoint", 1);
     ros::Subscriber setpointSubscriber = nodeHandle.subscribe("Setpoint", 1, setpointCallback);
 
     ros::NodeHandle namespace_nodeHandle(ros::this_node::getNamespace());
