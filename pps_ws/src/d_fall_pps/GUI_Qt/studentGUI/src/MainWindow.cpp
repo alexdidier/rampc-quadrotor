@@ -46,7 +46,7 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     DBChangedSubscriber = nodeHandle.subscribe("/my_GUI/DBChanged", 1, &MainWindow::DBChangedCallback, this);
 
     ros::NodeHandle my_nodeHandle("~");
-    controllerSetpointPublisher = nodeHandle.advertise<Setpoint>("ControllerSetpoint", 1);
+    controllerSetpointPublisher = my_nodeHandle.advertise<Setpoint>("ControllerSetpoint", 1);
     customYAMLloadedPublisher = my_nodeHandle.advertise<std_msgs::Int32>("customYAMLloaded", 1);
     safeYAMLloadedPublisher = my_nodeHandle.advertise<std_msgs::Int32>("safeYAMLloaded", 1);
 

@@ -93,7 +93,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     //Tip: create functions that you call here to keep you code cleaner
 
 
-
+    ROS_INFO("custom controller loop");
 
 
 

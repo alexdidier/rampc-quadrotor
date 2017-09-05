@@ -18,7 +18,7 @@ estimatorMatrix: [-22.3384, 0.9106] #only for velocity calculation
 defaultSetpoint: [0.0, 0.0, 0.3, 0.0]
 
 #take off and landing parameters (in meters and seconds)
-takeOffDistance : 1
-landingDistance : 0.15
+takeOffDistance : 0.7
+landingDistance : 0.1
 durationTakeOff : 3
 durationLanding : 3
