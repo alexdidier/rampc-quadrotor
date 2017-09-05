@@ -10,4 +10,5 @@ std::map<std::string, std::string> channel_LUT
     {"cfTwo", "0/69/2M"},
     {"cfThree", "0/72/2M"},
     {"cfFour", "0/99/2M"},
+    {"PPS_CF1", "0/0/2M"},
 };
