@@ -68,13 +68,7 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     centralManager = nodeHandle.serviceClient<CMQuery>("/CentralManagerService/Query", false);
     loadCrazyflieContext();
 
-    // we now have the m_context variable with the current context. Put CF Name in label
 
-    QString qstr = "StudentID ";
-    qstr.append(QString::number(m_student_id));
-    qstr.append(" connected to CF ");
-    qstr.append(QString::fromStdString(m_context.crazyflieName));
-    ui->groupBox->setTitle(qstr);
 
     std::vector<float> default_setpoint(4);
     ros::NodeHandle nh_safeControllerService(m_ros_namespace + "/SafeControllerService");
@@ -250,6 +244,13 @@ void MainWindow::loadCrazyflieContext()
     {
 		m_context = contextCall.response.crazyflieContext;
 		ROS_INFO_STREAM("CrazyflieContext:\n" << m_context);
+        // we now have the m_context variable with the current context. Put CF Name in label
+
+        QString qstr = "StudentID ";
+        qstr.append(QString::number(m_student_id));
+        qstr.append(" connected to CF ");
+        qstr.append(QString::fromStdString(m_context.crazyflieName));
+        ui->groupBox->setTitle(qstr);
 	}
     else
     {

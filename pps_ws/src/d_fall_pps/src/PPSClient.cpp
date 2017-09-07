@@ -61,6 +61,12 @@
 #define DURATION_TAKE_OFF  3   // seconds
 #define DURATION_LANDING   3   // seconds
 
+
+// line trayectory defines
+
+#define DISTANCE_THRESHOLD       0.5
+
+
 #define PI 3.141592653589
 
 using namespace d_fall_pps;
@@ -78,6 +84,13 @@ bool strictSafety;
 float angleMargin;
 
 Setpoint controller_setpoint;
+
+
+// variables for linear trayectory
+Setpoint current_safe_setpoint;
+double distance;
+double unit_vector[3];
+
 
 ros::ServiceClient centralManager;
 ros::Publisher controlCommandPublisher;
@@ -115,6 +128,13 @@ float take_off_distance;
 float landing_distance;
 float duration_take_off;
 float duration_landing;
+
+bool finished_take_off = false;
+bool finished_land = false;
+
+ros::Timer timer_takeoff;
+ros::Timer timer_land;
+
 
 
 void loadSafeController() {
@@ -194,6 +214,24 @@ void coordinatesToLocal(CrazyflieData& cf) {
 }
 
 
+void setCurrentSafeSetpoint(Setpoint setpoint)
+{
+    current_safe_setpoint = setpoint;
+}
+
+void calculateDistanceToCurrentSafeSetpoint(CrazyflieData& local)
+{
+    double dx = current_safe_setpoint.x - local.x;
+    double dy = current_safe_setpoint.y - local.y;
+    double dz = current_safe_setpoint.z - local.z;
+
+    distance = sqrt(pow(dx,2) + pow(dy,2) + pow(dz,2));
+
+    unit_vector[0] = dx/distance;
+    unit_vector[1] = dy/distance;
+    unit_vector[2] = dz/distance;
+}
+
 
 void takeOffCF(CrazyflieData& current_local_coordinates) //local because the setpoint is in local coordinates
 {
@@ -215,6 +253,9 @@ void takeOffCF(CrazyflieData& current_local_coordinates) //local because the set
     usingSafeController = true;
     loadSafeController();
     // when do we finish? after some time with delay?
+
+    // update variable that keeps track of current setpoint
+    setCurrentSafeSetpoint(setpoint_msg);
 }
 
 void landCF(CrazyflieData& current_local_coordinates)
@@ -230,6 +271,7 @@ void landCF(CrazyflieData& current_local_coordinates)
     // now, use safe controller to go to that setpoint
     usingSafeController = true;
     loadSafeController();
+    setCurrentSafeSetpoint(setpoint_msg);
 }
 
 void changeFlyingStateTo(int new_state)
@@ -251,11 +293,6 @@ void changeFlyingStateTo(int new_state)
     flyingStatePublisher.publish(flying_state_msg);
 }
 
-bool finished_take_off = false;
-bool finished_land = false;
-
-ros::Timer timer_takeoff;
-ros::Timer timer_land;
 
 void takeOffTimerCallback(const ros::TimerEvent&)
 {
@@ -269,23 +306,10 @@ void landTimerCallback(const ros::TimerEvent&)
 
 void goToControllerSetpoint()
 {
-    // std::vector<float> default_setpoint(4);
-    // ros::NodeHandle nh_safeControllerService(ros_namespace + "/SafeControllerService");
-
-    // ROS_INFO_STREAM(ros_namespace << "/SafeControllerService");
-
-    // if(!nh_safeControllerService.getParam("defaultSetpoint", default_setpoint))
-    // {
-    //     ROS_ERROR_STREAM("couldn't find parameter 'defaultSetpoint'");
-    // }
-
-    // Setpoint setpoint_msg;
-    // setpoint_msg.y = default_setpoint[1];
-    // setpoint_msg.z = default_setpoint[2];
-    // ROS_INFO_STREAM("Z =" << default_setpoint[2]);
-    // setpoint_msg.yaw = default_setpoint[3];
     safeControllerServiceSetpointPublisher.publish(controller_setpoint);
+    setCurrentSafeSetpoint(controller_setpoint);
 }
+
 
 //is called when new data from Vicon arrives
 void viconCallback(const ViconData& viconData) {
@@ -376,6 +400,26 @@ void viconCallback(const ViconData& viconData) {
                     }
                     else
                     {
+                        calculateDistanceToCurrentSafeSetpoint(local); // update distance, it also updates the unit vector
+
+                        // here, detect if euclidean distance between setpoint and current position is higher than a threshold
+                        if(distance > DISTANCE_THRESHOLD)
+                        {
+                            Setpoint setpoint_msg;
+                            // here, where we are now, or where we were in the beginning?
+                            setpoint_msg.x = local.x + DISTANCE_THRESHOLD * unit_vector[0];
+                            setpoint_msg.y = local.y + DISTANCE_THRESHOLD * unit_vector[1];
+                            setpoint_msg.z = local.z + DISTANCE_THRESHOLD * unit_vector[2];
+
+                            // yaw is better divided by the number of steps?
+                            setpoint_msg.yaw = current_safe_setpoint.yaw;
+                            safeControllerServiceSetpointPublisher.publish(setpoint_msg);
+                        }
+                        else
+                        {
+                            goToControllerSetpoint(); //maybe this is a bit repetitive?
+                        }
+
                         bool success = safeController.call(controllerCall);
                         if(!success) {
                             ROS_ERROR_STREAM("Failed to call safe controller, valid: " << safeController.isValid() << ", exists: " << safeController.exists());
@@ -452,31 +496,33 @@ void loadCrazyflieContext() {
 	if(centralManager.call(contextCall)) {
 		new_context = contextCall.response.crazyflieContext;
 		ROS_INFO_STREAM("CrazyflieContext:\n" << new_context);
-	} else {
-		ROS_ERROR("Failed to load context");
+
+        if((context.crazyflieName != "") && (new_context.crazyflieName != context.crazyflieName)) //linked crazyflie name changed and it was not empty before
+        {
+
+            // Motors off is done in python script now everytime we disconnect
+
+            // send motors OFF and disconnect before setting context = new_context
+            // std_msgs::Int32 msg;
+            // msg.data = CMD_CRAZYFLY_MOTORS_OFF;
+            // commandPublisher.publish(msg);
+
+            ROS_INFO("CF is now different for this student. Disconnect and turn it off");
+
+            std_msgs::Int32 msg;
+            msg.data = CMD_DISCONNECT;
+            crazyRadioCommandPublisher.publish(msg);
+        }
+
+        context = new_context;
+
+        ros::NodeHandle nh("CrazyRadio");
+        nh.setParam("crazyFlieAddress", context.crazyflieAddress);
 	}
-
-    if((context.crazyflieName != "") && (new_context.crazyflieName != context.crazyflieName)) //linked crazyflie name changed and it was not empty before
+    else
     {
-
-        // Motors off is done in python script now everytime we disconnect
-
-        // send motors OFF and disconnect before setting context = new_context
-        // std_msgs::Int32 msg;
-        // msg.data = CMD_CRAZYFLY_MOTORS_OFF;
-        // commandPublisher.publish(msg);
-
-        ROS_INFO("CF is now different for this student. Disconnect and turn it off");
-
-        std_msgs::Int32 msg;
-        msg.data = CMD_DISCONNECT;
-        crazyRadioCommandPublisher.publish(msg);
-    }
-
-    context = new_context;
-
-	ros::NodeHandle nh("CrazyRadio");
-	nh.setParam("crazyFlieAddress", context.crazyflieAddress);
+		ROS_ERROR("Failed to load context. Waiting for next Save in DB by teacher");
+	}
 }
 
 
@@ -540,6 +586,10 @@ void controllerSetPointCallback(const Setpoint& newSetpoint)
     {
         goToControllerSetpoint();
     }
+}
+
+void safeSetPointCallback(const Setpoint& newSetpoint)
+{
 }
 
 
@@ -608,6 +658,7 @@ int main(int argc, char* argv[])
     ros::NodeHandle namespaceNodeHandle = ros::NodeHandle();
     safeControllerServiceSetpointPublisher = namespaceNodeHandle.advertise<d_fall_pps::Setpoint>("SafeControllerService/Setpoint", 1);
     ros::Subscriber controllerSetpointSubscriber = namespaceNodeHandle.subscribe("student_GUI/ControllerSetpoint", 1, controllerSetPointCallback);
+    ros::Subscriber safeSetpointSubscriber = namespaceNodeHandle.subscribe("SafeControllerService/Setpoint", 1, safeSetPointCallback);
 
     // subscriber for DBChanged
     ros::Subscriber DBChangedSubscriber = namespaceNodeHandle.subscribe("/my_GUI/DBChanged", 1, DBChangedCallback);
