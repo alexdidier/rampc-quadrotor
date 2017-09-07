@@ -64,7 +64,7 @@
 
 // line trayectory defines
 
-#define DISTANCE_THRESHOLD       0.5
+#define DISTANCE_THRESHOLD       0.4
 
 
 #define PI 3.141592653589
@@ -90,6 +90,7 @@ Setpoint controller_setpoint;
 Setpoint current_safe_setpoint;
 double distance;
 double unit_vector[3];
+bool was_in_threshold = false;
 
 
 ros::ServiceClient centralManager;
@@ -401,10 +402,11 @@ void viconCallback(const ViconData& viconData) {
                     else
                     {
                         calculateDistanceToCurrentSafeSetpoint(local); // update distance, it also updates the unit vector
-
+			ROS_INFO_STREAM("distance: " << distance);
                         // here, detect if euclidean distance between setpoint and current position is higher than a threshold
                         if(distance > DISTANCE_THRESHOLD)
                         {
+		            ROS_INFO("inside threshold");
                             Setpoint setpoint_msg;
                             // here, where we are now, or where we were in the beginning?
                             setpoint_msg.x = local.x + DISTANCE_THRESHOLD * unit_vector[0];
@@ -414,10 +416,16 @@ void viconCallback(const ViconData& viconData) {
                             // yaw is better divided by the number of steps?
                             setpoint_msg.yaw = current_safe_setpoint.yaw;
                             safeControllerServiceSetpointPublisher.publish(setpoint_msg);
+                            was_in_threshold = true;
                         }
                         else
                         {
-                            goToControllerSetpoint(); //maybe this is a bit repetitive?
+                            if(was_in_threshold)
+                            {
+                                was_in_threshold = false;
+                                safeControllerServiceSetpointPublisher.publish(current_safe_setpoint);
+                                // goToControllerSetpoint(); //maybe this is a bit repetitive?
+                            }
                         }
 
                         bool success = safeController.call(controllerCall);
