@@ -211,11 +211,6 @@ void MainWindow::updateBatteryVoltage(float battery_voltage)
     // Need to take voltage, display it and transform it to percentage
     int percentage = (int) fromVoltageToPercent(m_battery_voltage);
 
-    if(percentage != ui->battery_bar->value())
-    {
-        // ui->battery_bar->setValue(percentage);
-    }
-
     QString qstr = "Raw voltage: ";
     qstr.append(QString::number(battery_voltage, 'f', 2));
     ui->raw_voltage->setText(qstr);

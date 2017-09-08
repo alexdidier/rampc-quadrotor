@@ -21,14 +21,22 @@
 #define ANGLE_MODE 1
 #define MOTOR_MODE 2
 
-//constants that you most probably need for your controller to work properly
-//see: 2015-08 - Forster - System ID of Crazyflie 2.pdf Chapter 3.3.1: Input Command → Thrust
-const float FEEDFORWARD_MOTOR[4] = {37000, 37000, 37000, 37000};
-const float MOTOR_REGRESSION_POLYNOMIAL[3] = {5.484560e-4, 1.032633e-6, 2.130295e-11};
-const float SATURATION_THRUST = MOTOR_REGRESSION_POLYNOMIAL[2] * 12000 * 12000 + MOTOR_REGRESSION_POLYNOMIAL[1] * 12000 + MOTOR_REGRESSION_POLYNOMIAL[1];
-
 //namespacing the package
 using namespace d_fall_pps;
+
+// variables for controller
+float cf_mass;                  //crazyflie mass in grams
+std::vector<float>  motorPoly(3);
+float control_frequency;
+float gravity_force;
+
+CrazyflieData previous_location;
+
+const float gainMatrixRoll[9] = {0, -1.714330725, 0, 0, -1.337107465, 0, 5.115369735, 0, 0};
+const float gainMatrixPitch[9] = {1.714330725, 0, 0, 1.337107465, 0, 0, 0, 5.115369735, 0};
+const float gainMatrixYaw[9] = {0, 0, 0, 0, 0, 0, 0, 0, 2.843099534};
+const float gainMatrixThrust[9] = {0, 0, 0.22195826, 0, 0, 0.12362477, 0, 0, 0};
+
 
 
 // load parameters from corresponding YAML file
@@ -42,9 +50,34 @@ void loadParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std
     }
 }
 
+float getFloatParameter(ros::NodeHandle& nodeHandle, std::string name)
+{
+
+    float val;
+    if(!nodeHandle.getParam(name, val))
+    {
+        ROS_ERROR_STREAM("missing parameter '" << name << "'");
+    }
+    return val;
+}
+
+
 void loadCustomParameters(ros::NodeHandle& nodeHandle)
 {
     // here we load the parameters that are in the CustomController.yaml
+
+    cf_mass = getFloatParameter(nodeHandle, "mass");
+    control_frequency = getFloatParameter(nodeHandle, "control_frequency");
+    loadParameterFloatVector(nodeHandle, "motorPoly", motorPoly, 3);
+
+    // compute things that we will need after from these parameters
+
+    // force that we need to counteract gravity (mg)
+    gravity_force = cf_mass * 9.81/1000; // in N
+}
+
+float computeMotorPolyBackward(float thrust) {
+    return (-motorPoly[1] + sqrt(motorPoly[1] * motorPoly[1] - 4 * motorPoly[2] * (motorPoly[0] - thrust))) / (2 * motorPoly[2]);
 }
 
 
@@ -52,7 +85,8 @@ void loadCustomParameters(ros::NodeHandle& nodeHandle)
 //-est- is an array with the estimated values : x,y,z,vx,vy,vz,roll,pitch,yaw
 //-estBody- is an EMPTY array which will then contain the values in the body frame used by the crazyflie
 //-yaw_measured- is the value that came from Vicon
-void convertIntoBodyFrame(float est[9], float (&estBody)[9], int yaw_measured) {
+void convertIntoBodyFrame(float est[9], float (&estBody)[9], int yaw_measured)
+{
     float sinYaw = sin(yaw_measured);
     float cosYaw = cos(yaw_measured);
 
@@ -68,8 +102,6 @@ void convertIntoBodyFrame(float est[9], float (&estBody)[9], int yaw_measured) {
     estBody[7] = est[7];
     estBody[8] = est[8];
 }
-
-
 
 
 /* --- the data students can work with ---
@@ -91,29 +123,55 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 
     // ********* do your calculations here *********
     //Tip: create functions that you call here to keep you code cleaner
-
-
     ROS_INFO("custom controller loop");
 
+    // calculate the velocity based in the derivative of the position
 
+    float est[9];
 
+    est[0] = request.ownCrazyflie.x;
+    est[1] = request.ownCrazyflie.y;
+    est[2] = request.ownCrazyflie.z;
 
-    //for students to set the newly calculated commands for the controller
-    response.controlOutput.roll = 0;
-    response.controlOutput.pitch = 0;
-    response.controlOutput.yaw = 0; //in [rad] --> will be converted to degree in CrazyRadio.py before sending to Crazyflie
-    response.controlOutput.motorCmd1 = 0;
-    response.controlOutput.motorCmd2 = 0;
-    response.controlOutput.motorCmd3 = 0;
-    response.controlOutput.motorCmd4 = 0;
+    est[3] = (request.ownCrazyflie.x - previous_location.x) * control_frequency;
+    est[4] = (request.ownCrazyflie.y - previous_location.y) * control_frequency;
+    est[5] = (request.ownCrazyflie.z - previous_location.z) * control_frequency;
 
+    est[6] = request.ownCrazyflie.roll;
+    est[7] = request.ownCrazyflie.pitch;
+    est[8] = request.ownCrazyflie.yaw;
+
+    float state[9];
+    convertIntoBodyFrame(est, state, request.ownCrazyflie.yaw);
+
+    // calculate feedback
+    float outRoll = 0;
+    float outPitch = 0;
+    float outYaw = 0;
+    float thrustIntermediate = 0;
+    for(int i = 0; i < 9; ++i)
+    {
+    	outRoll -= gainMatrixRoll[i] * state[i];
+    	outPitch -= gainMatrixPitch[i] * state[i];
+    	outYaw -= gainMatrixYaw[i] * state[i];
+    	thrustIntermediate -= gainMatrixThrust[i] * state[i];
+    }
+
+    response.controlOutput.roll = outRoll;
+    response.controlOutput.pitch = outPitch;
+    response.controlOutput.yaw = outYaw;
+    response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrustIntermediate + gravity_force);
+    response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrustIntermediate + gravity_force);
+    response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrustIntermediate + gravity_force);
+    response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrustIntermediate + gravity_force);
 
     /*choosing the Crazyflie onBoard controller type.
     it can either be Motor, Rate or Angle based */
-    response.controlOutput.onboardControllerType = MOTOR_MODE;
-    //response.controlOutput.onboardControllerType = RATE_MODE;
-    //response.controlOutput.onboardControllerType = ANGLE_MODE;
+    // response.controlOutput.onboardControllerType = MOTOR_MODE;
+    response.controlOutput.onboardControllerType = RATE_MODE;
+    // response.controlOutput.onboardControllerType = ANGLE_MODE;
 
+    previous_location = request.ownCrazyflie; // we have already used previous location, update it
 	return true;
 }
 

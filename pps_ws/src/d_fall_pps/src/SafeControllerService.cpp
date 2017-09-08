@@ -124,7 +124,6 @@ void estimateState(Controller::Request &request, float (&est)[9]) {
     est[5] = ahat_x[5] + k_x[5];
 
     memcpy(prevEstimate, est, 9 * sizeof(float));
-    
 }
 
 
