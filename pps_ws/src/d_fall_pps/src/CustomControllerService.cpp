@@ -160,6 +160,10 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     response.controlOutput.pitch = outPitch;
     response.controlOutput.yaw = outYaw;
 
+    ROS_INFO_STREAM("controlOutput.roll = " << response.controlOutput.roll);
+    ROS_INFO_STREAM("controlOutput.pitch = " << response.controlOutput.pitch);
+    ROS_INFO_STREAM("controlOutput.yaw = " << response.controlOutput.yaw);
+
     response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrustIntermediate + gravity_force);
     response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrustIntermediate + gravity_force);
     response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrustIntermediate + gravity_force);
