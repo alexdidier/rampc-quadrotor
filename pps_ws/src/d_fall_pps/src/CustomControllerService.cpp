@@ -41,7 +41,8 @@ const float gainMatrixThrust[9] = {0, 0, 0.22195826, 0, 0, 0.12362477, 0, 0, 0};
 
 // load parameters from corresponding YAML file
 
-void loadParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length) {
+void loadParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length)
+{
     if(!nodeHandle.getParam(name, val)){
         ROS_ERROR_STREAM("missing parameter '" << name << "'");
     }
@@ -111,15 +112,13 @@ void convertIntoBodyFrame(float est[9], float (&estBody)[9], int yaw_measured)
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response) {
     //writing the data from -request- to command line
     //might be useful for debugging
-    ROS_INFO_STREAM("x-coordinates: " << request.ownCrazyflie.x);
-    ROS_INFO_STREAM("y-coordinates: " << request.ownCrazyflie.y);
-    ROS_INFO_STREAM("z-coordinates: " << request.ownCrazyflie.z);
-    ROS_INFO_STREAM("roll: " << request.ownCrazyflie.roll);
-    ROS_INFO_STREAM("pitch: " << request.ownCrazyflie.pitch);
-    ROS_INFO_STREAM("yaw: " << request.ownCrazyflie.yaw);
-    ROS_INFO_STREAM("Delta t: " << request.ownCrazyflie.acquiringTime);
-
-
+    // ROS_INFO_STREAM("x-coordinates: " << request.ownCrazyflie.x);
+    // ROS_INFO_STREAM("y-coordinates: " << request.ownCrazyflie.y);
+    // ROS_INFO_STREAM("z-coordinates: " << request.ownCrazyflie.z);
+    // ROS_INFO_STREAM("roll: " << request.ownCrazyflie.roll);
+    // ROS_INFO_STREAM("pitch: " << request.ownCrazyflie.pitch);
+    // ROS_INFO_STREAM("yaw: " << request.ownCrazyflie.yaw);
+    // ROS_INFO_STREAM("Delta t: " << request.ownCrazyflie.acquiringTime);
 
     // ********* do your calculations here *********
     //Tip: create functions that you call here to keep you code cleaner
@@ -160,10 +159,13 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     response.controlOutput.roll = outRoll;
     response.controlOutput.pitch = outPitch;
     response.controlOutput.yaw = outYaw;
+
     response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrustIntermediate + gravity_force);
     response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrustIntermediate + gravity_force);
     response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrustIntermediate + gravity_force);
     response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrustIntermediate + gravity_force);
+
+    ROS_INFO_STREAM("controlOutput.cmd4 = " << response.controlOutput.motorCmd4);
 
     /*choosing the Crazyflie onBoard controller type.
     it can either be Motor, Rate or Angle based */
