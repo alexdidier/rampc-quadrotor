@@ -23,6 +23,7 @@
 
 #include <ros/ros.h>
 #include <ros/network.h>
+#include <ros/package.h>
 
 #endif
 
@@ -198,6 +199,7 @@ void MainGUIWindow::_init()
 
     ros::NodeHandle nodeHandle("~");
     DBChangedPublisher = nodeHandle.advertise<std_msgs::Int32>("DBChanged", 1);
+    emergencyStopPublisher = nodeHandle.advertise<std_msgs::Int32>("emergencyStop", 1);
     #endif
 }
 
@@ -925,4 +927,11 @@ void MainGUIWindow::on_comboBoxCFs_currentTextChanged(const QString &arg1)
     {
         ROS_INFO("name not found in LUT");
     }
+}
+
+
+void MainGUIWindow::on_all_motors_off_button_clicked()
+{
+    std_msgs::Int32 msg;
+    msg.data = CMD_CRAZYFLY_MOTORS_OFF;
 }

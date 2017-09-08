@@ -579,6 +579,11 @@ void DBChangedCallback(const std_msgs::Int32& msg)
     loadCrazyflieContext();
 }
 
+void emergencyStopCallback(const std_msgs::Int32& msg)
+{
+    commandCallback(msg);
+}
+
 void crazyRadioStatusCallback(const std_msgs::Int32& msg)
 {
     crazyradio_status = msg.data;
@@ -670,6 +675,9 @@ int main(int argc, char* argv[])
 
     // subscriber for DBChanged
     ros::Subscriber DBChangedSubscriber = namespaceNodeHandle.subscribe("/my_GUI/DBChanged", 1, DBChangedCallback);
+
+    // subscriber for emergencyStop
+    ros::Subscriber emergencyStopSubscriber = namespaceNodeHandle.subscribe("/my_GUI/emergencyStop", 1, emergencyStopCallback);
 
     // crazyradio status. Connected, connecting or disconnected
     ros::Subscriber crazyRadioStatusSubscriber = namespaceNodeHandle.subscribe("CrazyRadio/CrazyRadioStatus", 1, crazyRadioStatusCallback);

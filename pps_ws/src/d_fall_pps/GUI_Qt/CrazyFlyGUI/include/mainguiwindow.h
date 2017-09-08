@@ -20,7 +20,9 @@
 #include <std_msgs/Int32.h>
 
 
+#define CMD_CRAZYFLY_MOTORS_OFF   5
 using namespace d_fall_pps;
+
 #endif
 
 
@@ -132,6 +134,8 @@ private slots:
 
     void on_comboBoxCFs_currentTextChanged(const QString &arg1);
 
+    void on_all_motors_off_button_clicked();
+
 private:
 
     Ui::MainGUIWindow *ui;
@@ -146,6 +150,7 @@ private:
     CFLinker* cf_linker;
 
     ros::Publisher DBChangedPublisher;
+    ros::Publisher emergencyStopPublisher;
     #endif
 
     void updateComboBoxesCFs();
