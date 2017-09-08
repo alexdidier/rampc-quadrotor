@@ -575,7 +575,7 @@ void commandCallback(const std_msgs::Int32& commandMsg) {
     	case CMD_USE_CUSTOM_CONTROLLER:
             ROS_INFO("USE_CUSTOM_CONTROLLER Command received");
     		loadCustomController();
-            useSafeController();
+            useCustomController();
     		break;
 
     	case CMD_CRAZYFLY_TAKE_OFF:
