@@ -32,6 +32,8 @@ float gravity_force;
 
 CrazyflieData previous_location;
 
+std::vector<float>  setpoint(4);
+
 const float gainMatrixRoll[9] = {0, -1.714330725, 0, 0, -1.337107465, 0, 5.115369735, 0, 0};
 const float gainMatrixPitch[9] = {1.714330725, 0, 0, 1.337107465, 0, 0, 0, 5.115369735, 0};
 const float gainMatrixYaw[9] = {0, 0, 0, 0, 0, 0, 0, 0, 2.843099534};
@@ -74,7 +76,7 @@ void loadCustomParameters(ros::NodeHandle& nodeHandle)
     // compute things that we will need after from these parameters
 
     // force that we need to counteract gravity (mg)
-    gravity_force = cf_mass * 9.81/1000; // in N
+    gravity_force = cf_mass * 9.81/(1000*4); // in N
 }
 
 float computeMotorPolyBackward(float thrust) {
@@ -126,6 +128,12 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 
     // calculate the velocity based in the derivative of the position
 
+    //move coordinate system to make setpoint origin
+    request.ownCrazyflie.x -= setpoint[0];
+    request.ownCrazyflie.y -= setpoint[1];
+    request.ownCrazyflie.z -= setpoint[2];
+    float yaw = request.ownCrazyflie.yaw - setpoint[3];
+
     float est[9];
 
     est[0] = request.ownCrazyflie.x;
@@ -156,6 +164,8 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     	thrustIntermediate -= gainMatrixThrust[i] * state[i];
     }
 
+    ROS_INFO_STREAM("thrustIntermediate = " << thrustIntermediate);    
+
     response.controlOutput.roll = outRoll;
     response.controlOutput.pitch = outPitch;
     response.controlOutput.yaw = outYaw;
@@ -169,6 +179,13 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrustIntermediate + gravity_force);
     response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrustIntermediate + gravity_force);
 
+    ROS_INFO_STREAM("motorPoly 0:" << motorPoly[0]);
+    ROS_INFO_STREAM("motorPoly 0:" << motorPoly[1]);
+    ROS_INFO_STREAM("motorPoly 0:" << motorPoly[2]);
+
+    ROS_INFO_STREAM("controlOutput.cmd1 = " << response.controlOutput.motorCmd1);
+    ROS_INFO_STREAM("controlOutput.cmd3 = " << response.controlOutput.motorCmd2);
+    ROS_INFO_STREAM("controlOutput.cmd2 = " << response.controlOutput.motorCmd3);
     ROS_INFO_STREAM("controlOutput.cmd4 = " << response.controlOutput.motorCmd4);
 
     /*choosing the Crazyflie onBoard controller type.
@@ -189,10 +206,10 @@ void customYAMLloadedCallback(const std_msgs::Int32& msg)
 }
 
 void setpointCallback(const Setpoint& newSetpoint) {
-    // setpoint[0] = newSetpoint.x;
-    // setpoint[1] = newSetpoint.y;
-    // setpoint[2] = newSetpoint.z;
-    // setpoint[3] = newSetpoint.yaw;
+    setpoint[0] = newSetpoint.x;
+    setpoint[1] = newSetpoint.y;
+    setpoint[2] = newSetpoint.z;
+    setpoint[3] = newSetpoint.yaw;
 }
 
 
@@ -200,6 +217,7 @@ int main(int argc, char* argv[]) {
     //starting the ROS-node
     ros::init(argc, argv, "CustomControllerService");
     ros::NodeHandle nodeHandle("~");
+    loadCustomParameters(nodeHandle);
 
     ros::Subscriber setpointSubscriber = nodeHandle.subscribe("Setpoint", 1, setpointCallback);
 

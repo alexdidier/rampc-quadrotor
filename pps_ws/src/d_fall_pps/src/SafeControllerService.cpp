@@ -166,9 +166,8 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     // ros::NodeHandle nodeHandle("~");
     // loadSafeParameters(nodeHandle);  // do not put this here, cannot control anymore
 
-    CrazyflieData vicon = request.ownCrazyflie;
 	
-	float yaw_measured = request.ownCrazyflie.yaw;
+    float yaw_measured = request.ownCrazyflie.yaw;
 
     //move coordinate system to make setpoint origin
     request.ownCrazyflie.x -= setpoint[0];
@@ -176,7 +175,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     request.ownCrazyflie.z -= setpoint[2];
     float yaw = request.ownCrazyflie.yaw - setpoint[3];
 	
-	//bag.write("Offset", ros::Time::now(), request.ownCrazyflie);
+    //bag.write("Offset", ros::Time::now(), request.ownCrazyflie);
 
     while(yaw > PI) {yaw -= 2 * PI;}
     while(yaw < -PI) {yaw += 2 * PI;}
@@ -232,7 +231,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     	outYaw -= gainMatrixYaw[i] * state[i];
     	thrustIntermediate -= gainMatrixThrust[i] * state[i];
     }
-
+    ROS_INFO_STREAM("thrustIntermediate = " << thrustIntermediate);    
     //INFORMATION: this ugly fix was needed for the older firmware
     //outYaw *= 0.5;
 
@@ -249,6 +248,12 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrustIntermediate + ffThrust[1]);
     response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrustIntermediate + ffThrust[2]);
     response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrustIntermediate + ffThrust[3]);
+
+    ROS_INFO_STREAM("ffThrust" << ffThrust[0]);
+    ROS_INFO_STREAM("controlOutput.cmd1 = " << response.controlOutput.motorCmd1);
+    ROS_INFO_STREAM("controlOutput.cmd3 = " << response.controlOutput.motorCmd2);
+    ROS_INFO_STREAM("controlOutput.cmd2 = " << response.controlOutput.motorCmd3);
+    ROS_INFO_STREAM("controlOutput.cmd4 = " << response.controlOutput.motorCmd4);
 
     response.controlOutput.onboardControllerType = RATE_CONTROLLER;
 
