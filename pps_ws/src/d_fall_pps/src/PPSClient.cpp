@@ -62,11 +62,6 @@
 #define DURATION_LANDING   3   // seconds
 
 
-// line trayectory defines
-
-#define DISTANCE_THRESHOLD       0.4
-
-
 #define PI 3.141592653589
 
 using namespace d_fall_pps;
@@ -91,6 +86,7 @@ Setpoint current_safe_setpoint;
 double distance;
 double unit_vector[3];
 bool was_in_threshold = false;
+double distance_threshold;      //to be loaded from yaml
 
 
 ros::ServiceClient centralManager;
@@ -402,16 +398,16 @@ void viconCallback(const ViconData& viconData) {
                     else
                     {
                         calculateDistanceToCurrentSafeSetpoint(local); // update distance, it also updates the unit vector
-			ROS_INFO_STREAM("distance: " << distance);
+                        ROS_INFO_STREAM("distance: " << distance);
                         // here, detect if euclidean distance between setpoint and current position is higher than a threshold
-                        if(distance > DISTANCE_THRESHOLD)
+                        if(distance > distance_threshold)
                         {
-		            ROS_INFO("inside threshold");
+                            ROS_INFO("inside threshold");
                             Setpoint setpoint_msg;
                             // here, where we are now, or where we were in the beginning?
-                            setpoint_msg.x = local.x + DISTANCE_THRESHOLD * unit_vector[0];
-                            setpoint_msg.y = local.y + DISTANCE_THRESHOLD * unit_vector[1];
-                            setpoint_msg.z = local.z + DISTANCE_THRESHOLD * unit_vector[2];
+                            setpoint_msg.x = local.x + distance_threshold * unit_vector[0];
+                            setpoint_msg.y = local.y + distance_threshold * unit_vector[1];
+                            setpoint_msg.z = local.z + distance_threshold * unit_vector[2];
 
                             // yaw is better divided by the number of steps?
                             setpoint_msg.yaw = current_safe_setpoint.yaw;
@@ -489,6 +485,11 @@ void loadSafeControllerParameters()
     if(!nh_safeControllerService.getParam("durationLanding", duration_landing))
     {
 		ROS_ERROR("Failed to get duration_landing");
+	}
+
+    if(!nh_safeControllerService.getParam("distanceThreshold", distance_threshold))
+    {
+		ROS_ERROR("Failed to get distance_threshold");
 	}
 }
 
