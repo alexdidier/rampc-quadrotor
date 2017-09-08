@@ -89,6 +89,7 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     ui->current_setpoint_yaw->setText(QString::number(default_setpoint[3]));
 
     disableGUI();
+    highlightSafeControllerTab();
 }
 
 
