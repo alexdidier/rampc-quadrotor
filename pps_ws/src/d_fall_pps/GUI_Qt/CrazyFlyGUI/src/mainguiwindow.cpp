@@ -934,4 +934,5 @@ void MainGUIWindow::on_all_motors_off_button_clicked()
 {
     std_msgs::Int32 msg;
     msg.data = CMD_CRAZYFLY_MOTORS_OFF;
+    emergencyStopPublisher.publish(msg);
 }
