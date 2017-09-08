@@ -41,6 +41,8 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
 
     flyingStateSubscriber = nodeHandle.subscribe("PPSClient/flyingState", 1, &MainWindow::flyingStateChangedCallback, this);
 
+    controllerUsedSubscriber = nodeHandle.subscribe("PPSClient/controllerUsed", 1, &MainWindow::controllerUsedChangedCallback, this);
+
 
     safeSetpointSubscriber = nodeHandle.subscribe("SafeControllerService/Setpoint", 1, &MainWindow::safeSetpointCallback, this);
     DBChangedSubscriber = nodeHandle.subscribe("/my_GUI/DBChanged", 1, &MainWindow::DBChangedCallback, this);
@@ -105,10 +107,36 @@ void MainWindow::enableGUI()
     ui->groupBox_general->setEnabled(true);
 }
 
+void MainWindow::highlightSafeControllerTab()
+{
+    ui->tabWidget->tabBar()->setTabTextColor(0, Qt::green);
+    ui->tabWidget->tabBar()->setTabTextColor(1, Qt::black);
+}
+void MainWindow::highlightCustomControllerTab()
+{
+    ui->tabWidget->tabBar()->setTabTextColor(0, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(1, Qt::green);
+}
+
 void MainWindow::DBChangedCallback(const std_msgs::Int32& msg)
 {
     loadCrazyflieContext();
     ROS_INFO("context reloaded in student_GUI");
+}
+
+void MainWindow::controllerUsedChangedCallback(const std_msgs::Int32& msg)
+{
+    switch(msg.data)
+    {
+        case SAFE_CONTROLLER:
+            highlightSafeControllerTab();
+            break;
+        case CUSTOM_CONTROLLER:
+            highlightCustomControllerTab();
+            break;
+        default:
+            break;
+    }
 }
 
 void MainWindow::safeSetpointCallback(const Setpoint& newSetpoint)

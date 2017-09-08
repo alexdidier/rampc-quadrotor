@@ -33,6 +33,10 @@
 
 #include "d_fall_pps/ControlCommand.h"
 
+// tipes of controllers being used:
+#define SAFE_CONTROLLER   0
+#define CUSTOM_CONTROLLER 1
+
 #define CMD_USE_SAFE_CONTROLLER   1
 #define CMD_USE_CUSTOM_CONTROLLER 2
 #define CMD_CRAZYFLY_TAKE_OFF     3
@@ -80,7 +84,6 @@ float angleMargin;
 
 Setpoint controller_setpoint;
 
-
 // variables for linear trayectory
 Setpoint current_safe_setpoint;
 double distance;
@@ -117,7 +120,9 @@ int crazyradio_status;
 CrazyflieContext context;
 
 //wheter to use safe of custom controller
-bool usingSafeController;
+bool using_safe_controller;
+
+ros::Publisher controllerUsedPublisher;
 
 std::string ros_namespace;
 
@@ -133,6 +138,28 @@ ros::Timer timer_takeoff;
 ros::Timer timer_land;
 
 
+void useSafeController()
+{
+    using_safe_controller = true;
+    // send a message in topic for the studentGUI to read it
+    std_msgs::Int32 controller_used_msg;
+    controller_used_msg.data = SAFE_CONTROLLER;
+    controllerUsedPublisher.publish(controller_used_msg);
+}
+
+void useCustomController()
+{
+    using_safe_controller = false;
+    // send a message in topic for the studentGUI to read it
+    std_msgs::Int32 controller_used_msg;
+    controller_used_msg.data = CUSTOM_CONTROLLER;
+    controllerUsedPublisher.publish(controller_used_msg);
+}
+
+bool getUsingSafeController()
+{
+    return using_safe_controller;
+}
 
 void loadSafeController() {
 	ros::NodeHandle nodeHandle("~");
@@ -247,7 +274,7 @@ void takeOffCF(CrazyflieData& current_local_coordinates) //local because the set
     ROS_INFO("X: %f, Y: %f, Z: %f", setpoint_msg.x, setpoint_msg.y, setpoint_msg.z);
 
     // now, use safe controller to go to that setpoint
-    usingSafeController = true;
+    useSafeController();
     loadSafeController();
     // when do we finish? after some time with delay?
 
@@ -266,7 +293,7 @@ void landCF(CrazyflieData& current_local_coordinates)
     safeControllerServiceSetpointPublisher.publish(setpoint_msg);
 
     // now, use safe controller to go to that setpoint
-    usingSafeController = true;
+    useSafeController();
     loadSafeController();
     setCurrentSafeSetpoint(setpoint_msg);
 }
@@ -379,7 +406,7 @@ void viconCallback(const ViconData& viconData) {
             {
                 if(!global.occluded)    //if it is not occluded, then proceed to compute the controller output.
                 {
-                    if(!usingSafeController && flying_state == STATE_FLYING) // only enter in custom controller if we are not using safe controller AND the flying state is FLYING
+                    if(!getUsingSafeController() && flying_state == STATE_FLYING) // only enter in custom controller if we are not using safe controller AND the flying state is FLYING
                     {
                         bool success = customController.call(controllerCall);
                         if(!success)
@@ -387,11 +414,11 @@ void viconCallback(const ViconData& viconData) {
                             ROS_ERROR("Failed to call custom controller, switching to safe controller");
                             ROS_ERROR_STREAM("custom controller status: valid: " << customController.isValid() << ", exists: " << customController.exists());
                             ROS_ERROR_STREAM("custom controller name: " << customController.getService());
-                            usingSafeController = true;
+                            useSafeController();
                         }
                         else if(!safetyCheck(global, controllerCall.response.controlOutput))
                         {
-                            usingSafeController = true;
+                            useSafeController();
                             ROS_INFO_STREAM("safety check failed, switching to safe controller");
                         }
                     }
@@ -430,7 +457,6 @@ void viconCallback(const ViconData& viconData) {
                         }
                     }
 
-                    //ROS_INFO_STREAM("safe controller active: " << usingSafeController);
 
                     controlCommandPublisher.publish(controllerCall.response.controlOutput);
 
@@ -543,13 +569,13 @@ void commandCallback(const std_msgs::Int32& commandMsg) {
     	case CMD_USE_SAFE_CONTROLLER:
             ROS_INFO("USE_SAFE_CONTROLLER Command received");
     		loadSafeController();
-    		usingSafeController = true;
+            useSafeController();
     		break;
 
     	case CMD_USE_CUSTOM_CONTROLLER:
             ROS_INFO("USE_CUSTOM_CONTROLLER Command received");
     		loadCustomController();
-    		usingSafeController = false;
+            useSafeController();
     		break;
 
     	case CMD_CRAZYFLY_TAKE_OFF:
@@ -660,6 +686,8 @@ int main(int argc, char* argv[])
     // this topic will publish flying state whenever it changes.
     flyingStatePublisher = nodeHandle.advertise<std_msgs::Int32>("flyingState", 1);
 
+    controllerUsedPublisher = nodeHandle.advertise<std_msgs::Int32>("controllerUsed", 1);
+
     // crazy radio status
     crazyradio_status = DISCONNECTED;
 
@@ -687,7 +715,7 @@ int main(int argc, char* argv[])
 
 	//start with safe controller
     flying_state = STATE_MOTORS_OFF;
-	usingSafeController = true;
+    useSafeController();
 	loadSafeController();
 
 	std::string package_path;
