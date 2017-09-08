@@ -4,10 +4,9 @@
 #include <QBrush>
 
 
-crazyFly::crazyFly(const CrazyflieData* p_crazyfly_msg, QGraphicsItem * parent)
-    : QGraphicsSvgItem(":/images/drone_fixed.svg")
+crazyFly::crazyFly(const CrazyflieData* p_crazyfly_msg, QString filename, QGraphicsItem * parent)
+    : QGraphicsSvgItem(filename)
 {
-
     updateCF(p_crazyfly_msg);
     m_width = DRONE_WIDTH;
     m_height = DRONE_HEIGHT;

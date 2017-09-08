@@ -320,7 +320,25 @@ void MainGUIWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to
         }
         else                    //name not found, newly arrived, add it to the vector
         {
-            crazyFly* tmp_p_crazyfly = new crazyFly(&(p_msg->crazyflies[i]));
+            // now, if name follows our format, put the corresponding number. If not, put the unknown image
+            std::string s = p_msg->crazyflies[i].crazyflieName;
+            std::smatch m;
+            std::regex e ("PPS_CF([0-9]{2})");
+
+            QString filename(":/images/drone_fixed_");
+
+            if(std::regex_search(s, m, e))
+            {
+                std::string found_string = m[1].str();
+                filename.append(QString::fromStdString(found_string));
+                filename.append(".svg");
+            }
+            else
+            {
+                filename.append("unk.svg");
+            }
+
+            crazyFly* tmp_p_crazyfly = new crazyFly(&(p_msg->crazyflies[i]), filename);
             crazyflies_vector.push_back(tmp_p_crazyfly);
         }
 
@@ -330,7 +348,7 @@ void MainGUIWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to
             {
                 if(crazyflies_vector[i]->isOccluded())
                 {
-                    ROS_INFO("===================OCCLUDED");
+                    // ROS_INFO("===================OCCLUDED");
                     if(crazyflies_vector[i]->isAddedToScene())
                     {
                         scene->removeItem(crazyflies_vector[i]);

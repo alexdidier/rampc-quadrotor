@@ -20,7 +20,7 @@ using namespace d_fall_pps;
 class crazyFly : public QGraphicsSvgItem
 {
 public:
-    explicit crazyFly(const CrazyflieData* p_crazyfly_msg, QGraphicsItem * parent = 0);
+    explicit crazyFly(const CrazyflieData* p_crazyfly_msg, QString filename, QGraphicsItem * parent = 0);
     ~crazyFly();
     QRectF boundingRect() const;
 
