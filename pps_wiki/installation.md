@@ -28,6 +28,10 @@ Add a new line in the ``/etc/hosts`` file that links the teacher's IP with the d
 
 - USB Crazyradio: <br />
 To set up the crazyradio USB dongle just copy the rule files ``99-crazyflie.rules`` and ``99-crazyradio.rules`` to the directory ``/etc/udev/rules.d``.
+You also have to install the library pyusb:
+sudo apt-get update
+sudo apt-get install python-pip
+sudo pip install pyusb
 - Source scripts in ``.bashrc``: <br />
 You need to source the following scripts in the ``.bashrc`` file:
   - the ROS setup script: ``/opt/ros/kinetic/setup.bash``
