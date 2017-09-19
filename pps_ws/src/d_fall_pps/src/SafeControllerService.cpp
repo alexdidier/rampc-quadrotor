@@ -174,6 +174,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     request.ownCrazyflie.y -= setpoint[1];
     request.ownCrazyflie.z -= setpoint[2];
     float yaw = request.ownCrazyflie.yaw - setpoint[3];
+
 	
     //bag.write("Offset", ros::Time::now(), request.ownCrazyflie);
 

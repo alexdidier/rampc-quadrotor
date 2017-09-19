@@ -133,6 +133,9 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     request.ownCrazyflie.y -= setpoint[1];
     request.ownCrazyflie.z -= setpoint[2];
     float yaw = request.ownCrazyflie.yaw - setpoint[3];
+    while(yaw > PI) {yaw -= 2 * PI;}
+    while(yaw < -PI) {yaw += 2 * PI;}
+    request.ownCrazyflie.yaw = yaw;
 
     float est[9];
 
