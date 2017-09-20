@@ -219,10 +219,10 @@ int main(int argc, char* argv[]) {
     loadParameters(nodeHandle);
 
     int student_id;
-    std::string namespace = ros::this_node::getNamespace();
-    ros::NodeHandle PPSClient_nodeHandle(namespace + "/PPSClient");
+    std::string m_namespace = ros::this_node::getNamespace();
+    ros::NodeHandle PPSClient_nodeHandle(m_namespace + "/PPSClient");
 
-    if(!namespace_nodeHandle.getParam("studentID", student_id))
+    if(!PPSClient_nodeHandle.getParam("studentID", student_id))
     {
 		ROS_ERROR("Failed to get studentID from FollowN_1Service");
 	}
