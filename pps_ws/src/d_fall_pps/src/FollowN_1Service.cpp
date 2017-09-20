@@ -219,10 +219,12 @@ int main(int argc, char* argv[]) {
     loadParameters(nodeHandle);
 
     int student_id;
-    ros::NodeHandle namespace_nodeHandle(ros::this_node::getNamespace());
+    std::string namespace = ros::this_node::getNamespace();
+    ros::NodeHandle PPSClient_nodeHandle(namespace + "/PPSClient");
+
     if(!namespace_nodeHandle.getParam("studentID", student_id))
     {
-		ROS_ERROR("Failed to get studentID");
+		ROS_ERROR("Failed to get studentID from FollowN_1Service");
 	}
 
     followPublisher = nodeHandle.advertise<Setpoint>("/" + std::to_string(student_id) + "/FollowN_1Service/FollowTopic", 1);

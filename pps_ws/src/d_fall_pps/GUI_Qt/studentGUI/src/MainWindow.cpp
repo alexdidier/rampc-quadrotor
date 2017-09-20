@@ -59,7 +59,6 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     PPSClientCommandPublisher = nh_PPSClient.advertise<std_msgs::Int32>("Command", 1);
 
 
-
     // First get student ID
     if(!nh_PPSClient.getParam("studentID", m_student_id))
     {
