@@ -49,6 +49,7 @@ float prevEstimate[9];
 std::vector<float>  setpoint(4);
 float saturationThrust;
 ros::Publisher followPublisher;
+ros::Subscriber followSubscriber;
 
 CrazyflieData previousLocation;
 
@@ -209,6 +210,7 @@ void followCallback(const Setpoint& newSetpoint) {
     setpoint[1] = newSetpoint.y;
     setpoint[2] = newSetpoint.z;
     setpoint[3] = newSetpoint.yaw;
+    ROS_INFO("received callback new setpoint from FollowN1Service/FollowTopic");
 }
 
 
@@ -232,7 +234,7 @@ int main(int argc, char* argv[]) {
     if(student_id != 1)
     {
         // subscribe to n-1 setpoint
-        ros::Subscriber followSubscriber = nodeHandle.subscribe("/" + std::to_string(student_id - 1) + "/FollowN_1Service/FollowTopic", 1, followCallback);
+        followSubscriber = nodeHandle.subscribe("/" + std::to_string(student_id - 1) + "/FollowN_1Service/FollowTopic", 1, followCallback);
     }
     else
     {
