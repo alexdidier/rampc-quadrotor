@@ -1,5 +1,5 @@
 safeController: "SafeControllerService/RateController"
-customController: "FollowN_1ControllerService/FollowController"
+customController: "FollowN_1Service/FollowController"
 strictSafety: true
 angleMargin: 0.6
 

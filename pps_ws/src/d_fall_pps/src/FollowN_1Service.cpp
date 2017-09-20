@@ -213,7 +213,7 @@ void followCallback(const Setpoint& newSetpoint) {
 
 
 int main(int argc, char* argv[]) {
-    ros::init(argc, argv, "FollowN_1ControllerService");
+    ros::init(argc, argv, "FollowN_1Service");
 
     ros::NodeHandle nodeHandle("~");
     loadParameters(nodeHandle);
