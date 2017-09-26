@@ -584,6 +584,12 @@
               </item>
               <item row="2" column="1">
                <widget class="QLineEdit" name="current_y_2">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="readOnly">
                  <bool>true</bool>
                 </property>
@@ -744,6 +750,12 @@
               </item>
               <item row="2" column="2">
                <widget class="QLineEdit" name="diff_y_2">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="readOnly">
                  <bool>true</bool>
                 </property>
