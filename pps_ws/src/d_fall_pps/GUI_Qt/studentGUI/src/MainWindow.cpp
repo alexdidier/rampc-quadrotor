@@ -92,6 +92,7 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     disableGUI();
     highlightSafeControllerTab();
     ui->label_battery->setStyleSheet("QLabel { color : red; }");
+    m_battery_state = BATTERY_STATE_NORMAL;
 }
 
 
@@ -109,7 +110,10 @@ void MainWindow::disableGUI()
 void MainWindow::enableGUI()
 {
     // ui->groupBox_general->setEnabled(true);
-    ui->groupBox_4->setEnabled(true);
+    if(m_battery_state == BATTERY_STATE_NORMAL)
+    {
+        ui->groupBox_4->setEnabled(true);
+    }
 }
 
 void MainWindow::highlightSafeControllerTab()
@@ -197,10 +201,12 @@ void MainWindow::batteryStateChangedCallback(const std_msgs::Int32& msg)
             qstr.append("Low Battery!");
             ui->groupBox_4->setEnabled(false);
             ui->label_battery->setText(qstr);
+            m_battery_state = BATTERY_STATE_LOW;
             break;
         case BATTERY_STATE_NORMAL:
             ui->groupBox_4->setEnabled(true);
             ui->label_battery->clear();
+            m_battery_state = BATTERY_STATE_NORMAL;
             break;
         default:
             break;

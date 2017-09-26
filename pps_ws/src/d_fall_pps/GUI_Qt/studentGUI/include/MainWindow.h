@@ -103,6 +103,8 @@ private:
     Setpoint m_safe_setpoint;
     Setpoint m_custom_setpoint;
 
+    int m_battery_state;
+
     ros::Publisher crazyRadioCommandPublisher;
     ros::Subscriber crazyRadioStatusSubscriber;
     ros::Publisher PPSClientCommandPublisher;
