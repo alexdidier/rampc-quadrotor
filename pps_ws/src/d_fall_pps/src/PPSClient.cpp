@@ -49,6 +49,11 @@
 #define STATE_FLYING     3
 #define STATE_LAND       4
 
+// battery states
+
+#define BATTERY_STATE_NORMAL 0
+#define BATTERY_STATE_LOW    1
+
 // commands for CrazyRadio
 #define CMD_RECONNECT  0
 #define CMD_DISCONNECT 1
@@ -82,6 +87,16 @@ ros::ServiceClient customController;
 bool strictSafety;
 float angleMargin;
 
+// battery threshold
+float m_battery_threshold_while_flying;
+float m_battery_threshold_while_motors_off;
+
+
+// battery values
+
+int m_battery_state;
+float m_battery_voltage;
+
 Setpoint controller_setpoint;
 
 // variables for linear trayectory
@@ -100,6 +115,9 @@ ros::Publisher safeControllerServiceSetpointPublisher;
 
 // publisher for flying state
 ros::Publisher flyingStatePublisher;
+
+// publisher for battery state
+ros::Publisher batteryStatePublisher;
 
 // publisher to send commands to itself.
 ros::Publisher commandPublisher;
@@ -517,6 +535,14 @@ void loadParameters(ros::NodeHandle& nodeHandle) {
 		ROS_ERROR("Failed to get angleMargin param");
 		return;
 	}
+    if(!nodeHandle.getParam("battery_threshold_while_flying", m_battery_threshold_while_flying)) {
+		ROS_ERROR("Failed to get battery_threshold_while_flying param");
+		return;
+	}
+    if(!nodeHandle.getParam("battery_threshold_while_motors_off", m_battery_threshold_while_motors_off)) {
+		ROS_ERROR("Failed to get battery_threshold_while_motors_off param");
+		return;
+	}
 }
 
 void loadSafeControllerParameters()
@@ -666,6 +692,55 @@ void safeYAMLloadedCallback(const std_msgs::Int32& msg)
     loadSafeControllerParameters();
 }
 
+int getBatteryState()
+{
+    return m_battery_state;
+}
+
+
+void setBatteryStateTo(int new_battery_state)
+{
+    switch(new_battery_state)
+    {
+        case BATTERY_STATE_NORMAL:
+            m_battery_state = BATTERY_STATE_NORMAL;
+            break;
+        case BATTERY_STATE_LOW:
+            m_battery_state = BATTERY_STATE_LOW;
+            changeFlyingStateTo(STATE_LAND);
+            break;
+        default:
+            ROS_INFO("Unknown battery state command, set to normal");
+            m_battery_state = BATTERY_STATE_NORMAL;
+            break;
+    }
+
+    std_msgs::Int32 battery_state_msg;
+    battery_state_msg.data = getBatteryState();
+    batteryStatePublisher.publish(battery_state_msg);
+}
+
+
+void CFBatteryCallback(const std_msgs::Int32& msg)
+{
+    m_battery_voltage = msg.data;
+    // filter and check if inside limits, and if, change status
+    // need to do the filtering first
+    float filtered_battery_voltage = m_battery_voltage; //need to perform filtering here
+    if((flying_state != STATE_MOTORS_OFF && (filtered_battery_voltage < m_battery_threshold_while_flying)) ||
+       (flying_state == STATE_MOTORS_OFF && (filtered_battery_voltage < m_battery_threshold_while_motors_off)))
+    {
+        setBatteryStateTo(BATTERY_STATE_LOW);
+    }
+    else                        //maybe add hysteresis somewhere here?
+    {
+        if(getBatteryState() != BATTERY_STATE_NORMAL)
+        {
+            setBatteryStateTo(BATTERY_STATE_NORMAL);
+        }
+    }
+}
+
 int main(int argc, char* argv[])
 {
 	ros::init(argc, argv, "PPSClient");
@@ -713,6 +788,9 @@ int main(int argc, char* argv[])
     // this topic will publish flying state whenever it changes.
     flyingStatePublisher = nodeHandle.advertise<std_msgs::Int32>("flyingState", 1);
 
+    // will publish battery state when it changes
+    batteryStatePublisher = nodeHandle.advertise<std_msgs::Int32>("batteryState", 1);
+
     controllerUsedPublisher = nodeHandle.advertise<std_msgs::Int32>("controllerUsed", 1);
 
     // crazy radio status
@@ -740,10 +818,15 @@ int main(int argc, char* argv[])
 
     ros::Subscriber safeYAMloadedSubscriber = namespaceNodeHandle.subscribe("student_GUI/safeYAMLloaded", 1, safeYAMLloadedCallback);
 
+    // know the battery level of the CF
+    ros::Subscriber CFBatterySubscriber = namespaceNodeHandle.subscribe("CrazyRadio/CFBattery", 1, CFBatteryCallback);
+
 	//start with safe controller
     flying_state = STATE_MOTORS_OFF;
     setControllerUsed(SAFE_CONTROLLER);
     setInstantController(SAFE_CONTROLLER); //initialize this also, so we notify GUI
+
+    setBatteryStateTo(BATTERY_STATE_NORMAL); //initialize battery state
 
 	std::string package_path;
 	package_path = ros::package::getPath("d_fall_pps") + "/";

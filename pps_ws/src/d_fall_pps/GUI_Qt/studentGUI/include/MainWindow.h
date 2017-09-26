@@ -103,6 +103,7 @@ private:
     ros::Publisher PPSClientCommandPublisher;
     ros::Subscriber CFBatterySubscriber;
     ros::Subscriber flyingStateSubscriber;
+    ros::Subscriber batteryStateSubscriber;
 
     ros::Publisher controllerSetpointPublisher;
     ros::Subscriber safeSetpointSubscriber;
@@ -129,6 +130,7 @@ private:
     void customYamlFileTimerCallback(const ros::TimerEvent&);
     void safeYamlFileTimerCallback(const ros::TimerEvent&);
     void controllerUsedChangedCallback(const std_msgs::Int32& msg);
+    void batteryStateChangedCallback(const std_msgs::Int32& msg);
 
     float fromVoltageToPercent(float voltage);
     void updateBatteryVoltage(float battery_voltage);

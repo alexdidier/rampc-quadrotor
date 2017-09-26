@@ -2,4 +2,6 @@ safeController: "SafeControllerService/RateController"
 customController: "FollowN_1Service/FollowController"
 strictSafety: true
 angleMargin: 0.6
+battery_threshold_while_flying: 2.9
+battery_threshold_while_motors_off: 3.3
 

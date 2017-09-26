@@ -41,6 +41,8 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
 
     flyingStateSubscriber = nodeHandle.subscribe("PPSClient/flyingState", 1, &MainWindow::flyingStateChangedCallback, this);
 
+    batteryStateSubscriber = nodeHandle.subscribe("PPSClient/batteryState", 1, &MainWindow::batteryStateChangedCallback, this);
+
     controllerUsedSubscriber = nodeHandle.subscribe("PPSClient/controllerUsed", 1, &MainWindow::controllerUsedChangedCallback, this);
 
 
@@ -181,6 +183,12 @@ void MainWindow::flyingStateChangedCallback(const std_msgs::Int32& msg)
     }
     ui->flying_state_label->setText(qstr);
 }
+
+void MainWindow::batteryStateChangedCallback(const std_msgs::Int32& msg)
+{
+    // switch case with unabling buttons motors off, take off, etc... when battery is shit
+}
+
 
 void MainWindow::setCrazyRadioStatus(int radio_status)
 {
