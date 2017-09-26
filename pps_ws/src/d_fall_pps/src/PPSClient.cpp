@@ -734,8 +734,8 @@ void CFBatteryCallback(const std_msgs::Float32& msg)
     if((flying_state != STATE_MOTORS_OFF && (filtered_battery_voltage < m_battery_threshold_while_flying)) ||
        (flying_state == STATE_MOTORS_OFF && (filtered_battery_voltage < m_battery_threshold_while_motors_off)))
     {
-        // if(getBatteryState() != BATTERY_STATE_LOW)
-        setBatteryStateTo(BATTERY_STATE_LOW);
+        if(getBatteryState() != BATTERY_STATE_LOW)
+            setBatteryStateTo(BATTERY_STATE_LOW);
         ROS_INFO("low level battery triggered");
     }
     else                        //maybe add hysteresis somewhere here?
