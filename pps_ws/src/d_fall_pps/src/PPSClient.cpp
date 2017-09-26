@@ -29,6 +29,7 @@
 #include "d_fall_pps/CrazyflieContext.h"
 #include "d_fall_pps/Setpoint.h"
 #include "std_msgs/Int32.h"
+#include "std_msgs/Float32.h"
 
 
 #include "d_fall_pps/ControlCommand.h"
@@ -704,9 +705,11 @@ void setBatteryStateTo(int new_battery_state)
     {
         case BATTERY_STATE_NORMAL:
             m_battery_state = BATTERY_STATE_NORMAL;
+            ROS_INFO("changed battery state to normal");
             break;
         case BATTERY_STATE_LOW:
             m_battery_state = BATTERY_STATE_LOW;
+            ROS_INFO("changed battery state to low");
             changeFlyingStateTo(STATE_LAND);
             break;
         default:
@@ -721,7 +724,7 @@ void setBatteryStateTo(int new_battery_state)
 }
 
 
-void CFBatteryCallback(const std_msgs::Int32& msg)
+void CFBatteryCallback(const std_msgs::Float32& msg)
 {
     m_battery_voltage = msg.data;
     // filter and check if inside limits, and if, change status
@@ -731,6 +734,7 @@ void CFBatteryCallback(const std_msgs::Int32& msg)
        (flying_state == STATE_MOTORS_OFF && (filtered_battery_voltage < m_battery_threshold_while_motors_off)))
     {
         setBatteryStateTo(BATTERY_STATE_LOW);
+        ROS_INFO("low level battery triggered");
     }
     else                        //maybe add hysteresis somewhere here?
     {

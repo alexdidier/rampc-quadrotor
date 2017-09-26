@@ -103,11 +103,13 @@ MainWindow::~MainWindow()
 void MainWindow::disableGUI()
 {
     // ui->groupBox_general->setEnabled(false);
+    ui->groupBox_4->setEnabled(false);
 }
 
 void MainWindow::enableGUI()
 {
     // ui->groupBox_general->setEnabled(true);
+    ui->groupBox_4->setEnabled(true);
 }
 
 void MainWindow::highlightSafeControllerTab()
