@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1027</width>
-    <height>585</height>
+    <width>1056</width>
+    <height>670</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -1107,6 +1107,19 @@
             </property>
            </widget>
           </item>
+          <item>
+           <widget class="QLabel" name="label_battery">
+            <property name="font">
+             <font>
+              <pointsize>9</pointsize>
+              <italic>true</italic>
+             </font>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
          </layout>
         </widget>
        </item>
@@ -1214,7 +1227,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1027</width>
+     <width>1056</width>
      <height>25</height>
     </rect>
    </property>

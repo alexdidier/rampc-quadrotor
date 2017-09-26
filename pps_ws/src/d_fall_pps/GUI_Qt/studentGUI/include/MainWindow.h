@@ -40,6 +40,11 @@
 #define STATE_FLYING     3
 #define STATE_LAND       4
 
+// battery states
+
+#define BATTERY_STATE_NORMAL 0
+#define BATTERY_STATE_LOW    1
+
 
 #define PI 3.141592653589
 
