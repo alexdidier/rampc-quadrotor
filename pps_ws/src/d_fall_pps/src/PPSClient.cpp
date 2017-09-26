@@ -204,6 +204,11 @@ int getInstantController()
 void setControllerUsed(int controller) //for permanent configs
 {
     controller_used = controller;
+
+    if(flying_state == STATE_MOTORS_OFF || flying_state == STATE_FLYING)
+    {
+        setInstantController(controller); //if motors OFF or STATE FLYING, transparent, change is instant
+    }
 }
 
 int getControllerUsed()
