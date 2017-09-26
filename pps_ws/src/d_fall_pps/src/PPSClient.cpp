@@ -710,7 +710,8 @@ void setBatteryStateTo(int new_battery_state)
         case BATTERY_STATE_LOW:
             m_battery_state = BATTERY_STATE_LOW;
             ROS_INFO("changed battery state to low");
-            changeFlyingStateTo(STATE_LAND);
+            if(flying_state != STATE_MOTORS_OFF)
+                changeFlyingStateTo(STATE_LAND);
             break;
         default:
             ROS_INFO("Unknown battery state command, set to normal");
@@ -733,7 +734,8 @@ void CFBatteryCallback(const std_msgs::Float32& msg)
     if((flying_state != STATE_MOTORS_OFF && (filtered_battery_voltage < m_battery_threshold_while_flying)) ||
        (flying_state == STATE_MOTORS_OFF && (filtered_battery_voltage < m_battery_threshold_while_motors_off)))
     {
-        setBatteryStateTo(BATTERY_STATE_LOW);
+        if(getBatteryState() != BATTERY_STATE_LOW)
+            setBatteryStateTo(BATTERY_STATE_LOW);
         ROS_INFO("low level battery triggered");
     }
     else                        //maybe add hysteresis somewhere here?
