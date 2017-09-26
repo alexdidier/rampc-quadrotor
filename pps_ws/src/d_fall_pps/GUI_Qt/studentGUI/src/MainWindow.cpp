@@ -189,16 +189,16 @@ void MainWindow::setCrazyRadioStatus(int radio_status)
     {
         case CONNECTED:
             // change icon, the rest of the GUI is available now
-            ui->connected_disconnected_label->setText("Connected!");
+            ui->connected_disconnected_label->setText("Crazyradio status: Connected!");
             enableGUI();
             break;
         case CONNECTING:
             // change icon
-            ui->connected_disconnected_label->setText("Connecting...");
+            ui->connected_disconnected_label->setText("Crazyradio status: Connecting...");
             break;
         case DISCONNECTED:
             // change icon, the rest of the GUI is disabled
-            ui->connected_disconnected_label->setText("Disconnected");
+            ui->connected_disconnected_label->setText("Crazyradio status: Disconnected");
             disableGUI();
             break;
         default:
@@ -389,7 +389,7 @@ void MainWindow::on_set_setpoint_button_2_clicked()
     this->customSetpointPublisher.publish(msg_setpoint);
 }
 
-void MainWindow::on_pushButton_3_clicked()
+void MainWindow::on_RF_disconnect_button_clicked()
 {
     std_msgs::Int32 msg;
     msg.data = CMD_DISCONNECT;

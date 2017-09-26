@@ -6,46 +6,37 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>854</width>
-    <height>616</height>
+    <width>1000</width>
+    <height>800</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>1000</width>
+    <height>800</height>
+   </size>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="2">
-     <widget class="QLabel" name="connected_disconnected_label">
-      <property name="text">
-       <string>Connected/Disconnected RF status</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="1">
-     <widget class="QPushButton" name="RF_Connect_button">
-      <property name="text">
-       <string>Connect RF</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="2">
-     <widget class="QPushButton" name="pushButton_3">
-      <property name="text">
-       <string>Disconnect</string>
-      </property>
-     </widget>
-    </item>
     <item row="4" column="1" colspan="2">
      <widget class="QGroupBox" name="groupBox_general">
       <property name="title">
        <string/>
       </property>
       <layout class="QGridLayout" name="gridLayout_10">
-       <item row="2" column="0">
+       <item row="3" column="0">
         <widget class="QTabWidget" name="tabWidget">
          <property name="currentIndex">
-          <number>0</number>
+          <number>1</number>
          </property>
          <widget class="QWidget" name="tab_3">
           <attribute name="title">
@@ -60,6 +51,12 @@
              <layout class="QGridLayout" name="gridLayout_3">
               <item row="6" column="1">
                <widget class="QLineEdit" name="current_roll">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="readOnly">
                  <bool>true</bool>
                 </property>
@@ -67,6 +64,12 @@
               </item>
               <item row="2" column="1">
                <widget class="QLineEdit" name="current_y">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="readOnly">
                  <bool>true</bool>
                 </property>
@@ -74,6 +77,12 @@
               </item>
               <item row="4" column="1">
                <widget class="QLineEdit" name="current_yaw">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="readOnly">
                  <bool>true</bool>
                 </property>
@@ -81,6 +90,12 @@
               </item>
               <item row="3" column="1">
                <widget class="QLineEdit" name="current_z">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="readOnly">
                  <bool>true</bool>
                 </property>
@@ -88,6 +103,12 @@
               </item>
               <item row="1" column="0">
                <widget class="QLabel" name="current_x_label">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="text">
                  <string>x [m] =</string>
                 </property>
@@ -95,6 +116,12 @@
               </item>
               <item row="3" column="0">
                <widget class="QLabel" name="current_z_label">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="text">
                  <string>z [m] =</string>
                 </property>
@@ -102,6 +129,12 @@
               </item>
               <item row="2" column="0">
                <widget class="QLabel" name="current_y_label">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="text">
                  <string>y [m] =</string>
                 </property>
@@ -109,6 +142,12 @@
               </item>
               <item row="4" column="0">
                <widget class="QLabel" name="current_yaw_label">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="text">
                  <string>yaw [deg] = </string>
                 </property>
@@ -116,6 +155,12 @@
               </item>
               <item row="1" column="1">
                <widget class="QLineEdit" name="current_x">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="readOnly">
                  <bool>true</bool>
                 </property>
@@ -123,6 +168,12 @@
               </item>
               <item row="5" column="0">
                <widget class="QLabel" name="current_pitch_label">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="text">
                  <string>pitch [deg] =</string>
                 </property>
@@ -130,6 +181,12 @@
               </item>
               <item row="6" column="0">
                <widget class="QLabel" name="current_roll_label">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="text">
                  <string>roll [deg] =</string>
                 </property>
@@ -137,6 +194,12 @@
               </item>
               <item row="5" column="1">
                <widget class="QLineEdit" name="current_pitch">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="readOnly">
                  <bool>true</bool>
                 </property>
@@ -144,6 +207,12 @@
               </item>
               <item row="0" column="1">
                <widget class="QLabel" name="label_4">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="text">
                  <string>Current</string>
                 </property>
@@ -154,6 +223,12 @@
               </item>
               <item row="1" column="2">
                <widget class="QLineEdit" name="diff_x">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="readOnly">
                  <bool>true</bool>
                 </property>
@@ -161,6 +236,12 @@
               </item>
               <item row="2" column="2">
                <widget class="QLineEdit" name="diff_y">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="readOnly">
                  <bool>true</bool>
                 </property>
@@ -168,6 +249,12 @@
               </item>
               <item row="3" column="2">
                <widget class="QLineEdit" name="diff_z">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="readOnly">
                  <bool>true</bool>
                 </property>
@@ -175,6 +262,12 @@
               </item>
               <item row="4" column="2">
                <widget class="QLineEdit" name="diff_yaw">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="readOnly">
                  <bool>true</bool>
                 </property>
@@ -182,6 +275,12 @@
               </item>
               <item row="0" column="2">
                <widget class="QLabel" name="label_5">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="text">
                  <string>Difference</string>
                 </property>
@@ -200,16 +299,43 @@
              </property>
              <layout class="QGridLayout" name="gridLayout_4">
               <item row="2" column="2">
-               <widget class="QLineEdit" name="new_setpoint_y"/>
+               <widget class="QLineEdit" name="new_setpoint_y">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+               </widget>
               </item>
               <item row="4" column="2">
-               <widget class="QLineEdit" name="new_setpoint_yaw"/>
+               <widget class="QLineEdit" name="new_setpoint_yaw">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+               </widget>
               </item>
               <item row="1" column="2">
-               <widget class="QLineEdit" name="new_setpoint_x"/>
+               <widget class="QLineEdit" name="new_setpoint_x">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+               </widget>
               </item>
               <item row="2" column="1">
                <widget class="QLineEdit" name="current_setpoint_y">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="readOnly">
                  <bool>true</bool>
                 </property>
@@ -217,6 +343,12 @@
               </item>
               <item row="1" column="1">
                <widget class="QLineEdit" name="current_setpoint_x">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="readOnly">
                  <bool>true</bool>
                 </property>
@@ -224,6 +356,12 @@
               </item>
               <item row="4" column="0">
                <widget class="QLabel" name="label_11">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="text">
                  <string>yaw [deg] =</string>
                 </property>
@@ -231,6 +369,12 @@
               </item>
               <item row="0" column="1">
                <widget class="QLabel" name="label_12">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="font">
                  <font>
                   <pointsize>7</pointsize>
@@ -246,6 +390,12 @@
               </item>
               <item row="1" column="0">
                <widget class="QLabel" name="label_7">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="text">
                  <string>x [m] =</string>
                 </property>
@@ -253,6 +403,12 @@
               </item>
               <item row="3" column="0">
                <widget class="QLabel" name="label_9">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="text">
                  <string>z [m] =</string>
                 </property>
@@ -260,6 +416,12 @@
               </item>
               <item row="2" column="0">
                <widget class="QLabel" name="label_8">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="text">
                  <string>y [m] =</string>
                 </property>
@@ -267,6 +429,12 @@
               </item>
               <item row="3" column="1">
                <widget class="QLineEdit" name="current_setpoint_z">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="readOnly">
                  <bool>true</bool>
                 </property>
@@ -274,6 +442,12 @@
               </item>
               <item row="5" column="2">
                <widget class="QPushButton" name="set_setpoint_button">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="font">
                  <font>
                   <pointsize>7</pointsize>
@@ -286,16 +460,35 @@
               </item>
               <item row="4" column="1">
                <widget class="QLineEdit" name="current_setpoint_yaw">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="readOnly">
                  <bool>true</bool>
                 </property>
                </widget>
               </item>
               <item row="3" column="2">
-               <widget class="QLineEdit" name="new_setpoint_z"/>
+               <widget class="QLineEdit" name="new_setpoint_z">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+               </widget>
               </item>
               <item row="0" column="0">
                <widget class="QLabel" name="label_3">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="text">
                  <string>Setpoint:</string>
                 </property>
@@ -303,6 +496,12 @@
               </item>
               <item row="0" column="2">
                <widget class="QLabel" name="label_13">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="font">
                  <font>
                   <pointsize>7</pointsize>
@@ -321,6 +520,18 @@
            </item>
            <item row="1" column="1">
             <widget class="QPushButton" name="en_safe_controller">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>50</height>
+              </size>
+             </property>
              <property name="text">
               <string>Enable Safe Controller</string>
              </property>
@@ -328,6 +539,18 @@
            </item>
            <item row="1" column="0">
             <widget class="QPushButton" name="load_safe_yaml_button">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>50</height>
+              </size>
+             </property>
              <property name="text">
               <string>Load Safecontroller YAML file</string>
              </property>
@@ -348,6 +571,12 @@
              <layout class="QGridLayout" name="gridLayout_7">
               <item row="6" column="1">
                <widget class="QLineEdit" name="current_roll_2">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="readOnly">
                  <bool>true</bool>
                 </property>
@@ -362,6 +591,12 @@
               </item>
               <item row="4" column="1">
                <widget class="QLineEdit" name="current_yaw_2">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="readOnly">
                  <bool>true</bool>
                 </property>
@@ -369,6 +604,12 @@
               </item>
               <item row="3" column="1">
                <widget class="QLineEdit" name="current_z_2">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="readOnly">
                  <bool>true</bool>
                 </property>
@@ -376,6 +617,12 @@
               </item>
               <item row="1" column="0">
                <widget class="QLabel" name="current_x_label_2">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="text">
                  <string>x [m] =</string>
                 </property>
@@ -383,6 +630,12 @@
               </item>
               <item row="3" column="0">
                <widget class="QLabel" name="current_z_label_2">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="text">
                  <string>z [m] =</string>
                 </property>
@@ -397,6 +650,12 @@
               </item>
               <item row="4" column="0">
                <widget class="QLabel" name="current_yaw_label_2">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="text">
                  <string>yaw [deg] = </string>
                 </property>
@@ -404,6 +663,12 @@
               </item>
               <item row="1" column="1">
                <widget class="QLineEdit" name="current_x_2">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="readOnly">
                  <bool>true</bool>
                 </property>
@@ -411,6 +676,12 @@
               </item>
               <item row="5" column="0">
                <widget class="QLabel" name="current_pitch_label_2">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="text">
                  <string>pitch [deg] =</string>
                 </property>
@@ -418,6 +689,12 @@
               </item>
               <item row="6" column="0">
                <widget class="QLabel" name="current_roll_label_2">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="text">
                  <string>roll [deg] =</string>
                 </property>
@@ -425,6 +702,12 @@
               </item>
               <item row="5" column="1">
                <widget class="QLineEdit" name="current_pitch_2">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="readOnly">
                  <bool>true</bool>
                 </property>
@@ -432,6 +715,12 @@
               </item>
               <item row="0" column="1">
                <widget class="QLabel" name="label_6">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="text">
                  <string>Current</string>
                 </property>
@@ -442,6 +731,12 @@
               </item>
               <item row="1" column="2">
                <widget class="QLineEdit" name="diff_x_2">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="readOnly">
                  <bool>true</bool>
                 </property>
@@ -456,6 +751,12 @@
               </item>
               <item row="3" column="2">
                <widget class="QLineEdit" name="diff_z_2">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="readOnly">
                  <bool>true</bool>
                 </property>
@@ -463,6 +764,12 @@
               </item>
               <item row="4" column="2">
                <widget class="QLineEdit" name="diff_yaw_2">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="readOnly">
                  <bool>true</bool>
                 </property>
@@ -470,6 +777,12 @@
               </item>
               <item row="0" column="2">
                <widget class="QLabel" name="label_10">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="text">
                  <string>Difference</string>
                 </property>
@@ -488,16 +801,43 @@
              </property>
              <layout class="QGridLayout" name="gridLayout_8">
               <item row="2" column="2">
-               <widget class="QLineEdit" name="new_setpoint_y_2"/>
+               <widget class="QLineEdit" name="new_setpoint_y_2">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+               </widget>
               </item>
               <item row="4" column="2">
-               <widget class="QLineEdit" name="new_setpoint_yaw_2"/>
+               <widget class="QLineEdit" name="new_setpoint_yaw_2">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+               </widget>
               </item>
               <item row="1" column="2">
-               <widget class="QLineEdit" name="new_setpoint_x_2"/>
+               <widget class="QLineEdit" name="new_setpoint_x_2">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+               </widget>
               </item>
               <item row="2" column="1">
                <widget class="QLineEdit" name="current_setpoint_y_2">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="readOnly">
                  <bool>true</bool>
                 </property>
@@ -505,6 +845,12 @@
               </item>
               <item row="1" column="1">
                <widget class="QLineEdit" name="current_setpoint_x_2">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="readOnly">
                  <bool>true</bool>
                 </property>
@@ -512,6 +858,12 @@
               </item>
               <item row="4" column="0">
                <widget class="QLabel" name="label_14">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="text">
                  <string>yaw [deg] =</string>
                 </property>
@@ -519,6 +871,12 @@
               </item>
               <item row="0" column="1">
                <widget class="QLabel" name="label_15">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="font">
                  <font>
                   <pointsize>7</pointsize>
@@ -534,6 +892,12 @@
               </item>
               <item row="1" column="0">
                <widget class="QLabel" name="label_16">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="text">
                  <string>x [m] =</string>
                 </property>
@@ -541,6 +905,12 @@
               </item>
               <item row="3" column="0">
                <widget class="QLabel" name="label_17">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="text">
                  <string>z [m] =</string>
                 </property>
@@ -548,6 +918,12 @@
               </item>
               <item row="2" column="0">
                <widget class="QLabel" name="label_18">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="text">
                  <string>y [m] =</string>
                 </property>
@@ -555,6 +931,12 @@
               </item>
               <item row="3" column="1">
                <widget class="QLineEdit" name="current_setpoint_z_2">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="readOnly">
                  <bool>true</bool>
                 </property>
@@ -562,6 +944,12 @@
               </item>
               <item row="5" column="2">
                <widget class="QPushButton" name="set_setpoint_button_2">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="font">
                  <font>
                   <pointsize>7</pointsize>
@@ -574,16 +962,35 @@
               </item>
               <item row="4" column="1">
                <widget class="QLineEdit" name="current_setpoint_yaw_2">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="readOnly">
                  <bool>true</bool>
                 </property>
                </widget>
               </item>
               <item row="3" column="2">
-               <widget class="QLineEdit" name="new_setpoint_z_2"/>
+               <widget class="QLineEdit" name="new_setpoint_z_2">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+               </widget>
               </item>
               <item row="0" column="0">
                <widget class="QLabel" name="label_19">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="text">
                  <string>Setpoint:</string>
                 </property>
@@ -591,6 +998,12 @@
               </item>
               <item row="0" column="2">
                <widget class="QLabel" name="label_20">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="font">
                  <font>
                   <pointsize>7</pointsize>
@@ -609,6 +1022,18 @@
            </item>
            <item row="1" column="1">
             <widget class="QPushButton" name="en_custom_controller">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>50</height>
+              </size>
+             </property>
              <property name="text">
               <string>Enable Custom Controller</string>
              </property>
@@ -616,6 +1041,18 @@
            </item>
            <item row="1" column="0">
             <widget class="QPushButton" name="load_custom_yaml_button">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>50</height>
+              </size>
+             </property>
              <property name="text">
               <string>Load CustomController YAML file</string>
              </property>
@@ -625,7 +1062,7 @@
          </widget>
         </widget>
        </item>
-       <item row="2" column="1">
+       <item row="3" column="1">
         <widget class="QGroupBox" name="groupBox_4">
          <property name="title">
           <string/>
@@ -673,7 +1110,7 @@
          </layout>
         </widget>
        </item>
-       <item row="0" column="0">
+       <item row="1" column="0">
         <widget class="QGroupBox" name="groupBox">
          <property name="font">
           <font>
@@ -700,7 +1137,7 @@
          </layout>
         </widget>
        </item>
-       <item row="0" column="1">
+       <item row="1" column="1">
         <widget class="QLabel" name="flying_state_label">
          <property name="sizePolicy">
           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
@@ -719,6 +1156,57 @@
       </layout>
      </widget>
     </item>
+    <item row="1" column="1">
+     <widget class="QPushButton" name="RF_disconnect_button">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>600</width>
+        <height>100</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>Disconnect from Crazyflie</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="1">
+     <widget class="QPushButton" name="RF_Connect_button">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>400</width>
+        <height>100</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>Connect to Crazyflie</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="2">
+     <widget class="QLabel" name="connected_disconnected_label">
+      <property name="font">
+       <font>
+        <pointsize>16</pointsize>
+        <italic>true</italic>
+       </font>
+      </property>
+      <property name="text">
+       <string>Crazyradio status:</string>
+      </property>
+     </widget>
+    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menuBar">
@@ -726,7 +1214,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>854</width>
+     <width>1000</width>
      <height>25</height>
     </rect>
    </property>

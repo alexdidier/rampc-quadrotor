@@ -71,7 +71,7 @@ private slots:
     void on_set_setpoint_button_clicked();
     void on_set_setpoint_button_2_clicked();
 
-    void on_pushButton_3_clicked();
+    void on_RF_disconnect_button_clicked();
 
     void on_load_custom_yaml_button_clicked();
     void on_load_safe_yaml_button_clicked();
