@@ -120,7 +120,10 @@ int crazyradio_status;
 CrazyflieContext context;
 
 //wheter to use safe of custom controller
-bool using_safe_controller;
+int instant_controller;         //variable for the instant controller, e.g., we use safe controller for taking off and landing even if custom controller is enabled. This variable WILL change automatically
+
+// controller used:
+int controller_used = SAFE_CONTROLLER;
 
 ros::Publisher controllerUsedPublisher;
 
@@ -138,27 +141,34 @@ ros::Timer timer_takeoff;
 ros::Timer timer_land;
 
 
+
+void setControllerUsed(int controller)
+{
+    controller_used = controller;
+}
+
+int getControllerUsed()
+{
+    return controller_used;
+}
+
 void useSafeController()
 {
-    using_safe_controller = true;
+    setControllerUsed(SAFE_CONTROLLER);
+
+}
+
+void sendMessageUsingController(int controller)
+{
     // send a message in topic for the studentGUI to read it
     std_msgs::Int32 controller_used_msg;
-    controller_used_msg.data = SAFE_CONTROLLER;
+    controller_used_msg.data = controller;
     controllerUsedPublisher.publish(controller_used_msg);
 }
 
 void useCustomController()
 {
-    using_safe_controller = false;
-    // send a message in topic for the studentGUI to read it
-    std_msgs::Int32 controller_used_msg;
-    controller_used_msg.data = CUSTOM_CONTROLLER;
-    controllerUsedPublisher.publish(controller_used_msg);
-}
-
-bool getUsingSafeController()
-{
-    return using_safe_controller;
+    setControllerUsed(CUSTOM_CONTROLLER);
 }
 
 void loadSafeController() {
@@ -401,12 +411,14 @@ void viconCallback(const ViconData& viconData) {
                     break;
             }
 
+            sendMessageUsingController(getControllerUsed());
+
             // control part that should always be running, calls to controller, computation of control output
             if(flying_state != STATE_MOTORS_OFF)
             {
                 if(!global.occluded)    //if it is not occluded, then proceed to compute the controller output.
                 {
-                    if(!getUsingSafeController() && flying_state == STATE_FLYING) // only enter in custom controller if we are not using safe controller AND the flying state is FLYING
+                    if(getControllerUsed() == CUSTOM_CONTROLLER && flying_state == STATE_FLYING) // only enter in custom controller if we are not using safe controller AND the flying state is FLYING
                     {
                         bool success = customController.call(controllerCall);
                         if(!success)
@@ -422,7 +434,7 @@ void viconCallback(const ViconData& viconData) {
                             ROS_INFO_STREAM("safety check failed, switching to safe controller");
                         }
                     }
-                    else
+                    else        //SAFE_CONTROLLER and state is different from flying
                     {
                         calculateDistanceToCurrentSafeSetpoint(local); // update distance, it also updates the unit vector
                         ROS_INFO_STREAM("distance: " << distance);
@@ -717,6 +729,7 @@ int main(int argc, char* argv[])
     flying_state = STATE_MOTORS_OFF;
     useSafeController();
 	loadSafeController();
+    sendMessageUsingController(getControllerUsed());
 
 	std::string package_path;
 	package_path = ros::package::getPath("d_fall_pps") + "/";
