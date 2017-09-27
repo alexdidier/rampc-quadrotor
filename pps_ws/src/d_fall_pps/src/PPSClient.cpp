@@ -473,7 +473,7 @@ void viconCallback(const ViconData& viconData) {
                     else        //SAFE_CONTROLLER and state is different from flying
                     {
                         calculateDistanceToCurrentSafeSetpoint(local); // update distance, it also updates the unit vector
-                        ROS_INFO_STREAM("distance: " << distance);
+                        // ROS_INFO_STREAM("distance: " << distance);
                         // here, detect if euclidean distance between setpoint and current position is higher than a threshold
                         if(distance > distance_threshold)
                         {
