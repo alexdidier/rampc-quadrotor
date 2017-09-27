@@ -68,5 +68,4 @@ private:
     int m_assigned_cf_zone_index;
 };
 
-
 #endif

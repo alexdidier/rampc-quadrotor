@@ -260,6 +260,7 @@ set(MY_CPP_SOURCES_GUI              # compilation of sources
     ${MY_GUI_LIB_PATH_SRC}/crazyFly.cpp
     ${MY_GUI_LIB_PATH_SRC}/CFLinker.cpp
     ${MY_GUI_LIB_PATH_SRC}/channelLUT.cpp
+    ${MY_GUI_LIB_PATH_SRC}/centerMarker.cpp
     )
 
 # StudentGUI -- Add sources here

@@ -3,8 +3,8 @@
 
 
 #include <QGraphicsSimpleTextItem>
-
 #include "myGraphicsRectItem.h"
+#include "centerMarker.h"
 
 class crazyFlyZone : public myGraphicsRectItem
 {
@@ -31,7 +31,7 @@ protected:
 private:
     int _index;
     QGraphicsSimpleTextItem* label;
-    QGraphicsEllipseItem* m_center_marker;
+    centerMarker* m_center_marker;
 
     // stuff for linking
     bool m_linked;

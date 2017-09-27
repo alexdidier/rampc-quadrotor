@@ -23,7 +23,8 @@ void crazyFlyZone::updateLabel(QString string)
 void crazyFlyZone::createCenterMarker()
 {
     qreal diameter = 0.1 * FROM_METERS_TO_UNITS;
-    m_center_marker = new QGraphicsEllipseItem(QRectF(-diameter/2, -diameter/2, diameter, diameter), this);
+    // m_center_marker = new QGraphicsEllipseItem(QRectF(-diameter/2, -diameter/2, diameter, diameter), this);
+    m_center_marker = new centerMarker(":/images/center_rect.svg", this);
     updateCenterMarker();
     m_center_marker->setZValue(10); //max z value, always on top of things
 }
