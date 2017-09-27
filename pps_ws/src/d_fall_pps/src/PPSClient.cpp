@@ -731,7 +731,6 @@ float movingAverageBatteryFilter(float new_input)
     static float inputs[N];
 
 
-    inputs[0] = new_input;
     // imagine an array of an even number of samples, we will output the one in the middle averaged with information from all of them.
     // for that, we only need to store some past of the signal
     float output = previous_output + new_input/N - inputs[N-1]/N;
@@ -741,6 +740,8 @@ float movingAverageBatteryFilter(float new_input)
     {
         inputs[i] = inputs[i-1];
     }
+    inputs[0] = new_input;
+
 
     // update previous output
     previous_output = output;
