@@ -24,16 +24,20 @@ public:
     bool isLinked();
     void removeLink();
 
+    void updateCenterMarker();
+
 protected:
 
 private:
     int _index;
     QGraphicsSimpleTextItem* label;
+    QGraphicsEllipseItem* m_center_marker;
 
     // stuff for linking
     bool m_linked;
     std::string m_crazyfly_linked_name; //in the future this will be a vector of crazyFlies maybe
-};
 
+    void createCenterMarker();
+};
 
 #endif

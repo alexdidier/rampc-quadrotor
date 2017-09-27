@@ -4,6 +4,7 @@
 crazyFlyZone::crazyFlyZone(const QRectF & rect, int index,  QGraphicsItem * parent)
     : myGraphicsRectItem(rect, parent)
 {
+    createCenterMarker();
     this->setPen(QPen(Qt::black, 0));
     setIndex(index);
     m_linked = false;
@@ -17,6 +18,21 @@ void crazyFlyZone::updateLabel(QString string)
 {
     label->setText(string);
     setLabelPosition();
+}
+
+void crazyFlyZone::createCenterMarker()
+{
+    qreal diameter = 0.1 * FROM_METERS_TO_UNITS;
+    m_center_marker = new QGraphicsEllipseItem(QRectF(-diameter/2, -diameter/2, diameter, diameter), this);
+    updateCenterMarker();
+    m_center_marker->setZValue(10); //max z value, always on top of things
+}
+
+void crazyFlyZone::updateCenterMarker()
+{
+    qreal x_offset = this->rect().width()/2;
+    qreal y_offset = this->rect().height()/2;
+    m_center_marker->setPos(this->rect().topLeft().x() + x_offset,this->rect().topLeft().y() + y_offset);
 }
 
 void crazyFlyZone::setLabel(QString string)
@@ -49,6 +65,7 @@ void crazyFlyZone::setIndex(int index)
 void crazyFlyZone::rectSizeChanged() // pure virtual coming from parent
 {
     setLabelPosition();
+    updateCenterMarker();
 }
 
 void crazyFlyZone::linkCF(std::string cf_name)

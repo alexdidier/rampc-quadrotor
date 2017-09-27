@@ -16,6 +16,7 @@ public:
     void lock();
     void unlock();
 
+
 public slots:
 
 signals:
@@ -26,6 +27,7 @@ protected:
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent) override;
 
     virtual void rectSizeChanged() = 0; // pure virtual function, has to be overridden in derived class
+
 
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 
