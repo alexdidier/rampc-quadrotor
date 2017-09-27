@@ -754,6 +754,8 @@ void CFBatteryCallback(const std_msgs::Float32& msg)
     // filter and check if inside limits, and if, change status
     // need to do the filtering first
     float filtered_battery_voltage = movingAverageBatteryFilter(m_battery_voltage); //need to perform filtering here
+
+    ROS_INFO_STREAM("filtered data: " << filtered_battery_voltage);
     if((flying_state != STATE_MOTORS_OFF && (filtered_battery_voltage < m_battery_threshold_while_flying)) ||
        (flying_state == STATE_MOTORS_OFF && (filtered_battery_voltage < m_battery_threshold_while_motors_off)))
     {
