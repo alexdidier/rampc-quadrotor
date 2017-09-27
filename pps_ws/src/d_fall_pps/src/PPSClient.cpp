@@ -724,13 +724,36 @@ void setBatteryStateTo(int new_battery_state)
     batteryStatePublisher.publish(battery_state_msg);
 }
 
+float movingAverageBatteryFilter(float new_input)
+{
+    const int N = 7;
+    static float previous_output = 0;
+    static float inputs[N];
+
+
+    inputs[0] = new_input;
+    // imagine an array of an even number of samples, we will output the one in the middle averaged with information from all of them.
+    // for that, we only need to store some past of the signal
+    float output = previous_output + new_input/N - inputs[N-1]/N;
+
+    // update array of inputs
+    for(int i = N - 1; i > 0; i--)
+    {
+        inputs[i] = inputs[i-1];
+    }
+
+    // update previous output
+    previous_output = output;
+    return output;
+}
+
 
 void CFBatteryCallback(const std_msgs::Float32& msg)
 {
     m_battery_voltage = msg.data;
     // filter and check if inside limits, and if, change status
     // need to do the filtering first
-    float filtered_battery_voltage = m_battery_voltage; //need to perform filtering here
+    float filtered_battery_voltage = movingAverageBatteryFilter(m_battery_voltage); //need to perform filtering here
     if((flying_state != STATE_MOTORS_OFF && (filtered_battery_voltage < m_battery_threshold_while_flying)) ||
        (flying_state == STATE_MOTORS_OFF && (filtered_battery_voltage < m_battery_threshold_while_motors_off)))
     {
