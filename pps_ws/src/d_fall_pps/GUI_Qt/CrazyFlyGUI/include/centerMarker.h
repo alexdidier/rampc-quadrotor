@@ -6,7 +6,7 @@
 #include <QGraphicsSvgItem>
 #include <QSvgRenderer>
 
-#define DIAMETER         100 * FROM_MILIMETERS_TO_UNITS
+#define DIAMETER         50 * FROM_MILIMETERS_TO_UNITS
 
 class centerMarker : public QGraphicsSvgItem
 {
