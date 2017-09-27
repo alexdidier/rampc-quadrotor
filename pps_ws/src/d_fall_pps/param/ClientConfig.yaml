@@ -1,5 +1,5 @@
 safeController: "SafeControllerService/RateController"
-customController: "FollowN_1Service/FollowController"
+customController: "CustomControllerService/CustomController"
 strictSafety: true
 angleMargin: 0.6
 battery_threshold_while_flying: 2.9
