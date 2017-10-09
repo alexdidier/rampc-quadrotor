@@ -1,0 +1,17 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+  <file>images/drone.png</file>
+  <file>images/drone.svg</file>
+  <file>images/drone_fixed_unk.svg</file>
+  <file>images/drone_fixed_01.svg</file>
+  <file>images/drone_fixed_02.svg</file>
+  <file>images/drone_fixed_03.svg</file>
+  <file>images/drone_fixed_04.svg</file>
+  <file>images/drone_fixed_05.svg</file>
+  <file>images/drone_fixed_06.svg</file>
+  <file>images/drone_fixed_07.svg</file>
+  <file>images/drone_fixed_08.svg</file>
+  <file>images/drone_fixed_09.svg</file>
+  <file>images/center_rect.svg</file>
+</qresource>
+</RCC>

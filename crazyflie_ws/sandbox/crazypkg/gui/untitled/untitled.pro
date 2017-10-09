@@ -13,8 +13,22 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        mainguiwindow.cpp
+        mainguiwindow.cpp \
+    myGraphicsScene.cpp \
+    myGraphicsRectItem.cpp \
+    cornergrabber.cpp \
+    myGraphicsView.cpp \
+    crazyFlyZone.cpp \
+    tablePiece.cpp \
+    crazyFlyZoneTab.cpp
 
-HEADERS  += mainguiwindow.h
+HEADERS  += mainguiwindow.h \
+    myGraphicsScene.h \
+    myGraphicsRectItem.h \
+    cornergrabber.h \
+    myGraphicsView.h \
+    crazyFlyZone.h \
+    tablePiece.h \
+    crazyFlyZoneTab.h
 
 FORMS    += mainguiwindow.ui

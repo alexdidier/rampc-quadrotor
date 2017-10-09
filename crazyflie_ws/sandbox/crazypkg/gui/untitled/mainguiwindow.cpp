@@ -1,8 +1,16 @@
 #include "mainguiwindow.h"
 #include "ui_mainguiwindow.h"
+#include "crazyFlyZoneTab.h"
+
+#include <QObject>
 #include <QDoubleSpinBox>
 #include <QTextEdit>
+#include <QString>
 
+
+#define N_MAX_CRAZYFLIES           20 // protection number
+
+#ifndef DEBUG_GUI
 MainGUIWindow::MainGUIWindow(ros::NodeHandle* nodeHandle, /*ros::CallbackQueue *callbackQueue,
                              ros::Publisher* publisherMotorCommandsGUI,*/
                              QWidget *parent) :
@@ -14,13 +22,61 @@ MainGUIWindow::MainGUIWindow(ros::NodeHandle* nodeHandle, /*ros::CallbackQueue *
     m_isStopButtonActive=false;
     m_isCalActive=false;
     m_trajectoryType=eTrajCustom;
+    _init();
 }
+#else
+MainGUIWindow::MainGUIWindow(QWidget *parent) :
+    QMainWindow(parent),
+    ui(new Ui::MainGUIWindow)
+{
+
+    ui->setupUi(this);
+    _init();
+}
+#endif
 
 MainGUIWindow::~MainGUIWindow()
 {
     delete ui;
 }
 
+void MainGUIWindow::set_tabs(int n)
+{
+    ui->tabWidget->clear();
+    std::string str;
+    for (int i = 0; i < n; i++)
+    {
+        str = "CrazyFly ";
+        str += std::to_string(i+1);
+        QString qstr(str.c_str());
+        crazyFlyZoneTab* widget = new crazyFlyZoneTab(i);
+        ui->tabWidget->addTab(widget, qstr);
+        connect(widget, SIGNAL(centerButtonClickedSignal(int)), this, SLOT(centerViewIndex(int)));
+    }
+}
+
+void MainGUIWindow::_init()
+{
+
+    scene = new myGraphicsScene(ui->frame_drawing);
+    scene->setSceneRect(QRectF(QPointF(-1400, 1400), QSizeF(1400, 1400)));
+
+    ui->graphicsView->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
+    ui->graphicsView->setScene(scene);
+
+    // ui->radioButton_crazyfly_zones_mode->setCheckable(false);
+    // ui->radioButton_crazyfly_zones_mode->setEnabled(false);
+
+
+    QObject::connect(ui->tabWidget, SIGNAL(tabCloseRequested(int)), scene, SLOT(removeCrazyFlyZone(int)));
+    QObject::connect(scene, SIGNAL(numCrazyFlyZonesChanged(int)), this, SLOT(set_tabs(int)));
+    QObject::connect(ui->tabWidget, SIGNAL(currentChanged(int)), scene, SLOT(setSelectedCrazyFlyZone(int)));
+    QObject::connect(scene, SIGNAL(crazyFlyZoneSelected(int)), ui->tabWidget, SLOT(setCurrentIndex(int)));
+    QObject::connect(scene, SIGNAL(modeChanged(int)), this, SLOT(transitionToMode(int)));
+    QObject::connect(scene, SIGNAL(numTablePiecesChanged(int)), this, SLOT(handleTablePiecesNumChanged(int)));
+}
+
+#ifndef DEBUG_GUI
 void MainGUIWindow::init()
 {
     m_pNodeHandle->setCallbackQueue(&m_CallbackQueue);
@@ -47,16 +103,16 @@ void MainGUIWindow::init()
             <crazypkg::MotorCommands>("topicFeedforwardCmd",1));
 
 
-    m_pSubscriberControllerOutput=new ros::Subscriber(m_pNodeHandle->subscribe
-            ("/FlightControl/topicControllerOutput",1,&MainGUIWindow::callbackControllerOutput,this));
+    // m_pSubscriberControllerOutput=new ros::Subscriber(m_pNodeHandle->subscribe
+    //         ("/FlightControl/topicControllerOutput",1,&MainGUIWindow::callbackControllerOutput,this));
 
-    m_pSubscriberViconData=new ros::Subscriber(m_pNodeHandle->subscribe
-            ("/ViconDataStreamSDK/topicViconData",1,&MainGUIWindow::callbackViconData,this));
+    // m_pSubscriberViconData=new ros::Subscriber(m_pNodeHandle->subscribe
+    //         ("/ViconDataStreamSDK/topicViconData",1,&MainGUIWindow::callbackViconData,this));
 
-    m_pSubscriberCntViconDataMissed=new ros::Subscriber(m_pNodeHandle->subscribe
-            ("/FlightControl/topicCntViconDataMissed",1,&MainGUIWindow::callbackCntViconDataMissed,this));
-    initPIDParamsTable();
-    initRateParamsTable();
+    // m_pSubscriberCntViconDataMissed=new ros::Subscriber(m_pNodeHandle->subscribe
+    //         ("/FlightControl/topicCntViconDataMissed",1,&MainGUIWindow::callbackCntViconDataMissed,this));
+    // initPIDParamsTable();
+    // initRateParamsTable();
 
     readDefaultParameters();
 
@@ -66,115 +122,113 @@ void MainGUIWindow::init()
 
     m_CallbackQueue.callAvailable(ros::WallDuration(0));
 
-    setDefaultPIDParameters();
-    setDefaultRateParameters();
+    // setDefaultPIDParameters();
+    // setDefaultRateParameters();
 
-    initPositionSetpoint();
-    initSetpointType();
-    initSampleTime();
-    initFeedforwardCmd();
+    // initPositionSetpoint();
+    // initSetpointType();
+    // initSampleTime();
+    // initFeedforwardCmd();
 
-    initSetpointQueues();
+    // initSetpointQueues();
 
     ros::Duration(1).sleep();
 
-    initControllerType();
+    // initControllerType();
 
     //refreshScreen();
-
-
-
-}
-
-void MainGUIWindow::refreshScreen()
-{
-//    for(int i=0;i<countPIDControllers;i++)
-//    {
-//        ((QDoubleSpinBox*)ui->tableWidget->cellWidget(i,eKp))->setValue(m_PIDParams[i].Kp);
-//        ((QDoubleSpinBox*)ui->tableWidget->cellWidget(i,eKi))->setValue(m_PIDParams[i].Ki);
-//        ((QDoubleSpinBox*)ui->tableWidget->cellWidget(i,eKd))->setValue(m_PIDParams[i].Kd);
-//        ((QDoubleSpinBox*)ui->tableWidget->cellWidget(i,eN))->setValue(m_PIDParams[i].N);
-//    }
-
 }
 
 
 
+// void MainGUIWindow::refreshScreen()
+// {
+// //    for(int i=0;i<countPIDControllers;i++)
+// //    {
+// //        ((QDoubleSpinBox*)ui->tableWidget->cellWidget(i,eKp))->setValue(m_PIDParams[i].Kp);
+// //        ((QDoubleSpinBox*)ui->tableWidget->cellWidget(i,eKi))->setValue(m_PIDParams[i].Ki);
+// //        ((QDoubleSpinBox*)ui->tableWidget->cellWidget(i,eKd))->setValue(m_PIDParams[i].Kd);
+// //        ((QDoubleSpinBox*)ui->tableWidget->cellWidget(i,eN))->setValue(m_PIDParams[i].N);
+// //    }
+
+// }
 
 
-void MainGUIWindow::callbackCntViconDataMissed(const std_msgs::Int32& msg)
-{
-    ui->LCDMissedMes->display(msg.data);
-}
-
-void MainGUIWindow::callbackControllerOutput(const crazypkg::ControllerOutputPackage& msg)
-{
-    ui->LCDMotor1Cmd->display(msg.motorCmd1);
-    ui->LCDMotor2Cmd->display(msg.motorCmd2);
-    ui->LCDMotor3Cmd->display(msg.motorCmd3);
-    ui->LCDMotor4Cmd->display(msg.motorCmd4);
-    ui->LCDRollCmd->display(msg.roll);
-    ui->LCDPitchCmd->display(msg.pitch);
-    ui->LCDYawCmd->display(msg.yaw);
-    ui->LCDThrustCmd->display(msg.thrust);
-
-    switch (msg.onboardControllerType)
-    {
-    case eOnboardAngleController: {ui->labelControllerOutputMode->setText("Angle"); break;}
-    case eOnboardRateController: {ui->labelControllerOutputMode->setText("Rate"); break;}
-    case eOnboardMotorCmdController: {ui->labelControllerOutputMode->setText("MotorCmd"); break;}
-    default:{ROS_ERROR("unknown onboard controller type in MainGUIWindow::callbackControllerOutput"); break;}
-    }
 
 
-}
+// void MainGUIWindow::callbackCntViconDataMissed(const std_msgs::Int32& msg)
+// {
+//     ui->LCDMissedMes->display(msg.data);
+// }
 
-void MainGUIWindow::callbackViconData(const crazypkg::ViconData& msg)
-{
-    ui->LCDViconDataX->display(msg.x);
-    ui->LCDViconDataY->display(msg.y);
-    ui->LCDViconDataZ->display(msg.z);
-    ui->LCDViconDataYaw->display(msg.yaw*RAD2DEG);
-    ui->LCDViconDataPitch->display(msg.pitch*RAD2DEG);
-    ui->LCDViconDataRoll->display(msg.roll*RAD2DEG);
-}
+// void MainGUIWindow::callbackControllerOutput(const crazypkg::ControllerOutputPackage& msg)
+// {
+//     ui->LCDMotor1Cmd->display(msg.motorCmd1);
+//     ui->LCDMotor2Cmd->display(msg.motorCmd2);
+//     ui->LCDMotor3Cmd->display(msg.motorCmd3);
+//     ui->LCDMotor4Cmd->display(msg.motorCmd4);
+//     ui->LCDRollCmd->display(msg.roll);
+//     ui->LCDPitchCmd->display(msg.pitch);
+//     ui->LCDYawCmd->display(msg.yaw);
+//     ui->LCDThrustCmd->display(msg.thrust);
+
+//     switch (msg.onboardControllerType)
+//     {
+//     case eOnboardAngleController: {ui->labelControllerOutputMode->setText("Angle"); break;}
+//     case eOnboardRateController: {ui->labelControllerOutputMode->setText("Rate"); break;}
+//     case eOnboardMotorCmdController: {ui->labelControllerOutputMode->setText("MotorCmd"); break;}
+//     default:{ROS_ERROR("unknown onboard controller type in MainGUIWindow::callbackControllerOutput"); break;}
+//     }
+
+
+// }
+
+// void MainGUIWindow::callbackViconData(const crazypkg::ViconData& msg)
+// {
+//     ui->LCDViconDataX->display(msg.x);
+//     ui->LCDViconDataY->display(msg.y);
+//     ui->LCDViconDataZ->display(msg.z);
+//     ui->LCDViconDataYaw->display(msg.yaw*RAD2DEG);
+//     ui->LCDViconDataPitch->display(msg.pitch*RAD2DEG);
+//     ui->LCDViconDataRoll->display(msg.roll*RAD2DEG);
+// }
 
 void MainGUIWindow::runCallbacks()
 {
     m_CallbackQueue.callAvailable(ros::WallDuration(0));
 
-    updateSetpoint();
+    // updateSetpoint();
 }
 
-void MainGUIWindow::setDefaultPIDParameters()
-{
-    //memcpy(&m_PIDParams,&m_DefaultPIDParams,sizeof(m_DefaultPIDParams));
+// void MainGUIWindow::setDefaultPIDParameters()
+// {
+//     //memcpy(&m_PIDParams,&m_DefaultPIDParams,sizeof(m_DefaultPIDParams));
 
-    for(int i=0;i<countPIDControllers;i++)
-    {
-        ((QDoubleSpinBox*)ui->PIDParamTable->cellWidget(i,eKp))->setValue(m_DefaultPIDParams[i].Kp);
-        ((QDoubleSpinBox*)ui->PIDParamTable->cellWidget(i,eKi))->setValue(m_DefaultPIDParams[i].Ki);
-        ((QDoubleSpinBox*)ui->PIDParamTable->cellWidget(i,eKd))->setValue(m_DefaultPIDParams[i].Kd);
-        ((QDoubleSpinBox*)ui->PIDParamTable->cellWidget(i,eN))->setValue(m_DefaultPIDParams[i].N);
-        ((QDoubleSpinBox*)ui->PIDParamTable->cellWidget(i,eMinPIDSat))->setValue(m_DefaultPIDParams[i].MinSat);
-        ((QDoubleSpinBox*)ui->PIDParamTable->cellWidget(i,eMaxPIDSat))->setValue(m_DefaultPIDParams[i].MaxSat);
-    }
-}
+//     for(int i=0;i<countPIDControllers;i++)
+//     {
+//         ((QDoubleSpinBox*)ui->PIDParamTable->cellWidget(i,eKp))->setValue(m_DefaultPIDParams[i].Kp);
+//         ((QDoubleSpinBox*)ui->PIDParamTable->cellWidget(i,eKi))->setValue(m_DefaultPIDParams[i].Ki);
+//         ((QDoubleSpinBox*)ui->PIDParamTable->cellWidget(i,eKd))->setValue(m_DefaultPIDParams[i].Kd);
+//         ((QDoubleSpinBox*)ui->PIDParamTable->cellWidget(i,eN))->setValue(m_DefaultPIDParams[i].N);
+//         ((QDoubleSpinBox*)ui->PIDParamTable->cellWidget(i,eMinPIDSat))->setValue(m_DefaultPIDParams[i].MinSat);
+//         ((QDoubleSpinBox*)ui->PIDParamTable->cellWidget(i,eMaxPIDSat))->setValue(m_DefaultPIDParams[i].MaxSat);
+//     }
+// }
 
-void MainGUIWindow::setDefaultRateParameters()
-{
-    //memcpy(&m_PIDParams,&m_DefaultPIDParams,sizeof(m_DefaultPIDParams));
+// void MainGUIWindow::setDefaultRateParameters()
+// {
+//     //memcpy(&m_PIDParams,&m_DefaultPIDParams,sizeof(m_DefaultPIDParams));
 
-    for(int i=0;i<countRateControllers;i++)
-    {
-        ((QDoubleSpinBox*)ui->RateParamTable->cellWidget(i,eKp))->setValue(m_DefaultRateParams[i].Kp);
-        ((QDoubleSpinBox*)ui->RateParamTable->cellWidget(i,eKi))->setValue(m_DefaultRateParams[i].Ki);
-        ((QDoubleSpinBox*)ui->RateParamTable->cellWidget(i,eKd))->setValue(m_DefaultRateParams[i].Kd);
-        ((QDoubleSpinBox*)ui->RateParamTable->cellWidget(i,eN))->setValue(m_DefaultRateParams[i].N);
-        ((QDoubleSpinBox*)ui->RateParamTable->cellWidget(i,eMinPIDSat))->setValue(m_DefaultRateParams[i].MinSat);
-        ((QDoubleSpinBox*)ui->RateParamTable->cellWidget(i,eMaxPIDSat))->setValue(m_DefaultRateParams[i].MaxSat);
-    }
-}
+//     for(int i=0;i<countRateControllers;i++)
+//     {
+//         ((QDoubleSpinBox*)ui->RateParamTable->cellWidget(i,eKp))->setValue(m_DefaultRateParams[i].Kp);
+//         ((QDoubleSpinBox*)ui->RateParamTable->cellWidget(i,eKi))->setValue(m_DefaultRateParams[i].Ki);
+//         ((QDoubleSpinBox*)ui->RateParamTable->cellWidget(i,eKd))->setValue(m_DefaultRateParams[i].Kd);
+//         ((QDoubleSpinBox*)ui->RateParamTable->cellWidget(i,eN))->setValue(m_DefaultRateParams[i].N);
+//         ((QDoubleSpinBox*)ui->RateParamTable->cellWidget(i,eMinPIDSat))->setValue(m_DefaultRateParams[i].MinSat);
+//         ((QDoubleSpinBox*)ui->RateParamTable->cellWidget(i,eMaxPIDSat))->setValue(m_DefaultRateParams[i].MaxSat);
+//     }
+// }
 
 void MainGUIWindow::readDefaultParameters()
 {
@@ -257,147 +311,147 @@ void MainGUIWindow::readDefaultParameters()
     m_pNodeHandle->param<float>("FeedforwardMotor4",m_DefaultFeedforwardCmd.cmd4,0.0);
 }
 
-void MainGUIWindow::initPIDParamsTable()
-{
-    for (int i = 0; i < countPIDControllers; ++i)
-    {
-        for (int j = 0; j < countPIDParams ; ++j)
-        {
-            ui->PIDParamTable->setCellWidget(i,j,new QDoubleSpinBox(ui->PIDParamTable));
-            ((QDoubleSpinBox*)ui->PIDParamTable->cellWidget(i,j))->setDecimals(3);
-            ((QDoubleSpinBox*)ui->PIDParamTable->cellWidget(i,j))->setMaximum(999999.0);
-            ((QDoubleSpinBox*)ui->PIDParamTable->cellWidget(i,j))->setProperty("row",i);
-            ((QDoubleSpinBox*)ui->PIDParamTable->cellWidget(i,j))->setProperty("column",j);
-            ((QDoubleSpinBox*)ui->PIDParamTable->cellWidget(i,j))->setValue(1234.321);
-            if(j==eMinPIDSat)
-                ((QDoubleSpinBox*)ui->PIDParamTable->cellWidget(i,j))->setMinimum(-99999.0);
-            else
-                ((QDoubleSpinBox*)ui->PIDParamTable->cellWidget(i,j))->setMinimum(0);
-            connect(((QDoubleSpinBox*)ui->PIDParamTable->cellWidget(i,j))
-                    , SIGNAL(valueChanged(double)), this, SLOT(PIDParamTableChanged(double)));
-        }
+// void MainGUIWindow::initPIDParamsTable()
+// {
+//     for (int i = 0; i < countPIDControllers; ++i)
+//     {
+//         for (int j = 0; j < countPIDParams ; ++j)
+//         {
+//             ui->PIDParamTable->setCellWidget(i,j,new QDoubleSpinBox(ui->PIDParamTable));
+//             ((QDoubleSpinBox*)ui->PIDParamTable->cellWidget(i,j))->setDecimals(3);
+//             ((QDoubleSpinBox*)ui->PIDParamTable->cellWidget(i,j))->setMaximum(999999.0);
+//             ((QDoubleSpinBox*)ui->PIDParamTable->cellWidget(i,j))->setProperty("row",i);
+//             ((QDoubleSpinBox*)ui->PIDParamTable->cellWidget(i,j))->setProperty("column",j);
+//             ((QDoubleSpinBox*)ui->PIDParamTable->cellWidget(i,j))->setValue(1234.321);
+//             if(j==eMinPIDSat)
+//                 ((QDoubleSpinBox*)ui->PIDParamTable->cellWidget(i,j))->setMinimum(-99999.0);
+//             else
+//                 ((QDoubleSpinBox*)ui->PIDParamTable->cellWidget(i,j))->setMinimum(0);
+//             connect(((QDoubleSpinBox*)ui->PIDParamTable->cellWidget(i,j))
+//                     , SIGNAL(valueChanged(double)), this, SLOT(PIDParamTableChanged(double)));
+//         }
 
 
-    }
-}
+//     }
+// }
 
-void MainGUIWindow::initRateParamsTable()
-{
-        for (int i = 0; i < countRateControllers; ++i) {
-            for (int j = 0; j < countPIDParams ; ++j) {
-                ui->RateParamTable->setCellWidget(i,j,new QDoubleSpinBox(ui->RateParamTable));
-                ((QDoubleSpinBox*)ui->RateParamTable->cellWidget(i,j))->setDecimals(3);
-                ((QDoubleSpinBox*)ui->RateParamTable->cellWidget(i,j))->setMaximum(999999.0);
-                ((QDoubleSpinBox*)ui->RateParamTable->cellWidget(i,j))->setProperty("row",i);
-                ((QDoubleSpinBox*)ui->RateParamTable->cellWidget(i,j))->setProperty("column",j);
-                ((QDoubleSpinBox*)ui->RateParamTable->cellWidget(i,j))->setValue(1234.321);
-                if(j==eMinPIDSat)
-                    ((QDoubleSpinBox*)ui->RateParamTable->cellWidget(i,j))->setMinimum(-99999.0);
-                else
-                     ((QDoubleSpinBox*)ui->RateParamTable->cellWidget(i,j))->setMinimum(0);
-                connect(((QDoubleSpinBox*)ui->RateParamTable->cellWidget(i,j))
-                        , SIGNAL(valueChanged(double)), this, SLOT(RateParamTableChanged(double)));
-            }
-
-
-        }
-
-}
-
-void MainGUIWindow::PIDParamTableChanged(double param)
-{
-
-    QDoubleSpinBox* spinBox = qobject_cast<QDoubleSpinBox*>(sender());
-        if (spinBox)
-        {
-            m_controllerParam.crazyControllerType=ePID;
-            m_controllerParam.basicControllerType=spinBox->property("row").toInt();
-            m_controllerParam.paramType=spinBox->property("column").toInt();
-            m_controllerParam.value=param;
-
-            m_pPublisherControllerParam->publish(m_controllerParam);
-        }
-}
-
-void MainGUIWindow::RateParamTableChanged(double param)
-{
-
-    QDoubleSpinBox* spinBox = qobject_cast<QDoubleSpinBox*>(sender());
-        if (spinBox)
-        {
-            m_controllerParam.crazyControllerType=eRate;
-            m_controllerParam.basicControllerType=spinBox->property("row").toInt();
-            m_controllerParam.paramType=spinBox->property("column").toInt();
-            m_controllerParam.value=param;
-
-            m_pPublisherControllerParam->publish(m_controllerParam);
-        }
-}
-
-void MainGUIWindow::initPositionSetpoint()
-{
-    ui->SetpointX->setValue(ui->LCDViconDataX->value());
-    ui->SetpointY->setValue(ui->LCDViconDataY->value());
-    ui->SetpointZ->setValue(ui->LCDViconDataZ->value());
-    ui->SetpointYaw->setValue(ui->LCDViconDataYaw->value());
-
-    publishSetpoint();
-
-    connect(ui->SetpointX, SIGNAL(valueChanged(double)), this, SLOT(positionSetpointChanged(double)));
-    ui->SetpointX->setProperty("param","X");
-    connect(ui->SetpointY, SIGNAL(valueChanged(double)), this, SLOT(positionSetpointChanged(double)));
-    ui->SetpointY->setProperty("param","Y");
-    connect(ui->SetpointZ, SIGNAL(valueChanged(double)), this, SLOT(positionSetpointChanged(double)));
-    ui->SetpointZ->setProperty("param","Z");
-    connect(ui->SetpointYaw, SIGNAL(valueChanged(double)), this, SLOT(positionSetpointChanged(double)));
-    ui->SetpointYaw->setProperty("param","Yaw");
-
-}
-
-void MainGUIWindow::positionSetpointChanged(double param)
-{
-    //publishSetpoint();
-}
-
-void MainGUIWindow::publishSetpoint()
-{
-    m_positionSetpoint.x=ui->SetpointX->value()/1000;
-    m_positionSetpoint.y=ui->SetpointY->value()/1000;
-    m_positionSetpoint.z=ui->SetpointZ->value()/1000;
-    m_positionSetpoint.yaw=ui->SetpointYaw->value()*DEG2RAD;
-    m_pPublisherPositionSetpoint->publish(m_positionSetpoint);
-}
-
-void MainGUIWindow::initSampleTime()
-{
+// void MainGUIWindow::initRateParamsTable()
+// {
+//         for (int i = 0; i < countRateControllers; ++i) {
+//             for (int j = 0; j < countPIDParams ; ++j) {
+//                 ui->RateParamTable->setCellWidget(i,j,new QDoubleSpinBox(ui->RateParamTable));
+//                 ((QDoubleSpinBox*)ui->RateParamTable->cellWidget(i,j))->setDecimals(3);
+//                 ((QDoubleSpinBox*)ui->RateParamTable->cellWidget(i,j))->setMaximum(999999.0);
+//                 ((QDoubleSpinBox*)ui->RateParamTable->cellWidget(i,j))->setProperty("row",i);
+//                 ((QDoubleSpinBox*)ui->RateParamTable->cellWidget(i,j))->setProperty("column",j);
+//                 ((QDoubleSpinBox*)ui->RateParamTable->cellWidget(i,j))->setValue(1234.321);
+//                 if(j==eMinPIDSat)
+//                     ((QDoubleSpinBox*)ui->RateParamTable->cellWidget(i,j))->setMinimum(-99999.0);
+//                 else
+//                      ((QDoubleSpinBox*)ui->RateParamTable->cellWidget(i,j))->setMinimum(0);
+//                 connect(((QDoubleSpinBox*)ui->RateParamTable->cellWidget(i,j))
+//                         , SIGNAL(valueChanged(double)), this, SLOT(RateParamTableChanged(double)));
+//             }
 
 
+//         }
 
-//    publishSampleTime(ePIDTs);
-//    publishSampleTime(eLQRTs);
-//    publishSampleTime(eLQRInnerTs);
-//    publishSampleTime(eLQROuterTs);
+// }
 
-    connect(ui->PIDTs, SIGNAL(valueChanged(double)), this, SLOT(sampleTimeChanged(double)));
-    ui->PIDTs->setProperty("sampleTimeType",ePIDTs);
-    connect(ui->RateTs, SIGNAL(valueChanged(double)), this, SLOT(sampleTimeChanged(double)));
-    ui->RateTs->setProperty("sampleTimeType",eRateTs);
-    connect(ui->LQRFullTs, SIGNAL(valueChanged(double)), this, SLOT(sampleTimeChanged(double)));
-    ui->LQRFullTs->setProperty("sampleTimeType",eLQRFullTs);
-    connect(ui->LQRNestedTs, SIGNAL(valueChanged(double)), this, SLOT(sampleTimeChanged(double)));
-    ui->LQRNestedTs->setProperty("sampleTimeType",eLQRNestedTs);
+// void MainGUIWindow::PIDParamTableChanged(double param)
+// {
 
-    setDefaultSampleTime();
+//     QDoubleSpinBox* spinBox = qobject_cast<QDoubleSpinBox*>(sender());
+//         if (spinBox)
+//         {
+//             m_controllerParam.crazyControllerType=ePID;
+//             m_controllerParam.basicControllerType=spinBox->property("row").toInt();
+//             m_controllerParam.paramType=spinBox->property("column").toInt();
+//             m_controllerParam.value=param;
 
-}
+//             m_pPublisherControllerParam->publish(m_controllerParam);
+//         }
+// }
 
-void MainGUIWindow::setDefaultSampleTime()
-{
-    ui->PIDTs->setValue(m_DefaultSampleTime[ePIDTs]*1000);
-    ui->RateTs->setValue(m_DefaultSampleTime[eRateTs]*1000);
-    ui->LQRFullTs->setValue(m_DefaultSampleTime[eLQRFullTs]*1000);
-    ui->LQRNestedTs->setValue(m_DefaultSampleTime[eLQRNestedTs]*1000);
-}
+// void MainGUIWindow::RateParamTableChanged(double param)
+// {
+
+//     QDoubleSpinBox* spinBox = qobject_cast<QDoubleSpinBox*>(sender());
+//         if (spinBox)
+//         {
+//             m_controllerParam.crazyControllerType=eRate;
+//             m_controllerParam.basicControllerType=spinBox->property("row").toInt();
+//             m_controllerParam.paramType=spinBox->property("column").toInt();
+//             m_controllerParam.value=param;
+
+//             m_pPublisherControllerParam->publish(m_controllerParam);
+//         }
+// }
+
+// void MainGUIWindow::initPositionSetpoint()
+// {
+//     ui->SetpointX->setValue(ui->LCDViconDataX->value());
+//     ui->SetpointY->setValue(ui->LCDViconDataY->value());
+//     ui->SetpointZ->setValue(ui->LCDViconDataZ->value());
+//     ui->SetpointYaw->setValue(ui->LCDViconDataYaw->value());
+
+//     publishSetpoint();
+
+//     connect(ui->SetpointX, SIGNAL(valueChanged(double)), this, SLOT(positionSetpointChanged(double)));
+//     ui->SetpointX->setProperty("param","X");
+//     connect(ui->SetpointY, SIGNAL(valueChanged(double)), this, SLOT(positionSetpointChanged(double)));
+//     ui->SetpointY->setProperty("param","Y");
+//     connect(ui->SetpointZ, SIGNAL(valueChanged(double)), this, SLOT(positionSetpointChanged(double)));
+//     ui->SetpointZ->setProperty("param","Z");
+//     connect(ui->SetpointYaw, SIGNAL(valueChanged(double)), this, SLOT(positionSetpointChanged(double)));
+//     ui->SetpointYaw->setProperty("param","Yaw");
+
+// }
+
+// void MainGUIWindow::positionSetpointChanged(double param)
+// {
+//     //publishSetpoint();
+// }
+
+// void MainGUIWindow::publishSetpoint()
+// {
+//     m_positionSetpoint.x=ui->SetpointX->value()/1000;
+//     m_positionSetpoint.y=ui->SetpointY->value()/1000;
+//     m_positionSetpoint.z=ui->SetpointZ->value()/1000;
+//     m_positionSetpoint.yaw=ui->SetpointYaw->value()*DEG2RAD;
+//     m_pPublisherPositionSetpoint->publish(m_positionSetpoint);
+// }
+
+// void MainGUIWindow::initSampleTime()
+// {
+
+
+
+// //    publishSampleTime(ePIDTs);
+// //    publishSampleTime(eLQRTs);
+// //    publishSampleTime(eLQRInnerTs);
+// //    publishSampleTime(eLQROuterTs);
+
+//     connect(ui->PIDTs, SIGNAL(valueChanged(double)), this, SLOT(sampleTimeChanged(double)));
+//     ui->PIDTs->setProperty("sampleTimeType",ePIDTs);
+//     connect(ui->RateTs, SIGNAL(valueChanged(double)), this, SLOT(sampleTimeChanged(double)));
+//     ui->RateTs->setProperty("sampleTimeType",eRateTs);
+//     connect(ui->LQRFullTs, SIGNAL(valueChanged(double)), this, SLOT(sampleTimeChanged(double)));
+//     ui->LQRFullTs->setProperty("sampleTimeType",eLQRFullTs);
+//     connect(ui->LQRNestedTs, SIGNAL(valueChanged(double)), this, SLOT(sampleTimeChanged(double)));
+//     ui->LQRNestedTs->setProperty("sampleTimeType",eLQRNestedTs);
+
+//     setDefaultSampleTime();
+
+// }
+
+// void MainGUIWindow::setDefaultSampleTime()
+// {
+//     ui->PIDTs->setValue(m_DefaultSampleTime[ePIDTs]*1000);
+//     ui->RateTs->setValue(m_DefaultSampleTime[eRateTs]*1000);
+//     ui->LQRFullTs->setValue(m_DefaultSampleTime[eLQRFullTs]*1000);
+//     ui->LQRNestedTs->setValue(m_DefaultSampleTime[eLQRNestedTs]*1000);
+// }
 
 //void MainGUIWindow::publishSampleTime(ESampleTimeType sampleTimeType)
 //{
@@ -430,286 +484,286 @@ void MainGUIWindow::setDefaultSampleTime()
 //    m_pPublisherSampleTime->publish(m_sampleTimeParam);
 //}
 
-void MainGUIWindow::sampleTimeChanged(double param)
-{
-    QDoubleSpinBox* spinBox = qobject_cast<QDoubleSpinBox*>(sender());
-        if (spinBox)
-        {
-            m_sampleTimeParam.value=param/1000;
-            m_sampleTimeParam.sampleTimeType=spinBox->property("sampleTimeType").toInt();
-            m_pPublisherSampleTime->publish(m_sampleTimeParam);
-        }
-}
+// void MainGUIWindow::sampleTimeChanged(double param)
+// {
+//     QDoubleSpinBox* spinBox = qobject_cast<QDoubleSpinBox*>(sender());
+//         if (spinBox)
+//         {
+//             m_sampleTimeParam.value=param/1000;
+//             m_sampleTimeParam.sampleTimeType=spinBox->property("sampleTimeType").toInt();
+//             m_pPublisherSampleTime->publish(m_sampleTimeParam);
+//         }
+// }
 
-void MainGUIWindow::initControllerType()
-{
-    connect(ui->controllerPIDPosition, SIGNAL(toggled(bool)), this, SLOT(controllerTypeChanged(bool)));
-    ui->controllerPIDPosition->setProperty("controllerType",ePIDPosition);
-    connect(ui->controllerPIDAngle, SIGNAL(toggled(bool)), this, SLOT(controllerTypeChanged(bool)));
-    ui->controllerPIDAngle->setProperty("controllerType",ePIDAngle);
-    connect(ui->controllerPIDFull, SIGNAL(toggled(bool)), this, SLOT(controllerTypeChanged(bool)));
-    ui->controllerPIDFull->setProperty("controllerType",ePIDFull);
+// void MainGUIWindow::initControllerType()
+// {
+//     connect(ui->controllerPIDPosition, SIGNAL(toggled(bool)), this, SLOT(controllerTypeChanged(bool)));
+//     ui->controllerPIDPosition->setProperty("controllerType",ePIDPosition);
+//     connect(ui->controllerPIDAngle, SIGNAL(toggled(bool)), this, SLOT(controllerTypeChanged(bool)));
+//     ui->controllerPIDAngle->setProperty("controllerType",ePIDAngle);
+//     connect(ui->controllerPIDFull, SIGNAL(toggled(bool)), this, SLOT(controllerTypeChanged(bool)));
+//     ui->controllerPIDFull->setProperty("controllerType",ePIDFull);
 
-    connect(ui->controllerLQRFull, SIGNAL(toggled(bool)), this, SLOT(controllerTypeChanged(bool)));
-    ui->controllerLQRFull->setProperty("controllerType",eLQRFull);
+//     connect(ui->controllerLQRFull, SIGNAL(toggled(bool)), this, SLOT(controllerTypeChanged(bool)));
+//     ui->controllerLQRFull->setProperty("controllerType",eLQRFull);
 
-    connect(ui->controllerLQRNestedOnboard, SIGNAL(toggled(bool)), this, SLOT(controllerTypeChanged(bool)));
-    ui->controllerLQRNestedOnboard->setProperty("controllerType",eLQRNestedOnboardRate);
-    connect(ui->controllerLQRNestedOffboard, SIGNAL(toggled(bool)), this, SLOT(controllerTypeChanged(bool)));
-    ui->controllerLQRNestedOffboard->setProperty("controllerType",eLQRNestedOffboardRate);
+//     connect(ui->controllerLQRNestedOnboard, SIGNAL(toggled(bool)), this, SLOT(controllerTypeChanged(bool)));
+//     ui->controllerLQRNestedOnboard->setProperty("controllerType",eLQRNestedOnboardRate);
+//     connect(ui->controllerLQRNestedOffboard, SIGNAL(toggled(bool)), this, SLOT(controllerTypeChanged(bool)));
+//     ui->controllerLQRNestedOffboard->setProperty("controllerType",eLQRNestedOffboardRate);
 
-    connect(ui->controllerAngleCmdTest, SIGNAL(toggled(bool)), this, SLOT(controllerTypeChanged(bool)));
-    ui->controllerAngleCmdTest->setProperty("controllerType",eAngleCmdTest);
-    connect(ui->controllerRateCmdTest, SIGNAL(toggled(bool)), this, SLOT(controllerTypeChanged(bool)));
-    ui->controllerRateCmdTest->setProperty("controllerType",eRateCmdTest);
-    connect(ui->controllerMotorCmdTest, SIGNAL(toggled(bool)), this, SLOT(controllerTypeChanged(bool)));
-    ui->controllerMotorCmdTest->setProperty("controllerType",eMotorCmdTest);
+//     connect(ui->controllerAngleCmdTest, SIGNAL(toggled(bool)), this, SLOT(controllerTypeChanged(bool)));
+//     ui->controllerAngleCmdTest->setProperty("controllerType",eAngleCmdTest);
+//     connect(ui->controllerRateCmdTest, SIGNAL(toggled(bool)), this, SLOT(controllerTypeChanged(bool)));
+//     ui->controllerRateCmdTest->setProperty("controllerType",eRateCmdTest);
+//     connect(ui->controllerMotorCmdTest, SIGNAL(toggled(bool)), this, SLOT(controllerTypeChanged(bool)));
+//     ui->controllerMotorCmdTest->setProperty("controllerType",eMotorCmdTest);
 
-    //set default controller:
-    ui->controllerMotorCmdTest->setChecked(true);
+//     //set default controller:
+//     ui->controllerMotorCmdTest->setChecked(true);
 
-}
+// }
 
-void MainGUIWindow::initSetpointType()
-{
-    connect(ui->trajCustom, SIGNAL(toggled(bool)), this, SLOT(trajectoryTypeChanged(bool)));
-    ui->trajCustom->setProperty("trajectoryType",eTrajCustom);
-    connect(ui->trajCircle, SIGNAL(toggled(bool)), this, SLOT(trajectoryTypeChanged(bool)));
-    ui->trajCircle->setProperty("trajectoryType",eTrajCircle);
-    connect(ui->trajSquare, SIGNAL(toggled(bool)), this, SLOT(trajectoryTypeChanged(bool)));
-    ui->trajSquare->setProperty("trajectoryType",eTrajSquare);
+// void MainGUIWindow::initSetpointType()
+// {
+//     connect(ui->trajCustom, SIGNAL(toggled(bool)), this, SLOT(trajectoryTypeChanged(bool)));
+//     ui->trajCustom->setProperty("trajectoryType",eTrajCustom);
+//     connect(ui->trajCircle, SIGNAL(toggled(bool)), this, SLOT(trajectoryTypeChanged(bool)));
+//     ui->trajCircle->setProperty("trajectoryType",eTrajCircle);
+//     connect(ui->trajSquare, SIGNAL(toggled(bool)), this, SLOT(trajectoryTypeChanged(bool)));
+//     ui->trajSquare->setProperty("trajectoryType",eTrajSquare);
 
-    ui->trajCustom->setChecked(true);
-}
+//     ui->trajCustom->setChecked(true);
+// }
 
-void MainGUIWindow::trajectoryTypeChanged(bool checked)
-{
-    QRadioButton* radioButton = qobject_cast<QRadioButton*>(sender());
-        if (radioButton && checked)
-        {
-            m_trajectoryType=(ETrajectoryType)radioButton->property("trajectoryType").toInt();
-        }
-}
+// void MainGUIWindow::trajectoryTypeChanged(bool checked)
+// {
+//     QRadioButton* radioButton = qobject_cast<QRadioButton*>(sender());
+//         if (radioButton && checked)
+//         {
+//             m_trajectoryType=(ETrajectoryType)radioButton->property("trajectoryType").toInt();
+//         }
+// }
 
-void MainGUIWindow::controllerTypeChanged(bool checked)
-{
-    QRadioButton* radioButton = qobject_cast<QRadioButton*>(sender());
-        if (radioButton && checked)
-        {
-            m_controllerType.data=radioButton->property("controllerType").toInt();
+// void MainGUIWindow::controllerTypeChanged(bool checked)
+// {
+//     QRadioButton* radioButton = qobject_cast<QRadioButton*>(sender());
+//         if (radioButton && checked)
+//         {
+//             m_controllerType.data=radioButton->property("controllerType").toInt();
 
-            if(m_controllerType.data==ePIDPosition || m_controllerType.data==ePIDAngle ||
-                    m_controllerType.data==eLQRNestedOnboardRate
-                    || m_controllerType.data==eAngleCmdTest || m_controllerType.data==eRateCmdTest
-                    || m_controllerType.data==eMotorCmdTest)
-            {
-                ui->labelRateMode->setText("Onboard");
-            }
-            else if(m_controllerType.data==ePIDFull || m_controllerType.data==eLQRFull ||
-                    m_controllerType.data==eLQRNestedOffboardRate )
-            {
-               ui->labelRateMode->setText("Offboard");
-            }
-            else
-            {
-                ROS_ERROR("unknown controller type in MainGUIWindow::controllerTypeChanged");
-            }
+//             if(m_controllerType.data==ePIDPosition || m_controllerType.data==ePIDAngle ||
+//                     m_controllerType.data==eLQRNestedOnboardRate
+//                     || m_controllerType.data==eAngleCmdTest || m_controllerType.data==eRateCmdTest
+//                     || m_controllerType.data==eMotorCmdTest)
+//             {
+//                 ui->labelRateMode->setText("Onboard");
+//             }
+//             else if(m_controllerType.data==ePIDFull || m_controllerType.data==eLQRFull ||
+//                     m_controllerType.data==eLQRNestedOffboardRate )
+//             {
+//                ui->labelRateMode->setText("Offboard");
+//             }
+//             else
+//             {
+//                 ROS_ERROR("unknown controller type in MainGUIWindow::controllerTypeChanged");
+//             }
 
-            m_pPublisherControllerType->publish(m_controllerType);
-        }
-}
-
-
-
-
-void MainGUIWindow::on_buttonStop_clicked()
-{
-    if(!m_isStopButtonActive)
-    {
-        m_isStopButtonActive=true;
-        m_DoSomething.data=eStopQuad;
-        m_pPublisherDoSomething->publish(m_DoSomething);
-        ui->buttonStop->setText("START");
-    }
-    else
-    {
-        m_isStopButtonActive=false;
-        m_DoSomething.data=eStartQuad;
-        m_pPublisherDoSomething->publish(m_DoSomething);
-        ui->buttonStop->setText("STOP");
-    }
-
-}
-
-void MainGUIWindow::on_buttonPrint_clicked()
-{
-    m_DoSomething.data=ePrintInfo;
-    m_pPublisherDoSomething->publish(m_DoSomething);
-}
+//             m_pPublisherControllerType->publish(m_controllerType);
+//         }
+// }
 
 
 
 
-void MainGUIWindow::initFeedforwardCmd()
-{
-    connect(ui->FeedforwardCmd1, SIGNAL(valueChanged(double)), this, SLOT(feedforwardCmdChanged(double)));
-    connect(ui->FeedforwardCmd2, SIGNAL(valueChanged(double)), this, SLOT(feedforwardCmdChanged(double)));
-    connect(ui->FeedforwardCmd3, SIGNAL(valueChanged(double)), this, SLOT(feedforwardCmdChanged(double)));
-    connect(ui->FeedforwardCmd4, SIGNAL(valueChanged(double)), this, SLOT(feedforwardCmdChanged(double)));
+// void MainGUIWindow::on_buttonStop_clicked()
+// {
+//     if(!m_isStopButtonActive)
+//     {
+//         m_isStopButtonActive=true;
+//         m_DoSomething.data=eStopQuad;
+//         m_pPublisherDoSomething->publish(m_DoSomething);
+//         ui->buttonStop->setText("START");
+//     }
+//     else
+//     {
+//         m_isStopButtonActive=false;
+//         m_DoSomething.data=eStartQuad;
+//         m_pPublisherDoSomething->publish(m_DoSomething);
+//         ui->buttonStop->setText("STOP");
+//     }
 
+// }
 
-    setDefaultFeedforwardCmd();
-}
-
-void MainGUIWindow::feedforwardCmdChanged(double cmd)
-{
-    m_feedforwardCmd.cmd1=ui->FeedforwardCmd1->value();
-    m_feedforwardCmd.cmd2=ui->FeedforwardCmd2->value();
-    m_feedforwardCmd.cmd3=ui->FeedforwardCmd3->value();
-    m_feedforwardCmd.cmd4=ui->FeedforwardCmd4->value();
-    m_pPublisherFeedforwardCmd->publish(m_feedforwardCmd);
-}
-
-void MainGUIWindow::setDefaultFeedforwardCmd()
-{
-    ui->FeedforwardCmd1->setValue(m_DefaultFeedforwardCmd.cmd1);
-    ui->FeedforwardCmd2->setValue(m_DefaultFeedforwardCmd.cmd2);
-    ui->FeedforwardCmd3->setValue(m_DefaultFeedforwardCmd.cmd3);
-    ui->FeedforwardCmd4->setValue(m_DefaultFeedforwardCmd.cmd4);
-}
-
-void MainGUIWindow::on_buttonSetpointChange_clicked()
-{
-    publishSetpoint();
-}
-
-void MainGUIWindow::on_buttonResetControllers_clicked()
-{
-    m_DoSomething.data=eResetControllers;
-    m_pPublisherDoSomething->publish(m_DoSomething);
-}
-
-void MainGUIWindow::on_buttonSetDefaultTs_clicked()
-{
-        setDefaultSampleTime();
-}
-
-void MainGUIWindow::on_buttonPIDDefaultParams_clicked()
-{
-    setDefaultPIDParameters();
-}
-
-void MainGUIWindow::on_buttonSetpointCurrPos_clicked()
-{
-    ui->SetpointX->setValue(ui->LCDViconDataX->value());
-    ui->SetpointY->setValue(ui->LCDViconDataY->value());
-    ui->SetpointZ->setValue(ui->LCDViconDataZ->value());
-    ui->SetpointYaw->setValue(ui->LCDViconDataYaw->value());
-
-    publishSetpoint();
-}
-
-void MainGUIWindow::on_buttonDefaultFeedforward_clicked()
-{
-    setDefaultFeedforwardCmd();
-}
-
-
-void MainGUIWindow::on_buttonResetMissed_clicked()
-{
-    ui->LCDMissedMes->display(0);
-    m_DoSomething.data=eResetCntMissedViconData;
-    m_pPublisherDoSomething->publish(m_DoSomething);
-}
-
-void MainGUIWindow::on_buttonSetDefaultRateParams_clicked()
-{
-    setDefaultRateParameters();
-}
-
-void MainGUIWindow::on_SetpointHome_clicked()
-{
-    ui->SetpointX->setValue(0);
-    ui->SetpointY->setValue(-700);
-    ui->SetpointZ->setValue(1200);
-
-    publishSetpoint();
-}
-
-void MainGUIWindow::on_setpointZ200_clicked()
-{
-    ui->SetpointZ->setValue(200);
-
-    publishSetpoint();
-}
+// void MainGUIWindow::on_buttonPrint_clicked()
+// {
+//     m_DoSomething.data=ePrintInfo;
+//     m_pPublisherDoSomething->publish(m_DoSomething);
+// }
 
 
 
 
-void MainGUIWindow::on_slideMotorCmdTest_valueChanged(int value)
-{
-    m_controllerParam.crazyControllerType=eMotorCmdTest;
-    m_controllerParam.basicControllerType=eTestMotorCmd;
-    m_controllerParam.value=value*600;
-    m_pPublisherControllerParam->publish(m_controllerParam);
-    ui->LCDMotorCmdTest->display(value*600);
-}
+// void MainGUIWindow::initFeedforwardCmd()
+// {
+//     connect(ui->FeedforwardCmd1, SIGNAL(valueChanged(double)), this, SLOT(feedforwardCmdChanged(double)));
+//     connect(ui->FeedforwardCmd2, SIGNAL(valueChanged(double)), this, SLOT(feedforwardCmdChanged(double)));
+//     connect(ui->FeedforwardCmd3, SIGNAL(valueChanged(double)), this, SLOT(feedforwardCmdChanged(double)));
+//     connect(ui->FeedforwardCmd4, SIGNAL(valueChanged(double)), this, SLOT(feedforwardCmdChanged(double)));
+
+
+//     setDefaultFeedforwardCmd();
+// }
+
+// void MainGUIWindow::feedforwardCmdChanged(double cmd)
+// {
+//     m_feedforwardCmd.cmd1=ui->FeedforwardCmd1->value();
+//     m_feedforwardCmd.cmd2=ui->FeedforwardCmd2->value();
+//     m_feedforwardCmd.cmd3=ui->FeedforwardCmd3->value();
+//     m_feedforwardCmd.cmd4=ui->FeedforwardCmd4->value();
+//     m_pPublisherFeedforwardCmd->publish(m_feedforwardCmd);
+// }
+
+// void MainGUIWindow::setDefaultFeedforwardCmd()
+// {
+//     ui->FeedforwardCmd1->setValue(m_DefaultFeedforwardCmd.cmd1);
+//     ui->FeedforwardCmd2->setValue(m_DefaultFeedforwardCmd.cmd2);
+//     ui->FeedforwardCmd3->setValue(m_DefaultFeedforwardCmd.cmd3);
+//     ui->FeedforwardCmd4->setValue(m_DefaultFeedforwardCmd.cmd4);
+// }
+
+// void MainGUIWindow::on_buttonSetpointChange_clicked()
+// {
+//     publishSetpoint();
+// }
+
+// void MainGUIWindow::on_buttonResetControllers_clicked()
+// {
+//     m_DoSomething.data=eResetControllers;
+//     m_pPublisherDoSomething->publish(m_DoSomething);
+// }
+
+// void MainGUIWindow::on_buttonSetDefaultTs_clicked()
+// {
+//         setDefaultSampleTime();
+// }
+
+// void MainGUIWindow::on_buttonPIDDefaultParams_clicked()
+// {
+//     setDefaultPIDParameters();
+// }
+
+// void MainGUIWindow::on_buttonSetpointCurrPos_clicked()
+// {
+//     ui->SetpointX->setValue(ui->LCDViconDataX->value());
+//     ui->SetpointY->setValue(ui->LCDViconDataY->value());
+//     ui->SetpointZ->setValue(ui->LCDViconDataZ->value());
+//     ui->SetpointYaw->setValue(ui->LCDViconDataYaw->value());
+
+//     publishSetpoint();
+// }
+
+// void MainGUIWindow::on_buttonDefaultFeedforward_clicked()
+// {
+//     setDefaultFeedforwardCmd();
+// }
+
+
+// void MainGUIWindow::on_buttonResetMissed_clicked()
+// {
+//     ui->LCDMissedMes->display(0);
+//     m_DoSomething.data=eResetCntMissedViconData;
+//     m_pPublisherDoSomething->publish(m_DoSomething);
+// }
+
+// void MainGUIWindow::on_buttonSetDefaultRateParams_clicked()
+// {
+//     setDefaultRateParameters();
+// }
+
+// void MainGUIWindow::on_SetpointHome_clicked()
+// {
+//     ui->SetpointX->setValue(0);
+//     ui->SetpointY->setValue(-700);
+//     ui->SetpointZ->setValue(1200);
+
+//     publishSetpoint();
+// }
+
+// void MainGUIWindow::on_setpointZ200_clicked()
+// {
+//     ui->SetpointZ->setValue(200);
+
+//     publishSetpoint();
+// }
 
 
 
-void MainGUIWindow::on_slideRollAngleTest_valueChanged(int value)
-{
-    m_controllerParam.crazyControllerType=eAngleCmdTest;
-    m_controllerParam.basicControllerType=eTestRoll;
-    m_controllerParam.value=value*0.008;
-    m_pPublisherControllerParam->publish(m_controllerParam);
-    ui->LCDRollAngleTest->display(value*0.008*RAD2DEG);
-}
 
-void MainGUIWindow::on_slidePitchAngleTest_valueChanged(int value)
-{
-    m_controllerParam.crazyControllerType=eAngleCmdTest;
-    m_controllerParam.basicControllerType=eTestPitch;
-    m_controllerParam.value=value*0.008;
-    m_pPublisherControllerParam->publish(m_controllerParam);
-    ui->LCDPitchAngleTest->display(value*0.008*RAD2DEG);
-}
+// void MainGUIWindow::on_slideMotorCmdTest_valueChanged(int value)
+// {
+//     m_controllerParam.crazyControllerType=eMotorCmdTest;
+//     m_controllerParam.basicControllerType=eTestMotorCmd;
+//     m_controllerParam.value=value*600;
+//     m_pPublisherControllerParam->publish(m_controllerParam);
+//     ui->LCDMotorCmdTest->display(value*600);
+// }
 
-void MainGUIWindow::on_slideYawAngleTest_valueChanged(int value)
-{
-    m_controllerParam.crazyControllerType=eAngleCmdTest;
-    m_controllerParam.basicControllerType=eTestYaw;
-    m_controllerParam.value=value*0.03;
-    m_pPublisherControllerParam->publish(m_controllerParam);
-    ui->LCDYawAngleTest->display(value*0.03*RAD2DEG);
-}
 
-void MainGUIWindow::on_slideRollRateTest_valueChanged(int value)
-{
-    m_controllerParam.crazyControllerType=eRateCmdTest;
-    m_controllerParam.basicControllerType=eTestRoll;
-    m_controllerParam.value=value*0.005;
-    m_pPublisherControllerParam->publish(m_controllerParam);
-    ui->LCDRollRateTest->display(value*0.005*RAD2DEG);
-}
 
-void MainGUIWindow::on_slidePitchRateTest_valueChanged(int value)
-{
-    m_controllerParam.crazyControllerType=eRateCmdTest;
-    m_controllerParam.basicControllerType=eTestPitch;
-    m_controllerParam.value=value*0.005;
-    m_pPublisherControllerParam->publish(m_controllerParam);
-    ui->LCDPitchRateTest->display(value*0.005*RAD2DEG);
-}
+// void MainGUIWindow::on_slideRollAngleTest_valueChanged(int value)
+// {
+//     m_controllerParam.crazyControllerType=eAngleCmdTest;
+//     m_controllerParam.basicControllerType=eTestRoll;
+//     m_controllerParam.value=value*0.008;
+//     m_pPublisherControllerParam->publish(m_controllerParam);
+//     ui->LCDRollAngleTest->display(value*0.008*RAD2DEG);
+// }
 
-void MainGUIWindow::on_slideYawRateTest_valueChanged(int value)
-{
-    m_controllerParam.crazyControllerType=eRateCmdTest;
-    m_controllerParam.basicControllerType=eTestYaw;
-    m_controllerParam.value=value*0.005;
-    m_pPublisherControllerParam->publish(m_controllerParam);
-    ui->LCDYawRateTest->display(value*0.005*RAD2DEG);
-}
+// void MainGUIWindow::on_slidePitchAngleTest_valueChanged(int value)
+// {
+//     m_controllerParam.crazyControllerType=eAngleCmdTest;
+//     m_controllerParam.basicControllerType=eTestPitch;
+//     m_controllerParam.value=value*0.008;
+//     m_pPublisherControllerParam->publish(m_controllerParam);
+//     ui->LCDPitchAngleTest->display(value*0.008*RAD2DEG);
+// }
+
+// void MainGUIWindow::on_slideYawAngleTest_valueChanged(int value)
+// {
+//     m_controllerParam.crazyControllerType=eAngleCmdTest;
+//     m_controllerParam.basicControllerType=eTestYaw;
+//     m_controllerParam.value=value*0.03;
+//     m_pPublisherControllerParam->publish(m_controllerParam);
+//     ui->LCDYawAngleTest->display(value*0.03*RAD2DEG);
+// }
+
+// void MainGUIWindow::on_slideRollRateTest_valueChanged(int value)
+// {
+//     m_controllerParam.crazyControllerType=eRateCmdTest;
+//     m_controllerParam.basicControllerType=eTestRoll;
+//     m_controllerParam.value=value*0.005;
+//     m_pPublisherControllerParam->publish(m_controllerParam);
+//     ui->LCDRollRateTest->display(value*0.005*RAD2DEG);
+// }
+
+// void MainGUIWindow::on_slidePitchRateTest_valueChanged(int value)
+// {
+//     m_controllerParam.crazyControllerType=eRateCmdTest;
+//     m_controllerParam.basicControllerType=eTestPitch;
+//     m_controllerParam.value=value*0.005;
+//     m_pPublisherControllerParam->publish(m_controllerParam);
+//     ui->LCDPitchRateTest->display(value*0.005*RAD2DEG);
+// }
+
+// void MainGUIWindow::on_slideYawRateTest_valueChanged(int value)
+// {
+//     m_controllerParam.crazyControllerType=eRateCmdTest;
+//     m_controllerParam.basicControllerType=eTestYaw;
+//     m_controllerParam.value=value*0.005;
+//     m_pPublisherControllerParam->publish(m_controllerParam);
+//     ui->LCDYawRateTest->display(value*0.005*RAD2DEG);
+// }
 
 
 CSetpointQueue::CSetpointQueue()
@@ -762,136 +816,295 @@ void CSetpointQueue::print()
     }
 }
 
-void MainGUIWindow::initSetpointQueues()
-{
-    setpoint sp;
+// void MainGUIWindow::initSetpointQueues()
+// {
+//     setpoint sp;
 
-    int pointsCnt=500;
-    for(int i=0; i<pointsCnt; i++)
+//     int pointsCnt=500;
+//     for(int i=0; i<pointsCnt; i++)
+//     {
+//         double angle=i*2*3.141592/pointsCnt;
+//         sp.x=cos(angle)*0.7;
+//         sp.y=sin(angle)*0.7;
+//         sp.z=1;
+//         double yaw=PI/2+angle;
+//         while(yaw>PI) yaw-=2*PI;
+//         while(yaw<-PI) yaw+=2*PI;
+//         //sp.yaw=yaw;
+//         sp.yaw=0;
+//         m_trajCircle.insert(sp);
+//     }
+
+// //    for(int i=0; i<pointsCnt; i++)
+// //    {
+
+// //        sp.x=0;
+// //        sp.y=0.1;
+// //        sp.z=1.123;
+// //        sp.yaw=0;
+
+// //        m_trajSquare.insert(sp);
+// //    }
+
+//     sp.y=0;
+//     sp.yaw=0;
+
+
+//     sp.x=-0.250; sp.z=0.500; m_trajSquare.insert(sp);
+
+//     //sp.x=-0.550; sp.z=0.500; m_trajSquare.insert(sp);
+//     sp.x=-0.750; sp.z=0.500; m_trajSquare.insert(sp);
+
+//     //sp.x=-0.750; sp.z=0.750; m_trajSquare.insert(sp);
+//     sp.x=-0.750; sp.z=1; m_trajSquare.insert(sp);
+
+//     //sp.x=-0.500; sp.z=1; m_trajSquare.insert(sp);
+//     sp.x=-0.250; sp.z=1; m_trajSquare.insert(sp);
+
+//     //sp.x=-0.500; sp.z=1; m_trajSquare.insert(sp);
+//     sp.x=-0.750; sp.z=1; m_trajSquare.insert(sp);
+
+//     sp.x=-0.750; sp.z=1.5; m_trajSquare.insert(sp);
+
+//     sp.x=0; sp.z=1.5; m_trajSquare.insert(sp);
+
+//     sp.x=0; sp.z=0.500; m_trajSquare.insert(sp);
+
+//     sp.x=0; sp.z=1.5; m_trajSquare.insert(sp);
+
+//     sp.x=0.250; sp.z=1.5; m_trajSquare.insert(sp);
+
+//     sp.x=0.250; sp.z=0.500; m_trajSquare.insert(sp);
+
+//     sp.x=0.250; sp.z=1; m_trajSquare.insert(sp);
+
+//     sp.x=0.750; sp.z=1; m_trajSquare.insert(sp);
+
+//     sp.x=0.750; sp.z=1.5; m_trajSquare.insert(sp);
+
+//     sp.x=0.750; sp.z=0.500; m_trajSquare.insert(sp);
+
+//     m_trajSquare.print();
+
+// }
+
+// void MainGUIWindow::updateSetpoint()
+// {
+//   if(m_trajectoryType==eTrajCustom)
+//       return;
+
+//   double currX,currY,spX,spY,currZ,spZ;
+//   currX=ui->LCDViconDataX->value();
+//   currY=ui->LCDViconDataY->value();
+//   currZ=ui->LCDViconDataZ->value();
+
+//   spX=ui->SetpointX->value();
+//   spY=ui->SetpointY->value();
+//   spZ=ui->SetpointZ->value();
+
+//   while(sqrt((spX-currX)*(spX-currX)+(spY-currY)*(spY-currY)+(spZ-currZ)*(spZ-currZ))<40)
+// {
+
+//   setpoint sp;
+
+//     if(m_trajectoryType==eTrajCircle)
+//         sp=m_trajCircle.getNext();
+//     if(m_trajectoryType==eTrajSquare)
+//         sp=m_trajSquare.getNext();
+
+//     ui->SetpointX->setValue(sp.x*1000);
+//     ui->SetpointY->setValue(sp.y*1000);
+//     ui->SetpointZ->setValue(sp.z*1000);
+//     ui->SetpointYaw->setValue(sp.yaw*RAD2DEG);
+
+//     publishSetpoint();
+
+//     spX=ui->SetpointX->value();
+//     spY=ui->SetpointY->value();
+//     spZ=ui->SetpointZ->value();
+// }
+
+// }
+
+
+
+
+// void MainGUIWindow::on_buttonStop_2_clicked()
+// {
+
+//         if(!m_isCalActive)
+//         {
+//             m_isCalActive=true;
+//             m_DoSomething.data=eStartCal;
+//             m_pPublisherDoSomething->publish(m_DoSomething);
+//             ui->buttonStop_2->setText("STOP cal");
+//         }
+//         else
+//         {
+//             m_isCalActive=false;
+//             m_DoSomething.data=eStopCal;
+//             m_pPublisherDoSomething->publish(m_DoSomething);
+//             ui->buttonStop_2->setText("START cal");
+//         }
+
+
+// }
+#endif  // DEBUG_GUI
+
+
+
+void MainGUIWindow::on_removeTable_clicked()
+{
+    if(scene->getMode() == myGraphicsScene::mode_table)
     {
-        double angle=i*2*3.141592/pointsCnt;
-        sp.x=cos(angle)*0.7;
-        sp.y=sin(angle)*0.7;
-        sp.z=1;
-        double yaw=PI/2+angle;
-        while(yaw>PI) yaw-=2*PI;
-        while(yaw<-PI) yaw+=2*PI;
-        //sp.yaw=yaw;
-        sp.yaw=0;
-        m_trajCircle.insert(sp);
+        scene->removeTable();
+    }
+}
+
+void MainGUIWindow::transitionToMode(int mode)
+{
+    switch(mode)
+    {
+        case myGraphicsScene::mode_table:
+        {
+            ui->removeTable->setDisabled(false);
+            break;
+        }
+        case myGraphicsScene::mode_crazyfly_zones:
+        {
+            ui->removeTable->setDisabled(true);
+            break;
+        }
+    }
+}
+
+void MainGUIWindow::on_radioButton_table_mode_toggled(bool checked)
+{
+    switch(scene->getMode())
+    {
+        case myGraphicsScene::mode_table:
+        {
+            // already in the mode we want, do nothing
+            break;
+        }
+        case myGraphicsScene::mode_crazyfly_zones:
+        {
+            scene->setMode(myGraphicsScene::mode_table);
+            break;
+        }
+        case myGraphicsScene::mode_locked:
+        {
+            scene->setMode(myGraphicsScene::mode_table);
+            break;
+        }
     }
 
-//    for(int i=0; i<pointsCnt; i++)
-//    {
-
-//        sp.x=0;
-//        sp.y=0.1;
-//        sp.z=1.123;
-//        sp.yaw=0;
-
-//        m_trajSquare.insert(sp);
-//    }
-
-    sp.y=0;
-    sp.yaw=0;
-
-
-    sp.x=-0.250; sp.z=0.500; m_trajSquare.insert(sp);
-
-    //sp.x=-0.550; sp.z=0.500; m_trajSquare.insert(sp);
-    sp.x=-0.750; sp.z=0.500; m_trajSquare.insert(sp);
-
-    //sp.x=-0.750; sp.z=0.750; m_trajSquare.insert(sp);
-    sp.x=-0.750; sp.z=1; m_trajSquare.insert(sp);
-
-    //sp.x=-0.500; sp.z=1; m_trajSquare.insert(sp);
-    sp.x=-0.250; sp.z=1; m_trajSquare.insert(sp);
-
-    //sp.x=-0.500; sp.z=1; m_trajSquare.insert(sp);
-    sp.x=-0.750; sp.z=1; m_trajSquare.insert(sp);
-
-    sp.x=-0.750; sp.z=1.5; m_trajSquare.insert(sp);
-
-    sp.x=0; sp.z=1.5; m_trajSquare.insert(sp);
-
-    sp.x=0; sp.z=0.500; m_trajSquare.insert(sp);
-
-    sp.x=0; sp.z=1.5; m_trajSquare.insert(sp);
-
-    sp.x=0.250; sp.z=1.5; m_trajSquare.insert(sp);
-
-    sp.x=0.250; sp.z=0.500; m_trajSquare.insert(sp);
-
-    sp.x=0.250; sp.z=1; m_trajSquare.insert(sp);
-
-    sp.x=0.750; sp.z=1; m_trajSquare.insert(sp);
-
-    sp.x=0.750; sp.z=1.5; m_trajSquare.insert(sp);
-
-    sp.x=0.750; sp.z=0.500; m_trajSquare.insert(sp);
-
-    m_trajSquare.print();
-
-}
-
-void MainGUIWindow::updateSetpoint()
-{
-  if(m_trajectoryType==eTrajCustom)
-      return;
-
-  double currX,currY,spX,spY,currZ,spZ;
-  currX=ui->LCDViconDataX->value();
-  currY=ui->LCDViconDataY->value();
-  currZ=ui->LCDViconDataZ->value();
-
-  spX=ui->SetpointX->value();
-  spY=ui->SetpointY->value();
-  spZ=ui->SetpointZ->value();
-
-  while(sqrt((spX-currX)*(spX-currX)+(spY-currY)*(spY-currY)+(spZ-currZ)*(spZ-currZ))<40)
-{
-
-  setpoint sp;
-
-    if(m_trajectoryType==eTrajCircle)
-        sp=m_trajCircle.getNext();
-    if(m_trajectoryType==eTrajSquare)
-        sp=m_trajSquare.getNext();
-
-    ui->SetpointX->setValue(sp.x*1000);
-    ui->SetpointY->setValue(sp.y*1000);
-    ui->SetpointZ->setValue(sp.z*1000);
-    ui->SetpointYaw->setValue(sp.yaw*RAD2DEG);
-
-    publishSetpoint();
-
-    spX=ui->SetpointX->value();
-    spY=ui->SetpointY->value();
-    spZ=ui->SetpointZ->value();
-}
-
 }
 
 
-
-
-void MainGUIWindow::on_buttonStop_2_clicked()
+void MainGUIWindow::on_radioButton_crazyfly_zones_mode_toggled(bool checked)
 {
-
-        if(!m_isCalActive)
+    switch(scene->getMode())
+    {
+        case myGraphicsScene::mode_table:
         {
-            m_isCalActive=true;
-            m_DoSomething.data=eStartCal;
-            m_pPublisherDoSomething->publish(m_DoSomething);
-            ui->buttonStop_2->setText("STOP cal");
+            scene->setMode(myGraphicsScene::mode_crazyfly_zones);
+            break;
         }
-        else
+        case myGraphicsScene::mode_crazyfly_zones:
         {
-            m_isCalActive=false;
-            m_DoSomething.data=eStopCal;
-            m_pPublisherDoSomething->publish(m_DoSomething);
-            ui->buttonStop_2->setText("START cal");
+            // already in the mode we want, do nothing
+            break;
         }
+        case myGraphicsScene::mode_locked:
+        {
+            scene->setMode(myGraphicsScene::mode_crazyfly_zones);
+            break;
+        }
+    }
+}
+
+void MainGUIWindow::handleTablePiecesNumChanged(int newNum)
+{
+    // if(newNum == 0)
+    // {
+    //     ui->radioButton_crazyfly_zones_mode->setCheckable(false);
+    //     ui->radioButton_crazyfly_zones_mode->setEnabled(false);
+    // }
+    // else
+    // {
+    //     ui->radioButton_crazyfly_zones_mode->setCheckable(true);
+    //     ui->radioButton_crazyfly_zones_mode->setEnabled(true);
+    // }
+}
+
+void MainGUIWindow::on_radioButton_lock_mode_toggled(bool checked)
+{
+    switch(scene->getMode())
+    {
+        case myGraphicsScene::mode_table:
+        {
+            scene->setMode(myGraphicsScene::mode_locked);
+            break;
+        }
+        case myGraphicsScene::mode_crazyfly_zones:
+        {
+            scene->setMode(myGraphicsScene::mode_locked);
+            break;
+        }
+        case myGraphicsScene::mode_locked:
+        {
+            break;
+        }
+    }
+}
+
+void MainGUIWindow::on_checkBox_grid_toggled(bool checked)
+{
+    scene->setGrid(checked);
+}
+
+void MainGUIWindow::on_checkBox_table_toggled(bool checked)
+{
+    if(checked)
+    {
+        scene->showTable();
+    }
+    else
+    {
+        scene->hideTable();
+    }
+}
+
+void MainGUIWindow::on_checkBox_crazyfly_zones_toggled(bool checked)
+{
+    if(checked)
+    {
+        scene->showCrazyFlyZones();
+    }
+    else
+    {
+        scene->hideCrazyFlyZones();
+    }
+}
+
+void MainGUIWindow::on_tabWidget_currentChanged(int index)
+{
+    if(index >= 0)
+    {
+        scene->setSelectedCrazyFlyZone(index);
+    }
+}
+
+void MainGUIWindow::centerViewIndex(int index)
+{
+    ui->graphicsView->fitInView(scene->getRectFCrazyFlyZone(index), Qt::KeepAspectRatio);
+    ui->graphicsView->scale(0.95, 0.95); // A bit back zoom, so we can see everything better
+}
 
 
+void MainGUIWindow::on_pushButton_fitAll_clicked()
+{
+    ui->graphicsView->fitInView(scene->itemsBoundingRect(), Qt::KeepAspectRatio);
+    ui->graphicsView->scale(0.95, 0.95); // A bit back zoom, so we can see everything better
 }

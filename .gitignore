@@ -1,0 +1,8 @@
+pps_ws/build/
+pps_ws/devel/
+
+*.pyc
+*.orig
+*.bag
+
+build-*

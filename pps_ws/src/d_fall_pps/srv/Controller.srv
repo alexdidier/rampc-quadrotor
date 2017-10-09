@@ -1,0 +1,4 @@
+CrazyflieData ownCrazyflie
+CrazyflieData[] otherCrazyflies
+---
+ControlCommand controlOutput

@@ -4,3 +4,4 @@
 # USE THE rosinstall TOOL INSTEAD.
 # IF YOU CHANGE IT, USE rosinstall FOR THE CHANGES TO TAKE EFFECT
 - setup-file: {local-name: /opt/ros/kinetic/setup.sh}
+- other: {local-name: sandbox}
