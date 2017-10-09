@@ -5,7 +5,7 @@
 * Insert a CrazyRadio into one of your USB-ports on your Laptop.
 * Start your crazyflie. To know which one is the one you have been linked to,
 ask your teacher. The Crazyflie must be started on a flat surface, as the gyrosensor needs to initialize.
-<!-- * The Crazyflie atennas had to face the right direction (antenna facing -->
+<!-- * The Crazyflie atennas had to face the right direction (antenna facing  -->
 <!-- positive x-axis) upon defining the object in ViconTracker! -->
 
 ### Software prerequisites:
@@ -15,12 +15,10 @@ ask your teacher. The Crazyflie must be started on a flat surface, as the gyrose
        1. Go to the next folder: `cd ~/work/D-FaLL-System/pps_ws`
        2. Checkout master branch of the repository and pull:
 
-       ``
-       git checkout master
+       ``git checkout master
        ``
 
-       ``
-       git pull origin master
+       ``git pull origin master
        ``
 
        *Note: to do this step, you will be asked a username and a password. Use
@@ -32,8 +30,6 @@ ask your teacher. The Crazyflie must be started on a flat surface, as the gyrose
 ---
 
 ### Start the student's GUI
-  <!-- * Maybe add here some instructions to check if we are in the last version of -->
-  <!--   the repository? -->
 
   * Once all the prerequisites have been fulfilled, we can start the student's
     GUI by going to a terminal and typing:
