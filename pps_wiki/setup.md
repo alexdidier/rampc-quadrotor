@@ -64,7 +64,7 @@ Then go to the _IPv4 Settings_ and choose **Manual** as the _Method_ and then ad
 
 <br>
 ### Vicon, teacher and students
-During installation process is the IP address of the teacher set to 10.42.0.32. (This value is written to the /etc/hosts file such that this IP address is accessible through the keyword _teacher_) <br>
+During installation process is the IP address of the teacher set to 10.42.0.10. (This value is written to the /etc/hosts file such that this IP address is accessible through the keyword _teacher_) <br>
 Have a look at `Config.sh` in `~/pps_ws/src/d_fall_pps/launch/`
 <br><img src="./pics/setup_pics/configsh1.png" style="width: 500px;"/> <br>
 Here you see, that the ROS Master URI is set to be the teacher. This means that _roscore_ runs only on the teacher's computer. Your own IP address (_ROS IP_) is also set and taken from your Ethernet settings as defined in the section _Setting up the Vicon network_.
