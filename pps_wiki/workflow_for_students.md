@@ -63,8 +63,7 @@ gyrosensor needs to initialize.
   green in the tab name.<br><br>
     * The button "Load <filename> YAML file" loads and refreshes the parameters
   that are in the corresponding YAML file.<br><br>
-  <!-- insert image of student GUI with numbers in the buttons, so we can
-  explain every button -->
+
 
   * You can now play with the landing, take off and change of setpoint using the
     safe controller to get familiar with the system.
