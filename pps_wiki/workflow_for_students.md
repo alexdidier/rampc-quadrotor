@@ -32,7 +32,37 @@ gyrosensor needs to initialize.
     network and the teacher's GUI has to be started before. Please wait until
     your teacher has already set up everything.*
 
-  * Once started, you will see something like this:
+  * Once started, you will see something like this: <br>
+
+    <img src="./pics/student_gui.png" style="width: 800px;"/> <br><br>
+
+  * Connect to/Disconnect from Crazyflie: physically connects/disconnects our computer to
+  the assigned crazyflie using the Crazyradio dongle.<br><br>
+    * Crazyradio status: can take the values "Connected!", "Disconnected" or
+      "Connecting..." <br><br>
+    * Below the disconnect button we see two lines of text. The first one
+  contains information about our StudentID number, and the Crazyflie we are
+  linked to. This is the Crazyflie we must connect to. <br><br>
+  Below that, we can also see the Raw voltage line, which contains the instantaneous voltage of the
+  battery of the Crazyflie, in Volts.<br><br>
+    * In the right part, there are 3 buttons to control the flying state of our
+  Crazyflie, and a text label containing the current flying state. **It is
+  important to know that we can only take off when we are in the state "Motors
+  OFF", and we can only land if we are NOT in the state "Motors OFF"**<br><br>
+    * In the middle-bottom part of the GUI there are two tabs: Safe and Custom
+  controller. <br><br>
+  In the left part of these tabs, there is information about the
+  current position of the Crazyflie, and also the difference between the current
+  position and the current setpoint, useful for keeping track of the error of
+  our controller.<br><br>
+  In the right part of the tabs, there is information about the current
+  setpoint, and boxes to edit the new setpoint. When we press the button "Set
+  setpoint", we change the current setpoint with the information filled.<br><br>
+    * The button called "Enable <controller> Controller" enables the selected
+  controller. The current enabled controller is the one which is highlighted in
+  green in the tab name.<br><br>
+    * The button "Load <filename> YAML file" loads and refreshes the parameters
+  that are in the corresponding YAML file.<br><br>
   <!-- insert image of student GUI with numbers in the buttons, so we can
   explain every button -->
 
