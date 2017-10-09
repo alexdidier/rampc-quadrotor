@@ -12,16 +12,12 @@ gyrosensor needs to initialize.
     it would be helpful to check if the repository is in the last version, and
     if the source code has been properly compiled. To do this, follow the next steps:
        1. Go to the next folder: `cd ~/work/D-FaLL-System/pps_ws`
-       2. Checkout master branch of the repository and pull:
-
-       ``git checkout master``
-
-       ``git pull origin master``
-
+       2. Checkout master branch of the repository and pull:<br />
+         ``git checkout master``<br />
+         ``git pull origin master``<br />
        *Note: to do this step, you will be asked a username and a password. Use
        the same credentials you use for your ETH account. Also, make sure you
-       have an active account in gitlab: [https://gitlab.ethz.ch/](https://gitlab.ethz.ch/)*
-
+       have an active account in gitlab: [https://gitlab.ethz.ch/](https://gitlab.ethz.ch/)*<br />
        3. Compile the source code running `catkin_make`
 
 ---
