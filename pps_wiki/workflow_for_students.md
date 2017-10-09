@@ -1,4 +1,4 @@
-# Workflow for students. In development right now!
+# Workflow for students.
 
 ### Hardware prerequisites:
 * Make sure you are connected to the network (cable inserted and check if connected to Vicon in the settings).
