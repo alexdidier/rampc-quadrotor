@@ -45,8 +45,8 @@ gyrosensor needs to initialize.
 
     *Note: there are different parameters in the file called
     `SafeController.yaml`, in the folder param (use `roscd d_fall_pps/param` in a
-    terminal to go there). **These are the safe controller parameters and should NOT be
-    changed.** Take a look at the file and get familiar with the format used,
+    terminal to go there).* **These are the safe controller parameters and should NOT be
+    changed.** *Take a look at the file and get familiar with the format used,
     since may have to write your own for the custom controller.*
 
 ### Creating your own custom controller!
@@ -144,9 +144,9 @@ important files that should be taken into account.
    their own controller. Change the file as you wish with your own controller
    algorithm.
 
-   In the template you can also see an example of how to use the
-   `CustomController.yaml` to load parameters that you may want to change
-   without having to compile or restart the system.
+     In the template you can also see an example of how to use the
+     `CustomController.yaml` to load parameters that you may want to change
+     without having to compile or restart the system.
 
 2. Go to `cd ~/work/D-FaLL-System/pps_ws` and write `catkin_make`.
 
