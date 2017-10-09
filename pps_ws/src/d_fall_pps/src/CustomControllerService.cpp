@@ -133,16 +133,18 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     request.ownCrazyflie.y -= setpoint[1];
     request.ownCrazyflie.z -= setpoint[2];
     float yaw = request.ownCrazyflie.yaw - setpoint[3];
+
     while(yaw > PI) {yaw -= 2 * PI;}
     while(yaw < -PI) {yaw += 2 * PI;}
     request.ownCrazyflie.yaw = yaw;
 
-    float est[9];
+    float est[9];               // vector for the estimation of the state
 
     est[0] = request.ownCrazyflie.x;
     est[1] = request.ownCrazyflie.y;
     est[2] = request.ownCrazyflie.z;
 
+    // estimate speed of crazyflie. Simplest way: discrete derivative
     est[3] = (request.ownCrazyflie.x - previous_location.x) * control_frequency;
     est[4] = (request.ownCrazyflie.y - previous_location.y) * control_frequency;
     est[5] = (request.ownCrazyflie.z - previous_location.z) * control_frequency;
@@ -167,7 +169,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     	thrustIntermediate -= gainMatrixThrust[i] * state[i];
     }
 
-    ROS_INFO_STREAM("thrustIntermediate = " << thrustIntermediate);    
+    ROS_INFO_STREAM("thrustIntermediate = " << thrustIntermediate);
 
     response.controlOutput.roll = outRoll;
     response.controlOutput.pitch = outPitch;

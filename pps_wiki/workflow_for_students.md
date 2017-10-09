@@ -89,7 +89,8 @@ important files that should be taken into account.
 
 * In `d_fall_pps/param`
 
-  * _ClientConfig.yaml_ <br>
+  * _ClientConfig.yaml_ <br><br>
+          <img src="./pics/client_config_yaml.png" style="width: 400px;"/> <br><br>
   This file needs to be changed to define names for the custom controller. **The safeController property shouldn't be changed!** <br>
 
       *Usage:*
@@ -168,12 +169,15 @@ important files that should be taken into account.
    that the file is already filled with some code. This code is a simple LQR
    controller that is offered as a template for the student to start developing
    their own controller. Change the file as you wish with your own controller
-   algorithm.
+   algorithm. The function partially shown below is the most important part of
+   our this file:<br><br>
+        <img src="./pics/custom_controller_src.png" style="width: 700px;"/> <br><br>
 
      In the template you can also see an example of how to use the
      `CustomController.yaml` to load parameters that you may want to change
-     without having to compile or restart the system.
-
+     without having to compile or restart the system. Here, as an example, we
+     pass some parameters that can be seen below:<br><br>
+        <img src="./pics/custom_controller_yaml.png" style="width: 400px;"/> <br><br>
 2. Go to `cd ~/work/D-FaLL-System/pps_ws` and write `catkin_make`.
 
 3. Once everything has compiled without errors, run the next launch file:
