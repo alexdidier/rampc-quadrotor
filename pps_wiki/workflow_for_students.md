@@ -4,9 +4,8 @@
 * Make sure you are connected to the network (cable inserted and check if connected to Vicon in the settings).
 * Insert a CrazyRadio into one of your USB-ports on your Laptop.
 * Start your crazyflie. To know which one is the one you have been linked to,
-ask your teacher. The Crazyflie must be started on a flat surface, as the gyrosensor needs to initialize.
-<!-- * The Crazyflie atennas had to face the right direction (antenna facing  -->
-<!-- positive x-axis) upon defining the object in ViconTracker! -->
+ask your teacher. The Crazyflie must be started on a flat surface, as the
+gyrosensor needs to initialize.
 
 ### Software prerequisites:
   * In the software side, everything has already been set up for the course, but
@@ -15,11 +14,9 @@ ask your teacher. The Crazyflie must be started on a flat surface, as the gyrose
        1. Go to the next folder: `cd ~/work/D-FaLL-System/pps_ws`
        2. Checkout master branch of the repository and pull:
 
-       ``git checkout master
-       ``
+       ``git checkout master``
 
-       ``git pull origin master
-       ``
+       ``git pull origin master``
 
        *Note: to do this step, you will be asked a username and a password. Use
        the same credentials you use for your ETH account. Also, make sure you
@@ -48,23 +45,23 @@ ask your teacher. The Crazyflie must be started on a flat surface, as the gyrose
 
     *Note: there are different parameters in the file called
     `SafeController.yaml`, in the folder param (use `roscd d_fall_pps/param` in a
-    terminal to go there). These are the safe controller parameters and should NOT be
-    changed. Take a look at the file and get familiar with the format used,
+    terminal to go there). **These are the safe controller parameters and should NOT be
+    changed.** Take a look at the file and get familiar with the format used,
     since may have to write your own for the custom controller.*
 
 ### Creating your own custom controller!
 In this part, we will learn how to design our own custom controller and actually
 deploy it and see it working in our Crazyflie. For this, there are a set of
-files of interest:
+important files that should be taken into account.
 
 #### Files of interest:
 
-* in `d_fall_pps/src`
+* In `d_fall_pps/src`
 
   * _CustomControllerService.cpp_ <br>
   The file where students can implement their own controller. It provides already the ros service with the teacher. It can be used as a template.
 
-* in `d_fall_pps/param`
+* In `d_fall_pps/param`
 
   * _ClientConfig.yaml_ <br>
   This file needs to be changed to define names for the custom controller. **The safeController property shouldn't be changed!** <br>
@@ -96,7 +93,7 @@ files of interest:
       *Sets the low battery thresholds at which the crazyflie will automatically
       land. **Do not change these values.***
 
-* in `d_fall_pps/`
+* In `d_fall_pps/`
 
   * CMakeLists.txt
 
