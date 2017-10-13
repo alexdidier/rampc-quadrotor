@@ -17,9 +17,10 @@
 
 //constants
 #define PI 3.1415926535
-#define RATE_MODE 0
-#define ANGLE_MODE 1
-#define MOTOR_MODE 2
+
+#define MOTOR_MODE 6
+#define RATE_MODE 7
+#define ANGLE_MODE 8
 
 //namespacing the package
 using namespace d_fall_pps;
