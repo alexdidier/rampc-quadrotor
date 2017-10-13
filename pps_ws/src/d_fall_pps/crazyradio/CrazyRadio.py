@@ -129,7 +129,7 @@ class PPSRadioClient:
 
     def disconnect(self):
         print "Motors OFF"
-        self._send_to_commander(0, 0, 0, 0, 0, 0, 0, 0, CONTROLLER_MOTOR)
+        self._send_to_commander_motor(0, 0, 0, 0)
         # change state to motors OFF
         self.PPSClient_command_pub.publish(CMD_CRAZYFLY_MOTORS_OFF)
         time.sleep(0.1)
@@ -315,7 +315,7 @@ if __name__ == '__main__':
     rospy.spin()
     rospy.loginfo("Turning off crazyflie")
 
-    cf_client._send_to_commander(0, 0, 0, 0, 0, 0, 0, 0, CONTROLLER_MOTOR)
+    cf_client._send_to_commander_motor(0, 0, 0, 0)
     # change state to motors OFF
     cf_client.PPSClient_command_pub.publish(CMD_CRAZYFLY_MOTORS_OFF)
     #wait for client to send its commands
