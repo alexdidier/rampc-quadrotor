@@ -231,13 +231,13 @@ class PPSRadioClient:
     def _send_to_commander_rate(self, cmd1, cmd2, cmd3, cmd4, roll_rate, pitch_rate, yaw_rate):
         pk = CRTPPacket()
         pk.port = CRTPPort.COMMANDER_GENERIC
-        pk.data = struct.pack('<BHHHHfff', TYPE_PPS_RATE, cmd1, cmd2, cmd3, cmd4, roll_rate, pitch_rate, yaw_rate)
+        pk.data = struct.pack('<BHHHHfff', TYPE_PPS_RATE, cmd1, cmd2, cmd3, cmd4, roll_rate * RAD_TO_DEG, pitch_rate * RAD_TO_DEG, yaw_rate * RAD_TO_DEG)
         self._cf.send_packet(pk)
 
     def _send_to_commander_angle(self, cmd1, cmd2, cmd3, cmd4, roll, pitch, yaw):
         pk = CRTPPacket()
         pk.port = CRTPPort.COMMANDER_GENERIC
-        pk.data = struct.pack('<BHHHHfff', TYPE_PPS_ANGLE, cmd1, cmd2, cmd3, cmd4, roll, pitch, yaw)
+        pk.data = struct.pack('<BHHHHfff', TYPE_PPS_ANGLE, cmd1, cmd2, cmd3, cmd4, roll * RAD_TO_DEG, pitch * RAD_TO_DEG, yaw * RAD_TO_DEG)
         self._cf.send_packet(pk)
 
     # def _send_to_commander(self,roll, pitch, yaw, thrust, cmd1, cmd2, cmd3, cmd4, mode):
