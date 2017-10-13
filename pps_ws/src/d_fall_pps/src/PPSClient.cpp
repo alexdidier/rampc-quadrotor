@@ -34,6 +34,11 @@
 
 #include "d_fall_pps/ControlCommand.h"
 
+// types PPS firmware
+#define TYPE_PPS_MOTORS 6
+#define TYPE_PPS_RATE 7
+#define TYPE_PPS_ANGLE 8
+
 // tipes of controllers being used:
 #define SAFE_CONTROLLER   0
 #define CUSTOM_CONTROLLER 1
@@ -515,7 +520,7 @@ void viconCallback(const ViconData& viconData) {
             else
             {
                 ControlCommand zeroOutput = ControlCommand(); //everything set to zero
-                zeroOutput.onboardControllerType = 2; //set to motor_mode
+                zeroOutput.onboardControllerType = TYPE_PPS_MOTORS; //set to motor_mode
                 controlCommandPublisher.publish(zeroOutput);
                 bag.write("ViconData", ros::Time::now(), local);
                 bag.write("ControlOutput", ros::Time::now(), zeroOutput);
