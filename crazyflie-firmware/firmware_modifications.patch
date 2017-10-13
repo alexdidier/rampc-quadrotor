@@ -1,3 +1,19 @@
+diff --git a/src/modules/interface/attitude_controller.h b/src/modules/interface/attitude_controller.h
+index ad23ef0..ff85dcf 100644
+--- a/src/modules/interface/attitude_controller.h
++++ b/src/modules/interface/attitude_controller.h
+@@ -64,6 +64,11 @@ void attitudeControllerResetRollAttitudePID(void);
+ void attitudeControllerResetPitchAttitudePID(void);
+ 
+ /**
++ * Reset controller yaw attitude PID
++ */
++void attitudeControllerResetYawAttitudePID(void);
++
++/**
+  * Reset controller roll, pitch and yaw PID's.
+  */
+ void attitudeControllerResetAllPID(void);
 diff --git a/src/modules/interface/stabilizer_types.h b/src/modules/interface/stabilizer_types.h
 index 418cc0b..30d031b 100644
 --- a/src/modules/interface/stabilizer_types.h
@@ -38,28 +54,82 @@ index 418cc0b..30d031b 100644
    point_t position;
    velocity_t velocity;
    bool velocity_body;
+diff --git a/src/modules/src/attitude_pid_controller.c b/src/modules/src/attitude_pid_controller.c
+index 8b5f4aa..3055784 100644
+--- a/src/modules/src/attitude_pid_controller.c
++++ b/src/modules/src/attitude_pid_controller.c
+@@ -142,7 +142,12 @@ void attitudeControllerResetRollAttitudePID(void)
+ 
+ void attitudeControllerResetPitchAttitudePID(void)
+ {
+-    pidReset(&pidRoll);
++    pidReset(&pidPitch);
++}
++
++void attitudeControllerResetYawAttitudePID(void)
++{
++    pidReset(&pidYaw);
+ }
+ 
+ void attitudeControllerResetAllPID(void)
 diff --git a/src/modules/src/controller_pid.c b/src/modules/src/controller_pid.c
-index 0e5e62d..fddc70b 100644
+index 0e5e62d..516315a 100644
 --- a/src/modules/src/controller_pid.c
 +++ b/src/modules/src/controller_pid.c
-@@ -100,19 +100,78 @@ void stateController(control_t *control, setpoint_t *setpoint,
+@@ -51,9 +51,13 @@ void stateController(control_t *control, setpoint_t *setpoint,
+   }
+ 
+   if (RATE_DO_EXECUTE(POSITION_RATE, tick)) {
+-    positionController(&actuatorThrust, &attitudeDesired, setpoint, state);
++      if(setpoint->pps_mode != modeMotors && setpoint->pps_mode != modeRate && setpoint->pps_mode != modeAngle)
++      {
++          positionController(&actuatorThrust, &attitudeDesired, setpoint, state);
++      }
+   }
+ 
++
+   if (RATE_DO_EXECUTE(ATTITUDE_RATE, tick)) {
+     // Switch between manual and automatic position control
+     if (setpoint->mode.z == modeDisable) {
+@@ -63,7 +67,7 @@ void stateController(control_t *control, setpoint_t *setpoint,
+       attitudeDesired.roll = setpoint->attitude.roll;
+       attitudeDesired.pitch = setpoint->attitude.pitch;
+     }
+-
++    /* if everything is modeVelocity, skip this */
+     attitudeControllerCorrectAttitudePID(state->attitude.roll, state->attitude.pitch, state->attitude.yaw,
+                                 attitudeDesired.roll, attitudeDesired.pitch, attitudeDesired.yaw,
+                                 &rateDesired.roll, &rateDesired.pitch, &rateDesired.yaw);
+@@ -80,6 +84,12 @@ void stateController(control_t *control, setpoint_t *setpoint,
+       attitudeControllerResetPitchAttitudePID();
+     }
+ 
++    //added for PPSSafeController to make the Onboard Controller using the external YawRate. Pure speed controller, no position/500 small steps
++    if (setpoint->mode.yaw == modeVelocity) {
++      rateDesired.yaw = (-1) * setpoint->attitudeRate.yaw;
++      attitudeControllerResetYawAttitudePID();
++    }
++
+     // TODO: Investigate possibility to subtract gyro drift.
+     attitudeControllerCorrectRatePID(sensors->gyro.x, -sensors->gyro.y, sensors->gyro.z,
+                              rateDesired.roll, rateDesired.pitch, rateDesired.yaw);
+@@ -100,19 +110,76 @@ void stateController(control_t *control, setpoint_t *setpoint,
      control->thrust = actuatorThrust;
    }
  
 -  if (control->thrust == 0)
--  {
++  if(setpoint->pps_mode == modeMotors)
+   {
 -    control->thrust = 0;
 -    control->roll = 0;
 -    control->pitch = 0;
 -    control->yaw = 0;
- 
+-
 -    attitudeControllerResetAllPID();
 -    positionControllerResetAllPID();
- 
+-
 -    // Reset the calculated YAW angle for rate control
 -    attitudeDesired.yaw = state->attitude.yaw;
-+  if(setpoint->pps_mode == modeMotors)
-+  {
 +      control->roll = 0;
 +      control->pitch = 0;
 +      control->yaw = 0;
