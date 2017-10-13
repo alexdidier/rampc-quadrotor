@@ -31,7 +31,7 @@
 #include <std_msgs/Int32.h>
 
 #define PI 3.1415926535
-#define RATE_CONTROLLER 0
+#define RATE_CONTROLLER 7
 
 using namespace d_fall_pps;
 

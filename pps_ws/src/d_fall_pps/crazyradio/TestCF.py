@@ -204,7 +204,7 @@ class PPSRadioClient:
     def _send_to_commander_angle(self, cmd1, cmd2, cmd3, cmd4, roll, pitch, yaw):
         pk = CRTPPacket()
         pk.port = CRTPPort.COMMANDER_GENERIC
-        pk.data = struct.pack('<BHHHHfff', TYPE_PPSRATE, cmd1, cmd2, cmd3, cmd4, roll, pitch, yaw)
+        pk.data = struct.pack('<BHHHHfff', TYPE_PPSANGLE, cmd1, cmd2, cmd3, cmd4, roll, pitch, yaw)
         self._cf.send_packet(pk)
 
 if __name__ == '__main__':

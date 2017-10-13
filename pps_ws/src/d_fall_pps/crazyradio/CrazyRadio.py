@@ -34,9 +34,15 @@ from cflib.crazyflie.log import LogConfig
 # Logging settings
 logging.basicConfig(level=logging.ERROR)
 
-CONTROLLER_MOTOR = 2
-CONTROLLER_ANGLE = 1
-CONTROLLER_RATE = 0
+# CONTROLLER_MOTOR = 2
+# CONTROLLER_ANGLE = 1
+# CONTROLLER_RATE = 0
+
+
+TYPE_PPS_MOTORS = 6
+TYPE_PPS_RATE =   7
+TYPE_PPS_ANGLE =  8
+
 RAD_TO_DEG = 57.296
 
 # CrazyRadio states:
@@ -216,12 +222,29 @@ class PPSRadioClient:
         self.logconf.delete()
         rospy.loginfo("logconf deleted")
 
-
-    def _send_to_commander(self,roll, pitch, yaw, thrust, cmd1, cmd2, cmd3, cmd4, mode):
+    def _send_to_commander_motor(self, cmd1, cmd2, cmd3, cmd4):
         pk = CRTPPacket()
-        pk.port = CRTPPort.COMMANDER
-        pk.data = struct.pack('<fffHHHHHH', roll * RAD_TO_DEG, pitch * RAD_TO_DEG, yaw * RAD_TO_DEG, thrust, cmd1, cmd2, cmd3, cmd4, mode)
+        pk.port = CRTPPort.COMMANDER_GENERIC
+        pk.data = struct.pack('<BHHHH', TYPE_PPS_MOTORS, cmd1, cmd2, cmd3, cmd4)
         self._cf.send_packet(pk)
+
+    def _send_to_commander_rate(self, cmd1, cmd2, cmd3, cmd4, roll_rate, pitch_rate, yaw_rate):
+        pk = CRTPPacket()
+        pk.port = CRTPPort.COMMANDER_GENERIC
+        pk.data = struct.pack('<BHHHHfff', TYPE_PPS_RATE, cmd1, cmd2, cmd3, cmd4, roll_rate, pitch_rate, yaw_rate)
+        self._cf.send_packet(pk)
+
+    def _send_to_commander_angle(self, cmd1, cmd2, cmd3, cmd4, roll, pitch, yaw):
+        pk = CRTPPacket()
+        pk.port = CRTPPort.COMMANDER_GENERIC
+        pk.data = struct.pack('<BHHHHfff', TYPE_PPS_ANGLE, cmd1, cmd2, cmd3, cmd4, roll, pitch, yaw)
+        self._cf.send_packet(pk)
+
+    # def _send_to_commander(self,roll, pitch, yaw, thrust, cmd1, cmd2, cmd3, cmd4, mode):
+    #     pk = CRTPPacket()
+    #     pk.port = CRTPPort.COMMANDER
+    #     pk.data = struct.pack('<fffHHHHHH', roll * RAD_TO_DEG, pitch * RAD_TO_DEG, yaw * RAD_TO_DEG, thrust, cmd1, cmd2, cmd3, cmd4, mode)
+    #     self._cf.send_packet(pk)
 
     def crazyRadioCommandCallback(self, msg):
         """Callback to tell CrazyRadio to reconnect"""
@@ -249,8 +272,15 @@ def controlCommandCallback(data):
 
     #cmd1..4 must not be 0, as crazyflie onboard controller resets!
     #pitch and yaw are inverted on crazyflie controller
-    cf_client._send_to_commander(data.roll, -data.pitch, -data.yaw, 0, data.motorCmd1, data.motorCmd2, data.motorCmd3, data.motorCmd4, data.onboardControllerType)
+    if data.onboardControllerType == TYPE_PPS_MOTORS:
+        cf_client._send_to_commander_motor(data.motorCmd1, data.motorCmd2, data.motorCmd3, data.motorCmd4)
 
+    elif data.onboardControllerType == TYPE_PPS_RATE:
+        cf_client._send_to_commander_rate(data.motorCmd1, data.motorCmd2, data.motorCmd3, data.motorCmd4, data.roll, -data.pitch, -data.yaw)
+
+    elif data.onboardControllerType == TYPE_PPS_ANGLE:
+        cf_client._send_to_commander_angle(data.motorCmd1, data.motorCmd2, data.motorCmd3, data.motorCmd4, data.roll, -data.pitch, -data.yaw)
+        # cf_client._send_to_commander(data.roll, -data.pitch, -data.yaw, 0, data.motorCmd1, data.motorCmd2, data.motorCmd3, data.motorCmd4, data.onboardControllerType)
 
 
 
