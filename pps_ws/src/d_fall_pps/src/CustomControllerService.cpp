@@ -6,13 +6,14 @@
 #include <math.h>
 #include <stdlib.h>
 #include "ros/ros.h"
+#include <ros/package.h>
 
 //the generated structs from the msg-files have to be included
 #include "d_fall_pps/ViconData.h"
 #include "d_fall_pps/Setpoint.h"
 #include "d_fall_pps/ControlCommand.h"
 #include "d_fall_pps/Controller.h"
-#include "d_fall_pps/Debug.h"
+#include "d_fall_pps/DebugMsg.h"
 
 #include <std_msgs/Int32.h>
 
@@ -129,7 +130,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 
 
     // ************ Fill the debugging message with information to be displayed in rqt_plot ****************
-    Debug debugMsg;
+    DebugMsg debugMsg;
     debugMsg.vicon_x = request.ownCrazyflie.x;
     debugMsg.vicon_y = request.ownCrazyflie.y;
     debugMsg.vicon_z = request.ownCrazyflie.z;
@@ -242,6 +243,8 @@ int main(int argc, char* argv[]) {
     ros::NodeHandle nodeHandle("~");
     loadCustomParameters(nodeHandle);
 
+    debugPublisher = nodeHandle.advertise<DebugMsg>("DebugTopic", 1);
+
     ros::Subscriber setpointSubscriber = nodeHandle.subscribe("Setpoint", 1, setpointCallback);
 
     ros::ServiceServer service = nodeHandle.advertiseService("CustomController", calculateControlOutput);
@@ -249,7 +252,6 @@ int main(int argc, char* argv[]) {
     ros::NodeHandle namespace_nodeHandle(ros::this_node::getNamespace());
     ros::Subscriber customYAMLloadedSubscriber = namespace_nodeHandle.subscribe("student_GUI/customYAMLloaded", 1, customYAMLloadedCallback);
 
-    ros::Publisher debugPublisher = nodeHandle.advertise<Debug>("Debug", 1);
 
     ROS_INFO("CustomControllerService ready");
     ros::spin();
