@@ -11,8 +11,7 @@ To apply the patch, just write the following commands:
 `cd crazyflie-firmware`<br>
 `git submodule init && git submodule update`<br>
 `git checkout f4d21213d7ce37d7ed7338fad0f9a94a96cec191`<br>
-`git apply
-<folder_to_D-FaLL-System_repository/crazyflie_firmware/firmware_modifications.patch>`<br>
+`git apply <folder_to_D-FaLL-System_repository>/crazyflie_firmware/firmware_modifications.patch`<br>
 
 Now the repository is ready to compile. To do it, first make sure that you have
 installed the toolchain. To install it:
