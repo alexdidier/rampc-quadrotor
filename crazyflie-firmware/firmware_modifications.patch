@@ -1,19 +1,19 @@
 diff --git a/src/modules/interface/attitude_controller.h b/src/modules/interface/attitude_controller.h
-index ad23ef0..ff85dcf 100644
+index ad23ef0..f79b7d1 100644
 --- a/src/modules/interface/attitude_controller.h
 +++ b/src/modules/interface/attitude_controller.h
-@@ -64,6 +64,11 @@ void attitudeControllerResetRollAttitudePID(void);
+@@ -63,6 +63,11 @@ void attitudeControllerResetRollAttitudePID(void);
+  */
  void attitudeControllerResetPitchAttitudePID(void);
  
- /**
++/**
 + * Reset controller yaw attitude PID
 + */
 +void attitudeControllerResetYawAttitudePID(void);
 +
-+/**
+ /**
   * Reset controller roll, pitch and yaw PID's.
   */
- void attitudeControllerResetAllPID(void);
 diff --git a/src/modules/interface/stabilizer_types.h b/src/modules/interface/stabilizer_types.h
 index 418cc0b..30d031b 100644
 --- a/src/modules/interface/stabilizer_types.h
@@ -55,23 +55,25 @@ index 418cc0b..30d031b 100644
    velocity_t velocity;
    bool velocity_body;
 diff --git a/src/modules/src/attitude_pid_controller.c b/src/modules/src/attitude_pid_controller.c
-index 8b5f4aa..3055784 100644
+index 8b5f4aa..f16288f 100644
 --- a/src/modules/src/attitude_pid_controller.c
 +++ b/src/modules/src/attitude_pid_controller.c
-@@ -142,7 +142,12 @@ void attitudeControllerResetRollAttitudePID(void)
+@@ -142,9 +142,14 @@ void attitudeControllerResetRollAttitudePID(void)
  
  void attitudeControllerResetPitchAttitudePID(void)
  {
 -    pidReset(&pidRoll);
 +    pidReset(&pidPitch);
-+}
-+
+ }
+ 
 +void attitudeControllerResetYawAttitudePID(void)
 +{
 +    pidReset(&pidYaw);
- }
- 
++}
++
  void attitudeControllerResetAllPID(void)
+ {
+   pidReset(&pidRoll);
 diff --git a/src/modules/src/controller_pid.c b/src/modules/src/controller_pid.c
 index 0e5e62d..516315a 100644
 --- a/src/modules/src/controller_pid.c
