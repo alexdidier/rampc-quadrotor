@@ -1,0 +1,435 @@
+diff --git a/src/modules/interface/attitude_controller.h b/src/modules/interface/attitude_controller.h
+index ad23ef0..f79b7d1 100644
+--- a/src/modules/interface/attitude_controller.h
++++ b/src/modules/interface/attitude_controller.h
+@@ -63,6 +63,11 @@ void attitudeControllerResetRollAttitudePID(void);
+  */
+ void attitudeControllerResetPitchAttitudePID(void);
+ 
++/**
++ * Reset controller yaw attitude PID
++ */
++void attitudeControllerResetYawAttitudePID(void);
++
+ /**
+  * Reset controller roll, pitch and yaw PID's.
+  */
+diff --git a/src/modules/interface/stabilizer_types.h b/src/modules/interface/stabilizer_types.h
+index 418cc0b..30d031b 100644
+--- a/src/modules/interface/stabilizer_types.h
++++ b/src/modules/interface/stabilizer_types.h
+@@ -144,6 +144,10 @@ typedef struct control_s {
+   int16_t pitch;
+   int16_t yaw;
+   float thrust;
++  uint16_t cmd1;
++  uint16_t cmd2;
++  uint16_t cmd3;
++  uint16_t cmd4;
+ } control_t;
+ 
+ typedef enum mode_e {
+@@ -152,12 +156,24 @@ typedef enum mode_e {
+   modeVelocity
+ } stab_mode_t;
+ 
++typedef enum pps_mode_e {
++  modeDisabled = 0,
++  modeMotors,
++  modeRate,
++  modeAngle
++} pps_mode_t;
++
+ typedef struct setpoint_s {
+   uint32_t timestamp;
+ 
+   attitude_t attitude;
+   attitude_t attitudeRate;
+   float thrust;
++  pps_mode_t pps_mode;
++  uint16_t cmd1;
++  uint16_t cmd2;
++  uint16_t cmd3;
++  uint16_t cmd4;
+   point_t position;
+   velocity_t velocity;
+   bool velocity_body;
+diff --git a/src/modules/src/attitude_pid_controller.c b/src/modules/src/attitude_pid_controller.c
+index 8b5f4aa..f16288f 100644
+--- a/src/modules/src/attitude_pid_controller.c
++++ b/src/modules/src/attitude_pid_controller.c
+@@ -142,9 +142,14 @@ void attitudeControllerResetRollAttitudePID(void)
+ 
+ void attitudeControllerResetPitchAttitudePID(void)
+ {
+-    pidReset(&pidRoll);
++    pidReset(&pidPitch);
+ }
+ 
++void attitudeControllerResetYawAttitudePID(void)
++{
++    pidReset(&pidYaw);
++}
++
+ void attitudeControllerResetAllPID(void)
+ {
+   pidReset(&pidRoll);
+diff --git a/src/modules/src/controller_pid.c b/src/modules/src/controller_pid.c
+index 0e5e62d..516315a 100644
+--- a/src/modules/src/controller_pid.c
++++ b/src/modules/src/controller_pid.c
+@@ -51,9 +51,13 @@ void stateController(control_t *control, setpoint_t *setpoint,
+   }
+ 
+   if (RATE_DO_EXECUTE(POSITION_RATE, tick)) {
+-    positionController(&actuatorThrust, &attitudeDesired, setpoint, state);
++      if(setpoint->pps_mode != modeMotors && setpoint->pps_mode != modeRate && setpoint->pps_mode != modeAngle)
++      {
++          positionController(&actuatorThrust, &attitudeDesired, setpoint, state);
++      }
+   }
+ 
++
+   if (RATE_DO_EXECUTE(ATTITUDE_RATE, tick)) {
+     // Switch between manual and automatic position control
+     if (setpoint->mode.z == modeDisable) {
+@@ -63,7 +67,7 @@ void stateController(control_t *control, setpoint_t *setpoint,
+       attitudeDesired.roll = setpoint->attitude.roll;
+       attitudeDesired.pitch = setpoint->attitude.pitch;
+     }
+-
++    /* if everything is modeVelocity, skip this */
+     attitudeControllerCorrectAttitudePID(state->attitude.roll, state->attitude.pitch, state->attitude.yaw,
+                                 attitudeDesired.roll, attitudeDesired.pitch, attitudeDesired.yaw,
+                                 &rateDesired.roll, &rateDesired.pitch, &rateDesired.yaw);
+@@ -80,6 +84,12 @@ void stateController(control_t *control, setpoint_t *setpoint,
+       attitudeControllerResetPitchAttitudePID();
+     }
+ 
++    //added for PPSSafeController to make the Onboard Controller using the external YawRate. Pure speed controller, no position/500 small steps
++    if (setpoint->mode.yaw == modeVelocity) {
++      rateDesired.yaw = (-1) * setpoint->attitudeRate.yaw;
++      attitudeControllerResetYawAttitudePID();
++    }
++
+     // TODO: Investigate possibility to subtract gyro drift.
+     attitudeControllerCorrectRatePID(sensors->gyro.x, -sensors->gyro.y, sensors->gyro.z,
+                              rateDesired.roll, rateDesired.pitch, rateDesired.yaw);
+@@ -100,19 +110,76 @@ void stateController(control_t *control, setpoint_t *setpoint,
+     control->thrust = actuatorThrust;
+   }
+ 
+-  if (control->thrust == 0)
++  if(setpoint->pps_mode == modeMotors)
+   {
+-    control->thrust = 0;
+-    control->roll = 0;
+-    control->pitch = 0;
+-    control->yaw = 0;
+-
+-    attitudeControllerResetAllPID();
+-    positionControllerResetAllPID();
+-
+-    // Reset the calculated YAW angle for rate control
+-    attitudeDesired.yaw = state->attitude.yaw;
++      control->roll = 0;
++      control->pitch = 0;
++      control->yaw = 0;
++      control->cmd1 = setpoint->cmd1;
++      control->cmd2 = setpoint->cmd2;
++      control->cmd3 = setpoint->cmd3;
++      control->cmd4 = setpoint->cmd4;
++      if ((control->cmd1 == 0 && control->cmd2 == 0 && control->cmd3 == 0 && control->cmd4 == 0))
++      {
++          control->cmd1 = 0;
++          control->cmd2 = 0;
++          control->cmd3 = 0;
++          control->cmd4 = 0;
++          control->roll = 0;
++          control->pitch = 0;
++          control->yaw = 0;
++
++          attitudeControllerResetAllPID();
++          positionControllerResetAllPID();
++
++          // Reset the calculated YAW angle for rate control
++          attitudeDesired.yaw = state->attitude.yaw;
++      }
++  }
++  else if(setpoint->pps_mode == modeRate || setpoint->pps_mode == modeAngle)
++  {
++      control->cmd1 = setpoint->cmd1;
++      control->cmd2 = setpoint->cmd2;
++      control->cmd3 = setpoint->cmd3;
++      control->cmd4 = setpoint->cmd4;
++      if ((control->cmd1 == 0 && control->cmd2 == 0 && control->cmd3 == 0 && control->cmd4 == 0))
++      {
++          control->cmd1 = 0;
++          control->cmd2 = 0;
++          control->cmd3 = 0;
++          control->cmd4 = 0;
++          control->roll = 0;
++          control->pitch = 0;
++          control->yaw = 0;
++
++          attitudeControllerResetAllPID();
++          positionControllerResetAllPID();
++
++          // Reset the calculated YAW angle for rate control
++          attitudeDesired.yaw = state->attitude.yaw;
++      }
+   }
++  else                          /* pps_mode == modeDisabled */
++  {
++      control->cmd1 = control->thrust;
++      control->cmd2 = control->thrust;
++      control->cmd3 = control->thrust;
++      control->cmd4 = control->thrust;
++      if (control->thrust == 0)
++      {
++          control->thrust = 0;
++          control->roll = 0;
++          control->pitch = 0;
++          control->yaw = 0;
++
++          attitudeControllerResetAllPID();
++          positionControllerResetAllPID();
++
++          // Reset the calculated YAW angle for rate control
++          attitudeDesired.yaw = state->attitude.yaw;
++      }
++  }
++
+ }
+ 
+ 
+diff --git a/src/modules/src/crtp_commander_generic.c b/src/modules/src/crtp_commander_generic.c
+index 993dead..64447d6 100644
+--- a/src/modules/src/crtp_commander_generic.c
++++ b/src/modules/src/crtp_commander_generic.c
+@@ -34,6 +34,8 @@
+ #include "num.h"
+ #include "FreeRTOS.h"
+ 
++/* #include "motors.h" */
++
+ /* The generic commander format contains a packet type and data that has to be
+  * decoded into a setpoint_t structure. The aim is to make it future-proof
+  * by easily allowing the addition of new packets for future use cases.
+@@ -67,6 +69,9 @@ enum packet_type {
+   cppmEmuType       = 3,
+   altHoldType       = 4,
+   hoverType         = 5,
++  PPSMotorsType     = 6,
++  PPSRateType       = 7,
++  PPSAngleType      = 8,
+ };
+ 
+ /* ---===== 2 - Decoding functions =====--- */
+@@ -292,6 +297,152 @@ static void hoverDecoder(setpoint_t *setpoint, uint8_t type, const void *data, s
+   setpoint->velocity_body = true;
+ }
+ 
++struct PPSMotorsPacket_s {
++    uint16_t cmd1;
++    uint16_t cmd2;
++    uint16_t cmd3;
++    uint16_t cmd4;
++} __attribute__((packed));
++
++static void PPSMotorsDecoder(setpoint_t *setpoint, uint8_t type, const void *data, size_t datalen)
++{
++    const struct PPSMotorsPacket_s *values = data;
++    ASSERT(datalen == sizeof(struct PPSMotorsPacket_s));
++
++    /* we dont use position controller onboard */
++	setpoint->mode.x = modeDisable;
++	setpoint->mode.y = modeDisable;
++	setpoint->mode.z = modeDisable;
++
++	setpoint->thrust = 0;
++	setpoint->position.x = 0;
++	setpoint->position.y = 0;
++	setpoint->position.z = 0;
++	setpoint->velocity.x = 0;
++	setpoint->velocity.y = 0;
++	setpoint->velocity.z = 0;
++
++    /* we dont use rate controller onboard either */
++    setpoint->mode.roll = modeDisable;
++    setpoint->mode.pitch = modeDisable;
++    setpoint->mode.yaw = modeDisable;
++
++    setpoint->attitude.roll = 0;
++    setpoint->attitude.pitch = 0;
++    setpoint->attitude.yaw = 0;
++    setpoint->attitudeRate.roll = 0;
++    setpoint->attitudeRate.pitch = 0;
++    setpoint->attitudeRate.yaw = 0;
++
++    /* update cmds */
++
++    setpoint->cmd1 = limitUint16(values->cmd1);
++    setpoint->cmd2 = limitUint16(values->cmd2);
++    setpoint->cmd3 = limitUint16(values->cmd3);
++    setpoint->cmd4 = limitUint16(values->cmd4);
++
++    setpoint->pps_mode = modeMotors;
++}
++
++struct PPSRatePacket_s {
++    uint16_t cmd1;
++    uint16_t cmd2;
++    uint16_t cmd3;
++    uint16_t cmd4;
++    float roll_rate;
++    float pitch_rate;
++    float yaw_rate;
++} __attribute__((packed));
++
++static void PPSRateDecoder(setpoint_t *setpoint, uint8_t type, const void *data, size_t datalen)
++{
++    const struct PPSRatePacket_s *values = data;
++    ASSERT(datalen == sizeof(struct PPSRatePacket_s));
++
++    /* we dont use position controller onboard */
++	setpoint->mode.x = modeDisable;
++	setpoint->mode.y = modeDisable;
++	setpoint->mode.z = modeDisable;
++
++	setpoint->thrust = 0;
++	setpoint->position.x = 0;
++	setpoint->position.y = 0;
++	setpoint->position.z = 0;
++	setpoint->velocity.x = 0;
++	setpoint->velocity.y = 0;
++	setpoint->velocity.z = 0;
++
++    /* we use rate controller onboard either */
++    setpoint->mode.roll = modeVelocity;
++    setpoint->mode.pitch = modeVelocity;
++    setpoint->mode.yaw = modeVelocity;
++
++    setpoint->attitude.roll = 0;
++    setpoint->attitude.pitch = 0;
++    setpoint->attitude.yaw = 0;
++    setpoint->attitudeRate.roll = values->roll_rate;
++    setpoint->attitudeRate.pitch = values->pitch_rate;
++    setpoint->attitudeRate.yaw = values->yaw_rate;
++
++    /* update cmds */
++
++    setpoint->cmd1 = limitUint16(values->cmd1);
++    setpoint->cmd2 = limitUint16(values->cmd2);
++    setpoint->cmd3 = limitUint16(values->cmd3);
++    setpoint->cmd4 = limitUint16(values->cmd4);
++
++    setpoint->pps_mode = modeRate;
++}
++
++struct PPSAnglePacket_s {
++    uint16_t cmd1;
++    uint16_t cmd2;
++    uint16_t cmd3;
++    uint16_t cmd4;
++    float roll;
++    float pitch;
++    float yaw;
++} __attribute__((packed));
++
++static void PPSAngleDecoder(setpoint_t *setpoint, uint8_t type, const void *data, size_t datalen)
++{
++    const struct PPSAnglePacket_s *values = data;
++    ASSERT(datalen == sizeof(struct PPSRatePacket_s));
++
++    /* we dont use position controller onboard */
++	setpoint->mode.x = modeDisable;
++	setpoint->mode.y = modeDisable;
++	setpoint->mode.z = modeDisable;
++
++	setpoint->thrust = 0;
++	setpoint->position.x = 0;
++	setpoint->position.y = 0;
++	setpoint->position.z = 0;
++	setpoint->velocity.x = 0;
++	setpoint->velocity.y = 0;
++	setpoint->velocity.z = 0;
++
++    /* we use position angle controller onboard */
++    setpoint->mode.roll = modeAbs;
++    setpoint->mode.pitch = modeAbs;
++    setpoint->mode.yaw = modeAbs;
++
++    setpoint->attitude.roll = values->roll;
++    setpoint->attitude.pitch = values->pitch;
++    setpoint->attitude.yaw = values->yaw;
++    setpoint->attitudeRate.roll = 0;
++    setpoint->attitudeRate.pitch = 0;
++    setpoint->attitudeRate.yaw = 0;
++
++    /* update cmds */
++    setpoint->cmd1 = limitUint16(values->cmd1);
++    setpoint->cmd2 = limitUint16(values->cmd2);
++    setpoint->cmd3 = limitUint16(values->cmd3);
++    setpoint->cmd4 = limitUint16(values->cmd4);
++
++    setpoint->pps_mode = modeAngle;
++}
++
+  /* ---===== 3 - packetDecoders array =====--- */
+ const static packetDecoder_t packetDecoders[] = {
+   [stopType]          = stopDecoder,
+@@ -300,6 +451,9 @@ const static packetDecoder_t packetDecoders[] = {
+   [cppmEmuType]       = cppmEmuDecoder,
+   [altHoldType]       = altHoldDecoder,
+   [hoverType]         = hoverDecoder,
++  [PPSMotorsType]     = PPSMotorsDecoder,
++  [PPSRateType]       = PPSRateDecoder,
++  [PPSAngleType]      = PPSAngleDecoder,
+ };
+ 
+ /* Decoder switch */
+diff --git a/src/modules/src/power_distribution_stock.c b/src/modules/src/power_distribution_stock.c
+index 0e66c0b..79d5f2c 100644
+--- a/src/modules/src/power_distribution_stock.c
++++ b/src/modules/src/power_distribution_stock.c
+@@ -76,18 +76,19 @@ void powerDistribution(const control_t *control)
+   #ifdef QUAD_FORMATION_X
+     int16_t r = control->roll / 2.0f;
+     int16_t p = control->pitch / 2.0f;
+-    motorPower.m1 = limitThrust(control->thrust - r + p + control->yaw);
+-    motorPower.m2 = limitThrust(control->thrust - r - p - control->yaw);
+-    motorPower.m3 =  limitThrust(control->thrust + r - p + control->yaw);
+-    motorPower.m4 =  limitThrust(control->thrust + r + p - control->yaw);
++    motorPower.m1 = limitThrust(control->cmd1 - r + p + control->yaw);
++    motorPower.m2 = limitThrust(control->cmd2 - r - p - control->yaw);
++    motorPower.m3 =  limitThrust(control->cmd3 + r - p + control->yaw);
++    motorPower.m4 =  limitThrust(control->cmd4 + r + p - control->yaw);
++
+   #else // QUAD_FORMATION_NORMAL
+-    motorPower.m1 = limitThrust(control->thrust + control->pitch +
++    motorPower.m1 = limitThrust(control->cmd1 + control->pitch +
+                                control->yaw);
+-    motorPower.m2 = limitThrust(control->thrust - control->roll -
++    motorPower.m2 = limitThrust(control->cmd2 - control->roll -
+                                control->yaw);
+-    motorPower.m3 =  limitThrust(control->thrust - control->pitch +
++    motorPower.m3 =  limitThrust(control->cmd3 - control->pitch +
+                                control->yaw);
+-    motorPower.m4 =  limitThrust(control->thrust + control->roll -
++    motorPower.m4 =  limitThrust(control->cmd4 + control->roll -
+                                control->yaw);
+   #endif
+ 
+diff --git a/src/modules/src/stabilizer.c b/src/modules/src/stabilizer.c
+index eccc709..6b9fcc3 100644
+--- a/src/modules/src/stabilizer.c
++++ b/src/modules/src/stabilizer.c
+@@ -130,7 +130,6 @@ static void stabilizerTask(void* param)
+     commanderGetSetpoint(&setpoint, &state);
+ 
+     sitAwUpdateSetpoint(&setpoint, &sensorData, &state);
+-
+     stateController(&control, &setpoint, &sensorData, &state, tick);
+ 
+     checkEmergencyStopTimeout();
