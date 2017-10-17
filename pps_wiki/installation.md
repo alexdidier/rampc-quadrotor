@@ -55,7 +55,7 @@ If you are not sure at any point you can check out the install script.
 ## Additional Steps for Teacher
 
 ### Removing Config.sh and replacing
-As the teacher must not source the script ``config.sh``, the ``.bashrc`` must be edited and the last line
+As the teacher must not source the script ``Config.sh``, the ``.bashrc`` must be edited and the last line
 ```
 source ~/pps_ws/src/d_fall_pps/launch/Config.sh
 ```
@@ -73,3 +73,24 @@ clone the git repository, change the directory to the root directory of the repo
 ```
 pip3 install -e .
 ```
+
+## Steps for adding a Crazyflie to the system
+
+When we build a new crazyflie, it must be added to the system. The steps for
+doing so are these:
+
+1. Find out the radio address of the crazyflie that you want to fly
+   (`radio://0/79/2M`, for example). You can change this address using the
+   cfclient (Connect->Configure 2.0, write parameters and then reset the CF for
+   changes to take effect) <br><br>
+2. After having put some reflective markers in the crazyflie, register it in the Vicon system with the name that you want. (in the PPS case, we call them PPS_CFXX)<br><br>
+3. Go to the file channelLUT.cpp (path:
+   `pps_ws/src/d_fall_pps/GUI_Qt/CrazyFlyGUI/src/channelLUT.cpp`) and add an
+   entry with the name of the crazyflie and the radio address. Follow the
+   formatting that the other entries have.<br><br>
+   <img src="./pics/LUT.png" style="width: 450px;"/> <br><br>
+4. Go to pps\_ws folder, and in a terminal write `catkin_make`<br><br>
+5. Run the teacher's GUI, and if you registered correctly your crazyflie with the proper name in Vicon (and enabled it by ticking it in Vicon PC), in the crazyflies dropdown box, after pressing "refresh crazyflies" button you should be able to see the name you assigned.<br><br>
+6. When you select it, you should see in the field "Radio address" in the radio address that you assigned to that name in channelLUT.cpp<br><br>
+7. Link it to a CFZone previously created and to the student ID of your computer and, once everything is in the linked table,  click Save in DB<br><br>
+8. Open the student's GUI in student computer, and you should be able to connect to your crazyflie, if every step above was done successfully.<br><br>
