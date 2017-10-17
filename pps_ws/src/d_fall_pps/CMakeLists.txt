@@ -133,7 +133,7 @@ add_message_files(
   CrazyflieEntry.msg
   CrazyflieDB.msg
   #----------------------------------------------------------------------
-  Debugging.msg
+  Debug.msg
 )
 
 ## Generate services in the 'srv' folder

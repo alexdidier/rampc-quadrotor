@@ -12,6 +12,7 @@
 #include "d_fall_pps/Setpoint.h"
 #include "d_fall_pps/ControlCommand.h"
 #include "d_fall_pps/Controller.h"
+#include "d_fall_pps/Debug.h"
 
 #include <std_msgs/Int32.h>
 
@@ -40,6 +41,8 @@ const float gainMatrixPitch[9] = {1.714330725, 0, 0, 1.337107465, 0, 0, 0, 5.115
 const float gainMatrixYaw[9] = {0, 0, 0, 0, 0, 0, 0, 0, 2.843099534};
 const float gainMatrixThrust[9] = {0, 0, 0.22195826, 0, 0, 0.12362477, 0, 0, 0};
 
+
+ros::Publisher debugPublisher;
 
 
 // load parameters from corresponding YAML file
@@ -113,6 +116,7 @@ void convertIntoBodyFrame(float est[9], float (&estBody)[9], int yaw_measured)
     -response- is where you have to write your calculated data into.
 */
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response) {
+
     //writing the data from -request- to command line
     //might be useful for debugging
     // ROS_INFO_STREAM("x-coordinates: " << request.ownCrazyflie.x);
@@ -122,6 +126,19 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     // ROS_INFO_STREAM("pitch: " << request.ownCrazyflie.pitch);
     // ROS_INFO_STREAM("yaw: " << request.ownCrazyflie.yaw);
     // ROS_INFO_STREAM("Delta t: " << request.ownCrazyflie.acquiringTime);
+
+
+    // ************ Fill the debugging message with information to be displayed in rqt_plot ****************
+    Debug debugMsg;
+    debugMsg.vicon_x = request.ownCrazyflie.x;
+    debugMsg.vicon_y = request.ownCrazyflie.y;
+    debugMsg.vicon_z = request.ownCrazyflie.z;
+    debugMsg.vicon_roll = request.ownCrazyflie.roll;
+    debugMsg.vicon_pitch = request.ownCrazyflie.pitch;
+    debugMsg.vicon_yaw = request.ownCrazyflie.yaw;
+
+    debugPublisher.publish(debugMsg);
+
 
     // ********* do your calculations here *********
     //Tip: create functions that you call here to keep you code cleaner
@@ -231,6 +248,8 @@ int main(int argc, char* argv[]) {
 
     ros::NodeHandle namespace_nodeHandle(ros::this_node::getNamespace());
     ros::Subscriber customYAMLloadedSubscriber = namespace_nodeHandle.subscribe("student_GUI/customYAMLloaded", 1, customYAMLloadedCallback);
+
+    ros::Publisher debugPublisher = nodeHandle.advertise<Debug>("Debug", 1);
 
     ROS_INFO("CustomControllerService ready");
     ros::spin();
