@@ -24,7 +24,7 @@ Then, in the `crazyflie-firmware` folder where you applied the patch, do:<br>
 
 If everything is successful, you will see something like this:<br>
 
-<img src="./pics/success_building.png" style="width: 400px;"/> <br><br>
+<img src="./../pps_wiki/pics/success_building.png" style="width: 400px;"/> <br><br>
 
 Now the binary file cf2.bin has been created, and can be directly uploaded to
 the crazyflie
