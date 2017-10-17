@@ -14,7 +14,7 @@ To apply the patch, just write the following commands:
 `git apply <folder_to_D-FaLL-System_repository>/crazyflie_firmware/firmware_modifications.patch`<br>
 
 Now the repository is ready to compile. To do it, first make sure that you have
-installed the toolchain. To install it:
+installed the toolchain. To install it:<br>
 `sudo add-apt-repository ppa:team-gcc-arm-embedded/ppa`<br>
 `sudo apt-get update`<br>
 `sudo apt-get install libnewlib-arm-none-eabi`<br>
