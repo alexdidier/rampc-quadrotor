@@ -138,6 +138,10 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     debugMsg.vicon_pitch = request.ownCrazyflie.pitch;
     debugMsg.vicon_yaw = request.ownCrazyflie.yaw;
 
+    // debugMsg.value_1 = // new debug variables
+    // // ......................
+    // debugMsg.value_10 = // from value_1 to value_10, fill with debug variables to plot
+
     debugPublisher.publish(debugMsg);
 
 
