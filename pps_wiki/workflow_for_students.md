@@ -208,6 +208,34 @@ to it*
    the GUI. This way, you can try and see the effect of changing some parameters
    on the fly.
 
+
+#### Steps to plot debug variables from Custom Controller in a graph
+
+1. Choose the variables that we want to see in a plot from the file
+   `CustomControllerService.cpp`. Inside the function `calculateControlOutput`,
+   a part where we fill a DebugMsg with data has been written (lines 133-145 in
+   previous figure). Vicon data has already been filled in (vicon\_x,
+   vicon\_y,...). Additionally, there are up to 10 general purpose variables
+   that can be filled with any data we may be interested in plotting (value\_1,
+   value\_2,...., value\_10). <br><br>
+2. Once chosen the variables, save the file and go to `cd ~/work/D-FaLL-System/pps_ws` and write `catkin_make`.<br><br>
+3. Open another terminal and type `rqt`. Then, in the top bar, go to
+   Plugins->Visualization->Plot. A new plot will be added to the screen. If you
+   want more than one plot, just add several ones doing the same thing. You will
+   be seeing something like this:<br><br>
+
+    <img src="./pics/rqt_window_subplots.png" style="width: 400px;"/> <br><br>
+4. In each subplot, to add data to plot, write the name of the topic you want to
+   plot in the field "Topic", e.g., if we want to plot the Z position of our
+   crazyflie, we would have to write here
+   `/<student_id>/CustomControllerService/DebugTopic/vicon_z`. You can see an
+   autocompletion of the
+   list of all the topics available when you start typing in the field "Topic". <br><br>
+3. Start the Student node following the steps mentioned before (`roslaunch
+   d_fall_pps Student.launch`) and enable the Custom Controller.<br><br>
+4. Once we are using the Custom Controller, we will be seeing how the data
+   selected gets plotted in the rqt plots.
+
 <!-- --- -->
 
 

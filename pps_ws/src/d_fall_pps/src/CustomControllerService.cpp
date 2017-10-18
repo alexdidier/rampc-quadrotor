@@ -129,7 +129,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     // ROS_INFO_STREAM("Delta t: " << request.ownCrazyflie.acquiringTime);
 
 
-    // ************ Fill the debugging message with information to be displayed in rqt_plot ****************
+    // ************ Fill the debugging message with information to be displayed in rqt plots ****************
     DebugMsg debugMsg;
     debugMsg.vicon_x = request.ownCrazyflie.x;
     debugMsg.vicon_y = request.ownCrazyflie.y;
