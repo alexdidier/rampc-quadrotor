@@ -103,16 +103,18 @@ MainWindow::~MainWindow()
 
 void MainWindow::disableGUI()
 {
-    // ui->groupBox_general->setEnabled(false);
-    ui->groupBox_4->setEnabled(false);
+    ui->motors_OFF_button->setEnabled(false);
+    ui->take_off_button->setEnabled(false);
+    ui->land_button->setEnabled(false);
 }
 
 void MainWindow::enableGUI()
 {
-    // ui->groupBox_general->setEnabled(true);
+    ui->motors_OFF_button->setEnabled(true);
     if(m_battery_state == BATTERY_STATE_NORMAL)
     {
-        ui->groupBox_4->setEnabled(true);
+        ui->take_off_button->setEnabled(true);
+        ui->land_button->setEnabled(true);
     }
 }
 
@@ -199,12 +201,18 @@ void MainWindow::batteryStateChangedCallback(const std_msgs::Int32& msg)
     {
         case BATTERY_STATE_LOW:
             qstr.append("Low Battery!");
-            ui->groupBox_4->setEnabled(false);
+            ui->take_off_button->setEnabled(false);
+            ui->land_button->setEnabled(false);
+            // ui->groupBox_4->setEnabled(false);
+
             ui->label_battery->setText(qstr);
             m_battery_state = BATTERY_STATE_LOW;
             break;
         case BATTERY_STATE_NORMAL:
-            ui->groupBox_4->setEnabled(true);
+            // ui->groupBox_4->setEnabled(true);
+            ui->take_off_button->setEnabled(true);
+            ui->land_button->setEnabled(true);
+
             ui->label_battery->clear();
             m_battery_state = BATTERY_STATE_NORMAL;
             break;
