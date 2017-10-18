@@ -298,12 +298,14 @@ void MainWindow::updateBatteryVoltage(float battery_voltage)
 
     QString qstr = "Raw voltage: ";
     qstr.append(QString::number(battery_voltage, 'f', 2));
+    ROS_INFO_STREAM("battery voltage " << battery_voltage);
     ui->raw_voltage->clear();
     ui->raw_voltage->setText(qstr);
 }
 
 void MainWindow::CFBatteryCallback(const std_msgs::Float32& msg)
 {
+    ROS_INFO("callback CFBattery received in GUI");
     updateBatteryVoltage(msg.data);
 }
 
