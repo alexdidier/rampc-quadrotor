@@ -231,9 +231,8 @@ to it*
    `/<student_id>/CustomControllerService/DebugTopic/vicon_z`. You can see an
    autocompletion of the
    list of all the topics available when you start typing in the field "Topic". <br><br>
-3. Start the Student node following the steps mentioned before (`roslaunch
-   d_fall_pps Student.launch`) and enable the Custom Controller.<br><br>
-4. Once we are using the Custom Controller, we will be seeing how the data
+5. Start the Student node following the steps mentioned before (`roslaunch d_fall_pps Student.launch`) and enable the Custom Controller.<br><br>
+6. Once we are using the Custom Controller, we will be seeing how the data
    selected gets plotted in the rqt plots.
 
 <!-- --- -->
