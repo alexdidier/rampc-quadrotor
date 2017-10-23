@@ -180,7 +180,7 @@ class PPSRadioClient:
     # def _init_logging(self):
 
     def _start_logging(self):
-        self.logconf = LogConfig("LoggingTest", 100) # second variable is freq in ms
+        self.logconf = LogConfig("LoggingTest", battery_polling_period) # second variable is period in ms
         self.logconf.add_variable("stabilizer.roll", "float");
         self.logconf.add_variable("stabilizer.pitch", "float");
         self.logconf.add_variable("stabilizer.yaw", "float");
@@ -305,6 +305,9 @@ if __name__ == '__main__':
     global node_name
     node_name = "CrazyRadio"
     rospy.init_node(node_name, anonymous=True)
+
+    global ros_namespace
+    ros_namespace = rospy.get_namespace()
     # Initialize the low-level drivers (don't list the debug drivers)
     cflib.crtp.init_drivers(enable_debug_driver=False)
 
@@ -315,6 +318,8 @@ if __name__ == '__main__':
     #use this following two lines to connect without data from CentralManager
     # radio_address = "radio://0/72/2M"
     # rospy.loginfo("manual address loaded")
+    global battery_polling_period
+    battery_polling_period = rospy.get_param(ros_namespace + "/CrazyRadio/battery_polling_period")
 
     global cfbattery_pub
     cfbattery_pub = rospy.Publisher(node_name + '/CFBattery', Float32, queue_size=10)
