@@ -8,7 +8,7 @@ Installation with the install script is the easiest. You will need:
 - the ``d_fall_pps`` package compressed in a file called ``package.tar.gz``
 - the rule files for the USB connection to the crazyradio, called ``99-crazyflie.rules`` and ``99-crazyradio.rules``
 
-These files all need to be in the same directory. To run the installation, move to the containing directory and call it with
+These files all need to be in the same directory. To run the installation, move to the containing directory (pps\ install) and call it with
 ```
 ./pps_install.sh <student id>
 ```
@@ -27,7 +27,7 @@ Create a new catkin workspace and copy the ``d_fall_pps`` package into the ``src
 Add a new line in the ``/etc/hosts`` file that links the teacher's IP with the domain name ``teacher`` and create a file called ``/etc/StudentID`` that contains the student id. Only write digits without any other symbols or whitespace characters.
 
 - USB Crazyradio: <br />
-To set up the crazyradio USB dongle just copy the rule files ``99-crazyflie.rules`` and ``99-crazyradio.rules`` to the directory ``/etc/udev/rules.d``.
+To set up the crazyradio USB dongle just copy the rule files ``99-crazyflie.rules`` and ``99-crazyradio.rules`` from directory ``pps\ install/`` to the directory ``/etc/udev/rules.d``.
 You also have to install the library pyusb:
 
 ```
@@ -43,10 +43,12 @@ sudo pip install pyusb
 ```
 
 - Source scripts in ``.bashrc``: <br />
-You need to source the following scripts in the ``.bashrc`` file:
-  - the ROS setup script: ``/opt/ros/kinetic/setup.bash``
-  - the workspace setup script: ``<catkin workspace>/devel/setup.bash``
-  - the student setup script: ``<catkin workspace>/src/d_fall_pps/launch/Config.sh``
+Add following lines to the bottom of the file ``~/.bashrc`` (replace ``<catkin workspace>`` with correct directory)
+```
+source /opt/ros/kinetic/setup.bash
+source <catkin workspace>/devel/setup.bash
+source <catkin workspace>/src/d_fall_pps/launch/Config.sh
+```
 
 The workspace setup script will only appear after the first compilation of the catkin workspace.
 
@@ -63,6 +65,9 @@ must be replaced with
 ```
 export ROS_HOSTNAME=teacher
 ```
+
+### IP-Addresses
+Currently the teacher's IP is ``10.42.0.10`` and the student's IP are of the format ``10.42.0.xx``, where xx is an unused address.
 
 ### Installation of cfclient
 The steps to install the crazyflie client are taken from [here](https://github.com/bitcraze/crazyflie-clients-python). To install the cfclient you need to install its dependencies:
