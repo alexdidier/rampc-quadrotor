@@ -121,7 +121,7 @@ float computeMotorPolyBackward(float thrust) {
 //-est- is an array with the estimated values : x,y,z,vx,vy,vz,roll,pitch,yaw
 //-estBody- is an EMPTY array which will then contain the values in the body frame used by the crazyflie
 //-yaw_measured- is the value that came from Vicon
-void convertIntoBodyFrame(float est[9], float (&estBody)[9], int yaw_measured)
+void convertIntoBodyFrame(float est[9], float (&estBody)[9], float yaw_measured)
 {
     float sinYaw = sin(yaw_measured);
     float cosYaw = cos(yaw_measured);
