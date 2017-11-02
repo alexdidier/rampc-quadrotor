@@ -63,7 +63,7 @@ float gravity_force;
 
 CrazyflieData previous_location;
 
-std::vector<float>  setpoint(4);
+std::vector<float>  setpoint {0, 0, 0.4, 0};
 
 const float gainMatrixRoll[9] = {0, -1.714330725, 0, 0, -1.337107465, 0, 5.115369735, 0, 0};
 const float gainMatrixPitch[9] = {1.714330725, 0, 0, 1.337107465, 0, 0, 0, 5.115369735, 0};
