@@ -30,6 +30,20 @@
 //    ----------------------------------------------------------------------------------
 
 
+
+
+
+//    ----------------------------------------------------------------------------------
+//    III  N   N   CCCC  L      U   U  DDDD   EEEEE   SSSS
+//     I   NN  N  C      L      U   U  D   D  E      S
+//     I   N N N  C      L      U   U  D   D  EEE     SSS
+//     I   N  NN  C      L      U   U  D   D  E          S
+//    III  N   N   CCCC  LLLLL   UUU   DDDD   EEEEE  SSSS
+//    ----------------------------------------------------------------------------------
+
+// These various headers need to be included so that this controller service can be
+// connected with the D-FaLL system.
+
 //some useful libraries
 #include <math.h>
 #include <stdlib.h>
@@ -45,26 +59,67 @@
 
 #include <std_msgs/Int32.h>
 
-//constants
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//    DDDD   EEEEE  FFFFF  III  N   N  EEEEE   SSSS
+//    D   D  E      F       I   NN  N  E      S
+//    D   D  EEE    FFF     I   N N N  EEE     SSS
+//    D   D  E      F       I   N  NN  E          S
+//    DDDD   EEEEE  F      III  N   N  EEEEE  SSSS
+//    ----------------------------------------------------------------------------------
+
+// These constants are defined to make the code more readable and adaptable.
+
+// constants
 #define PI 3.1415926535
 
+// The constants define the modes that can be used for controller the Crazyflie 2.0,
+// the constants defined here need to be in agreement with those defined in the
+// firmware running on the Crazyflie 2.0.
+// The following is a short description about each mode:
+// MOTOR_MODE    In this mode the Crazyflie will apply the requested 16-bit per motor
+//               command directly to each of the motors
+// RATE_MODE     In this mode the Crazyflie will apply the requested 16-bit per motor
+//               command directly to each of the motors, and additionally request the
+//               body frame roll, pitch, and yaw angular rates from the PID rate
+//               controllers implemented in the Crazyflie 2.0 firmware.
+// ANGE_MODE     In this mode the Crazyflie will apply the requested 16-bit per motor
+//               command directly to each of the motors, and additionally request the
+//               body frame roll, pitch, and yaw angles from the PID attitude
+//               controllers implemented in the Crazyflie 2.0 firmware.
 #define MOTOR_MODE 6
 #define RATE_MODE 7
 #define ANGLE_MODE 8
 
-//namespacing the package
+// namespacing the package
 using namespace d_fall_pps;
 
-// variables for controller
-float cf_mass;                  //crazyflie mass in grams
-std::vector<float>  motorPoly(3);
-float control_frequency;
-float gravity_force;
 
-CrazyflieData previous_location;
 
-std::vector<float>  setpoint {0, 0, 0.4, 0};
 
+
+//    ----------------------------------------------------------------------------------
+//    V   V    A    RRRR   III    A    BBBB   L      EEEEE   SSSS
+//    V   V   A A   R   R   I    A A   B   B  L      E      S
+//    V   V  A   A  RRRR    I   A   A  BBBB   L      EEE     SSS
+//     V V   AAAAA  R  R    I   AAAAA  B   B  L      E          S
+//      V    A   A  R   R  III  A   A  BBBB   LLLLL  EEEEE  SSSS
+//    ----------------------------------------------------------------------------------
+
+// Variables for controller
+float cf_mass;                       // Crazyflie mass in grams
+std::vector<float>  motorPoly(3);    // Coefficients of the 16-bit command to thrust conversion
+float control_frequency;             // Frequency at which the controller is running
+float gravity_force;                 // The weight of the Crazyflie in Newtons, i.e., mg
+
+CrazyflieData previous_stateErrorInertial;     // The location error of the Crazyflie at the "previous" time step
+
+std::vector<float>  setpoint(4);     // The setpoints for (x,y,z) position and yaw angle
+
+// The LQR Controller parameters
 const float gainMatrixRoll[9] = {0, -1.714330725, 0, 0, -1.337107465, 0, 5.115369735, 0, 0};
 const float gainMatrixPitch[9] = {1.714330725, 0, 0, 1.337107465, 0, 0, 0, 5.115369735, 0};
 const float gainMatrixYaw[9] = {0, 0, 0, 0, 0, 0, 0, 0, 2.843099534};
@@ -74,31 +129,471 @@ const float gainMatrixThrust[9] = {0, 0, 0.22195826, 0, 0, 0.12362477, 0, 0, 0};
 ros::Publisher debugPublisher;
 
 
-// load parameters from corresponding YAML file
 
-void loadParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length)
-{
-    if(!nodeHandle.getParam(name, val)){
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    if(val.size() != length) {
-        ROS_ERROR_STREAM("parameter '" << name << "' has wrong array length, " << length << " needed");
-    }
-}
+// RELEVANT NOTES ABOUT THE VARIABLES DECLARE HERE:
+// The "CrazyflieData" type used for the "previous_stateErrorInertial" variable is a
+// structure as defined in the file "CrazyflieData.msg" which has the following
+// properties:
+//     string crazyflieName              The name given to the Crazyflie in the Vicon software
+//     float64 x                         The x position of the Crazyflie [metres]
+//     float64 y                         The y position of the Crazyflie [metres]
+//     float64 z                         The z position of the Crazyflie [metres]
+//     float64 roll                      The roll component of the intrinsic Euler angles [radians]
+//     float64 pitch                     The pitch component of the intrinsic Euler angles [radians]
+//     float64 yaw                       The yaw component of the intrinsic Euler angles [radians]
+//     float64 acquiringTime #delta t    The time elapsed since the previous "CrazyflieData" was received [seconds]
+//     bool occluded                     A boolean indicted whether the Crazyflie for visible at the time of this measurement
 
-float getFloatParameter(ros::NodeHandle& nodeHandle, std::string name)
-{
 
-    float val;
-    if(!nodeHandle.getParam(name, val))
+
+
+
+//    ----------------------------------------------------------------------------------
+//    FFFFF  U   U  N   N   CCCC  TTTTT  III   OOO   N   N
+//    F      U   U  NN  N  C        T     I   O   O  NN  N
+//    FFF    U   U  N N N  C        T     I   O   O  N N N
+//    F      U   U  N  NN  C        T     I   O   O  N  NN
+//    F       UUU   N   N   CCCC    T    III   OOO   N   N
+//
+//    PPPP   RRRR    OOO   TTTTT   OOO   TTTTT  Y   Y  PPPP   EEEEE   SSSS
+//    P   P  R   R  O   O    T    O   O    T     Y Y   P   P  E      S
+//    PPPP   RRRR   O   O    T    O   O    T      Y    PPPP   EEE     SSS
+//    P      R  R   O   O    T    O   O    T      Y    P      E          S
+//    P      R   R   OOO     T     OOO     T      Y    P      EEEEE  SSSS
+//    ----------------------------------------------------------------------------------
+
+// These function prototypes are not strictly required for this code to complile, but
+// adding the function prototypes here means the the functions can be written below in
+// any order. If the function prototypes are not included then the function need to
+// written below in an order that ensure each function is implemented before it is
+// called from another function, hence why the "main" function is at the bottom.
+
+// TRANSFORMATION OF THE (x,y) INERTIAL FRAME ERROR INTO AN (x,y) BODY FRAME ERROR
+void convertIntoBodyFrame(float stateInertial[9], float (&stateBody)[9], float yaw_measured);
+
+// CONVERSION FROM THRUST IN NEWTONS TO 16-BIT COMMAND
+float computeMotorPolyBackward(float thrust);
+
+// SETPOINT CHANGE CALLBACK
+void setpointCallback(const Setpoint& newSetpoint);
+
+// LOAD PARAMETERS
+void loadParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length);
+float getFloatParameter(ros::NodeHandle& nodeHandle, std::string name);
+void loadPPSTemplateParameters(ros::NodeHandle& nodeHandle);
+void customYAMLloadedCallback(const std_msgs::Int32& msg);
+
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//    FFFFF  U   U  N   N   CCCC  TTTTT  III   OOO   N   N
+//    F      U   U  NN  N  C        T     I   O   O  NN  N
+//    FFF    U   U  N N N  C        T     I   O   O  N N N
+//    F      U   U  N  NN  C        T     I   O   O  N  NN
+//    F       UUU   N   N   CCCC    T    III   OOO   N   N
+//
+//    III M   M PPPP  L     EEEEE M   M EEEEE N   N TTTTT   A   TTTTT III  OOO  N   N
+//     I  MM MM P   P L     E     MM MM E     NN  N   T    A A    T    I  O   O NN  N
+//     I  M M M PPPP  L     EEE   M M M EEE   N N N   T   A   A   T    I  O   O N N N
+//     I  M   M P     L     E     M   M E     N  NN   T   AAAAA   T    I  O   O N  NN
+//    III M   M P     LLLLL EEEEE M   M EEEEE N   N   T   A   A   T   III  OOO  N   N
+//    ----------------------------------------------------------------------------------
+
+
+
+
+
+//    ------------------------------------------------------------------------------
+//     OOO   U   U  TTTTT  EEEEE  RRRR 
+//    O   O  U   U    T    E      R   R
+//    O   O  U   U    T    EEE    RRRR
+//    O   O  U   U    T    E      R  R
+//     OOO    UUU     T    EEEEE  R   R
+//
+//     CCCC   OOO   N   N  TTTTT  RRRR    OOO   L           L       OOO    OOO   PPPP
+//    C      O   O  NN  N    T    R   R  O   O  L           L      O   O  O   O  P   P
+//    C      O   O  N N N    T    RRRR   O   O  L           L      O   O  O   O  PPPP
+//    C      O   O  N  NN    T    R  R   O   O  L           L      O   O  O   O  P
+//     CCCC   OOO   N   N    T    R   R   OOO   LLLLL       LLLLL   OOO    OOO   P
+//    ----------------------------------------------------------------------------------
+
+// This function is the callback that is linked to the "CustomController" service that
+// is advertised in the main function. This must have arguments that match the
+// "input-output" behaviour defined in the "Controller.srv" file (located in the "srv"
+// folder)
+//
+// The arument "request" is a structure provided to this service with the following two
+// properties:
+// request.ownCrazyflie
+// This property is itself a structure of type "CrazyflieData",  which is defined in the
+// file "CrazyflieData.msg", and has the following properties
+// string crazyflieName
+//     float64 x                         The x position of the Crazyflie [metres]
+//     float64 y                         The y position of the Crazyflie [metres]
+//     float64 z                         The z position of the Crazyflie [metres]
+//     float64 roll                      The roll component of the intrinsic Euler angles [radians]
+//     float64 pitch                     The pitch component of the intrinsic Euler angles [radians]
+//     float64 yaw                       The yaw component of the intrinsic Euler angles [radians]
+//     float64 acquiringTime #delta t    The time elapsed since the previous "CrazyflieData" was received [seconds]
+//     bool occluded                     A boolean indicted whether the Crazyflie for visible at the time of this measurement
+// The values in these properties are directly the measurement taken by the Vicon
+// motion capture system of the Crazyflie that is to be controlled by this service
+//
+// request.otherCrazyflies
+// This property is an array of "CrazyflieData" structures, what allows access to the
+// Vicon measurements of other Crazyflies.
+//
+// The argument "response" is a structure that is expected to be filled in by this
+// service by this function, it has only the following property
+// response.ControlCommand
+// This property is iteself a structure of type "ControlCommand", which is defined in
+// the file "ControlCommand.msg", and has the following properties:
+//     float32 roll                      The command sent to the Crazyflie for the body frame x-axis
+//     float32 pitch                     The command sent to the Crazyflie for the body frame y-axis
+//     float32 yaw                       The command sent to the Crazyflie for the body frame z-axis
+//     uint16 motorCmd1                  The command sent to the Crazyflie for motor 1
+//     uint16 motorCmd2                  The command sent to the Crazyflie for motor 1
+//     uint16 motorCmd3                  The command sent to the Crazyflie for motor 1
+//     uint16 motorCmd4                  The command sent to the Crazyflie for motor 1
+//     uint8 onboardControllerType       The flag sent to the Crazyflie for indicating how to implement the command
+// 
+// IMPORTANT NOTES FOR "onboardControllerType"  AND AXIS CONVENTIONS
+// > The allowed values for "onboardControllerType" are in the "Defines" section at the
+//   top of this file, they are MOTOR_MODE, RATE_MODE, OR ANGLE_MODE.
+// > In the PPS exercise we will only use the RATE_MODE.
+// > In RATE_MODE the ".roll", ".ptich", and ".yaw" properties of "response.ControlCommand"
+//   specify the angular rate in [radians/second] that will be requested from the
+//   PID controllers running in the Crazyflie 2.0 firmware.
+// > In RATE_MODE the ".motorCmd1" to ".motorCmd4" properties of "response.ControlCommand"
+//   are the baseline motor commands requested from the Crazyflie, with the adjustment
+//   for body rates being added on top of this in the firmware (i.e., as per the code
+//   of the "distribute_power" function provided in exercise sheet 2).
+// > In RATE_MODE the axis convention for the roll, pitch, and yaw body rates returned
+//   in "response.ControlCommand" should use right-hand coordinate axes with x-forward
+//   and z-upwards (i.e., the positive z-axis is aligned with the direction of positive
+//   thrust). To assist, teh following is an ASCII art of this convention:
+//
+// ASCII ART OF THE CRAZYFLIE 2.0 LAYOUT
+//
+//  > This is a top view,
+//  > M1 to M4 stand for Motor 1 to Motor 4,
+//  > "CW"  indicates that the motor rotates Clockwise,
+//  > "CCW" indicates that the motor rotates Counter-Clockwise,
+//  > By right-hand axis convention, the positive z-direction points our of the screen,
+//  > This being a "top view" means tha the direction of positive thrust produced
+//    by the propellers is also out of the screen.
+//
+//        ____                         ____
+//       /    \                       /    \
+//  (CW) | M4 |           x           | M1 | (CCW)
+//       \____/\          ^          /\____/
+//            \ \         |         / /
+//             \ \        |        / /
+//              \ \______ | ______/ /
+//               \        |        /
+//                |       |       |
+//        y <-------------o       |
+//                |               |
+//               / _______________ \
+//              / /               \ \
+//             / /                 \ \
+//        ____/ /                   \ \____
+//       /    \/                     \/    \
+// (CCW) | M3 |                       | M2 | (CW)
+//       \____/                       \____/
+//
+//   
+//
+// This function WILL NEED TO BE edited for successful completion of the PPS exercise
+bool calculateControlOutput(Controller::Request &request, Controller::Response &response) {
+
+    // This is the "start" of the outer loop controller, add all your control
+    // computation here, or you may find it convienient to create functions
+    // to keep you code cleaner
+    
+    
+    // Define a local array to fill in with the state error
+    float stateErrorInertial[9];
+
+    // Fill in the (x,y,z) position error
+    stateErrorInertial[0] = request.ownCrazyflie.x - setpoint[0];
+    stateErrorInertial[1] = request.ownCrazyflie.y - setpoint[1];
+    stateErrorInertial[2] = request.ownCrazyflie.z - setpoint[2];
+
+    // Compute an estimate of the velocity
+    // > As simply the derivative between the current and previous position
+    stateErrorInertial[3] = (stateErrorInertial[0] - previous_stateErrorInertial.x) * control_frequency;
+    stateErrorInertial[4] = (stateErrorInertial[1] - previous_stateErrorInertial.y) * control_frequency;
+    stateErrorInertial[5] = (stateErrorInertial[2] - previous_stateErrorInertial.z) * control_frequency;
+
+    // Fill in the roll and pitch angle measurements directly
+    stateErrorInertial[6] = request.ownCrazyflie.roll;
+    stateErrorInertial[7] = request.ownCrazyflie.pitch;
+
+    // Fill in the yaw angle error
+    // > This error should be "unwrapped" to be in the range
+    //   ( -pi , pi )
+    // > First, get the yaw error into a local variable
+    float yawError = request.ownCrazyflie.yaw - setpoint[3];
+    // > Second, "unwrap" the yaw error to the interval ( -pi , pi )
+    while(yawError > PI) {yawError -= 2 * PI;}
+    while(yawError < -PI) {yawError += 2 * PI;}
+    // > Third, put the "yawError" into the "stateError" variable
+    stateErrorInertial[8] = yawError;
+
+    
+    
+
+
+    float stateErrorBody[9];
+    convertIntoBodyFrame(stateErrorInertial, stateErrorBody, request.ownCrazyflie.yaw);
+
+
+    // calculate feedback
+    float outRoll = 0;
+    float outPitch = 0;
+    float outYaw = 0;
+    float thrustIntermediate = 0;
+    for(int i = 0; i < 9; ++i)
     {
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
+        outRoll -= gainMatrixRoll[i] * stateErrorBody[i];
+        outPitch -= gainMatrixPitch[i] * stateErrorBody[i];
+        outYaw -= gainMatrixYaw[i] * stateErrorBody[i];
+        thrustIntermediate -= gainMatrixThrust[i] * stateErrorBody[i];
     }
-    return val;
+
+    
+
+    response.controlOutput.roll = outRoll;
+    response.controlOutput.pitch = outPitch;
+    response.controlOutput.yaw = outYaw;
+
+    
+    response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrustIntermediate + gravity_force);
+    response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrustIntermediate + gravity_force);
+    response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrustIntermediate + gravity_force);
+    response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrustIntermediate + gravity_force);
+
+
+    /*choosing the Crazyflie onBoard controller type.
+    it can either be Motor, Rate or Angle based */
+    // response.controlOutput.onboardControllerType = MOTOR_MODE;
+    response.controlOutput.onboardControllerType = RATE_MODE;
+    // response.controlOutput.onboardControllerType = ANGLE_MODE;
+
+    previous_stateErrorInertial = request.ownCrazyflie; // we have already used previous location, update it
+
+    // Adjust (x,y,z) for the stepoint
+    previous_stateErrorInertial.x = request.ownCrazyflie.x - setpoint[0];
+    previous_stateErrorInertial.y = request.ownCrazyflie.y - setpoint[1];
+    previous_stateErrorInertial.z = request.ownCrazyflie.z - setpoint[2];
+
+    // Adjust yaw for the stepoint
+    previous_stateErrorInertial.yaw = stateErrorInertial[8];
+
+
+    // DEBUGGING CODE:
+    // As part of the D-FaLL-System we have defined a message type names"DebugMsg".
+    // By fill this message with data and publishing it you can display the data in
+    // real time using rpt plots. Instructions for using rqt plots can be found on
+    // the wiki of the D-FaLL-System repository
+
+    // Instantiate a local variable of type "DebugMsg", see the file "DebugMsg.msg"
+    // (located in the "msg" folder) to see the full structure of this message.
+    DebugMsg debugMsg;
+
+    // Fill the debugging message with the data provided by Vicon
+    debugMsg.vicon_x = request.ownCrazyflie.x;
+    debugMsg.vicon_y = request.ownCrazyflie.y;
+    debugMsg.vicon_z = request.ownCrazyflie.z;
+    debugMsg.vicon_roll = request.ownCrazyflie.roll;
+    debugMsg.vicon_pitch = request.ownCrazyflie.pitch;
+    debugMsg.vicon_yaw = request.ownCrazyflie.yaw;
+
+    // Fill in the debugging message with any other data you would like to display
+    // in real time. For example, it might be useful to display the thrust
+    // adjustment computed by the z-altitude controller.
+    // The "DebugMsg" type has 10 properties from "value_1" to "value_10", all of
+    // type "float64" that you can fill in with data you would like to plot in
+    // real-time.
+    // debugMsg.value_1 = thrustIntermediate;
+    // ......................
+    // debugMsg.value_10 = your_variable_name;
+
+    // Publish the "debugMsg"
+    debugPublisher.publish(debugMsg);
+
+
+    // An alternate debugging technique is to print out data directly to the
+    // command line from which this node was launched.
+
+    // An example of "printing out" the data from the "request" argument to the
+    // command line. This might be useful for debugging.
+    // ROS_INFO_STREAM("x-coordinates: " << request.ownCrazyflie.x);
+    // ROS_INFO_STREAM("y-coordinates: " << request.ownCrazyflie.y);
+    // ROS_INFO_STREAM("z-coordinates: " << request.ownCrazyflie.z);
+    // ROS_INFO_STREAM("roll: " << request.ownCrazyflie.roll);
+    // ROS_INFO_STREAM("pitch: " << request.ownCrazyflie.pitch);
+    // ROS_INFO_STREAM("yaw: " << request.ownCrazyflie.yaw);
+    // ROS_INFO_STREAM("Delta t: " << request.ownCrazyflie.acquiringTime);
+
+    // An example of "printing out" the control actions computed.
+    // ROS_INFO_STREAM("thrustIntermediate = " << thrustIntermediate);
+    // ROS_INFO_STREAM("controlOutput.roll = " << response.controlOutput.roll);
+    // ROS_INFO_STREAM("controlOutput.pitch = " << response.controlOutput.pitch);
+    // ROS_INFO_STREAM("controlOutput.yaw = " << response.controlOutput.yaw);
+
+    // An example of "printing out" the "thrust-to-command" conversion parameters.
+    // ROS_INFO_STREAM("motorPoly 0:" << motorPoly[0]);
+    // ROS_INFO_STREAM("motorPoly 0:" << motorPoly[1]);
+    // ROS_INFO_STREAM("motorPoly 0:" << motorPoly[2]);
+
+    // An example of "printing out" the per motor 16-bit command computed.
+    // ROS_INFO_STREAM("controlOutput.cmd1 = " << response.controlOutput.motorCmd1);
+    // ROS_INFO_STREAM("controlOutput.cmd3 = " << response.controlOutput.motorCmd2);
+    // ROS_INFO_STREAM("controlOutput.cmd2 = " << response.controlOutput.motorCmd3);
+    // ROS_INFO_STREAM("controlOutput.cmd4 = " << response.controlOutput.motorCmd4);
+
+    // Return "true" to indicate that the control computation was performed successfully
+    return true;
 }
 
 
-void loadCustomParameters(ros::NodeHandle& nodeHandle)
+
+
+
+
+//    ------------------------------------------------------------------------------
+//    RRRR    OOO   TTTTT    A    TTTTT  EEEEE       III  N   N  TTTTT   OOO
+//    R   R  O   O    T     A A     T    E            I   NN  N    T    O   O
+//    RRRR   O   O    T    A   A    T    EEE          I   N N N    T    O   O
+//    R  R   O   O    T    AAAAA    T    E            I   N  NN    T    O   O
+//    R   R   OOO     T    A   A    T    EEEEE       III  N   N    T     OOO
+//
+//    BBBB    OOO   DDDD   Y   Y       FFFFF  RRRR     A    M   M  EEEEE
+//    B   B  O   O  D   D   Y Y        F      R   R   A A   MM MM  E
+//    BBBB   O   O  D   D    Y         FFF    RRRR   A   A  M M M  EEE
+//    B   B  O   O  D   D    Y         F      R  R   AAAAA  M   M  E
+//    BBBB    OOO   DDDD     Y         F      R   R  A   A  M   M  EEEEE
+//    ----------------------------------------------------------------------------------
+
+// The arguments for this function are as follows:
+// est
+// This is an array of length 9 with the estimates the error of of the following values
+// relative to the sepcifed setpoint:
+//     est[0]    x position of the Crazyflie relative to the inertial frame origin [meters]
+//     est[1]    y position of the Crazyflie relative to the inertial frame origin [meters]
+//     est[2]    z position of the Crazyflie relative to the inertial frame origin [meters]
+//     est[3]    x-axis component of the velocity of the Crazyflie in the inertial frame [meters/second]
+//     est[4]    y-axis component of the velocity of the Crazyflie in the inertial frame [meters/second]
+//     est[5]    z-axis component of the velocity of the Crazyflie in the inertial frame [meters/second]
+//     est[6]    The roll  component of the intrinsic Euler angles [radians]
+//     est[7]    The pitch component of the intrinsic Euler angles [radians]
+//     est[8]    The yaw   component of the intrinsic Euler angles [radians]
+// 
+// estBody
+// This is an empty array of length 9, this function should fill in all elements of this
+// array with the same ordering as for the "est" argument, expect that the (x,y) position
+// and (x,y) velocities are rotated into the body frame.
+//
+// yaw_measured
+// This is the yaw component of the intrinsic Euler angles in [radians] as measured by
+// the Vicon motion capture system
+//
+// This function WILL NEED TO BE edited for successful completion of the PPS exercise
+void convertIntoBodyFrame(float stateInertial[9], float (&stateBody)[9], float yaw_measured)
+{
+    // Fill in the (x,y,z) position estimates to be returned
+    stateBody[0] = stateInertial[0];
+    stateBody[1] = stateInertial[1];
+    stateBody[2] = stateInertial[2];
+
+    // Fill in the (x,y,z) velocity estimates to be returned
+    stateBody[3] = stateInertial[3];
+    stateBody[4] = stateInertial[4];
+    stateBody[5] = stateInertial[5];
+
+    // Fill in the (roll,pitch,yaw) estimates to be returned
+    stateBody[6] = stateInertial[6];
+    stateBody[7] = stateInertial[7];
+    stateBody[8] = stateInertial[8];
+}
+
+
+
+
+
+//    ------------------------------------------------------------------------------
+//    N   N  EEEEE  W     W   TTTTT   OOO   N   N        CCCC  M   M  DDDD
+//    NN  N  E      W     W     T    O   O  NN  N       C      MM MM  D   D
+//    N N N  EEE    W     W     T    O   O  N N N  -->  C      M M M  D   D
+//    N  NN  E       W W W      T    O   O  N  NN       C      M   M  D   D
+//    N   N  EEEEE    W W       T     OOO   N   N        CCCC  M   M  DDDD
+//
+//     CCCC   OOO   N   N  V   V  EEEEE  RRRR    SSSS  III   OOO   N   N
+//    C      O   O  NN  N  V   V  E      R   R  S       I   O   O  NN  N
+//    C      O   O  N N N  V   V  EEE    RRRR    SSS    I   O   O  N N N
+//    C      O   O  N  NN   V V   E      R  R       S   I   O   O  N  NN
+//     CCCC   OOO   N   N    V    EEEEE  R   R  SSSS   III   OOO   N   N
+//    ----------------------------------------------------------------------------------
+
+// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+float computeMotorPolyBackward(float thrust)
+{
+    return (-motorPoly[1] + sqrt(motorPoly[1] * motorPoly[1] - 4 * motorPoly[2] * (motorPoly[0] - thrust))) / (2 * motorPoly[2]);
+}
+
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//    N   N  EEEEE  W     W        SSSS  EEEEE  TTTTT  PPPP    OOO   III  N   N  TTTTT
+//    NN  N  E      W     W       S      E        T    P   P  O   O   I   NN  N    T
+//    N N N  EEE    W     W        SSS   EEE      T    PPPP   O   O   I   N N N    T
+//    N  NN  E       W W W            S  E        T    P      O   O   I   N  NN    T
+//    N   N  EEEEE    W W         SSSS   EEEEE    T    P       OOO   III  N   N    T
+//
+//     GGG   U   U  III        CCCC    A    L      L      BBBB     A     CCCC  K   K
+//    G   G  U   U   I        C       A A   L      L      B   B   A A   C      K  K
+//    G      U   U   I        C      A   A  L      L      BBBB   A   A  C      KKK
+//    G   G  U   U   I        C      AAAAA  L      L      B   B  AAAAA  C      K  K
+//     GGGG   UUU   III        CCCC  A   A  LLLLL  LLLLL  BBBB   A   A   CCCC  K   K
+//    ----------------------------------------------------------------------------------
+
+// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+void setpointCallback(const Setpoint& newSetpoint)
+{
+    setpoint[0] = newSetpoint.x;
+    setpoint[1] = newSetpoint.y;
+    setpoint[2] = newSetpoint.z;
+    setpoint[3] = newSetpoint.yaw;
+}
+
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//    L       OOO     A    DDDD
+//    L      O   O   A A   D   D
+//    L      O   O  A   A  D   D
+//    L      O   O  AAAAA  D   D
+//    LLLLL   OOO   A   A  DDDD
+//
+//    PPPP     A    RRRR     A    M   M  EEEEE  TTTTT  EEEEE  RRRR    SSSS
+//    P   P   A A   R   R   A A   MM MM  E        T    E      R   R  S
+//    PPPP   A   A  RRRR   A   A  M M M  EEE      T    EEE    RRRR    SSS
+//    P      AAAAA  R  R   AAAAA  M   M  E        T    E      R  R       S
+//    P      A   A  R   R  A   A  M   M  EEEEE    T    EEEEE  R   R  SSSS
+//    ----------------------------------------------------------------------------------
+
+// This function CAN BE edited for successful completion of the PPS exercise, and the
+// use of parameters loaded from the YAML file is highly recommended to make tuning of
+// your controller easier and quicker.
+void loadPPSTemplateParameters(ros::NodeHandle& nodeHandle)
 {
     // here we load the parameters that are in the CustomController.yaml
 
@@ -112,181 +607,103 @@ void loadCustomParameters(ros::NodeHandle& nodeHandle)
     gravity_force = cf_mass * 9.81/(1000*4); // in N
 }
 
-float computeMotorPolyBackward(float thrust) {
-    return (-motorPoly[1] + sqrt(motorPoly[1] * motorPoly[1] - 4 * motorPoly[2] * (motorPoly[0] - thrust))) / (2 * motorPoly[2]);
-}
-
-
-// ********* important function that has to be used!! *********
-//-est- is an array with the estimated values : x,y,z,vx,vy,vz,roll,pitch,yaw
-//-estBody- is an EMPTY array which will then contain the values in the body frame used by the crazyflie
-//-yaw_measured- is the value that came from Vicon
-void convertIntoBodyFrame(float est[9], float (&estBody)[9], float yaw_measured)
+// load parameters from corresponding YAML file
+//
+// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+void loadParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length)
 {
-    float sinYaw = sin(yaw_measured);
-    float cosYaw = cos(yaw_measured);
-
-    estBody[0] = est[0] * cosYaw + est[1] * sinYaw;
-    estBody[1] = -est[0] * sinYaw + est[1] * cosYaw;
-    estBody[2] = est[2];
-
-    estBody[3] = est[3] * cosYaw + est[4] * sinYaw;
-    estBody[4] = -est[3] * sinYaw + est[4] * cosYaw;
-    estBody[5] = est[5];
-
-    estBody[6] = est[6];
-    estBody[7] = est[7];
-    estBody[8] = est[8];
-}
-
-
-/* --- the data students can work with ---
-    -request- contains data provided by Vicon. Check d_fall_pps/msg/ViconData.msg what it includes.
-    -response- is where you have to write your calculated data into.
-*/
-bool calculateControlOutput(Controller::Request &request, Controller::Response &response) {
-
-    //writing the data from -request- to command line
-    //might be useful for debugging
-    // ROS_INFO_STREAM("x-coordinates: " << request.ownCrazyflie.x);
-    // ROS_INFO_STREAM("y-coordinates: " << request.ownCrazyflie.y);
-    // ROS_INFO_STREAM("z-coordinates: " << request.ownCrazyflie.z);
-    // ROS_INFO_STREAM("roll: " << request.ownCrazyflie.roll);
-    // ROS_INFO_STREAM("pitch: " << request.ownCrazyflie.pitch);
-    // ROS_INFO_STREAM("yaw: " << request.ownCrazyflie.yaw);
-    // ROS_INFO_STREAM("Delta t: " << request.ownCrazyflie.acquiringTime);
-
-
-    // ************ Fill the debugging message with information to be displayed in rqt plots ****************
-    DebugMsg debugMsg;
-    debugMsg.vicon_x = request.ownCrazyflie.x;
-    debugMsg.vicon_y = request.ownCrazyflie.y;
-    debugMsg.vicon_z = request.ownCrazyflie.z;
-    debugMsg.vicon_roll = request.ownCrazyflie.roll;
-    debugMsg.vicon_pitch = request.ownCrazyflie.pitch;
-    debugMsg.vicon_yaw = request.ownCrazyflie.yaw;
-
-    // debugMsg.value_1 = // new debug variables
-    // // ......................
-    // debugMsg.value_10 = // from value_1 to value_10, fill with debug variables to plot
-
-    debugPublisher.publish(debugMsg);
-
-
-    // ********* do your calculations here *********
-    //Tip: create functions that you call here to keep you code cleaner
-    ROS_INFO("custom controller loop");
-
-    // calculate the velocity based in the derivative of the position
-
-    //move coordinate system to make setpoint origin
-    request.ownCrazyflie.x -= setpoint[0];
-    request.ownCrazyflie.y -= setpoint[1];
-    request.ownCrazyflie.z -= setpoint[2];
-    float yaw = request.ownCrazyflie.yaw - setpoint[3];
-
-    while(yaw > PI) {yaw -= 2 * PI;}
-    while(yaw < -PI) {yaw += 2 * PI;}
-    request.ownCrazyflie.yaw = yaw;
-
-    float est[9];               // vector for the estimation of the state
-
-    est[0] = request.ownCrazyflie.x;
-    est[1] = request.ownCrazyflie.y;
-    est[2] = request.ownCrazyflie.z;
-
-    // estimate speed of crazyflie. Simplest way: discrete derivative
-    est[3] = (request.ownCrazyflie.x - previous_location.x) * control_frequency;
-    est[4] = (request.ownCrazyflie.y - previous_location.y) * control_frequency;
-    est[5] = (request.ownCrazyflie.z - previous_location.z) * control_frequency;
-
-    est[6] = request.ownCrazyflie.roll;
-    est[7] = request.ownCrazyflie.pitch;
-    est[8] = request.ownCrazyflie.yaw;
-
-    float state[9];
-    convertIntoBodyFrame(est, state, request.ownCrazyflie.yaw);
-
-    // calculate feedback
-    float outRoll = 0;
-    float outPitch = 0;
-    float outYaw = 0;
-    float thrustIntermediate = 0;
-    for(int i = 0; i < 9; ++i)
-    {
-    	outRoll -= gainMatrixRoll[i] * state[i];
-    	outPitch -= gainMatrixPitch[i] * state[i];
-    	outYaw -= gainMatrixYaw[i] * state[i];
-    	thrustIntermediate -= gainMatrixThrust[i] * state[i];
+    if(!nodeHandle.getParam(name, val)){
+        ROS_ERROR_STREAM("missing parameter '" << name << "'");
     }
-
-    ROS_INFO_STREAM("thrustIntermediate = " << thrustIntermediate);
-
-    response.controlOutput.roll = outRoll;
-    response.controlOutput.pitch = outPitch;
-    response.controlOutput.yaw = outYaw;
-
-    ROS_INFO_STREAM("controlOutput.roll = " << response.controlOutput.roll);
-    ROS_INFO_STREAM("controlOutput.pitch = " << response.controlOutput.pitch);
-    ROS_INFO_STREAM("controlOutput.yaw = " << response.controlOutput.yaw);
-
-    response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrustIntermediate + gravity_force);
-    response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrustIntermediate + gravity_force);
-    response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrustIntermediate + gravity_force);
-    response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrustIntermediate + gravity_force);
-
-    ROS_INFO_STREAM("motorPoly 0:" << motorPoly[0]);
-    ROS_INFO_STREAM("motorPoly 0:" << motorPoly[1]);
-    ROS_INFO_STREAM("motorPoly 0:" << motorPoly[2]);
-
-    ROS_INFO_STREAM("controlOutput.cmd1 = " << response.controlOutput.motorCmd1);
-    ROS_INFO_STREAM("controlOutput.cmd3 = " << response.controlOutput.motorCmd2);
-    ROS_INFO_STREAM("controlOutput.cmd2 = " << response.controlOutput.motorCmd3);
-    ROS_INFO_STREAM("controlOutput.cmd4 = " << response.controlOutput.motorCmd4);
-
-    /*choosing the Crazyflie onBoard controller type.
-    it can either be Motor, Rate or Angle based */
-    // response.controlOutput.onboardControllerType = MOTOR_MODE;
-    response.controlOutput.onboardControllerType = RATE_MODE;
-    // response.controlOutput.onboardControllerType = ANGLE_MODE;
-
-    previous_location = request.ownCrazyflie; // we have already used previous location, update it
-	return true;
+    if(val.size() != length) {
+        ROS_ERROR_STREAM("parameter '" << name << "' has wrong array length, " << length << " needed");
+    }
 }
 
+// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+float getFloatParameter(ros::NodeHandle& nodeHandle, std::string name)
+{
+
+    float val;
+    if(!nodeHandle.getParam(name, val))
+    {
+        ROS_ERROR_STREAM("missing parameter '" << name << "'");
+    }
+    return val;
+}
+
+// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
 void customYAMLloadedCallback(const std_msgs::Int32& msg)
 {
     ros::NodeHandle nodeHandle("~");
     ROS_INFO("received msg custom loaded YAML");
-    loadCustomParameters(nodeHandle);
-}
-
-void setpointCallback(const Setpoint& newSetpoint) {
-    setpoint[0] = newSetpoint.x;
-    setpoint[1] = newSetpoint.y;
-    setpoint[2] = newSetpoint.z;
-    setpoint[3] = newSetpoint.yaw;
+    loadPPSTemplateParameters(nodeHandle);
 }
 
 
+
+
+//    ----------------------------------------------------------------------------------
+//    M   M    A    III  N   N
+//    MM MM   A A    I   NN  N
+//    M M M  A   A   I   N N N
+//    M   M  AAAAA   I   N  NN
+//    M   M  A   A  III  N   N
+//    ----------------------------------------------------------------------------------
+
+// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
 int main(int argc, char* argv[]) {
-    //starting the ROS-node
+    
+    // Starting the ROS-node
     ros::init(argc, argv, "CustomControllerService");
-    ros::NodeHandle nodeHandle("~");
-    loadCustomParameters(nodeHandle);
 
+    // Create a "ros::NodeHandle" type local variable "nodeHandle" as the current node,
+    // the "~" indcates that "self" is the node handle assigned to this variable.
+    ros::NodeHandle nodeHandle("~");
+
+    // Call the class function that loads the parameters for this class.
+    loadPPSTemplateParameters(nodeHandle);
+
+    // Instantiate the instance variable "debugPublisher" to be a "ros::Publisher" that
+    // advertises under the name "DebugTopic" and is a message with the structure
+    // defined in the file "DebugMsg.msg" (located in the "msg" folder).
     debugPublisher = nodeHandle.advertise<DebugMsg>("DebugTopic", 1);
 
+    // Instantiate the local variable "setpointSubscriber" to be a "ros::Subscriber"
+    // type variable that subscribes to the "Setpoint" topic and calls the class function
+    // "setpointCallback" each time a messaged is received on this topic and the message
+    // is passed as an input argument to the "setpointCallback" class function.
     ros::Subscriber setpointSubscriber = nodeHandle.subscribe("Setpoint", 1, setpointCallback);
 
+    // Instantiate the local variable "service" to be a "ros::ServiceServer" type
+    // variable that advertises the service called "CustomController". This service has
+    // the input-output behaviour defined in the "Controller.srv" file (located in the
+    // "srv" folder). This service, when called, is provided with the most recent
+    // measurement of the Crazyflie and is expected to respond with the control action
+    // that should be sent via the Crazyradio and requested from the Crazyflie, i.e.,
+    // this is where the "outer loop" controller function starts. When a request is made
+    // of this service the "calculateControlOutput" function is called.
     ros::ServiceServer service = nodeHandle.advertiseService("CustomController", calculateControlOutput);
 
+    // Create a "ros::NodeHandle" type local variable "namespace_nodeHandle" that points
+    // to the name space of this node, i.e., "d_fall_pps" as specified by the line:
+    //     "using namespace d_fall_pps;"
+    // in the "DEFINES" section at the top of this file.
     ros::NodeHandle namespace_nodeHandle(ros::this_node::getNamespace());
+
+    // Instantiate the local variable "customYAMLloadedSubscriber" to be a "ros::Subscriber"
+    // type variable that subscribes to the "student_GUI/customYAMLloaded" topic and calls
+    // the class function "customYAMLloadedCallback" each time a messaged is received on
+    // this topic. Such a message is sent when the button "Load Customcontroller YAML file"
+    // is clicked in the student GUI.
     ros::Subscriber customYAMLloadedSubscriber = namespace_nodeHandle.subscribe("student_GUI/customYAMLloaded", 1, customYAMLloadedCallback);
 
-
+    // Print out some information to the user.
     ROS_INFO("CustomControllerService ready");
+
+    // Enter an endless while loop to keep the node alive.
     ros::spin();
 
+    // Return zero if the "ross::spin" is cancelled.
     return 0;
 }
