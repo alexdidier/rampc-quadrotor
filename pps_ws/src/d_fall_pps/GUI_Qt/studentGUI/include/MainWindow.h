@@ -176,6 +176,7 @@ private:
     void setCrazyRadioStatus(int radio_status);
     void loadCrazyflieContext();
     void coordinatesToLocal(CrazyflieData& cf);
+    void initialize_custom_setpoint();
 
 
     void disableGUI();

@@ -21,7 +21,7 @@ defaultSetpoint: [0.0, 0.0, 0.4, 0.0]
 takeOffDistance : 0.4
 landingDistance : 0.05
 durationTakeOff : 1.5
-durationLanding : 1.5
+durationLanding : 2
 
 # Liner Trayectory following parameters
 distanceThreshold : 0.5

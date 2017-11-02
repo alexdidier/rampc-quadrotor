@@ -125,6 +125,8 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     highlightSafeControllerTab();
     ui->label_battery->setStyleSheet("QLabel { color : red; }");
     m_battery_state = BATTERY_STATE_NORMAL;
+
+    initialize_custom_setpoint();
 }
 
 
@@ -449,6 +451,17 @@ void MainWindow::on_set_setpoint_button_clicked()
     msg_setpoint.yaw = (ui->new_setpoint_yaw->text()).toFloat() * DEG2RAD;
 
     this->controllerSetpointPublisher.publish(msg_setpoint);
+}
+
+void MainWindow::initialize_custom_setpoint()
+{
+    Setpoint msg_setpoint;
+    msg_setpoint.x = 0;
+    msg_setpoint.y = 0;
+    msg_setpoint.z = 0.4;
+    msg_setpoint.yaw = 0;
+
+    this->customSetpointPublisher.publish(msg_setpoint);
 }
 
 void MainWindow::on_set_setpoint_button_2_clicked()
