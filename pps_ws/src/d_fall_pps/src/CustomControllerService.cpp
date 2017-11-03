@@ -396,6 +396,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 
     // Perform the "-Kx" LQR computation for the thrust adjustment to respoond with
     for(int i = 0; i < 9; ++i)
+    {
         thrustAdjustment -= gainMatrixThrust[i] * stateErrorBody[i];
     }
 
