@@ -117,7 +117,7 @@ float gravity_force;                 // The weight of the Crazyflie in Newtons, 
 
 CrazyflieData previous_stateErrorInertial;     // The location error of the Crazyflie at the "previous" time step
 
-std::vector<float>  setpoint(4);     // The setpoints for (x,y,z) position and yaw angle
+std::vector<float>  setpoint{0.0,0.0,0.4,0.0};     // The setpoints for (x,y,z) position and yaw angle, in that order
 
 // The LQR Controller parameters
 const float gainMatrixRoll[9] = {0, -1.714330725, 0, 0, -1.337107465, 0, 5.115369735, 0, 0};
@@ -344,38 +344,129 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     stateErrorInertial[8] = yawError;
 
     
-    
-
-
+    // CONVERSION INTO BODY FRAME
+    // Conver the state erorr from the Inertial frame into the Body frame
+    // > Note: the function "convertIntoBodyFrame" is implemented in this file
+    //   and by default does not perform any conversion. The equations to convert
+    //   the state error into the body frame should be implemented in that function
+    //   for successful completion of the PPS exercise
     float stateErrorBody[9];
     convertIntoBodyFrame(stateErrorInertial, stateErrorBody, request.ownCrazyflie.yaw);
 
 
-    // calculate feedback
-    float outRoll = 0;
-    float outPitch = 0;
-    float outYaw = 0;
-    float thrustIntermediate = 0;
+
+
+    //  **********************
+    //  Y   Y    A    W     W
+    //   Y Y    A A   W     W
+    //    Y    A   A  W     W
+    //    Y    AAAAA   W W W
+    //    Y    A   A    W W
+    //
+    // YAW CONTROLLER
+
+    // Instantiate the local variable for the yaw rate that will be requested
+    // from the Crazyflie's on-baord "inner-loop" controller
+    float yawRate_forResponse = 0;
+
+    // Perform the "-Kx" LQR computation for the yaw rate to respoond with
     for(int i = 0; i < 9; ++i)
     {
-        outRoll -= gainMatrixRoll[i] * stateErrorBody[i];
-        outPitch -= gainMatrixPitch[i] * stateErrorBody[i];
-        outYaw -= gainMatrixYaw[i] * stateErrorBody[i];
-        thrustIntermediate -= gainMatrixThrust[i] * stateErrorBody[i];
+        yawRate_forResponse -= gainMatrixYaw[i] * stateErrorBody[i];
     }
 
+    // Put the computed yaw rate into the "response" variable
+    response.controlOutput.yaw = yawRate_forResponse;
+
+
+
+
+    //  **************************************
+    //  BBBB    OOO   DDDD   Y   Y       ZZZZZ
+    //  B   B  O   O  D   D   Y Y           Z
+    //  BBBB   O   O  D   D    Y           Z
+    //  B   B  O   O  D   D    Y          Z
+    //  BBBB    OOO   DDDD     Y         ZZZZZ
+    //
+    // ALITUDE CONTROLLER (i.e., z-controller)
+
+    // Instantiate the local variable for the thrust adjustment that will be
+    // requested from the Crazyflie's on-baord "inner-loop" controller
+    float thrustAdjustment = 0;
+
+    // Perform the "-Kx" LQR computation for the thrust adjustment to respoond with
+    for(int i = 0; i < 9; ++i)
+        thrustAdjustment -= gainMatrixThrust[i] * stateErrorBody[i];
+    }
+
+    // Put the computed thrust adjustment into the "response" variable,
+    // as well as adding the feed-forward thrust to counter-act gravity.
+    // > NOTE: remember that the thrust is commanded per motor, so you sohuld
+    //         consider whether the "thrustAdjustment" computed by your
+    //         controller needed to be divided by 4 or not.
+    // > NOTE: the "gravity_force" value was already divided by 4 when is was
+    //         loaded from the .yaml file via the "loadPPSTemplateParameters"
+    //         class function in this file.
+    response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrustAdjustment + gravity_force);
+    response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrustAdjustment + gravity_force);
+    response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrustAdjustment + gravity_force);
+    response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrustAdjustment + gravity_force);
+
+
+
+
+    //  **************************************
+    //  BBBB    OOO   DDDD   Y   Y       X   X
+    //  B   B  O   O  D   D   Y Y         X X
+    //  BBBB   O   O  D   D    Y           X
+    //  B   B  O   O  D   D    Y          X X
+    //  BBBB    OOO   DDDD     Y         X   X
+    //
+    // BODY FRAME X CONTROLLER
+
+    // Instantiate the local variable for the pitch rate that will be requested
+    // from the Crazyflie's on-baord "inner-loop" controller
+    float pitchRate_forResponse = 0;
+    
+    // Perform the "-Kx" LQR computation for the pitch rate to respoond with
+    for(int i = 0; i < 9; ++i)
+    {
+        pitchRate_forResponse -= gainMatrixPitch[i] * stateErrorBody[i];
+    }
+
+    // Put the computed pitch rate into the "response" variable
+    response.controlOutput.pitch = pitchRate_forResponse;
     
 
-    response.controlOutput.roll = outRoll;
-    response.controlOutput.pitch = outPitch;
-    response.controlOutput.yaw = outYaw;
 
+
+	//  **************************************
+    //  BBBB    OOO   DDDD   Y   Y       Y   Y
+    //  B   B  O   O  D   D   Y Y         Y Y
+    //  BBBB   O   O  D   D    Y           Y
+    //  B   B  O   O  D   D    Y           Y
+    //  BBBB    OOO   DDDD     Y           Y
+    //
+    // BODY FRAME Y CONTROLLER
+
+    // Instantiate the local variable for the roll rate that will be requested
+    // from the Crazyflie's on-baord "inner-loop" controller
+    float rollRate_forResponse = 0;
     
-    response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrustIntermediate + gravity_force);
-    response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrustIntermediate + gravity_force);
-    response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrustIntermediate + gravity_force);
-    response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrustIntermediate + gravity_force);
+    // Perform the "-Kx" LQR computation for the roll rate to respoond with
+    for(int i = 0; i < 9; ++i)
+    {
+        rollRate_forResponse -= gainMatrixRoll[i] * stateErrorBody[i];
+    }
 
+    // Put the computed roll rate into the "response" variable
+    response.controlOutput.roll = rollRate_forResponse;
+    
+    
+
+
+
+    // PREPARE AND RETURN THE VARIABLE "response"
 
     /*choosing the Crazyflie onBoard controller type.
     it can either be Motor, Rate or Angle based */
@@ -383,6 +474,8 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     response.controlOutput.onboardControllerType = RATE_MODE;
     // response.controlOutput.onboardControllerType = ANGLE_MODE;
 
+    
+    // SAVE THE STATE ERROR TO BE USED NEXT TIME THIS FUNCTION IS CALLED
     previous_stateErrorInertial = request.ownCrazyflie; // we have already used previous location, update it
 
     // Adjust (x,y,z) for the stepoint
@@ -418,7 +511,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     // The "DebugMsg" type has 10 properties from "value_1" to "value_10", all of
     // type "float64" that you can fill in with data you would like to plot in
     // real-time.
-    // debugMsg.value_1 = thrustIntermediate;
+    // debugMsg.value_1 = thrustAdjustment;
     // ......................
     // debugMsg.value_10 = your_variable_name;
 
@@ -440,7 +533,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     // ROS_INFO_STREAM("Delta t: " << request.ownCrazyflie.acquiringTime);
 
     // An example of "printing out" the control actions computed.
-    // ROS_INFO_STREAM("thrustIntermediate = " << thrustIntermediate);
+    // ROS_INFO_STREAM("thrustAdjustment = " << thrustAdjustment);
     // ROS_INFO_STREAM("controlOutput.roll = " << response.controlOutput.roll);
     // ROS_INFO_STREAM("controlOutput.pitch = " << response.controlOutput.pitch);
     // ROS_INFO_STREAM("controlOutput.yaw = " << response.controlOutput.yaw);
