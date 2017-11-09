@@ -1,6 +1,10 @@
 pps_ws/build/
 pps_ws/devel/
 
+pps_ws/src/d_fall_pps/lib/vicon/
+pps_ws/src/d_fall_pps/include/DataStreamClient.h
+
+
 *.pyc
 *.orig
 *.bag
