@@ -53,6 +53,7 @@ using namespace d_fall_pps;
 
 std::vector<float>  ffThrust(4);
 std::vector<float>  feedforwardMotor(4);
+float cf_mass;
 std::vector<float>  motorPoly(3);
 
 std::vector<float>  gainMatrixRoll(9);
@@ -85,12 +86,10 @@ void loadParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std
 }
 
 void loadSafeParameters(ros::NodeHandle& nodeHandle) {
-    loadParameterFloatVector(nodeHandle, "feedforwardMotor", feedforwardMotor, 4);
     loadParameterFloatVector(nodeHandle, "motorPoly", motorPoly, 3);
-
-    for(int i = 0; i < 4; ++i) {
-        ffThrust[i] = motorPoly[2] * feedforwardMotor[i] * feedforwardMotor[i] + motorPoly[1] * feedforwardMotor[i] + motorPoly[0];
-    }
+    cf_mass = getFloatParameter(nodeHandle, "mass");
+    // force that we need to counteract gravity (mg)
+    gravity_force = cf_mass * 9.81/(1000*4); // in N
     saturationThrust = motorPoly[2] * 12000 * 12000 + motorPoly[1] * 12000 + motorPoly[0];
 
     loadParameterFloatVector(nodeHandle, "gainMatrixRoll", gainMatrixRoll, 9);
@@ -261,10 +260,10 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     else if(thrustIntermediate < -saturationThrust)
         thrustIntermediate = -saturationThrust;
 
-    response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrustIntermediate + ffThrust[0]);
-    response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrustIntermediate + ffThrust[1]);
-    response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrustIntermediate + ffThrust[2]);
-    response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrustIntermediate + ffThrust[3]);
+    response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrustIntermediate + gravity_force);
+    response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrustIntermediate + gravity_force);
+    response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrustIntermediate + gravity_force);
+    response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrustIntermediate + gravity_force);
 
     // ROS_INFO_STREAM("ffThrust" << ffThrust[0]);
     // ROS_INFO_STREAM("controlOutput.cmd1 = " << response.controlOutput.motorCmd1);
