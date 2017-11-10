@@ -54,6 +54,7 @@ using namespace d_fall_pps;
 std::vector<float>  ffThrust(4);
 std::vector<float>  feedforwardMotor(4);
 float cf_mass;
+float gravity_force;
 std::vector<float>  motorPoly(3);
 
 std::vector<float>  gainMatrixRoll(9);
@@ -74,6 +75,19 @@ float saturationThrust;
 CrazyflieData previousLocation;
 
 rosbag::Bag bag;
+
+// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+float getFloatParameter(ros::NodeHandle& nodeHandle, std::string name)
+{
+
+    float val;
+    if(!nodeHandle.getParam(name, val))
+    {
+        ROS_ERROR_STREAM("missing parameter '" << name << "'");
+    }
+    return val;
+}
+
 
 
 void loadParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length) {
