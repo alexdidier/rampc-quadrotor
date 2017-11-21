@@ -54,6 +54,25 @@ The workspace setup script will only appear after the first compilation of the c
 
 If you are not sure at any point you can check out the install script.
 
+### Vicon Datastream SDK Installation
+
+A Vicon motion capture system can be used to provide position and attitude measurements of the Crazyflie and close the feedback loop. The software provided by Vicon is propriety and hence is not included in this piece of Open Source software. In order to make the position and attitude data accessible over the network, the piece of software called the Datastream SDK needs to be downloaded and placed in the correct folder. Complete the following steps to achieve this:
+
+- Download the Vicon Datastream SDK from [https://www.vicon.com/products/software/datastream-sdk](https://www.vicon.com/products/software/datastream-sdk) (or if this link is broken for some reason you can search for the Datastream SDK download directly via the Vicon website)
+- This set of instructions was tested with version 1.7.1 of the Datastream SDK
+- De-compress the downloaded file and open the folder that corresponds to the latest ``Linux64-boost-1.xx.x`` version, when tested this was ``1,58.0``
+- From the files found in this folder, copy the file ``DataStreamClient.h`` into the folder
+```
+~/pps_ws/src/d_fall_pps/include/
+```
+- Copy also the file ``libViconDataStreamSDK_CPP.so`` into the folder (noting that the folder ``lib`` and ``vicon`` may need to be created)
+```
+~/pps_ws/src/d_fall_pps/lib/vicon/
+```
+- Copy all the file of the form ``libboost_*`` into the same ``/lib/vicon/`` folder
+- Note that the ``DataStreamClient.h`` header file and the ``/lib/vicon/`` folder are in the ``.gitignore`` and hence will not be tracked or removed by the git repository (though some more advanced git commands may still remove them anyway).
+
+
 ## Additional Steps for Teacher
 
 ### Removing Config.sh and replacing
