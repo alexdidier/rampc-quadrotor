@@ -89,22 +89,22 @@ To check whether the Vicon Datastream software is properly added to the local co
 
 The main requirements are that:
 - The ``DataStreamClient.h`` header file needs to be located in ``~/pps_ws/src/d_fall_pps/lib/vicon/``,
-- The ``libViconDataStreamSDK_CPP.so` shared object needs to be located in ``~/pps_ws/src/d_fall_pps/lib/vicon/``, and
+- The ``libViconDataStreamSDK_CPP.so`` shared object needs to be located in ``~/pps_ws/src/d_fall_pps/lib/vicon/``, and
 - A number of files of the form ``libboost_*`` should also be located in ``~/pps_ws/src/d_fall_pps/lib/vicon/``.
 
 
 
 ## Control algorithm hints
 
-This section contains those Frequently Asked Questions that pertain to commonly coding errors in the implementation of your control algorithm that cause the [Crazyflie](https://www.bitcraze.io/) to behave unexpectedly (remember that computers always follow the instructions they are given).
+This section contains those Frequently Asked Questions that pertain to common coding errors in the implementation of your control algorithm that causes the [Crazyflie](https://www.bitcraze.io/) to behave in an undesirable manner (remember that computers always follow the instructions they are given).
 
 
 ### Why does my crazyflie drop to the ground when I request a large setpoint change in altitude?
 
-The per motor command that your algorithm requests from the Crazyflie via setting the ``response.controlOutput.motorCmd1`` property in the function ``calculateControlOutput`` is subseuently cast as a ``uint16`` typer variable. Hence you should consider saturating the per motor commands computed by your algorithm before setting the value of ``response.controlOutput.motorCmd1``.
+The per motor command that your algorithm requests from the Crazyflie via setting the ``response.controlOutput.motorCmd1`` property in the function ``calculateControlOutput`` is subseuently cast as a ``uint16`` type variable. Hence you should consider saturating the per motor commands computed by your algorithm before setting the value of ``response.controlOutput.motorCmd1``.
 
 
 ### Why does my crazyflie stop and ``Stuent GUI`` freeze when I enable my custom controller?
 
-This is most likely caused by your code causing a segmentation fault, which is commonly caused due to a division by zero. This have been commonly observed in relation to the computation of sampling time from frequency. You need to think carefully about the order in which variables are instantiated, give a value, and subsequently used in your code. Specifically, in the tempmlate controller provided the ``control_frequency`` variable is set to the value loaded from the ``.yaml'' parameter file, and it is common to instantiate a new variable as ``ts = 1.0 / control_frequency``. However, if ``ts`` is accidentally used before it is set to this value then it is possible that you are dividing by zero.
+This is most likely caused by your code causing a segmentation fault, which is commonly caused due to a division by zero. This is often observed in relation to the calculation of sampling time from frequency. You need to think carefully about the order in which variables are instantiated, set to a value, and subsequently used in your code. Specifically, in the template controller code provided contains the ``control_frequency`` variable that is set to a value loaded from the ``.yaml`` parameter file. It is common to instantiate a new variable as ``t_s = 1.0 / control_frequency``. However, if ``ts`` is accidentally used before it is set to this value then it is possible that you are dividing by zero.
 
