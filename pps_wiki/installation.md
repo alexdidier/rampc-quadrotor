@@ -58,7 +58,7 @@ If you are not sure at any point you can check out the install script.
 
 A Vicon motion capture system can be used to provide position and attitude measurements of the Crazyflie and close the feedback loop. The software provided by Vicon is propriety and hence is not included in this piece of Open Source software. In order to make the position and attitude data accessible over the network, the piece of software called the Datastream SDK needs to be downloaded and placed in the correct folder. Complete the following steps to achieve this:
 
-- Download the Vicon Datastream SDK from [https://www.vicon.com/products/software/datastream-sdk](https://www.vicon.com/products/software/datastream-sdk) (or if this link is broken for some reason you can search for the Datastream SDK download directly via the Vicon website)
+- Download the Vicon Datastream SDK from [www.vicon.com/products/software/datastream-sdk](https://www.vicon.com/products/software/datastream-sdk) (or if this link is broken for some reason you can search for the Datastream SDK download directly via the Vicon website)
 - This set of instructions was tested with version 1.7.1 of the Datastream SDK
 - De-compress the downloaded file and open the folder that corresponds to the latest ``Linux64-boost-1.xx.x`` version, when tested this was ``1.58.0``
 - From the files found in this folder, copy the file ``DataStreamClient.h`` into the following folder:

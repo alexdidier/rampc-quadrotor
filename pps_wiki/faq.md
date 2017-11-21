@@ -6,7 +6,7 @@ Contents:
 
 ## Remind me of that command again...
 
-This section contain those Frequently Asked Questions that pertain to "those commands" that are regularly used to interact with the ``D-FaLL-System`` and bring your control algorithms to life through a Crazyflie quadrotor.
+This section contains those Frequently Asked Questions that pertain to "those commands" that are regularly used to interact with the ``D-FaLL-System`` and bring your control algorithms to life through a [Crazyflie](https://www.bitcraze.io/) quadrotor.
 
 ### How do I to get a clean version of the repository?
 <b>Step 1)</b> Change to the directory where you have a copy of the ``D-FaLL-System`` repository under version control. On a machine setup as per the instruction this will be:
@@ -39,7 +39,7 @@ roslaunch d_fall_pps Student.launch
 This can be run from any directory because ``d_fall_pps`` is defined as an environment variable that points to the absolute foler location ```~/work/D-FaLL-System/pps_ws/src/d_fall_pps/launch/`
 
 
-### How do I make changes to a ``*cpp`` file take effect?
+### How do I make changes to a ``*.cpp`` file take effect?
 In essence you need to re-compile the code and re-launch all ROS nodes.
 
 <b>Step 1)</b> Kill all ROS processes that are running nodes from the ``D-FaLL-System`` repository, i.e., you must kill the ``Student GUI`` node but you do not need to kill an ``rqt`` plotting node. To kill a process press ``Ctrl+c`` from the terminal window that is running the process.
