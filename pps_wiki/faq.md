@@ -14,9 +14,9 @@ This section contain those Frequently Asked Questions that pertain to "those com
 cd ~/work/D-FaLL-System
 ```
 <b>Step 2)</b> It is good practice always check the status of the git repository:
-``''
+```
 git status
-``''
+```
 <b>Step 3)</b> Remove all changes on the current branch since the previous pull
 ```
 git checkout .
