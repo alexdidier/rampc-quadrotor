@@ -9,10 +9,10 @@ Contents:
 This section contain those Frequently Asked Questions that pertain to "those commands" that are regularly used to interact with the ``D-FaLL-System`` and bring your control algorithms to life through a Crazyflie quadrotor.
 
 ### How do I to get a clean version of the repository?
-Step 1) Change to the directory where you have a copy of the ``D-FaLL-System`` repository under version control. On a machine setup as per the instruction this will be
-``
+<b>Step 1)<\b> Change to the directory where you have a copy of the ``D-FaLL-System`` repository under version control. On a machine setup as per the instruction this will be
+```
 cd ~/work/D-FaLL-System
-``
+```
 Step 2) It is good practice always check the status of the git repository,
 ``
 git status
