@@ -52,6 +52,8 @@ cd ~work/D-FaLL-System/pps_ws/
 ```
 catkin_make
 ```
+This will compile all the code, or throw an error if your changes have introduced errors that prevent the compilation from completing successfully.
+
 <b>Step 4)</b> Relaunch the Student GUI
 
 
