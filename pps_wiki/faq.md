@@ -83,9 +83,14 @@ And if you look at the ``Config.sh`` file in the repository you see that it defi
 
 ### The ``Student GUI`` fails to launch due to Vicon related errors
 
-The Vicon motion capture system provides position and attitude information via a piece of propriety software nmed the Datastream SDK. Hence, the proprietry software cannot be ditributed with this piece of Open Source software, and the error is likley cause by the software not being present on the local computer.
+The Vicon motion capture system provides position and attitude information via a piece of propriety software named the Datastream SDK. Hence, the proprietry software cannot be ditributed with this piece of Open Source software, and the error is likley cause by the software not being present on the local computer.
 
 To check whether the Vicon Datastream software is properly added to the local computer, goto the [Installation](installation.md) wiki page and follow the instructions under the title "Vicon Datastream SDK Installation".
+
+The main requirements are that:
+- The ``DataStreamClient.h`` header file needs to be located in ``~/pps_ws/src/d_fall_pps/lib/vicon/``,
+- The ``libViconDataStreamSDK_CPP.so` shared object needs to be located in ``~/pps_ws/src/d_fall_pps/lib/vicon/``, and
+- A number of files of the form ``libboost_*`` should also be located in ``~/pps_ws/src/d_fall_pps/lib/vicon/``.
 
 
 
