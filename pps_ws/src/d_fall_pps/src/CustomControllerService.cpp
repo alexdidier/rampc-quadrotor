@@ -73,7 +73,7 @@
 
 // These constants are defined to make the code more readable and adaptable.
 
-// constants
+// Universal constants
 #define PI 3.1415926535
 
 // The constants define the modes that can be used for controller the Crazyflie 2.0,
@@ -91,10 +91,10 @@
 //               body frame roll, pitch, and yaw angles from the PID attitude
 //               controllers implemented in the Crazyflie 2.0 firmware.
 #define MOTOR_MODE 6
-#define RATE_MODE 7
+#define RATE_MODE  7
 #define ANGLE_MODE 8
 
-// namespacing the package
+// Namespacing the package
 using namespace d_fall_pps;
 
 
@@ -786,11 +786,11 @@ int main(int argc, char* argv[]) {
     ros::NodeHandle namespace_nodeHandle(ros::this_node::getNamespace());
 
     // Instantiate the local variable "customYAMLloadedSubscriber" to be a "ros::Subscriber"
-    // type variable that subscribes to the "student_GUI/customYAMLloaded" topic and calls
+    // type variable that subscribes to the "PPSClient/customYAMLloaded" topic and calls
     // the class function "customYAMLloadedCallback" each time a messaged is received on
     // this topic. Such a message is sent when the button "Load Customcontroller YAML file"
     // is clicked in the student GUI.
-    ros::Subscriber customYAMLloadedSubscriber = namespace_nodeHandle.subscribe("student_GUI/customYAMLloaded", 1, customYAMLloadedCallback);
+    ros::Subscriber customYAMLloadedSubscriber = namespace_nodeHandle.subscribe("PPSClient/customYAMLloaded", 1, customYAMLloadedCallback);
 
     // Print out some information to the user.
     ROS_INFO("CustomControllerService ready");

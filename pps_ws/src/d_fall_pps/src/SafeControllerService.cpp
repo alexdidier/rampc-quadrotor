@@ -304,7 +304,7 @@ void setpointCallback(const Setpoint& newSetpoint) {
 void safeYAMLloadedCallback(const std_msgs::Int32& msg)
 {
     ros::NodeHandle nodeHandle("~");
-    ROS_INFO("received msg safe loaded YAML");
+    ROS_INFO("Received msg safe loaded YAML");
     loadSafeParameters(nodeHandle);
 }
 
@@ -322,7 +322,9 @@ int main(int argc, char* argv[]) {
 
     ros::NodeHandle namespace_nodeHandle(ros::this_node::getNamespace());
 
-    ros::Subscriber safeYAMloadedSubscriber = namespace_nodeHandle.subscribe("student_GUI/safeYAMLloaded", 1, safeYAMLloadedCallback);
+    // Subscribe to the message from the "PPSClient" node that the YAML parameters
+    // have been loaded for the custom controller
+    ros::Subscriber safeYAMloadedSubscriber = namespace_nodeHandle.subscribe("PPSClient/safeYAMLloaded", 1, safeYAMLloadedCallback);
 
     ros::ServiceServer service = nodeHandle.advertiseService("RateController", calculateControlOutput);
     ROS_INFO("SafeControllerService ready");

@@ -45,21 +45,23 @@
 #include "d_fall_pps/Setpoint.h"
 
 
-// tipes of controllers being used:
+// Types of controllers being used:
 #define SAFE_CONTROLLER   0
 #define CUSTOM_CONTROLLER 1
 
-// commands for CrazyRadio
+// Commands for CrazyRadio
 #define CMD_RECONNECT  0
 #define CMD_DISCONNECT 1
-
 
 // CrazyRadio states:
 #define CONNECTED        0
 #define CONNECTING       1
 #define DISCONNECTED     2
 
-// Commands for PPSClient
+// The constants that "command" changes in the
+// operation state of this agent. These "commands"
+// are sent from this GUI node to the "PPSClient"
+// node where the command is enacted
 #define CMD_USE_SAFE_CONTROLLER   1
 #define CMD_USE_CUSTOM_CONTROLLER 2
 #define CMD_CRAZYFLY_TAKE_OFF     3
@@ -72,12 +74,15 @@
 #define STATE_FLYING     3
 #define STATE_LAND       4
 
-// battery states
-
+// Battery states
 #define BATTERY_STATE_NORMAL 0
 #define BATTERY_STATE_LOW    1
 
+// For which controller parameters to load
+#define LOAD_YAML_SAFE_CONTROLLER   0
+#define LOAD_YAML_CUSTOM_CONTROLLER 1
 
+// Universal constants
 #define PI 3.141592653589
 
 #define RAD2DEG 180.0/PI
@@ -152,8 +157,18 @@ private:
 
     ros::Subscriber DBChangedSubscriber;
 
-    ros::Publisher customYAMLloadedPublisher;
-    ros::Publisher safeYAMLloadedPublisher;
+
+
+    // > For publishing a message that requests the 
+    //   YAML parameters to be re-loaded from file
+    // > The message contents specify which controller
+    //   the parameters should be re-loaded for
+    ros::Publisher requestLoadControllerYamlPublisher;
+
+    // Subscriber for locking the load the controller YAML
+    // parameters when the Coordintor GUI requests a load
+    ros::Subscriber requestLoadControllerYamlAllAgentsSubscriber;
+
 
     ros::Subscriber controllerUsedSubscriber;
 
@@ -168,6 +183,7 @@ private:
     void DBChangedCallback(const std_msgs::Int32& msg);
     void customYamlFileTimerCallback(const ros::TimerEvent&);
     void safeYamlFileTimerCallback(const ros::TimerEvent&);
+    void requestLoadControllerYamlAllAgentsCallback(const ros::TimerEvent&);
     void controllerUsedChangedCallback(const std_msgs::Int32& msg);
     void batteryStateChangedCallback(const std_msgs::Int32& msg);
 

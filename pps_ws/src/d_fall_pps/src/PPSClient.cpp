@@ -30,6 +30,17 @@
 //    ----------------------------------------------------------------------------------
 
 
+
+
+
+//    ----------------------------------------------------------------------------------
+//    III  N   N   CCCC  L      U   U  DDDD   EEEEE   SSSS
+//     I   NN  N  C      L      U   U  D   D  E      S
+//     I   N N N  C      L      U   U  D   D  EEE     SSS
+//     I   N  NN  C      L      U   U  D   D  E          S
+//    III  N   N   CCCC  LLLLL   UUU   DDDD   EEEEE  SSSS
+//    ----------------------------------------------------------------------------------
+
 #include "ros/ros.h"
 #include <stdlib.h>
 #include <std_msgs/String.h>
@@ -50,15 +61,29 @@
 
 #include "d_fall_pps/ControlCommand.h"
 
-// types PPS firmware
-#define TYPE_PPS_MOTORS 6
-#define TYPE_PPS_RATE 7
-#define TYPE_PPS_ANGLE 8
 
-// tipes of controllers being used:
+
+
+
+//    ----------------------------------------------------------------------------------
+//    DDDD   EEEEE  FFFFF  III  N   N  EEEEE   SSSS
+//    D   D  E      F       I   NN  N  E      S
+//    D   D  EEE    FFF     I   N N N  EEE     SSS
+//    D   D  E      F       I   N  NN  E          S
+//    DDDD   EEEEE  F      III  N   N  EEEEE  SSSS
+//    ----------------------------------------------------------------------------------
+
+// Types PPS firmware
+#define TYPE_PPS_MOTORS 6
+#define TYPE_PPS_RATE   7
+#define TYPE_PPS_ANGLE  8
+
+// Types of controllers being used:
 #define SAFE_CONTROLLER   0
 #define CUSTOM_CONTROLLER 1
 
+// The constants that "command" changes in the
+// operation state of this agent
 #define CMD_USE_SAFE_CONTROLLER   1
 #define CMD_USE_CUSTOM_CONTROLLER 2
 #define CMD_CRAZYFLY_TAKE_OFF     3
@@ -71,12 +96,11 @@
 #define STATE_FLYING     3
 #define STATE_LAND       4
 
-// battery states
-
+// Battery states
 #define BATTERY_STATE_NORMAL 0
 #define BATTERY_STATE_LOW    1
 
-// commands for CrazyRadio
+// Commands for CrazyRadio
 #define CMD_RECONNECT  0
 #define CMD_DISCONNECT 1
 
@@ -86,16 +110,34 @@
 #define CONNECTING       1
 #define DISCONNECTED     2
 
-// parameters for take off and landing. Eventually will go in YAML file
-#define TAKE_OFF_OFFSET  1    //in meters
-#define LANDING_DISTANCE 0.15    //in meters
-#define DURATION_TAKE_OFF  3   // seconds
-#define DURATION_LANDING   3   // seconds
+// For which controller parameters to load
+#define LOAD_YAML_SAFE_CONTROLLER   0
+#define LOAD_YAML_CUSTOM_CONTROLLER 1
 
 
+// Parameters for take off and landing. Eventually will go in YAML file
+//#define TAKE_OFF_OFFSET  1    //in meters
+//#define LANDING_DISTANCE 0.15    //in meters
+//#define DURATION_TAKE_OFF  3   // seconds
+//#define DURATION_LANDING   3   // seconds
+
+// Universal constants
 #define PI 3.141592653589
 
+// Namespacing the package
 using namespace d_fall_pps;
+
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//    V   V    A    RRRR   III    A    BBBB   L      EEEEE   SSSS
+//    V   V   A A   R   R   I    A A   B   B  L      E      S
+//    V   V  A   A  RRRR    I   A   A  BBBB   L      EEE     SSS
+//     V V   AAAAA  R  R    I   AAAAA  B   B  L      E          S
+//      V    A   A  R   R  III  A   A  BBBB   LLLLL  EEEEE  SSSS
+//    ----------------------------------------------------------------------------------
 
 //studentID, gives namespace and identifier in CentralManagerService
 int studentID;
@@ -147,6 +189,12 @@ ros::Publisher commandPublisher;
 // communication with crazyRadio node. Connect and disconnect
 ros::Publisher crazyRadioCommandPublisher;
 
+// Publisher that the Safe Controller YAML parameters have been loaded
+ros::Publisher safeYAMLloadedPublisher;
+// Publisher that the Custom Controller YAML parameters have been loaded
+ros::Publisher customYAMLloadedPublisher;
+
+
 rosbag::Bag bag;
 
 // variables for the states:
@@ -180,6 +228,51 @@ bool finished_land = false;
 ros::Timer timer_takeoff;
 ros::Timer timer_land;
 
+// Timers for the Loading of YAML parameters
+ros::Timer timer_load_from_yaml_ready_for_safe_controller;
+ros::Timer timer_load_from_yaml_ready_for_custom_controller;
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//    FFFFF  U   U  N   N   CCCC  TTTTT  III   OOO   N   N
+//    F      U   U  NN  N  C        T     I   O   O  NN  N
+//    FFF    U   U  N N N  C        T     I   O   O  N N N
+//    F      U   U  N  NN  C        T     I   O   O  N  NN
+//    F       UUU   N   N   CCCC    T    III   OOO   N   N
+//
+//    PPPP   RRRR    OOO   TTTTT   OOO   TTTTT  Y   Y  PPPP   EEEEE   SSSS
+//    P   P  R   R  O   O    T    O   O    T     Y Y   P   P  E      S
+//    PPPP   RRRR   O   O    T    O   O    T      Y    PPPP   EEE     SSS
+//    P      R  R   O   O    T    O   O    T      Y    P      E          S
+//    P      R   R   OOO     T     OOO     T      Y    P      EEEEE  SSSS
+//    ----------------------------------------------------------------------------------
+
+
+void requestLoadControllerYamlAllAgentsCallback(const std_msgs::Int32& msg);
+void requestLoadControllerYamlCallback(const std_msgs::Int32& msg);
+
+void requestLoadSafeControllerYamlTimerCallback(const ros::TimerEvent&);
+void requestLoadCustomControllerYamlTimerCallback(const ros::TimerEvent&);
+
+void crazyRadioCommandAllAgentsCallback(const std_msgs::Int32& msg);
+
+
+
+//    ----------------------------------------------------------------------------------
+//    FFFFF  U   U  N   N   CCCC  TTTTT  III   OOO   N   N
+//    F      U   U  NN  N  C        T     I   O   O  NN  N
+//    FFF    U   U  N N N  C        T     I   O   O  N N N
+//    F      U   U  N  NN  C        T     I   O   O  N  NN
+//    F       UUU   N   N   CCCC    T    III   OOO   N   N
+//
+//    III M   M PPPP  L     EEEEE M   M EEEEE N   N TTTTT   A   TTTTT III  OOO  N   N
+//     I  MM MM P   P L     E     MM MM E     NN  N   T    A A    T    I  O   O NN  N
+//     I  M M M PPPP  L     EEE   M M M EEE   N N N   T   A   A   T    I  O   O N N N
+//     I  M   M P     L     E     M   M E     N  NN   T   AAAAA   T    I  O   O N  NN
+//    III M   M P     LLLLL EEEEE M   M EEEEE N   N   T   A   A   T   III  OOO  N   N
+//    ----------------------------------------------------------------------------------
 
 void loadSafeController() {
 	ros::NodeHandle nodeHandle("~");
@@ -374,7 +467,7 @@ void changeFlyingStateTo(int new_state)
     }
     else
     {
-        ROS_INFO("Disconnected and trying to change state. Stays goes to MOTORS OFF");
+        ROS_INFO("Disconnected and trying to change state. State goes to MOTORS OFF");
         flying_state = STATE_MOTORS_OFF;
     }
 
@@ -686,6 +779,11 @@ void emergencyStopCallback(const std_msgs::Int32& msg)
     commandCallback(msg);
 }
 
+void commandAllAgentsCallback(const std_msgs::Int32& msg)
+{
+    commandCallback(msg);
+}
+
 void crazyRadioStatusCallback(const std_msgs::Int32& msg)
 {
     crazyradio_status = msg.data;
@@ -708,11 +806,115 @@ void safeSetPointCallback(const Setpoint& newSetpoint)
 }
 
 
-void safeYAMLloadedCallback(const std_msgs::Int32& msg)
+void requestLoadControllerYamlAllAgentsCallback(const std_msgs::Int32& msg)
 {
-    ROS_INFO("received msg safe loaded YAML");
-    loadSafeControllerParameters();
+    // Pass the message directly through to the same callback that
+    // responds to this type of message from the "Student_GUI"
+    requestLoadControllerYamlCallback(msg);
 }
+
+void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
+{
+    // Extract from the "msg" for which controller the YAML
+    // parameters should be loaded
+    controller_to_load_yaml = msg.data;
+
+    // Get the path to the "d_fall_pps" package
+    // > This is the absolute path to where the D-FaLL-System is installed
+    // > This path should be contained in the environemnt variable "d_fall_pps"
+    std::string d_fall_pps_path = ros::package::getPath("d_fall_pps");
+    ROS_INFO_STREAM(d_fall_pps_path);
+
+    // First, we re-load parameters from the "ClientConfig" YAML file
+    // > Amongst other parameters, this YAML file contains the name of the 
+    //   controller to use for the safe and custom controller
+    // > i.e., the parameters named "safeController" and "customController"
+    std::string cmd = "rosparam load " + d_fall_pps_path + "/param/ClientConfig.yaml " + ros_namespace + "/PPSClient";
+    system(cmd.c_str());
+    ROS_INFO_STREAM(cmd);
+
+    // Switch between loading for the different controllers
+    switch(controller_to_load_yaml)
+    {
+        case LOAD_YAML_SAFE_CONTROLLER:
+            // Re-load the parameters of the safe controller:
+            cmd = "rosparam load " + d_fall_pps_path + "/param/SafeController.yaml " + ros_namespace + "/SafeControllerService";
+            system(cmd.c_str());
+            ROS_INFO_STREAM(cmd);
+
+            // Start a timer which, in its callback, will subsequently call thte functions that 
+            // assigns the YAML parameters to the appropriate local variables
+            ros::NodeHandle nodeHandle("~");
+            timer_load_from_yaml_ready_for_safe_controller = nodeHandle.createTimer(ros::Duration(1), &MainWindow::requestLoadSafeControllerYamlTimerCallback, this, true);
+
+            break;
+
+        case LOAD_YAML_CUSTOM_CONTROLLER:
+            // Re-load the parameters of the custom controller:
+            cmd = "rosparam load " + d_fall_pps_path + "/param/CustomController.yaml " + ros_namespace + "/CustomControllerService";
+            system(cmd.c_str());
+            ROS_INFO_STREAM(cmd);
+
+            // Start a timer which, in its callback, will subsequently call thte functions that 
+            // assigns the YAML parameters to the appropriate local variables
+            ros::NodeHandle nodeHandle("~");
+            timer_load_from_yaml_ready_for_custom_controller = nodeHandle.createTimer(ros::Duration(1), &MainWindow::requestLoadCustomControllerYamlTimerCallback, this, true);
+
+            break;
+
+        default:
+            ROS_INFO("Unknown 'controller to load yaml' command, thus nothing will be loaded");
+            break;
+    }
+    
+}
+
+void requestLoadSafeControllerYamlTimerCallback(const ros::TimerEvent&)
+{
+    // Print out some info
+    ROS_INFO("Received timer callback that the safe controller YAML has been loaded.");
+    ROS_INFO("Now assigning to local variables.");
+
+    // Assign to class variables those parameters that are relevant for the for this class
+    loadSafeControllerParameters();
+
+    // Send a message so that the safe controller instance so that it also assigns the
+    // parameters to its relevant class variables
+    std_msgs::Int32 msg;
+    msg.data = 1;
+    safeYAMLloadedPublisher.publish(msg);
+}
+
+void requestLoadCustomControllerYamlTimerCallback(const ros::TimerEvent&)
+{
+    // Print out some info
+    ROS_INFO("Received timer callback that the safe controller YAML has been loaded.");
+    ROS_INFO("Now assigning to local variables.");
+
+    // Note: none of the custom controller parameters are relevant for this class.
+
+    // Send a message so that the safe controller instance so that it also assigns the
+    // parameters to its relevant class variables
+    std_msgs::Int32 msg;
+    msg.data = 1;
+    customYAMLloadedPublisher.publish(msg);
+}
+
+
+
+
+void crazyRadioCommandAllAgentsCallback((const std_msgs::Int32& msg))
+{
+    // The "msg" received can be directly published on the "crazyRadioCommandPublisher"
+    // class variable because it is same format message
+    // > NOTE: this may be inefficient to "just" pass on the message,
+    //   the intention is that it is more transparent that the "coordinator"
+    //   node requests all agents to (re/dis)-connect from, and the
+    //   individual agents pass this along to their respective radio node.
+    crazyRadioCommandPublisher.publish(msg);
+}
+
+
 
 int getBatteryState()
 {
@@ -792,6 +994,15 @@ void CFBatteryCallback(const std_msgs::Float32& msg)
     }
 }
 
+
+//    ----------------------------------------------------------------------------------
+//    M   M    A    III  N   N
+//    MM MM   A A    I   NN  N
+//    M M M  A   A   I   N N N
+//    M   M  AAAAA   I   N  NN
+//    M   M  A   A  III  N   N
+//    ----------------------------------------------------------------------------------
+
 int main(int argc, char* argv[])
 {
 	ros::init(argc, argv, "PPSClient");
@@ -864,10 +1075,30 @@ int main(int argc, char* argv[])
     // subscriber for emergencyStop
     ros::Subscriber emergencyStopSubscriber = namespaceNodeHandle.subscribe("/my_GUI/emergencyStop", 1, emergencyStopCallback);
 
+    // Subscriber for "commandAllAgents" commands that are sent from the coordinator node
+    ros::Subscriber commandAllAgentsSubscriber = namespaceNodeHandle.subscribe("/my_GUI/commandAllAgents", 1, commandAllAgentsCallback);
+
     // crazyradio status. Connected, connecting or disconnected
     ros::Subscriber crazyRadioStatusSubscriber = namespaceNodeHandle.subscribe("CrazyRadio/CrazyRadioStatus", 1, crazyRadioStatusCallback);
 
-    ros::Subscriber safeYAMloadedSubscriber = namespaceNodeHandle.subscribe("student_GUI/safeYAMLloaded", 1, safeYAMLloadedCallback);
+    // Subscriber for the loading the controller YAML
+    // parameters from the Student GUI
+    ros::Subscriber requestLoadControllerYamlFromGUISubscriber = namespaceNodeHandle.subscribe("student_GUI/requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);
+
+    // Subscriber for the loading the controller YAML
+    // parameters from the Coordintor GUI
+    ros::Subscriber requestLoadControllerYamlAllAgentsSubscriber = namespaceNodeHandle.subscribe("/my_GUI/requestLoadControllerYamlAllAgents", 1, requestLoadControllerYamlAllAgentsCallback);
+
+    // Publisher that the Safe Controller YAML parameters have been loaded
+    safeYAMLloadedPublisher = my_nodeHandle.advertise<std_msgs::Int32>("safeYAMLloaded", 1);
+
+    // Publisher that the Custom Controller YAML parameters have been loaded
+    customYAMLloadedPublisher = my_nodeHandle.advertise<std_msgs::Int32>("customYAMLloaded", 1);
+
+    // Subscriber for "crazyRadioCommandAllAgents" commands that are sent from the coordinator node
+    ros::Subscriber crazyRadioCommandAllAgentsSubscriber = namespaceNodeHandle.subscribe("/my_GUI/crazyRadioCommandAllAgents", 1, crazyRadioCommandAllAgentsCallback);
+    
+    
 
     // know the battery level of the CF
     ros::Subscriber CFBatterySubscriber = namespaceNodeHandle.subscribe("CrazyRadio/CFBattery", 1, CFBatteryCallback);

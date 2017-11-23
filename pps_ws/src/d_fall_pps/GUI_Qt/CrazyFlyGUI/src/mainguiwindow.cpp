@@ -232,6 +232,20 @@ void MainGUIWindow::_init()
     ros::NodeHandle nodeHandle("~");
     DBChangedPublisher = nodeHandle.advertise<std_msgs::Int32>("DBChanged", 1);
     emergencyStopPublisher = nodeHandle.advertise<std_msgs::Int32>("emergencyStop", 1);
+
+    // Initialise the publisher for sending "commands" from here (the master)
+    // to all of the agent nodes
+    commandAllAgentsPublisher = nodeHandle.advertise<std_msgs::Int32>("commandAllAgents", 1);
+
+    // Initialise the publisher for sending request from here (the master)
+    // to all of the agent nodes that they should re-load parameters from
+    // the YAML files for their controllers
+    requestLoadControllerYamlAllAgentsPublisher = nodeHandle.advertise<std_msgs::Int32>("requestLoadControllerYamlAllAgents", 1);
+
+    // Initialise the publisher for sending a request from here (the master)
+    // to all of the agents nodes that they should (re/dis)-connect from
+    // the Crazy-Radio
+    crazyRadioCommandAllAgentsPublisher = nodeHandle.advertise<std_msgs::Int32>("crazyRadioCommandAllAgents", 1);
     #endif
 }
 
@@ -962,9 +976,68 @@ void MainGUIWindow::on_comboBoxCFs_currentTextChanged(const QString &arg1)
 }
 
 
+// For the buttons that commands all of the agent nodes to:
+// > TAKE-OFF
+void MainGUIWindow::on_all_take_off_button_clicked()
+{
+    std_msgs::Int32 msg;
+    msg.data = CMD_CRAZYFLY_TAKE_OFF;
+    commandAllAgentsPublisher.publish(msg);
+}
+// > LAND
+void MainGUIWindow::on_all_land_button_clicked()
+{
+    std_msgs::Int32 msg;
+    msg.data = CMD_CRAZYFLY_LAND;
+    commandAllAgentsPublisher.publish(msg);
+}
+// > MOTORS OFF
 void MainGUIWindow::on_all_motors_off_button_clicked()
 {
     std_msgs::Int32 msg;
     msg.data = CMD_CRAZYFLY_MOTORS_OFF;
-    emergencyStopPublisher.publish(msg);
+    commandAllAgentsPublisher.publish(msg);
+    //emergencyStopPublisher.publish(msg);
+}
+// > ENABLE SAFE CONTROLLER
+void MainGUIWindow::on_all_enable_safe_controller_button_clicked()
+{
+    std_msgs::Int32 msg;
+    msg.data = CMD_USE_SAFE_CONTROLLER;
+    commandAllAgentsPublisher.publish(msg);
+}
+// > ENABLE SAFE CONTROLLER
+void MainGUIWindow::on_all_enable_custom_controller_button_clicked()
+{
+    std_msgs::Int32 msg;
+    msg.data = CMD_USE_CUSTOM_CONTROLLER;
+    commandAllAgentsPublisher.publish(msg);
+}
+// > LOAD THE YAML PARAMETERS FOR THE SAFE CONTROLLER
+void MainGUIWindow::on_all_load_safe_controller_yaml_button_clicked()
+{
+    std_msgs::Int32 msg;
+    msg.data = LOAD_YAML_SAFE_CONTROLLER;
+    requestLoadControllerYamlAllAgentsPublisher.publish(msg);
+}
+// > LOAD THE YAML PARAMETERS FOR THE CUSTOM CONTROLLER
+void MainGUIWindow::on_all_load_custom_controller_yaml_button_clicked()
+{
+    std_msgs::Int32 msg;
+    msg.data = LOAD_YAML_CUSTOM_CONTROLLER;
+    requestLoadControllerYamlAllAgentsPublisher.publish(msg);
+}
+// > (RE)CONNECT THE RADIO
+void MainGUIWindow::on_all_connect_button_clicked()
+{
+    std_msgs::Int32 msg;
+    msg.data = CMD_RECONNECT;
+    crazyRadioCommandAllAgentsPublisher.publish(msg);
+}
+// > DISCONNECT THE RADIO
+void MainGUIWindow::on_all_disconnect_button_clicked()
+{
+    std_msgs::Int32 msg;
+    msg.data = CMD_DISCONNECT;
+    crazyRadioCommandAllAgentsPublisher.publish(msg);
 }

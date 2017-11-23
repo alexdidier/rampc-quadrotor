@@ -52,7 +52,24 @@
 #include <std_msgs/Int32.h>
 
 
+// The constants that are sent to the agents in order to
+// "command" changes in their operation state
+#define CMD_USE_SAFE_CONTROLLER   1
+#define CMD_USE_CUSTOM_CONTROLLER 2
+#define CMD_CRAZYFLY_TAKE_OFF     3
+#define CMD_CRAZYFLY_LAND         4
 #define CMD_CRAZYFLY_MOTORS_OFF   5
+
+// The constants that are sent to the agents in order to
+// adjust their radio connection
+#define CMD_RECONNECT  0
+#define CMD_DISCONNECT 1
+
+// For which controller parameters to load
+#define LOAD_YAML_SAFE_CONTROLLER   0
+#define LOAD_YAML_CUSTOM_CONTROLLER 1
+
+
 using namespace d_fall_pps;
 
 #endif
@@ -166,15 +183,20 @@ private slots:
 
     void on_comboBoxCFs_currentTextChanged(const QString &arg1);
 
-    void on_all_motors_off_button_clicked();
-
-    // For the buttons that command "all" client nodes
+    
+    // For the buttons that "command" all of the agent nodes
+    // > For changing the operation state
     void on_all_take_off_button_clicked();
     void on_all_land_button_clicked();
+    void on_all_motors_off_button_clicked();
     void on_all_enable_safe_controller_button_clicked();
     void on_all_enable_custom_controller_button_clicked();
+    // > For loading the parameter
     void on_all_load_safe_controller_yaml_button_clicked();
     void on_all_load_custom_controller_yaml_button_clicked();
+    // > For the radio connection
+    void on_all_connect_button_clicked();
+    void on_all_disconnect_button_clicked();
 
 private:
 
@@ -191,6 +213,21 @@ private:
 
     ros::Publisher DBChangedPublisher;
     ros::Publisher emergencyStopPublisher;
+
+    // Publsher for sending "commands" from here (the master) to all
+    // of the agent nodes (where a "command" is the integer that
+    // gives the directive to "take-off", "land, "motors-off", etc...)
+    ros::Publisher commandAllAgentsPublisher;
+
+    // Publisher for sending a request from here (the master) to all
+    // of the agent nodes that they should re-load parameters from
+    // the YAML files for their controllers
+    ros::Publisher requestLoadControllerYamlAllAgentsPublisher;
+
+    // Publisher for sending a request from here (the master) to all
+    // of the agents nodes that they should (re/dis)-connect from
+    // the Crazy-Radio
+    ros::Publisher crazyRadioCommandAllAgentsPublisher;
     #endif
 
     void updateComboBoxesCFs();

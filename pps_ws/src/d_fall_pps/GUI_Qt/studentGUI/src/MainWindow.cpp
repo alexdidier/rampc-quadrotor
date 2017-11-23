@@ -83,15 +83,23 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
 
     ros::NodeHandle my_nodeHandle("~");
     controllerSetpointPublisher = my_nodeHandle.advertise<Setpoint>("ControllerSetpoint", 1);
-    customYAMLloadedPublisher = my_nodeHandle.advertise<std_msgs::Int32>("customYAMLloaded", 1);
-    safeYAMLloadedPublisher = my_nodeHandle.advertise<std_msgs::Int32>("safeYAMLloaded", 1);
-
+    
 
     // communication with PPS Client, just to make it possible to communicate through terminal also we use PPSClient's name
     ros::NodeHandle nh_PPSClient(m_ros_namespace + "/PPSClient");
     crazyRadioCommandPublisher = nh_PPSClient.advertise<std_msgs::Int32>("crazyRadioCommand", 1);
     PPSClientCommandPublisher = nh_PPSClient.advertise<std_msgs::Int32>("Command", 1);
 
+    // > For publishing a message that requests the 
+    //   YAML parameters to be re-loaded from file
+    // > The message contents specify which controller
+    //   the parameters should be re-loaded for
+    requestLoadControllerYamlPublisher;
+
+    // Subscriber for locking the load the controller YAML
+    // parameters when the Coordintor GUI requests a load
+    requestLoadControllerYamlAllAgentsSubscriber = namespaceNodeHandle.subscribe("/my_GUI/requestLoadControllerYamlAllAgents", 1, requestLoadControllerYamlAllAgentsCallback);
+    
 
     // First get student ID
     if(!nh_PPSClient.getParam("studentID", m_student_id))
@@ -483,67 +491,121 @@ void MainWindow::on_RF_disconnect_button_clicked()
     ROS_INFO("command disconnect published");
 }
 
-void MainWindow::safeYamlFileTimerCallback(const ros::TimerEvent&)
-{
-    // send msg that says that parameters have changed in YAML file
-    std_msgs::Int32 msg;
-    msg.data = 1;
-    this->safeYAMLloadedPublisher.publish(msg);
-    ROS_INFO("YALMloaded published");
-    ui->load_safe_yaml_button->setEnabled(true);
-}
+
+
 
 void MainWindow::on_load_safe_yaml_button_clicked()
 {
+    // Set the "load safe yaml" button to be disabled
     ui->load_safe_yaml_button->setEnabled(false);
-    ros::NodeHandle nodeHandle("~");
-    m_custom_timer_yaml_file = nodeHandle.createTimer(ros::Duration(1), &MainWindow::safeYamlFileTimerCallback, this, true);
 
-    std::string d_fall_pps_path = ros::package::getPath("d_fall_pps");
-    ROS_INFO_STREAM(d_fall_pps_path);
-
-    // first, reload the name of the custom controller:
-    std::string cmd = "rosparam load " + d_fall_pps_path + "/param/ClientConfig.yaml " + m_ros_namespace + "/PPSClient";
-    system(cmd.c_str());
-    ROS_INFO_STREAM(cmd);
-
-    // then, reload the parameters of the custom controller:
-    cmd = "rosparam load " + d_fall_pps_path + "/param/SafeController.yaml " + m_ros_namespace + "/SafeControllerService";
-    system(cmd.c_str());
-    ROS_INFO_STREAM(cmd);
-}
-
-
-
-void MainWindow::customYamlFileTimerCallback(const ros::TimerEvent&)
-{
-    // send msg that says that parameters have changed in YAML file
+    // Send a message requesting the parameters from the YAML
+    // file to be reloaded for the safe controller
     std_msgs::Int32 msg;
-    msg.data = 1;
-    this->customYAMLloadedPublisher.publish(msg);
-    ROS_INFO("YALMloaded published");
-    ui->load_custom_yaml_button->setEnabled(true);
+    msg.data = LOAD_YAML_SAFE_CONTROLLER;
+    this->requestLoadControllerYamlPublisher.publish(msg);
+    ROS_INFO("Request load of safe controller YAML published");
+
+    // Start a timer which will enable the button in its callback
+    // > This is required because the agent node waits some time between
+    //   re-loading the values from the YAML file and then assigning then
+    //   to the local variable of the agent.
+    // > Thus we use this timer to prevent the user from clicking the
+    //   button in the GUI repeatedly.
+    ros::NodeHandle nodeHandle("~");
+    m_custom_timer_yaml_file = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::safeYamlFileTimerCallback, this, true);
 }
+
+void MainWindow::safeYamlFileTimerCallback(const ros::TimerEvent&)
+{
+    // Enble the "load safe yaml" button again
+    ui->load_safe_yaml_button->setEnabled(true);
+}
+
+
+
+
 
 void MainWindow::on_load_custom_yaml_button_clicked()
 {
+    // Set the "load custom yaml" button to be disabled
     ui->load_custom_yaml_button->setEnabled(false);
+
+    // Send a message requesting the parameters from the YAML
+    // file to be reloaded for the custom controller
+    std_msgs::Int32 msg;
+    msg.data = LOAD_YAML_CUSTOM_CONTROLLER;
+    this->requestLoadControllerYamlPublisher.publish(msg);
+    ROS_INFO("Request load of custom controller YAML published");
+
+    // Start a timer which will enable the button in its callback
+    // > This is required because the agent node waits some time between
+    //   re-loading the values from the YAML file and then assigning then
+    //   to the local variable of the agent.
+    // > Thus we use this timer to prevent the user from clicking the
+    //   button in the GUI repeatedly.
     ros::NodeHandle nodeHandle("~");
-    m_custom_timer_yaml_file = nodeHandle.createTimer(ros::Duration(1), &MainWindow::customYamlFileTimerCallback, this, true);
-
-    std::string d_fall_pps_path = ros::package::getPath("d_fall_pps");
-    ROS_INFO_STREAM(d_fall_pps_path);
-
-    // first, reload the name of the custom controller:
-    std::string cmd = "rosparam load " + d_fall_pps_path + "/param/ClientConfig.yaml " + m_ros_namespace + "/PPSClient";
-    system(cmd.c_str());
-    ROS_INFO_STREAM(cmd);
-
-    // then, reload the parameters of the custom controller:
-    cmd = "rosparam load " + d_fall_pps_path + "/param/CustomController.yaml " + m_ros_namespace + "/CustomControllerService";
-    system(cmd.c_str());
-    ROS_INFO_STREAM(cmd);
+    m_custom_timer_yaml_file = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::customYamlFileTimerCallback, this, true);    
 }
+
+void MainWindow::customYamlFileTimerCallback(const ros::TimerEvent&)
+{
+    // Enble the "load custom yaml" button again
+    ui->load_custom_yaml_button->setEnabled(true);
+}
+
+
+
+
+
+
+void MainWindow::requestLoadControllerYamlAllAgentsCallback(const ros::TimerEvent&)
+{
+    // Extract from the "msg" for which controller the YAML
+    // parameters should be loaded
+    controller_to_load_yaml = msg.data;
+
+    // Switch between loading for the different controllers
+    switch(controller_to_load_yaml)
+    {
+        case LOAD_YAML_SAFE_CONTROLLER:
+            // Set the "load safe yaml" button to be disabled
+            ui->load_safe_yaml_button->setEnabled(false);
+
+            // Start a timer which will enable the button in its callback
+            // > This is required because the agent node waits some time between
+            //   re-loading the values from the YAML file and then assigning then
+            //   to the local variable of the agent.
+            // > Thus we use this timer to prevent the user from clicking the
+            //   button in the GUI repeatedly.
+            ros::NodeHandle nodeHandle("~");
+            m_custom_timer_yaml_file = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::safeYamlFileTimerCallback, this, true);
+
+            break;
+
+        case LOAD_YAML_CUSTOM_CONTROLLER:
+            // Set the "load custom yaml" button to be disabled
+            ui->load_custom_yaml_button->setEnabled(false);
+
+            // Start a timer which will enable the button in its callback
+            // > This is required because the agent node waits some time between
+            //   re-loading the values from the YAML file and then assigning then
+            //   to the local variable of the agent.
+            // > Thus we use this timer to prevent the user from clicking the
+            //   button in the GUI repeatedly.
+            ros::NodeHandle nodeHandle("~");
+            m_custom_timer_yaml_file = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::customYamlFileTimerCallback, this, true);    
+
+            break;
+
+        default:
+            ROS_INFO("Unknown 'all controllers to load yaml' command, thus nothing will be disabled");
+            break;
+    }
+}
+
+
+
 
 void MainWindow::on_en_custom_controller_clicked()
 {
