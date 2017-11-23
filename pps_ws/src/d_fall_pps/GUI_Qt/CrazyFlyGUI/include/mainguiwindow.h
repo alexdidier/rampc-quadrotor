@@ -168,6 +168,14 @@ private slots:
 
     void on_all_motors_off_button_clicked();
 
+    // For the buttons that command "all" client nodes
+    void on_all_take_off_button_clicked();
+    void on_all_land_button_clicked();
+    void on_all_enable_safe_controller_button_clicked();
+    void on_all_enable_custom_controller_button_clicked();
+    void on_all_load_safe_controller_yaml_button_clicked();
+    void on_all_load_custom_controller_yaml_button_clicked();
+
 private:
 
     Ui::MainGUIWindow *ui;
