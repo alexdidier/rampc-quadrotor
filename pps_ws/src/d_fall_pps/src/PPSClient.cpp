@@ -111,8 +111,8 @@
 #define DISCONNECTED     2
 
 // For which controller parameters to load
-#define LOAD_YAML_SAFE_CONTROLLER   0
-#define LOAD_YAML_CUSTOM_CONTROLLER 1
+#define LOAD_YAML_SAFE_CONTROLLER   1
+#define LOAD_YAML_CUSTOM_CONTROLLER 2
 
 
 // Parameters for take off and landing. Eventually will go in YAML file
@@ -833,6 +833,9 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
     system(cmd.c_str());
     ROS_INFO_STREAM(cmd);
 
+    // Create the "nodeHandle" needed in the switch cases below
+    ros::NodeHandle nodeHandle("~");
+
     // Switch between loading for the different controllers
     switch(controller_to_load_yaml)
     {
@@ -844,7 +847,6 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
 
             // Start a timer which, in its callback, will subsequently call thte functions that 
             // assigns the YAML parameters to the appropriate local variables
-            ros::NodeHandle nodeHandle("~");
             timer_load_from_yaml_ready_for_safe_controller = nodeHandle.createTimer(ros::Duration(1), requestLoadSafeControllerYamlTimerCallback, true);
 
             break;
@@ -857,7 +859,6 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
 
             // Start a timer which, in its callback, will subsequently call thte functions that 
             // assigns the YAML parameters to the appropriate local variables
-            ros::NodeHandle nodeHandle("~");
             timer_load_from_yaml_ready_for_custom_controller = nodeHandle.createTimer(ros::Duration(1), requestLoadCustomControllerYamlTimerCallback, true);
 
             break;

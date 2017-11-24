@@ -66,8 +66,8 @@
 #define CMD_DISCONNECT 1
 
 // For which controller parameters to load
-#define LOAD_YAML_SAFE_CONTROLLER   0
-#define LOAD_YAML_CUSTOM_CONTROLLER 1
+#define LOAD_YAML_SAFE_CONTROLLER   1
+#define LOAD_YAML_CUSTOM_CONTROLLER 2
 
 
 using namespace d_fall_pps;

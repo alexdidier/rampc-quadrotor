@@ -79,8 +79,8 @@
 #define BATTERY_STATE_LOW    1
 
 // For which controller parameters to load
-#define LOAD_YAML_SAFE_CONTROLLER   0
-#define LOAD_YAML_CUSTOM_CONTROLLER 1
+#define LOAD_YAML_SAFE_CONTROLLER   1
+#define LOAD_YAML_CUSTOM_CONTROLLER 2
 
 // Universal constants
 #define PI 3.141592653589
