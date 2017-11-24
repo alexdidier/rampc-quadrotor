@@ -132,7 +132,8 @@ private:
 
     std::string m_ros_namespace;
 
-    ros::Timer m_custom_timer_yaml_file;
+    ros::Timer m_timer_yaml_file_for_safe_controller;
+    ros::Timer m_timer_yaml_file_for_custom_controlller;
 
     int m_student_id;
     CrazyflieContext m_context;

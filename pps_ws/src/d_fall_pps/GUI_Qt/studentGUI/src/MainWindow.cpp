@@ -513,7 +513,7 @@ void MainWindow::on_load_safe_yaml_button_clicked()
     // > Thus we use this timer to prevent the user from clicking the
     //   button in the GUI repeatedly.
     ros::NodeHandle nodeHandle("~");
-    m_custom_timer_yaml_file = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::safeYamlFileTimerCallback, this, true);
+    m_timer_yaml_file_for_safe_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::safeYamlFileTimerCallback, this, true);
 }
 
 void MainWindow::safeYamlFileTimerCallback(const ros::TimerEvent&)
@@ -545,7 +545,7 @@ void MainWindow::on_load_custom_yaml_button_clicked()
     // > Thus we use this timer to prevent the user from clicking the
     //   button in the GUI repeatedly.
     ros::NodeHandle nodeHandle("~");
-    m_custom_timer_yaml_file = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::customYamlFileTimerCallback, this, true);    
+    m_timer_yaml_file_for_custom_controlller = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::customYamlFileTimerCallback, this, true);    
 }
 
 void MainWindow::customYamlFileTimerCallback(const ros::TimerEvent&)
@@ -563,7 +563,10 @@ void MainWindow::requestLoadControllerYamlAllAgentsCallback(const ros::TimerEven
 {
     // Extract from the "msg" for which controller the YAML
     // parameters should be loaded
-    controller_to_load_yaml = msg.data;
+    int controller_to_load_yaml = msg.data;
+
+    
+    ros::NodeHandle nodeHandle("~");
 
     // Switch between loading for the different controllers
     switch(controller_to_load_yaml)
@@ -578,8 +581,7 @@ void MainWindow::requestLoadControllerYamlAllAgentsCallback(const ros::TimerEven
             //   to the local variable of the agent.
             // > Thus we use this timer to prevent the user from clicking the
             //   button in the GUI repeatedly.
-            ros::NodeHandle nodeHandle("~");
-            m_custom_timer_yaml_file = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::safeYamlFileTimerCallback, this, true);
+            m_timer_yaml_file_for_safe_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::safeYamlFileTimerCallback, this, true);
 
             break;
 
@@ -593,8 +595,7 @@ void MainWindow::requestLoadControllerYamlAllAgentsCallback(const ros::TimerEven
             //   to the local variable of the agent.
             // > Thus we use this timer to prevent the user from clicking the
             //   button in the GUI repeatedly.
-            ros::NodeHandle nodeHandle("~");
-            m_custom_timer_yaml_file = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::customYamlFileTimerCallback, this, true);    
+            m_timer_yaml_file_for_custom_controlller = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::customYamlFileTimerCallback, this, true);    
 
             break;
 
