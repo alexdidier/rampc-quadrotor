@@ -845,7 +845,7 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
             // Start a timer which, in its callback, will subsequently call thte functions that 
             // assigns the YAML parameters to the appropriate local variables
             ros::NodeHandle nodeHandle("~");
-            timer_load_from_yaml_ready_for_safe_controller = nodeHandle.createTimer(ros::Duration(1), &MainWindow::requestLoadSafeControllerYamlTimerCallback, this, true);
+            timer_load_from_yaml_ready_for_safe_controller = nodeHandle.createTimer(ros::Duration(1), requestLoadSafeControllerYamlTimerCallback, this, true);
 
             break;
 
@@ -858,7 +858,7 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
             // Start a timer which, in its callback, will subsequently call thte functions that 
             // assigns the YAML parameters to the appropriate local variables
             ros::NodeHandle nodeHandle("~");
-            timer_load_from_yaml_ready_for_custom_controller = nodeHandle.createTimer(ros::Duration(1), &MainWindow::requestLoadCustomControllerYamlTimerCallback, this, true);
+            timer_load_from_yaml_ready_for_custom_controller = nodeHandle.createTimer(ros::Duration(1), requestLoadCustomControllerYamlTimerCallback, this, true);
 
             break;
 

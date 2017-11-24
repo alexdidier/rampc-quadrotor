@@ -94,7 +94,7 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     //   YAML parameters to be re-loaded from file
     // > The message contents specify which controller
     //   the parameters should be re-loaded for
-    requestLoadControllerYamlPublisher;
+    requestLoadControllerYamlPublisher = nodeHandle.advertise<std_msgs::Int32>("requestLoadControllerYaml", 1);;
 
     // Subscriber for locking the load the controller YAML
     // parameters when the Coordintor GUI requests a load
