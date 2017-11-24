@@ -817,7 +817,7 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
 {
     // Extract from the "msg" for which controller the YAML
     // parameters should be loaded
-    controller_to_load_yaml = msg.data;
+    int controller_to_load_yaml = msg.data;
 
     // Get the path to the "d_fall_pps" package
     // > This is the absolute path to where the D-FaLL-System is installed

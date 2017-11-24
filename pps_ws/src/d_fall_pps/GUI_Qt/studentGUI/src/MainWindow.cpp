@@ -98,7 +98,7 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
 
     // Subscriber for locking the load the controller YAML
     // parameters when the Coordintor GUI requests a load
-    requestLoadControllerYamlAllAgentsSubscriber = namespaceNodeHandle.subscribe("/my_GUI/requestLoadControllerYamlAllAgents", 1, requestLoadControllerYamlAllAgentsCallback);
+    requestLoadControllerYamlAllAgentsSubscriber = nodeHandle.subscribe("/my_GUI/requestLoadControllerYamlAllAgents", 1, &MainWindow::requestLoadControllerYamlAllAgentsCallback);
     
 
     // First get student ID
