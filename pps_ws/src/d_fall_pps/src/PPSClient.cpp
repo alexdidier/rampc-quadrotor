@@ -1056,6 +1056,12 @@ int main(int argc, char* argv[])
 
     controllerUsedPublisher = nodeHandle.advertise<std_msgs::Int32>("controllerUsed", 1);
 
+    // Publisher that the Safe Controller YAML parameters have been loaded
+    safeYAMLloadedPublisher = nodeHandle.advertise<std_msgs::Int32>("safeYAMLloaded", 1);
+
+    // Publisher that the Custom Controller YAML parameters have been loaded
+    customYAMLloadedPublisher = nodeHandle.advertise<std_msgs::Int32>("customYAMLloaded", 1);
+
     // crazy radio status
     crazyradio_status = DISCONNECTED;
 
@@ -1090,16 +1096,8 @@ int main(int argc, char* argv[])
     // parameters from the Coordintor GUI
     ros::Subscriber requestLoadControllerYamlAllAgentsSubscriber = namespaceNodeHandle.subscribe("/my_GUI/requestLoadControllerYamlAllAgents", 1, requestLoadControllerYamlAllAgentsCallback);
 
-    // Publisher that the Safe Controller YAML parameters have been loaded
-    safeYAMLloadedPublisher = my_nodeHandle.advertise<std_msgs::Int32>("safeYAMLloaded", 1);
-
-    // Publisher that the Custom Controller YAML parameters have been loaded
-    customYAMLloadedPublisher = my_nodeHandle.advertise<std_msgs::Int32>("customYAMLloaded", 1);
-
     // Subscriber for "crazyRadioCommandAllAgents" commands that are sent from the coordinator node
     ros::Subscriber crazyRadioCommandAllAgentsSubscriber = namespaceNodeHandle.subscribe("/my_GUI/crazyRadioCommandAllAgents", 1, crazyRadioCommandAllAgentsCallback);
-    
-    
 
     // know the battery level of the CF
     ros::Subscriber CFBatterySubscriber = namespaceNodeHandle.subscribe("CrazyRadio/CFBattery", 1, CFBatteryCallback);
