@@ -904,7 +904,7 @@ void requestLoadCustomControllerYamlTimerCallback(const ros::TimerEvent&)
 
 
 
-void crazyRadioCommandAllAgentsCallback((const std_msgs::Int32& msg))
+void crazyRadioCommandAllAgentsCallback(const std_msgs::Int32& msg)
 {
     // The "msg" received can be directly published on the "crazyRadioCommandPublisher"
     // class variable because it is same format message
