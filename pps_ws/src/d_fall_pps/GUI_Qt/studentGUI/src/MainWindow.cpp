@@ -559,13 +559,13 @@ void MainWindow::customYamlFileTimerCallback(const ros::TimerEvent&)
 
 
 
-void MainWindow::requestLoadControllerYamlAllAgentsCallback(const ros::TimerEvent&)
+void MainWindow::requestLoadControllerYamlAllAgentsCallback(const std_msgs::Int32& msg)
 {
     // Extract from the "msg" for which controller the YAML
     // parameters should be loaded
     int controller_to_load_yaml = msg.data;
 
-    
+    // Create the "nodeHandle" needed in the switch cases below
     ros::NodeHandle nodeHandle("~");
 
     // Switch between loading for the different controllers
