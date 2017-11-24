@@ -184,7 +184,7 @@ private:
     void DBChangedCallback(const std_msgs::Int32& msg);
     void customYamlFileTimerCallback(const ros::TimerEvent&);
     void safeYamlFileTimerCallback(const ros::TimerEvent&);
-    void requestLoadControllerYamlAllAgentsCallback(const ros::TimerEvent&);
+    void requestLoadControllerYamlAllAgentsCallback(const std_msgs::Int32& msg);
     void controllerUsedChangedCallback(const std_msgs::Int32& msg);
     void batteryStateChangedCallback(const std_msgs::Int32& msg);
 
