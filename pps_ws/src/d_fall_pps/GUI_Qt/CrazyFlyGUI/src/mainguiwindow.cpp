@@ -977,6 +977,20 @@ void MainGUIWindow::on_comboBoxCFs_currentTextChanged(const QString &arg1)
 
 
 // For the buttons that commands all of the agent nodes to:
+// > (RE)CONNECT THE RADIO
+void MainGUIWindow::on_all_connect_button_clicked()
+{
+    std_msgs::Int32 msg;
+    msg.data = CMD_RECONNECT;
+    crazyRadioCommandAllAgentsPublisher.publish(msg);
+}
+// > DISCONNECT THE RADIO
+void MainGUIWindow::on_all_disconnect_button_clicked()
+{
+    std_msgs::Int32 msg;
+    msg.data = CMD_DISCONNECT;
+    crazyRadioCommandAllAgentsPublisher.publish(msg);
+}
 // > TAKE-OFF
 void MainGUIWindow::on_all_take_off_button_clicked()
 {
@@ -1027,17 +1041,17 @@ void MainGUIWindow::on_all_load_custom_controller_yaml_button_clicked()
     msg.data = LOAD_YAML_CUSTOM_CONTROLLER;
     requestLoadControllerYamlAllAgentsPublisher.publish(msg);
 }
-// > (RE)CONNECT THE RADIO
-void MainGUIWindow::on_all_connect_button_clicked()
+// > SEND THE YAML PARAMETERS FOR THE SAFE CONTROLLER
+void MainGUIWindow::on_all_send_safe_controller_yaml_button_clicked()
 {
     std_msgs::Int32 msg;
-    msg.data = CMD_RECONNECT;
-    crazyRadioCommandAllAgentsPublisher.publish(msg);
+    msg.data = LOAD_YAML_SAFE_CONTROLLER;
+    requestLoadControllerYamlAllAgentsPublisher.publish(msg);
 }
-// > DISCONNECT THE RADIO
-void MainGUIWindow::on_all_disconnect_button_clicked()
+// > SEND THE YAML PARAMETERS FOR THE CUSTOM CONTROLLER
+void MainGUIWindow::on_all_send_custom_controller_yaml_button_clicked()
 {
     std_msgs::Int32 msg;
-    msg.data = CMD_DISCONNECT;
-    crazyRadioCommandAllAgentsPublisher.publish(msg);
+    msg.data = LOAD_YAML_CUSTOM_CONTROLLER;
+    requestLoadControllerYamlAllAgentsPublisher.publish(msg);
 }

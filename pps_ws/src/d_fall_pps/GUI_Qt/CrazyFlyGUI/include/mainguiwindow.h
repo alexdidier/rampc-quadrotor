@@ -185,6 +185,9 @@ private slots:
 
     
     // For the buttons that "command" all of the agent nodes
+    // > For the radio connection
+    void on_all_connect_button_clicked();
+    void on_all_disconnect_button_clicked();
     // > For changing the operation state
     void on_all_take_off_button_clicked();
     void on_all_land_button_clicked();
@@ -194,9 +197,10 @@ private slots:
     // > For loading the parameter
     void on_all_load_safe_controller_yaml_button_clicked();
     void on_all_load_custom_controller_yaml_button_clicked();
-    // > For the radio connection
-    void on_all_connect_button_clicked();
-    void on_all_disconnect_button_clicked();
+    // > For sending a message with updated parameters
+    void on_all_send_safe_controller_yaml_button_clicked();
+    void on_all_send_custom_controller_yaml_button_clicked();
+    
 
 private:
 
