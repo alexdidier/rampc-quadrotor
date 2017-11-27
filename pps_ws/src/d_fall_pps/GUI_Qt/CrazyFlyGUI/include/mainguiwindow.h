@@ -206,7 +206,17 @@ private:
 
     Ui::MainGUIWindow *ui;
     myGraphicsScene* scene;
+
+    ros::Timer m_timer_yaml_file_for_safe_controller;
+    ros::Timer m_timer_yaml_file_for_custom_controlller;
+
     void _init();
+
+    void safeYamlFileTimerCallback(const ros::TimerEvent&);
+    void customYamlFileTimerCallback(const ros::TimerEvent&);
+
+    void customSendYamlAsMessageTimerCallback(const ros::TimerEvent&);
+    
 
 
     #ifdef CATKIN_MAKE
@@ -214,6 +224,8 @@ private:
     std::vector<Marker*> markers_vector;
     std::vector<crazyFly*> crazyflies_vector;
     CFLinker* cf_linker;
+
+    std::string ros_namespace;
 
     ros::Publisher DBChangedPublisher;
     ros::Publisher emergencyStopPublisher;
@@ -227,6 +239,11 @@ private:
     // of the agent nodes that they should re-load parameters from
     // the YAML files for their controllers
     ros::Publisher requestLoadControllerYamlAllAgentsPublisher;
+
+    // Publisher for sending a message from here (the master) to all
+    // of the agent nodes with the Custom Controller YAML parameters
+    // as the contents of the message
+    ros::Publisher customYAMLasMessagePublisher;
 
     // Publisher for sending a request from here (the master) to all
     // of the agents nodes that they should (re/dis)-connect from

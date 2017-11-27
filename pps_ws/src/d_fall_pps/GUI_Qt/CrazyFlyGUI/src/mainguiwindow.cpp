@@ -229,6 +229,9 @@ void MainGUIWindow::_init()
     QObject::connect(_rosNodeThread, SIGNAL(newViconData(const ptrToMessage&)), this, SLOT(updateNewViconData(const ptrToMessage&)));
     QObject::connect(cf_linker, SIGNAL(updateComboBoxes()), this, SLOT(updateComboBoxes()));
 
+
+    ros_namespace = ros::this_node::getNamespace();
+
     ros::NodeHandle nodeHandle("~");
     DBChangedPublisher = nodeHandle.advertise<std_msgs::Int32>("DBChanged", 1);
     emergencyStopPublisher = nodeHandle.advertise<std_msgs::Int32>("emergencyStop", 1);
@@ -241,6 +244,11 @@ void MainGUIWindow::_init()
     // to all of the agent nodes that they should re-load parameters from
     // the YAML files for their controllers
     requestLoadControllerYamlAllAgentsPublisher = nodeHandle.advertise<std_msgs::Int32>("requestLoadControllerYamlAllAgents", 1);
+
+    // Initialise the publisher for sending message from here (the master)
+    // to all of the agent nodes with the Custom Controller YAML parameters
+    // as the contents of the message
+    customYAMLasMessagePublisher = nodeHandle.advertise<CustomControllerYAML>("customYAMLasMessage", 1);
 
     // Initialise the publisher for sending a request from here (the master)
     // to all of the agents nodes that they should (re/dis)-connect from
@@ -1030,28 +1038,218 @@ void MainGUIWindow::on_all_enable_custom_controller_button_clicked()
 // > LOAD THE YAML PARAMETERS FOR THE SAFE CONTROLLER
 void MainGUIWindow::on_all_load_safe_controller_yaml_button_clicked()
 {
+	// Disable the button
+	ui->all_load_safe_controller_yaml_button->setEnabled(false);
+	ui->all_send_safe_controller_yaml_button->setEnabled(false);
+
+	// Send the message that the YAML paremters should be loaded
     std_msgs::Int32 msg;
     msg.data = LOAD_YAML_SAFE_CONTROLLER;
     requestLoadControllerYamlAllAgentsPublisher.publish(msg);
+
+    // Start a timer which will enable the button in its callback
+    // > This is required because the agent node waits some time between
+    //   re-loading the values from the YAML file and then assigning then
+    //   to the local variable of the agent.
+    // > Thus we use this timer to prevent the user from clicking the
+    //   button in the GUI repeatedly.
+    ros::NodeHandle nodeHandle("~");
+    m_timer_yaml_file_for_safe_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::safeYamlFileTimerCallback, this, true);
 }
 // > LOAD THE YAML PARAMETERS FOR THE CUSTOM CONTROLLER
 void MainGUIWindow::on_all_load_custom_controller_yaml_button_clicked()
 {
+	// Disable the button
+	ui->all_load_custom_controller_yaml_button->setEnabled(false);
+	ui->all_send_custom_controller_yaml_button->setEnabled(false);
+
+	// Send the message that the YAML paremters should be loaded
     std_msgs::Int32 msg;
     msg.data = LOAD_YAML_CUSTOM_CONTROLLER;
     requestLoadControllerYamlAllAgentsPublisher.publish(msg);
+
+    // Start a timer which will enable the button in its callback
+    // > This is required because the agent node waits some time between
+    //   re-loading the values from the YAML file and then assigning then
+    //   to the local variable of the agent.
+    // > Thus we use this timer to prevent the user from clicking the
+    //   button in the GUI repeatedly.
+    ros::NodeHandle nodeHandle("~");
+    m_timer_yaml_file_for_custom_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::customYamlFileTimerCallback, this, true);
+
 }
 // > SEND THE YAML PARAMETERS FOR THE SAFE CONTROLLER
 void MainGUIWindow::on_all_send_safe_controller_yaml_button_clicked()
 {
+	// Disable the button
+	ui->all_load_safe_controller_yaml_button->setEnabled(false);
+	ui->all_send_safe_controller_yaml_button->setEnabled(false);
+
+	// Send the message that the YAML paremters should be loaded
     std_msgs::Int32 msg;
     msg.data = LOAD_YAML_SAFE_CONTROLLER;
     requestLoadControllerYamlAllAgentsPublisher.publish(msg);
+
+    // Start a timer which will enable the button in its callback
+    // > This is required because the agent node waits some time between
+    //   re-loading the values from the YAML file and then assigning then
+    //   to the local variable of the agent.
+    // > Thus we use this timer to prevent the user from clicking the
+    //   button in the GUI repeatedly.
+    ros::NodeHandle nodeHandle("~");
+    m_timer_yaml_file_for_safe_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::safeYamlFileTimerCallback, this, true);
 }
 // > SEND THE YAML PARAMETERS FOR THE CUSTOM CONTROLLER
 void MainGUIWindow::on_all_send_custom_controller_yaml_button_clicked()
 {
-    std_msgs::Int32 msg;
-    msg.data = LOAD_YAML_CUSTOM_CONTROLLER;
-    requestLoadControllerYamlAllAgentsPublisher.publish(msg);
+	// Disable the button
+	ui->all_load_custom_controller_yaml_button->setEnabled(false);
+	ui->all_send_custom_controller_yaml_button->setEnabled(false);
+
+	// Get the path to the "d_fall_pps" package
+    // > This is the absolute path to where the D-FaLL-System is installed
+    // > This path should be contained in the environemnt variable "d_fall_pps"
+    std::string d_fall_pps_path = ros::package::getPath("d_fall_pps");
+    ROS_INFO_STREAM(d_fall_pps_path);
+
+    // First, we re-load parameters from the "ClientConfig" YAML file
+    // > Amongst other parameters, this YAML file contains the name of the 
+    //   controller to use for the safe and custom controller
+    // > i.e., the parameters named "safeController" and "customController"
+    std::string cmd = "rosparam load " + d_fall_pps_path + "/param/CustomController.yaml " + ros_namespace + "/my_GUI";
+    system(cmd.c_str());
+    ROS_INFO_STREAM(cmd);
+
+    // Create the "nodeHandle" needed in the switch cases below
+    ros::NodeHandle nodeHandle("~");
+
+    // Start a timer which, in its callback, will subsequently call thte functions that 
+    // assigns the YAML parameters to the appropriate local variables
+    m_timer_yaml_file_for_custom_controller = nodeHandle.createTimer(ros::Duration(1), customSendYamlAsMessageTimerCallback, this, true);
+
+
+}
+// > CALLBACL TO RE-ENABLE THE SAFE CONTROLLER YAML BUTTONS
+void MainGUIWindow::safeYamlFileTimerCallback(const ros::TimerEvent&)
+{
+    // Enble the "load" and the "send" safe controller YAML button again
+    ui->all_load_safe_controller_yaml_button->setEnabled(true);
+	ui->all_send_safe_controller_yaml_button->setEnabled(true);
+}
+// > CALLBACL TO RE-ENABLE THE CUSTOM CONTROLLER YAML BUTTONS
+void MainGUIWindow::customYamlFileTimerCallback(const ros::TimerEvent&)
+{
+    // Enble the "load" and the "send" custom controller YAML button again
+    ui->all_load_custom_controller_yaml_button->setEnabled(true);
+	ui->all_send_custom_controller_yaml_button->setEnabled(true);
+}
+// > CALLBACL TO SEND THE CUSTOM CONTROLLER YAML PARAMETERS AS A MESSAGE
+void MainGUIWindow::customSendYamlAsMessageTimerCallback(const ros::TimerEvent&)
+{
+	// Load the CUSTOM controller YAML parameters from file into a message for
+	// sending directly to the "CustonControllerService" node of every agent
+
+	ros::NodeHandle nodeHandle("~");
+
+	// Instaniate a local variable of the message type
+	CustomControllerYAML customControllerYamlMessage;
+
+	// Load the data directly from the YAML file into the message
+	customControllerYamlMessage.mass = getParameterFloat(nodeHandle, "mass");
+	customControllerYamlMessage.control_frequency = getParameterFloat(nodeHandle, "control_frequency");
+	getParameterFloatVector(nodeHandle, "motorPoly", customControllerYamlMessage.motorPoly, 3);
+	customControllerYamlMessage.shouldPublishCurrent_xyz_yaw = getParameterBool(nodeHandle, "shouldPublishCurrent_xyz_yaw");
+	customControllerYamlMessage.shouldFollowAnotherAgent = getParameterBool(nodeHandle, "shouldFollowAnotherAgent");
+	int temp_number_of_agents_in_a_line = getParameterIntVectorWithUnknownLength(nodeHandle, "follow_in_a_line_agentIDs", customControllerYamlMessage.follow_in_a_line_agentIDs);
+    // > Double check that the sizes agree
+    if ( temp_number_of_agents_in_a_line != customControllerYamlMessage.follow_in_a_line_agentIDs.size() )
+    {
+    	// Update the user if the sizes don't agree
+    	ROS_ERROR_STREAM("parameter 'follow_in_a_line_agentIDs' was loaded with two different lengths, " << temp_number_of_agents_in_a_line << " versus " << customControllerYamlMessage.follow_in_a_line_agentIDs.size() );
+    }
+
+    // Publish the message containing the loaded YAML parameters
+    customYAMLasMessagePublisher.publish(customControllerYamlMessage);
+
+	// Start a timer which will enable the button in its callback
+    m_timer_yaml_file_for_custom_controller = nodeHandle.createTimer(ros::Duration(0.5), &MainWindow::customYamlFileTimerCallback, this, true);
+}
+
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//    L       OOO     A    DDDD        Y   Y    A    M   M  L
+//    L      O   O   A A   D   D        Y Y    A A   MM MM  L
+//    L      O   O  A   A  D   D         Y    A   A  M M M  L
+//    L      O   O  AAAAA  D   D         Y    AAAAA  M   M  L
+//    LLLLL   OOO   A   A  DDDD          Y    A   A  M   M  LLLLL
+//
+//    PPPP     A    RRRR     A    M   M  EEEEE  TTTTT  EEEEE  RRRR    SSSS
+//    P   P   A A   R   R   A A   MM MM  E        T    E      R   R  S
+//    PPPP   A   A  RRRR   A   A  M M M  EEE      T    EEE    RRRR    SSS
+//    P      AAAAA  R  R   AAAAA  M   M  E        T    E      R  R       S
+//    P      A   A  R   R  A   A  M   M  EEEEE    T    EEEEE  R   R  SSSS
+//    ----------------------------------------------------------------------------------
+
+// load parameters from corresponding YAML file
+//
+// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name)
+{
+    float val;
+    if(!nodeHandle.getParam(name, val))
+    {
+        ROS_ERROR_STREAM("missing parameter '" << name << "'");
+    }
+    return val;
+}
+// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+void getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length)
+{
+    if(!nodeHandle.getParam(name, val)){
+        ROS_ERROR_STREAM("missing parameter '" << name << "'");
+    }
+    if(val.size() != length) {
+        ROS_ERROR_STREAM("parameter '" << name << "' has wrong array length, " << length << " needed");
+    }
+}
+// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+int getParameterInt(ros::NodeHandle& nodeHandle, std::string name)
+{
+    int val;
+    if(!nodeHandle.getParam(name, val))
+    {
+        ROS_ERROR_STREAM("missing parameter '" << name << "'");
+    }
+    return val;
+}
+// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+void getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val, int length)
+{
+    if(!nodeHandle.getParam(name, val)){
+        ROS_ERROR_STREAM("missing parameter '" << name << "'");
+    }
+    if(val.size() != length) {
+        ROS_ERROR_STREAM("parameter '" << name << "' has wrong array length, " << length << " needed");
+    }
+}
+// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+int getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val)
+{
+    if(!nodeHandle.getParam(name, val)){
+        ROS_ERROR_STREAM("missing parameter '" << name << "'");
+    }
+    return val.size();
+}
+// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+bool getParameterBool(ros::NodeHandle& nodeHandle, std::string name)
+{
+    bool val;
+    if(!nodeHandle.getParam(name, val))
+    {
+        ROS_ERROR_STREAM("missing parameter '" << name << "'");
+    }
+    return val;
 }
