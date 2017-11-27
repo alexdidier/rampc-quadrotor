@@ -827,7 +827,7 @@ void customYAMLasMessageCallback(const CustomControllerYAML& newCustomController
 	ROS_INFO("Received message containing a new set of Custom Controller YAML parameters");
 
 	// Display one of the YAML parameters to debug if it is working correctly
-	ROS_INFO("DEBUGGING: mass received in message = " << newCustomControllerParameters.mass );	
+	ROS_INFO_STREAM("DEBUGGING: mass received in message = " << newCustomControllerParameters.mass );	
 
 	// Call the function that computes details an values that are needed from these
     // parameters loaded above
