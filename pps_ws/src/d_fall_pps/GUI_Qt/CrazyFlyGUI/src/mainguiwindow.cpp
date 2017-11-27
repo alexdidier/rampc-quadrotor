@@ -1054,7 +1054,7 @@ void MainGUIWindow::on_all_load_safe_controller_yaml_button_clicked()
     // > Thus we use this timer to prevent the user from clicking the
     //   button in the GUI repeatedly.
     ros::NodeHandle nodeHandle("~");
-    m_timer_yaml_file_for_safe_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::safeYamlFileTimerCallback, this, true);
+    m_timer_yaml_file_for_safe_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainGUIWindow::safeYamlFileTimerCallback, this, true);
 }
 // > LOAD THE YAML PARAMETERS FOR THE CUSTOM CONTROLLER
 void MainGUIWindow::on_all_load_custom_controller_yaml_button_clicked()
@@ -1075,7 +1075,7 @@ void MainGUIWindow::on_all_load_custom_controller_yaml_button_clicked()
     // > Thus we use this timer to prevent the user from clicking the
     //   button in the GUI repeatedly.
     ros::NodeHandle nodeHandle("~");
-    m_timer_yaml_file_for_custom_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::customYamlFileTimerCallback, this, true);
+    m_timer_yaml_file_for_custom_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainGUIWindow::customYamlFileTimerCallback, this, true);
 
 }
 // > SEND THE YAML PARAMETERS FOR THE SAFE CONTROLLER
@@ -1097,7 +1097,7 @@ void MainGUIWindow::on_all_send_safe_controller_yaml_button_clicked()
     // > Thus we use this timer to prevent the user from clicking the
     //   button in the GUI repeatedly.
     ros::NodeHandle nodeHandle("~");
-    m_timer_yaml_file_for_safe_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::safeYamlFileTimerCallback, this, true);
+    m_timer_yaml_file_for_safe_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainGUIWindow::safeYamlFileTimerCallback, this, true);
 }
 // > SEND THE YAML PARAMETERS FOR THE CUSTOM CONTROLLER
 void MainGUIWindow::on_all_send_custom_controller_yaml_button_clicked()
@@ -1125,7 +1125,7 @@ void MainGUIWindow::on_all_send_custom_controller_yaml_button_clicked()
 
     // Start a timer which, in its callback, will subsequently call thte functions that 
     // assigns the YAML parameters to the appropriate local variables
-    m_timer_yaml_file_for_custom_controller = nodeHandle.createTimer(ros::Duration(1), customSendYamlAsMessageTimerCallback, this, true);
+    m_timer_yaml_file_for_custom_controller = nodeHandle.createTimer(ros::Duration(1), &MainGUIWindow::customSendYamlAsMessageTimerCallback, this, true);
 
 
 }
@@ -1155,24 +1155,43 @@ void MainGUIWindow::customSendYamlAsMessageTimerCallback(const ros::TimerEvent&)
 	CustomControllerYAML customControllerYamlMessage;
 
 	// Load the data directly from the YAML file into the message
-	customControllerYamlMessage.mass = getParameterFloat(nodeHandle, "mass");
-	customControllerYamlMessage.control_frequency = getParameterFloat(nodeHandle, "control_frequency");
-	getParameterFloatVector(nodeHandle, "motorPoly", customControllerYamlMessage.motorPoly, 3);
-	customControllerYamlMessage.shouldPublishCurrent_xyz_yaw = getParameterBool(nodeHandle, "shouldPublishCurrent_xyz_yaw");
-	customControllerYamlMessage.shouldFollowAnotherAgent = getParameterBool(nodeHandle, "shouldFollowAnotherAgent");
-	int temp_number_of_agents_in_a_line = getParameterIntVectorWithUnknownLength(nodeHandle, "follow_in_a_line_agentIDs", customControllerYamlMessage.follow_in_a_line_agentIDs);
-    // > Double check that the sizes agree
+	customControllerYamlMessage.mass = MainGUIWindow::getParameterFloat(nodeHandle, "mass");
+
+	customControllerYamlMessage.control_frequency = MainGUIWindow::getParameterFloat(nodeHandle, "control_frequency");
+
+    std::vector<float> temp_motorPoly(3);
+	MainGUIWindow::getParameterFloatVector(nodeHandle, "motorPoly", temp_motorPoly, 3);
+    // Copy the loaded data into the message
+    for ( int i=0 ; i<3 ; i++ )
+    {
+        customControllerYamlMessage.motorPoly.push_back( temp_motorPoly[i] );
+    }
+
+	customControllerYamlMessage.shouldPublishCurrent_xyz_yaw = MainGUIWindow::getParameterBool(nodeHandle, "shouldPublishCurrent_xyz_yaw");
+
+	customControllerYamlMessage.shouldFollowAnotherAgent = MainGUIWindow::getParameterBool(nodeHandle, "shouldFollowAnotherAgent");
+
+    std::vector<int> temp_follow_in_a_line_agentIDs(100);
+	int temp_number_of_agents_in_a_line = MainGUIWindow::getParameterIntVectorWithUnknownLength(nodeHandle, "follow_in_a_line_agentIDs", temp_follow_in_a_line_agentIDs);
+// > Double check that the sizes agree
     if ( temp_number_of_agents_in_a_line != customControllerYamlMessage.follow_in_a_line_agentIDs.size() )
     {
     	// Update the user if the sizes don't agree
     	ROS_ERROR_STREAM("parameter 'follow_in_a_line_agentIDs' was loaded with two different lengths, " << temp_number_of_agents_in_a_line << " versus " << customControllerYamlMessage.follow_in_a_line_agentIDs.size() );
     }
+    // Copy the loaded data into the message
+    for ( int i=0 ; i<temp_number_of_agents_in_a_line ; i++ )
+    {
+        customControllerYamlMessage.follow_in_a_line_agentIDs.push_back( temp_follow_in_a_line_agentIDs[i] );
+    }
+
+    
 
     // Publish the message containing the loaded YAML parameters
     customYAMLasMessagePublisher.publish(customControllerYamlMessage);
 
 	// Start a timer which will enable the button in its callback
-    m_timer_yaml_file_for_custom_controller = nodeHandle.createTimer(ros::Duration(0.5), &MainWindow::customYamlFileTimerCallback, this, true);
+    m_timer_yaml_file_for_custom_controller = nodeHandle.createTimer(ros::Duration(0.5), &MainGUIWindow::customYamlFileTimerCallback, this, true);
 }
 
 
@@ -1196,7 +1215,7 @@ void MainGUIWindow::customSendYamlAsMessageTimerCallback(const ros::TimerEvent&)
 // load parameters from corresponding YAML file
 //
 // This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name)
+float MainGUIWindow::getParameterFloat(ros::NodeHandle& nodeHandle, std::string name)
 {
     float val;
     if(!nodeHandle.getParam(name, val))
@@ -1206,7 +1225,7 @@ float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name)
     return val;
 }
 // This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-void getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length)
+void MainGUIWindow::getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length)
 {
     if(!nodeHandle.getParam(name, val)){
         ROS_ERROR_STREAM("missing parameter '" << name << "'");
@@ -1216,7 +1235,7 @@ void getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std:
     }
 }
 // This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-int getParameterInt(ros::NodeHandle& nodeHandle, std::string name)
+int MainGUIWindow::getParameterInt(ros::NodeHandle& nodeHandle, std::string name)
 {
     int val;
     if(!nodeHandle.getParam(name, val))
@@ -1226,7 +1245,7 @@ int getParameterInt(ros::NodeHandle& nodeHandle, std::string name)
     return val;
 }
 // This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-void getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val, int length)
+void MainGUIWindow::getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val, int length)
 {
     if(!nodeHandle.getParam(name, val)){
         ROS_ERROR_STREAM("missing parameter '" << name << "'");
@@ -1236,7 +1255,7 @@ void getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::stri
     }
 }
 // This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-int getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val)
+int MainGUIWindow::getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val)
 {
     if(!nodeHandle.getParam(name, val)){
         ROS_ERROR_STREAM("missing parameter '" << name << "'");
@@ -1244,7 +1263,7 @@ int getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::str
     return val.size();
 }
 // This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-bool getParameterBool(ros::NodeHandle& nodeHandle, std::string name)
+bool MainGUIWindow::getParameterBool(ros::NodeHandle& nodeHandle, std::string name)
 {
     bool val;
     if(!nodeHandle.getParam(name, val))

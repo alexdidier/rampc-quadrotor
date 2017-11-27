@@ -56,6 +56,7 @@
 #include "d_fall_pps/ControlCommand.h"
 #include "d_fall_pps/Controller.h"
 #include "d_fall_pps/DebugMsg.h"
+#include "d_fall_pps/CustomControllerYAML.h"
 
 #include <std_msgs/Int32.h>
 
@@ -213,9 +214,9 @@ void setpointCallback(const Setpoint& newSetpoint);
 void xyz_yaw_to_follow_callback(const Setpoint& newSetpoint);
 
 // LOAD PARAMETERS
-float getFloatParameter(ros::NodeHandle& nodeHandle, std::string name);
-void loadParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length);
-int getParameterInt(ros::NodeHandle& nodeHandle, std::string name)
+float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name);
+void getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length);
+int getParameterInt(ros::NodeHandle& nodeHandle, std::string name);
 void getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val, int length);
 int getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val);
 bool getParameterBool(ros::NodeHandle& nodeHandle, std::string name);
@@ -223,6 +224,7 @@ bool getParameterBool(ros::NodeHandle& nodeHandle, std::string name);
 void loadPPSTemplateParameters(ros::NodeHandle& nodeHandle);
 void processLoadedParameters(ros::NodeHandle& nodeHandle);
 void customYAMLloadedCallback(const std_msgs::Int32& msg);
+void customYAMLasMessageCallback(const CustomControllerYAML& newCustomControllerParameters);
 
 
 
@@ -531,14 +533,14 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 
 
     // PUBLISH THE CURRENT X,Y,Z, AND YAW (if required)
-    if shouldPublishCurrent_xyz_yaw
+    if (shouldPublishCurrent_xyz_yaw)
     {
 	    // publish setpoint for FollowController of another student group
 	    Setpoint temp_current_xyz_yaw;
 	    // Fill in the x,y,z, and yaw info directly from the data provided to this
 	    // function
 	    temp_current_xyz_yaw.x   = request.ownCrazyflie.x;
-	    temp_current_xyz_yaw.y   = equest.ownCrazyflie.y;
+	    temp_current_xyz_yaw.y   = request.ownCrazyflie.y;
 	    temp_current_xyz_yaw.z   = request.ownCrazyflie.z;
 	    temp_current_xyz_yaw.yaw = request.ownCrazyflie.yaw;
 	    my_current_xyz_yaw_publisher.publish(temp_current_xyz_yaw);
@@ -731,7 +733,7 @@ void setpointCallback(const Setpoint& newSetpoint)
 void xyz_yaw_to_follow_callback(const Setpoint& newSetpoint)
 {
 	// The setpoint should only be updated if allow by the respective booelan
-	if shouldFollowAnotherAgent
+	if (shouldFollowAnotherAgent)
 	{
 	    setpoint[0] = newSetpoint.x;
 	    setpoint[1] = newSetpoint.y;
@@ -809,14 +811,14 @@ void customYAMLasMessageCallback(const CustomControllerYAML& newCustomController
 	// central coordinator node
 	cf_mass = newCustomControllerParameters.mass;
 	control_frequency = newCustomControllerParameters.control_frequency;
-	for (i=1;i<3;i++)
+	for (int i=1;i<3;i++)
 	{
 		motorPoly[i] = newCustomControllerParameters.motorPoly[i];
 	}
 	shouldPublishCurrent_xyz_yaw = newCustomControllerParameters.shouldPublishCurrent_xyz_yaw;
 	shouldFollowAnotherAgent = newCustomControllerParameters.shouldFollowAnotherAgent;
 	follow_in_a_line_agentIDs.clear();
-	for ( i=1 ; i<newCustomControllerParameters.follow_in_a_line_agentIDs.size() ; i++ )
+	for ( int i=1 ; i<newCustomControllerParameters.follow_in_a_line_agentIDs.size() ; i++ )
 	{
 		follow_in_a_line_agentIDs.push_back( newCustomControllerParameters.follow_in_a_line_agentIDs[i] );
 	}
@@ -843,7 +845,7 @@ void processLoadedParameters(ros::NodeHandle& nodeHandle)
     		// our own agent ID in the list
     		bool foundMyAgentID = false;
     		// Iterate through the vector of "follow_in_a_line_agentIDs"
-	    	for ( i=0 ; i<follow_in_a_line_agentIDs.size() ; i++ )
+	    	for ( int i=0 ; i<follow_in_a_line_agentIDs.size() ; i++ )
 	    	{
 	    		// Check if the current entry matches the ID of this agent
 	    		if (follow_in_a_line_agentIDs[i] == my_agentID)

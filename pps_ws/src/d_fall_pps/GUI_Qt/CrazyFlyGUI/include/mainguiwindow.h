@@ -48,6 +48,7 @@
 
 #include "d_fall_pps/CrazyflieDB.h"
 #include "d_fall_pps/CrazyflieEntry.h"
+#include "d_fall_pps/CustomControllerYAML.h"
 
 #include <std_msgs/Int32.h>
 
@@ -208,7 +209,7 @@ private:
     myGraphicsScene* scene;
 
     ros::Timer m_timer_yaml_file_for_safe_controller;
-    ros::Timer m_timer_yaml_file_for_custom_controlller;
+    ros::Timer m_timer_yaml_file_for_custom_controller;
 
     void _init();
 
@@ -217,6 +218,12 @@ private:
 
     void customSendYamlAsMessageTimerCallback(const ros::TimerEvent&);
     
+    float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name);
+    void getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length);
+    int getParameterInt(ros::NodeHandle& nodeHandle, std::string name);
+    void getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val, int length);
+    int getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val);
+    bool getParameterBool(ros::NodeHandle& nodeHandle, std::string name);
 
 
     #ifdef CATKIN_MAKE

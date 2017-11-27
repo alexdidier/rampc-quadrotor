@@ -1,6 +1,6 @@
 float64 mass
 float64 control_frequency
-float64[3] motorPoly
+float64[] motorPoly
 bool shouldPublishCurrent_xyz_yaw
 bool shouldFollowAnotherAgent
-int[] follow_in_a_line_agentIDs
+uint32[] follow_in_a_line_agentIDs

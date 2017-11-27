@@ -134,6 +134,7 @@ add_message_files(
   CrazyflieDB.msg
   #----------------------------------------------------------------------
   DebugMsg.msg
+  CustomControllerYAML.msg
 )
 
 ## Generate services in the 'srv' folder
