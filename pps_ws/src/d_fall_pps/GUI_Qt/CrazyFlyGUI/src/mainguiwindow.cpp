@@ -1159,6 +1159,9 @@ void MainGUIWindow::customSendYamlAsMessageTimerCallback(const ros::TimerEvent&)
 	// > For the mass
 	customControllerYamlMessage.mass = MainGUIWindow::getParameterFloat(nodeHandle, "mass");
 
+    // Debugging this this works
+    ROS_INFO_STREAM("DEBUGGING: mass loaded from the custom controller YAML = " << customControllerYamlMessage.mass );
+
 	// > For the control_frequency
 	customControllerYamlMessage.control_frequency = MainGUIWindow::getParameterFloat(nodeHandle, "control_frequency");
 
@@ -1181,10 +1184,10 @@ void MainGUIWindow::customSendYamlAsMessageTimerCallback(const ros::TimerEvent&)
     std::vector<int> temp_follow_in_a_line_agentIDs(100);
 	int temp_number_of_agents_in_a_line = MainGUIWindow::getParameterIntVectorWithUnknownLength(nodeHandle, "follow_in_a_line_agentIDs", temp_follow_in_a_line_agentIDs);
 	// > Double check that the sizes agree
-    if ( temp_number_of_agents_in_a_line != customControllerYamlMessage.follow_in_a_line_agentIDs.size() )
+    if ( temp_number_of_agents_in_a_line != temp_follow_in_a_line_agentIDs.size() )
     {
     	// Update the user if the sizes don't agree
-    	ROS_ERROR_STREAM("parameter 'follow_in_a_line_agentIDs' was loaded with two different lengths, " << temp_number_of_agents_in_a_line << " versus " << customControllerYamlMessage.follow_in_a_line_agentIDs.size() );
+    	ROS_ERROR_STREAM("parameter 'follow_in_a_line_agentIDs' was loaded with two different lengths, " << temp_number_of_agents_in_a_line << " versus " << temp_follow_in_a_line_agentIDs.size() );
     }
     // Copy the loaded data into the message
     for ( int i=0 ; i<temp_number_of_agents_in_a_line ; i++ )
