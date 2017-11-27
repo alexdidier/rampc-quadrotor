@@ -130,6 +130,13 @@ const float gainMatrixThrust[9] = {0, 0, 0.22195826, 0, 0, 0.12362477, 0, 0, 0};
 ros::Publisher debugPublisher;
 
 
+
+
+
+// Boolean whether to execute the convert into body frame function
+bool shouldPerformConvertIntoBodyFrame = false;
+
+
 // VARIABLES RELATING TO PUBLISHING CURRENT POSITION AND FOLLOWING ANOTHER AGENT'S
 // POSITION
 
@@ -658,20 +665,43 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 // This function WILL NEED TO BE edited for successful completion of the PPS exercise
 void convertIntoBodyFrame(float stateInertial[9], float (&stateBody)[9], float yaw_measured)
 {
-    // Fill in the (x,y,z) position estimates to be returned
-    stateBody[0] = stateInertial[0];
-    stateBody[1] = stateInertial[1];
-    stateBody[2] = stateInertial[2];
+	if (shouldPerformConvertIntoBodyFrame)
+	{
+		float sinYaw = sin(yaw_measured);
+    	float cosYaw = cos(yaw_measured);
 
-    // Fill in the (x,y,z) velocity estimates to be returned
-    stateBody[3] = stateInertial[3];
-    stateBody[4] = stateInertial[4];
-    stateBody[5] = stateInertial[5];
+    	// Fill in the (x,y,z) position estimates to be returned
+	    stateBody[0] = stateInertial[0] * cosYaw  +  stateInertial[1] * sinYaw;
+	    stateBody[1] = stateInertial[1] * cosYaw  -  stateInertial[0] * sinYaw;
+	    stateBody[2] = stateInertial[2];
 
-    // Fill in the (roll,pitch,yaw) estimates to be returned
-    stateBody[6] = stateInertial[6];
-    stateBody[7] = stateInertial[7];
-    stateBody[8] = stateInertial[8];
+	    // Fill in the (x,y,z) velocity estimates to be returned
+	    stateBody[3] = stateInertial[3] * cosYaw  +  stateInertial[4] * sinYaw;
+	    stateBody[4] = stateInertial[4] * cosYaw  -  stateInertial[3] * sinYaw;
+	    stateBody[5] = stateInertial[5];
+
+	    // Fill in the (roll,pitch,yaw) estimates to be returned
+	    stateBody[6] = stateInertial[6];
+	    stateBody[7] = stateInertial[7];
+	    stateBody[8] = stateInertial[8];
+	}
+	else
+	{
+	    // Fill in the (x,y,z) position estimates to be returned
+	    stateBody[0] = stateInertial[0];
+	    stateBody[1] = stateInertial[1];
+	    stateBody[2] = stateInertial[2];
+
+	    // Fill in the (x,y,z) velocity estimates to be returned
+	    stateBody[3] = stateInertial[3];
+	    stateBody[4] = stateInertial[4];
+	    stateBody[5] = stateInertial[5];
+
+	    // Fill in the (roll,pitch,yaw) estimates to be returned
+	    stateBody[6] = stateInertial[6];
+	    stateBody[7] = stateInertial[7];
+	    stateBody[8] = stateInertial[8];
+	}
 }
 
 
@@ -782,6 +812,9 @@ void loadPPSTemplateParameters(ros::NodeHandle& nodeHandle)
     //   thrust force in Newtons
     getParameterFloatVector(nodeHandle, "motorPoly", motorPoly, 3);
 
+    // > The boolean for whether to execute the convert into body frame function
+    shouldPerformConvertIntoBodyFrame = getParameterBool(nodeHandle, "shouldPerformConvertIntoBodyFrame");
+
     // > The boolean indicating whether the (x,y,z,yaw) of this agent should be published
     //   or not
     shouldPublishCurrent_xyz_yaw = getParameterBool(nodeHandle, "shouldPublishCurrent_xyz_yaw");
@@ -821,6 +854,10 @@ void customYAMLasMessageCallback(const CustomControllerYAML& newCustomController
 	{
 		motorPoly[i] = newCustomControllerParameters.motorPoly[i];
 	}
+
+	// > The boolean for whether to execute the convert into body frame function
+    shouldPerformConvertIntoBodyFrame = newCustomControllerParameters.shouldPerformConvertIntoBodyFrame;
+
 	shouldPublishCurrent_xyz_yaw = newCustomControllerParameters.shouldPublishCurrent_xyz_yaw;
 	shouldFollowAnotherAgent = newCustomControllerParameters.shouldFollowAnotherAgent;
 	follow_in_a_line_agentIDs.clear();

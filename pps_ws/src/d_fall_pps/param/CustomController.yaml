@@ -7,6 +7,9 @@ control_frequency : 200
 # Quadratic motor regression equation (a0, a1, a2)
 motorPoly : [5.484560e-4, 1.032633e-6, 2.130295e-11]
 
+# Boolean for whether to execute the convert into body frame function
+shouldPerformConvertIntoBodyFrame : false
+
 # Boolean indiciating whether the (x,y,z,yaw) of this agent should be published or not
 shouldPublishCurrent_xyz_yaw : false
 

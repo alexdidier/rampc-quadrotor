@@ -1174,6 +1174,9 @@ void MainGUIWindow::customSendYamlAsMessageTimerCallback(const ros::TimerEvent&)
         customControllerYamlMessage.motorPoly.push_back( temp_motorPoly[i] );
     }
 
+    // > For the boolean about whether to execute the convert into body frame function
+    customControllerYamlMessage.shouldPerformConvertIntoBodyFrame = MainGUIWindow::getParameterBool(nodeHandle, "shouldPerformConvertIntoBodyFrame");
+
     // > For the boolean about publishing the agents current position
 	customControllerYamlMessage.shouldPublishCurrent_xyz_yaw = MainGUIWindow::getParameterBool(nodeHandle, "shouldPublishCurrent_xyz_yaw");
 
