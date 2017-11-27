@@ -1155,10 +1155,14 @@ void MainGUIWindow::customSendYamlAsMessageTimerCallback(const ros::TimerEvent&)
 	CustomControllerYAML customControllerYamlMessage;
 
 	// Load the data directly from the YAML file into the message
+
+	// > For the mass
 	customControllerYamlMessage.mass = MainGUIWindow::getParameterFloat(nodeHandle, "mass");
 
+	// > For the control_frequency
 	customControllerYamlMessage.control_frequency = MainGUIWindow::getParameterFloat(nodeHandle, "control_frequency");
 
+	// > For the motorPoly coefficients
     std::vector<float> temp_motorPoly(3);
 	MainGUIWindow::getParameterFloatVector(nodeHandle, "motorPoly", temp_motorPoly, 3);
     // Copy the loaded data into the message
@@ -1167,13 +1171,16 @@ void MainGUIWindow::customSendYamlAsMessageTimerCallback(const ros::TimerEvent&)
         customControllerYamlMessage.motorPoly.push_back( temp_motorPoly[i] );
     }
 
+    // > For the boolean about publishing the agents current position
 	customControllerYamlMessage.shouldPublishCurrent_xyz_yaw = MainGUIWindow::getParameterBool(nodeHandle, "shouldPublishCurrent_xyz_yaw");
 
+	// > For the boolean about following another agent
 	customControllerYamlMessage.shouldFollowAnotherAgent = MainGUIWindow::getParameterBool(nodeHandle, "shouldFollowAnotherAgent");
 
+	// > For the ordered agent ID's for following eachother in a line
     std::vector<int> temp_follow_in_a_line_agentIDs(100);
 	int temp_number_of_agents_in_a_line = MainGUIWindow::getParameterIntVectorWithUnknownLength(nodeHandle, "follow_in_a_line_agentIDs", temp_follow_in_a_line_agentIDs);
-// > Double check that the sizes agree
+	// > Double check that the sizes agree
     if ( temp_number_of_agents_in_a_line != customControllerYamlMessage.follow_in_a_line_agentIDs.size() )
     {
     	// Update the user if the sizes don't agree
@@ -1183,9 +1190,7 @@ void MainGUIWindow::customSendYamlAsMessageTimerCallback(const ros::TimerEvent&)
     for ( int i=0 ; i<temp_number_of_agents_in_a_line ; i++ )
     {
         customControllerYamlMessage.follow_in_a_line_agentIDs.push_back( temp_follow_in_a_line_agentIDs[i] );
-    }
-
-    
+    }    
 
     // Publish the message containing the loaded YAML parameters
     customYAMLasMessagePublisher.publish(customControllerYamlMessage);
