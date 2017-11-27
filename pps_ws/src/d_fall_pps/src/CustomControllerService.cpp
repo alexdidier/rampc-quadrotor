@@ -816,14 +816,14 @@ void customYAMLasMessageCallback(const CustomControllerYAML& newCustomController
 	// central coordinator node
 	cf_mass = newCustomControllerParameters.mass;
 	control_frequency = newCustomControllerParameters.control_frequency;
-	for (int i=1;i<3;i++)
+	for (int i=0;i<3;i++)
 	{
 		motorPoly[i] = newCustomControllerParameters.motorPoly[i];
 	}
 	shouldPublishCurrent_xyz_yaw = newCustomControllerParameters.shouldPublishCurrent_xyz_yaw;
 	shouldFollowAnotherAgent = newCustomControllerParameters.shouldFollowAnotherAgent;
 	follow_in_a_line_agentIDs.clear();
-	for ( int i=1 ; i<newCustomControllerParameters.follow_in_a_line_agentIDs.size() ; i++ )
+	for ( int i=0 ; i<newCustomControllerParameters.follow_in_a_line_agentIDs.size() ; i++ )
 	{
 		follow_in_a_line_agentIDs.push_back( newCustomControllerParameters.follow_in_a_line_agentIDs[i] );
 	}
@@ -852,6 +852,10 @@ void processLoadedParameters(ros::NodeHandle& nodeHandle)
     // > in units of [Newtons]
     gravity_force = cf_mass * 9.81/(1000*4);
 
+    ROS_INFO_STREAM("DEBUGGING: my agent ID is = " << my_agentID );
+
+    ROS_INFO_STREAM("DEBUGGING: should attempt to find an agent to follow : " << shouldFollowAnotherAgent );
+
     // Look-up which agent should be followed
     if (shouldFollowAnotherAgent)
     {
@@ -868,9 +872,10 @@ void processLoadedParameters(ros::NodeHandle& nodeHandle)
 	    		if (follow_in_a_line_agentIDs[i] == my_agentID)
 	    		{
 	    			// Set the boolean flag that we have found out own agent ID
-	    			bool foundMyAgentID = true;
+	    			foundMyAgentID = true;
+                                ROS_INFO_STREAM("DEBUGGING: found my agent ID at i = " << i );
 	    			// If it is the first entry, then this agent is the leader
-	    			if (i==1)
+	    			if (i==0)
 	    			{
 	    				// The leader does not follow anyone else
 	    				shouldFollowAnotherAgent = false;
@@ -879,9 +884,10 @@ void processLoadedParameters(ros::NodeHandle& nodeHandle)
 	    			else
 	    			{
 	    				// The agent ID to follow is the previous entry
-	    				agentID_to_follow = follow_in_a_line_agentIDs[i-1];
+	    				agentID_to_follow = follow_in_a_line_agentIDs[i-1];	
+                                        shouldFollowAnotherAgent = true;
 
-ROS_INFO_STREAM("DEBUGGING: agentID_to_follow = " << agentID_to_follow );	
+                                        ROS_INFO_STREAM("DEBUGGING: now subscribing to agent ID = " << agentID_to_follow );
 
 	    				// Subscribe to the "my_current_xyz_yaw_topic" of the agent ID
 	    				// that this agent should be following
@@ -895,6 +901,7 @@ ROS_INFO_STREAM("DEBUGGING: agentID_to_follow = " << agentID_to_follow );
 	    	// Check whether we found our own agent ID
 	    	if (!foundMyAgentID)
 	    	{
+                        ROS_INFO("DEBUGGING: not following because my ID was not found");
 	    		// Revert to the default of not following any agent
     			shouldFollowAnotherAgent = false;
     			agentID_to_follow = 0;
@@ -902,6 +909,7 @@ ROS_INFO_STREAM("DEBUGGING: agentID_to_follow = " << agentID_to_follow );
     	}
     	else
     	{
+                ROS_INFO("DEBUGGING: not following because line vector has length zero");
     		// As the "follow_in_a_line_agentIDs" vector has length zero, revert to the
     		// default of not following any agent
     		shouldFollowAnotherAgent = false;
@@ -910,10 +918,16 @@ ROS_INFO_STREAM("DEBUGGING: agentID_to_follow = " << agentID_to_follow );
     }
     else
     {
+        ROS_INFO("DEBUGGING: not following because I was asked not to follow");
     	// Set to its default value the integer specifying the ID of the agent that will
     	// be followed by this agent
 		agentID_to_follow = 0;
     }
+
+    ROS_INFO_STREAM("DEBUGGING: shouldPublishCurrent_xyz_yaw = " << shouldPublishCurrent_xyz_yaw );
+    ROS_INFO_STREAM("DEBUGGING: shouldFollowAnotherAgent = " << shouldFollowAnotherAgent );
+    ROS_INFO_STREAM("DEBUGGING: agentID_to_follow = " << agentID_to_follow );
+
 }
 
 // This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
