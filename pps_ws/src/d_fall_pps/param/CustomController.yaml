@@ -1,8 +1,21 @@
-# mass of the crazyflie
-mass : 30
+# Mass of the crazyflie
+mass : 31
 
-# frequency of the controller, in hertz
+# Frequency of the controller, in hertz
 control_frequency : 200
 
-#quadratic motor regression equation (a0, a1, a2)
-motorPoly: [5.484560e-4, 1.032633e-6, 2.130295e-11]
+# Quadratic motor regression equation (a0, a1, a2)
+motorPoly : [5.484560e-4, 1.032633e-6, 2.130295e-11]
+
+# Boolean indiciating whether the (x,y,z,yaw) of this agent should be published or not
+shouldPublishCurrent_xyz_yaw : false
+
+# Boolean indicating whether the (x,y,z,yaw) setpoint of this agent should adapted in
+# an attempt to follow the "my_current_xyz_yaw_topic" from another agent
+shouldFollowAnotherAgent : false
+
+# The order in which agents should follow eachother
+# > This parameter is a vector of integers that specifies  agent ID's
+# > The order of the agent ID's is the ordering of the line formation
+# > i.e., the first ID is the leader, the second ID should follow the first ID, and so on
+follow_in_a_line_agentIDs : [1, 2, 3]
