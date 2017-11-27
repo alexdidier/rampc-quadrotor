@@ -732,6 +732,7 @@ void setpointCallback(const Setpoint& newSetpoint)
 //   class instance variable "xyz_yaw_to_follow_subscriber" is subscribed
 void xyz_yaw_to_follow_callback(const Setpoint& newSetpoint)
 {
+        //ROS_INFO("DEBUGGING: Received new setpoint from another agent");
 	// The setpoint should only be updated if allow by the respective booelan
 	if (shouldFollowAnotherAgent)
 	{
@@ -891,7 +892,7 @@ void processLoadedParameters(ros::NodeHandle& nodeHandle)
 
 	    				// Subscribe to the "my_current_xyz_yaw_topic" of the agent ID
 	    				// that this agent should be following
-	    				xyz_yaw_to_follow_subscriber = nodeHandle.subscribe("/" + std::to_string(agentID_to_follow - 1) + "/my_current_xyz_yaw_topic", 1, xyz_yaw_to_follow_callback);
+	    				xyz_yaw_to_follow_subscriber = nodeHandle.subscribe("/" + std::to_string(agentID_to_follow) + "/my_current_xyz_yaw_topic", 1, xyz_yaw_to_follow_callback);
 	    			}
 	    			// Break out of the for loop as the assumption is that each agent ID
 	    			// appears only once in the "follow_in_a_line_agentIDs" vector of ID's
