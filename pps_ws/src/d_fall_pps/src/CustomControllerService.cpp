@@ -823,6 +823,17 @@ void customYAMLasMessageCallback(const CustomControllerYAML& newCustomController
 		follow_in_a_line_agentIDs.push_back( newCustomControllerParameters.follow_in_a_line_agentIDs[i] );
 	}
 
+	// Let the user know that the message was received with new YAML parameters
+	ROS_INFO("Received message containing a new set of Custom Controller YAML parameters");
+
+	// Display one of the YAML parameters to debug if it is working correctly
+	ROS_INFO("DEBUGGING: mass received in message = " << newCustomControllerParameters.mass );	
+
+	// Call the function that computes details an values that are needed from these
+    // parameters loaded above
+    ros::NodeHandle nodeHandle("~");
+    processLoadedParameters(nodeHandle);
+
 }
 
 // This function CAN BE edited for successful completion of the PPS exercise, and the
