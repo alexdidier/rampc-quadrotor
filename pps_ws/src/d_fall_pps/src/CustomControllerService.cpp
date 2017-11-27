@@ -1068,7 +1068,8 @@ int main(int argc, char* argv[]) {
     // function "customYAMLasMessageCallback" each time a messaged is received on this topic
     // and the message is passed as an input argument to the "customYAMLasMessageCallback" class
     // function.
-    ros::Subscriber customYAMLasMessageSubscriber = namespace_nodeHandle.subscribe("my_GUI/customYAMLasMessage", 1, customYAMLasMessageCallback);
+    ros::NodeHandle temp_nodeHandle = ros::NodeHandle();
+    ros::Subscriber customYAMLasMessageSubscriber = temp_nodeHandle.subscribe("/my_GUI/customYAMLasMessage", 1, customYAMLasMessageCallback);
 
     // Print out some information to the user.
     ROS_INFO("CustomControllerService ready");
