@@ -83,6 +83,12 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
 
     ros::NodeHandle my_nodeHandle("~");
     controllerSetpointPublisher = my_nodeHandle.advertise<Setpoint>("ControllerSetpoint", 1);
+
+// > For publishing a message that requests the 
+    //   YAML parameters to be re-loaded from file
+    // > The message contents specify which controller
+    //   the parameters should be re-loaded for
+    requestLoadControllerYamlPublisher = my_nodeHandle.advertise<std_msgs::Int32>("requestLoadControllerYaml", 1);
     
 
     // communication with PPS Client, just to make it possible to communicate through terminal also we use PPSClient's name
@@ -90,11 +96,7 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     crazyRadioCommandPublisher = nh_PPSClient.advertise<std_msgs::Int32>("crazyRadioCommand", 1);
     PPSClientCommandPublisher = nh_PPSClient.advertise<std_msgs::Int32>("Command", 1);
 
-    // > For publishing a message that requests the 
-    //   YAML parameters to be re-loaded from file
-    // > The message contents specify which controller
-    //   the parameters should be re-loaded for
-    requestLoadControllerYamlPublisher = nodeHandle.advertise<std_msgs::Int32>("requestLoadControllerYaml", 1);
+    
 
     // Subscriber for locking the load the controller YAML
     // parameters when the Coordintor GUI requests a load

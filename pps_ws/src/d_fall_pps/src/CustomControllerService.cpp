@@ -770,6 +770,9 @@ void loadPPSTemplateParameters(ros::NodeHandle& nodeHandle)
 	// > The mass of the crazyflie
     cf_mass = getParameterFloat(nodeHandle, "mass");
 
+// Display one of the YAML parameters to debug if it is working correctly
+	ROS_INFO_STREAM("DEBUGGING: mass leaded from loacl file = " << cf_mass );
+
     // > The frequency at which the "computeControlOutput" is being called, as determined
     //   by the frequency at which the Vicon system provides position and attitude data
     control_frequency = getParameterFloat(nodeHandle, "control_frequency");
@@ -795,6 +798,8 @@ void loadPPSTemplateParameters(ros::NodeHandle& nodeHandle)
     	// Update the user if the sizes don't agree
     	ROS_ERROR_STREAM("parameter 'follow_in_a_line_agentIDs' was loaded with two different lengths, " << temp_number_of_agents_in_a_line << " versus " << follow_in_a_line_agentIDs.size() );
     }
+
+
 
     // Call the function that computes details an values that are needed from these
     // parameters loaded above
@@ -841,7 +846,8 @@ void customYAMLasMessageCallback(const CustomControllerYAML& newCustomController
 // your controller easier and quicker.
 void processLoadedParameters(ros::NodeHandle& nodeHandle)
 {
-    
+    ROS_INFO("DEBUGGING: entered the processLoadedParameters function" );
+
     // Compute the feed-forward force that we need to counteract gravity (i.e., mg)
     // > in units of [Newtons]
     gravity_force = cf_mass * 9.81/(1000*4);
@@ -874,6 +880,9 @@ void processLoadedParameters(ros::NodeHandle& nodeHandle)
 	    			{
 	    				// The agent ID to follow is the previous entry
 	    				agentID_to_follow = follow_in_a_line_agentIDs[i-1];
+
+ROS_INFO_STREAM("DEBUGGING: agentID_to_follow = " << agentID_to_follow );	
+
 	    				// Subscribe to the "my_current_xyz_yaw_topic" of the agent ID
 	    				// that this agent should be following
 	    				xyz_yaw_to_follow_subscriber = nodeHandle.subscribe("/" + std::to_string(agentID_to_follow - 1) + "/my_current_xyz_yaw_topic", 1, xyz_yaw_to_follow_callback);
@@ -911,7 +920,7 @@ void processLoadedParameters(ros::NodeHandle& nodeHandle)
 void customYAMLloadedCallback(const std_msgs::Int32& msg)
 {
     ros::NodeHandle nodeHandle("~");
-    ROS_INFO("Received message that the Custom Controller YAML parameters were (re-)loaded");
+    ROS_INFO("The CustomControllerService received the message that its YAML parameters were (re-)loaded");
     loadPPSTemplateParameters(nodeHandle);
 }
 

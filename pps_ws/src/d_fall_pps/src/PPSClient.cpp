@@ -889,7 +889,7 @@ void requestLoadSafeControllerYamlTimerCallback(const ros::TimerEvent&)
 void requestLoadCustomControllerYamlTimerCallback(const ros::TimerEvent&)
 {
     // Print out some info
-    ROS_INFO("Received timer callback that the safe controller YAML has been loaded.");
+    ROS_INFO("Received timer callback that the custom controller YAML has been loaded.");
     ROS_INFO("Now assigning to local variables.");
 
     // Note: none of the custom controller parameters are relevant for this class.
