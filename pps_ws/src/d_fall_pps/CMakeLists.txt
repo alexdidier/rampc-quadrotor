@@ -239,6 +239,7 @@ add_executable(PPSClient src/PPSClient.cpp)
 add_executable(SafeControllerService src/SafeControllerService.cpp)
 add_executable(CustomControllerService src/CustomControllerService.cpp)
 add_executable(CentralManagerService src/CentralManagerService.cpp src/CrazyflieIO.cpp)
+add_executable(ParameterService src/ParameterService.cpp)
 add_executable(CircleControllerService src/CircleControllerService.cpp)
 add_executable(FollowCrazyflieService src/FollowCrazyflieService.cpp)
 add_executable(FollowN_1Service src/FollowN_1Service.cpp)
@@ -287,6 +288,7 @@ add_dependencies(PPSClient d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TA
 add_dependencies(SafeControllerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(CustomControllerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(CentralManagerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(ParameterService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(CircleControllerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(FollowCrazyflieService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(FollowN_1Service d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
@@ -324,6 +326,8 @@ target_link_libraries(SafeControllerService ${catkin_LIBRARIES})
 target_link_libraries(CustomControllerService ${catkin_LIBRARIES})
 
 target_link_libraries(CentralManagerService ${catkin_LIBRARIES})
+
+target_link_libraries(ParameterService ${catkin_LIBRARIES})
 
 target_link_libraries(CircleControllerService ${catkin_LIBRARIES})
 
