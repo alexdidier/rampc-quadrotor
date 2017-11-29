@@ -240,16 +240,15 @@ void MainGUIWindow::_init()
     // to all of the agent nodes
     commandAllAgentsPublisher = nodeHandle.advertise<std_msgs::Int32>("commandAllAgents", 1);
 
-    // Initialise the publisher for sending request from here (the master)
-    // to all of the agent nodes that they should re-load parameters from
-    // the YAML files for their controllers
-    requestLoadControllerYamlAllAgentsPublisher = nodeHandle.advertise<std_msgs::Int32>("requestLoadControllerYamlAllAgents", 1);
-
-    // Initialise the publisher for sending message from here (the master)
-    // to all of the agent nodes with the Custom Controller YAML parameters
-    // as the contents of the message
-    customYAMLasMessagePublisher = nodeHandle.advertise<CustomControllerYAML>("customYAMLasMessage", 1);
-
+    // Publisher for sending a request from here (the master) to all "Parameter Service" nodes
+    // that it should re-load parameters from the YAML file for the controllers.
+    // > This is recieved and acted on by both Coordinate and Agent type "Parameter Services",
+    // > A coordinator type "Parameter Service" will subsequently request the agents to fetch
+    //   the parameters from itself.
+    // > A agent type "Parameter Service" will subsequently request its own agent to fetch
+    //   the parameters from itself.
+    requestLoadControllerYamlPublisher = nodeHandle.advertise<std_msgs::Int32>("requestLoadControllerYaml", 1);
+    
     // Initialise the publisher for sending a request from here (the master)
     // to all of the agents nodes that they should (re/dis)-connect from
     // the Crazy-Radio
@@ -984,6 +983,24 @@ void MainGUIWindow::on_comboBoxCFs_currentTextChanged(const QString &arg1)
 }
 
 
+
+
+
+//    ----------------------------------------------------------------------------------
+//     CCCC   OOO   M   M  M   M    A    N   N  DDDD          A    L      L
+//    C      O   O  MM MM  MM MM   A A   NN  N  D   D        A A   L      L
+//    C      O   O  M M M  M M M  A   A  N N N  D   D       A   A  L      L
+//    C      O   O  M   M  M   M  AAAAA  N  NN  D   D       AAAAA  L      L
+//     CCCC   OOO   M   M  M   M  A   A  N   N  DDDD        A   A  LLLLL  LLLLL
+//
+//    BBBB   U   U  TTTTT  TTTTT   OOO   N   N   SSSS
+//    B   B  U   U    T      T    O   O  NN  N  S
+//    BBBB   U   U    T      T    O   O  N N N   SSS
+//    B   B  U   U    T      T    O   O  N  NN      S
+//    BBBB    UUU     T      T     OOO   N   N  SSSS
+//    ----------------------------------------------------------------------------------
+
+
 // For the buttons that commands all of the agent nodes to:
 // > (RE)CONNECT THE RADIO
 void MainGUIWindow::on_all_connect_button_clicked()
@@ -1036,7 +1053,7 @@ void MainGUIWindow::on_all_enable_custom_controller_button_clicked()
     commandAllAgentsPublisher.publish(msg);
 }
 // > LOAD THE YAML PARAMETERS FOR THE SAFE CONTROLLER
-void MainGUIWindow::on_all_load_safe_controller_yaml_button_clicked()
+void MainGUIWindow::on_all_load_safe_controller_yaml_own_agent_button_clicked()
 {
 	// Disable the button
 	ui->all_load_safe_controller_yaml_button->setEnabled(false);
@@ -1044,8 +1061,8 @@ void MainGUIWindow::on_all_load_safe_controller_yaml_button_clicked()
 
 	// Send the message that the YAML paremters should be loaded
     std_msgs::Int32 msg;
-    msg.data = LOAD_YAML_SAFE_CONTROLLER;
-    requestLoadControllerYamlAllAgentsPublisher.publish(msg);
+    msg.data = LOAD_YAML_SAFE_CONTROLLER_OWN_AGENT;
+    requestLoadControllerYamlPublisher.publish(msg);
 
     // Start a timer which will enable the button in its callback
     // > This is required because the agent node waits some time between
@@ -1057,7 +1074,7 @@ void MainGUIWindow::on_all_load_safe_controller_yaml_button_clicked()
     m_timer_yaml_file_for_safe_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainGUIWindow::safeYamlFileTimerCallback, this, true);
 }
 // > LOAD THE YAML PARAMETERS FOR THE CUSTOM CONTROLLER
-void MainGUIWindow::on_all_load_custom_controller_yaml_button_clicked()
+void MainGUIWindow::on_all_load_custom_controller_yaml_own_agent_button_clicked()
 {
 	// Disable the button
 	ui->all_load_custom_controller_yaml_button->setEnabled(false);
@@ -1065,8 +1082,8 @@ void MainGUIWindow::on_all_load_custom_controller_yaml_button_clicked()
 
 	// Send the message that the YAML paremters should be loaded
     std_msgs::Int32 msg;
-    msg.data = LOAD_YAML_CUSTOM_CONTROLLER;
-    requestLoadControllerYamlAllAgentsPublisher.publish(msg);
+    msg.data = LOAD_YAML_CUSTOM_CONTROLLER_OWN_AGENT;
+    requestLoadControllerYamlPublisher.publish(msg);
 
     // Start a timer which will enable the button in its callback
     // > This is required because the agent node waits some time between
@@ -1079,16 +1096,17 @@ void MainGUIWindow::on_all_load_custom_controller_yaml_button_clicked()
 
 }
 // > SEND THE YAML PARAMETERS FOR THE SAFE CONTROLLER
-void MainGUIWindow::on_all_send_safe_controller_yaml_button_clicked()
+void MainGUIWindow::on_all_load_safe_controller_yaml_coordinator_button_clicked()
 {
 	// Disable the button
 	ui->all_load_safe_controller_yaml_button->setEnabled(false);
 	ui->all_send_safe_controller_yaml_button->setEnabled(false);
 
 	// Send the message that the YAML paremters should be loaded
+    // by the coordinator (and then the agent informed)
     std_msgs::Int32 msg;
-    msg.data = LOAD_YAML_SAFE_CONTROLLER;
-    requestLoadControllerYamlAllAgentsPublisher.publish(msg);
+    msg.data = LOAD_YAML_SAFE_CONTROLLER_COORDINATOR;
+    requestLoadControllerYamlPublisher.publish(msg);
 
     // Start a timer which will enable the button in its callback
     // > This is required because the agent node waits some time between
@@ -1100,50 +1118,46 @@ void MainGUIWindow::on_all_send_safe_controller_yaml_button_clicked()
     m_timer_yaml_file_for_safe_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainGUIWindow::safeYamlFileTimerCallback, this, true);
 }
 // > SEND THE YAML PARAMETERS FOR THE CUSTOM CONTROLLER
-void MainGUIWindow::on_all_send_custom_controller_yaml_button_clicked()
+void MainGUIWindow::on_all_load_custom_controller_yaml_coordinator_button_clicked()
 {
 	// Disable the button
 	ui->all_load_custom_controller_yaml_button->setEnabled(false);
 	ui->all_send_custom_controller_yaml_button->setEnabled(false);
 
-	// Get the path to the "d_fall_pps" package
-    // > This is the absolute path to where the D-FaLL-System is installed
-    // > This path should be contained in the environemnt variable "d_fall_pps"
-    std::string d_fall_pps_path = ros::package::getPath("d_fall_pps");
-    ROS_INFO_STREAM(d_fall_pps_path);
+    // Send the message that the YAML paremters should be loaded
+    // by the coordinator (and then the agent informed)
+    std_msgs::Int32 msg;
+    msg.data = LOAD_YAML_CUSTOM_CONTROLLER_COORDINATOR;
+    requestLoadControllerYamlPublisher.publish(msg);
 
-    // First, we re-load parameters from the "ClientConfig" YAML file
-    // > Amongst other parameters, this YAML file contains the name of the 
-    //   controller to use for the safe and custom controller
-    // > i.e., the parameters named "safeController" and "customController"
-    std::string cmd = "rosparam load " + d_fall_pps_path + "/param/CustomController.yaml " + ros_namespace + "/my_GUI";
-    system(cmd.c_str());
-    ROS_INFO_STREAM(cmd);
-
-    // Create the "nodeHandle" needed in the switch cases below
+    // Start a timer which will enable the button in its callback
+    // > This is required because the agent node waits some time between
+    //   re-loading the values from the YAML file and then assigning then
+    //   to the local variable of the agent.
+    // > Thus we use this timer to prevent the user from clicking the
+    //   button in the GUI repeatedly.
     ros::NodeHandle nodeHandle("~");
-
-    // Start a timer which, in its callback, will subsequently call thte functions that 
-    // assigns the YAML parameters to the appropriate local variables
     m_timer_yaml_file_for_custom_controller = nodeHandle.createTimer(ros::Duration(1), &MainGUIWindow::customSendYamlAsMessageTimerCallback, this, true);
 
 
 }
-// > CALLBACL TO RE-ENABLE THE SAFE CONTROLLER YAML BUTTONS
+// > CALLBACK TO RE-ENABLE THE SAFE CONTROLLER YAML BUTTONS
 void MainGUIWindow::safeYamlFileTimerCallback(const ros::TimerEvent&)
 {
     // Enble the "load" and the "send" safe controller YAML button again
     ui->all_load_safe_controller_yaml_button->setEnabled(true);
 	ui->all_send_safe_controller_yaml_button->setEnabled(true);
 }
-// > CALLBACL TO RE-ENABLE THE CUSTOM CONTROLLER YAML BUTTONS
+// > CALLBACK TO RE-ENABLE THE CUSTOM CONTROLLER YAML BUTTONS
 void MainGUIWindow::customYamlFileTimerCallback(const ros::TimerEvent&)
 {
     // Enble the "load" and the "send" custom controller YAML button again
     ui->all_load_custom_controller_yaml_button->setEnabled(true);
 	ui->all_send_custom_controller_yaml_button->setEnabled(true);
 }
-// > CALLBACL TO SEND THE CUSTOM CONTROLLER YAML PARAMETERS AS A MESSAGE
+
+/*
+// > CALLBACK TO SEND THE CUSTOM CONTROLLER YAML PARAMETERS AS A MESSAGE
 void MainGUIWindow::customSendYamlAsMessageTimerCallback(const ros::TimerEvent&)
 {
 	// Load the CUSTOM controller YAML parameters from file into a message for
@@ -1204,7 +1218,7 @@ void MainGUIWindow::customSendYamlAsMessageTimerCallback(const ros::TimerEvent&)
 	// Start a timer which will enable the button in its callback
     m_timer_yaml_file_for_custom_controller = nodeHandle.createTimer(ros::Duration(0.5), &MainGUIWindow::customYamlFileTimerCallback, this, true);
 }
-
+*/
 
 
 

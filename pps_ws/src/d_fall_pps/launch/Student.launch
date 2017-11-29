@@ -1,27 +1,34 @@
 <launch>
 
+	<!-- CRAZY RADIO -->
 	<node pkg="d_fall_pps" name="CrazyRadio" output="screen" type="CrazyRadio.py">
 		<rosparam command="load" file="$(find d_fall_pps)/param/ClientConfig.yaml" />
 	</node>
 
+	<!-- PPS CLIENT -->
 	<node pkg="d_fall_pps" name="PPSClient" output="screen" type="PPSClient">
 		<rosparam command="load" file="$(find d_fall_pps)/param/ClientConfig.yaml" />
 		<param name="studentID" value="$(optenv ROS_NAMESPACE)" />
 	</node>
 
+	<!-- SAFE CONTROLLER -->
 	<node pkg="d_fall_pps" name="SafeControllerService" output="screen" type="SafeControllerService">
-		<rosparam command="load" file="$(find d_fall_pps)/param/SafeController.yaml" />
 	</node>
 
+	<!-- CUSTOM CONTROLLER -->
 	<node pkg="d_fall_pps" name="CustomControllerService" output="screen" type="CustomControllerService">
-		<rosparam command="load" file="$(find d_fall_pps)/param/CustomController.yaml" />
 	</node>
 
-    <!-- When we have a GUI, this has to be adapted and included -->
-	<node pkg="d_fall_pps" name="student_GUI" output="screen" type="student_GUI">
-		<!-- <rosparam command="load" file="$(find d_fall_pps)/launch/ControlParams.yaml" /> -->
+	<!-- PARAMETER SERVICE -->
+	<node pkg="d_fall_pps" name="ParameterService" output="screen" type="ParameterService">
+		<param name="type" type="str" value="student" />
+		<param name="agentID" value="$(optenv ROS_NAMESPACE)" />
+		<rosparam command="load" file="$(find d_fall_pps)/param/SafeController.yaml" ns="SafeController" />
+		<rosparam command="load" file="$(find d_fall_pps)/param/CustomController.yaml" ns="CustomController" />
 	</node>
 
-
+	<!-- AGENT GUI (aka. the "student GUI") -->
+    <node pkg="d_fall_pps" name="student_GUI" output="screen" type="student_GUI">
+	</node>
 
 </launch>

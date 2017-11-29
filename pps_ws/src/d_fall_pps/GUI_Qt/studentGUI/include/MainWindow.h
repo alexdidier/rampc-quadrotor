@@ -79,8 +79,10 @@
 #define BATTERY_STATE_LOW    1
 
 // For which controller parameters to load
-#define LOAD_YAML_SAFE_CONTROLLER   1
-#define LOAD_YAML_CUSTOM_CONTROLLER 2
+#define LOAD_YAML_SAFE_CONTROLLER_AGENT           1
+#define LOAD_YAML_CUSTOM_CONTROLLER_AGENT         2
+#define LOAD_YAML_SAFE_CONTROLLER_COORDINATOR     3
+#define LOAD_YAML_CUSTOM_CONTROLLER_COORDINATOR   4
 
 // Universal constants
 #define PI 3.141592653589
@@ -168,7 +170,7 @@ private:
 
     // Subscriber for locking the load the controller YAML
     // parameters when the Coordintor GUI requests a load
-    ros::Subscriber requestLoadControllerYamlAllAgentsSubscriber;
+    ros::Subscriber requestLoadControllerYaml_from_my_GUI_Subscriber;
 
 
     ros::Subscriber controllerUsedSubscriber;
@@ -184,7 +186,7 @@ private:
     void DBChangedCallback(const std_msgs::Int32& msg);
     void customYamlFileTimerCallback(const ros::TimerEvent&);
     void safeYamlFileTimerCallback(const ros::TimerEvent&);
-    void requestLoadControllerYamlAllAgentsCallback(const std_msgs::Int32& msg);
+    void requestLoadControllerYaml_from_my_GUI_Callback(const std_msgs::Int32& msg);
     void controllerUsedChangedCallback(const std_msgs::Int32& msg);
     void batteryStateChangedCallback(const std_msgs::Int32& msg);
 

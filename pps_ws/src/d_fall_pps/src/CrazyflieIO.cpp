@@ -25,7 +25,13 @@
 //
 //
 //    DESCRIPTION:
-//    This manages the Input/Output stream from the Crazyflie
+//    This manages the Input/Output from the text file database that is used to store
+//    and commincate an agent's zone between the coordinator node and the agent's node,
+//    i.e., the details of:
+//    > the linked ( agent ID , Crazyflie ) pair, where the Crazyflie is described by:
+//      - the "name", which matches that used by the localisation system
+//      - the "address", which is needed to establish a radio connection
+//    > the hyper-rectangle area in which the agent is allowed to operate
 //
 //    ----------------------------------------------------------------------------------
 

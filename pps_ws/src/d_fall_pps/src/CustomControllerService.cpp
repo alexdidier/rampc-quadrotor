@@ -95,6 +95,12 @@
 #define RATE_MODE  7
 #define ANGLE_MODE 8
 
+// Constants for feching the yaml paramters
+#define FETCH_YAML_SAFE_CONTROLLER_AGENT          1
+#define FETCH_YAML_CUSTOM_CONTROLLER_AGENT        2
+#define FETCH_YAML_SAFE_CONTROLLER_COORDINATOR    3
+#define FETCH_YAML_CUSTOM_CONTROLLER_COORDINATOR  4
+
 // Namespacing the package
 using namespace d_fall_pps;
 
@@ -130,7 +136,11 @@ const float gainMatrixThrust[9] = {0, 0, 0.22195826, 0, 0, 0.12362477, 0, 0, 0};
 ros::Publisher debugPublisher;
 
 
-
+// Variable for the node handle to the paramter services
+// > For the paramter service of this agent
+ros::NodeHandle nodeHandle_to_own_agent_parameter_service;
+// > For the parameter service of the coordinator
+ros::NodeHandle nodeHandle_to_coordinator_parameter_service;
 
 
 // Boolean whether to execute the convert into body frame function
@@ -228,10 +238,10 @@ void getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::stri
 int getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val);
 bool getParameterBool(ros::NodeHandle& nodeHandle, std::string name);
 
-void loadPPSTemplateParameters(ros::NodeHandle& nodeHandle);
-void processLoadedParameters(ros::NodeHandle& nodeHandle);
-void customYAMLloadedCallback(const std_msgs::Int32& msg);
-void customYAMLasMessageCallback(const CustomControllerYAML& newCustomControllerParameters);
+void yamlReadyForFetchCallback(const std_msgs::Int32& msg);
+void fetchYamlParameters(ros::NodeHandle& nodeHandle);
+void processFetchedParameters();
+//void customYAMLasMessageCallback(const CustomControllerYAML& newCustomControllerParameters);
 
 
 
@@ -456,7 +466,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     //         consider whether the "thrustAdjustment" computed by your
     //         controller needed to be divided by 4 or not.
     // > NOTE: the "gravity_force" value was already divided by 4 when is was
-    //         loaded from the .yaml file via the "loadPPSTemplateParameters"
+    //         loaded from the .yaml file via the "fetchYamlParameters"
     //         class function in this file.
     response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrustAdjustment + gravity_force);
     response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrustAdjustment + gravity_force);
@@ -791,41 +801,82 @@ void xyz_yaw_to_follow_callback(const Setpoint& newSetpoint)
 //    P      A   A  R   R  A   A  M   M  EEEEE    T    EEEEE  R   R  SSSS
 //    ----------------------------------------------------------------------------------
 
+
+// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
+{
+	// Extract from the "msg" for which controller the and from where to fetch the YAML
+	// parameters
+	int controller_to_fetch_yaml = msg.data;
+
+	// Switch between fetching for the different controllers and from different locations
+	switch(controller_to_fetch_yaml)
+	{
+			case FETCH_YAML_CUSTOM_CONTROLLER_COORDINATOR:
+			// Let the user know that this message was received
+			ROS_INFO("The CustomControllerService received the message that YAML parameters were (re-)loaded");
+			// Let the user know from where the paramters are being fetched
+			ROS_INFO("> Now fetching the parameter values from the this machine");
+			// Call the function that fetches the parameters
+			fetchYamlParameters(nodeHandle_to_coordinator_parameter_service);
+			break;
+
+		case FETCH_YAML_CUSTOM_CONTROLLER_AGENT:
+			// Let the user know that this message was received
+			ROS_INFO("The CustomControllerService received the message that YAML parameters were (re-)loaded");
+			// Let the user know which paramters are being fetch
+			ROS_INFO("> Now fetching the parameter values from the this machine");
+			// Call the function that fetches the parameters
+			fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
+			break;
+
+		default:
+			// Let the user know that the command was not relevant
+			ROS_INFO("The CustomControllerService received the message that YAML parameters were (re-)loaded");
+			ROS_INFO("> However the parameters do not relate to this controller, hence nothing will be fetched.");
+			break;
+	}
+}
+
+
 // This function CAN BE edited for successful completion of the PPS exercise, and the
-// use of parameters loaded from the YAML file is highly recommended to make tuning of
+// use of parameters fetched from the YAML file is highly recommended to make tuning of
 // your controller easier and quicker.
-void loadPPSTemplateParameters(ros::NodeHandle& nodeHandle)
+void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 {
     // Here we load the parameters that are specified in the CustomController.yaml file
 
-	// > The mass of the crazyflie
-    cf_mass = getParameterFloat(nodeHandle, "mass");
+	// Add the "CustomController" namespace to the "nodeHandle"
+	nodeHandle_for_customController = ros::NodeHandle(nodeHandle + "/CustomController");
 
-// Display one of the YAML parameters to debug if it is working correctly
-	ROS_INFO_STREAM("DEBUGGING: mass leaded from loacl file = " << cf_mass );
+	// > The mass of the crazyflie
+    cf_mass = getParameterFloat(nodeHandle_for_customController , "mass");
+
+	// Display one of the YAML parameters to debug if it is working correctly
+	//ROS_INFO_STREAM("DEBUGGING: mass leaded from loacl file = " << cf_mass );
 
     // > The frequency at which the "computeControlOutput" is being called, as determined
     //   by the frequency at which the Vicon system provides position and attitude data
-    control_frequency = getParameterFloat(nodeHandle, "control_frequency");
+    control_frequency = getParameterFloat(nodeHandle_for_customController, "control_frequency");
 
     // > The co-efficients of the quadratic conversation from 16-bit motor command to
     //   thrust force in Newtons
-    getParameterFloatVector(nodeHandle, "motorPoly", motorPoly, 3);
+    getParameterFloatVector(nodeHandle_for_customController, "motorPoly", motorPoly, 3);
 
     // > The boolean for whether to execute the convert into body frame function
-    shouldPerformConvertIntoBodyFrame = getParameterBool(nodeHandle, "shouldPerformConvertIntoBodyFrame");
+    shouldPerformConvertIntoBodyFrame = getParameterBool(nodeHandle_for_customController, "shouldPerformConvertIntoBodyFrame");
 
     // > The boolean indicating whether the (x,y,z,yaw) of this agent should be published
     //   or not
-    shouldPublishCurrent_xyz_yaw = getParameterBool(nodeHandle, "shouldPublishCurrent_xyz_yaw");
+    shouldPublishCurrent_xyz_yaw = getParameterBool(nodeHandle_for_customController, "shouldPublishCurrent_xyz_yaw");
 
     // > The boolean indicating whether the (x,y,z,yaw) setpoint of this agent should adapted in
 	//   an attempt to follow the "my_current_xyz_yaw_topic" from another agent
-    shouldFollowAnotherAgent = getParameterBool(nodeHandle, "shouldFollowAnotherAgent");
+    shouldFollowAnotherAgent = getParameterBool(nodeHandle_for_customController, "shouldFollowAnotherAgent");
 
     // > The ordered vector for ID's that specifies how the agents should follow eachother
     follow_in_a_line_agentIDs.clear();
-    int temp_number_of_agents_in_a_line = getParameterIntVectorWithUnknownLength(nodeHandle, "follow_in_a_line_agentIDs", follow_in_a_line_agentIDs);
+    int temp_number_of_agents_in_a_line = getParameterIntVectorWithUnknownLength(nodeHandle_for_customController, "follow_in_a_line_agentIDs", follow_in_a_line_agentIDs);
     // > Double check that the sizes agree
     if ( temp_number_of_agents_in_a_line != follow_in_a_line_agentIDs.size() )
     {
@@ -833,18 +884,101 @@ void loadPPSTemplateParameters(ros::NodeHandle& nodeHandle)
     	ROS_ERROR_STREAM("parameter 'follow_in_a_line_agentIDs' was loaded with two different lengths, " << temp_number_of_agents_in_a_line << " versus " << follow_in_a_line_agentIDs.size() );
     }
 
-
-
     // Call the function that computes details an values that are needed from these
     // parameters loaded above
-    processLoadedParameters(nodeHandle);
+    processFetchedParameters();
 
 }
 
+
+// This function CAN BE edited for successful completion of the PPS exercise, and the
+// use of parameters loaded from the YAML file is highly recommended to make tuning of
+// your controller easier and quicker.
+void processFetchedParameters()
+{
+    // Compute the feed-forward force that we need to counteract gravity (i.e., mg)
+    // > in units of [Newtons]
+    gravity_force = cf_mass * 9.81/(1000*4);
+
+    // Look-up which agent should be followed
+    if (shouldFollowAnotherAgent)
+    {
+    	// Only bother if the "follow_in_a_line_agentIDs" vector has a non-zero length
+    	if (follow_in_a_line_agentIDs.size() > 0)
+    	{
+    		// Instantiate a local boolean variable for checking whether we found
+    		// our own agent ID in the list
+    		bool foundMyAgentID = false;
+    		// Iterate through the vector of "follow_in_a_line_agentIDs"
+	    	for ( int i=0 ; i<follow_in_a_line_agentIDs.size() ; i++ )
+	    	{
+	    		// Check if the current entry matches the ID of this agent
+	    		if (follow_in_a_line_agentIDs[i] == my_agentID)
+	    		{
+	    			// Set the boolean flag that we have found out own agent ID
+	    			foundMyAgentID = true;
+                    //ROS_INFO_STREAM("DEBUGGING: found my agent ID at index " << i );
+	    			// If it is the first entry, then this agent is the leader
+	    			if (i==0)
+	    			{
+	    				// The leader does not follow anyone else
+	    				shouldFollowAnotherAgent = false;
+    					agentID_to_follow = 0;
+	    			}
+	    			else
+	    			{
+	    				// The agent ID to follow is the previous entry
+	    				agentID_to_follow = follow_in_a_line_agentIDs[i-1];	
+                        shouldFollowAnotherAgent = true;
+	    				// Subscribe to the "my_current_xyz_yaw_topic" of the agent ID
+	    				// that this agent should be following
+	    				ros::NodeHandle nodeHandle("~");
+	    				xyz_yaw_to_follow_subscriber = nodeHandle.subscribe("/" + std::to_string(agentID_to_follow) + "/my_current_xyz_yaw_topic", 1, xyz_yaw_to_follow_callback);
+	    				//ROS_INFO_STREAM("DEBUGGING: subscribed to agent ID = " << agentID_to_follow );
+	    			}
+	    			// Break out of the for loop as the assumption is that each agent ID
+	    			// appears only once in the "follow_in_a_line_agentIDs" vector of ID's
+	    			break;
+	    		}
+	    	}
+	    	// Check whether we found our own agent ID
+	    	if (!foundMyAgentID)
+	    	{
+                ROS_INFO("DEBUGGING: not following because my ID was not found");
+	    		// Revert to the default of not following any agent
+    			shouldFollowAnotherAgent = false;
+    			agentID_to_follow = 0;
+	    	}
+    	}
+    	else
+    	{
+    		// As the "follow_in_a_line_agentIDs" vector has length zero, revert to the
+    		// default of not following any agent
+    		shouldFollowAnotherAgent = false;
+    		agentID_to_follow = 0;
+    		//ROS_INFO("DEBUGGING: not following because line vector has length zero");
+    	}
+    }
+    else
+    {
+    	// Set to its default value the integer specifying the ID of the agent that will
+    	// be followed by this agent
+		agentID_to_follow = 0;
+		//ROS_INFO("DEBUGGING: not following because I was asked not to follow");
+    }
+
+    if (shouldFollowAnotherAgent)
+    {
+    	ROS_INFO_STREAM("This agent (with ID " << my_agentID << ") will now follow agent ID " << agentID_to_follow );
+    }
+}
+
+
+/*
 // This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
 void customYAMLasMessageCallback(const CustomControllerYAML& newCustomControllerParameters)
 {
-	// This function puts all the same parameters as the "loadPPSTemplateParameters" function
+	// This function puts all the same parameters as the "fetchYamlParameters" function
 	// above into the same variables.
 	// The difference is that this function allows us to send all parameters from one
 	// central coordinator node
@@ -875,111 +1009,21 @@ void customYAMLasMessageCallback(const CustomControllerYAML& newCustomController
 	// Call the function that computes details an values that are needed from these
     // parameters loaded above
     ros::NodeHandle nodeHandle("~");
-    processLoadedParameters(nodeHandle);
+    processFetchedParameters(nodeHandle);
 
 }
-
-// This function CAN BE edited for successful completion of the PPS exercise, and the
-// use of parameters loaded from the YAML file is highly recommended to make tuning of
-// your controller easier and quicker.
-void processLoadedParameters(ros::NodeHandle& nodeHandle)
-{
-    ROS_INFO("DEBUGGING: entered the processLoadedParameters function" );
-
-    // Compute the feed-forward force that we need to counteract gravity (i.e., mg)
-    // > in units of [Newtons]
-    gravity_force = cf_mass * 9.81/(1000*4);
-
-    ROS_INFO_STREAM("DEBUGGING: my agent ID is = " << my_agentID );
-
-    ROS_INFO_STREAM("DEBUGGING: should attempt to find an agent to follow : " << shouldFollowAnotherAgent );
-
-    // Look-up which agent should be followed
-    if (shouldFollowAnotherAgent)
-    {
-    	// Only bother if the "follow_in_a_line_agentIDs" vector has a non-zero length
-    	if (follow_in_a_line_agentIDs.size() > 0)
-    	{
-    		// Instantiate a local boolean variable for checking whether we found
-    		// our own agent ID in the list
-    		bool foundMyAgentID = false;
-    		// Iterate through the vector of "follow_in_a_line_agentIDs"
-	    	for ( int i=0 ; i<follow_in_a_line_agentIDs.size() ; i++ )
-	    	{
-	    		// Check if the current entry matches the ID of this agent
-	    		if (follow_in_a_line_agentIDs[i] == my_agentID)
-	    		{
-	    			// Set the boolean flag that we have found out own agent ID
-	    			foundMyAgentID = true;
-                                ROS_INFO_STREAM("DEBUGGING: found my agent ID at i = " << i );
-	    			// If it is the first entry, then this agent is the leader
-	    			if (i==0)
-	    			{
-	    				// The leader does not follow anyone else
-	    				shouldFollowAnotherAgent = false;
-    					agentID_to_follow = 0;
-	    			}
-	    			else
-	    			{
-	    				// The agent ID to follow is the previous entry
-	    				agentID_to_follow = follow_in_a_line_agentIDs[i-1];	
-                                        shouldFollowAnotherAgent = true;
-
-                                        ROS_INFO_STREAM("DEBUGGING: now subscribing to agent ID = " << agentID_to_follow );
-
-	    				// Subscribe to the "my_current_xyz_yaw_topic" of the agent ID
-	    				// that this agent should be following
-	    				xyz_yaw_to_follow_subscriber = nodeHandle.subscribe("/" + std::to_string(agentID_to_follow) + "/my_current_xyz_yaw_topic", 1, xyz_yaw_to_follow_callback);
-	    			}
-	    			// Break out of the for loop as the assumption is that each agent ID
-	    			// appears only once in the "follow_in_a_line_agentIDs" vector of ID's
-	    			break;
-	    		}
-	    	}
-	    	// Check whether we found our own agent ID
-	    	if (!foundMyAgentID)
-	    	{
-                        ROS_INFO("DEBUGGING: not following because my ID was not found");
-	    		// Revert to the default of not following any agent
-    			shouldFollowAnotherAgent = false;
-    			agentID_to_follow = 0;
-	    	}
-    	}
-    	else
-    	{
-                ROS_INFO("DEBUGGING: not following because line vector has length zero");
-    		// As the "follow_in_a_line_agentIDs" vector has length zero, revert to the
-    		// default of not following any agent
-    		shouldFollowAnotherAgent = false;
-    		agentID_to_follow = 0;
-    	}
-    }
-    else
-    {
-        ROS_INFO("DEBUGGING: not following because I was asked not to follow");
-    	// Set to its default value the integer specifying the ID of the agent that will
-    	// be followed by this agent
-		agentID_to_follow = 0;
-    }
-
-    ROS_INFO_STREAM("DEBUGGING: shouldPublishCurrent_xyz_yaw = " << shouldPublishCurrent_xyz_yaw );
-    ROS_INFO_STREAM("DEBUGGING: shouldFollowAnotherAgent = " << shouldFollowAnotherAgent );
-    ROS_INFO_STREAM("DEBUGGING: agentID_to_follow = " << agentID_to_follow );
-
-}
-
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-void customYAMLloadedCallback(const std_msgs::Int32& msg)
-{
-    ros::NodeHandle nodeHandle("~");
-    ROS_INFO("The CustomControllerService received the message that its YAML parameters were (re-)loaded");
-    loadPPSTemplateParameters(nodeHandle);
-}
+*/
 
 
+//    ----------------------------------------------------------------------------------
+//     GGGG  EEEEE  TTTTT  PPPP     A    RRRR     A    M   M   ( )
+//    G      E        T    P   P   A A   R   R   A A   MM MM  (   )
+//    G      EEE      T    PPPP   A   A  RRRR   A   A  M M M  (   )
+//    G   G  E        T    P      AAAAA  R  R   AAAAA  M   M  (   )
+//     GGGG  EEEEE    T    P      A   A  R   R  A   A  M   M   ( )
+//    ----------------------------------------------------------------------------------
 
-// load parameters from corresponding YAML file
-//
+
 // This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
 float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name)
 {
@@ -1081,8 +1125,39 @@ int main(int argc, char* argv[]) {
 		ROS_ERROR("Failed to get studentID from FollowN_1Service");
 	}
 
+
+	// *********************************************************************************
+	// EVERYTHING THAT RELATES TO FETCHING PARAMETERS FROM A YAML FILE
+
+	// Set the class variable "nodeHandle_to_own_agent_parameter_service" to be a node handle
+    // for the parameter service that is running on the machone of this agent
+    nodeHandle_to_own_agent_parameter_service = ros::NodeHandle(m_namespace + "/ParameterService");
+
+    // Set the class variable "nodeHandle_to_coordinator_parameter_service" to be a node handle
+    // for the parameter service that is running on the coordinate machine
+    ros::NodeHandle coordinator_nodeHandle = ros::NodeHandle();
+    nodeHandle_to_coordinator_parameter_service = ros::NodeHandle(coordinator_nodeHandle + "/ParameterService");
+
+    // Instantiate the local variable "controllerYamlReadyForFetchSubscriber" to be a
+    // "ros::Subscriber" type variable that subscribes to the "controllerYamlReadyForFetch" topic
+    // and calls the class function "yamlReadyForFetchCallback" each time a message is
+    // received on this topic and the message is passed as an input argument to the
+    // "yamlReadyForFetchCallback" class function.
+    ros::Subscriber controllerYamlReadyForFetchSubscriber_to_agent = nodeHandle_to_own_agent_parameter_service.subscribe("controllerYamlReadyForFetch", 1, yamlReadyForFetchCallback);
+
+    // Instantiate the local variable "controllerYamlReadyForFetchSubscriber" to be a
+    // "ros::Subscriber" type variable that subscribes to the "controllerYamlReadyForFetch" topic
+    // and calls the class function "yamlReadyForFetchCallback" each time a message is
+    // received on this topic and the message is passed as an input argument to the
+    // "yamlReadyForFetchCallback" class function.
+    ros::Subscriber controllerYamlReadyForFetchSubscriber_to_coordinator = nodeHandle_to_coordinator_parameter_service.subscribe("controllerYamlReadyForFetch", 1, yamlReadyForFetchCallback);
+
 	// Call the class function that loads the parameters for this class.
-    loadPPSTemplateParameters(nodeHandle);
+    fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
+
+    // *********************************************************************************
+
+
 
     // Instantiate the instance variable "debugPublisher" to be a "ros::Publisher" that
     // advertises under the name "DebugTopic" and is a message with the structure
@@ -1111,26 +1186,11 @@ int main(int argc, char* argv[]) {
     // in the "DEFINES" section at the top of this file.
     ros::NodeHandle namespace_nodeHandle(ros::this_node::getNamespace());
 
-    // Instantiate the local variable "customYAMLloadedSubscriber" to be a "ros::Subscriber"
-    // type variable that subscribes to the "PPSClient/customYAMLloaded" topic and calls
-    // the class function "customYAMLloadedCallback" each time a messaged is received on
-    // this topic. Such a message is sent when the button "Load Customcontroller YAML file"
-    // is clicked in the student GUI.
-    ros::Subscriber customYAMLloadedSubscriber = namespace_nodeHandle.subscribe("PPSClient/customYAMLloaded", 1, customYAMLloadedCallback);
-
     // Instantiate the instance variable "my_current_xyz_yaw_publisher" to be a "ros::Publisher"
     // that advertises under the name "<my_agentID>/my_current_xyz_yaw_topic" where <my_agentID>
     // is filled in with the student ID number of this computer. The messages published will
     // have the structure defined in the file "Setpoint.msg" (located in the "msg" folder).
     my_current_xyz_yaw_publisher = nodeHandle.advertise<Setpoint>("/" + std::to_string(my_agentID) + "/my_current_xyz_yaw_topic", 1);
-
-    // Instantiate the local variable "customYAMLasMessageSubscriber" to be a "ros::Subscriber"
-    // type variable that subscribes to the "customYAMLasMessage" topic and calls the class
-    // function "customYAMLasMessageCallback" each time a messaged is received on this topic
-    // and the message is passed as an input argument to the "customYAMLasMessageCallback" class
-    // function.
-    ros::NodeHandle temp_nodeHandle = ros::NodeHandle();
-    ros::Subscriber customYAMLasMessageSubscriber = temp_nodeHandle.subscribe("/my_GUI/customYAMLasMessage", 1, customYAMLasMessageCallback);
 
     // Print out some information to the user.
     ROS_INFO("CustomControllerService ready");

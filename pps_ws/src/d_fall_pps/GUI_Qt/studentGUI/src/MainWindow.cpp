@@ -100,7 +100,7 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
 
     // Subscriber for locking the load the controller YAML
     // parameters when the Coordintor GUI requests a load
-    requestLoadControllerYamlAllAgentsSubscriber = nodeHandle.subscribe("/my_GUI/requestLoadControllerYamlAllAgents", 1, &MainWindow::requestLoadControllerYamlAllAgentsCallback, this);
+    requestLoadControllerYaml_from_my_GUI_Subscriber = nodeHandle.subscribe("/my_GUI/requestLoadControllerYaml", 1, &MainWindow::requestLoadControllerYaml_from_my_GUI_Callback, this);
     
 
     // First get student ID
@@ -504,7 +504,7 @@ void MainWindow::on_load_safe_yaml_button_clicked()
     // Send a message requesting the parameters from the YAML
     // file to be reloaded for the safe controller
     std_msgs::Int32 msg;
-    msg.data = LOAD_YAML_SAFE_CONTROLLER;
+    msg.data = LOAD_YAML_SAFE_CONTROLLER_AGENT;
     this->requestLoadControllerYamlPublisher.publish(msg);
     ROS_INFO("Request load of safe controller YAML published");
 
@@ -536,7 +536,7 @@ void MainWindow::on_load_custom_yaml_button_clicked()
     // Send a message requesting the parameters from the YAML
     // file to be reloaded for the custom controller
     std_msgs::Int32 msg;
-    msg.data = LOAD_YAML_CUSTOM_CONTROLLER;
+    msg.data = LOAD_YAML_CUSTOM_CONTROLLER_AGENT;
     this->requestLoadControllerYamlPublisher.publish(msg);
     ROS_INFO("Request load of custom controller YAML published");
 
@@ -561,7 +561,7 @@ void MainWindow::customYamlFileTimerCallback(const ros::TimerEvent&)
 
 
 
-void MainWindow::requestLoadControllerYamlAllAgentsCallback(const std_msgs::Int32& msg)
+void MainWindow::requestLoadControllerYaml_from_my_GUI_Callback(const std_msgs::Int32& msg)
 {
     // Extract from the "msg" for which controller the YAML
     // parameters should be loaded
@@ -573,7 +573,7 @@ void MainWindow::requestLoadControllerYamlAllAgentsCallback(const std_msgs::Int3
     // Switch between loading for the different controllers
     switch(controller_to_load_yaml)
     {
-        case LOAD_YAML_SAFE_CONTROLLER:
+        case LOAD_YAML_SAFE_CONTROLLER_AGENT || LOAD_YAML_SAFE_CONTROLLER_COORDINATOR:
             // Set the "load safe yaml" button to be disabled
             ui->load_safe_yaml_button->setEnabled(false);
 
@@ -587,7 +587,7 @@ void MainWindow::requestLoadControllerYamlAllAgentsCallback(const std_msgs::Int3
 
             break;
 
-        case LOAD_YAML_CUSTOM_CONTROLLER:
+        case LOAD_YAML_CUSTOM_CONTROLLER_AGENT || LOAD_YAML_CUSTOM_CONTROLLER_COORDINATOR:
             // Set the "load custom yaml" button to be disabled
             ui->load_custom_yaml_button->setEnabled(false);
 

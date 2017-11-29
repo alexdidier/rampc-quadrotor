@@ -67,8 +67,10 @@
 #define CMD_DISCONNECT 1
 
 // For which controller parameters to load
-#define LOAD_YAML_SAFE_CONTROLLER   1
-#define LOAD_YAML_CUSTOM_CONTROLLER 2
+#define LOAD_YAML_SAFE_CONTROLLER_AGENT          1
+#define LOAD_YAML_CUSTOM_CONTROLLER_AGENT        2
+#define LOAD_YAML_SAFE_CONTROLLER_COORDINATOR    3
+#define LOAD_YAML_CUSTOM_CONTROLLER_COORDINATOR  4
 
 
 using namespace d_fall_pps;
@@ -242,15 +244,14 @@ private:
     // gives the directive to "take-off", "land, "motors-off", etc...)
     ros::Publisher commandAllAgentsPublisher;
 
-    // Publisher for sending a request from here (the master) to all
-    // of the agent nodes that they should re-load parameters from
-    // the YAML files for their controllers
-    ros::Publisher requestLoadControllerYamlAllAgentsPublisher;
-
-    // Publisher for sending a message from here (the master) to all
-    // of the agent nodes with the Custom Controller YAML parameters
-    // as the contents of the message
-    ros::Publisher customYAMLasMessagePublisher;
+    // Publisher for sending a request from here (the master) to all "Parameter Service" nodes
+    // that it should re-load parameters from the YAML file for the controllers.
+    // > This is recieved and acted on by both Coordinate and Agent type "Parameter Services",
+    // > A coordinator type "Parameter Service" will subsequently request the agents to fetch
+    //   the parameters from itself.
+    // > A agent type "Parameter Service" will subsequently request its own agent to fetch
+    //   the parameters from itself.
+    ros::Publisher requestLoadControllerYamlPublisher;
 
     // Publisher for sending a request from here (the master) to all
     // of the agents nodes that they should (re/dis)-connect from

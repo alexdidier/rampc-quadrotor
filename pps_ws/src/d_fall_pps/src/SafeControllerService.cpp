@@ -30,11 +30,23 @@
 //    ----------------------------------------------------------------------------------
 
 
+
+
+//    ----------------------------------------------------------------------------------
+//    III  N   N   CCCC  L      U   U  DDDD   EEEEE   SSSS
+//     I   NN  N  C      L      U   U  D   D  E      S
+//     I   N N N  C      L      U   U  D   D  EEE     SSS
+//     I   N  NN  C      L      U   U  D   D  E          S
+//    III  N   N   CCCC  LLLLL   UUU   DDDD   EEEEE  SSSS
+//    ----------------------------------------------------------------------------------
+
+// These various headers need to be included so that this controller service can be
+// connected with the D-FaLL system.
+
 #include <math.h>
 #include <stdlib.h>
 #include "ros/ros.h"
 #include <std_msgs/String.h>
-#include <rosbag/bag.h>
 #include <ros/package.h>
 #include "std_msgs/Float32.h"
 
@@ -42,14 +54,62 @@
 #include "d_fall_pps/Setpoint.h"
 #include "d_fall_pps/ControlCommand.h"
 #include "d_fall_pps/Controller.h"
-//#include "d_fall_pps/Debugging.h" //---------------------------------------------------------------------------
 
 #include <std_msgs/Int32.h>
 
-#define PI 3.1415926535
-#define RATE_CONTROLLER 7
 
+
+
+//    ----------------------------------------------------------------------------------
+//    DDDD   EEEEE  FFFFF  III  N   N  EEEEE   SSSS
+//    D   D  E      F       I   NN  N  E      S
+//    D   D  EEE    FFF     I   N N N  EEE     SSS
+//    D   D  E      F       I   N  NN  E          S
+//    DDDD   EEEEE  F      III  N   N  EEEEE  SSSS
+//    ----------------------------------------------------------------------------------
+
+// These constants are defined to make the code more readable and adaptable.
+
+// Universal constants
+#define PI 3.1415926535
+
+// The constants define the modes that can be used for controller the Crazyflie 2.0,
+// the constants defined here need to be in agreement with those defined in the
+// firmware running on the Crazyflie 2.0.
+// The following is a short description about each mode:
+// MOTOR_MODE    In this mode the Crazyflie will apply the requested 16-bit per motor
+//               command directly to each of the motors
+// RATE_MODE     In this mode the Crazyflie will apply the requested 16-bit per motor
+//               command directly to each of the motors, and additionally request the
+//               body frame roll, pitch, and yaw angular rates from the PID rate
+//               controllers implemented in the Crazyflie 2.0 firmware.
+// ANGE_MODE     In this mode the Crazyflie will apply the requested 16-bit per motor
+//               command directly to each of the motors, and additionally request the
+//               body frame roll, pitch, and yaw angles from the PID attitude
+//               controllers implemented in the Crazyflie 2.0 firmware.
+#define MOTOR_MODE 6
+#define RATE_MODE  7
+#define ANGLE_MODE 8
+
+// Constants for feching the yaml paramters
+#define FETCH_YAML_SAFE_CONTROLLER_AGENT          1
+#define FETCH_YAML_CUSTOM_CONTROLLER_AGENT        2
+#define FETCH_YAML_SAFE_CONTROLLER_COORDINATOR    3
+#define FETCH_YAML_CUSTOM_CONTROLLER_COORDINATOR  4
+
+// Namespacing the package
 using namespace d_fall_pps;
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//    V   V    A    RRRR   III    A    BBBB   L      EEEEE   SSSS
+//    V   V   A A   R   R   I    A A   B   B  L      E      S
+//    V   V  A   A  RRRR    I   A   A  BBBB   L      EEE     SSS
+//     V V   AAAAA  R  R    I   AAAAA  B   B  L      E          S
+//      V    A   A  R   R  III  A   A  BBBB   LLLLL  EEEEE  SSSS
+//    ----------------------------------------------------------------------------------
 
 std::vector<float>  ffThrust(4);
 std::vector<float>  feedforwardMotor(4);
@@ -74,87 +134,80 @@ float saturationThrust;
 
 CrazyflieData previousLocation;
 
-rosbag::Bag bag;
 
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-float getFloatParameter(ros::NodeHandle& nodeHandle, std::string name)
-{
-
-    float val;
-    if(!nodeHandle.getParam(name, val))
-    {
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    return val;
-}
+// Variable for the node handle to the paramter services
+// > For the paramter service of this agent
+ros::NodeHandle nodeHandle_to_own_agent_parameter_service;
+// > For the parameter service of the coordinator
+ros::NodeHandle nodeHandle_to_coordinator_parameter_service;
 
 
 
-void loadParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length) {
-    if(!nodeHandle.getParam(name, val)){
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    if(val.size() != length) {
-        ROS_ERROR_STREAM("parameter '" << name << "' has wrong array length, " << length << " needed");
-    }
-}
+//    ----------------------------------------------------------------------------------
+//    FFFFF  U   U  N   N   CCCC  TTTTT  III   OOO   N   N
+//    F      U   U  NN  N  C        T     I   O   O  NN  N
+//    FFF    U   U  N N N  C        T     I   O   O  N N N
+//    F      U   U  N  NN  C        T     I   O   O  N  NN
+//    F       UUU   N   N   CCCC    T    III   OOO   N   N
+//
+//    PPPP   RRRR    OOO   TTTTT   OOO   TTTTT  Y   Y  PPPP   EEEEE   SSSS
+//    P   P  R   R  O   O    T    O   O    T     Y Y   P   P  E      S
+//    PPPP   RRRR   O   O    T    O   O    T      Y    PPPP   EEE     SSS
+//    P      R  R   O   O    T    O   O    T      Y    P      E          S
+//    P      R   R   OOO     T     OOO     T      Y    P      EEEEE  SSSS
+//    ----------------------------------------------------------------------------------
 
-void loadSafeParameters(ros::NodeHandle& nodeHandle) {
-    loadParameterFloatVector(nodeHandle, "motorPoly", motorPoly, 3);
-    cf_mass = getFloatParameter(nodeHandle, "mass");
-    // force that we need to counteract gravity (mg)
-    gravity_force = cf_mass * 9.81/(1000*4); // in N
-    saturationThrust = motorPoly[2] * 12000 * 12000 + motorPoly[1] * 12000 + motorPoly[0];
+// These function prototypes are not strictly required for this code to complile, but
+// adding the function prototypes here means the the functions can be written below in
+// any order. If the function prototypes are not included then the function need to
+// written below in an order that ensure each function is implemented before it is
+// called from another function, hence why the "main" function is at the bottom.
 
-    loadParameterFloatVector(nodeHandle, "gainMatrixRoll", gainMatrixRoll, 9);
-    loadParameterFloatVector(nodeHandle, "gainMatrixPitch", gainMatrixPitch, 9);
-    loadParameterFloatVector(nodeHandle, "gainMatrixYaw", gainMatrixYaw, 9);
-    loadParameterFloatVector(nodeHandle, "gainMatrixThrust", gainMatrixThrust, 9);
+// > For the CONTROL LOOP
+bool calculateControlOutput(Controller::Request &request, Controller::Response &response);
+void convertIntoBodyFrame(float est[9], float (&state)[9], float yaw_measured);
+float computeMotorPolyBackward(float thrust);
+void estimateState(Controller::Request &request, float (&est)[9]);
 
-    loadParameterFloatVector(nodeHandle, "filterGain", filterGain, 6);
-    loadParameterFloatVector(nodeHandle, "estimatorMatrix", estimatorMatrix, 2);
+// > For the LOAD PARAMETERS
+void yamlReadyForFetchCallback(const std_msgs::Int32& msg);
+void fetchYamlParameters(ros::NodeHandle& nodeHandle);
+void processFetchedParameters();
 
-    loadParameterFloatVector(nodeHandle, "defaultSetpoint", defaultSetpoint, 4);
-}
+// > For the GETPARAM()
+float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name);
+void getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length);
+int getParameterInt(ros::NodeHandle& nodeHandle, std::string name);
+void getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val, int length);
+int getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val);
+bool getParameterBool(ros::NodeHandle& nodeHandle, std::string name);
 
-float computeMotorPolyBackward(float thrust) {
-    return (-motorPoly[1] + sqrt(motorPoly[1] * motorPoly[1] - 4 * motorPoly[2] * (motorPoly[0] - thrust))) / (2 * motorPoly[2]);
-}
 
 
-//Kalman
-void estimateState(Controller::Request &request, float (&est)[9]) {
-    // attitude
-    est[6] = request.ownCrazyflie.roll;
-    est[7] = request.ownCrazyflie.pitch;
-    est[8] = request.ownCrazyflie.yaw;
+//    ----------------------------------------------------------------------------------
+//    FFFFF  U   U  N   N   CCCC  TTTTT  III   OOO   N   N
+//    F      U   U  NN  N  C        T     I   O   O  NN  N
+//    FFF    U   U  N N N  C        T     I   O   O  N N N
+//    F      U   U  N  NN  C        T     I   O   O  N  NN
+//    F       UUU   N   N   CCCC    T    III   OOO   N   N
+//
+//    III M   M PPPP  L     EEEEE M   M EEEEE N   N TTTTT   A   TTTTT III  OOO  N   N
+//     I  MM MM P   P L     E     MM MM E     NN  N   T    A A    T    I  O   O NN  N
+//     I  M M M PPPP  L     EEE   M M M EEE   N N N   T   A   A   T    I  O   O N N N
+//     I  M   M P     L     E     M   M E     N  NN   T   AAAAA   T    I  O   O N  NN
+//    III M   M P     LLLLL EEEEE M   M EEEEE N   N   T   A   A   T   III  OOO  N   N
+//    ----------------------------------------------------------------------------------
 
-    //velocity & filtering
-    float ahat_x[6]; //estimator matrix times state (x, y, z, vx, vy, vz)
-    ahat_x[0] = 0; ahat_x[1]=0; ahat_x[2]=0;
-    ahat_x[3] = estimatorMatrix[0] * prevEstimate[0] + estimatorMatrix[1] * prevEstimate[3];
-    ahat_x[4] = estimatorMatrix[0] * prevEstimate[1] + estimatorMatrix[1] * prevEstimate[4];
-    ahat_x[5] = estimatorMatrix[0] * prevEstimate[2] + estimatorMatrix[1] * prevEstimate[5];
 
-    
-    float k_x[6]; //filterGain times state
-    k_x[0] = request.ownCrazyflie.x * filterGain[0];
-    k_x[1] = request.ownCrazyflie.y * filterGain[1];
-    k_x[2] = request.ownCrazyflie.z * filterGain[2];
-    k_x[3] = request.ownCrazyflie.x * filterGain[3];
-    k_x[4] = request.ownCrazyflie.y * filterGain[4];
-    k_x[5] = request.ownCrazyflie.z * filterGain[5];
-   
-    est[0] = ahat_x[0] + k_x[0];
-    est[1] = ahat_x[1] + k_x[1];
-	est[2] = ahat_x[2] + k_x[2];
-    est[3] = ahat_x[3] + k_x[3];
-    est[4] = ahat_x[4] + k_x[4];
-    est[5] = ahat_x[5] + k_x[5];
 
-    memcpy(prevEstimate, est, 9 * sizeof(float));
-}
 
+//    ------------------------------------------------------------------------------
+//     CCCC   OOO   N   N  TTTTT  RRRR    OOO   L           L       OOO    OOO   PPPP
+//    C      O   O  NN  N    T    R   R  O   O  L           L      O   O  O   O  P   P
+//    C      O   O  N N N    T    RRRR   O   O  L           L      O   O  O   O  PPPP
+//    C      O   O  N  NN    T    R  R   O   O  L           L      O   O  O   O  P
+//     CCCC   OOO   N   N    T    R   R   OOO   LLLLL       LLLLL   OOO    OOO   P
+//    ----------------------------------------------------------------------------------
 
 //simple derivative
 /*
@@ -173,29 +226,10 @@ void estimateState(Controller::Request &request, float (&est)[9]) {
 }
 */
 
-void convertIntoBodyFrame(float est[9], float (&state)[9], float yaw_measured) {
-	float sinYaw = sin(yaw_measured);
-    float cosYaw = cos(yaw_measured);
-
-    state[0] = est[0] * cosYaw + est[1] * sinYaw;
-    state[1] = -est[0] * sinYaw + est[1] * cosYaw;
-    state[2] = est[2];
-
-    state[3] = est[3] * cosYaw + est[4] * sinYaw;
-    state[4] = -est[3] * sinYaw + est[4] * cosYaw;
-    state[5] = est[5];
-
-    state[6] = est[6];
-    state[7] = est[7];
-    state[8] = est[8];
-}
 
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response)
 {
-    // ros::NodeHandle nodeHandle("~");
-    // loadSafeParameters(nodeHandle);  // do not put this here, cannot control anymore
-
-	
+    
     float yaw_measured = request.ownCrazyflie.yaw;
 
     //move coordinate system to make setpoint origin
@@ -204,7 +238,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     request.ownCrazyflie.z -= setpoint[2];
     float yaw = request.ownCrazyflie.yaw - setpoint[3];
 
-	
+    
     //bag.write("Offset", ros::Time::now(), request.ownCrazyflie);
 
     while(yaw > PI) {yaw -= 2 * PI;}
@@ -213,42 +247,10 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 
     float est[9]; //px, py, pz, vx, vy, vz, roll, pitch, yaw
     estimateState(request, est);
-	
- //    //CONTROLLER DEBUGGING--------------------------------------------------------------------------------------------------
- //    Debugging estTests;
- //    estTests.x = est[0];
- //    estTests.y = est[1];
- //    estTests.z = est[2];
- //    estTests.vx = est[3];
- //    estTests.vy = est[4];
- //    estTests.vz = est[5];
- //    estTests.roll = est[6];
- //    estTests.pitch = est[7];
- //    estTests.yaw = est[8];
-	
-	// bag.write("Debugging est", ros::Time::now(), estTests);
- //    //CONTROLLER DEBUGGING END----------------------------------------------------------------------------------------------
+    
 
     float state[9]; //px, py, pz, vx, vy, vz, roll, pitch, yaw
     convertIntoBodyFrame(est, state, yaw_measured);
-
-    // //CONTROLLER DEBUGGING--------------------------------------------------------------------------------------------------
-    // estTests.x = state[0];
-    // estTests.y = state[1];
-    // estTests.z = state[2];
-    // estTests.vx = state[3];
-    // estTests.vy = state[4];
-    // estTests.vz = state[5];
-    // estTests.roll = state[6];
-    // estTests.pitch = state[7];
-    // estTests.yaw = state[8];
-    
-    // bag.write("Debugging state", ros::Time::now(), estTests);
-
-    // std_msgs::Float32 f32;
-    // f32.data = yaw_measured;
-    // bag.write("yaw measured", ros::Time::now(), f32);
-    // //CONTROLLER DEBUGGING END----------------------------------------------------------------------------------------------
 
     //calculate feedback
     float outRoll = 0;
@@ -256,10 +258,10 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     float outYaw = 0;
     float thrustIntermediate = 0;
     for(int i = 0; i < 9; ++i) {
-    	outRoll -= gainMatrixRoll[i] * state[i];
-    	outPitch -= gainMatrixPitch[i] * state[i];
-    	outYaw -= gainMatrixYaw[i] * state[i];
-    	thrustIntermediate -= gainMatrixThrust[i] * state[i];
+        outRoll -= gainMatrixRoll[i] * state[i];
+        outPitch -= gainMatrixPitch[i] * state[i];
+        outYaw -= gainMatrixYaw[i] * state[i];
+        thrustIntermediate -= gainMatrixThrust[i] * state[i];
     }
     // ROS_INFO_STREAM("thrustIntermediate = " << thrustIntermediate);
     //INFORMATION: this ugly fix was needed for the older firmware
@@ -285,14 +287,260 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     // ROS_INFO_STREAM("controlOutput.cmd2 = " << response.controlOutput.motorCmd3);
     // ROS_INFO_STREAM("controlOutput.cmd4 = " << response.controlOutput.motorCmd4);
 
-    response.controlOutput.onboardControllerType = RATE_CONTROLLER;
+    response.controlOutput.onboardControllerType = RATE_MODE;
 
     previousLocation = request.ownCrazyflie;
 
-	bag.write("ControlOutput", ros::Time::now(), response.controlOutput);
-
-	return true;
+    return true;
 }
+
+void convertIntoBodyFrame(float est[9], float (&state)[9], float yaw_measured)
+{
+    float sinYaw = sin(yaw_measured);
+    float cosYaw = cos(yaw_measured);
+
+    state[0] = est[0] * cosYaw + est[1] * sinYaw;
+    state[1] = -est[0] * sinYaw + est[1] * cosYaw;
+    state[2] = est[2];
+
+    state[3] = est[3] * cosYaw + est[4] * sinYaw;
+    state[4] = -est[3] * sinYaw + est[4] * cosYaw;
+    state[5] = est[5];
+
+    state[6] = est[6];
+    state[7] = est[7];
+    state[8] = est[8];
+}
+
+
+
+float computeMotorPolyBackward(float thrust)
+{
+    return (-motorPoly[1] + sqrt(motorPoly[1] * motorPoly[1] - 4 * motorPoly[2] * (motorPoly[0] - thrust))) / (2 * motorPoly[2]);
+}
+
+
+//Kalman
+void estimateState(Controller::Request &request, float (&est)[9])
+{
+    // attitude
+    est[6] = request.ownCrazyflie.roll;
+    est[7] = request.ownCrazyflie.pitch;
+    est[8] = request.ownCrazyflie.yaw;
+
+    //velocity & filtering
+    float ahat_x[6]; //estimator matrix times state (x, y, z, vx, vy, vz)
+    ahat_x[0] = 0; ahat_x[1]=0; ahat_x[2]=0;
+    ahat_x[3] = estimatorMatrix[0] * prevEstimate[0] + estimatorMatrix[1] * prevEstimate[3];
+    ahat_x[4] = estimatorMatrix[0] * prevEstimate[1] + estimatorMatrix[1] * prevEstimate[4];
+    ahat_x[5] = estimatorMatrix[0] * prevEstimate[2] + estimatorMatrix[1] * prevEstimate[5];
+
+    
+    float k_x[6]; //filterGain times state
+    k_x[0] = request.ownCrazyflie.x * filterGain[0];
+    k_x[1] = request.ownCrazyflie.y * filterGain[1];
+    k_x[2] = request.ownCrazyflie.z * filterGain[2];
+    k_x[3] = request.ownCrazyflie.x * filterGain[3];
+    k_x[4] = request.ownCrazyflie.y * filterGain[4];
+    k_x[5] = request.ownCrazyflie.z * filterGain[5];
+   
+    est[0] = ahat_x[0] + k_x[0];
+    est[1] = ahat_x[1] + k_x[1];
+    est[2] = ahat_x[2] + k_x[2];
+    est[3] = ahat_x[3] + k_x[3];
+    est[4] = ahat_x[4] + k_x[4];
+    est[5] = ahat_x[5] + k_x[5];
+
+    memcpy(prevEstimate, est, 9 * sizeof(float));
+}
+
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//    L       OOO     A    DDDD
+//    L      O   O   A A   D   D
+//    L      O   O  A   A  D   D
+//    L      O   O  AAAAA  D   D
+//    LLLLL   OOO   A   A  DDDD
+//
+//    PPPP     A    RRRR     A    M   M  EEEEE  TTTTT  EEEEE  RRRR    SSSS
+//    P   P   A A   R   R   A A   MM MM  E        T    E      R   R  S
+//    PPPP   A   A  RRRR   A   A  M M M  EEE      T    EEE    RRRR    SSS
+//    P      AAAAA  R  R   AAAAA  M   M  E        T    E      R  R       S
+//    P      A   A  R   R  A   A  M   M  EEEEE    T    EEEEE  R   R  SSSS
+//    ----------------------------------------------------------------------------------
+
+
+// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
+{
+    // Extract from the "msg" for which controller the and from where to fetch the YAML
+    // parameters
+    int controller_to_fetch_yaml = msg.data;
+
+    // Switch between fetching for the different controllers and from different locations
+    switch(controller_to_fetch_yaml)
+    {
+            case FETCH_YAML_SAFE_CONTROLLER_COORDINATOR:
+            // Let the user know that this message was received
+            ROS_INFO("The SafeControllerService received the message that YAML parameters were (re-)loaded");
+            // Let the user know from where the paramters are being fetched
+            ROS_INFO("> Now fetching the parameter values from the this machine");
+            // Call the function that fetches the parameters
+            fetchYamlParameters(nodeHandle_to_coordinator_parameter_service);
+            break;
+
+        case FETCH_YAML_SAFE_CONTROLLER_AGENT:
+            // Let the user know that this message was received
+            ROS_INFO("The SafeControllerService received the message that YAML parameters were (re-)loaded");
+            // Let the user know which paramters are being fetch
+            ROS_INFO("> Now fetching the parameter values from the this machine");
+            // Call the function that fetches the parameters
+            fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
+            break;
+
+        default:
+            // Let the user know that the command was not relevant
+            ROS_INFO("The SafeControllerService received the message that YAML parameters were (re-)loaded");
+            ROS_INFO("> However the parameters do not relate to this controller, hence nothing will be fetched.");
+            break;
+    }
+}
+
+void fetchYamlParameters(ros::NodeHandle& nodeHandle)
+{
+
+    // Here we load the parameters that are specified in the SafeController.yaml file
+
+    // Add the "CustomController" namespace to the "nodeHandle"
+    nodeHandle_for_safeController = ros::NodeHandle(nodeHandle + "/SafeController");
+
+    // > The mass of the crazyflie
+    cf_mass = getParameterFloat(nodeHandle_for_safeController, "mass");
+
+    // > The co-efficients of the quadratic conversation from 16-bit motor command to
+    //   thrust force in Newtons
+    loadParameterFloatVector(nodeHandle_for_safeController, "motorPoly", motorPoly, 3);
+    
+    
+    // > The row of the LQR matrix that commands body frame roll rate
+    loadParameterFloatVector(nodeHandle_for_safeController, "gainMatrixRoll", gainMatrixRoll, 9);
+    // > The row of the LQR matrix that commands body frame pitch rate
+    loadParameterFloatVector(nodeHandle_for_safeController, "gainMatrixPitch", gainMatrixPitch, 9);
+    // > The row of the LQR matrix that commands body frame yaw rate
+    loadParameterFloatVector(nodeHandle_for_safeController, "gainMatrixYaw", gainMatrixYaw, 9);
+    // > The row of the LQR matrix that commands thrust adjustment
+    loadParameterFloatVector(nodeHandle_for_safeController, "gainMatrixThrust", gainMatrixThrust, 9);
+
+    // > The gains for the point-mass Kalman filter
+    loadParameterFloatVector(nodeHandle_for_safeController, "filterGain", filterGain, 6);
+    loadParameterFloatVector(nodeHandle_for_safeController, "estimatorMatrix", estimatorMatrix, 2);
+
+    // > The defailt setpoint of the controller
+    loadParameterFloatVector(nodeHandle_for_safeController, "defaultSetpoint", defaultSetpoint, 4);
+
+    // Call the function that computes details an values that are needed from these
+    // parameters loaded above
+    processFetchedParameters();
+}
+
+void processFetchedParameters()
+{
+    // force that we need to counteract gravity (mg)
+    gravity_force = cf_mass * 9.81/(1000*4); // in N
+    // The maximum possible thrust
+    saturationThrust = motorPoly[2] * 12000 * 12000 + motorPoly[1] * 12000 + motorPoly[0];
+}
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//     GGGG  EEEEE  TTTTT  PPPP     A    RRRR     A    M   M   ( )
+//    G      E        T    P   P   A A   R   R   A A   MM MM  (   )
+//    G      EEE      T    PPPP   A   A  RRRR   A   A  M M M  (   )
+//    G   G  E        T    P      AAAAA  R  R   AAAAA  M   M  (   )
+//     GGGG  EEEEE    T    P      A   A  R   R  A   A  M   M   ( )
+//    ----------------------------------------------------------------------------------
+
+
+float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name)
+{
+    float val;
+    if(!nodeHandle.getParam(name, val))
+    {
+        ROS_ERROR_STREAM("missing parameter '" << name << "'");
+    }
+    return val;
+}
+
+void getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length)
+{
+    if(!nodeHandle.getParam(name, val)){
+        ROS_ERROR_STREAM("missing parameter '" << name << "'");
+    }
+    if(val.size() != length) {
+        ROS_ERROR_STREAM("parameter '" << name << "' has wrong array length, " << length << " needed");
+    }
+}
+
+int getParameterInt(ros::NodeHandle& nodeHandle, std::string name)
+{
+    int val;
+    if(!nodeHandle.getParam(name, val))
+    {
+        ROS_ERROR_STREAM("missing parameter '" << name << "'");
+    }
+    return val;
+}
+
+void getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val, int length)
+{
+    if(!nodeHandle.getParam(name, val)){
+        ROS_ERROR_STREAM("missing parameter '" << name << "'");
+    }
+    if(val.size() != length) {
+        ROS_ERROR_STREAM("parameter '" << name << "' has wrong array length, " << length << " needed");
+    }
+}
+
+int getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val)
+{
+    if(!nodeHandle.getParam(name, val)){
+        ROS_ERROR_STREAM("missing parameter '" << name << "'");
+    }
+    return val.size();
+}
+
+bool getParameterBool(ros::NodeHandle& nodeHandle, std::string name)
+{
+    bool val;
+    if(!nodeHandle.getParam(name, val))
+    {
+        ROS_ERROR_STREAM("missing parameter '" << name << "'");
+    }
+    return val;
+}
+
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//    N   N  EEEEE  W     W        SSSS  EEEEE  TTTTT  PPPP    OOO   III  N   N  TTTTT
+//    NN  N  E      W     W       S      E        T    P   P  O   O   I   NN  N    T
+//    N N N  EEE    W     W        SSS   EEE      T    PPPP   O   O   I   N N N    T
+//    N  NN  E       W W W            S  E        T    P      O   O   I   N  NN    T
+//    N   N  EEEEE    W W         SSSS   EEEEE    T    P       OOO   III  N   N    T
+//
+//     GGG   U   U  III        CCCC    A    L      L      BBBB     A     CCCC  K   K
+//    G   G  U   U   I        C       A A   L      L      B   B   A A   C      K  K
+//    G      U   U   I        C      A   A  L      L      BBBB   A   A  C      KKK
+//    G   G  U   U   I        C      AAAAA  L      L      B   B  AAAAA  C      K  K
+//     GGGG   UUU   III        CCCC  A   A  LLLLL  LLLLL  BBBB   A   A   CCCC  K   K
+//    ----------------------------------------------------------------------------------
 
 void setpointCallback(const Setpoint& newSetpoint) {
     setpoint[0] = newSetpoint.x;
@@ -301,43 +549,80 @@ void setpointCallback(const Setpoint& newSetpoint) {
     setpoint[3] = newSetpoint.yaw;
 }
 
-void safeYAMLloadedCallback(const std_msgs::Int32& msg)
-{
-    ros::NodeHandle nodeHandle("~");
-    ROS_INFO("Received msg safe loaded YAML");
-    loadSafeParameters(nodeHandle);
-}
 
 
-//ros::Publisher pub;
+
+
+//    ----------------------------------------------------------------------------------
+//    M   M    A    III  N   N
+//    MM MM   A A    I   NN  N
+//    M M M  A   A   I   N N N
+//    M   M  AAAAA   I   N  NN
+//    M   M  A   A  III  N   N
+//    ----------------------------------------------------------------------------------
 
 int main(int argc, char* argv[]) {
     ros::init(argc, argv, "SafeControllerService");
 
     ros::NodeHandle nodeHandle("~");
-    loadSafeParameters(nodeHandle);
+
+
+    // *********************************************************************************
+    // EVERYTHING THAT RELATES TO FETCHING PARAMETERS FROM A YAML FILE
+
+    // Get the namespace of this "SafeControllerService" node
+    std::string m_namespace = ros::this_node::getNamespace();
+
+    // Set the class variable "nodeHandle_to_own_agent_parameter_service" to be a node handle
+    // for the parameter service that is running on the machone of this agent
+    nodeHandle_to_own_agent_parameter_service = ros::NodeHandle(m_namespace + "/ParameterService");
+
+    // Set the class variable "nodeHandle_to_coordinator_parameter_service" to be a node handle
+    // for the parameter service that is running on the coordinate machine
+    ros::NodeHandle coordinator_nodeHandle = ros::NodeHandle();
+    nodeHandle_to_coordinator_parameter_service = ros::NodeHandle(coordinator_nodeHandle + "/ParameterService");
+
+    // Instantiate the local variable "controllerYamlReadyForFetchSubscriber" to be a
+    // "ros::Subscriber" type variable that subscribes to the "controllerYamlReadyForFetch" topic
+    // and calls the class function "yamlReadyForFetchCallback" each time a message is
+    // received on this topic and the message is passed as an input argument to the
+    // "yamlReadyForFetchCallback" class function.
+    ros::Subscriber controllerYamlReadyForFetchSubscriber_to_agent = nodeHandle_to_own_agent_parameter_service.subscribe("controllerYamlReadyForFetch", 1, yamlReadyForFetchCallback);
+
+    // Instantiate the local variable "controllerYamlReadyForFetchSubscriber" to be a
+    // "ros::Subscriber" type variable that subscribes to the "controllerYamlReadyForFetch" topic
+    // and calls the class function "yamlReadyForFetchCallback" each time a message is
+    // received on this topic and the message is passed as an input argument to the
+    // "yamlReadyForFetchCallback" class function.
+    ros::Subscriber controllerYamlReadyForFetchSubscriber_to_coordinator = nodeHandle_to_coordinator_parameter_service.subscribe("controllerYamlReadyForFetch", 1, yamlReadyForFetchCallback);
+
+    // Call the class function that loads the parameters for this class.
+    fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
+
+    // *********************************************************************************
+
+    
+    
+
     setpoint = defaultSetpoint; // only first time setpoint is equal to default setpoint
 
     ros::Subscriber setpointSubscriber = nodeHandle.subscribe("Setpoint", 1, setpointCallback);
 
     ros::NodeHandle namespace_nodeHandle(ros::this_node::getNamespace());
 
-    // Subscribe to the message from the "PPSClient" node that the YAML parameters
-    // have been loaded for the custom controller
-    ros::Subscriber safeYAMloadedSubscriber = namespace_nodeHandle.subscribe("PPSClient/safeYAMLloaded", 1, safeYAMLloadedCallback);
 
     ros::ServiceServer service = nodeHandle.advertiseService("RateController", calculateControlOutput);
     ROS_INFO("SafeControllerService ready");
     
-	std::string package_path;
-	package_path = ros::package::getPath("d_fall_pps") + "/";
-	ROS_INFO_STREAM(package_path);
-	std::string record_file = package_path + "LoggingSafeController.bag";
-	bag.open(record_file, rosbag::bagmode::Write);
+	// std::string package_path;
+	// package_path = ros::package::getPath("d_fall_pps") + "/";
+	// ROS_INFO_STREAM(package_path);
+	// std::string record_file = package_path + "LoggingSafeController.bag";
+	// bag.open(record_file, rosbag::bagmode::Write);
 
 
     ros::spin();
-	bag.close();
+	// bag.close();
 	
 	
 
