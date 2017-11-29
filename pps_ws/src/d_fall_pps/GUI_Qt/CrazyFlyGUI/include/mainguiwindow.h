@@ -198,11 +198,11 @@ private slots:
     void on_all_enable_safe_controller_button_clicked();
     void on_all_enable_custom_controller_button_clicked();
     // > For loading the parameter
-    void on_all_load_safe_controller_yaml_button_clicked();
-    void on_all_load_custom_controller_yaml_button_clicked();
+    void on_all_load_safe_controller_yaml_own_agent_button_clicked();
+    void on_all_load_custom_controller_yaml_own_agent_button_clicked();
     // > For sending a message with updated parameters
-    void on_all_send_safe_controller_yaml_button_clicked();
-    void on_all_send_custom_controller_yaml_button_clicked();
+    void on_all_load_safe_controller_yaml_coordinator_button_clicked();
+    void on_all_load_custom_controller_yaml_coordinator_button_clicked();
     
 
 private:

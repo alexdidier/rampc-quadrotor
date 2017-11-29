@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1176</width>
-    <height>1169</height>
+    <height>1180</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -276,7 +276,7 @@
        <item>
         <widget class="QTabWidget" name="tabWidget_2">
          <property name="currentIndex">
-          <number>0</number>
+          <number>1</number>
          </property>
          <widget class="QWidget" name="links_tab">
           <attribute name="title">
@@ -617,8 +617,8 @@
              </property>
             </widget>
            </item>
-           <item row="7" column="0">
-            <widget class="QPushButton" name="all_load_safe_controller_yaml_button">
+           <item row="8" column="0">
+            <widget class="QPushButton" name="all_load_safe_controller_yaml_own_agent_button">
              <property name="minimumSize">
               <size>
                <width>0</width>
@@ -636,8 +636,8 @@
              </property>
             </widget>
            </item>
-           <item row="7" column="1">
-            <widget class="QPushButton" name="all_load_custom_controller_yaml_button">
+           <item row="8" column="1">
+            <widget class="QPushButton" name="all_load_custom_controller_yaml_own_agent_button">
              <property name="minimumSize">
               <size>
                <width>0</width>
@@ -695,15 +695,15 @@
               </size>
              </property>
              <property name="text">
-              <string>LOAD/SEND YAML PARAMETERS</string>
+              <string>LOAD YAML PARAMETERS</string>
              </property>
              <property name="alignment">
               <set>Qt::AlignBottom|Qt::AlignHCenter</set>
              </property>
             </widget>
            </item>
-           <item row="8" column="0">
-            <widget class="QPushButton" name="all_send_safe_controller_yaml_button">
+           <item row="10" column="0">
+            <widget class="QPushButton" name="all_load_safe_controller_yaml_coordinator_button">
              <property name="minimumSize">
               <size>
                <width>0</width>
@@ -721,8 +721,8 @@
              </property>
             </widget>
            </item>
-           <item row="8" column="1">
-            <widget class="QPushButton" name="all_send_custom_controller_yaml_button">
+           <item row="10" column="1">
+            <widget class="QPushButton" name="all_load_custom_controller_yaml_coordinator_button">
              <property name="minimumSize">
               <size>
                <width>0</width>
@@ -737,6 +737,44 @@
              </property>
              <property name="text">
               <string>Send Custom YAML</string>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="0" colspan="2">
+            <widget class="QLabel" name="all_yaml_agent_label">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>&gt; From agenet's local file</string>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="0" colspan="2">
+            <widget class="QLabel" name="all_yaml_coordinator_label">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>&gt; From coordinator's file</string>
              </property>
             </widget>
            </item>
@@ -792,7 +830,7 @@
      <x>0</x>
      <y>0</y>
      <width>1176</width>
-     <height>25</height>
+     <height>37</height>
     </rect>
    </property>
   </widget>
