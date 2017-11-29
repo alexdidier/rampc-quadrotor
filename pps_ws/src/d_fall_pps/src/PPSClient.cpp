@@ -192,6 +192,13 @@ ros::Publisher commandPublisher;
 ros::Publisher crazyRadioCommandPublisher;
 
 
+// Variable for the node handle to the paramter services
+// > For the paramter service of this agent
+ros::NodeHandle nodeHandle_to_own_agent_parameter_service;
+// > For the parameter service of the coordinator
+ros::NodeHandle nodeHandle_to_coordinator_parameter_service;
+
+
 // variables for the states:
 int flying_state;
 bool changed_state_flag;
@@ -815,7 +822,7 @@ void fetchYamlParametersForSafeController(ros::NodeHandle& nodeHandle)
     // Here we load the parameters that are specified in the SafeController.yaml file
 
     // Add the "CustomController" namespace to the "nodeHandle"
-    nodeHandle_for_safeController = ros::NodeHandle(nodeHandle + "/SafeController");
+    ros::NodeHandle nodeHandle_for_safeController = ros::NodeHandle(nodeHandle, "/SafeController");
 
 
     if(!nodeHandle_for_safeController.getParam("takeOffDistance", take_off_distance))
@@ -1015,7 +1022,7 @@ int main(int argc, char* argv[])
     // Set the class variable "nodeHandle_to_coordinator_parameter_service" to be a node handle
     // for the parameter service that is running on the coordinate machine
     ros::NodeHandle coordinator_nodeHandle = ros::NodeHandle();
-    nodeHandle_to_coordinator_parameter_service = ros::NodeHandle(coordinator_nodeHandle + "/ParameterService");
+    nodeHandle_to_coordinator_parameter_service = ros::NodeHandle(coordinator_nodeHandle, "/ParameterService");
 
     // Instantiate the local variable "controllerYamlReadyForFetchSubscriber" to be a
     // "ros::Subscriber" type variable that subscribes to the "controllerYamlReadyForFetch" topic
@@ -1032,8 +1039,7 @@ int main(int argc, char* argv[])
     ros::Subscriber controllerYamlReadyForFetchSubscriber_to_coordinator = nodeHandle_to_coordinator_parameter_service.subscribe("controllerYamlReadyForFetch", 1, yamlReadyForFetchCallback);
 
     // Call the class function that loads the parameters for this class.
-    fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
-    loadSafeControllerParameters();
+    fetchYamlParametersForSafeController(nodeHandle_to_own_agent_parameter_service);
 
     // *********************************************************************************
     

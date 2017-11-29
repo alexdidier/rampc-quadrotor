@@ -415,31 +415,31 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
     // Here we load the parameters that are specified in the SafeController.yaml file
 
     // Add the "CustomController" namespace to the "nodeHandle"
-    nodeHandle_for_safeController = ros::NodeHandle(nodeHandle + "/SafeController");
+    ros::NodeHandle nodeHandle_for_safeController = ros::NodeHandle(nodeHandle, "/SafeController");
 
     // > The mass of the crazyflie
     cf_mass = getParameterFloat(nodeHandle_for_safeController, "mass");
 
     // > The co-efficients of the quadratic conversation from 16-bit motor command to
     //   thrust force in Newtons
-    loadParameterFloatVector(nodeHandle_for_safeController, "motorPoly", motorPoly, 3);
+    getParameterFloatVector(nodeHandle_for_safeController, "motorPoly", motorPoly, 3);
     
     
     // > The row of the LQR matrix that commands body frame roll rate
-    loadParameterFloatVector(nodeHandle_for_safeController, "gainMatrixRoll", gainMatrixRoll, 9);
+    getParameterFloatVector(nodeHandle_for_safeController, "gainMatrixRoll", gainMatrixRoll, 9);
     // > The row of the LQR matrix that commands body frame pitch rate
-    loadParameterFloatVector(nodeHandle_for_safeController, "gainMatrixPitch", gainMatrixPitch, 9);
+    getParameterFloatVector(nodeHandle_for_safeController, "gainMatrixPitch", gainMatrixPitch, 9);
     // > The row of the LQR matrix that commands body frame yaw rate
-    loadParameterFloatVector(nodeHandle_for_safeController, "gainMatrixYaw", gainMatrixYaw, 9);
+    getParameterFloatVector(nodeHandle_for_safeController, "gainMatrixYaw", gainMatrixYaw, 9);
     // > The row of the LQR matrix that commands thrust adjustment
-    loadParameterFloatVector(nodeHandle_for_safeController, "gainMatrixThrust", gainMatrixThrust, 9);
+    getParameterFloatVector(nodeHandle_for_safeController, "gainMatrixThrust", gainMatrixThrust, 9);
 
     // > The gains for the point-mass Kalman filter
-    loadParameterFloatVector(nodeHandle_for_safeController, "filterGain", filterGain, 6);
-    loadParameterFloatVector(nodeHandle_for_safeController, "estimatorMatrix", estimatorMatrix, 2);
+    getParameterFloatVector(nodeHandle_for_safeController, "filterGain", filterGain, 6);
+    getParameterFloatVector(nodeHandle_for_safeController, "estimatorMatrix", estimatorMatrix, 2);
 
     // > The defailt setpoint of the controller
-    loadParameterFloatVector(nodeHandle_for_safeController, "defaultSetpoint", defaultSetpoint, 4);
+    getParameterFloatVector(nodeHandle_for_safeController, "defaultSetpoint", defaultSetpoint, 4);
 
     // Call the function that computes details an values that are needed from these
     // parameters loaded above
@@ -580,7 +580,7 @@ int main(int argc, char* argv[]) {
     // Set the class variable "nodeHandle_to_coordinator_parameter_service" to be a node handle
     // for the parameter service that is running on the coordinate machine
     ros::NodeHandle coordinator_nodeHandle = ros::NodeHandle();
-    nodeHandle_to_coordinator_parameter_service = ros::NodeHandle(coordinator_nodeHandle + "/ParameterService");
+    nodeHandle_to_coordinator_parameter_service = ros::NodeHandle(coordinator_nodeHandle, "/ParameterService");
 
     // Instantiate the local variable "controllerYamlReadyForFetchSubscriber" to be a
     // "ros::Subscriber" type variable that subscribes to the "controllerYamlReadyForFetch" topic

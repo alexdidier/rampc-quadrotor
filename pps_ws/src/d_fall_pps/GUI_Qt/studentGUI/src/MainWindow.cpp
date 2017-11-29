@@ -573,7 +573,8 @@ void MainWindow::requestLoadControllerYaml_from_my_GUI_Callback(const std_msgs::
     // Switch between loading for the different controllers
     switch(controller_to_load_yaml)
     {
-        case LOAD_YAML_SAFE_CONTROLLER_AGENT || LOAD_YAML_SAFE_CONTROLLER_COORDINATOR:
+        case LOAD_YAML_SAFE_CONTROLLER_AGENT:
+        case LOAD_YAML_SAFE_CONTROLLER_COORDINATOR:
             // Set the "load safe yaml" button to be disabled
             ui->load_safe_yaml_button->setEnabled(false);
 
@@ -587,7 +588,8 @@ void MainWindow::requestLoadControllerYaml_from_my_GUI_Callback(const std_msgs::
 
             break;
 
-        case LOAD_YAML_CUSTOM_CONTROLLER_AGENT || LOAD_YAML_CUSTOM_CONTROLLER_COORDINATOR:
+        case LOAD_YAML_CUSTOM_CONTROLLER_AGENT:
+        case LOAD_YAML_CUSTOM_CONTROLLER_COORDINATOR:
             // Set the "load custom yaml" button to be disabled
             ui->load_custom_yaml_button->setEnabled(false);
 

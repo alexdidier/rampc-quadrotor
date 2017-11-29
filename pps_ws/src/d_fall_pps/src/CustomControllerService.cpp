@@ -847,7 +847,7 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
     // Here we load the parameters that are specified in the CustomController.yaml file
 
 	// Add the "CustomController" namespace to the "nodeHandle"
-	nodeHandle_for_customController = ros::NodeHandle(nodeHandle + "/CustomController");
+	ros::NodeHandle nodeHandle_for_customController = ros::NodeHandle(nodeHandle, "/CustomController");
 
 	// > The mass of the crazyflie
     cf_mass = getParameterFloat(nodeHandle_for_customController , "mass");
@@ -1136,7 +1136,7 @@ int main(int argc, char* argv[]) {
     // Set the class variable "nodeHandle_to_coordinator_parameter_service" to be a node handle
     // for the parameter service that is running on the coordinate machine
     ros::NodeHandle coordinator_nodeHandle = ros::NodeHandle();
-    nodeHandle_to_coordinator_parameter_service = ros::NodeHandle(coordinator_nodeHandle + "/ParameterService");
+    nodeHandle_to_coordinator_parameter_service = ros::NodeHandle(coordinator_nodeHandle, "/ParameterService");
 
     // Instantiate the local variable "controllerYamlReadyForFetchSubscriber" to be a
     // "ros::Subscriber" type variable that subscribes to the "controllerYamlReadyForFetch" topic

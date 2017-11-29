@@ -8,8 +8,14 @@
 
 	<!-- When we have a GUI, this has to be adapted and included -->
 	<node pkg="d_fall_pps" name="my_GUI" output="screen" type="my_GUI">
-		<!-- <rosparam command="load" file="$(find d_fall_pps)/launch/ControlParams.yaml" /> -->
-		<rosparam command="load" file="$(find d_fall_pps)/param/CustomController.yaml" />
+	</node>
+
+        <!-- PARAMETER SERVICE -->
+	<node pkg="d_fall_pps" name="ParameterService" output="screen" type="ParameterService">
+		<param name="type" type="str" value="student" />
+		<param name="agentID" value="$(optenv ROS_NAMESPACE)" />
+		<rosparam command="load" file="$(find d_fall_pps)/param/SafeController.yaml" ns="SafeController" />
+		<rosparam command="load" file="$(find d_fall_pps)/param/CustomController.yaml" ns="CustomController" />
 	</node>
 
 </launch>

@@ -1056,12 +1056,12 @@ void MainGUIWindow::on_all_enable_custom_controller_button_clicked()
 void MainGUIWindow::on_all_load_safe_controller_yaml_own_agent_button_clicked()
 {
 	// Disable the button
-	ui->all_load_safe_controller_yaml_button->setEnabled(false);
-	ui->all_send_safe_controller_yaml_button->setEnabled(false);
+	ui->all_load_safe_controller_yaml_own_agent_button->setEnabled(false);
+	ui->all_load_safe_controller_yaml_coordinator_button->setEnabled(false);
 
 	// Send the message that the YAML paremters should be loaded
     std_msgs::Int32 msg;
-    msg.data = LOAD_YAML_SAFE_CONTROLLER_OWN_AGENT;
+    msg.data = LOAD_YAML_SAFE_CONTROLLER_AGENT;
     requestLoadControllerYamlPublisher.publish(msg);
 
     // Start a timer which will enable the button in its callback
@@ -1077,12 +1077,12 @@ void MainGUIWindow::on_all_load_safe_controller_yaml_own_agent_button_clicked()
 void MainGUIWindow::on_all_load_custom_controller_yaml_own_agent_button_clicked()
 {
 	// Disable the button
-	ui->all_load_custom_controller_yaml_button->setEnabled(false);
-	ui->all_send_custom_controller_yaml_button->setEnabled(false);
+	ui->all_load_custom_controller_yaml_own_agent_button->setEnabled(false);
+	ui->all_load_custom_controller_yaml_coordinator_button->setEnabled(false);
 
 	// Send the message that the YAML paremters should be loaded
     std_msgs::Int32 msg;
-    msg.data = LOAD_YAML_CUSTOM_CONTROLLER_OWN_AGENT;
+    msg.data = LOAD_YAML_CUSTOM_CONTROLLER_AGENT;
     requestLoadControllerYamlPublisher.publish(msg);
 
     // Start a timer which will enable the button in its callback
@@ -1099,8 +1099,8 @@ void MainGUIWindow::on_all_load_custom_controller_yaml_own_agent_button_clicked(
 void MainGUIWindow::on_all_load_safe_controller_yaml_coordinator_button_clicked()
 {
 	// Disable the button
-	ui->all_load_safe_controller_yaml_button->setEnabled(false);
-	ui->all_send_safe_controller_yaml_button->setEnabled(false);
+	ui->all_load_safe_controller_yaml_own_agent_button->setEnabled(false);
+	ui->all_load_safe_controller_yaml_coordinator_button->setEnabled(false);
 
 	// Send the message that the YAML paremters should be loaded
     // by the coordinator (and then the agent informed)
@@ -1121,8 +1121,8 @@ void MainGUIWindow::on_all_load_safe_controller_yaml_coordinator_button_clicked(
 void MainGUIWindow::on_all_load_custom_controller_yaml_coordinator_button_clicked()
 {
 	// Disable the button
-	ui->all_load_custom_controller_yaml_button->setEnabled(false);
-	ui->all_send_custom_controller_yaml_button->setEnabled(false);
+	ui->all_load_custom_controller_yaml_own_agent_button->setEnabled(false);
+	ui->all_load_custom_controller_yaml_coordinator_button->setEnabled(false);
 
     // Send the message that the YAML paremters should be loaded
     // by the coordinator (and then the agent informed)
@@ -1137,23 +1137,22 @@ void MainGUIWindow::on_all_load_custom_controller_yaml_coordinator_button_clicke
     // > Thus we use this timer to prevent the user from clicking the
     //   button in the GUI repeatedly.
     ros::NodeHandle nodeHandle("~");
-    m_timer_yaml_file_for_custom_controller = nodeHandle.createTimer(ros::Duration(1), &MainGUIWindow::customSendYamlAsMessageTimerCallback, this, true);
-
+    m_timer_yaml_file_for_custom_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainGUIWindow::customYamlFileTimerCallback, this, true);
 
 }
 // > CALLBACK TO RE-ENABLE THE SAFE CONTROLLER YAML BUTTONS
 void MainGUIWindow::safeYamlFileTimerCallback(const ros::TimerEvent&)
 {
     // Enble the "load" and the "send" safe controller YAML button again
-    ui->all_load_safe_controller_yaml_button->setEnabled(true);
-	ui->all_send_safe_controller_yaml_button->setEnabled(true);
+    ui->all_load_safe_controller_yaml_own_agent_button->setEnabled(true);
+	ui->all_load_safe_controller_yaml_coordinator_button->setEnabled(true);
 }
 // > CALLBACK TO RE-ENABLE THE CUSTOM CONTROLLER YAML BUTTONS
 void MainGUIWindow::customYamlFileTimerCallback(const ros::TimerEvent&)
 {
     // Enble the "load" and the "send" custom controller YAML button again
-    ui->all_load_custom_controller_yaml_button->setEnabled(true);
-	ui->all_send_custom_controller_yaml_button->setEnabled(true);
+    ui->all_load_custom_controller_yaml_own_agent_button->setEnabled(true);
+	ui->all_load_custom_controller_yaml_coordinator_button->setEnabled(true);
 }
 
 /*
