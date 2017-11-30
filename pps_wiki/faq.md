@@ -110,3 +110,34 @@ The per motor command that your algorithm requests from the Crazyflie via settin
 
 This is most likely caused by your code causing a segmentation fault, which is commonly caused due to a division by zero. This is often observed in relation to the calculation of sampling time from frequency. You need to think carefully about the order in which variables are instantiated, set to a value, and subsequently used in your code. Specifically, in the template controller code provided contains the ``control_frequency`` variable that is set to a value loaded from the ``.yaml`` parameter file. It is common to instantiate a new variable as ``t_s = 1.0 / control_frequency``. However, if the ``t_s`` variable is accidentally used before it is set to this value then it is possible that you are dividing by zero. Remember also that the values from the ``.yaml`` parameter file are loaded during runtime, as they can be changed at any time during the running of the application, so those values are not present during compile time of your code.
 
+
+### How can we send and receive the Crazyflies position between our controllers?
+
+In order to make information available between the laptops, you can use the publish and subscribe messaging framework availble in ROS.
+
+In order to publish the position of your Crazyflie you need to introduce a variable of type ``ros::Publisher`` and you can use the ``Setpoint`` message type to publish the x,y,z, and yaw of your Crazyflie.
+
+To add a publisher follow these steps:
+- Add ``ros::Publisher`` type class variable to your ``CustomControllerService.cpp`` file:
+```
+ros::Publisher my_current_xyz_yaw_publisher
+```
+
+- In the ``main()`` function of your ``CustomControllerService.cpp`` file initialise your publisher:
+```
+ros::NodeHandle nodeHandle("~");
+my_current_xyz_yaw_publisher = nodeHandle.advertise<Setpoint>("/<ID>/my_current_xyz_yaw_topic", 1);
+'''
+where ``<ID>`` should be replaced by the ID of your computer, and ``my_current_xyz_yaw_topic`` is the name of the message topic that will be published.
+
+- In the ``computeControlOutput`` function of your ``CustomControllerService.cpp`` file you can publish the current position of your Crazyflie by adding the following:
+```
+Setpoint temp_current_xyz_yaw;
+temp_current_xyz_yaw.x   = request.ownCrazyflie.x;
+temp_current_xyz_yaw.y   = request.ownCrazyflie.y;
+temp_current_xyz_yaw.z   = request.ownCrazyflie.z;
+temp_current_xyz_yaw.yaw = request.ownCrazyflie.yaw;
+my_current_xyz_yaw_publisher.publish(temp_current_xyz_yaw);
+```
+
+
