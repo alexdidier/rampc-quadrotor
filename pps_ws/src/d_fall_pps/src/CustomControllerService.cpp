@@ -136,11 +136,11 @@ const float gainMatrixThrust[9] = {0, 0, 0.22195826, 0, 0, 0.12362477, 0, 0, 0};
 ros::Publisher debugPublisher;
 
 
-// Variable for the node handle to the paramter services
+// Variable for the namespaces for the paramter services
 // > For the paramter service of this agent
-ros::NodeHandle nodeHandle_to_own_agent_parameter_service;
+std::string namespace_to_own_agent_parameter_service;
 // > For the parameter service of the coordinator
-ros::NodeHandle nodeHandle_to_coordinator_parameter_service;
+std::string namespace_to_coordinator_parameter_service;
 
 
 // Boolean whether to execute the convert into body frame function
@@ -817,7 +817,9 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
 			ROS_INFO("The CustomControllerService received the message that YAML parameters were (re-)loaded");
 			// Let the user know from where the paramters are being fetched
 			ROS_INFO("> Now fetching the parameter values from the this machine");
-			// Call the function that fetches the parameters
+			// Create a node handle to the parameter service running on the coordinator machine
+            ros::NodeHandle nodeHandle_to_coordinator_parameter_service = ros::NodeHandle(namespace_to_coordinator_parameter_service);
+            // Call the function that fetches the parameters
 			fetchYamlParameters(nodeHandle_to_coordinator_parameter_service);
 			break;
 
@@ -826,7 +828,9 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
 			ROS_INFO("The CustomControllerService received the message that YAML parameters were (re-)loaded");
 			// Let the user know which paramters are being fetch
 			ROS_INFO("> Now fetching the parameter values from the this machine");
-			// Call the function that fetches the parameters
+			// Create a node handle to the parameter service running on this agent's machine
+            ros::NodeHandle nodeHandle_to_own_agent_parameter_service = ros::NodeHandle(namespace_to_own_agent_parameter_service);
+            // Call the function that fetches the parameters
 			fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
 			break;
 
@@ -1129,14 +1133,21 @@ int main(int argc, char* argv[]) {
 	// *********************************************************************************
 	// EVERYTHING THAT RELATES TO FETCHING PARAMETERS FROM A YAML FILE
 
-	// Set the class variable "nodeHandle_to_own_agent_parameter_service" to be a node handle
-    // for the parameter service that is running on the machone of this agent
-    nodeHandle_to_own_agent_parameter_service = ros::NodeHandle(m_namespace + "/ParameterService");
+	// Set the class variable "namespace_to_own_agent_parameter_service" to be a the
+    // namespace string for the parameter service that is running on the machine of this
+    // agent
+    namespace_to_own_agent_parameter_service = (m_namespace + "/ParameterService");
+
+    // Create a node handle to the parameter service running on this agent's machine
+    ros::NodeHandle nodeHandle_to_own_agent_parameter_service = ros::NodeHandle(namespace_to_own_agent_parameter_service);
 
     // Set the class variable "nodeHandle_to_coordinator_parameter_service" to be a node handle
     // for the parameter service that is running on the coordinate machine
-    ros::NodeHandle coordinator_nodeHandle = ros::NodeHandle();
-    nodeHandle_to_coordinator_parameter_service = ros::NodeHandle(coordinator_nodeHandle, "/ParameterService");
+    std::string m_ros_namespace = ros::getNamespace();
+    namespace_to_coordinator_parameter_service = (m_ros_namespace + "/ParameterService");
+
+    // Create a node handle to the parameter service running on the coordinator machine
+    ros::NodeHandle nodeHandle_to_coordinator_parameter_service = ros::NodeHandle(namespace_to_own_agent_parameter_service);
 
     // Instantiate the local variable "controllerYamlReadyForFetchSubscriber" to be a
     // "ros::Subscriber" type variable that subscribes to the "controllerYamlReadyForFetch" topic
