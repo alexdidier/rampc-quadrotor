@@ -56,7 +56,7 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     setCrazyRadioStatus(DISCONNECTED);
 
     m_ros_namespace = ros::this_node::getNamespace();
-    ROS_INFO("namespace: %s", m_ros_namespace.c_str());
+    ROS_INFO("Student GUI node namespace: %s", m_ros_namespace.c_str());
 
     qRegisterMetaType<ptrToMessage>("ptrToMessage");
     QObject::connect(m_rosNodeThread, SIGNAL(newViconData(const ptrToMessage&)), this, SLOT(updateNewViconData(const ptrToMessage&)));
@@ -84,17 +84,21 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     ros::NodeHandle my_nodeHandle("~");
     controllerSetpointPublisher = my_nodeHandle.advertise<Setpoint>("ControllerSetpoint", 1);
 
-// > For publishing a message that requests the 
-    //   YAML parameters to be re-loaded from file
-    // > The message contents specify which controller
-    //   the parameters should be re-loaded for
-    requestLoadControllerYamlPublisher = my_nodeHandle.advertise<std_msgs::Int32>("requestLoadControllerYaml", 1);
+    
     
 
     // communication with PPS Client, just to make it possible to communicate through terminal also we use PPSClient's name
-    ros::NodeHandle nh_PPSClient(m_ros_namespace + "/PPSClient");
+    //ros::NodeHandle nh_PPSClient(m_ros_namespace + "/PPSClient");
+    ros::NodeHandle nh_PPSClient("PPSClient");
     crazyRadioCommandPublisher = nh_PPSClient.advertise<std_msgs::Int32>("crazyRadioCommand", 1);
     PPSClientCommandPublisher = nh_PPSClient.advertise<std_msgs::Int32>("Command", 1);
+
+
+    // > For publishing a message that requests the 
+    //   YAML parameters to be re-loaded from file
+    // > The message contents specify which controller
+    //   the parameters should be re-loaded for
+    requestLoadControllerYamlPublisher = nh_PPSClient.advertise<std_msgs::Int32>("requestLoadControllerYaml", 1);
 
     
 
@@ -115,21 +119,23 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
 
 
 
+
+    // Load default setpoint from the "SafeController" namespace of the "ParameterService"
     std::vector<float> default_setpoint(4);
-    ros::NodeHandle nh_safeControllerService(m_ros_namespace + "/SafeControllerService");
+    ros::NodeHandle nodeHandle_to_own_agent_parameter_service("ParameterService");
+    ros::NodeHandle nodeHandle_for_safeController(nodeHandle_to_own_agent_parameter_service, "SafeController");
 
-    ROS_INFO_STREAM(m_ros_namespace << "/SafeControllerService");
-
-    if(!nh_safeControllerService.getParam("defaultSetpoint", default_setpoint))
+    if(!nodeHandle_for_safeController.getParam("defaultSetpoint", default_setpoint))
     {
-        ROS_ERROR_STREAM("couldn't find parameter 'defaultSetpoint'");
+        ROS_ERROR_STREAM("The StudentGUI could not find parameter 'defaultSetpoint', as called from main(...)");
     }
 
-
+    // Copy the default setpoint into respective text fields of the GUI
     ui->current_setpoint_x->setText(QString::number(default_setpoint[0]));
     ui->current_setpoint_y->setText(QString::number(default_setpoint[1]));
     ui->current_setpoint_z->setText(QString::number(default_setpoint[2]));
     ui->current_setpoint_yaw->setText(QString::number(default_setpoint[3]));
+
 
     disableGUI();
     highlightSafeControllerTab();

@@ -169,6 +169,8 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
     // parameters should be loaded
     int controller_to_load_yaml = msg.data;
 
+    ROS_INFO_STREAM("The Parameter Service node received the message to load YAML parameters from file into cache");
+
 
     // Instantiate a local varaible to confirm that something was actually loaded from
     // a YAML file
@@ -342,12 +344,20 @@ int main(int argc, char* argv[])
         case TYPE_AGENT:
         {
             // Get the node handles required
-            ros::NodeHandle agent_nodeHandle = ros::NodeHandle();
-            ros::NodeHandle agent_namespace_nodeHandle(ros::this_node::getNamespace());
+            //ros::NodeHandle agent_nodeHandle = ros::NodeHandle();
+            //ros::NodeHandle agent_namespace_nodeHandle(ros::this_node::getNamespace());
             // > Subscribe to requests from: the master GUI
-            ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_master = agent_nodeHandle.subscribe("/my_GUI/requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);
+            //ros::NodeHandle nh_studentGUI_for_this_agent("student_GUI");
+            //ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_master = nh_studentGUI_for_this_agent.subscribe("requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);
             // > Subscribe to requests from: the agent's own "PPSClient" node
-            ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_self = agent_namespace_nodeHandle.subscribe("PPSClient/requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);
+            //std::string temp_this_node_namespace = ros::this_node::getNamespace();
+            //ros::NodeHandle nh_PPSClient_for_this_agent(temp_this_node_namespace + "/PPSClient");
+            ros::NodeHandle nh_PPSClient_for_this_agent(nodeHandle,"PPSClient");
+            ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_self = nh_PPSClient_for_this_agent.subscribe("requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);
+
+
+            ROS_INFO_STREAM("This Parameter Service has subscribed to 'requestLoadControllerYaml' messages from both the 'my_GUI' and the 'PPSClient'");
+
             break;
         }
 

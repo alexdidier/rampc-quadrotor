@@ -809,7 +809,7 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
             // Let the user know which paramters are being fetch
             ROS_INFO("> Now fetching the parameter values from the this machine");
             // Create a node handle to the parameter service running on this agent's machine
-            ros::NodeHandle nodeHandle_to_own_agent_parameter_service = ros::NodeHandle(namespace_to_own_agent_parameter_service);
+            ros::NodeHandle nodeHandle_to_own_agent_parameter_service(namespace_to_own_agent_parameter_service);
             // Call the function that fetches the parameters
             fetchYamlParametersForSafeController(nodeHandle_to_own_agent_parameter_service);
             break;
@@ -832,8 +832,7 @@ void fetchYamlParametersForSafeController(ros::NodeHandle& nodeHandle)
     // Here we load the parameters that are specified in the SafeController.yaml file
 
     // Add the "CustomController" namespace to the "nodeHandle"
-    ros::NodeHandle nodeHandle_for_safeController = ros::NodeHandle(nodeHandle, "/SafeController");
-
+    ros::NodeHandle nodeHandle_for_safeController(nodeHandle, "SafeController");
 
     if(!nodeHandle_for_safeController.getParam("takeOffDistance", take_off_distance))
     {
@@ -999,23 +998,6 @@ int main(int argc, char* argv[])
 	ros::NodeHandle nodeHandle("~");
     ros_namespace = ros::this_node::getNamespace();
 
-    // load default setpoint
-    std::vector<float> default_setpoint(4);
-    ros::NodeHandle nh_safeControllerService(ros_namespace + "/SafeControllerService");
-
-    ROS_INFO_STREAM(ros_namespace << "/SafeControllerService");
-
-    if(!nh_safeControllerService.getParam("defaultSetpoint", default_setpoint))
-    {
-        ROS_ERROR_STREAM("couldn't find parameter 'defaultSetpoint'");
-    }
-
-    controller_setpoint.x = default_setpoint[0];
-    controller_setpoint.y = default_setpoint[1];
-    controller_setpoint.z = default_setpoint[2];
-    controller_setpoint.yaw = default_setpoint[3];
-
-
     // *********************************************************************************
     // EVERYTHING THAT RELATES TO FETCHING PARAMETERS FROM A YAML FILE
 
@@ -1028,15 +1010,15 @@ int main(int argc, char* argv[])
     // Set the class variable "namespace_to_own_agent_parameter_service" to be a the
     // namespace string for the parameter service that is running on the machine of this
     // agent
-    namespace_to_own_agent_parameter_service = (m_namespace + "/ParameterService");
+    namespace_to_own_agent_parameter_service = "ParameterService";
     
     // Create a node handle to the parameter service running on this agent's machine
-    ros::NodeHandle nodeHandle_to_own_agent_parameter_service = ros::NodeHandle(namespace_to_own_agent_parameter_service);
+    ros::NodeHandle nodeHandle_to_own_agent_parameter_service(namespace_to_own_agent_parameter_service);
 
     // Set the class variable "nodeHandle_to_coordinator_parameter_service" to be a node handle
     // for the parameter service that is running on the coordinate machine
-    std::string m_ros_namespace = ros::getNamespace();
-    namespace_to_coordinator_parameter_service = (m_ros_namespace + "/ParameterService");
+    //std::string m_ros_namespace = ros::getNamespace();
+    namespace_to_coordinator_parameter_service = "ParameterService";
 
     // Create a node handle to the parameter service running on the coordinator machine
     ros::NodeHandle nodeHandle_to_coordinator_parameter_service = ros::NodeHandle(namespace_to_own_agent_parameter_service);
@@ -1059,6 +1041,22 @@ int main(int argc, char* argv[])
     fetchYamlParametersForSafeController(nodeHandle_to_own_agent_parameter_service);
 
     // *********************************************************************************
+
+
+    // Load default setpoint from the "SafeController" namespace of the "ParameterService"
+    std::vector<float> default_setpoint(4);
+    ros::NodeHandle nodeHandle_for_safeController(nodeHandle_to_own_agent_parameter_service, "SafeController");
+
+    if(!nodeHandle_for_safeController.getParam("defaultSetpoint", default_setpoint))
+    {
+        ROS_ERROR_STREAM("The PPSClient could not find parameter 'defaultSetpoint', as called from main(...)");
+    }
+
+    // Copy the default setpoint into the class variable
+    controller_setpoint.x = default_setpoint[0];
+    controller_setpoint.y = default_setpoint[1];
+    controller_setpoint.z = default_setpoint[2];
+    controller_setpoint.yaw = default_setpoint[3];
     
 
 	//ros::service::waitForService("/CentralManagerService/CentralManager");
