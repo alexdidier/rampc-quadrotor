@@ -328,17 +328,19 @@ int main(int argc, char* argv[])
         // A COORDINATOR TYPE PARAMETER SERVICE IS REQUESTED FROM:
         // > The master GUI
         case TYPE_COORDINATOR:
+        {
             // Get the node handles required
             ros::NodeHandle coordinator_agent_namespace_nodeHandle(ros::this_node::getNamespace());
             // > Subscribe to requests from: the master GUI
             ros::Subscriber requestLoadControllerYamlSubscriber_coordinator = coordinator_agent_namespace_nodeHandle.subscribe("my_GUI/requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);
             break;
-
+        }
 
         // AN AGENT TYPE PARAMETER SERVICE IS REQUESTED FROM:
         // > The master GUI
         // > The agent's own "PPSClient" node
         case TYPE_AGENT:
+        {
             // Get the node handles required
             ros::NodeHandle agent_nodeHandle = ros::NodeHandle();
             ros::NodeHandle agent_namespace_nodeHandle(ros::this_node::getNamespace());
@@ -347,10 +349,13 @@ int main(int argc, char* argv[])
             // > Subscribe to requests from: the agent's own "PPSClient" node
             ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_self = agent_namespace_nodeHandle.subscribe("PPSClient/requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);
             break;
+        }
 
         default:
+        {
             ROS_ERROR("The retrieve type parameter was no recognised.");
             break;
+        }
     }
 
     
