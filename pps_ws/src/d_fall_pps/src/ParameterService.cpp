@@ -74,8 +74,9 @@
 #define FETCH_YAML_SAFE_CONTROLLER_FROM_COORDINATOR    3
 #define FETCH_YAML_CUSTOM_CONTROLLER_FROM_COORDINATOR  4
 
-#define TYPE_COORDINATOR  1
-#define TYPE_AGENT        2
+#define TYPE_INVALID      -1
+#define TYPE_COORDINATOR   1
+#define TYPE_AGENT         2
 
 
 // Namespacing the package
@@ -183,38 +184,38 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
     // Switch between loading for the different controllers
     if ( (controller_to_load_yaml==LOAD_YAML_SAFE_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR) )
     {
-            // Re-load the parameters of the safe controller:
-            cmd = "rosparam load " + d_fall_pps_path + "/param/SafeController.yaml " + m_ros_namespace + "/SafeControllerService";
-            system(cmd.c_str());
-            ROS_INFO_STREAM(cmd);
+        // Re-load the parameters of the safe controller:
+        cmd = "rosparam load " + d_fall_pps_path + "/param/SafeController.yaml " + m_ros_namespace + "/SafeControllerService";
+        system(cmd.c_str());
+        ROS_INFO_STREAM(cmd);
     }
     else if ( (controller_to_load_yaml==LOAD_YAML_SAFE_CONTROLLER_AGENT) && (my_type==TYPE_AGENT) )
     {
-            // Re-load the parameters of the safe controller:
-            cmd = "rosparam load " + d_fall_pps_path + "/param/SafeController.yaml " + m_ros_namespace + "/SafeControllerService";
-            system(cmd.c_str());
-            ROS_INFO_STREAM(cmd);
+        // Re-load the parameters of the safe controller:
+        cmd = "rosparam load " + d_fall_pps_path + "/param/SafeController.yaml " + m_ros_namespace + "/SafeControllerService";
+        system(cmd.c_str());
+        ROS_INFO_STREAM(cmd);
     }
     else if ( (controller_to_load_yaml==LOAD_YAML_CUSTOM_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR) )
     {
-            // Re-load the parameters of the custom controller:
-            cmd = "rosparam load " + d_fall_pps_path + "/param/CustomController.yaml " + m_ros_namespace + "/CustomControllerService";
-            system(cmd.c_str());
-            ROS_INFO_STREAM(cmd);
+        // Re-load the parameters of the custom controller:
+        cmd = "rosparam load " + d_fall_pps_path + "/param/CustomController.yaml " + m_ros_namespace + "/CustomControllerService";
+        system(cmd.c_str());
+        ROS_INFO_STREAM(cmd);
     }
     else if ( (controller_to_load_yaml==LOAD_YAML_CUSTOM_CONTROLLER_AGENT) && (my_type==TYPE_AGENT) )
     {
-            // Re-load the parameters of the custom controller:
-            cmd = "rosparam load " + d_fall_pps_path + "/param/CustomController.yaml " + m_ros_namespace + "/CustomControllerService";
-            system(cmd.c_str());
-            ROS_INFO_STREAM(cmd);
+        // Re-load the parameters of the custom controller:
+        cmd = "rosparam load " + d_fall_pps_path + "/param/CustomController.yaml " + m_ros_namespace + "/CustomControllerService";
+        system(cmd.c_str());
+        ROS_INFO_STREAM(cmd);
     }
     else
     {
-            // Let the user know that the command was not recognised
-            ROS_INFO("Unknown 'controller to load yaml' command, thus nothing will be loaded");
-            // Set the boolean that prevents the fetch message from being sent
-            isReadyForFetch = false;
+        // Let the user know that the command was not recognised
+        ROS_INFO("Unknown 'controller to load yaml' command, thus nothing will be loaded");
+        // Set the boolean that prevents the fetch message from being sent
+        isReadyForFetch = false;
     }
 
     // Pause breifly to ensure that the yaml file is fully loaded
@@ -290,15 +291,17 @@ int main(int argc, char* argv[])
     // Set the "my_type" instance variable based on this string loaded
     if ((!type_string.compare("coordinator")))
     {
-            my_type = TYPE_COORDINATOR;
+        my_type = TYPE_COORDINATOR;
     }
     else if ((!type_string.compare("agent")))
     {
-            my_type = TYPE_AGENT;
+        my_type = TYPE_AGENT;
     }
     else
     {
-            ROS_ERROR("The retrieve type parameter was no recognised.");
+        // Set "my_type" to the value indicating that it is invlid
+        my_type = TYPE_INVALID;
+        ROS_ERROR("The retrieve type parameter was no recognised.");
     }
 
 
