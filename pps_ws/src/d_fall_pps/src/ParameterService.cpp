@@ -42,10 +42,16 @@
 //    ----------------------------------------------------------------------------------
 
 #include <stdlib.h>
+#include <string>
+
 #include <ros/ros.h>
+#include <ros/package.h>
+#include <ros/network.h>
+#include "std_msgs/Int32.h"
+//#include "std_msgs/Float32.h"
+//#include <std_msgs/String.h>
 
-#include "ParameterService.h"
-
+#include "d_fall_pps/Controller.h"
 
 
 //    ----------------------------------------------------------------------------------
@@ -63,17 +69,18 @@
 #define LOAD_YAML_SAFE_CONTROLLER_COORDINATOR     3
 #define LOAD_YAML_CUSTOM_CONTROLLER_COORDINATOR   4
 
-#define FETCH_YAML_SAFE_CONTROLLER_AGENT          1
-#define FETCH_YAML_CUSTOM_CONTROLLER_AGENT        2
-#define FETCH_YAML_SAFE_CONTROLLER_COORDINATOR    3
-#define FETCH_YAML_CUSTOM_CONTROLLER_COORDINATOR  4
+#define FETCH_YAML_SAFE_CONTROLLER_FROM_OWN_AGENT      1
+#define FETCH_YAML_CUSTOM_CONTROLLER_FROM_OWN_AGENT    2
+#define FETCH_YAML_SAFE_CONTROLLER_FROM_COORDINATOR    3
+#define FETCH_YAML_CUSTOM_CONTROLLER_FROM_COORDINATOR  4
 
-#define TYPE_COORDINATOR  0
-#define TYPE_AGENT        1
+#define TYPE_COORDINATOR  1
+#define TYPE_AGENT        2
 
 
+// Namespacing the package
 using namespace d_fall_pps;
-
+//using namespace std;
 
 
 
@@ -99,6 +106,9 @@ int my_agentID = 0;
 ros::Publisher controllerYamlReadyForFetchPublihser;
 
 
+std::string m_ros_namespace;
+
+
 //    ----------------------------------------------------------------------------------
 //    FFFFF  U   U  N   N   CCCC  TTTTT  III   OOO   N   N
 //    F      U   U  NN  N  C        T     I   O   O  NN  N
@@ -113,7 +123,7 @@ ros::Publisher controllerYamlReadyForFetchPublihser;
 //    P      R   R   OOO     T     OOO     T      Y    P      EEEEE  SSSS
 //    ----------------------------------------------------------------------------------
 
-void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
+void requestLoadControllerYamlCallback(const std_msgs::Int32& msg);
 
 
 
@@ -163,43 +173,48 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
     // a YAML file
     bool isReadyForFetch = true;
 
+    // Instantiate a local variable for the string that will be passed to the "system"
+    std::string cmd;
+
+    // Get the abolute path to "d_fall_pps"
+    std::string d_fall_pps_path = ros::package::getPath("d_fall_pps");
+    ROS_INFO_STREAM(d_fall_pps_path);
+
     // Switch between loading for the different controllers
-    switch(controller_to_load_yaml)
+    if ( (controller_to_load_yaml==LOAD_YAML_SAFE_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR) )
     {
-        case ( LOAD_YAML_SAFE_CONTROLLER_COORDINATOR && (my_type == TYPE_COORDINATOR) ):
             // Re-load the parameters of the safe controller:
-            cmd = "rosparam load " + d_fall_pps_path + "/param/SafeController.yaml " + ros_namespace + "/SafeControllerService";
+            cmd = "rosparam load " + d_fall_pps_path + "/param/SafeController.yaml " + m_ros_namespace + "/SafeControllerService";
             system(cmd.c_str());
             ROS_INFO_STREAM(cmd);
-            break;
-
-        case ( LOAD_YAML_SAFE_CONTROLLER_AGENT && (my_type == TYPE_AGENT) ):
+    }
+    else if ( (controller_to_load_yaml==LOAD_YAML_SAFE_CONTROLLER_AGENT) && (my_type==TYPE_AGENT) )
+    {
             // Re-load the parameters of the safe controller:
-            cmd = "rosparam load " + d_fall_pps_path + "/param/SafeController.yaml " + ros_namespace + "/SafeControllerService";
+            cmd = "rosparam load " + d_fall_pps_path + "/param/SafeController.yaml " + m_ros_namespace + "/SafeControllerService";
             system(cmd.c_str());
             ROS_INFO_STREAM(cmd);
-            break;
-
-        case ( LOAD_YAML_CUSTOM_CONTROLLER_COORDINATOR && (my_type == TYPE_COORDINATOR) ):
+    }
+    else if ( (controller_to_load_yaml==LOAD_YAML_CUSTOM_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR) )
+    {
             // Re-load the parameters of the custom controller:
-            cmd = "rosparam load " + d_fall_pps_path + "/param/CustomController.yaml " + ros_namespace + "/CustomControllerService";
+            cmd = "rosparam load " + d_fall_pps_path + "/param/CustomController.yaml " + m_ros_namespace + "/CustomControllerService";
             system(cmd.c_str());
             ROS_INFO_STREAM(cmd);
-            break;
-
-        case ( LOAD_YAML_CUSTOM_CONTROLLER_AGENT && (my_type == TYPE_AGENT) ):
+    }
+    else if ( (controller_to_load_yaml==LOAD_YAML_CUSTOM_CONTROLLER_AGENT) && (my_type==TYPE_AGENT) )
+    {
             // Re-load the parameters of the custom controller:
-            cmd = "rosparam load " + d_fall_pps_path + "/param/CustomController.yaml " + ros_namespace + "/CustomControllerService";
+            cmd = "rosparam load " + d_fall_pps_path + "/param/CustomController.yaml " + m_ros_namespace + "/CustomControllerService";
             system(cmd.c_str());
             ROS_INFO_STREAM(cmd);
-            break;
-
-        default:
+    }
+    else
+    {
             // Let the user know that the command was not recognised
             ROS_INFO("Unknown 'controller to load yaml' command, thus nothing will be loaded");
             // Set the boolean that prevents the fetch message from being sent
-            isReadyForFetch = false
-            break;
+            isReadyForFetch = false;
     }
 
     // Pause breifly to ensure that the yaml file is fully loaded
@@ -262,6 +277,8 @@ int main(int argc, char* argv[])
     // the "~" indcates that "self" is the node handle assigned to this variable.
     ros::NodeHandle nodeHandle("~");
 
+    m_ros_namespace = ros::this_node::getNamespace();
+
     // Get the value of the "type" parameter into a local string variable
     std::string type_string;
     if(!nodeHandle.getParam("type", type_string))
@@ -271,15 +288,16 @@ int main(int argc, char* argv[])
     }
 
     // Set the "my_type" instance variable based on this string loaded
-    switch type_string
+    if ((!type_string.compare("coordinator")))
     {
-        case 'coordinator':
-            my_type = TYPE_COORDINATOR
-
-        case 'agent':
-            my_type = TYPE_AGENT
-
-        default:
+            my_type = TYPE_COORDINATOR;
+    }
+    else if ((!type_string.compare("agent")))
+    {
+            my_type = TYPE_AGENT;
+    }
+    else
+    {
             ROS_ERROR("The retrieve type parameter was no recognised.");
     }
 
@@ -296,27 +314,28 @@ int main(int argc, char* argv[])
     controllerYamlReadyForFetchPublihser = nodeHandle.advertise<std_msgs::Int32>("controllerYamlReadyForFetch", 1);
     
     // Get the handle to the namespace in which this coordinator is launched
-    ros::NodeHandle namespaceNodeHandle = ros::NodeHandle();
+    //ros::NodeHandle namespaceNodeHandle = ros::NodeHandle();
 
 
 
 
     // SUBSCRIBE TO THE APPROPRIATE "request" MESSAGES DEPENDING ON THE "my_type"
-    switch type_string
+    switch (my_type)
     {
         // A COORDINATOR TYPE PARAMETER SERVICE IS REQUESTED FROM:
         // > The master GUI
-        case 'coordinator':
+        case TYPE_COORDINATOR:
             // Get the node handles required
             ros::NodeHandle coordinator_agent_namespace_nodeHandle(ros::this_node::getNamespace());
             // > Subscribe to requests from: the master GUI
             ros::Subscriber requestLoadControllerYamlSubscriber_coordinator = coordinator_agent_namespace_nodeHandle.subscribe("my_GUI/requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);
+            break;
 
 
         // AN AGENT TYPE PARAMETER SERVICE IS REQUESTED FROM:
         // > The master GUI
         // > The agent's own "PPSClient" node
-        case 'agent':
+        case TYPE_AGENT:
             // Get the node handles required
             ros::NodeHandle agent_nodeHandle = ros::NodeHandle();
             ros::NodeHandle agent_namespace_nodeHandle(ros::this_node::getNamespace());
@@ -324,9 +343,11 @@ int main(int argc, char* argv[])
             ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_master = agent_nodeHandle.subscribe("/my_GUI/requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);
             // > Subscribe to requests from: the agent's own "PPSClient" node
             ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_self = agent_namespace_nodeHandle.subscribe("PPSClient/requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);
+            break;
 
         default:
             ROS_ERROR("The retrieve type parameter was no recognised.");
+            break;
     }
 
     
