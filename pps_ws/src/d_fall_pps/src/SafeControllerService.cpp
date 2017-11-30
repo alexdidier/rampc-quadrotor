@@ -383,7 +383,8 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
     // Switch between fetching for the different controllers and from different locations
     switch(controller_to_fetch_yaml)
     {
-            case FETCH_YAML_SAFE_CONTROLLER_COORDINATOR:
+        case FETCH_YAML_SAFE_CONTROLLER_COORDINATOR:
+        {
             // Let the user know that this message was received
             ROS_INFO("The SafeControllerService received the message that YAML parameters were (re-)loaded");
             // Let the user know from where the paramters are being fetched
@@ -393,8 +394,10 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
             // Call the function that fetches the parameters
             fetchYamlParameters(nodeHandle_to_coordinator_parameter_service);
             break;
+        }
 
         case FETCH_YAML_SAFE_CONTROLLER_AGENT:
+        {
             // Let the user know that this message was received
             ROS_INFO("The SafeControllerService received the message that YAML parameters were (re-)loaded");
             // Let the user know which paramters are being fetch
@@ -404,12 +407,15 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
             // Call the function that fetches the parameters
             fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
             break;
+        }
 
         default:
+        {
             // Let the user know that the command was not relevant
             ROS_INFO("The SafeControllerService received the message that YAML parameters were (re-)loaded");
             ROS_INFO("> However the parameters do not relate to this controller, hence nothing will be fetched.");
             break;
+        }
     }
 }
 
