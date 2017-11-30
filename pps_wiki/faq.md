@@ -127,8 +127,11 @@ ros::Publisher my_current_xyz_yaw_publisher
 ```
 ros::NodeHandle nodeHandle("~");
 my_current_xyz_yaw_publisher = nodeHandle.advertise<Setpoint>("/<ID>/my_current_xyz_yaw_topic", 1);
-'''
-where ``<ID>`` should be replaced by the ID of your computer, and ``my_current_xyz_yaw_topic`` is the name of the message topic that will be published.
+```
+where ``<ID>`` should be replaced by the ID of your computer, for example the number 7, ``my_current_xyz_yaw_topic`` is the name of the message topic that will be published, and ``Setpoint`` specifies the stucture of the message as defined in the file ``/msg/Setpoint.msg`` and included with
+```
+#include "d_fall_pps/Setpoint.h"
+```
 
 - In the ``computeControlOutput`` function of your ``CustomControllerService.cpp`` file you can publish the current position of your Crazyflie by adding the following:
 ```
@@ -138,6 +141,31 @@ temp_current_xyz_yaw.y   = request.ownCrazyflie.y;
 temp_current_xyz_yaw.z   = request.ownCrazyflie.z;
 temp_current_xyz_yaw.yaw = request.ownCrazyflie.yaw;
 my_current_xyz_yaw_publisher.publish(temp_current_xyz_yaw);
+```
+
+In order to subscribe to the position published in the was above from another student's laptop, you need to define a variable of type ``ros::Subscriber`` and you specify the function that should be called each time a message is receive on the topic to which you subscribe.
+
+To subscribe to a topic follw these steps:
+- In the ``main()`` function of your ``CustomControllerService.cpp`` file initialise the subscriber:
+```
+ros::NodeHandle nodeHandle("~");
+ros::Subscriber xyz_yaw_to_follow_subscriber = nodeHandle.subscribe("/<ID>/my_current_xyz_yaw_topic", 1, xyz_yaw_to_follow_callback);
+```
+where ``<ID>`` should be replaced by the ID of the computer from which you wish to subscribed, for example the number 8, ``my_current_xyz_yaw_topic`` must match the name of the topic being published, and ``xyz_yaw_to_follow_callback`` is the function in your ``CustomControllerService.cpp`` file that will be called when the message is received.
+- To add the callback function, first add the following functio prototype to the top of your ``CustomControllerService.cpp`` file:
+```
+void xyz_yaw_to_follow_callback(const Setpoint& newSetpoint);
+```
+- Implement the ``xyz_yaw_to_follow_callback`` function in your ``CustomControllerService.cpp`` file to achieve the behaviour desired, the following example makes the setpoint of my Crazyflie equal to the position received in the message:
+```
+void xyz_yaw_to_follow_callback(const Setpoint& newSetpoint)
+{
+    setpoint[0] = newSetpoint.x;
+    setpoint[1] = newSetpoint.y;
+    setpoint[2] = newSetpoint.z;
+    setpoint[3] = newSetpoint.yaw;
+}
+
 ```
 
 
