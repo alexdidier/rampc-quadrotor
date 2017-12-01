@@ -283,3 +283,9 @@ if (true)
 }
 ```
 This would work if it is in the ``main()`` function of a node, but if it is in another function then you may need to declare the subscriber as a class variable.
+
+To observe any message published on a particular topic, after launching your node, open a separate command window and type the command:
+```
+rostopic echo /namespace/topicname
+```
+where ``/namespace/topicname`` needs to be replace with the topic that you wish to echo. Any messages received by this topic will be directly printed out in the command window.
