@@ -1,7 +1,6 @@
 # Frequently Asked Questions (FAQ)
 Contents:
 - [Remind me of that command again...](#remind-me-of-that-command-again)
--- test
 - [Troubleshooting :-(](#troubleshooting-)
 - [Control algorithm hints](#control-algorithm-hints)
 
@@ -252,13 +251,13 @@ Now the ``.otherCrazyflies`` property of the ``request`` variable that is passed
 
 ### I added some advertise, publish, subscribe topics but I am not getting the desired behaviour, what debugging tools are avilable?
 
-If your code changes compile successfully and your node runs without crashing, then the command line tool ``rostopic`` is the most useful tool for debugging errors. Open a new terminal and type `rostopic` to read the desription and help files.
+If your code changes compile successfully and your node runs without crashing, then the command line tool ``rostopic`` is the most useful tool for debugging errors. Open a new terminal and type ``rostopic`` to read the desription and help files.
 
 After launching your node, open a separate command window and type the command
 ```
 rostopic list
 ```
-this will list all the topics that are currently active, including both advertised and subscribe to topics.
+this will list all the topics that are currently active, including both advertised and subscribed to topics.
 
 Common pitfalls to watch out for are:
 - If there are two topics with a very similar name, then double check the spelling of the topic is identical in both the ``.advertise`` and ``.subscribe`` lines of code.
@@ -271,7 +270,7 @@ if (true)
 		ros::Subscriber my_subscriber = nodeHandle.subscribe("/fortytwo",1,fortytwoCallback);
 }
 ```
-then the subscriber only exists while the code between the ``{}`` is being exectute and removed after the ``if`` statement has completed it execution. To make the subscriber persist, then you need to declare the subscriber varaible outside of the ``if`` statement's context, i.e.,
+then the subscriber only exists while the code between the ``{}`` is being exectuted and it is removed after the ``if`` statement has finished executing. To make the subscriber persist, then you need to declare the subscriber varaible outside of the ``if`` statement's context, i.e.,
 ```
 ros::Subscriber my_subscriber;
 if (true)
@@ -280,4 +279,4 @@ if (true)
 		my_subscriber = nodeHandle.subscribe("/fortytwo",1,fortytwoCallback);
 }
 ```
-This would work if it is in the ``main()`` function of a node, but if it is in other functions then you should declare the subscriber as a class variable.
+This would work if it is in the ``main()`` function of a node, but if it is in another function then you may need to declare the subscriber as a class variable.
