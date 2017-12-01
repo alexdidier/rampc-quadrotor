@@ -264,10 +264,11 @@ Common pitfalls to watch out for are:
 - Even if the topic name is exactly matching, the name space may be different.
 - If you advertise or subscribe to a topic from with a block of code enclosed by curly braces, for example:
 ```
+ros::Subscriber my_subscriber;
 if (true)
 {
 		ros::NodeHandle nodeHandle("~");
-		ros::Subscriber my_subscriber = nodeHandle.subscribe("/fortytwo",1,fortytwoCallback);
+		my_subscriber = nodeHandle.subscribe("/fortytwo",1,fortytwoCallback);
 }
 ```
 
