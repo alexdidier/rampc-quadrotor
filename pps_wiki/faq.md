@@ -168,8 +168,8 @@ void xyz_yaw_to_follow_callback(const Setpoint& newSetpoint)
     setpoint[2] = newSetpoint.z;
     setpoint[3] = newSetpoint.yaw;
 }
-
 ```
+
 
 
 ### How can my controller receive the position of another object recognised by the Vicon system?
