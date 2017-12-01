@@ -246,3 +246,14 @@ coordinatesToLocal(otherObject);
 controllerCall.request.otherCrazyflies.push_back(otherObject);
 ```
 Now the ``.otherCrazyflies`` property of the ``request`` variable that is passed to the ``calculateControlOutput`` function of your ``CustomControllerService.cpp`` file will contain the position of the ``otherObject`` as the first entry in the array, i.e., you can access the data via ``request.otherCrazyflies[0].{x,y,z,roll,pitch,yaw}``.
+
+
+
+### I added some advertise, publish, subscribe topics but not getting the desired behaviour, what debugging tools are avilable?
+
+<details>
+<summary>Click here to expand</summary>
+
+If you code changes compile successfully and your node runs without crashing, then the command line tool ``rostopic`` is the most useful tool for debugging errors.
+
+</details>
