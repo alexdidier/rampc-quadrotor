@@ -109,6 +109,8 @@ ros::Publisher controllerYamlReadyForFetchPublihser;
 
 std::string m_ros_namespace;
 
+ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_self;
+
 
 //    ----------------------------------------------------------------------------------
 //    FFFFF  U   U  N   N   CCCC  TTTTT  III   OOO   N   N
@@ -352,11 +354,14 @@ int main(int argc, char* argv[])
             // > Subscribe to requests from: the agent's own "PPSClient" node
             //std::string temp_this_node_namespace = ros::this_node::getNamespace();
             //ros::NodeHandle nh_PPSClient_for_this_agent(temp_this_node_namespace + "/PPSClient");
-            ros::NodeHandle nh_PPSClient_for_this_agent(nodeHandle,"PPSClient");
-            ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_self = nh_PPSClient_for_this_agent.subscribe("requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);
+            
+ros::NodeHandle nh_PPSClient_for_this("PPSClient");
+ros::Subscriber requestLoadContr = nh_PPSClient_for_this.subscribe("hfsfhjfshjfsjfshsdgdagdasgdagad", 1, requestLoadControllerYamlCallback);
 
 
             ROS_INFO_STREAM("This Parameter Service has subscribed to 'requestLoadControllerYaml' messages from both the 'my_GUI' and the 'PPSClient'");
+
+ros::Duration(5).sleep();
 
             break;
         }
@@ -368,6 +373,15 @@ int main(int argc, char* argv[])
         }
     }
 
+ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_self;
+ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_selffdxfd;
+if (my_type==TYPE_AGENT)
+{
+
+ros::NodeHandle nh_PPSClient_for_this_agent("PPSClient");
+
+             requestLoadControllerYamlSubscriber_agent_to_self = nh_PPSClient_for_this_agent.subscribe("requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);
+}
     
     // Subscriber for requests that the controller parameters should be re-loaded from
     // the .YAML files on the coordinators machine, and then all the agents should be
