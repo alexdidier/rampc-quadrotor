@@ -229,9 +229,9 @@ for(std::vector<CrazyflieData>::const_iterator it = viconData.crazyflies.begin()
 		}
 }
 ```
-This for loop iterates over all the objects provided to the ``viconCallback`` function, and fills in the ``otherObject`` variable with the object that match the string ``"name_of_object_I_am_searching_for"``.
+This for loop iterates over all the objects provided to the ``viconCallback`` function, and fills in the ``otherObject`` variable with the object whose name matches the string ``"name_of_object_I_am_searching_for"``.
 
-- Define a new object via the Vicon Tracker software and give it a meaningful name, and replace the string ``"name_of_object_I_am_searching_for"`` with the exact string that you used in the Vicon saftware.
+- Define a new object via the Vicon Tracker software, give it a meaningful name in the Vicon software, and replace the string ``"name_of_object_I_am_searching_for"`` with the exact string that you used in the Vicon saftware.
 
 - In the ``viconCallback`` function of the ``PPSClient.cpp`` file, look for the following lines of code:
 ```
@@ -245,4 +245,4 @@ and immediately after these existing lines of code, add the following new lines 
 coordinatesToLocal(otherObject);
 controllerCall.request.otherCrazyflies.push_back(otherObject);
 ```
-Now the ``.otherCrazyflies`` property of the ``request`` variable that is passed to the ``calculateControlOutput`` function of your ``CustomControllerService.cpp`` file will contain the position of the other object as the first entry in the array, i.e., you can access the data via ``request.otherCrazyflies[0].{x,y,z,roll,pitch,yaw}``.
+Now the ``.otherCrazyflies`` property of the ``request`` variable that is passed to the ``calculateControlOutput`` function of your ``CustomControllerService.cpp`` file will contain the position of the ``otherObject`` as the first entry in the array, i.e., you can access the data via ``request.otherCrazyflies[0].{x,y,z,roll,pitch,yaw}``.
