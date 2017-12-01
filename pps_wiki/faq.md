@@ -228,7 +228,6 @@ for(std::vector<CrazyflieData>::const_iterator it = viconData.crazyflies.begin()
 				break;
 		}
 }
-
 ```
 This for loop iterates over all the objects provided to the ``viconCallback`` function, and fills in the ``otherObject`` variable with the object that match the string ``"name_of_object_I_am_searching_for"``.
 
