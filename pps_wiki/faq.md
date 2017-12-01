@@ -134,7 +134,7 @@ where ``<ID>`` should be replaced by the ID of your computer, for example the nu
 ```
 added at the top of  your ``CustomControllerService.cpp`` file.
 
-- In the ``computeControlOutput`` function of your ``CustomControllerService.cpp`` file you can publish the current position of your Crazyflie by adding the following:
+- In the ``calculateControlOutput`` function of your ``CustomControllerService.cpp`` file you can publish the current position of your Crazyflie by adding the following:
 ```
 Setpoint temp_current_xyz_yaw;
 temp_current_xyz_yaw.x   = request.ownCrazyflie.x;
@@ -172,3 +172,78 @@ void xyz_yaw_to_follow_callback(const Setpoint& newSetpoint)
 ```
 
 
+### How can my controller receive the position of another object recognised by the Vicon system?
+
+In the ``calculateControlOutput`` function of your ``CustomControllerService.cpp`` file is called everytime that the Vicon system provides new data, where this data is provided to ``calculateControlOutput`` function in the ``request`` variable and the calculated control output to apply is returned in the ``response``. In this way the ``calculateControlOutput`` function is performing in ROS what is referred to as a service. This service is advertised in the ``main()`` function of your ``CustomControllerService.cpp`` file by the line of code:
+```
+ros::ServiceServer service = nodeHandle.advertiseService("CustomController", calculateControlOutput);
+```
+and this service is called on from the ``PPSClient.cpp`` file, and expected to adhere to the data structures described in ``/srv/Controller.srv``:
+```
+CrazyflieData ownCrazyflie
+CrazyflieData[] otherCrazyflies
+---
+ControlCommand controlOutput
+```
+Hence why the position and attitude information of your own Crazyflie is accessed from inside the ``calculateControlOutput`` function via ``request.ownCrazyflie.{x,y,z,roll,pitch,yaw}``.
+
+By default the property ``otherCrazyflies`` is left empty when the service request is constructed in the ``PPSClient.cpp``. Thus, in order to have access to the position of another object recognised by the Vicon system you can edit the ``PPSClient.cpp`` as per the following steps:
+- In the ``PPSClient.cpp`` file locate the implementation of the function ``viconCallback``, which has the full prototype:
+```
+void viconCallback(const ViconData& viconData)
+```
+where ``viconData`` is an structure define in ``ViconData.msg``:
+```
+CrazyflieData[] crazyflies
+UnlabeledMarker[] markers
+```
+thus ``viconData.crazyflies`` is an array of all the objects that the Vicon system is attempting to recognise, where each element of the array adheres to the following data structure:
+```
+string crazyflieName
+float64 x
+float64 y
+float64 z
+float64 roll
+float64 pitch
+float64 yaw
+float64 acquiringTime #delta t
+bool occluded
+```
+
+- At the start of the ``viconCallback`` in the ``PPSClient.cpp`` file (i.e., before the ``for`` loop), add the following varible declaration:
+```
+CrazyflieData otherObject;
+```
+where the plan is to fill in this variable with the data about the object of interest and then pass it as part of the service request in the ``.otherCrazyflies`` property.
+
+- In the ``viconCallback`` function of the ``PPSClient.cpp`` file, just after the variable declaration you added, add the following ``for`` loop:
+```
+for(std::vector<CrazyflieData>::const_iterator it = viconData.crazyflies.begin(); it != viconData.crazyflies.end(); ++it)
+{
+	CrazyflieData thisObject = *it;
+
+	if ( thisObject.crazyflieName == "name_of_object_I_am_searching_for" )
+	{
+		otherObject = thisCrazyflie;
+		break;
+	}
+}
+
+```
+This for loop iterates over all the objects provided to the ``viconCallback`` function, and fills in the ``otherObject`` variable with the object that match the string ``"name_of_object_I_am_searching_for"``.
+
+- Define a new object via the Vicon Tracker software and give it a meaningful name, and replace the string ``"name_of_object_I_am_searching_for"`` with the exact string that you used in the Vicon saftware.
+
+- In the ``viconCallback`` function of the ``PPSClient.cpp`` file, look for the following lines of code:
+```
+Controller controllerCall;
+CrazyflieData local = global;
+coordinatesToLocal(local);
+controllerCall.request.ownCrazyflie = local;
+```
+and immediately after these existing lines of code, add the following new lines of code:
+```
+coordinatesToLocal(otherObject);
+controllerCall.request.otherCrazyflies.push_back(otherObject);
+```
+Now the ``.otherCrazyflies`` property of the ``request`` variable that is passed to the ``calculateControlOutput`` function of your ``CustomControllerService.cpp`` file will contain the position of the other object as the first entry in the array, i.e., you can access the data via ``request.otherCrazyflies[0].{x,y,z,roll,pitch,yaw}``.
