@@ -1,6 +1,7 @@
 # Frequently Asked Questions (FAQ)
 Contents:
 - [Remind me of that command again...](#remind-me-of-that-command-again)
+-- test
 - [Troubleshooting :-(](#troubleshooting-)
 - [Control algorithm hints](#control-algorithm-hints)
 
@@ -251,9 +252,6 @@ Now the ``.otherCrazyflies`` property of the ``request`` variable that is passed
 
 ### I added some advertise, publish, subscribe topics but I am not getting the desired behaviour, what debugging tools are avilable?
 
-<details>
-<summary>Click here to expand</summary>
-
 If your code changes compile successfully and your node runs without crashing, then the command line tool ``rostopic`` is the most useful tool for debugging errors. Open a new terminal and type `rostopic` to read the desription and help files.
 
 After launching your node, open a separate command window and type the command
@@ -283,5 +281,3 @@ if (true)
 }
 ```
 This would work if it is in the ``main()`` function of a node, but if it is in other functions then you should declare the subscriber as a class variable.
-
-</details>
