@@ -264,9 +264,6 @@ Common pitfalls to watch out for are:
 - Even if the topic name is exactly matching, the name space may be different.
 - If you advertise or subscribe to a topic from with a block of code enclosed by curly braces, for example:
 
-Common pitfalls to wathc out for are:
-
-- If there are two topics with a very similar name, then double check the spelling of the topic is identical in both the
 ```
 ros::Subscriber my_subscriber;
 if (true)
