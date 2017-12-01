@@ -270,6 +270,7 @@ if (true)
 		ros::Subscriber my_subscriber = nodeHandle.subscribe("/fortytwo",1,fortytwoCallback);
 }
 ```
+
 then the subscriber only exists while the code between the ``{}`` is being exectuted and it is removed after the ``if`` statement has finished executing. To make the subscriber persist, then you need to declare the subscriber varaible outside of the ``if`` statement's context, i.e.,
 ```
 ros::Subscriber my_subscriber;
