@@ -1,7 +1,7 @@
 # Frequently Asked Questions (FAQ)
 Contents:
 - Remind me of that command again...
-- Troubleshooting :-(
+- [Troubleshooting :-(](#troubleshooting-)
 - Control algorithm hints
 
 ## Remind me of that command again...
