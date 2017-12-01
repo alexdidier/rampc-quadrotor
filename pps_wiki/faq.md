@@ -1,8 +1,8 @@
 # Frequently Asked Questions (FAQ)
 Contents:
-- Remind me of that command again...
+- [Remind me of that command again...](#remind-me-of-that-command-again)
 - [Troubleshooting :-(](#troubleshooting-)
-- Control algorithm hints
+- [Control algorithm hints](#control-algorithm-hints)
 
 ## Remind me of that command again...
 
