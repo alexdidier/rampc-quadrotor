@@ -163,10 +163,10 @@ void xyz_yaw_to_follow_callback(const Setpoint& newSetpoint);
 ```
 void xyz_yaw_to_follow_callback(const Setpoint& newSetpoint)
 {
-    setpoint[0] = newSetpoint.x;
-    setpoint[1] = newSetpoint.y;
-    setpoint[2] = newSetpoint.z;
-    setpoint[3] = newSetpoint.yaw;
+		setpoint[0] = newSetpoint.x;
+		setpoint[1] = newSetpoint.y;
+		setpoint[2] = newSetpoint.z;
+		setpoint[3] = newSetpoint.yaw;
 }
 ```
 
@@ -174,11 +174,11 @@ void xyz_yaw_to_follow_callback(const Setpoint& newSetpoint)
 
 ### How can my controller receive the position of another object recognised by the Vicon system?
 
-In the ``calculateControlOutput`` function of your ``CustomControllerService.cpp`` file is called everytime that the Vicon system provides new data, where this data is provided to ``calculateControlOutput`` function in the ``request`` variable and the calculated control output to apply is returned in the ``response``. In this way the ``calculateControlOutput`` function is performing in ROS what is referred to as a service. This service is advertised in the ``main()`` function of your ``CustomControllerService.cpp`` file by the line of code:
+The ``calculateControlOutput`` function of your ``CustomControllerService.cpp`` file is called everytime that the Vicon system provides new data, where this data is provided to the ``calculateControlOutput`` function in the ``request`` variable and the calculated control output to apply is returned in the ``response`` variable. In this way the ``calculateControlOutput`` function is performing in ROS what is referred to as a service. This service is advertised in the ``main()`` function of your ``CustomControllerService.cpp`` file by the line of code:
 ```
 ros::ServiceServer service = nodeHandle.advertiseService("CustomController", calculateControlOutput);
 ```
-and this service is called on from the ``PPSClient.cpp`` file, and expected to adhere to the data structures described in ``/srv/Controller.srv``:
+This service is called on from the ``PPSClient.cpp`` file, and it is expected to adhere to the data structures described in ``/srv/Controller.srv``:
 ```
 CrazyflieData ownCrazyflie
 CrazyflieData[] otherCrazyflies
@@ -192,7 +192,7 @@ By default the property ``otherCrazyflies`` is left empty when the service reque
 ```
 void viconCallback(const ViconData& viconData)
 ```
-where ``viconData`` is an structure define in ``ViconData.msg``:
+where the argument ``viconData`` has the structure defined in ``ViconData.msg``:
 ```
 CrazyflieData[] crazyflies
 UnlabeledMarker[] markers
@@ -220,13 +220,13 @@ where the plan is to fill in this variable with the data about the object of int
 ```
 for(std::vector<CrazyflieData>::const_iterator it = viconData.crazyflies.begin(); it != viconData.crazyflies.end(); ++it)
 {
-	CrazyflieData thisObject = *it;
+		CrazyflieData thisObject = *it;
 
-	if ( thisObject.crazyflieName == "name_of_object_I_am_searching_for" )
-	{
-		otherObject = thisCrazyflie;
-		break;
-	}
+		if ( thisObject.crazyflieName == "name_of_object_I_am_searching_for" )
+		{
+				otherObject = thisCrazyflie;
+				break;
+		}
 }
 
 ```
