@@ -174,8 +174,8 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
     ROS_INFO_STREAM("The Parameter Service node received the message to load YAML parameters from file into cache");
 
 
-    // Instantiate a local varaible to confirm that something was actually loaded from
-    // a YAML file
+    // Instantiate a local varaible to confirm that something can actually be loaded
+    // from a YAML file
     bool isValidToAttemptLoad = true;
 
     // Instantiate a local variable for the string that will be passed to the "system"
@@ -227,6 +227,10 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
 
         // Pause breifly to ensure that the yaml file is fully loaded
         ros::Duration(0.2).sleep();
+
+        // Instantiate a local varaible to confirm that something was actually loaded from
+        // a YAML file
+        bool isReadyForFetch = true;
     
         // Instantiate a local variable for the fetch message
         std_msgs::Int32 fetch_msg;
@@ -247,14 +251,17 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
                 break;
             default:
                 // Let the user know that the command was not recognised
-                ROS_INFO("Unknown 'controller to load yaml' command, thus nothing will be loaded");
+                ROS_INFO("Unknown 'controller to load yaml' command, thus a 'ready to fetch' message will NOT be published.");
                 // Set the boolean that prevents the fetch message from being sent
                 isReadyForFetch = false;
                 break;
         }
         // Send a message that the YAML parameter have been loaded and hence are
         // ready to be fetched (i.e., using getparam())
-        controllerYamlReadyForFetchPublihser.publish(fetch_msg);
+        if (isReadyForFetch)
+        {
+            controllerYamlReadyForFetchPublihser.publish(fetch_msg);
+        }
     }
 }
 
