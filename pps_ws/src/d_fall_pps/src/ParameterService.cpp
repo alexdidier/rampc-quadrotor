@@ -208,7 +208,9 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
     else
     {
         // Let the user know that the command was not recognised
-        ROS_INFO("> Unknown 'controller to load yaml' command, thus nothing will be loaded");
+        ROS_INFO_STREAM("> Nothing to load for this parameter service with.");
+        ROS_INFO_STREAM("> The message received has 'controller_to_load_yaml'   =  " << controller_to_load_yaml);
+        ROS_INFO_STREAM("> And the type of this Parameter Service is 'my_type'  =  " << my_type);
         // Set the boolean that prevents the fetch message from being sent
         isValidToAttemptLoad = false;
     }
@@ -343,7 +345,7 @@ int main(int argc, char* argv[])
         case TYPE_COORDINATOR:
         {
             //m_ros_namespace = ros::this_node::getNamespace();
-            m_ros_namespace = '/' + "ParameterService";
+            m_ros_namespace = "/ParameterService";
             ROS_INFO_STREAM("This Paramter Sercice will load .yaml file parameters into the 'base' namespace: " << m_ros_namespace);
             break;
         }
