@@ -386,7 +386,7 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
         case FETCH_YAML_SAFE_CONTROLLER_COORDINATOR:
         {
             // Let the user know that this message was received
-            ROS_INFO("The SafeControllerService received the message that YAML parameters were (re-)loaded.\r> Now fetching the parameter values from the coordinator.");
+            ROS_INFO("The SafeControllerService received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from the coordinator.");
             // Create a node handle to the parameter service running on the coordinator machine
             ros::NodeHandle nodeHandle_to_coordinator_parameter_service = ros::NodeHandle(namespace_to_coordinator_parameter_service);
             // Call the function that fetches the parameters
@@ -397,7 +397,7 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
         case FETCH_YAML_SAFE_CONTROLLER_AGENT:
         {
             // Let the user know that this message was received
-            ROS_INFO("The SafeControllerService received the message that YAML parameters were (re-)loaded.\r> Now fetching the parameter values from the this machine.");
+            ROS_INFO("The SafeControllerService received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from this machine.");
             // Create a node handle to the parameter service running on this agent's machine
             ros::NodeHandle nodeHandle_to_own_agent_parameter_service = ros::NodeHandle(namespace_to_own_agent_parameter_service);
             // Call the function that fetches the parameters

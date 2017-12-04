@@ -219,7 +219,7 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
     if (isValidToAttemptLoad)
     {
         // Let the user know what is about to happen
-        ROS_INFO_STREAM("> The following path will be used for locating the .yaml file:\r" << d_fall_pps_path  << "\rThe comand line string sent to the 'system' is:\r" << cmd );
+        ROS_INFO_STREAM("> The following path will be used for locating the .yaml file: " << d_fall_pps_path  << " The comand line string sent to the 'system' is: " << cmd );
 
         // Re-load the parameters by pass the command line string via a "system" call
         // > i.e., this replicates pasting this string in a new terminal window and pressing enter
