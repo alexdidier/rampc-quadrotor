@@ -792,9 +792,8 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
         case FETCH_YAML_SAFE_CONTROLLER_COORDINATOR:
         {
             // Let the user know that this message was received
-            ROS_INFO("The PPSClient received the message that YAML parameters were (re-)loaded for the Safe Controller");
-            // Let the user know from where the paramters are being fetched
-            ROS_INFO("> Now fetching the parameter values from the this machine");
+            // > and also from where the paramters are being fetched
+            ROS_INFO("The PPSClient received the message that YAML parameters were (re-)loaded for the Safe Controller.\n>Now fetching the parameter values from the this machine.");
             // Create a node handle to the parameter service running on the coordinator machine
             ros::NodeHandle nodeHandle_to_coordinator_parameter_service = ros::NodeHandle(namespace_to_coordinator_parameter_service);
             // Call the function that fetches the parameters

@@ -320,76 +320,62 @@ int main(int argc, char* argv[])
     // from file into ram/cache, and hence are ready to be fetched
     controllerYamlReadyForFetchPublihser = nodeHandle.advertise<std_msgs::Int32>("controllerYamlReadyForFetch", 1);
     
-    // Get the handle to the namespace in which this coordinator is launched
-    //ros::NodeHandle namespaceNodeHandle = ros::NodeHandle();
 
 
-
+    // Delare the subscribers as local variables here so that they persist for the life
+    // time of this main() function. The varaibles will be assigned in the switch case below
+    // > Subscribers for when this Parameter Service node is: TYPE_AGENT
+    ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_self;
+    ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_coordinator;
+    // > Subscribers for when this Parameter Service node is: TYPE_COORDINATOR
+    ros::Subscriber requestLoadControllerYamlSubscriber_coordinator_to_self;
 
     // SUBSCRIBE TO THE APPROPRIATE "request" MESSAGES DEPENDING ON THE "my_type"
     switch (my_type)
     {
-        // A COORDINATOR TYPE PARAMETER SERVICE IS REQUESTED FROM:
-        // > The master GUI
-        case TYPE_COORDINATOR:
-        {
-            // Get the node handles required
-            ros::NodeHandle coordinator_agent_namespace_nodeHandle(ros::this_node::getNamespace());
-            // > Subscribe to requests from: the master GUI
-            ros::Subscriber requestLoadControllerYamlSubscriber_coordinator = coordinator_agent_namespace_nodeHandle.subscribe("my_GUI/requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);
-            break;
-        }
-
         // AN AGENT TYPE PARAMETER SERVICE IS REQUESTED FROM:
         // > The master GUI
         // > The agent's own "PPSClient" node
         case TYPE_AGENT:
         {
-            // Get the node handles required
-            //ros::NodeHandle agent_nodeHandle = ros::NodeHandle();
-            //ros::NodeHandle agent_namespace_nodeHandle(ros::this_node::getNamespace());
-            // > Subscribe to requests from: the master GUI
-            //ros::NodeHandle nh_studentGUI_for_this_agent("student_GUI");
-            //ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_master = nh_studentGUI_for_this_agent.subscribe("requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);
-            // > Subscribe to requests from: the agent's own "PPSClient" node
-            //std::string temp_this_node_namespace = ros::this_node::getNamespace();
-            //ros::NodeHandle nh_PPSClient_for_this_agent(temp_this_node_namespace + "/PPSClient");
-            
-ros::NodeHandle nh_PPSClient_for_this("PPSClient");
-ros::Subscriber requestLoadContr = nh_PPSClient_for_this.subscribe("hfsfhjfshjfsjfshsdgdagdasgdagad", 1, requestLoadControllerYamlCallback);
+            // Subscribing to the agent's own PPSclient
+            // > First: Construct a node handle to the PPSclient
+            ros::NodeHandle nh_PPSClient_for_this_agent("PPSClient");
+            // > Second: Subscribe to the "requestLoadControllerYaml" topic
+            ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_self = nh_PPSClient_for_this_agent.subscribe("requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);
 
+            // Subscribing to the coordinator
+            // > First: construct a node handle to the coordinator
+            ros::NodeHandle nh_coordinator_for_this_agent = ros::NodeHandle();
+            // > Second: Subscribe to the "requestLoadControllerYaml" topic
+            ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_coordinator = nh_coordinator.subscribe("my_GUI/requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);            
 
+            // Inform the user what was subscribed to:
             ROS_INFO_STREAM("This Parameter Service has subscribed to 'requestLoadControllerYaml' messages from both the 'my_GUI' and the 'PPSClient'");
+            break;
+        }
 
-ros::Duration(5).sleep();
+        // A COORDINATOR TYPE PARAMETER SERVICE IS REQUESTED FROM:
+        // > The master GUI
+        case TYPE_COORDINATOR:
+        {
+            // Subscribing to the coordinator's own "my_GUI" 
+            // > First: Get the node handle required
+            ros::NodeHandle nh_coordinator_for_this_coordinator(ros::this_node::getNamespace());
+            // > Second: Subscribe to requests from: the master GUI
+            ros::Subscriber requestLoadControllerYamlSubscriber_coordinator_to_self = nh_coordinator_for_this_coordinator.subscribe("my_GUI/requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);
 
+            // Inform the user what was subscribed to:
+            ROS_INFO_STREAM("This Parameter Service has subscribed to 'requestLoadControllerYaml' messages from 'my_GUI'");
             break;
         }
 
         default:
         {
-            ROS_ERROR("The retrieve type parameter was no recognised.");
+            ROS_ERROR("The 'my_type' type parameter was not recognised.");
             break;
         }
     }
-
-ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_self;
-ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_selffdxfd;
-if (my_type==TYPE_AGENT)
-{
-
-ros::NodeHandle nh_PPSClient_for_this_agent("PPSClient");
-
-             requestLoadControllerYamlSubscriber_agent_to_self = nh_PPSClient_for_this_agent.subscribe("requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);
-}
-    
-    // Subscriber for requests that the controller parameters should be re-loaded from
-    // the .YAML files on the coordinators machine, and then all the agents should be
-    // request to fetch the parameters from itself, i.e., fetch parameters from the
-    // coordinator.
-    
-
-    // SUBSCRIBE TO THE "request" MESSAGES FROM THE "master GUI"
 
 
     ROS_INFO("CentralManagerService ready");
