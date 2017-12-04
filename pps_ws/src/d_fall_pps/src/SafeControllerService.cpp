@@ -584,7 +584,7 @@ int main(int argc, char* argv[]) {
     // Set the class variable "namespace_to_own_agent_parameter_service" to be a the
     // namespace string for the parameter service that is running on the machine of this
     // agent
-    namespace_to_own_agent_parameter_service = "ParameterService";
+    namespace_to_own_agent_parameter_service = m_namespace + "/ParameterService";
     
     // Create a node handle to the parameter service running on this agent's machine
     ros::NodeHandle nodeHandle_to_own_agent_parameter_service(namespace_to_own_agent_parameter_service);
@@ -610,6 +610,11 @@ int main(int argc, char* argv[]) {
     // received on this topic and the message is passed as an input argument to the
     // "yamlReadyForFetchCallback" class function.
     ros::Subscriber controllerYamlReadyForFetchSubscriber_to_coordinator = nodeHandle_to_coordinator_parameter_service.subscribe("controllerYamlReadyForFetch", 1, yamlReadyForFetchCallback);
+
+    // Let the user know what namespaces are being used for linking to the parameter service
+    ROS_INFO_STREAM("The namespace string for accessing the Paramter Services are:");
+    ROS_INFO_STREAM("namespace_to_own_agent_parameter_service    =  " << namespace_to_own_agent_parameter_service);
+    ROS_INFO_STREAM("namespace_to_coordinator_parameter_service  =  " << namespace_to_coordinator_parameter_service);
 
     // Call the class function that loads the parameters for this class.
     fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
