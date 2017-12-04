@@ -226,7 +226,7 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
         system(cmd.c_str());
 
         // Pause breifly to ensure that the yaml file is fully loaded
-        ros::Duration(0.2).sleep();
+        ros::Duration(0.5).sleep();
 
         // Instantiate a local varaible to confirm that something was actually loaded from
         // a YAML file
