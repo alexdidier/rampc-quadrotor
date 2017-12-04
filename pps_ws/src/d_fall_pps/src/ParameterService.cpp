@@ -342,13 +342,13 @@ int main(int argc, char* argv[])
             // > First: Construct a node handle to the PPSclient
             ros::NodeHandle nh_PPSClient_for_this_agent("PPSClient");
             // > Second: Subscribe to the "requestLoadControllerYaml" topic
-            ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_self = nh_PPSClient_for_this_agent.subscribe("requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);
+            requestLoadControllerYamlSubscriber_agent_to_self = nh_PPSClient_for_this_agent.subscribe("requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);
 
             // Subscribing to the coordinator
             // > First: construct a node handle to the coordinator
             ros::NodeHandle nh_coordinator_for_this_agent = ros::NodeHandle();
             // > Second: Subscribe to the "requestLoadControllerYaml" topic
-            ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_coordinator = nh_coordinator_for_this_agent.subscribe("my_GUI/requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);            
+            requestLoadControllerYamlSubscriber_agent_to_coordinator = nh_coordinator_for_this_agent.subscribe("my_GUI/requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);            
 
             // Inform the user what was subscribed to:
             ROS_INFO_STREAM("This Parameter Service has subscribed to 'requestLoadControllerYaml' messages from both the 'my_GUI' and the 'PPSClient'");
@@ -363,7 +363,7 @@ int main(int argc, char* argv[])
             // > First: Get the node handle required
             ros::NodeHandle nh_coordinator_for_this_coordinator(ros::this_node::getNamespace());
             // > Second: Subscribe to requests from: the master GUI
-            ros::Subscriber requestLoadControllerYamlSubscriber_coordinator_to_self = nh_coordinator_for_this_coordinator.subscribe("my_GUI/requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);
+            requestLoadControllerYamlSubscriber_coordinator_to_self = nh_coordinator_for_this_coordinator.subscribe("my_GUI/requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);
 
             // Inform the user what was subscribed to:
             ROS_INFO_STREAM("This Parameter Service has subscribed to 'requestLoadControllerYaml' messages from 'my_GUI'");
