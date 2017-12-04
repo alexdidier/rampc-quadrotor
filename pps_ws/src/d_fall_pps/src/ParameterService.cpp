@@ -288,7 +288,6 @@ int main(int argc, char* argv[])
     // the "~" indcates that "self" is the node handle assigned to this variable.
     ros::NodeHandle nodeHandle("~");
 
-    m_ros_namespace = ros::this_node::getNamespace();
 
     // Get the value of the "type" parameter into a local string variable
     std::string type_string;
@@ -325,6 +324,37 @@ int main(int argc, char* argv[])
     // Publisher that notifies the relevant nodes when the YAML paramters have been loaded
     // from file into ram/cache, and hence are ready to be fetched
     controllerYamlReadyForFetchPublihser = nodeHandle.advertise<std_msgs::Int32>("controllerYamlReadyForFetch", 1);
+    
+
+    // Construct the string to the namespace of this Paramater Service
+    // SUBSCRIBE TO THE APPROPRIATE "request" MESSAGES DEPENDING ON THE "my_type"
+    switch (my_type)
+    {
+        case TYPE_AGENT:
+        {
+            //m_ros_namespace = ros::this_node::getNamespace();
+            m_ros_namespace = "/" + std::to_string(agentID_to_follow) + "/" + "ParameterService";
+            ROS_INFO_STREAM("This Paramter Sercice will load .yaml file parameters into the 'base' namespace: " << m_ros_namespace);
+            break;
+        }
+
+        // A COORDINATOR TYPE PARAMETER SERVICE IS REQUESTED FROM:
+        // > The master GUI
+        case TYPE_COORDINATOR:
+        {
+            //m_ros_namespace = ros::this_node::getNamespace();
+            m_ros_namespace = "/" + "ParameterService";
+            ROS_INFO_STREAM("This Paramter Sercice will load .yaml file parameters into the 'base' namespace: " << m_ros_namespace);
+            break;
+        }
+
+        default:
+        {
+            ROS_ERROR("The 'my_type' type parameter was not recognised.");
+            break;
+        }
+    }
+
     
 
 
