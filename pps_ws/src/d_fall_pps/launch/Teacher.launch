@@ -12,8 +12,8 @@
 
         <!-- PARAMETER SERVICE -->
 	<node pkg="d_fall_pps" name="ParameterService" output="screen" type="ParameterService">
-		<param name="type" type="str" value="student" />
-		<param name="agentID" value="$(optenv ROS_NAMESPACE)" />
+		<param name="type" type="str" value="coordinator" />
+		<param name="agentID" value=0 />
 		<rosparam command="load" file="$(find d_fall_pps)/param/SafeController.yaml" ns="SafeController" />
 		<rosparam command="load" file="$(find d_fall_pps)/param/CustomController.yaml" ns="CustomController" />
 	</node>
