@@ -176,59 +176,58 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
 
     // Instantiate a local varaible to confirm that something was actually loaded from
     // a YAML file
-    bool isReadyForFetch = true;
+    bool isValidToAttemptLoad = true;
 
     // Instantiate a local variable for the string that will be passed to the "system"
     std::string cmd;
 
     // Get the abolute path to "d_fall_pps"
     std::string d_fall_pps_path = ros::package::getPath("d_fall_pps");
-    ROS_INFO_STREAM(d_fall_pps_path);
 
     // Switch between loading for the different controllers
     if ( (controller_to_load_yaml==LOAD_YAML_SAFE_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR) )
     {
         // Re-load the parameters of the safe controller:
         cmd = "rosparam load " + d_fall_pps_path + "/param/SafeController.yaml " + m_ros_namespace + "/SafeControllerService";
-        system(cmd.c_str());
-        ROS_INFO_STREAM(cmd);
     }
     else if ( (controller_to_load_yaml==LOAD_YAML_SAFE_CONTROLLER_AGENT) && (my_type==TYPE_AGENT) )
     {
         // Re-load the parameters of the safe controller:
         cmd = "rosparam load " + d_fall_pps_path + "/param/SafeController.yaml " + m_ros_namespace + "/SafeControllerService";
-        system(cmd.c_str());
-        ROS_INFO_STREAM(cmd);
     }
     else if ( (controller_to_load_yaml==LOAD_YAML_CUSTOM_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR) )
     {
         // Re-load the parameters of the custom controller:
         cmd = "rosparam load " + d_fall_pps_path + "/param/CustomController.yaml " + m_ros_namespace + "/CustomControllerService";
-        system(cmd.c_str());
-        ROS_INFO_STREAM(cmd);
     }
     else if ( (controller_to_load_yaml==LOAD_YAML_CUSTOM_CONTROLLER_AGENT) && (my_type==TYPE_AGENT) )
     {
         // Re-load the parameters of the custom controller:
         cmd = "rosparam load " + d_fall_pps_path + "/param/CustomController.yaml " + m_ros_namespace + "/CustomControllerService";
-        system(cmd.c_str());
-        ROS_INFO_STREAM(cmd);
     }
     else
     {
         // Let the user know that the command was not recognised
-        ROS_INFO("Unknown 'controller to load yaml' command, thus nothing will be loaded");
+        ROS_INFO("> Unknown 'controller to load yaml' command, thus nothing will be loaded");
         // Set the boolean that prevents the fetch message from being sent
-        isReadyForFetch = false;
+        isValidToAttemptLoad = false;
     }
 
-    // Pause breifly to ensure that the yaml file is fully loaded
-    ros::Duration(0.2).sleep();
 
-    // Only bother with sending the "ready for fetch" message if something was actually
-    // loaded from a YAML file
-    if (isReadyForFetch)
+    // Only bother with ttempting to loaded the .yaml file, and subseuently send the "ready for fetch"
+    // message if something can actually be loaded from a YAML file
+    if (isValidToAttemptLoad)
     {
+        // Let the user know what is about to happen
+        ROS_INFO_STREAM("> The following path will be used for locating the .yaml file:\r" << d_fall_pps_path  << "\rThe comand line string sent to the 'system' is:\r" << cmd );
+
+        // Re-load the parameters by pass the command line string via a "system" call
+        // > i.e., this replicates pasting this string in a new terminal window and pressing enter
+        system(cmd.c_str());
+
+        // Pause breifly to ensure that the yaml file is fully loaded
+        ros::Duration(0.2).sleep();
+    
         // Instantiate a local variable for the fetch message
         std_msgs::Int32 fetch_msg;
         // Fill in the data of the fetch message

@@ -793,7 +793,7 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
         {
             // Let the user know that this message was received
             // > and also from where the paramters are being fetched
-            ROS_INFO("The PPSClient received the message that YAML parameters were (re-)loaded for the Safe Controller.\n>Now fetching the parameter values from the this machine.");
+            ROS_INFO("The PPSClient received the message that YAML parameters were (re-)loaded for the Safe Controller.\r>Now fetching the parameter values from the coordinator.");
             // Create a node handle to the parameter service running on the coordinator machine
             ros::NodeHandle nodeHandle_to_coordinator_parameter_service = ros::NodeHandle(namespace_to_coordinator_parameter_service);
             // Call the function that fetches the parameters
@@ -804,9 +804,9 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
         case FETCH_YAML_SAFE_CONTROLLER_AGENT:
         {
             // Let the user know that this message was received
-            ROS_INFO("The PPSClient received the message that YAML parameters were (re-)loaded for the Safe Controller");
+            ROS_INFO("The PPSClient received the message that YAML parameters were (re-)loaded for the Safe Controller.\r> Now fetching the parameter values from the this machine");
             // Let the user know which paramters are being fetch
-            ROS_INFO("> Now fetching the parameter values from the this machine");
+            ROS_INFO("");
             // Create a node handle to the parameter service running on this agent's machine
             ros::NodeHandle nodeHandle_to_own_agent_parameter_service(namespace_to_own_agent_parameter_service);
             // Call the function that fetches the parameters
@@ -817,8 +817,7 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
         default:
         {
             // Let the user know that the command was not relevant
-            ROS_INFO("The PPSClient received the message that YAML parameters were (re-)loaded");
-            ROS_INFO("> However the parameters do not relate to this service, hence nothing will be fetched.");
+            //ROS_INFO("The PPSClient received the message that YAML parameters were (re-)loaded.\r> However the parameters do not relate to this service, hence nothing will be fetched.");
             break;
         }
     }
