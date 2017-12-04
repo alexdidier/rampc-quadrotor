@@ -348,7 +348,7 @@ int main(int argc, char* argv[])
             // > First: construct a node handle to the coordinator
             ros::NodeHandle nh_coordinator_for_this_agent = ros::NodeHandle();
             // > Second: Subscribe to the "requestLoadControllerYaml" topic
-            ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_coordinator = nh_coordinator.subscribe("my_GUI/requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);            
+            ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_coordinator = nh_coordinator_for_this_agent.subscribe("my_GUI/requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);            
 
             // Inform the user what was subscribed to:
             ROS_INFO_STREAM("This Parameter Service has subscribed to 'requestLoadControllerYaml' messages from both the 'my_GUI' and the 'PPSClient'");
