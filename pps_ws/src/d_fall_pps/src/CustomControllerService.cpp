@@ -143,16 +143,16 @@ std::vector<float>  setpoint{0.0,0.0,0.4,0.0};     // The setpoints for (x,y,z) 
 int controller_type = LQR_RATE_MODE;
 
 // The LQR Controller parameters for "LQR_RATE_MODE"
-const float gainMatrixRollRate[9]                =  { 0.00,-1.72, 0.00, 0.00,-1.34, 0.00, 5.12, 0.00, 0.00};
-const float gainMatrixPitchRate[9]               =  { 1.72, 0.00, 0.00, 1.34, 0.00, 0.00, 0.00, 5.12, 0.00};
-const float gainMatrixYawRate[9]                 =  { 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.84};
-const float gainMatrixThrust_NineStateVector[9]  =  { 0.00, 0.00, 0.25, 0.00, 0.00, 0.14, 0.00, 0.00, 0.00};
+std::vector<float> gainMatrixRollRate[9]                =  { 0.00,-1.72, 0.00, 0.00,-1.34, 0.00, 5.12, 0.00, 0.00};
+std::vector<float> gainMatrixPitchRate[9]               =  { 1.72, 0.00, 0.00, 1.34, 0.00, 0.00, 0.00, 5.12, 0.00};
+std::vector<float> gainMatrixYawRate[9]                 =  { 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.84};
+std::vector<float> gainMatrixThrust_NineStateVector[9]  =  { 0.00, 0.00, 0.25, 0.00, 0.00, 0.14, 0.00, 0.00, 0.00};
 
 
 // The LQR Controller parameters for "LQR_ANGLE_MODE"
-const float gainMatrixRollAngle[6]               =  { 0.00,-0.20, 0.00, 0.00,-0.20, 0.00};
-const float gainMatrixPitchAngle[6]              =  { 0.20, 0.00, 0.00, 0.20, 0.00, 0.00};
-const float gainMatrixThrust_SixStateVector[6]   =  { 0.00, 0.00, 0.31, 0.00, 0.00, 0.14};
+std::vector<float> gainMatrixRollAngle[6]               =  { 0.00,-0.20, 0.00, 0.00,-0.20, 0.00};
+std::vector<float> gainMatrixPitchAngle[6]              =  { 0.20, 0.00, 0.00, 0.20, 0.00, 0.00};
+std::vector<float> gainMatrixThrust_SixStateVector[6]   =  { 0.00, 0.00, 0.31, 0.00, 0.00, 0.14};
 
 // ROS Publisher for debugging variables
 ros::Publisher debugPublisher;
