@@ -323,13 +323,13 @@ int main(int argc, char* argv[])
         ROS_ERROR("Failed to get agentID from ParameterService");
     }
 
+
     // Publisher that notifies the relevant nodes when the YAML paramters have been loaded
     // from file into ram/cache, and hence are ready to be fetched
     controllerYamlReadyForFetchPublihser = nodeHandle.advertise<std_msgs::Int32>("controllerYamlReadyForFetch", 1);
     
 
     // Construct the string to the namespace of this Paramater Service
-    // SUBSCRIBE TO THE APPROPRIATE "request" MESSAGES DEPENDING ON THE "my_type"
     switch (my_type)
     {
         case TYPE_AGENT:
@@ -360,6 +360,7 @@ int main(int argc, char* argv[])
     
 
 
+    // SUBSCRIBE TO THE APPROPRIATE "request" MESSAGES DEPENDING ON THE "my_type"
     // Delare the subscribers as local variables here so that they persist for the life
     // time of this main() function. The varaibles will be assigned in the switch case below
     // > Subscribers for when this Parameter Service node is: TYPE_AGENT
@@ -386,7 +387,7 @@ int main(int argc, char* argv[])
             // > First: construct a node handle to the coordinator
             ros::NodeHandle nh_coordinator_for_this_agent = ros::NodeHandle();
             // > Second: Subscribe to the "requestLoadControllerYaml" topic
-            requestLoadControllerYamlSubscriber_agent_to_coordinator = nh_coordinator_for_this_agent.subscribe("my_GUI/requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);            
+            requestLoadControllerYamlSubscriber_agent_to_coordinator = nh_coordinator_for_this_agent.subscribe("/my_GUI/requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);            
 
             // Inform the user what was subscribed to:
             ROS_INFO_STREAM("This Parameter Service has subscribed to 'requestLoadControllerYaml' messages from both the 'my_GUI' and the 'PPSClient'");
@@ -399,9 +400,9 @@ int main(int argc, char* argv[])
         {
             // Subscribing to the coordinator's own "my_GUI" 
             // > First: Get the node handle required
-            ros::NodeHandle nh_coordinator_for_this_coordinator(ros::this_node::getNamespace());
+            ros::NodeHandle nh_coordinator_for_this_coordinator = ros::NodeHandle();
             // > Second: Subscribe to requests from: the master GUI
-            requestLoadControllerYamlSubscriber_coordinator_to_self = nh_coordinator_for_this_coordinator.subscribe("my_GUI/requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);
+            requestLoadControllerYamlSubscriber_coordinator_to_self = nh_coordinator_for_this_coordinator.subscribe("/my_GUI/requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);
 
             // Inform the user what was subscribed to:
             ROS_INFO_STREAM("This Parameter Service has subscribed to 'requestLoadControllerYaml' messages from 'my_GUI'");
