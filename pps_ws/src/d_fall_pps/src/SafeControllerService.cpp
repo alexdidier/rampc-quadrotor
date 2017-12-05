@@ -402,8 +402,7 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
             // Let the user know that this message was received
             ROS_INFO("The SafeControllerService received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from the coordinator.");
             // Create a node handle to the parameter service running on the coordinator machine
-            ros::NodeHandle nodeHandle_to_coordinator = ros::NodeHandle();
-            ros::NodeHandle nodeHandle_to_coordinator_parameter_service(nodeHandle_to_coordinator,namespace_to_coordinator_parameter_service);
+            ros::NodeHandle nodeHandle_to_coordinator_parameter_service(namespace_to_coordinator_parameter_service);
             // Call the function that fetches the parameters
             fetchYamlParameters(nodeHandle_to_coordinator_parameter_service);
             break;
@@ -608,8 +607,9 @@ int main(int argc, char* argv[]) {
 
     // Set the class variable "nodeHandle_to_coordinator_parameter_service" to be a node handle
     // for the parameter service that is running on the coordinate machine
-    //std::string m_ros_namespace = ros::master::getNamespace();
-    namespace_to_coordinator_parameter_service = "ParameterService";
+    // NOTE: the backslash here (i.e., "/") before the name of the node ("ParameterService")
+    //       is very important because it specifies that the name is global
+    namespace_to_coordinator_parameter_service = "/ParameterService";
 
     // Create a node handle to the parameter service running on the coordinator machine
     ros::NodeHandle nodeHandle_to_coordinator = ros::NodeHandle();
