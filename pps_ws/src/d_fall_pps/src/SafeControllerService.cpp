@@ -383,17 +383,8 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
     // Switch between fetching for the different controllers and from different locations
     switch(controller_to_fetch_yaml)
     {
-        case FETCH_YAML_SAFE_CONTROLLER_COORDINATOR:
-        {
-            // Let the user know that this message was received
-            ROS_INFO("The SafeControllerService received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from the coordinator.");
-            // Create a node handle to the parameter service running on the coordinator machine
-            ros::NodeHandle nodeHandle_to_coordinator_parameter_service = ros::NodeHandle(namespace_to_coordinator_parameter_service);
-            // Call the function that fetches the parameters
-            fetchYamlParameters(nodeHandle_to_coordinator_parameter_service);
-            break;
-        }
 
+        // > FOR FETCHING FROM THE AGENT'S OWN PARAMETER SERVICE
         case FETCH_YAML_SAFE_CONTROLLER_AGENT:
         {
             // Let the user know that this message was received
@@ -402,6 +393,19 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
             ros::NodeHandle nodeHandle_to_own_agent_parameter_service(namespace_to_own_agent_parameter_service);
             // Call the function that fetches the parameters
             fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
+            break;
+        }
+
+        // > FOR FETCHING FROM THE COORDINATOR'S PARAMETER SERVICE
+        case FETCH_YAML_SAFE_CONTROLLER_COORDINATOR:
+        {
+            // Let the user know that this message was received
+            ROS_INFO("The SafeControllerService received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from the coordinator.");
+            // Create a node handle to the parameter service running on the coordinator machine
+            ros::NodeHandle nodeHandle_to_coordinator = ros::NodeHandle();
+            ros::NodeHandle nodeHandle_to_coordinator_parameter_service = ros::NodeHandle(nodeHandle_to_coordinator,namespace_to_coordinator_parameter_service);
+            // Call the function that fetches the parameters
+            fetchYamlParameters(nodeHandle_to_coordinator_parameter_service);
             break;
         }
 
@@ -630,7 +634,7 @@ int main(int argc, char* argv[]) {
 
 
     // FINALLY, FETCH ANY PARAMETERS REQUIRED FROM THESE "PARAMETER SERVICES"
-    
+
     // Call the class function that loads the parameters for this class.
     fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
 
