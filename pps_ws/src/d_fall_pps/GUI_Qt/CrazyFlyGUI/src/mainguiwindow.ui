@@ -276,7 +276,7 @@
        <item>
         <widget class="QTabWidget" name="tabWidget_2">
          <property name="currentIndex">
-          <number>1</number>
+          <number>0</number>
          </property>
          <widget class="QWidget" name="links_tab">
           <attribute name="title">
@@ -475,6 +475,25 @@
            <string>Command all</string>
           </attribute>
           <layout class="QGridLayout" name="gridLayout_2">
+           <item row="1" column="0">
+            <widget class="QPushButton" name="all_disconnect_button">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>50</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>100</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>Disconnect</string>
+             </property>
+            </widget>
+           </item>
            <item row="1" column="1">
             <widget class="QPushButton" name="all_connect_button">
              <property name="minimumSize">
@@ -579,25 +598,6 @@
              </property>
             </widget>
            </item>
-           <item row="1" column="0">
-            <widget class="QPushButton" name="all_disconnect_button">
-             <property name="minimumSize">
-              <size>
-               <width>0</width>
-               <height>50</height>
-              </size>
-             </property>
-             <property name="maximumSize">
-              <size>
-               <width>16777215</width>
-               <height>100</height>
-              </size>
-             </property>
-             <property name="text">
-              <string>Disconnect</string>
-             </property>
-            </widget>
-           </item>
            <item row="5" column="1">
             <widget class="QPushButton" name="all_enable_custom_controller_button">
              <property name="minimumSize">
@@ -614,25 +614,6 @@
              </property>
              <property name="text">
               <string>Enable Custom</string>
-             </property>
-            </widget>
-           </item>
-           <item row="8" column="0">
-            <widget class="QPushButton" name="all_load_safe_controller_yaml_own_agent_button">
-             <property name="minimumSize">
-              <size>
-               <width>0</width>
-               <height>50</height>
-              </size>
-             </property>
-             <property name="maximumSize">
-              <size>
-               <width>16777215</width>
-               <height>100</height>
-              </size>
-             </property>
-             <property name="text">
-              <string>Load Safe YAML</string>
              </property>
             </widget>
            </item>
@@ -717,7 +698,7 @@
               </size>
              </property>
              <property name="text">
-              <string>Send Safe YAML</string>
+              <string>Load Safe YAML</string>
              </property>
             </widget>
            </item>
@@ -736,7 +717,7 @@
               </size>
              </property>
              <property name="text">
-              <string>Send Custom YAML</string>
+              <string>Load Custom YAML</string>
              </property>
             </widget>
            </item>
@@ -775,6 +756,25 @@
              </property>
              <property name="text">
               <string>&gt; From coordinator's file</string>
+             </property>
+            </widget>
+           </item>
+           <item row="8" column="0">
+            <widget class="QPushButton" name="all_load_safe_controller_yaml_own_agent_button">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>50</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>100</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>Load Safe YAML</string>
              </property>
             </widget>
            </item>
@@ -830,7 +830,7 @@
      <x>0</x>
      <y>0</y>
      <width>1176</width>
-     <height>37</height>
+     <height>25</height>
     </rect>
    </property>
   </widget>
