@@ -532,78 +532,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 
 
 
-	//  ***********************************************************
-	//  DDDD   EEEEE  BBBB   U   U   GGGG       M   M   SSSS   GGGG
-	//  D   D  E      B   B  U   U  G           MM MM  S      G
-	//  D   D  EEE    BBBB   U   U  G           M M M   SSS   G
-	//  D   D  E      B   B  U   U  G   G       M   M      S  G   G
-	//  DDDD   EEEEE  BBBB    UUU    GGGG       M   M  SSSS    GGGG
-
-    // DEBUGGING CODE:
-    // As part of the D-FaLL-System we have defined a message type names"DebugMsg".
-    // By fill this message with data and publishing it you can display the data in
-    // real time using rpt plots. Instructions for using rqt plots can be found on
-    // the wiki of the D-FaLL-System repository
-    if (shouldPublishDebugMessage)
-    {
-		// Instantiate a local variable of type "DebugMsg", see the file "DebugMsg.msg"
-		// (located in the "msg" folder) to see the full structure of this message.
-		DebugMsg debugMsg;
-
-		// Fill the debugging message with the data provided by Vicon
-		debugMsg.vicon_x = request.ownCrazyflie.x;
-		debugMsg.vicon_y = request.ownCrazyflie.y;
-		debugMsg.vicon_z = request.ownCrazyflie.z;
-		debugMsg.vicon_roll = request.ownCrazyflie.roll;
-		debugMsg.vicon_pitch = request.ownCrazyflie.pitch;
-		debugMsg.vicon_yaw = request.ownCrazyflie.yaw;
-
-		// Fill in the debugging message with any other data you would like to display
-		// in real time. For example, it might be useful to display the thrust
-		// adjustment computed by the z-altitude controller.
-		// The "DebugMsg" type has 10 properties from "value_1" to "value_10", all of
-		// type "float64" that you can fill in with data you would like to plot in
-		// real-time.
-		// debugMsg.value_1 = thrustAdjustment;
-		// ......................
-		// debugMsg.value_10 = your_variable_name;
-
-		// Publish the "debugMsg"
-		debugPublisher.publish(debugMsg);
-	}
-
-
-	// An alternate debugging technique is to print out data directly to the
-	// command line from which this node was launched.
-	if (shouldDisplayDebugInfo)
-	{
-		// An example of "printing out" the data from the "request" argument to the
-		// command line. This might be useful for debugging.
-		ROS_INFO_STREAM("x-coordinates: " << request.ownCrazyflie.x);
-		ROS_INFO_STREAM("y-coordinates: " << request.ownCrazyflie.y);
-		ROS_INFO_STREAM("z-coordinates: " << request.ownCrazyflie.z);
-		ROS_INFO_STREAM("roll: " << request.ownCrazyflie.roll);
-		ROS_INFO_STREAM("pitch: " << request.ownCrazyflie.pitch);
-		ROS_INFO_STREAM("yaw: " << request.ownCrazyflie.yaw);
-		ROS_INFO_STREAM("Delta t: " << request.ownCrazyflie.acquiringTime);
-
-		// An example of "printing out" the control actions computed.
-		ROS_INFO_STREAM("thrustAdjustment = " << thrustAdjustment);
-		ROS_INFO_STREAM("controlOutput.roll = " << response.controlOutput.roll);
-		ROS_INFO_STREAM("controlOutput.pitch = " << response.controlOutput.pitch);
-		ROS_INFO_STREAM("controlOutput.yaw = " << response.controlOutput.yaw);
-
-		// An example of "printing out" the "thrust-to-command" conversion parameters.
-		ROS_INFO_STREAM("motorPoly 0:" << motorPoly[0]);
-		ROS_INFO_STREAM("motorPoly 0:" << motorPoly[1]);
-		ROS_INFO_STREAM("motorPoly 0:" << motorPoly[2]);
-
-		// An example of "printing out" the per motor 16-bit command computed.
-		ROS_INFO_STREAM("controlOutput.cmd1 = " << response.controlOutput.motorCmd1);
-		ROS_INFO_STREAM("controlOutput.cmd3 = " << response.controlOutput.motorCmd2);
-		ROS_INFO_STREAM("controlOutput.cmd2 = " << response.controlOutput.motorCmd3);
-		ROS_INFO_STREAM("controlOutput.cmd4 = " << response.controlOutput.motorCmd4);
-	}
+	
 
 	// Return "true" to indicate that the control computation was performed successfully
 	return true;
@@ -732,6 +661,79 @@ void calculateControlOutput_viaLQRforRates(float stateErrorBody[9], Controller::
 	// response.controlOutput.onboardControllerType = MOTOR_MODE;
 	response.controlOutput.onboardControllerType = RATE_MODE;
 	// response.controlOutput.onboardControllerType = ANGLE_MODE;
+
+	//  ***********************************************************
+	//  DDDD   EEEEE  BBBB   U   U   GGGG       M   M   SSSS   GGGG
+	//  D   D  E      B   B  U   U  G           MM MM  S      G
+	//  D   D  EEE    BBBB   U   U  G           M M M   SSS   G
+	//  D   D  E      B   B  U   U  G   G       M   M      S  G   G
+	//  DDDD   EEEEE  BBBB    UUU    GGGG       M   M  SSSS    GGGG
+
+    // DEBUGGING CODE:
+    // As part of the D-FaLL-System we have defined a message type names"DebugMsg".
+    // By fill this message with data and publishing it you can display the data in
+    // real time using rpt plots. Instructions for using rqt plots can be found on
+    // the wiki of the D-FaLL-System repository
+    if (shouldPublishDebugMessage)
+    {
+		// Instantiate a local variable of type "DebugMsg", see the file "DebugMsg.msg"
+		// (located in the "msg" folder) to see the full structure of this message.
+		DebugMsg debugMsg;
+
+		// Fill the debugging message with the data provided by Vicon
+		debugMsg.vicon_x = request.ownCrazyflie.x;
+		debugMsg.vicon_y = request.ownCrazyflie.y;
+		debugMsg.vicon_z = request.ownCrazyflie.z;
+		debugMsg.vicon_roll = request.ownCrazyflie.roll;
+		debugMsg.vicon_pitch = request.ownCrazyflie.pitch;
+		debugMsg.vicon_yaw = request.ownCrazyflie.yaw;
+
+		// Fill in the debugging message with any other data you would like to display
+		// in real time. For example, it might be useful to display the thrust
+		// adjustment computed by the z-altitude controller.
+		// The "DebugMsg" type has 10 properties from "value_1" to "value_10", all of
+		// type "float64" that you can fill in with data you would like to plot in
+		// real-time.
+		// debugMsg.value_1 = thrustAdjustment;
+		// ......................
+		// debugMsg.value_10 = your_variable_name;
+
+		// Publish the "debugMsg"
+		debugPublisher.publish(debugMsg);
+	}
+
+
+	// An alternate debugging technique is to print out data directly to the
+	// command line from which this node was launched.
+	if (shouldDisplayDebugInfo)
+	{
+		// An example of "printing out" the data from the "request" argument to the
+		// command line. This might be useful for debugging.
+		ROS_INFO_STREAM("x-coordinates: " << request.ownCrazyflie.x);
+		ROS_INFO_STREAM("y-coordinates: " << request.ownCrazyflie.y);
+		ROS_INFO_STREAM("z-coordinates: " << request.ownCrazyflie.z);
+		ROS_INFO_STREAM("roll: " << request.ownCrazyflie.roll);
+		ROS_INFO_STREAM("pitch: " << request.ownCrazyflie.pitch);
+		ROS_INFO_STREAM("yaw: " << request.ownCrazyflie.yaw);
+		ROS_INFO_STREAM("Delta t: " << request.ownCrazyflie.acquiringTime);
+
+		// An example of "printing out" the control actions computed.
+		ROS_INFO_STREAM("thrustAdjustment = " << thrustAdjustment);
+		ROS_INFO_STREAM("controlOutput.roll = " << response.controlOutput.roll);
+		ROS_INFO_STREAM("controlOutput.pitch = " << response.controlOutput.pitch);
+		ROS_INFO_STREAM("controlOutput.yaw = " << response.controlOutput.yaw);
+
+		// An example of "printing out" the "thrust-to-command" conversion parameters.
+		ROS_INFO_STREAM("motorPoly 0:" << motorPoly[0]);
+		ROS_INFO_STREAM("motorPoly 0:" << motorPoly[1]);
+		ROS_INFO_STREAM("motorPoly 0:" << motorPoly[2]);
+
+		// An example of "printing out" the per motor 16-bit command computed.
+		ROS_INFO_STREAM("controlOutput.cmd1 = " << response.controlOutput.motorCmd1);
+		ROS_INFO_STREAM("controlOutput.cmd3 = " << response.controlOutput.motorCmd2);
+		ROS_INFO_STREAM("controlOutput.cmd2 = " << response.controlOutput.motorCmd3);
+		ROS_INFO_STREAM("controlOutput.cmd4 = " << response.controlOutput.motorCmd4);
+	}
 }
 
 
