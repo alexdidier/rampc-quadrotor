@@ -890,6 +890,9 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
     	ROS_ERROR_STREAM("parameter 'follow_in_a_line_agentIDs' was loaded with two different lengths, " << temp_number_of_agents_in_a_line << " versus " << follow_in_a_line_agentIDs.size() );
     }
 
+    // DEBUGGING: Print out one of the parameters that was loaded
+    ROS_INFO_STREAM("DEBUGGING: the fetched SafeController/mass = " << cf_mass);
+
     // Call the function that computes details an values that are needed from these
     // parameters loaded above
     processFetchedParameters();
