@@ -403,7 +403,7 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
             ROS_INFO("The SafeControllerService received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from the coordinator.");
             // Create a node handle to the parameter service running on the coordinator machine
             ros::NodeHandle nodeHandle_to_coordinator = ros::NodeHandle();
-            ros::NodeHandle nodeHandle_to_coordinator_parameter_service = ros::NodeHandle(nodeHandle_to_coordinator,namespace_to_coordinator_parameter_service);
+            ros::NodeHandle nodeHandle_to_coordinator_parameter_service(nodeHandle_to_coordinator,namespace_to_coordinator_parameter_service);
             // Call the function that fetches the parameters
             fetchYamlParameters(nodeHandle_to_coordinator_parameter_service);
             break;
