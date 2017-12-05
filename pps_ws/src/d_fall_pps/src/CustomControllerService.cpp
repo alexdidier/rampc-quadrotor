@@ -257,6 +257,7 @@ ros::Subscriber xyz_yaw_to_follow_subscriber;
 // CONTROLLER COMPUTATIONS
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response);
 void calculateControlOutput_viaLQRforRates(stateErrorBody, Controller::Request &request, Controller::Response &response);
+void calculateControlOutput_viaLQRforAngles(stateErrorBody, Controller::Request &request, Controller::Response &response);
 
 // TRANSFORMATION OF THE (x,y) INERTIAL FRAME ERROR INTO AN (x,y) BODY FRAME ERROR
 void convertIntoBodyFrame(float stateInertial[9], float (&stateBody)[9], float yaw_measured);
