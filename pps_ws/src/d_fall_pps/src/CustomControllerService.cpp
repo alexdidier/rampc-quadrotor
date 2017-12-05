@@ -142,17 +142,17 @@ std::vector<float>  setpoint{0.0,0.0,0.4,0.0};     // The setpoints for (x,y,z) 
 // The controller type to run in the "calculateControlOutput" function
 int controller_type = LQR_RATE_MODE;
 
-// The LQR Controller parameters
-const float gainMatrixRollRate[9] = {0, -1.714330725, 0, 0, -1.337107465, 0, 5.115369735, 0, 0};
-const float gainMatrixPitchRate[9] = {1.714330725, 0, 0, 1.337107465, 0, 0, 0, 5.115369735, 0};
-const float gainMatrixYawRate[9] = {0, 0, 0, 0, 0, 0, 0, 0, 2.843099534};
-const float gainMatrixThrust_NineStateVector[9] = {0, 0, 0.22195826, 0, 0, 0.12362477, 0, 0, 0};
+// The LQR Controller parameters for "LQR_RATE_MODE"
+const float gainMatrixRollRate[9]                =  { 0.00,-1.72, 0.00, 0.00,-1.34, 0.00, 5.12, 0.00, 0.00};
+const float gainMatrixPitchRate[9]               =  { 1.72, 0.00, 0.00, 1.34, 0.00, 0.00, 0.00, 5.12, 0.00};
+const float gainMatrixYawRate[9]                 =  { 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.84};
+const float gainMatrixThrust_NineStateVector[9]  =  { 0.00, 0.00, 0.25, 0.00, 0.00, 0.14, 0.00, 0.00, 0.00};
 
 
-// The LQR Controller parameters
-const float gainMatrixRollAngle[6] = {0, -1.714330725, 0, 0, -1.337107465, 0};
-const float gainMatrixPitchAngle[6] = {1.714330725, 0, 0, 1.337107465, 0, 0};
-const float gainMatrixThrust_SixStateVector[6] = {0, 0, 0.22195826, 0, 0, 0.12362477};
+// The LQR Controller parameters for "LQR_ANGLE_MODE"
+const float gainMatrixRollAngle[6]               =  { 0.00,-0.20, 0.00, 0.00,-0.20, 0.00};
+const float gainMatrixPitchAngle[6]              =  { 0.20, 0.00, 0.00, 0.20, 0.00, 0.00};
+const float gainMatrixThrust_SixStateVector[6]   =  { 0.00, 0.00, 0.31, 0.00, 0.00, 0.14};
 
 // ROS Publisher for debugging variables
 ros::Publisher debugPublisher;
@@ -1073,61 +1073,76 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
 // your controller easier and quicker.
 void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 {
-    // Here we load the parameters that are specified in the CustomController.yaml file
+	// Here we load the parameters that are specified in the CustomController.yaml file
 
 	// Add the "CustomController" namespace to the "nodeHandle"
 	ros::NodeHandle nodeHandle_for_customController(nodeHandle, "CustomController");
 
 	// > The mass of the crazyflie
-    cf_mass = getParameterFloat(nodeHandle_for_customController , "mass");
+	cf_mass = getParameterFloat(nodeHandle_for_customController , "mass");
 
 	// Display one of the YAML parameters to debug if it is working correctly
 	//ROS_INFO_STREAM("DEBUGGING: mass leaded from loacl file = " << cf_mass );
 
-    // > The frequency at which the "computeControlOutput" is being called, as determined
-    //   by the frequency at which the Vicon system provides position and attitude data
-    control_frequency = getParameterFloat(nodeHandle_for_customController, "control_frequency");
+	// > The frequency at which the "computeControlOutput" is being called, as determined
+	//   by the frequency at which the Vicon system provides position and attitude data
+	control_frequency = getParameterFloat(nodeHandle_for_customController, "control_frequency");
 
-    // > The co-efficients of the quadratic conversation from 16-bit motor command to
-    //   thrust force in Newtons
-    getParameterFloatVector(nodeHandle_for_customController, "motorPoly", motorPoly, 3);
+	// > The co-efficients of the quadratic conversation from 16-bit motor command to
+	//   thrust force in Newtons
+	getParameterFloatVector(nodeHandle_for_customController, "motorPoly", motorPoly, 3);
 
-    // > The boolean for whether to execute the convert into body frame function
-    shouldPerformConvertIntoBodyFrame = getParameterBool(nodeHandle_for_customController, "shouldPerformConvertIntoBodyFrame");
+	// > The boolean for whether to execute the convert into body frame function
+	shouldPerformConvertIntoBodyFrame = getParameterBool(nodeHandle_for_customController, "shouldPerformConvertIntoBodyFrame");
 
-    // > The boolean indicating whether the (x,y,z,yaw) of this agent should be published
-    //   or not
-    shouldPublishCurrent_xyz_yaw = getParameterBool(nodeHandle_for_customController, "shouldPublishCurrent_xyz_yaw");
+	// > The boolean indicating whether the (x,y,z,yaw) of this agent should be published
+	//   or not
+	shouldPublishCurrent_xyz_yaw = getParameterBool(nodeHandle_for_customController, "shouldPublishCurrent_xyz_yaw");
 
-    // > The boolean indicating whether the (x,y,z,yaw) setpoint of this agent should adapted in
+	// > The boolean indicating whether the (x,y,z,yaw) setpoint of this agent should adapted in
 	//   an attempt to follow the "my_current_xyz_yaw_topic" from another agent
-    shouldFollowAnotherAgent = getParameterBool(nodeHandle_for_customController, "shouldFollowAnotherAgent");
+	shouldFollowAnotherAgent = getParameterBool(nodeHandle_for_customController, "shouldFollowAnotherAgent");
 
-    // > The ordered vector for ID's that specifies how the agents should follow eachother
-    follow_in_a_line_agentIDs.clear();
-    int temp_number_of_agents_in_a_line = getParameterIntVectorWithUnknownLength(nodeHandle_for_customController, "follow_in_a_line_agentIDs", follow_in_a_line_agentIDs);
-    // > Double check that the sizes agree
-    if ( temp_number_of_agents_in_a_line != follow_in_a_line_agentIDs.size() )
-    {
-    	// Update the user if the sizes don't agree
-    	ROS_ERROR_STREAM("parameter 'follow_in_a_line_agentIDs' was loaded with two different lengths, " << temp_number_of_agents_in_a_line << " versus " << follow_in_a_line_agentIDs.size() );
-    }
+	// > The ordered vector for ID's that specifies how the agents should follow eachother
+	follow_in_a_line_agentIDs.clear();
+	int temp_number_of_agents_in_a_line = getParameterIntVectorWithUnknownLength(nodeHandle_for_customController, "follow_in_a_line_agentIDs", follow_in_a_line_agentIDs);
+	// > Double check that the sizes agree
+	if ( temp_number_of_agents_in_a_line != follow_in_a_line_agentIDs.size() )
+	{
+		// Update the user if the sizes don't agree
+		ROS_ERROR_STREAM("parameter 'follow_in_a_line_agentIDs' was loaded with two different lengths, " << temp_number_of_agents_in_a_line << " versus " << follow_in_a_line_agentIDs.size() );
+	}
 
-    // A flag for which controller to use, defined as:
-    controller_type = getParameterInt( nodeHandle_for_customController , "controller_type" );
-
-    // Boolean indiciating whether the "Debug Message" of this agent should be published or not
+	// Boolean indiciating whether the "Debug Message" of this agent should be published or not
 	shouldPublishDebugMessage = getParameterBool(nodeHandle_for_customController, "shouldPublishDebugMessage");
 
-    // Boolean indiciating whether the debugging ROS_INFO_STREAM should be displayed or not
+	// Boolean indiciating whether the debugging ROS_INFO_STREAM should be displayed or not
 	shouldDisplayDebugInfo = getParameterBool(nodeHandle_for_customController, "shouldDisplayDebugInfo");
 
-    // DEBUGGING: Print out one of the parameters that was loaded
-    ROS_INFO_STREAM("DEBUGGING: the fetched SafeController/mass = " << cf_mass);
 
-    // Call the function that computes details an values that are needed from these
-    // parameters loaded above
-    processFetchedParameters();
+	// THE CONTROLLER GAINS:
+
+	// A flag for which controller to use, defined as:
+	controller_type = getParameterInt( nodeHandle_for_customController , "controller_type" );
+
+	// The LQR Controller parameters for "LQR_RATE_MODE"
+	getParameterFloatVector(nodeHandle_for_customController, "gainMatrixRollRate",               gainMatrixRollRate,               9);
+	getParameterFloatVector(nodeHandle_for_customController, "gainMatrixPitchRate",              gainMatrixPitchRate,              9);
+	getParameterFloatVector(nodeHandle_for_customController, "gainMatrixYawRate",                gainMatrixYawRate,                9);
+	getParameterFloatVector(nodeHandle_for_customController, "gainMatrixThrust_NineStateVector", gainMatrixThrust_NineStateVector, 9);
+
+	// The LQR Controller parameters for "LQR_ANGLE_MODE"
+	getParameterFloatVector(nodeHandle_for_customController, "gainMatrixRollAngle",              gainMatrixRollAngle,              6);
+	getParameterFloatVector(nodeHandle_for_customController, "gainMatrixPitchAngle",             gainMatrixPitchAngle,             6);
+	getParameterFloatVector(nodeHandle_for_customController, "gainMatrixThrust_SixStateVector",  gainMatrixThrust_SixStateVector,  6);
+
+
+	// DEBUGGING: Print out one of the parameters that was loaded
+	ROS_INFO_STREAM("DEBUGGING: the fetched SafeController/mass = " << cf_mass);
+
+	// Call the function that computes details an values that are needed from these
+	// parameters loaded above
+	processFetchedParameters();
 
 }
 

@@ -23,13 +23,24 @@ shouldFollowAnotherAgent : false
 # > i.e., the first ID is the leader, the second ID should follow the first ID, and so on
 follow_in_a_line_agentIDs : [1, 2, 3]
 
-# A flag for which controller to use, defined as:
-# 1  -  LQR controller based on the state vector: [position,velocity,angles]
-# 2  -  LQR controller based on the state vector: [position,velocity]
-controller_type : 1
-
 # Boolean indiciating whether the "Debug Message" of this agent should be published or not
 shouldPublishDebugMessage : false
 
 # Boolean indiciating whether the debugging ROS_INFO_STREAM should be displayed or not
 shouldDisplayDebugInfo : false
+
+# A flag for which controller to use, defined as:
+# 1  -  LQR controller based on the state vector: [position,velocity,angles]
+# 2  -  LQR controller based on the state vector: [position,velocity]
+controller_type : 1
+
+# The LQR Controller parameters for "mode = 1"
+gainMatrixRollRate                :  [ 0.00,-1.72, 0.00, 0.00,-1.34, 0.00, 5.12, 0.00, 0.00]
+gainMatrixPitchRate               :  [ 1.72, 0.00, 0.00, 1.34, 0.00, 0.00, 0.00, 5.12, 0.00]
+gainMatrixYawRate                 :  [ 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.84]
+gainMatrixThrust_NineStateVector  :  [ 0.00, 0.00, 0.25, 0.00, 0.00, 0.14, 0.00, 0.00, 0.00]
+
+# The LQR Controller parameters for "mode = 2"
+gainMatrixRollAngle               :  [ 0.00,-0.20, 0.00, 0.00,-0.20, 0.00]
+gainMatrixPitchAngle              :  [ 0.20, 0.00, 0.00, 0.20, 0.00, 0.00]
+gainMatrixThrust_SixStateVector   :  [ 0.00, 0.00, 0.31, 0.00, 0.00, 0.14]
