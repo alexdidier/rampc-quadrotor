@@ -578,6 +578,9 @@ int main(int argc, char* argv[]) {
     // *********************************************************************************
     // EVERYTHING THAT RELATES TO FETCHING PARAMETERS FROM A YAML FILE
 
+
+    // EVERYTHING FOR THE CONNECTION TO THIS AGENT's OWN PARAMETER SERVICE:
+
     // Get the namespace of this "SafeControllerService" node
     std::string m_namespace = ros::this_node::getNamespace();
 
@@ -589,14 +592,6 @@ int main(int argc, char* argv[]) {
     // Create a node handle to the parameter service running on this agent's machine
     ros::NodeHandle nodeHandle_to_own_agent_parameter_service(namespace_to_own_agent_parameter_service);
 
-    // Set the class variable "nodeHandle_to_coordinator_parameter_service" to be a node handle
-    // for the parameter service that is running on the coordinate machine
-    //std::string m_ros_namespace = ros::master::getNamespace();
-    namespace_to_coordinator_parameter_service = "/ParameterService";
-
-    // Create a node handle to the parameter service running on the coordinator machine
-    ros::NodeHandle nodeHandle_to_coordinator_parameter_service = ros::NodeHandle(namespace_to_own_agent_parameter_service);
-
     // Instantiate the local variable "controllerYamlReadyForFetchSubscriber" to be a
     // "ros::Subscriber" type variable that subscribes to the "controllerYamlReadyForFetch" topic
     // and calls the class function "yamlReadyForFetchCallback" each time a message is
@@ -604,18 +599,38 @@ int main(int argc, char* argv[]) {
     // "yamlReadyForFetchCallback" class function.
     ros::Subscriber controllerYamlReadyForFetchSubscriber_to_agent = nodeHandle_to_own_agent_parameter_service.subscribe("controllerYamlReadyForFetch", 1, yamlReadyForFetchCallback);
 
+
+    // EVERYTHING FOR THE CONNECTION THE COORDINATOR'S PARAMETER SERVICE:
+
+    // Set the class variable "nodeHandle_to_coordinator_parameter_service" to be a node handle
+    // for the parameter service that is running on the coordinate machine
+    //std::string m_ros_namespace = ros::master::getNamespace();
+    namespace_to_coordinator_parameter_service = "ParameterService";
+
+    // Create a node handle to the parameter service running on the coordinator machine
+    ros::NodeHandle nodeHandle_to_coordinator = ros::NodeHandle();
+    //ros::NodeHandle nodeHandle_to_coordinator_parameter_service = ros::NodeHandle(namespace_to_own_agent_parameter_service);
+    
+
     // Instantiate the local variable "controllerYamlReadyForFetchSubscriber" to be a
     // "ros::Subscriber" type variable that subscribes to the "controllerYamlReadyForFetch" topic
     // and calls the class function "yamlReadyForFetchCallback" each time a message is
     // received on this topic and the message is passed as an input argument to the
     // "yamlReadyForFetchCallback" class function.
-    ros::Subscriber controllerYamlReadyForFetchSubscriber_to_coordinator = nodeHandle_to_coordinator_parameter_service.subscribe("controllerYamlReadyForFetch", 1, yamlReadyForFetchCallback);
+    ros::Subscriber controllerYamlReadyForFetchSubscriber_to_coordinator = nodeHandle_to_coordinator.subscribe("/ParameterService/controllerYamlReadyForFetch", 1, yamlReadyForFetchCallback);
+    //ros::Subscriber controllerYamlReadyForFetchSubscriber_to_coordinator = nodeHandle_to_coordinator_parameter_service.subscribe("controllerYamlReadyForFetch", 1, yamlReadyForFetchCallback);
+
+
+    // PRINT OUT SOME INFORMATION
 
     // Let the user know what namespaces are being used for linking to the parameter service
     ROS_INFO_STREAM("The namespace string for accessing the Paramter Services are:");
     ROS_INFO_STREAM("namespace_to_own_agent_parameter_service    =  " << namespace_to_own_agent_parameter_service);
     ROS_INFO_STREAM("namespace_to_coordinator_parameter_service  =  " << namespace_to_coordinator_parameter_service);
 
+
+    // FINALLY, FETCH ANY PARAMETERS REQUIRED FROM THESE "PARAMETER SERVICES"
+    
     // Call the class function that loads the parameters for this class.
     fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
 
