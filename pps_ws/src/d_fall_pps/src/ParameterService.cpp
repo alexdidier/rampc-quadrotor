@@ -1,4 +1,4 @@
-//    Copyright (C) 2017, ETH Zurich, D-ITET, Cyrill Burgener, Marco Mueller, Philipp Friedli
+//    Copyright (C) 2017, ETH Zurich, D-ITET, Paul Beuchat
 //
 //    This file is part of D-FaLL-System.
 //    
