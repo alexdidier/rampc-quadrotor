@@ -592,7 +592,7 @@ int main(int argc, char* argv[]) {
     // Set the class variable "nodeHandle_to_coordinator_parameter_service" to be a node handle
     // for the parameter service that is running on the coordinate machine
     //std::string m_ros_namespace = ros::master::getNamespace();
-    namespace_to_coordinator_parameter_service = "ParameterService";
+    namespace_to_coordinator_parameter_service = "/ParameterService";
 
     // Create a node handle to the parameter service running on the coordinator machine
     ros::NodeHandle nodeHandle_to_coordinator_parameter_service = ros::NodeHandle(namespace_to_own_agent_parameter_service);
