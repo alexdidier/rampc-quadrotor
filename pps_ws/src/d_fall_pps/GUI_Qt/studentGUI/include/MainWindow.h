@@ -161,11 +161,13 @@ private:
     ros::Publisher customSetpointPublisher;
     ros::Subscriber customSetpointSubscriber;
 
+    ros::Publisher PPSClientStudentCustomButtonPublisher;
+
     ros::Subscriber DBChangedSubscriber;
 
 
 
-    // > For publishing a message that requests the 
+    // > For publishing a message that requests the
     //   YAML parameters to be re-loaded from file
     // > The message contents specify which controller
     //   the parameters should be re-loaded for
