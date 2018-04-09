@@ -709,7 +709,10 @@ void MainWindow::on_customButton_3_clicked()
 Setpoint MainWindow::correctSetpointBox(Setpoint setpoint, CrazyflieContext context)
 {
     Setpoint corrected_setpoint;
-    corrected_setpoint =  setpoint;
+    corrected_setpoint.x =  setpoint.x;
+    corrected_setpoint.y =  setpoint.y;
+    corrected_setpoint.z =  setpoint.z;
+    corrected_setpoint.yaw =  setpoint.yaw;
 
     if(setpoint.x > context.localArea.xmax)
         corrected_setpoint.x = context.localArea.xmax;
