@@ -1,4 +1,4 @@
-//    Copyright (C) 2017, ETH Zurich, D-ITET, Angel Romero
+//    Copyright (C) 2017, ETH Zurich, D-ITET, Paul Beuchat, Angel Romero
 //
 //    This file is part of D-FaLL-System.
 //    
@@ -42,6 +42,8 @@
 
 #include "d_fall_pps/ViconData.h"
 
+#include "d_fall_pps/CustomButton.h"
+
 MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
@@ -56,7 +58,7 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     setCrazyRadioStatus(DISCONNECTED);
 
     m_ros_namespace = ros::this_node::getNamespace();
-    ROS_INFO("namespace: %s", m_ros_namespace.c_str());
+    ROS_INFO("Student GUI node namespace: %s", m_ros_namespace.c_str());
 
     qRegisterMetaType<ptrToMessage>("ptrToMessage");
     QObject::connect(m_rosNodeThread, SIGNAL(newViconData(const ptrToMessage&)), this, SLOT(updateNewViconData(const ptrToMessage&)));
@@ -83,15 +85,27 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
 
     ros::NodeHandle my_nodeHandle("~");
     controllerSetpointPublisher = my_nodeHandle.advertise<Setpoint>("ControllerSetpoint", 1);
-    customYAMLloadedPublisher = my_nodeHandle.advertise<std_msgs::Int32>("customYAMLloaded", 1);
-    safeYAMLloadedPublisher = my_nodeHandle.advertise<std_msgs::Int32>("safeYAMLloaded", 1);
 
 
     // communication with PPS Client, just to make it possible to communicate through terminal also we use PPSClient's name
-    ros::NodeHandle nh_PPSClient(m_ros_namespace + "/PPSClient");
+    //ros::NodeHandle nh_PPSClient(m_ros_namespace + "/PPSClient");
+    ros::NodeHandle nh_PPSClient("PPSClient");
     crazyRadioCommandPublisher = nh_PPSClient.advertise<std_msgs::Int32>("crazyRadioCommand", 1);
     PPSClientCommandPublisher = nh_PPSClient.advertise<std_msgs::Int32>("Command", 1);
 
+    PPSClientStudentCustomButtonPublisher = nh_PPSClient.advertise<CustomButton>("StudentCustomButton", 1);
+
+
+    // > For publishing a message that requests the
+    //   YAML parameters to be re-loaded from file
+    // > The message contents specify which controller
+    //   the parameters should be re-loaded for
+    requestLoadControllerYamlPublisher = nh_PPSClient.advertise<std_msgs::Int32>("requestLoadControllerYaml", 1);
+
+
+    // Subscriber for locking the load the controller YAML
+    // parameters when the Coordintor GUI requests a load
+    requestLoadControllerYaml_from_my_GUI_Subscriber = nodeHandle.subscribe("/my_GUI/requestLoadControllerYaml", 1, &MainWindow::requestLoadControllerYaml_from_my_GUI_Callback, this);
 
     // First get student ID
     if(!nh_PPSClient.getParam("studentID", m_student_id))
@@ -105,26 +119,31 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
 
 
 
+
+    // Load default setpoint from the "SafeController" namespace of the "ParameterService"
     std::vector<float> default_setpoint(4);
-    ros::NodeHandle nh_safeControllerService(m_ros_namespace + "/SafeControllerService");
+    ros::NodeHandle nodeHandle_to_own_agent_parameter_service("ParameterService");
+    ros::NodeHandle nodeHandle_for_safeController(nodeHandle_to_own_agent_parameter_service, "SafeController");
 
-    ROS_INFO_STREAM(m_ros_namespace << "/SafeControllerService");
-
-    if(!nh_safeControllerService.getParam("defaultSetpoint", default_setpoint))
+    if(!nodeHandle_for_safeController.getParam("defaultSetpoint", default_setpoint))
     {
-        ROS_ERROR_STREAM("couldn't find parameter 'defaultSetpoint'");
+        ROS_ERROR_STREAM("The StudentGUI could not find parameter 'defaultSetpoint', as called from main(...)");
     }
 
-
+    // Copy the default setpoint into respective text fields of the GUI
     ui->current_setpoint_x->setText(QString::number(default_setpoint[0]));
     ui->current_setpoint_y->setText(QString::number(default_setpoint[1]));
     ui->current_setpoint_z->setText(QString::number(default_setpoint[2]));
     ui->current_setpoint_yaw->setText(QString::number(default_setpoint[3]));
 
+
     disableGUI();
     highlightSafeControllerTab();
     ui->label_battery->setStyleSheet("QLabel { color : red; }");
     m_battery_state = BATTERY_STATE_NORMAL;
+
+    ui->error_label->setStyleSheet("QLabel { color : red; }");
+    ui->error_label->clear();
 
     initialize_custom_setpoint();
 }
@@ -445,12 +464,43 @@ void MainWindow::on_motors_OFF_button_clicked()
 void MainWindow::on_set_setpoint_button_clicked()
 {
     Setpoint msg_setpoint;
-    msg_setpoint.x = (ui->new_setpoint_x->text()).toFloat();
-    msg_setpoint.y = (ui->new_setpoint_y->text()).toFloat();
-    msg_setpoint.z = (ui->new_setpoint_z->text()).toFloat();
-    msg_setpoint.yaw = (ui->new_setpoint_yaw->text()).toFloat() * DEG2RAD;
+
+    // initialize setpoint to previous one
+
+    msg_setpoint.x = (ui->current_setpoint_x->text()).toFloat();
+    msg_setpoint.y = (ui->current_setpoint_y->text()).toFloat();
+    msg_setpoint.z = (ui->current_setpoint_z->text()).toFloat();
+    msg_setpoint.yaw = (ui->current_setpoint_yaw->text()).toFloat();
+
+    if(!ui->new_setpoint_x->text().isEmpty())
+        msg_setpoint.x = (ui->new_setpoint_x->text()).toFloat();
+
+    if(!ui->new_setpoint_y->text().isEmpty())
+        msg_setpoint.y = (ui->new_setpoint_y->text()).toFloat();
+
+    if(!ui->new_setpoint_z->text().isEmpty())
+        msg_setpoint.z = (ui->new_setpoint_z->text()).toFloat();
+
+    if(!ui->new_setpoint_yaw->text().isEmpty())
+        msg_setpoint.yaw = (ui->new_setpoint_yaw->text()).toFloat() * DEG2RAD;
+
+
+    if(!setpointInsideBox(msg_setpoint, m_context))
+    {
+        ROS_INFO("Corrected setpoint, was out of bounds");
+
+        // correct the setpoint given the box size
+        msg_setpoint = correctSetpointBox(msg_setpoint, m_context);
+        ui->error_label->setText("Setpoint is outside safety box");
+    }
+    else
+    {
+        ui->error_label->clear();
+    }
 
     this->controllerSetpointPublisher.publish(msg_setpoint);
+
+    ROS_INFO_STREAM("Setpoint change clicked with:" << msg_setpoint.x << ", "<< msg_setpoint.y << ", "<< msg_setpoint.z << ", "<< msg_setpoint.yaw);
 }
 
 void MainWindow::initialize_custom_setpoint()
@@ -467,12 +517,24 @@ void MainWindow::initialize_custom_setpoint()
 void MainWindow::on_set_setpoint_button_2_clicked()
 {
     Setpoint msg_setpoint;
-    msg_setpoint.x = (ui->new_setpoint_x_2->text()).toFloat();
-    msg_setpoint.y = (ui->new_setpoint_y_2->text()).toFloat();
-    msg_setpoint.z = (ui->new_setpoint_z_2->text()).toFloat();
-    msg_setpoint.yaw = (ui->new_setpoint_yaw_2->text()).toFloat() * DEG2RAD;
+
+    msg_setpoint.x = (ui->current_setpoint_x_2->text()).toFloat();
+    msg_setpoint.y = (ui->current_setpoint_y_2->text()).toFloat();
+    msg_setpoint.z = (ui->current_setpoint_z_2->text()).toFloat();
+    msg_setpoint.yaw = (ui->current_setpoint_yaw_2->text()).toFloat();
+
+    if(!ui->new_setpoint_x_2->text().isEmpty())
+        msg_setpoint.x = (ui->new_setpoint_x_2->text()).toFloat();
+    if(!ui->new_setpoint_y_2->text().isEmpty())
+        msg_setpoint.y = (ui->new_setpoint_y_2->text()).toFloat();
+    if(!ui->new_setpoint_z_2->text().isEmpty())
+        msg_setpoint.z = (ui->new_setpoint_z_2->text()).toFloat();
+    if(!ui->new_setpoint_yaw_2->text().isEmpty())
+        msg_setpoint.yaw = (ui->new_setpoint_yaw_2->text()).toFloat() * DEG2RAD;
 
     this->customSetpointPublisher.publish(msg_setpoint);
+
+    ROS_INFO_STREAM("Setpoint change clicked with:" << msg_setpoint.x << ", "<< msg_setpoint.y << ", "<< msg_setpoint.z << ", "<< msg_setpoint.yaw);
 }
 
 void MainWindow::on_RF_disconnect_button_clicked()
@@ -483,67 +545,123 @@ void MainWindow::on_RF_disconnect_button_clicked()
     ROS_INFO("command disconnect published");
 }
 
-void MainWindow::safeYamlFileTimerCallback(const ros::TimerEvent&)
-{
-    // send msg that says that parameters have changed in YAML file
-    std_msgs::Int32 msg;
-    msg.data = 1;
-    this->safeYAMLloadedPublisher.publish(msg);
-    ROS_INFO("YALMloaded published");
-    ui->load_safe_yaml_button->setEnabled(true);
-}
+
+
 
 void MainWindow::on_load_safe_yaml_button_clicked()
 {
+    // Set the "load safe yaml" button to be disabled
     ui->load_safe_yaml_button->setEnabled(false);
-    ros::NodeHandle nodeHandle("~");
-    m_custom_timer_yaml_file = nodeHandle.createTimer(ros::Duration(1), &MainWindow::safeYamlFileTimerCallback, this, true);
 
-    std::string d_fall_pps_path = ros::package::getPath("d_fall_pps");
-    ROS_INFO_STREAM(d_fall_pps_path);
-
-    // first, reload the name of the custom controller:
-    std::string cmd = "rosparam load " + d_fall_pps_path + "/param/ClientConfig.yaml " + m_ros_namespace + "/PPSClient";
-    system(cmd.c_str());
-    ROS_INFO_STREAM(cmd);
-
-    // then, reload the parameters of the custom controller:
-    cmd = "rosparam load " + d_fall_pps_path + "/param/SafeController.yaml " + m_ros_namespace + "/SafeControllerService";
-    system(cmd.c_str());
-    ROS_INFO_STREAM(cmd);
-}
-
-
-
-void MainWindow::customYamlFileTimerCallback(const ros::TimerEvent&)
-{
-    // send msg that says that parameters have changed in YAML file
+    // Send a message requesting the parameters from the YAML
+    // file to be reloaded for the safe controller
     std_msgs::Int32 msg;
-    msg.data = 1;
-    this->customYAMLloadedPublisher.publish(msg);
-    ROS_INFO("YALMloaded published");
-    ui->load_custom_yaml_button->setEnabled(true);
+    msg.data = LOAD_YAML_SAFE_CONTROLLER_AGENT;
+    this->requestLoadControllerYamlPublisher.publish(msg);
+    ROS_INFO("Request load of safe controller YAML published");
+
+    // Start a timer which will enable the button in its callback
+    // > This is required because the agent node waits some time between
+    //   re-loading the values from the YAML file and then assigning then
+    //   to the local variable of the agent.
+    // > Thus we use this timer to prevent the user from clicking the
+    //   button in the GUI repeatedly.
+    ros::NodeHandle nodeHandle("~");
+    m_timer_yaml_file_for_safe_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::safeYamlFileTimerCallback, this, true);
 }
+
+void MainWindow::safeYamlFileTimerCallback(const ros::TimerEvent&)
+{
+    // Enble the "load safe yaml" button again
+    ui->load_safe_yaml_button->setEnabled(true);
+}
+
+
+
+
 
 void MainWindow::on_load_custom_yaml_button_clicked()
 {
+    // Set the "load custom yaml" button to be disabled
     ui->load_custom_yaml_button->setEnabled(false);
+
+    // Send a message requesting the parameters from the YAML
+    // file to be reloaded for the custom controller
+    std_msgs::Int32 msg;
+    msg.data = LOAD_YAML_CUSTOM_CONTROLLER_AGENT;
+    this->requestLoadControllerYamlPublisher.publish(msg);
+    ROS_INFO("Request load of custom controller YAML published");
+
+    // Start a timer which will enable the button in its callback
+    // > This is required because the agent node waits some time between
+    //   re-loading the values from the YAML file and then assigning then
+    //   to the local variable of the agent.
+    // > Thus we use this timer to prevent the user from clicking the
+    //   button in the GUI repeatedly.
     ros::NodeHandle nodeHandle("~");
-    m_custom_timer_yaml_file = nodeHandle.createTimer(ros::Duration(1), &MainWindow::customYamlFileTimerCallback, this, true);
-
-    std::string d_fall_pps_path = ros::package::getPath("d_fall_pps");
-    ROS_INFO_STREAM(d_fall_pps_path);
-
-    // first, reload the name of the custom controller:
-    std::string cmd = "rosparam load " + d_fall_pps_path + "/param/ClientConfig.yaml " + m_ros_namespace + "/PPSClient";
-    system(cmd.c_str());
-    ROS_INFO_STREAM(cmd);
-
-    // then, reload the parameters of the custom controller:
-    cmd = "rosparam load " + d_fall_pps_path + "/param/CustomController.yaml " + m_ros_namespace + "/CustomControllerService";
-    system(cmd.c_str());
-    ROS_INFO_STREAM(cmd);
+    m_timer_yaml_file_for_custom_controlller = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::customYamlFileTimerCallback, this, true);    
 }
+
+void MainWindow::customYamlFileTimerCallback(const ros::TimerEvent&)
+{
+    // Enble the "load custom yaml" button again
+    ui->load_custom_yaml_button->setEnabled(true);
+}
+
+
+
+
+
+void MainWindow::requestLoadControllerYaml_from_my_GUI_Callback(const std_msgs::Int32& msg)
+{
+    // Extract from the "msg" for which controller the YAML
+    // parameters should be loaded
+    int controller_to_load_yaml = msg.data;
+
+    // Create the "nodeHandle" needed in the switch cases below
+    ros::NodeHandle nodeHandle("~");
+
+    // Switch between loading for the different controllers
+    switch(controller_to_load_yaml)
+    {
+        case LOAD_YAML_SAFE_CONTROLLER_AGENT:
+        case LOAD_YAML_SAFE_CONTROLLER_COORDINATOR:
+            // Set the "load safe yaml" button to be disabled
+            ui->load_safe_yaml_button->setEnabled(false);
+
+            // Start a timer which will enable the button in its callback
+            // > This is required because the agent node waits some time between
+            //   re-loading the values from the YAML file and then assigning then
+            //   to the local variable of the agent.
+            // > Thus we use this timer to prevent the user from clicking the
+            //   button in the GUI repeatedly.
+            m_timer_yaml_file_for_safe_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::safeYamlFileTimerCallback, this, true);
+
+            break;
+
+        case LOAD_YAML_CUSTOM_CONTROLLER_AGENT:
+        case LOAD_YAML_CUSTOM_CONTROLLER_COORDINATOR:
+            // Set the "load custom yaml" button to be disabled
+            ui->load_custom_yaml_button->setEnabled(false);
+
+            // Start a timer which will enable the button in its callback
+            // > This is required because the agent node waits some time between
+            //   re-loading the values from the YAML file and then assigning then
+            //   to the local variable of the agent.
+            // > Thus we use this timer to prevent the user from clicking the
+            //   button in the GUI repeatedly.
+            m_timer_yaml_file_for_custom_controlller = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::customYamlFileTimerCallback, this, true);    
+
+            break;
+
+        default:
+            ROS_INFO("Unknown 'all controllers to load yaml' command, thus nothing will be disabled");
+            break;
+    }
+}
+
+
+
 
 void MainWindow::on_en_custom_controller_clicked()
 {
@@ -558,4 +676,81 @@ void MainWindow::on_en_safe_controller_clicked()
     std_msgs::Int32 msg;
     msg.data = CMD_USE_SAFE_CONTROLLER;
     this->PPSClientCommandPublisher.publish(msg);
+}
+
+void MainWindow::on_customButton_1_clicked()
+{
+    CustomButton msg_custom_button;
+    msg_custom_button.button_index = 1;
+    msg_custom_button.command_code = 0;
+    this->PPSClientStudentCustomButtonPublisher.publish(msg_custom_button);
+
+    ROS_INFO("Custom button 1 pressed");
+}
+
+void MainWindow::on_customButton_2_clicked()
+{
+    CustomButton msg_custom_button;
+    msg_custom_button.button_index = 2;
+    msg_custom_button.command_code = 0;
+    this->PPSClientStudentCustomButtonPublisher.publish(msg_custom_button);
+    ROS_INFO("Custom button 2 pressed");
+}
+
+void MainWindow::on_customButton_3_clicked()
+{
+    CustomButton msg_custom_button;
+    msg_custom_button.button_index = 3;
+    msg_custom_button.command_code = (ui->custom_command_3->text()).toFloat();
+    this->PPSClientStudentCustomButtonPublisher.publish(msg_custom_button);
+    ROS_INFO("Custom button 3 pressed");
+}
+
+Setpoint MainWindow::correctSetpointBox(Setpoint setpoint, CrazyflieContext context)
+{
+    Setpoint corrected_setpoint;
+    corrected_setpoint =  setpoint;
+
+    float x_size = context.localArea.xmax - context.localArea.xmin;
+    float y_size = context.localArea.ymax - context.localArea.ymin;
+    float z_size = context.localArea.zmax - context.localArea.zmin;
+
+    if(setpoint.x > x_size/2)
+        corrected_setpoint.x = x_size/2;
+    if(setpoint.y > y_size/2)
+        corrected_setpoint.y = y_size/2;
+    if(setpoint.z > z_size)
+        corrected_setpoint.z = z_size;
+
+    if(setpoint.x < -x_size/2)
+        corrected_setpoint.x = -x_size/2;
+    if(setpoint.y < -y_size/2)
+        corrected_setpoint.y = -y_size/2;
+    if(setpoint.z < 0)
+        corrected_setpoint.z = 0;
+
+    return corrected_setpoint;
+}
+
+bool MainWindow::setpointInsideBox(Setpoint setpoint, CrazyflieContext context)
+{
+
+    float x_size = context.localArea.xmax - context.localArea.xmin;
+    float y_size = context.localArea.ymax - context.localArea.ymin;
+    float z_size = context.localArea.zmax - context.localArea.zmin;
+    //position check
+	if((setpoint.x < -x_size/2) or (setpoint.x > x_size/2)) {
+		ROS_INFO_STREAM("x outside safety box");
+		return false;
+	}
+	if((setpoint.y < -y_size/2) or (setpoint.y > y_size/2)) {
+		ROS_INFO_STREAM("y outside safety box");
+		return false;
+	}
+	if((setpoint.z < 0) or (setpoint.z > z_size)) {
+		ROS_INFO_STREAM("z outside safety box");
+		return false;
+	}
+
+	return true;
 }

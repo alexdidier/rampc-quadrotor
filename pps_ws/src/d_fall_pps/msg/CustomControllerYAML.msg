@@ -1,0 +1,7 @@
+float64 mass
+float64 control_frequency
+float64[] motorPoly
+bool shouldPerformConvertIntoBodyFrame
+bool shouldPublishCurrent_xyz_yaw
+bool shouldFollowAnotherAgent
+uint32[] follow_in_a_line_agentIDs

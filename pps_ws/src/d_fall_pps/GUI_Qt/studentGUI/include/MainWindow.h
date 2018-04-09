@@ -1,4 +1,4 @@
-//    Copyright (C) 2017, ETH Zurich, D-ITET, Angel Romero
+//    Copyright (C) 2017, ETH Zurich, D-ITET, Paul Beuchat, Angel Romero
 //
 //    This file is part of D-FaLL-System.
 //    
@@ -45,21 +45,23 @@
 #include "d_fall_pps/Setpoint.h"
 
 
-// tipes of controllers being used:
+// Types of controllers being used:
 #define SAFE_CONTROLLER   0
 #define CUSTOM_CONTROLLER 1
 
-// commands for CrazyRadio
+// Commands for CrazyRadio
 #define CMD_RECONNECT  0
 #define CMD_DISCONNECT 1
-
 
 // CrazyRadio states:
 #define CONNECTED        0
 #define CONNECTING       1
 #define DISCONNECTED     2
 
-// Commands for PPSClient
+// The constants that "command" changes in the
+// operation state of this agent. These "commands"
+// are sent from this GUI node to the "PPSClient"
+// node where the command is enacted
 #define CMD_USE_SAFE_CONTROLLER   1
 #define CMD_USE_CUSTOM_CONTROLLER 2
 #define CMD_CRAZYFLY_TAKE_OFF     3
@@ -72,12 +74,17 @@
 #define STATE_FLYING     3
 #define STATE_LAND       4
 
-// battery states
-
+// Battery states
 #define BATTERY_STATE_NORMAL 0
 #define BATTERY_STATE_LOW    1
 
+// For which controller parameters to load
+#define LOAD_YAML_SAFE_CONTROLLER_AGENT           1
+#define LOAD_YAML_CUSTOM_CONTROLLER_AGENT         2
+#define LOAD_YAML_SAFE_CONTROLLER_COORDINATOR     3
+#define LOAD_YAML_CUSTOM_CONTROLLER_COORDINATOR   4
 
+// Universal constants
 #define PI 3.141592653589
 
 #define RAD2DEG 180.0/PI
@@ -117,6 +124,9 @@ private slots:
 
     void on_en_safe_controller_clicked();
 
+    void on_customButton_1_clicked();
+    void on_customButton_2_clicked();
+    void on_customButton_3_clicked();
 private:
     Ui::MainWindow *ui;
 
@@ -127,7 +137,8 @@ private:
 
     std::string m_ros_namespace;
 
-    ros::Timer m_custom_timer_yaml_file;
+    ros::Timer m_timer_yaml_file_for_safe_controller;
+    ros::Timer m_timer_yaml_file_for_custom_controlller;
 
     int m_student_id;
     CrazyflieContext m_context;
@@ -150,10 +161,22 @@ private:
     ros::Publisher customSetpointPublisher;
     ros::Subscriber customSetpointSubscriber;
 
+    ros::Publisher PPSClientStudentCustomButtonPublisher;
+
     ros::Subscriber DBChangedSubscriber;
 
-    ros::Publisher customYAMLloadedPublisher;
-    ros::Publisher safeYAMLloadedPublisher;
+
+
+    // > For publishing a message that requests the
+    //   YAML parameters to be re-loaded from file
+    // > The message contents specify which controller
+    //   the parameters should be re-loaded for
+    ros::Publisher requestLoadControllerYamlPublisher;
+
+    // Subscriber for locking the load the controller YAML
+    // parameters when the Coordintor GUI requests a load
+    ros::Subscriber requestLoadControllerYaml_from_my_GUI_Subscriber;
+
 
     ros::Subscriber controllerUsedSubscriber;
 
@@ -168,6 +191,7 @@ private:
     void DBChangedCallback(const std_msgs::Int32& msg);
     void customYamlFileTimerCallback(const ros::TimerEvent&);
     void safeYamlFileTimerCallback(const ros::TimerEvent&);
+    void requestLoadControllerYaml_from_my_GUI_Callback(const std_msgs::Int32& msg);
     void controllerUsedChangedCallback(const std_msgs::Int32& msg);
     void batteryStateChangedCallback(const std_msgs::Int32& msg);
 
@@ -183,6 +207,9 @@ private:
     void enableGUI();
     void highlightSafeControllerTab();
     void highlightCustomControllerTab();
+
+    bool setpointInsideBox(Setpoint setpoint, CrazyflieContext context);
+    Setpoint correctSetpointBox(Setpoint setpoint, CrazyflieContext context);
 
     const std::vector<float> m_cutoff_voltages {3.1966,        3.2711,        3.3061,        3.3229,        3.3423,        3.3592,        3.3694,        3.385,        3.4006,        3.4044,        3.4228,        3.4228,        3.4301,        3.4445,        3.4531,        3.4677,        3.4705,        3.4712,        3.4756,        3.483,        3.4944,        3.5008,        3.5008,        3.5084,        3.511,        3.5122,        3.5243,        3.5329,        3.5412,        3.5529,        3.5609,        3.5625,        3.5638,        3.5848,        3.6016,        3.6089,        3.6223,        3.628,        3.6299,        3.6436,        3.6649,        3.6878,        3.6983,        3.7171,        3.7231,        3.7464,        3.7664,        3.7938,        3.8008,        3.816,        3.8313,        3.8482,        3.866,        3.8857,        3.8984,        3.9159,        3.9302,        3.9691,        3.997,        4.14    };
 };
