@@ -124,6 +124,9 @@ private slots:
 
     void on_en_safe_controller_clicked();
 
+    void on_customButton_1_clicked();
+    void on_customButton_2_clicked();
+    void on_customButton_3_clicked();
 private:
     Ui::MainWindow *ui;
 

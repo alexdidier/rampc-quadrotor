@@ -42,6 +42,8 @@
 
 #include "d_fall_pps/ViconData.h"
 
+#include "d_fall_pps/CustomButton.h"
+
 MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
@@ -84,8 +86,6 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     ros::NodeHandle my_nodeHandle("~");
     controllerSetpointPublisher = my_nodeHandle.advertise<Setpoint>("ControllerSetpoint", 1);
 
-    
-    
 
     // communication with PPS Client, just to make it possible to communicate through terminal also we use PPSClient's name
     //ros::NodeHandle nh_PPSClient(m_ros_namespace + "/PPSClient");
@@ -93,19 +93,19 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     crazyRadioCommandPublisher = nh_PPSClient.advertise<std_msgs::Int32>("crazyRadioCommand", 1);
     PPSClientCommandPublisher = nh_PPSClient.advertise<std_msgs::Int32>("Command", 1);
 
+    PPSClientStudentCustomButtonPublisher = nh_PPSClient.advertise<CustomButton>("StudentCustomButton", 1);
 
-    // > For publishing a message that requests the 
+
+    // > For publishing a message that requests the
     //   YAML parameters to be re-loaded from file
     // > The message contents specify which controller
     //   the parameters should be re-loaded for
     requestLoadControllerYamlPublisher = nh_PPSClient.advertise<std_msgs::Int32>("requestLoadControllerYaml", 1);
 
-    
 
     // Subscriber for locking the load the controller YAML
     // parameters when the Coordintor GUI requests a load
     requestLoadControllerYaml_from_my_GUI_Subscriber = nodeHandle.subscribe("/my_GUI/requestLoadControllerYaml", 1, &MainWindow::requestLoadControllerYaml_from_my_GUI_Callback, this);
-    
 
     // First get student ID
     if(!nh_PPSClient.getParam("studentID", m_student_id))
@@ -482,6 +482,8 @@ void MainWindow::on_set_setpoint_button_clicked()
         msg_setpoint.yaw = (ui->new_setpoint_yaw->text()).toFloat() * DEG2RAD;
 
     this->controllerSetpointPublisher.publish(msg_setpoint);
+
+    ROS_INFO_STREAM("Setpoint change clicked with:" << msg_setpoint.x << ", "<< msg_setpoint.y << ", "<< msg_setpoint.z << ", "<< msg_setpoint.yaw);
 }
 
 void MainWindow::initialize_custom_setpoint()
@@ -514,6 +516,8 @@ void MainWindow::on_set_setpoint_button_2_clicked()
         msg_setpoint.yaw = (ui->new_setpoint_yaw_2->text()).toFloat() * DEG2RAD;
 
     this->customSetpointPublisher.publish(msg_setpoint);
+
+    ROS_INFO_STREAM("Setpoint change clicked with:" << msg_setpoint.x << ", "<< msg_setpoint.y << ", "<< msg_setpoint.z << ", "<< msg_setpoint.yaw);
 }
 
 void MainWindow::on_RF_disconnect_button_clicked()
@@ -591,7 +595,6 @@ void MainWindow::customYamlFileTimerCallback(const ros::TimerEvent&)
 
 
 
-
 void MainWindow::requestLoadControllerYaml_from_my_GUI_Callback(const std_msgs::Int32& msg)
 {
     // Extract from the "msg" for which controller the YAML
@@ -656,4 +659,32 @@ void MainWindow::on_en_safe_controller_clicked()
     std_msgs::Int32 msg;
     msg.data = CMD_USE_SAFE_CONTROLLER;
     this->PPSClientCommandPublisher.publish(msg);
+}
+
+void MainWindow::on_customButton_1_clicked()
+{
+    CustomButton msg_custom_button;
+    msg_custom_button.button_index = 1;
+    msg_custom_button.command_code = 0;
+    this->PPSClientStudentCustomButtonPublisher.publish(msg_custom_button);
+
+    ROS_INFO("Custom button 1 pressed");
+}
+
+void MainWindow::on_customButton_2_clicked()
+{
+    CustomButton msg_custom_button;
+    msg_custom_button.button_index = 2;
+    msg_custom_button.command_code = 0;
+    this->PPSClientStudentCustomButtonPublisher.publish(msg_custom_button);
+    ROS_INFO("Custom button 2 pressed");
+}
+
+void MainWindow::on_customButton_3_clicked()
+{
+    CustomButton msg_custom_button;
+    msg_custom_button.button_index = 3;
+    msg_custom_button.command_code = (ui->custom_command_3->text()).toFloat();
+    this->PPSClientStudentCustomButtonPublisher.publish(msg_custom_button);
+    ROS_INFO("Custom button 3 pressed");
 }

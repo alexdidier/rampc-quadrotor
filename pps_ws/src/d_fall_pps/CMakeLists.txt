@@ -135,6 +135,7 @@ add_message_files(
   #----------------------------------------------------------------------
   DebugMsg.msg
   CustomControllerYAML.msg
+  CustomButton.msg
 )
 
 ## Generate services in the 'srv' folder
