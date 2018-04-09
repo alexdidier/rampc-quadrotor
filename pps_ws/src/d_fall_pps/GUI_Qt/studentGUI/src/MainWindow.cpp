@@ -711,35 +711,43 @@ Setpoint MainWindow::correctSetpointBox(Setpoint setpoint, CrazyflieContext cont
     Setpoint corrected_setpoint;
     corrected_setpoint =  setpoint;
 
-    if(setpoint.x > context.localArea.xmax)
-        corrected_setpoint.x = context.localArea.xmax;
-    if(setpoint.y > context.localArea.ymax)
-        corrected_setpoint.y = context.localArea.ymax;
-    if(setpoint.z > context.localArea.zmax)
-        corrected_setpoint.z = context.localArea.zmax;
+    float x_size = context.localArea.xmax - context.localArea.xmin;
+    float y_size = context.localArea.xmax - context.localArea.xmin;
+    float z_size = context.localArea.xmax - context.localArea.xmin;
 
-    if(setpoint.x < context.localArea.xmin)
-        corrected_setpoint.x = context.localArea.xmin;
-    if(setpoint.y < context.localArea.ymin)
-        corrected_setpoint.y = context.localArea.ymin;
-    if(setpoint.z < context.localArea.zmin)
-        corrected_setpoint.z = context.localArea.zmin;
+    if(setpoint.x > x_size/2)
+        corrected_setpoint.x = x_size/2;
+    if(setpoint.y > y_size/2)
+        corrected_setpoint.y = y_size/2;
+    if(setpoint.z > z_size)
+        corrected_setpoint.z = z_size;
+
+    if(setpoint.x < -x_size/2)
+        corrected_setpoint.x = -x_size/2;
+    if(setpoint.y < -y_size/2)
+        corrected_setpoint.y = -y_size/2;
+    if(setpoint.z < 0)
+        corrected_setpoint.z = 0;
 
     return corrected_setpoint;
 }
 
 bool MainWindow::setpointInsideBox(Setpoint setpoint, CrazyflieContext context)
 {
+
+    float x_size = context.localArea.xmax - context.localArea.xmin;
+    float y_size = context.localArea.xmax - context.localArea.xmin;
+    float z_size = context.localArea.xmax - context.localArea.xmin;
     //position check
-	if((setpoint.x < context.localArea.xmin) or (setpoint.x > context.localArea.xmax)) {
+	if((setpoint.x < -x_size/2) or (setpoint.x > x_size/2)) {
 		ROS_INFO_STREAM("x outside safety box");
 		return false;
 	}
-	if((setpoint.y < context.localArea.ymin) or (setpoint.y > context.localArea.ymax)) {
+	if((setpoint.y < -y_size/2) or (setpoint.y > y_size/2)) {
 		ROS_INFO_STREAM("y outside safety box");
 		return false;
 	}
-	if((setpoint.z < context.localArea.zmin) or (setpoint.z > context.localArea.zmax)) {
+	if((setpoint.z < 0) or (setpoint.z > z_size)) {
 		ROS_INFO_STREAM("z outside safety box");
 		return false;
 	}
