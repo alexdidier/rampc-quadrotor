@@ -709,10 +709,7 @@ void MainWindow::on_customButton_3_clicked()
 Setpoint MainWindow::correctSetpointBox(Setpoint setpoint, CrazyflieContext context)
 {
     Setpoint corrected_setpoint;
-    corrected_setpoint.x =  setpoint.x;
-    corrected_setpoint.y =  setpoint.y;
-    corrected_setpoint.z =  setpoint.z;
-    corrected_setpoint.yaw =  setpoint.yaw;
+    corrected_setpoint =  setpoint;
 
     if(setpoint.x > context.localArea.xmax)
         corrected_setpoint.x = context.localArea.xmax;
@@ -728,6 +725,7 @@ Setpoint MainWindow::correctSetpointBox(Setpoint setpoint, CrazyflieContext cont
     if(setpoint.z < context.localArea.zmin)
         corrected_setpoint.z = context.localArea.zmin;
 
+    return corrected_setpoint;
 }
 
 bool MainWindow::setpointInsideBox(Setpoint setpoint, CrazyflieContext context)
