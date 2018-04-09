@@ -142,6 +142,9 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     ui->label_battery->setStyleSheet("QLabel { color : red; }");
     m_battery_state = BATTERY_STATE_NORMAL;
 
+    ui->error_label->setStyleSheet("QLabel { color : red; }");
+    ui->error_label->clear();
+
     initialize_custom_setpoint();
 }
 
@@ -481,6 +484,20 @@ void MainWindow::on_set_setpoint_button_clicked()
     if(!ui->new_setpoint_yaw->text().isEmpty())
         msg_setpoint.yaw = (ui->new_setpoint_yaw->text()).toFloat() * DEG2RAD;
 
+
+    if(!setpointInsideBox(msg_setpoint, m_context))
+    {
+        ROS_INFO("Corrected setpoint, was out of bounds");
+
+        // correct the setpoint given the box size
+        msg_setpoint = correctSetpointBox(msg_setpoint, m_context);
+        ui->error_label->setText("Setpoint is outside safety box");
+    }
+    else
+    {
+        ui->error_label->clear();
+    }
+
     this->controllerSetpointPublisher.publish(msg_setpoint);
 
     ROS_INFO_STREAM("Setpoint change clicked with:" << msg_setpoint.x << ", "<< msg_setpoint.y << ", "<< msg_setpoint.z << ", "<< msg_setpoint.yaw);
@@ -687,4 +704,44 @@ void MainWindow::on_customButton_3_clicked()
     msg_custom_button.command_code = (ui->custom_command_3->text()).toFloat();
     this->PPSClientStudentCustomButtonPublisher.publish(msg_custom_button);
     ROS_INFO("Custom button 3 pressed");
+}
+
+Setpoint MainWindow::correctSetpointBox(Setpoint setpoint, CrazyflieContext context)
+{
+    Setpoint corrected_setpoint;
+    corrected_setpoint =  setpoint;
+
+    if(setpoint.x > context.localArea.xmax)
+        corrected_setpoint.x = context.localArea.xmax;
+    if(setpoint.y > context.localArea.ymax)
+        corrected_setpoint.y = context.localArea.ymax;
+    if(setpoint.z > context.localArea.zmax)
+        corrected_setpoint.z = context.localArea.zmax;
+
+    if(setpoint.x < context.localArea.xmin)
+        corrected_setpoint.x = context.localArea.xmin;
+    if(setpoint.y < context.localArea.ymin)
+        corrected_setpoint.y = context.localArea.ymin;
+    if(setpoint.z < context.localArea.zmin)
+        corrected_setpoint.z = context.localArea.zmin;
+
+}
+
+bool MainWindow::setpointInsideBox(Setpoint setpoint, CrazyflieContext context)
+{
+    //position check
+	if((setpoint.x < context.localArea.xmin) or (setpoint.x > context.localArea.xmax)) {
+		ROS_INFO_STREAM("x outside safety box");
+		return false;
+	}
+	if((setpoint.y < context.localArea.ymin) or (setpoint.y > context.localArea.ymax)) {
+		ROS_INFO_STREAM("y outside safety box");
+		return false;
+	}
+	if((setpoint.z < context.localArea.zmin) or (setpoint.z > context.localArea.zmax)) {
+		ROS_INFO_STREAM("z outside safety box");
+		return false;
+	}
+
+	return true;
 }

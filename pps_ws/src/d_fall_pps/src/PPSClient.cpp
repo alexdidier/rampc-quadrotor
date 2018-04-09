@@ -1013,7 +1013,6 @@ int main(int argc, char* argv[])
     // namespace string for the parameter service that is running on the machine of this
     // agent
     namespace_to_own_agent_parameter_service = "ParameterService";
-    
     // Create a node handle to the parameter service running on this agent's machine
     ros::NodeHandle nodeHandle_to_own_agent_parameter_service(namespace_to_own_agent_parameter_service);
 
@@ -1068,7 +1067,6 @@ int main(int argc, char* argv[])
     controller_setpoint.y = default_setpoint[1];
     controller_setpoint.z = default_setpoint[2];
     controller_setpoint.yaw = default_setpoint[3];
-    
 
 	//ros::service::waitForService("/CentralManagerService/CentralManager");
 	centralManager = nodeHandle.serviceClient<CMQuery>("/CentralManagerService/Query", false);
