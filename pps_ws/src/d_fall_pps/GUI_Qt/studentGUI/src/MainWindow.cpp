@@ -712,8 +712,8 @@ Setpoint MainWindow::correctSetpointBox(Setpoint setpoint, CrazyflieContext cont
     corrected_setpoint =  setpoint;
 
     float x_size = context.localArea.xmax - context.localArea.xmin;
-    float y_size = context.localArea.xmax - context.localArea.xmin;
-    float z_size = context.localArea.xmax - context.localArea.xmin;
+    float y_size = context.localArea.ymax - context.localArea.ymin;
+    float z_size = context.localArea.zmax - context.localArea.zmin;
 
     if(setpoint.x > x_size/2)
         corrected_setpoint.x = x_size/2;
@@ -736,8 +736,8 @@ bool MainWindow::setpointInsideBox(Setpoint setpoint, CrazyflieContext context)
 {
 
     float x_size = context.localArea.xmax - context.localArea.xmin;
-    float y_size = context.localArea.xmax - context.localArea.xmin;
-    float z_size = context.localArea.xmax - context.localArea.xmin;
+    float y_size = context.localArea.ymax - context.localArea.ymin;
+    float z_size = context.localArea.zmax - context.localArea.zmin;
     //position check
 	if((setpoint.x < -x_size/2) or (setpoint.x > x_size/2)) {
 		ROS_INFO_STREAM("x outside safety box");
