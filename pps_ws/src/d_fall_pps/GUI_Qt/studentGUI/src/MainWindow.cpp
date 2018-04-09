@@ -461,10 +461,25 @@ void MainWindow::on_motors_OFF_button_clicked()
 void MainWindow::on_set_setpoint_button_clicked()
 {
     Setpoint msg_setpoint;
-    msg_setpoint.x = (ui->new_setpoint_x->text()).toFloat();
-    msg_setpoint.y = (ui->new_setpoint_y->text()).toFloat();
-    msg_setpoint.z = (ui->new_setpoint_z->text()).toFloat();
-    msg_setpoint.yaw = (ui->new_setpoint_yaw->text()).toFloat() * DEG2RAD;
+
+    // initialize setpoint to previous one
+
+    msg_setpoint.x = (ui->current_setpoint_x->text()).toFloat();
+    msg_setpoint.y = (ui->current_setpoint_y->text()).toFloat();
+    msg_setpoint.z = (ui->current_setpoint_z->text()).toFloat();
+    msg_setpoint.yaw = (ui->current_setpoint_yaw->text()).toFloat();
+
+    if(!ui->new_setpoint_x->text().isEmpty())
+        msg_setpoint.x = (ui->new_setpoint_x->text()).toFloat();
+
+    if(!ui->new_setpoint_y->text().isEmpty())
+        msg_setpoint.y = (ui->new_setpoint_y->text()).toFloat();
+
+    if(!ui->new_setpoint_z->text().isEmpty())
+        msg_setpoint.z = (ui->new_setpoint_z->text()).toFloat();
+
+    if(!ui->new_setpoint_yaw->text().isEmpty())
+        msg_setpoint.yaw = (ui->new_setpoint_yaw->text()).toFloat() * DEG2RAD;
 
     this->controllerSetpointPublisher.publish(msg_setpoint);
 }
@@ -483,10 +498,20 @@ void MainWindow::initialize_custom_setpoint()
 void MainWindow::on_set_setpoint_button_2_clicked()
 {
     Setpoint msg_setpoint;
-    msg_setpoint.x = (ui->new_setpoint_x_2->text()).toFloat();
-    msg_setpoint.y = (ui->new_setpoint_y_2->text()).toFloat();
-    msg_setpoint.z = (ui->new_setpoint_z_2->text()).toFloat();
-    msg_setpoint.yaw = (ui->new_setpoint_yaw_2->text()).toFloat() * DEG2RAD;
+
+    msg_setpoint.x = (ui->current_setpoint_x_2->text()).toFloat();
+    msg_setpoint.y = (ui->current_setpoint_y_2->text()).toFloat();
+    msg_setpoint.z = (ui->current_setpoint_z_2->text()).toFloat();
+    msg_setpoint.yaw = (ui->current_setpoint_yaw_2->text()).toFloat();
+
+    if(!ui->new_setpoint_x_2->text().isEmpty())
+        msg_setpoint.x = (ui->new_setpoint_x_2->text()).toFloat();
+    if(!ui->new_setpoint_y_2->text().isEmpty())
+        msg_setpoint.y = (ui->new_setpoint_y_2->text()).toFloat();
+    if(!ui->new_setpoint_z_2->text().isEmpty())
+        msg_setpoint.z = (ui->new_setpoint_z_2->text()).toFloat();
+    if(!ui->new_setpoint_yaw_2->text().isEmpty())
+        msg_setpoint.yaw = (ui->new_setpoint_yaw_2->text()).toFloat() * DEG2RAD;
 
     this->customSetpointPublisher.publish(msg_setpoint);
 }
