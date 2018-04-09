@@ -639,8 +639,6 @@ int main(int argc, char* argv[]) {
     // *********************************************************************************
 
     
-    
-
     setpoint = defaultSetpoint; // only first time setpoint is equal to default setpoint
 
     ros::Subscriber setpointSubscriber = nodeHandle.subscribe("Setpoint", 1, setpointCallback);
