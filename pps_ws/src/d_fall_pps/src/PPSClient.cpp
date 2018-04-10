@@ -593,7 +593,9 @@ void viconCallback(const ViconData& viconData) {
                         // here, detect if euclidean distance between setpoint and current position is higher than a threshold
                         if(distance > distance_threshold)
                         {
-                            ROS_INFO("inside threshold");
+                            // DEBUGGING: display a message that the crazyflie is inside the thresholds
+                            //ROS_INFO("inside threshold");
+                            // Declare a local variable for the "setpoint message" to be published
                             Setpoint setpoint_msg;
                             // here, where we are now, or where we were in the beginning?
                             setpoint_msg.x = local.x + distance_threshold * unit_vector[0];
