@@ -140,9 +140,9 @@ std::vector<float>  setpoint{0.0,0.0,0.4,0.0};     // The setpoints for (x,y,z) 
 
 
 // The LQR Controller parameters for "LQR_RATE_MODE"
-const float gainMatrixRoll[9]    =  { 0.00,-1.72, 0.00, 0.00,-1.34, 0.00, 5.12, 0.00, 0.00};
-const float gainMatrixPitch[9]   =  { 1.72, 0.00, 0.00, 1.34, 0.00, 0.00, 0.00, 5.12, 0.00};
-const float gainMatrixYaw[9]     =  { 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.84};
+const float gainMatrixRollRate[9]    =  { 0.00,-1.72, 0.00, 0.00,-1.34, 0.00, 5.12, 0.00, 0.00};
+const float gainMatrixPitchRate[9]   =  { 1.72, 0.00, 0.00, 1.34, 0.00, 0.00, 0.00, 5.12, 0.00};
+const float gainMatrixYawRate[9]     =  { 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.84};
 const float gainMatrixThrust[9]  =  { 0.00, 0.00, 0.25, 0.00, 0.00, 0.14, 0.00, 0.00, 0.00};
 
 
@@ -446,7 +446,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	// Perform the "-Kx" LQR computation for the thrust adjustment to respoond with
 	for(int i = 0; i < 9; ++i)
 	{
-		thrustAdjustment -= gainMatrixThrust_NineStateVector[i] * stateErrorBody[i];
+		thrustAdjustment -= gainMatrixThrust[i] * stateErrorBody[i];
 	}
 
 	// Put the computed thrust adjustment into the "response" variable,
