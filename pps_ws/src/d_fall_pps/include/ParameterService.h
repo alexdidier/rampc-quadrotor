@@ -1,4 +1,4 @@
-//    Copyright (C) 2017, ETH Zurich, D-ITET, Cyrill Burgener, Marco Mueller, Philipp Friedli
+//    Copyright (C) 2017, ETH Zurich, D-ITET, Paul Beuchat
 //
 //    This file is part of D-FaLL-System.
 //    
@@ -25,7 +25,7 @@
 //
 //
 //    DESCRIPTION:
-//    Header for the service that manages the context of the student groups.
+//    The service that manages the loading of YAML parameters
 //
 //    ----------------------------------------------------------------------------------
 
@@ -42,19 +42,16 @@
 //    ----------------------------------------------------------------------------------
 
 #include <stdlib.h>
+#include <string>
+
 #include <ros/ros.h>
-#include "d_fall_pps/CrazyflieContext.h"
-#include "d_fall_pps/CrazyflieDB.h"
+#include <ros/package.h>
+#include <ros/network.h>
+#include "std_msgs/Int32.h"
+//#include "std_msgs/Float32.h"
+//#include <std_msgs/String.h>
 
-#include "d_fall_pps/CMRead.h"
-#include "d_fall_pps/CMQuery.h"
-#include "d_fall_pps/CMUpdate.h"
-#include "d_fall_pps/CMCommand.h"
-
-#include "CrazyflieIO.h"
-
-
-
+#include "d_fall_pps/Controller.h"
 
 
 //    ----------------------------------------------------------------------------------
@@ -65,30 +62,26 @@
 //    DDDD   EEEEE  F      III  N   N  EEEEE  SSSS
 //    ----------------------------------------------------------------------------------
 
-//for field command in CMCommand
-#define CMD_SAVE    1
-#define CMD_RELOAD  2
-
-//for field mode in CMUpdate
-#define ENTRY_INSERT_OR_UPDATE  1
-#define ENTRY_REMOVE            2
 
 // For which controller parameters to load
-#define LOAD_YAML_SAFE_CONTROLLER_AGENT          1
-#define LOAD_YAML_DEMO_CONTROLLER_AGENT        2
-#define LOAD_YAML_SAFE_CONTROLLER_COORDINATOR    3
-#define LOAD_YAML_DEMO_CONTROLLER_COORDINATOR  4
+#define LOAD_YAML_SAFE_CONTROLLER_AGENT           1
+#define LOAD_YAML_DEMO_CONTROLLER_AGENT         2
+#define LOAD_YAML_SAFE_CONTROLLER_COORDINATOR     3
+#define LOAD_YAML_DEMO_CONTROLLER_COORDINATOR   4
 
-// For which controller parameters and from where to fetch
-#define FETCH_YAML_SAFE_CONTROLLER_FROM_OWN_AGENT        1
-#define FETCH_YAML_DEMO_CONTROLLER_FROM_OWN_AGENT      2
-#define FETCH_YAML_SAFE_CONTROLLER_FROM_COORDINATOR      3
-#define FETCH_YAML_DEMO_CONTROLLER_FROM_COORDINATOR    4
+#define FETCH_YAML_SAFE_CONTROLLER_FROM_OWN_AGENT      1
+#define FETCH_YAML_DEMO_CONTROLLER_FROM_OWN_AGENT    2
+#define FETCH_YAML_SAFE_CONTROLLER_FROM_COORDINATOR    3
+#define FETCH_YAML_DEMO_CONTROLLER_FROM_COORDINATOR  4
+
+#define TYPE_INVALID      -1
+#define TYPE_COORDINATOR   1
+#define TYPE_AGENT         2
 
 
+// Namespacing the package
 using namespace d_fall_pps;
-using namespace std;
-
+//using namespace std;
 
 
 
@@ -101,10 +94,22 @@ using namespace std;
 //      V    A   A  R   R  III  A   A  BBBB   LLLLL  EEEEE  SSSS
 //    ----------------------------------------------------------------------------------
 
-CrazyflieDB crazyflieDB;
+// The type of this node, i.e., agent or a coordinator, specified as a parameter in the
+// "*.launch" file
+int my_type = 0;
+
+// The ID of this agent, i.e., the ID of this computer in the case that this computer is
+// and agent
+int my_agentID = 0;
+
+// Publisher that notifies the relevant nodes when the YAML paramters have been loaded
+// from file into ram/cache, and hence are ready to be fetched
+ros::Publisher controllerYamlReadyForFetchPublihser;
 
 
+std::string m_ros_namespace;
 
+ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_self;
 
 
 //    ----------------------------------------------------------------------------------
@@ -121,10 +126,4 @@ CrazyflieDB crazyflieDB;
 //    P      R   R   OOO     T     OOO     T      Y    P      EEEEE  SSSS
 //    ----------------------------------------------------------------------------------
 
-bool cmRead(CMRead::Request &request, CMRead::Response &response);
-int findEntryByStudID(unsigned int studID);
-bool cmQuery(CMQuery::Request &request, CMQuery::Response &response);
-int findEntryByCF(string name);
-bool cmUpdate(CMUpdate::Request &request, CMUpdate::Response &response);
-bool cmCommand(CMCommand::Request &request, CMCommand::Response &response);
-
+void requestLoadControllerYamlCallback(const std_msgs::Int32& msg);

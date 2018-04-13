@@ -15,8 +15,8 @@
 	<node pkg="d_fall_pps" name="SafeControllerService" output="screen" type="SafeControllerService">
 	</node>
 
-	<!-- CUSTOM CONTROLLER -->
-	<node pkg="d_fall_pps" name="CustomControllerService" output="screen" type="CustomControllerService">
+	<!-- DEMO CONTROLLER -->
+	<node pkg="d_fall_pps" name="DemoControllerService" output="screen" type="DemoControllerService">
 	</node>
 
 	<!-- PARAMETER SERVICE -->
@@ -24,7 +24,7 @@
 		<param name="type" type="str" value="agent" />
 		<param name="agentID" value="$(optenv ROS_NAMESPACE)" />
 		<rosparam command="load" file="$(find d_fall_pps)/param/SafeController.yaml" ns="SafeController" />
-		<rosparam command="load" file="$(find d_fall_pps)/param/DemoController.yaml" ns="CustomController" />
+		<rosparam command="load" file="$(find d_fall_pps)/param/DemoController.yaml" ns="DemoController" />
 	</node>
 
 	<!-- AGENT GUI (aka. the "student GUI") -->

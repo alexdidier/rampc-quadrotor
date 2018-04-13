@@ -33,232 +33,10 @@
 
 
 
-//    ----------------------------------------------------------------------------------
-//    III  N   N   CCCC  L      U   U  DDDD   EEEEE   SSSS
-//     I   NN  N  C      L      U   U  D   D  E      S
-//     I   N N N  C      L      U   U  D   D  EEE     SSS
-//     I   N  NN  C      L      U   U  D   D  E          S
-//    III  N   N   CCCC  LLLLL   UUU   DDDD   EEEEE  SSSS
-//    ----------------------------------------------------------------------------------
+// INCLUDE THE HEADER
+#include "PPSClient.h"
 
-#include "ros/ros.h"
-#include <stdlib.h>
-#include <std_msgs/String.h>
-#include <ros/package.h>
 
-#include "d_fall_pps/Controller.h"
-#include "d_fall_pps/CMQuery.h"
-
-#include "d_fall_pps/ViconData.h"
-#include "d_fall_pps/CrazyflieData.h"
-#include "d_fall_pps/ControlCommand.h"
-#include "d_fall_pps/CrazyflieContext.h"
-#include "d_fall_pps/Setpoint.h"
-#include "std_msgs/Int32.h"
-#include "std_msgs/Float32.h"
-
-#include "d_fall_pps/ControlCommand.h"
-
-// Need for having a ROS "bag" to store data for post-analysis
-//#include <rosbag/bag.h>
-
-
-
-
-//    ----------------------------------------------------------------------------------
-//    DDDD   EEEEE  FFFFF  III  N   N  EEEEE   SSSS
-//    D   D  E      F       I   NN  N  E      S
-//    D   D  EEE    FFF     I   N N N  EEE     SSS
-//    D   D  E      F       I   N  NN  E          S
-//    DDDD   EEEEE  F      III  N   N  EEEEE  SSSS
-//    ----------------------------------------------------------------------------------
-
-// Types PPS firmware
-#define TYPE_PPS_MOTORS 6
-#define TYPE_PPS_RATE   7
-#define TYPE_PPS_ANGLE  8
-
-// Types of controllers being used:
-#define SAFE_CONTROLLER   0
-#define CUSTOM_CONTROLLER 1
-
-// The constants that "command" changes in the
-// operation state of this agent
-#define CMD_USE_SAFE_CONTROLLER   1
-#define CMD_USE_CUSTOM_CONTROLLER 2
-#define CMD_CRAZYFLY_TAKE_OFF     3
-#define CMD_CRAZYFLY_LAND         4
-#define CMD_CRAZYFLY_MOTORS_OFF   5
-
-// Flying states
-#define STATE_MOTORS_OFF 1
-#define STATE_TAKE_OFF   2
-#define STATE_FLYING     3
-#define STATE_LAND       4
-
-// Battery states
-#define BATTERY_STATE_NORMAL 0
-#define BATTERY_STATE_LOW    1
-
-// Commands for CrazyRadio
-#define CMD_RECONNECT  0
-#define CMD_DISCONNECT 1
-
-
-// CrazyRadio states:
-#define CONNECTED        0
-#define CONNECTING       1
-#define DISCONNECTED     2
-
-// For which controller parameters to load
-#define FETCH_YAML_SAFE_CONTROLLER_AGENT          1
-#define FETCH_YAML_CUSTOM_CONTROLLER_AGENT        2
-#define FETCH_YAML_SAFE_CONTROLLER_COORDINATOR    3
-#define FETCH_YAML_CUSTOM_CONTROLLER_COORDINATOR  4
-
-
-// Parameters for take off and landing. Eventually will go in YAML file
-//#define TAKE_OFF_OFFSET  1    //in meters
-//#define LANDING_DISTANCE 0.15    //in meters
-//#define DURATION_TAKE_OFF  3   // seconds
-//#define DURATION_LANDING   3   // seconds
-
-// Universal constants
-#define PI 3.141592653589
-
-// Namespacing the package
-using namespace d_fall_pps;
-
-
-
-
-
-//    ----------------------------------------------------------------------------------
-//    V   V    A    RRRR   III    A    BBBB   L      EEEEE   SSSS
-//    V   V   A A   R   R   I    A A   B   B  L      E      S
-//    V   V  A   A  RRRR    I   A   A  BBBB   L      EEE     SSS
-//     V V   AAAAA  R  R    I   AAAAA  B   B  L      E          S
-//      V    A   A  R   R  III  A   A  BBBB   LLLLL  EEEEE  SSSS
-//    ----------------------------------------------------------------------------------
-
-//studentID, gives namespace and identifier in CentralManagerService
-int studentID;
-
-//the safe controller specified in the ClientConfig.yaml, is considered stable
-ros::ServiceClient safeController;
-//the custom controller specified in the ClientConfig.yaml, is considered potentially unstable
-ros::ServiceClient customController;
-
-//values for safteyCheck
-bool strictSafety;
-float angleMargin;
-
-// battery threshold
-float m_battery_threshold_while_flying;
-float m_battery_threshold_while_motors_off;
-
-
-// battery values
-
-int m_battery_state;
-float m_battery_voltage;
-
-Setpoint controller_setpoint;
-
-// variables for linear trayectory
-Setpoint current_safe_setpoint;
-double distance;
-double unit_vector[3];
-bool was_in_threshold = false;
-double distance_threshold;      //to be loaded from yaml
-
-
-ros::ServiceClient centralManager;
-ros::Publisher controlCommandPublisher;
-
-// communicate with safeControllerService, setpoint, etc...
-ros::Publisher safeControllerServiceSetpointPublisher;
-
-// publisher for flying state
-ros::Publisher flyingStatePublisher;
-
-// publisher for battery state
-ros::Publisher batteryStatePublisher;
-
-// publisher to send commands to itself.
-ros::Publisher commandPublisher;
-
-// communication with crazyRadio node. Connect and disconnect
-ros::Publisher crazyRadioCommandPublisher;
-
-
-// Variable for the namespaces for the paramter services
-// > For the paramter service of this agent
-std::string namespace_to_own_agent_parameter_service;
-// > For the parameter service of the coordinator
-std::string namespace_to_coordinator_parameter_service;
-
-
-// variables for the states:
-int flying_state;
-bool changed_state_flag;
-
-// variable for crazyradio status
-int crazyradio_status;
-
-//describes the area of the crazyflie and other parameters
-CrazyflieContext context;
-
-//wheter to use safe of custom controller
-int instant_controller;         //variable for the instant controller, e.g., we use safe controller for taking off and landing even if custom controller is enabled. This variable WILL change automatically
-
-// controller used:
-int controller_used;
-
-ros::Publisher controllerUsedPublisher;
-
-std::string ros_namespace;
-
-float take_off_distance;
-float landing_distance;
-float duration_take_off;
-float duration_landing;
-
-bool finished_take_off = false;
-bool finished_land = false;
-
-ros::Timer timer_takeoff;
-ros::Timer timer_land;
-
-// A ROS "bag" to store data for post-analysis
-//rosbag::Bag bag;
-
-
-
-
-//    ----------------------------------------------------------------------------------
-//    FFFFF  U   U  N   N   CCCC  TTTTT  III   OOO   N   N
-//    F      U   U  NN  N  C        T     I   O   O  NN  N
-//    FFF    U   U  N N N  C        T     I   O   O  N N N
-//    F      U   U  N  NN  C        T     I   O   O  N  NN
-//    F       UUU   N   N   CCCC    T    III   OOO   N   N
-//
-//    PPPP   RRRR    OOO   TTTTT   OOO   TTTTT  Y   Y  PPPP   EEEEE   SSSS
-//    P   P  R   R  O   O    T    O   O    T     Y Y   P   P  E      S
-//    PPPP   RRRR   O   O    T    O   O    T      Y    PPPP   EEE     SSS
-//    P      R  R   O   O    T    O   O    T      Y    P      E          S
-//    P      R   R   OOO     T     OOO     T      Y    P      EEEEE  SSSS
-//    ----------------------------------------------------------------------------------
-
-
-// > For the LOAD PARAMETERS
-void yamlReadyForFetchCallback(const std_msgs::Int32& msg);
-void fetchYamlParametersForSafeController(ros::NodeHandle& nodeHandle);
-void fetchClientConfigParameters(ros::NodeHandle& nodeHandle);
-
-
-
-void crazyRadioCommandAllAgentsCallback(const std_msgs::Int32& msg);
 
 
 
@@ -276,84 +54,14 @@ void crazyRadioCommandAllAgentsCallback(const std_msgs::Int32& msg);
 //    III M   M P     LLLLL EEEEE M   M EEEEE N   N   T   A   A   T   III  OOO  N   N
 //    ----------------------------------------------------------------------------------
 
-void loadSafeController() {
-	ros::NodeHandle nodeHandle("~");
-
-	std::string safeControllerName;
-	if(!nodeHandle.getParam("safeController", safeControllerName)) {
-		ROS_ERROR("Failed to get safe controller name");
-		return;
-	}
-
-	ros::service::waitForService(safeControllerName);
-	safeController = ros::service::createClient<Controller>(safeControllerName, true);
-    ROS_INFO_STREAM("loaded safe controller: " << safeController.getService());
-}
-
-void loadCustomController()
-{
-	ros::NodeHandle nodeHandle("~");
-
-	std::string customControllerName;
-	if(!nodeHandle.getParam("customController", customControllerName))
-    {
-		ROS_ERROR("Failed to get custom controller name");
-		return;
-	}
-
-    customController = ros::service::createClient<Controller>(customControllerName, true);
-    ROS_INFO_STREAM("loaded custom controller " << customControllerName);
-}
-
-
-void sendMessageUsingController(int controller)
-{
-    // send a message in topic for the studentGUI to read it
-    std_msgs::Int32 controller_used_msg;
-    controller_used_msg.data = controller;
-    controllerUsedPublisher.publish(controller_used_msg);
-}
-
-void setInstantController(int controller) //for right now, temporal use
-{
-    instant_controller = controller;
-    sendMessageUsingController(controller);
-    switch(controller)
-    {
-        case SAFE_CONTROLLER:
-            loadSafeController();
-            break;
-        case CUSTOM_CONTROLLER:
-            loadCustomController();
-            break;
-        default:
-            break;
-    }
-}
-
-int getInstantController()
-{
-    return instant_controller;
-}
-
-void setControllerUsed(int controller) //for permanent configs
-{
-    controller_used = controller;
-
-    if(flying_state == STATE_MOTORS_OFF || flying_state == STATE_FLYING)
-    {
-        setInstantController(controller); //if motors OFF or STATE FLYING, transparent, change is instant
-    }
-}
-
-int getControllerUsed()
-{
-    return controller_used;
-}
 
 
 
-//checks if crazyflie is within allowed area and if custom controller returns no data
+
+
+
+
+//checks if crazyflie is within allowed area and if demo controller returns no data
 bool safetyCheck(CrazyflieData data, ControlCommand controlCommand) {
 	//position check
 	if((data.x < context.localArea.xmin) or (data.x > context.localArea.xmax)) {
@@ -570,14 +278,15 @@ void viconCallback(const ViconData& viconData) {
             {
                 if(!global.occluded)    //if it is not occluded, then proceed to compute the controller output.
                 {
-                    if(getInstantController() == CUSTOM_CONTROLLER && flying_state == STATE_FLYING) // only enter in custom controller if we are not using safe controller AND the flying state is FLYING
+                    // only enter in demo controller if we are not using safe controller AND the flying state is FLYING
+                    if(getInstantController() == DEMO_CONTROLLER && flying_state == STATE_FLYING)
                     {
-                        bool success = customController.call(controllerCall);
+                        bool success = demoController.call(controllerCall);
                         if(!success)
                         {
-                            ROS_ERROR("Failed to call custom controller, switching to safe controller");
-                            ROS_ERROR_STREAM("custom controller status: valid: " << customController.isValid() << ", exists: " << customController.exists());
-                            ROS_ERROR_STREAM("custom controller name: " << customController.getService());
+                            ROS_ERROR("Failed to call demo controller, switching to safe controller");
+                            ROS_ERROR_STREAM("demo controller status: valid: " << demoController.isValid() << ", exists: " << demoController.exists());
+                            ROS_ERROR_STREAM("demo controller name: " << demoController.getService());
                             setInstantController(SAFE_CONTROLLER);
                         }
                         else if(!safetyCheck(global, controllerCall.response.controlOutput))
@@ -634,7 +343,7 @@ void viconCallback(const ViconData& viconData) {
             else
             {
                 ControlCommand zeroOutput = ControlCommand(); //everything set to zero
-                zeroOutput.onboardControllerType = TYPE_PPS_MOTORS; //set to motor_mode
+                zeroOutput.onboardControllerType = CF_COMMAND_TYPE_MOTORS; //set to motor_mode
                 controlCommandPublisher.publish(zeroOutput);
 
                 // Putting data into the ROS "bag" for post-analysis
@@ -700,9 +409,9 @@ void commandCallback(const std_msgs::Int32& commandMsg) {
             setControllerUsed(SAFE_CONTROLLER);
     		break;
 
-    	case CMD_USE_CUSTOM_CONTROLLER:
-            ROS_INFO("USE_CUSTOM_CONTROLLER Command received");
-            setControllerUsed(CUSTOM_CONTROLLER);
+    	case CMD_USE_DEMO_CONTROLLER:
+            ROS_INFO("USE_DEMO_CONTROLLER Command received");
+            setControllerUsed(DEMO_CONTROLLER);
     		break;
 
     	case CMD_CRAZYFLY_TAKE_OFF:
@@ -832,7 +541,7 @@ void fetchYamlParametersForSafeController(ros::NodeHandle& nodeHandle)
 {
     // Here we load the parameters that are specified in the SafeController.yaml file
 
-    // Add the "CustomController" namespace to the "nodeHandle"
+    // Add the "SafeController" namespace to the "nodeHandle"
     ros::NodeHandle nodeHandle_for_safeController(nodeHandle, "SafeController");
 
     if(!nodeHandle_for_safeController.getParam("takeOffDistance", take_off_distance))
@@ -893,6 +602,8 @@ void fetchClientConfigParameters(ros::NodeHandle& nodeHandle)
 
 
 
+
+
 void crazyRadioCommandAllAgentsCallback(const std_msgs::Int32& msg)
 {
     // The "msg" received can be directly published on the "crazyRadioCommandPublisher"
@@ -903,6 +614,12 @@ void crazyRadioCommandAllAgentsCallback(const std_msgs::Int32& msg)
     //   individual agents pass this along to their respective radio node.
     crazyRadioCommandPublisher.publish(msg);
 }
+
+
+
+
+
+
 
 
 
@@ -983,6 +700,102 @@ void CFBatteryCallback(const std_msgs::Float32& msg)
             setBatteryStateTo(BATTERY_STATE_NORMAL);
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void loadSafeController() {
+    ros::NodeHandle nodeHandle("~");
+
+    std::string safeControllerName;
+    if(!nodeHandle.getParam("safeController", safeControllerName)) {
+        ROS_ERROR("Failed to get safe controller name");
+        return;
+    }
+
+    ros::service::waitForService(safeControllerName);
+    safeController = ros::service::createClient<Controller>(safeControllerName, true);
+    ROS_INFO_STREAM("loaded safe controller: " << safeController.getService());
+}
+
+void loadDemoController()
+{
+    ros::NodeHandle nodeHandle("~");
+
+    std::string demoControllerName;
+    if(!nodeHandle.getParam("demoController", demoControllerName))
+    {
+        ROS_ERROR("Failed to get demo controller name");
+        return;
+    }
+
+    demoController = ros::service::createClient<Controller>(demoControllerName, true);
+    ROS_INFO_STREAM("Loaded demo controller " << demoController.getService());
+}
+
+
+void sendMessageUsingController(int controller)
+{
+    // send a message in topic for the studentGUI to read it
+    std_msgs::Int32 controller_used_msg;
+    controller_used_msg.data = controller;
+    controllerUsedPublisher.publish(controller_used_msg);
+}
+
+void setInstantController(int controller) //for right now, temporal use
+{
+    instant_controller = controller;
+    sendMessageUsingController(controller);
+    switch(controller)
+    {
+        case SAFE_CONTROLLER:
+            loadSafeController();
+            break;
+        case DEMO_CONTROLLER:
+            loadDemoController();
+            break;
+        default:
+            break;
+    }
+}
+
+int getInstantController()
+{
+    return instant_controller;
+}
+
+void setControllerUsed(int controller) //for permanent configs
+{
+    controller_used = controller;
+
+    if(flying_state == STATE_MOTORS_OFF || flying_state == STATE_FLYING)
+    {
+        setInstantController(controller); //if motors OFF or STATE FLYING, transparent, change is instant
+    }
+}
+
+int getControllerUsed()
+{
+    return controller_used;
+}
+
+
+
+
+
+
+
 
 
 //    ----------------------------------------------------------------------------------

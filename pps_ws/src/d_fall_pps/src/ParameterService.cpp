@@ -33,100 +33,10 @@
 
 
 
-//    ----------------------------------------------------------------------------------
-//    III  N   N   CCCC  L      U   U  DDDD   EEEEE   SSSS
-//     I   NN  N  C      L      U   U  D   D  E      S
-//     I   N N N  C      L      U   U  D   D  EEE     SSS
-//     I   N  NN  C      L      U   U  D   D  E          S
-//    III  N   N   CCCC  LLLLL   UUU   DDDD   EEEEE  SSSS
-//    ----------------------------------------------------------------------------------
-
-#include <stdlib.h>
-#include <string>
-
-#include <ros/ros.h>
-#include <ros/package.h>
-#include <ros/network.h>
-#include "std_msgs/Int32.h"
-//#include "std_msgs/Float32.h"
-//#include <std_msgs/String.h>
-
-#include "d_fall_pps/Controller.h"
+// INCLUDE THE HEADER
+#include "ParameterService.h"
 
 
-//    ----------------------------------------------------------------------------------
-//    DDDD   EEEEE  FFFFF  III  N   N  EEEEE   SSSS
-//    D   D  E      F       I   NN  N  E      S
-//    D   D  EEE    FFF     I   N N N  EEE     SSS
-//    D   D  E      F       I   N  NN  E          S
-//    DDDD   EEEEE  F      III  N   N  EEEEE  SSSS
-//    ----------------------------------------------------------------------------------
-
-
-// For which controller parameters to load
-#define LOAD_YAML_SAFE_CONTROLLER_AGENT           1
-#define LOAD_YAML_CUSTOM_CONTROLLER_AGENT         2
-#define LOAD_YAML_SAFE_CONTROLLER_COORDINATOR     3
-#define LOAD_YAML_CUSTOM_CONTROLLER_COORDINATOR   4
-
-#define FETCH_YAML_SAFE_CONTROLLER_FROM_OWN_AGENT      1
-#define FETCH_YAML_CUSTOM_CONTROLLER_FROM_OWN_AGENT    2
-#define FETCH_YAML_SAFE_CONTROLLER_FROM_COORDINATOR    3
-#define FETCH_YAML_CUSTOM_CONTROLLER_FROM_COORDINATOR  4
-
-#define TYPE_INVALID      -1
-#define TYPE_COORDINATOR   1
-#define TYPE_AGENT         2
-
-
-// Namespacing the package
-using namespace d_fall_pps;
-//using namespace std;
-
-
-
-
-//    ----------------------------------------------------------------------------------
-//    V   V    A    RRRR   III    A    BBBB   L      EEEEE   SSSS
-//    V   V   A A   R   R   I    A A   B   B  L      E      S
-//    V   V  A   A  RRRR    I   A   A  BBBB   L      EEE     SSS
-//     V V   AAAAA  R  R    I   AAAAA  B   B  L      E          S
-//      V    A   A  R   R  III  A   A  BBBB   LLLLL  EEEEE  SSSS
-//    ----------------------------------------------------------------------------------
-
-// The type of this node, i.e., agent or a coordinator, specified as a parameter in the
-// "*.launch" file
-int my_type = 0;
-
-// The ID of this agent, i.e., the ID of this computer in the case that this computer is
-// and agent
-int my_agentID = 0;
-
-// Publisher that notifies the relevant nodes when the YAML paramters have been loaded
-// from file into ram/cache, and hence are ready to be fetched
-ros::Publisher controllerYamlReadyForFetchPublihser;
-
-
-std::string m_ros_namespace;
-
-ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_self;
-
-
-//    ----------------------------------------------------------------------------------
-//    FFFFF  U   U  N   N   CCCC  TTTTT  III   OOO   N   N
-//    F      U   U  NN  N  C        T     I   O   O  NN  N
-//    FFF    U   U  N N N  C        T     I   O   O  N N N
-//    F      U   U  N  NN  C        T     I   O   O  N  NN
-//    F       UUU   N   N   CCCC    T    III   OOO   N   N
-//
-//    PPPP   RRRR    OOO   TTTTT   OOO   TTTTT  Y   Y  PPPP   EEEEE   SSSS
-//    P   P  R   R  O   O    T    O   O    T     Y Y   P   P  E      S
-//    PPPP   RRRR   O   O    T    O   O    T      Y    PPPP   EEE     SSS
-//    P      R  R   O   O    T    O   O    T      Y    P      E          S
-//    P      R   R   OOO     T     OOO     T      Y    P      EEEEE  SSSS
-//    ----------------------------------------------------------------------------------
-
-void requestLoadControllerYamlCallback(const std_msgs::Int32& msg);
 
 
 
@@ -195,15 +105,15 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
         // Re-load the parameters of the safe controller:
         cmd = "rosparam load " + d_fall_pps_path + "/param/SafeController.yaml " + m_ros_namespace + "/SafeController";
     }
-    else if ( (controller_to_load_yaml==LOAD_YAML_CUSTOM_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR) )
+    else if ( (controller_to_load_yaml==LOAD_YAML_DEMO_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR) )
     {
-        // Re-load the parameters of the custom controller:
-        cmd = "rosparam load " + d_fall_pps_path + "/param/CustomController.yaml " + m_ros_namespace + "/CustomController";
+        // Re-load the parameters of the demo controller:
+        cmd = "rosparam load " + d_fall_pps_path + "/param/DemoController.yaml " + m_ros_namespace + "/DemoController";
     }
-    else if ( (controller_to_load_yaml==LOAD_YAML_CUSTOM_CONTROLLER_AGENT) && (my_type==TYPE_AGENT) )
+    else if ( (controller_to_load_yaml==LOAD_YAML_DEMO_CONTROLLER_AGENT) && (my_type==TYPE_AGENT) )
     {
-        // Re-load the parameters of the custom controller:
-        cmd = "rosparam load " + d_fall_pps_path + "/param/CustomController.yaml " + m_ros_namespace + "/CustomController";
+        // Re-load the parameters of the demo controller:
+        cmd = "rosparam load " + d_fall_pps_path + "/param/DemoController.yaml " + m_ros_namespace + "/DemoController";
     }
     else
     {
@@ -242,14 +152,14 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
             case (LOAD_YAML_SAFE_CONTROLLER_COORDINATOR):
                 fetch_msg.data = FETCH_YAML_SAFE_CONTROLLER_FROM_COORDINATOR;
                 break;
-            case (LOAD_YAML_CUSTOM_CONTROLLER_COORDINATOR):
-                fetch_msg.data = FETCH_YAML_CUSTOM_CONTROLLER_FROM_COORDINATOR;
+            case (LOAD_YAML_DEMO_CONTROLLER_COORDINATOR):
+                fetch_msg.data = FETCH_YAML_DEMO_CONTROLLER_FROM_COORDINATOR;
                 break;
             case (LOAD_YAML_SAFE_CONTROLLER_AGENT):
                 fetch_msg.data = FETCH_YAML_SAFE_CONTROLLER_FROM_OWN_AGENT;
                 break;
-            case (LOAD_YAML_CUSTOM_CONTROLLER_AGENT):
-                fetch_msg.data = FETCH_YAML_CUSTOM_CONTROLLER_FROM_OWN_AGENT;
+            case (LOAD_YAML_DEMO_CONTROLLER_AGENT):
+                fetch_msg.data = FETCH_YAML_DEMO_CONTROLLER_FROM_OWN_AGENT;
                 break;
             default:
                 // Let the user know that the command was not recognised
