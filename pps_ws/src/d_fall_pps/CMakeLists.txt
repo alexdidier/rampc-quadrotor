@@ -134,7 +134,6 @@ add_message_files(
   CrazyflieDB.msg
   #----------------------------------------------------------------------
   DebugMsg.msg
-  CustomControllerYAML.msg
   CustomButton.msg
 )
 
@@ -238,12 +237,9 @@ include_directories(
 add_executable(ViconDataPublisher src/ViconDataPublisher.cpp)
 add_executable(PPSClient src/PPSClient.cpp)
 add_executable(SafeControllerService src/SafeControllerService.cpp)
-add_executable(CustomControllerService src/CustomControllerService.cpp)
+add_executable(DemoControllerService src/DemoControllerService.cpp)
 add_executable(CentralManagerService src/CentralManagerService.cpp src/CrazyflieIO.cpp)
 add_executable(ParameterService src/ParameterService.cpp)
-add_executable(CircleControllerService src/CircleControllerService.cpp)
-add_executable(FollowCrazyflieService src/FollowCrazyflieService.cpp)
-add_executable(FollowN_1Service src/FollowN_1Service.cpp)
 
 
 
@@ -287,12 +283,9 @@ qt5_use_modules(student_GUI Widgets)
 add_dependencies(ViconDataPublisher d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(PPSClient d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(SafeControllerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(CustomControllerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(DemoControllerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(CentralManagerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(ParameterService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(CircleControllerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(FollowCrazyflieService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(FollowN_1Service d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 # GUI-- dependencies
 add_dependencies(my_GUI d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
@@ -324,17 +317,11 @@ target_link_libraries(PPSClient ${catkin_LIBRARIES})
 
 target_link_libraries(SafeControllerService ${catkin_LIBRARIES})
 
-target_link_libraries(CustomControllerService ${catkin_LIBRARIES})
+target_link_libraries(DemoControllerService ${catkin_LIBRARIES})
 
 target_link_libraries(CentralManagerService ${catkin_LIBRARIES})
 
 target_link_libraries(ParameterService ${catkin_LIBRARIES})
-
-target_link_libraries(CircleControllerService ${catkin_LIBRARIES})
-
-target_link_libraries(FollowCrazyflieService ${catkin_LIBRARIES})
-
-target_link_libraries(FollowN_1Service ${catkin_LIBRARIES})
 
 # GUI -- link libraries
 target_link_libraries(my_GUI Qt5::Widgets) # GUI -- let my_GUI have acesss to Qt stuff

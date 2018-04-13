@@ -15,7 +15,7 @@
 		<param name="type" type="str" value="coordinator" />
 		<param name="agentID" value="0" />
 		<rosparam command="load" file="$(find d_fall_pps)/param/SafeController.yaml" ns="SafeController" />
-		<rosparam command="load" file="$(find d_fall_pps)/param/CustomController.yaml" ns="CustomController" />
+		<rosparam command="load" file="$(find d_fall_pps)/param/DemoController.yaml" ns="CustomController" />
 	</node>
 
 </launch>

@@ -24,7 +24,7 @@
 		<param name="type" type="str" value="agent" />
 		<param name="agentID" value="$(optenv ROS_NAMESPACE)" />
 		<rosparam command="load" file="$(find d_fall_pps)/param/SafeController.yaml" ns="SafeController" />
-		<rosparam command="load" file="$(find d_fall_pps)/param/CustomController.yaml" ns="CustomController" />
+		<rosparam command="load" file="$(find d_fall_pps)/param/DemoController.yaml" ns="CustomController" />
 	</node>
 
 	<!-- AGENT GUI (aka. the "student GUI") -->
