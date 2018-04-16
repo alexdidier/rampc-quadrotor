@@ -194,16 +194,10 @@ int lqr_controller_mode = LQR_MODE_RATE;
 
 
 // The LQR Controller parameters for "LQR_MODE_MOTOR"
-std::vector<float> gainMatrixMotor1;
-std::vector<float> gainMatrixMotor2;
-std::vector<float> gainMatrixMotor3;
-std::vector<float> gainMatrixMotor4;
-
-
-  
-    
-    
-   
+std::vector<float> gainMatrixMotor1 (12,0.0);
+std::vector<float> gainMatrixMotor2 (12,0.0);
+std::vector<float> gainMatrixMotor3 (12,0.0);
+std::vector<float> gainMatrixMotor4 (12,0.0);
 
 // The LQR Controller parameters for "LQR_MODE_ACTUATOR"
 std::vector<float> gainMatrixThrust_TwelveStateVector  =  { 0.00,-1.72, 0.00, 0.00,-1.34, 0.00, 5.12, 0.00, 0.00, 0.00, 0.00, 0.00};
@@ -211,20 +205,16 @@ std::vector<float> gainMatrixRollTorque                =  { 1.72, 0.00, 0.00, 1.
 std::vector<float> gainMatrixPitchTorque               =  { 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.84, 0.00, 0.00, 0.00};
 std::vector<float> gainMatrixYawTorque                 =  { 0.00, 0.00, 0.25, 0.00, 0.00, 0.14, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00};
 
-
 // The LQR Controller parameters for "LQR_MODE_RATE"
 std::vector<float> gainMatrixThrust_NineStateVector  =  { 0.00, 0.00, 0.25, 0.00, 0.00, 0.14, 0.00, 0.00, 0.00};
 std::vector<float> gainMatrixRollRate                =  { 0.00,-1.72, 0.00, 0.00,-1.34, 0.00, 5.12, 0.00, 0.00};
 std::vector<float> gainMatrixPitchRate               =  { 1.72, 0.00, 0.00, 1.34, 0.00, 0.00, 0.00, 5.12, 0.00};
 std::vector<float> gainMatrixYawRate                 =  { 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.84};
 
-
-
 // The LQR Controller parameters for "LQR_MODE_ANGLE"
 std::vector<float> gainMatrixThrust_SixStateVector   =  { 0.00, 0.00, 0.31, 0.00, 0.00, 0.14};
 std::vector<float> gainMatrixRollAngle               =  { 0.00,-0.20, 0.00, 0.00,-0.20, 0.00};
 std::vector<float> gainMatrixPitchAngle              =  { 0.20, 0.00, 0.00, 0.20, 0.00, 0.00};
-
 
 
 // The 16-bit command limits
@@ -255,17 +245,31 @@ float previous_xzy_rpy_measurement[6];
 //   difference state estimator
 float stateInterialEstimate_viaFiniteDifference[12];
 
+// > The full 12 state estimate maintained by the point mass
+//   kalman filter state estimator
+float stateInterialEstimate_viaPointMassKalmanFilter[12];
 
-// ROS Publisher for debugging variables
-ros::Publisher debugPublisher;
+// THE POINT MASS KALMAN FILTER (PMKF) GAINS AND ERROR EVOLUATION
+// > For the (x,y,z) position
+std::vector<float> PMKF_Ahat_row1_for_positions (2,0.0)
+std::vector<float> PMKF_Ahat_row2_for_positions (2,0.0)
+std::vector<float> PMKF_Kinf_for_positions      (2,0.0)
+// > For the (roll,pitch,yaw) angles
+std::vector<float> PMKF_Ahat_row1_for_angles    (2,0.0)
+std::vector<float> PMKF_Ahat_row2_for_angles    (2,0.0)
+std::vector<float> PMKF_Kinf_for_angles         (2,0.0)
 
 
-// Variable for the namespaces for the paramter services
+
+// VARIABLES FOR THE NAMESPACES FOR THE PARAMETER SERVICES
 // > For the paramter service of this agent
 std::string namespace_to_own_agent_parameter_service;
 // > For the parameter service of the coordinator
 std::string namespace_to_coordinator_parameter_service;
 
+
+// ROS PUBLISHER FOR SENDING OUT THE DEBUG MESSAGES
+ros::Publisher debugPublisher;
 
 
 // VARIABLES RELATING TO PERFORMING THE CONVERSION INTO BODY FRAME
@@ -370,6 +374,7 @@ void calculateControlOutput_viaLQRforAngles(   float stateErrorBody[12], Control
 // ESTIMATOR COMPUTATIONS
 void performEstimatorUpdate_forStateInterial(Controller::Request &request);
 void performEstimatorUpdate_forStateInterial_viaFiniteDifference();
+void performEstimatorUpdate_forStateInterial_viaPointMassKalmanFilter();
 
 // TRANSFORMATION FROM INTERIAL ESTIMATE TO BODY FRAME ERROR
 void convert_stateInertial_to_bodyFrameError(float stateInertial[12], float setpoint[4], float (&bodyFrameError)[12]);

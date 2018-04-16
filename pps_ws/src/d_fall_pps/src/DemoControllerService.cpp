@@ -230,9 +230,13 @@ void performEstimatorUpdate_forStateInterial(Controller::Request &request)
 	current_xzy_rpy_measurement[4] = request.ownCrazyflie.pitch;
 	current_xzy_rpy_measurement[5] = request.ownCrazyflie.yaw;
 
+
 	// RUN THE FINITE DIFFERENCE ESTIMATOR
 	performEstimatorUpdate_forStateInterial_viaFiniteDifference();
 
+
+	// RUN THE POINT MASS KALMAN FILTER ESTIMATOR
+	performEstimatorUpdate_forStateInterial_viaPointMassKalmanFilter();
 
 
 	// FILLE IN THE STATE INERTIAL ESTIMATE TO BE USED FOR CONTROL
@@ -248,6 +252,17 @@ void performEstimatorUpdate_forStateInterial(Controller::Request &request)
 			}
 			break;
 		}
+		// Estimator based on Point Mass Kalman Filter
+		case ESTIMATOR_METHOD_POINT_MASS_PER_DIMENSION:
+		{
+			// Transfer the estimate
+			for(int i = 0; i < 12; ++i)
+			{
+				current_stateInertialEstimate[i]  = stateInterialEstimate_viaPointMassKalmanFilter[i];
+			}
+			break;
+		}
+		// Handle the exception
 		default:
 		{
 			// Display that the "estimator_method" was not recognised
@@ -275,6 +290,7 @@ void performEstimatorUpdate_forStateInterial(Controller::Request &request)
 }
 
 
+
 void performEstimatorUpdate_forStateInterial_viaFiniteDifference()
 {
 	// PUT IN THE CURRENT MEASUREMENT DIRECTLY
@@ -297,6 +313,41 @@ void performEstimatorUpdate_forStateInterial_viaFiniteDifference()
 	stateInterialEstimate_viaFiniteDifference[10] = (current_xzy_rpy_measurement[4] - previous_xzy_rpy_measurement[4]) * estimator_frequency;
 	stateInterialEstimate_viaFiniteDifference[11] = (current_xzy_rpy_measurement[5] - previous_xzy_rpy_measurement[5]) * estimator_frequency;
 }
+
+
+
+void performEstimatorUpdate_forStateInterial_viaPointMassKalmanFilter()
+{
+	// PERFORM THE KALMAN FILTER UPDATE STEP
+	// > First take a copy of the estimator state
+	float temp_PMKFstate[12];
+	for(int i = 0; i < 12; ++i)
+	{
+		temp_PMKFstate[i]  = stateInterialEstimate_viaPointMassKalmanFilter[i];
+	}
+	// > Now perform update for:
+	// > x position and velocity:
+	stateInterialEstimate_viaPointMassKalmanFilter[0] = PMKF_Ahat_row1_for_positions[0]*temp_PMKFstate[0] + PMKF_Ahat_row1_for_positions[1]*temp_PMKFstate[3] + PMKF_Kinf_for_positions[0]*current_xzy_rpy_measurement[0];
+	stateInterialEstimate_viaPointMassKalmanFilter[3] = PMKF_Ahat_row2_for_positions[0]*temp_PMKFstate[0] + PMKF_Ahat_row2_for_positions[1]*temp_PMKFstate[3] + PMKF_Kinf_for_positions[1]*current_xzy_rpy_measurement[0];
+	// > y position and velocity:
+	stateInterialEstimate_viaPointMassKalmanFilter[1] = PMKF_Ahat_row1_for_positions[0]*temp_PMKFstate[1] + PMKF_Ahat_row1_for_positions[1]*temp_PMKFstate[4] + PMKF_Kinf_for_positions[0]*current_xzy_rpy_measurement[1];
+	stateInterialEstimate_viaPointMassKalmanFilter[4] = PMKF_Ahat_row2_for_positions[0]*temp_PMKFstate[1] + PMKF_Ahat_row2_for_positions[1]*temp_PMKFstate[4] + PMKF_Kinf_for_positions[1]*current_xzy_rpy_measurement[1];
+	// > z position and velocity:
+	stateInterialEstimate_viaPointMassKalmanFilter[2] = PMKF_Ahat_row1_for_positions[0]*temp_PMKFstate[2] + PMKF_Ahat_row1_for_positions[1]*temp_PMKFstate[5] + PMKF_Kinf_for_positions[0]*current_xzy_rpy_measurement[2];
+	stateInterialEstimate_viaPointMassKalmanFilter[5] = PMKF_Ahat_row2_for_positions[0]*temp_PMKFstate[2] + PMKF_Ahat_row2_for_positions[1]*temp_PMKFstate[5] + PMKF_Kinf_for_positions[1]*current_xzy_rpy_measurement[2];
+
+	// > roll  position and velocity:
+	stateInterialEstimate_viaPointMassKalmanFilter[6]  = PMKF_Ahat_row1_for_angles[0]*temp_PMKFstate[6] + PMKF_Ahat_row1_for_angles[1]*temp_PMKFstate[9]  + PMKF_Kinf_for_angles[0]*current_xzy_rpy_measurement[3];
+	stateInterialEstimate_viaPointMassKalmanFilter[9]  = PMKF_Ahat_row2_for_angles[0]*temp_PMKFstate[6] + PMKF_Ahat_row2_for_angles[1]*temp_PMKFstate[9]  + PMKF_Kinf_for_angles[1]*current_xzy_rpy_measurement[3];
+	// > pitch position and velocity:
+	stateInterialEstimate_viaPointMassKalmanFilter[7]  = PMKF_Ahat_row1_for_angles[0]*temp_PMKFstate[7] + PMKF_Ahat_row1_for_angles[1]*temp_PMKFstate[10] + PMKF_Kinf_for_angles[0]*current_xzy_rpy_measurement[4];
+	stateInterialEstimate_viaPointMassKalmanFilter[10] = PMKF_Ahat_row2_for_angles[0]*temp_PMKFstate[7] + PMKF_Ahat_row2_for_angles[1]*temp_PMKFstate[10] + PMKF_Kinf_for_angles[1]*current_xzy_rpy_measurement[4];
+	// > yaw   position and velocity:
+	stateInterialEstimate_viaPointMassKalmanFilter[8]  = PMKF_Ahat_row1_for_angles[0]*temp_PMKFstate[8] + PMKF_Ahat_row1_for_angles[1]*temp_PMKFstate[11] + PMKF_Kinf_for_angles[0]*current_xzy_rpy_measurement[5];
+	stateInterialEstimate_viaPointMassKalmanFilter[11] = PMKF_Ahat_row2_for_angles[0]*temp_PMKFstate[8] + PMKF_Ahat_row2_for_angles[1]*temp_PMKFstate[11] + PMKF_Kinf_for_angles[1]*current_xzy_rpy_measurement[5];
+}
+
+
 
 
 
@@ -1084,6 +1135,18 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 	// 16-BIT COMMAND LIMITS
 	cmd_sixteenbit_min = getParameterFloat(nodeHandle_for_demoController, "command_sixteenbit_min");
 	cmd_sixteenbit_max = getParameterFloat(nodeHandle_for_demoController, "command_sixteenbit_max");
+
+
+	// THE POINT MASS KALMAN FILTER (PMKF) GAINS AND ERROR EVOLUATION
+	// > For the (x,y,z) position
+	getParameterFloatVector(nodeHandle_for_demoController, "PMKF_Ahat_row1_for_positions",  PMKF_Ahat_row1_for_positions,  2);
+	getParameterFloatVector(nodeHandle_for_demoController, "PMKF_Ahat_row2_for_positions",  PMKF_Ahat_row2_for_positions,  2);
+	getParameterFloatVector(nodeHandle_for_demoController, "PMKF_Kinf_for_positions"     ,  PMKF_Kinf_for_positions     ,  2);
+	// > For the (roll,pitch,yaw) angles
+	getParameterFloatVector(nodeHandle_for_demoController, "PMKF_Ahat_row1_for_angles",  PMKF_Ahat_row1_for_angles,  2);
+	getParameterFloatVector(nodeHandle_for_demoController, "PMKF_Ahat_row2_for_angles",  PMKF_Ahat_row2_for_angles,  2);
+	getParameterFloatVector(nodeHandle_for_demoController, "PMKF_Kinf_for_angles"     ,  PMKF_Kinf_for_angles     ,  2);
+
 
 	// DEBUGGING: Print out one of the parameters that was loaded
 	ROS_INFO_STREAM("DEBUGGING: the fetched SafeController/mass = " << cf_mass);
