@@ -91,27 +91,63 @@
 //               command directly to each of the motors, and additionally request the
 //               body frame roll, pitch, and yaw angles from the PID attitude
 //               controllers implemented in the Crazyflie 2.0 firmware.
-#define MOTOR_MODE 6
-#define RATE_MODE  7
-#define ANGLE_MODE 8
+#define CF_COMMAND_TYPE_MOTOR   6
+#define CF_COMMAND_TYPE_RATE    7
+#define CF_COMMAND_TYPE_ANGLE   8
+
 
 // These constants define the controller used for computing the response in the
 // "calculateControlOutput" function
 // The following is a short description about each mode:
-// LQR_RATE_MODE      LQR controller based on the state vector:
+//
+// LQR_MODE_MOTOR     LQR controller based on the state vector:
+//                    [position,velocity,angles,angular velocity]
+//                    commands per motor thrusts
+//
+// LQR_MODE_ACTUATOR  LQR controller based on the state vector:
+//                    [position,velocity,angles,angular velocity]
+//                    commands actuators of total force and bodz torques
+//
+// LQR_MODE_RATE      LQR controller based on the state vector:
 //                    [position,velocity,angles]
 //
-// LQR_ANGLE_MODE     LQR controller based on the state vector:
+// LQR_MODE_ANGLE     LQR controller based on the state vector:
 //                    [position,velocity]
 //
-#define LQR_RATE_MODE   1   // (DEFAULT)
-#define LQR_ANGLE_MODE  2
+#define LQR_MODE_MOTOR      1
+#define LQR_MODE_ACTUATOR   2
+#define LQR_MODE_RATE       3   // (DEFAULT)
+#define LQR_MODE_ANGLE      4
+
+
+// These constants define the method used for estimating the Inertial
+// frame state.
+// All methods are run at all times, this flag indicates which estimate
+// is passed onto the controller.
+// The following is a short description about each mode:
+//
+// ESTIMATOR_METHOD_FINITE_DIFFERENCE
+//       Takes the poisition and angles directly as measured,
+//       and estimates the velocities as a finite different to the
+//       previous measurement
+//
+// ESTIMATOR_METHOD_POINT_MASS_PER_DIMENSION
+//       Uses a 2nd order random walk estimator independently for
+//       each of (x,y,z,roll,pitch,yaw)
+//
+// ESTIMATOR_METHOD_QUADROTOR_MODEL_BASED
+//       Uses the model of the quad-rotor and the previous inputs
+//
+#define ESTIMATOR_METHOD_FINITE_DIFFERENCE          1
+#define ESTIMATOR_METHOD_POINT_MASS_PER_DIMENSION   2   // (DEFAULT)
+#define ESTIMATOR_METHOD_QUADROTOR_MODEL_BASED      3
+
 
 // Constants for feching the yaml paramters
-#define FETCH_YAML_SAFE_CONTROLLER_AGENT          1
-#define FETCH_YAML_DEMO_CONTROLLER_AGENT        2
-#define FETCH_YAML_SAFE_CONTROLLER_COORDINATOR    3
-#define FETCH_YAML_DEMO_CONTROLLER_COORDINATOR  4
+//#define FETCH_YAML_SAFE_CONTROLLER_AGENT         1
+#define FETCH_YAML_DEMO_CONTROLLER_AGENT         2
+//#define FETCH_YAML_SAFE_CONTROLLER_COORDINATOR   3
+#define FETCH_YAML_DEMO_CONTROLLER_COORDINATOR   4
 
 // Namespacing the package
 using namespace d_fall_pps;
@@ -128,31 +164,97 @@ using namespace d_fall_pps;
 //      V    A   A  R   R  III  A   A  BBBB   LLLLL  EEEEE  SSSS
 //    ----------------------------------------------------------------------------------
 
-// Variables for controller
-float cf_mass;                       // Crazyflie mass in grams
-std::vector<float> motorPoly(3);     // Coefficients of the 16-bit command to thrust conversion
-float control_frequency;             // Frequency at which the controller is running
-float gravity_force;                 // The weight of the Crazyflie in Newtons, i.e., mg
+// VARIABLES FOR SOME "ALMOST CONSTANTS"
+// > Mass of the Crazyflie quad-rotor, in [grams]
+float cf_mass;
+// > Coefficients of the 16-bit command to thrust conversion
+std::vector<float> motorPoly(3);
+// The weight of the Crazyflie in [Newtons], i.e., mg
+float gravity_force;
+// One quarter of the "gravity_force"
+float gravity_force_quarter;
 
-float previous_stateErrorInertial[9];     // The location error of the Crazyflie at the "previous" time step
 
-std::vector<float>  setpoint{0.0,0.0,0.4,0.0};     // The setpoints for (x,y,z) position and yaw angle, in that order
+
+
+// VARIABLES FOR THE CONTROLLER
+
+// Frequency at which the controller is running
+float control_frequency;
+
+
+// > The setpoints for (x,y,z) position and yaw angle, in that order
+float setpoint[4] = {0.0,0.0,0.4,0.0};
+
+
 
 
 // The controller type to run in the "calculateControlOutput" function
-int controller_type = LQR_RATE_MODE;
+int lqr_controller_mode = LQR_MODE_RATE;
 
-// The LQR Controller parameters for "LQR_RATE_MODE"
+
+// The LQR Controller parameters for "LQR_MODE_MOTOR"
+std::vector<float> gainMatrixMotor1;
+std::vector<float> gainMatrixMotor2;
+std::vector<float> gainMatrixMotor3;
+std::vector<float> gainMatrixMotor4;
+
+
+  
+    
+    
+   
+
+// The LQR Controller parameters for "LQR_MODE_ACTUATOR"
+std::vector<float> gainMatrixThrust_TwelveStateVector  =  { 0.00,-1.72, 0.00, 0.00,-1.34, 0.00, 5.12, 0.00, 0.00, 0.00, 0.00, 0.00};
+std::vector<float> gainMatrixRollTorque                =  { 1.72, 0.00, 0.00, 1.34, 0.00, 0.00, 0.00, 5.12, 0.00, 0.00, 0.00, 0.00};
+std::vector<float> gainMatrixPitchTorque               =  { 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.84, 0.00, 0.00, 0.00};
+std::vector<float> gainMatrixYawTorque                 =  { 0.00, 0.00, 0.25, 0.00, 0.00, 0.14, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00};
+
+
+// The LQR Controller parameters for "LQR_MODE_RATE"
+std::vector<float> gainMatrixThrust_NineStateVector  =  { 0.00, 0.00, 0.25, 0.00, 0.00, 0.14, 0.00, 0.00, 0.00};
 std::vector<float> gainMatrixRollRate                =  { 0.00,-1.72, 0.00, 0.00,-1.34, 0.00, 5.12, 0.00, 0.00};
 std::vector<float> gainMatrixPitchRate               =  { 1.72, 0.00, 0.00, 1.34, 0.00, 0.00, 0.00, 5.12, 0.00};
 std::vector<float> gainMatrixYawRate                 =  { 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.84};
-std::vector<float> gainMatrixThrust_NineStateVector  =  { 0.00, 0.00, 0.25, 0.00, 0.00, 0.14, 0.00, 0.00, 0.00};
 
 
-// The LQR Controller parameters for "LQR_ANGLE_MODE"
+
+// The LQR Controller parameters for "LQR_MODE_ANGLE"
+std::vector<float> gainMatrixThrust_SixStateVector   =  { 0.00, 0.00, 0.31, 0.00, 0.00, 0.14};
 std::vector<float> gainMatrixRollAngle               =  { 0.00,-0.20, 0.00, 0.00,-0.20, 0.00};
 std::vector<float> gainMatrixPitchAngle              =  { 0.20, 0.00, 0.00, 0.20, 0.00, 0.00};
-std::vector<float> gainMatrixThrust_SixStateVector   =  { 0.00, 0.00, 0.31, 0.00, 0.00, 0.14};
+
+
+
+// The 16-bit command limits
+float cmd_sixteenbit_min;
+float cmd_sixteenbit_max;
+
+
+// VARIABLES FOR THE ESTIMATOR
+
+// Frequency at which the controller is running
+float estimator_frequency;
+
+// > A flag for which estimator to use:
+int estimator_method = ESTIMATOR_METHOD_FINITE_DIFFERENCE;
+// > The current state interial estimate,
+//   for use by the controller
+float current_stateInertialEstimate[12];
+
+// > The measurement of the Crazyflie at the "current" time step,
+//   to avoid confusion
+float current_xzy_rpy_measurement[6];
+
+// > The measurement of the Crazyflie at the "previous" time step,
+//   used for computing finite difference velocities
+float previous_xzy_rpy_measurement[6];
+
+// > The full 12 state estimate maintained by the finite
+//   difference state estimator
+float stateInterialEstimate_viaFiniteDifference[12];
+
 
 // ROS Publisher for debugging variables
 ros::Publisher debugPublisher;
@@ -255,12 +357,25 @@ ros::Subscriber xyz_yaw_to_follow_subscriber;
 // called from another function, hence why the "main" function is at the bottom.
 
 // CONTROLLER COMPUTATIONS
+// > The function that is called to "start" all estimation and control computations
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response);
-void calculateControlOutput_viaLQRforRates(float stateErrorBody[9], Controller::Request &request, Controller::Response &response);
-void calculateControlOutput_viaLQRforAngles(float stateErrorBody[9], Controller::Request &request, Controller::Response &response);
+
+// > The various functions that implement an LQR controller
+void calculateControlOutput_viaLQR(            float stateErrorBody[12], Controller::Request &request, Controller::Response &response);
+void calculateControlOutput_viaLQRforMotors(   float stateErrorBody[12], Controller::Request &request, Controller::Response &response);
+void calculateControlOutput_viaLQRforActuators(float stateErrorBody[12], Controller::Request &request, Controller::Response &response);
+void calculateControlOutput_viaLQRforRates(    float stateErrorBody[12], Controller::Request &request, Controller::Response &response);
+void calculateControlOutput_viaLQRforAngles(   float stateErrorBody[12], Controller::Request &request, Controller::Response &response);
+
+// ESTIMATOR COMPUTATIONS
+void performEstimatorUpdate_forStateInterial(Controller::Request &request);
+void performEstimatorUpdate_forStateInterial_viaFiniteDifference();
+
+// TRANSFORMATION FROM INTERIAL ESTIMATE TO BODY FRAME ERROR
+void convert_stateInertial_to_bodyFrameError(float stateInertial[12], float setpoint[4], float (&bodyFrameError)[12]);
 
 // TRANSFORMATION OF THE (x,y) INERTIAL FRAME ERROR INTO AN (x,y) BODY FRAME ERROR
-void convertIntoBodyFrame(float stateInertial[9], float (&stateBody)[9], float yaw_measured);
+void convertIntoBodyFrame(float stateInertial[12], float (&stateBody)[12], float yaw_measured);
 
 // CONVERSION FROM THRUST IN NEWTONS TO 16-BIT COMMAND
 float computeMotorPolyBackward(float thrust);
@@ -269,13 +384,16 @@ float computeMotorPolyBackward(float thrust);
 void setpointCallback(const Setpoint& newSetpoint);
 void xyz_yaw_to_follow_callback(const Setpoint& newSetpoint);
 
+// PUBLISH THE CURRENT X,Y,Z, AND YAW
+void publish_current_xyz_yaw(float x, float y, float z, float yaw);
+
 // LOAD PARAMETERS
 float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name);
-void getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length);
-int getParameterInt(ros::NodeHandle& nodeHandle, std::string name);
-void getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val, int length);
-int getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val);
-bool getParameterBool(ros::NodeHandle& nodeHandle, std::string name);
+void  getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length);
+int   getParameterInt(ros::NodeHandle& nodeHandle, std::string name);
+void  getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val, int length);
+int   getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val);
+bool  getParameterBool(ros::NodeHandle& nodeHandle, std::string name);
 
 void yamlReadyForFetchCallback(const std_msgs::Int32& msg);
 void fetchYamlParameters(ros::NodeHandle& nodeHandle);

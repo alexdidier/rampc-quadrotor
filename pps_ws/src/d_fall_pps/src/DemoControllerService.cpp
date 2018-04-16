@@ -114,16 +114,18 @@
 // 
 // IMPORTANT NOTES FOR "onboardControllerType"  AND AXIS CONVENTIONS
 // > The allowed values for "onboardControllerType" are in the "Defines" section at the
-//   top of this file, they are MOTOR_MODE, RATE_MODE, OR ANGLE_MODE.
-// > In the PPS exercise we will only use the RATE_MODE.
-// > In RATE_MODE the ".roll", ".ptich", and ".yaw" properties of "response.ControlCommand"
+//   top of this file, they are:
+//   CF_COMMAND_TYPE_MOTOR
+//   CF_COMMAND_TYPE_RATE
+//   CF_COMMAND_TYPE_ANGLE.
+// > With CF_COMMAND_TYPE_RATE the ".roll", ".ptich", and ".yaw" properties of "response.ControlCommand"
 //   specify the angular rate in [radians/second] that will be requested from the
 //   PID controllers running in the Crazyflie 2.0 firmware.
-// > In RATE_MODE the ".motorCmd1" to ".motorCmd4" properties of "response.ControlCommand"
+// > With CF_COMMAND_TYPE_RATE the ".motorCmd1" to ".motorCmd4" properties of "response.ControlCommand"
 //   are the baseline motor commands requested from the Crazyflie, with the adjustment
 //   for body rates being added on top of this in the firmware (i.e., as per the code
 //   of the "distribute_power" function provided in exercise sheet 2).
-// > In RATE_MODE the axis convention for the roll, pitch, and yaw body rates returned
+// > With CF_COMMAND_TYPE_RATE the axis convention for the roll, pitch, and yaw body rates returned
 //   in "response.ControlCommand" should use right-hand coordinate axes with x-forward
 //   and z-upwards (i.e., the positive z-axis is aligned with the direction of positive
 //   thrust). To assist, teh following is an ASCII art of this convention:
@@ -163,73 +165,184 @@
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response)
 {
 
-	// This is the "start" of the outer loop controller, add all your control
-	// computation here, or you may find it convienient to create functions
-	// to keep you code cleaner
+	// THIS IS THE START OF THE "OUTER" CONTROL LOOP
+	// > i.e., this is the control loop run on this laptop
+	// > this function is called at the frequency specified
+	// > this function performs all estimation and control
 
 
-	// Define a local array to fill in with the state error
-	float stateErrorInertial[9];
+	// PERFORM THE ESTIMATOR UPDATE FOR THE INTERIAL FRAME STATE
+	// > After this function is complete the class variable
+	//   "current_stateInertialEstimate" is updated and ready
+	//   to be used for subsequent controller copmutations
+	performEstimatorUpdate_forStateInterial(request);
 
-	// Fill in the (x,y,z) position error
-	stateErrorInertial[0] = request.ownCrazyflie.x - setpoint[0];
-	stateErrorInertial[1] = request.ownCrazyflie.y - setpoint[1];
-	stateErrorInertial[2] = request.ownCrazyflie.z - setpoint[2];
+	
+	// CONVERT THE CURRENT INERTIAL FRAME STATE ESTIMATE, INTO
+	// THE BODY FRAME ERROR REQUIRED BY THE CONTROLLER
+	// > Define a local array to fill in with the body frame error
+	float current_bodyFrameError[12];
+	// > Call the function to perform the conversion
+	convert_stateInertial_to_bodyFrameError(current_stateInertialEstimate,setpoint,current_bodyFrameError);
 
-	// Compute an estimate of the velocity
-	// > As simply the derivative between the current and previous position
-	stateErrorInertial[3] = (stateErrorInertial[0] - previous_stateErrorInertial[0]) * control_frequency;
-	stateErrorInertial[4] = (stateErrorInertial[1] - previous_stateErrorInertial[1]) * control_frequency;
-	stateErrorInertial[5] = (stateErrorInertial[2] - previous_stateErrorInertial[2]) * control_frequency;
+	
 
-	// Fill in the roll and pitch angle measurements directly
-	stateErrorInertial[6] = request.ownCrazyflie.roll;
-	stateErrorInertial[7] = request.ownCrazyflie.pitch;
+	
 
-	// Fill in the yaw angle error
-	// > This error should be "unwrapped" to be in the range
-	//   ( -pi , pi )
-	// > First, get the yaw error into a local variable
-	float yawError = request.ownCrazyflie.yaw - setpoint[3];
-	// > Second, "unwrap" the yaw error to the interval ( -pi , pi )
-	while(yawError > PI) {yawError -= 2 * PI;}
-	while(yawError < -PI) {yawError += 2 * PI;}
-	// > Third, put the "yawError" into the "stateError" variable
-	stateErrorInertial[8] = yawError;
+	
+
+	// PERFORM THE BASIC LQR CONTROLLER
+	calculateControlOutput_viaLQR(current_bodyFrameError,request,response);
 
 
-	// CONVERSION INTO BODY FRAME
-	// Conver the state erorr from the Inertial frame into the Body frame
-	// > Note: the function "convertIntoBodyFrame" is implemented in this file
-	//   and by default does not perform any conversion. The equations to convert
-	//   the state error into the body frame should be implemented in that function
-	//   for successful completion of the PPS exercise
-	float stateErrorBody[9];
-	convertIntoBodyFrame(stateErrorInertial, stateErrorBody, request.ownCrazyflie.yaw);
 
 
-	// SAVE THE STATE ERROR TO BE USED NEXT TIME THIS FUNCTION IS CALLED
-	// > as we have already used previous error we can now update it update it
-	for(int i = 0; i < 9; ++i)
+	// PUBLISH THE CURRENT X,Y,Z, AND YAW (if required)
+	if (shouldPublishCurrent_xyz_yaw)
 	{
-		previous_stateErrorInertial[i] = stateErrorInertial[i];
+		publish_current_xyz_yaw(request.ownCrazyflie.x,request.ownCrazyflie.y,request.ownCrazyflie.z,request.ownCrazyflie.yaw);
+	}
+
+	// RETURN "true" TO INDICATE THAT THE COMPUTATIONS WERE SUCCESSFUL
+	return true;
+}
+
+
+
+
+//    ------------------------------------------------------------------------------
+//    EEEEE   SSSS  TTTTT  III  M   M    A    TTTTT  III   OOO   N   N
+//    E      S        T     I   MM MM   A A     T     I   O   O  NN  N
+//    EEE     SSS     T     I   M M M  A   A    T     I   O   O  N N N
+//    E          S    T     I   M   M  AAAAA    T     I   O   O  N  NN
+//    EEEEE  SSSS     T    III  M   M  A   A    T    III   OOO   N   N
+//    ------------------------------------------------------------------------------
+void performEstimatorUpdate_forStateInterial(Controller::Request &request)
+{
+
+	// PUT THE CURRENT MEASURED DATA INTO THE CLASS VARIABLE
+	// > for (x,y,z) position
+	current_xzy_rpy_measurement[0] = request.ownCrazyflie.x;
+	current_xzy_rpy_measurement[1] = request.ownCrazyflie.y;
+	current_xzy_rpy_measurement[2] = request.ownCrazyflie.z;
+	// > for (roll,pitch,yaw) angles
+	current_xzy_rpy_measurement[3] = request.ownCrazyflie.roll;
+	current_xzy_rpy_measurement[4] = request.ownCrazyflie.pitch;
+	current_xzy_rpy_measurement[5] = request.ownCrazyflie.yaw;
+
+	// RUN THE FINITE DIFFERENCE ESTIMATOR
+	performEstimatorUpdate_forStateInterial_viaFiniteDifference();
+
+
+
+	// FILLE IN THE STATE INERTIAL ESTIMATE TO BE USED FOR CONTROL
+	switch (estimator_method)
+	{
+		// Estimator based on finte differences
+		case ESTIMATOR_METHOD_FINITE_DIFFERENCE:
+		{
+			// Transfer the estimate
+			for(int i = 0; i < 12; ++i)
+			{
+				current_stateInertialEstimate[i]  = stateInterialEstimate_viaFiniteDifference[i];
+			}
+			break;
+		}
+		default:
+		{
+			// Display that the "estimator_method" was not recognised
+			ROS_INFO_STREAM("ERROR: in the 'calculateControlOutput' function of the 'DemoControllerService': the 'estimator_method' is not recognised.");
+			// Transfer the finite difference estimate by default
+			for(int i = 0; i < 12; ++i)
+			{
+				current_stateInertialEstimate[i]  = stateInterialEstimate_viaFiniteDifference[i];
+			}
+			break;
+		}
 	}
 
 
+	// NOW THAT THE ESTIMATORS HAVE ALL BEEN RUN, PUT THE CURRENT
+	// MEASURED DATA INTO THE CLASS VARIABLE FOR THE PREVIOUS 
+	// > for (x,y,z) position
+	previous_xzy_rpy_measurement[0] = current_xzy_rpy_measurement[0];
+	previous_xzy_rpy_measurement[1] = current_xzy_rpy_measurement[1];
+	previous_xzy_rpy_measurement[2] = current_xzy_rpy_measurement[2];
+	// > for (roll,pitch,yaw) angles
+	previous_xzy_rpy_measurement[3] = current_xzy_rpy_measurement[3];
+	previous_xzy_rpy_measurement[4] = current_xzy_rpy_measurement[4];
+	previous_xzy_rpy_measurement[5] = current_xzy_rpy_measurement[5];
+}
 
-	// SWITCH BETWEEN THE DIFFERENT CONTROLLER TYPES:
-	switch (controller_type)
+
+void performEstimatorUpdate_forStateInterial_viaFiniteDifference()
+{
+	// PUT IN THE CURRENT MEASUREMENT DIRECTLY
+	// > for (x,y,z) position
+	stateInterialEstimate_viaFiniteDifference[0]  = current_xzy_rpy_measurement[0];
+	stateInterialEstimate_viaFiniteDifference[1]  = current_xzy_rpy_measurement[1];
+	stateInterialEstimate_viaFiniteDifference[2]  = current_xzy_rpy_measurement[2];
+	// > for (roll,pitch,yaw) angles
+	stateInterialEstimate_viaFiniteDifference[6]  = current_xzy_rpy_measurement[3];
+	stateInterialEstimate_viaFiniteDifference[7]  = current_xzy_rpy_measurement[4];
+	stateInterialEstimate_viaFiniteDifference[8]  = current_xzy_rpy_measurement[5];
+
+	// COMPUTE THE VELOCITIES VIA FINITE DIFFERENCE
+	// > for (x,y,z) velocities
+	stateInterialEstimate_viaFiniteDifference[3]  = (current_xzy_rpy_measurement[0] - previous_xzy_rpy_measurement[0]) * estimator_frequency;
+	stateInterialEstimate_viaFiniteDifference[4]  = (current_xzy_rpy_measurement[1] - previous_xzy_rpy_measurement[1]) * estimator_frequency;
+	stateInterialEstimate_viaFiniteDifference[5]  = (current_xzy_rpy_measurement[2] - previous_xzy_rpy_measurement[2]) * estimator_frequency;
+	// > for (roll,pitch,yaw) velocities
+	stateInterialEstimate_viaFiniteDifference[9]  = (current_xzy_rpy_measurement[3] - previous_xzy_rpy_measurement[3]) * estimator_frequency;
+	stateInterialEstimate_viaFiniteDifference[10] = (current_xzy_rpy_measurement[4] - previous_xzy_rpy_measurement[4]) * estimator_frequency;
+	stateInterialEstimate_viaFiniteDifference[11] = (current_xzy_rpy_measurement[5] - previous_xzy_rpy_measurement[5]) * estimator_frequency;
+}
+
+
+
+//    ----------------------------------------------------------------------------------
+//    L       QQQ   RRRR
+//    L      Q   Q  R   R
+//    L      Q   Q  RRRR
+//    L      Q  Q   R  R
+//    LLLLL   QQ Q  R   R
+//    ----------------------------------------------------------------------------------
+
+void calculateControlOutput_viaLQR(float stateErrorBody[12], Controller::Request &request, Controller::Response &response)
+{
+	// SWITCH BETWEEN THE DIFFERENT LQR CONTROLLER MODES:
+	switch (lqr_controller_mode)
 	{
-		// LQR controller based on the state vector: [position,velocity,angles]
-		case LQR_RATE_MODE:
+		// LQR controller based on the state vector:
+		// [position,velocity,angles,angular velocity]
+		// commands per motor thrusts
+		case LQR_MODE_MOTOR:
+		{
+			// Call the function that performs the control computations for this mode
+			calculateControlOutput_viaLQRforMotors(stateErrorBody,request,response);
+			break;
+		}
+		// LQR controller based on the state vector:
+		// [position,velocity,angles,angular velocity]
+		// commands actuators of total force and bodz torques
+		case LQR_MODE_ACTUATOR:
+		{
+			// Call the function that performs the control computations for this mode
+			calculateControlOutput_viaLQRforActuators(stateErrorBody,request,response);
+			break;
+		}
+		// LQR controller based on the state vector:
+		// [position,velocity,angles]
+		case LQR_MODE_RATE:
 		{
 			// Call the function that performs the control computations for this mode
 			calculateControlOutput_viaLQRforRates(stateErrorBody,request,response);
 			break;
 		}
 
-		// LQR controller based on the state vector: [position,velocity]
-		case LQR_ANGLE_MODE:
+		// LQR controller based on the state vector:
+		// [position,velocity]
+		case LQR_MODE_ANGLE:
 		{
 			// Call the function that performs the control computations for this mode
 			calculateControlOutput_viaLQRforAngles(stateErrorBody,request,response);
@@ -238,8 +351,8 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 
 		default:
 		{
-			// Display that the "controller_type" was not recognised
-			ROS_INFO_STREAM("ERROR: in the 'calculateControlOutput' function of the 'DemoControllerService': the 'controller_type' is not recognised.");
+			// Display that the "lqr_controller_mode" was not recognised
+			ROS_INFO_STREAM("ERROR: in the 'calculateControlOutput' function of the 'DemoControllerService': the 'lqr_controller_mode' is not recognised.");
 			// Set everything in the response to zero
 			response.controlOutput.roll       =  0;
 			response.controlOutput.pitch      =  0;
@@ -248,55 +361,155 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 			response.controlOutput.motorCmd2  =  0;
 			response.controlOutput.motorCmd3  =  0;
 			response.controlOutput.motorCmd4  =  0;
-			response.controlOutput.onboardControllerType = MOTOR_MODE;
+			response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTOR;
 			break;
 		}
-
-
-
 	}
-
-
-
-	
-
-
-
-	//  ************************************************************************************************
-	//  PPPP   U   U  BBBB   L      III   SSSS  H  H       X   X  Y   Y  ZZZZZ     Y   Y    A    W     W
-	//  P   P  U   U  B   B  L       I   S      H  H        X X    Y Y      Z       Y Y    A A   W     W
-	//  PPPP   U   U  BBBB   L       I    SSS   HHHH         X      Y      Z         Y    A   A  W     W
-	//  P      U   U  B   B  L       I       S  H  H        X X     Y     Z          Y    AAAAA   W W W
-	//  P       UUU   BBBB   LLLLL  III  SSSS   H  H       X   X    Y    ZZZZZ       Y    A   A    W W
-
-	// PUBLISH THE CURRENT X,Y,Z, AND YAW (if required)
-	if (shouldPublishCurrent_xyz_yaw)
-	{
-		// publish setpoint for FollowController of another student group
-		Setpoint temp_current_xyz_yaw;
-		// Fill in the x,y,z, and yaw info directly from the data provided to this
-		// function
-		temp_current_xyz_yaw.x   = request.ownCrazyflie.x;
-		temp_current_xyz_yaw.y   = request.ownCrazyflie.y;
-		temp_current_xyz_yaw.z   = request.ownCrazyflie.z;
-		temp_current_xyz_yaw.yaw = request.ownCrazyflie.yaw;
-		my_current_xyz_yaw_publisher.publish(temp_current_xyz_yaw);
-	}
-
-
-
-
-	
-
-	// Return "true" to indicate that the control computation was performed successfully
-	return true;
 }
 
 
 
 
+void calculateControlOutput_viaLQRforMotors(float stateErrorBody[12], Controller::Request &request, Controller::Response &response)
+{
+	// PERFORM THE "u=Kx" LQR CONTROLLER COMPUTATION
 
-void calculateControlOutput_viaLQRforRates(float stateErrorBody[9], Controller::Request &request, Controller::Response &response)
+	// Instantiate the local variables for the per motor thrust
+	// adjustment. These will be requested from the Crazyflie's
+	// on-baord "inner-loop" controller
+	float motor1_thrustAdjustment = 0;
+	float motor2_thrustAdjustment = 0;
+	float motor3_thrustAdjustment = 0;
+	float motor4_thrustAdjustment = 0;
+	
+	// Perform the "-Kx" LQR computation for the rates and thrust:
+	for(int i = 0; i < 12; ++i)
+	{
+		// MOTORS 1,2,3,4
+		motor1_thrustAdjustment  -= gainMatrixMotor1[i] * stateErrorBody[i];
+		motor2_thrustAdjustment  -= gainMatrixMotor2[i] * stateErrorBody[i];
+		motor3_thrustAdjustment  -= gainMatrixMotor3[i] * stateErrorBody[i];
+		motor4_thrustAdjustment  -= gainMatrixMotor4[i] * stateErrorBody[i];
+	}
+
+
+	motor1_thrustAdjustment = -gravity_force_quarter/2.0;
+	motor2_thrustAdjustment = -gravity_force_quarter/2.0;
+	motor3_thrustAdjustment = -gravity_force_quarter/2.0;
+	motor4_thrustAdjustment = -gravity_force_quarter/2.0;
+
+	// UPDATE THE "RETURN" THE VARIABLE NAME "response"
+
+	// Put the roll, pitch, and yaw command to zero
+	response.controlOutput.roll  = 0;
+	response.controlOutput.pitch = 0;
+	response.controlOutput.yaw   = 0;
+	// > For the thrust adjustment we must add the feed-forward thrust to counter-act gravity.
+	// > NOTE: the "gravity_force_quarter" value was already divided by 4 when
+	//   it was loaded/processes from the .yaml file.
+	response.controlOutput.motorCmd1 = computeMotorPolyBackward(motor1_thrustAdjustment + gravity_force_quarter);
+	response.controlOutput.motorCmd2 = computeMotorPolyBackward(motor2_thrustAdjustment + gravity_force_quarter);
+	response.controlOutput.motorCmd3 = computeMotorPolyBackward(motor3_thrustAdjustment + gravity_force_quarter);
+	response.controlOutput.motorCmd4 = computeMotorPolyBackward(motor4_thrustAdjustment + gravity_force_quarter);
+
+	
+	// Specify that this controller is a rate controller
+	 response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTOR;
+	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
+	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_ANGLE;
+
+
+	// An alternate debugging technique is to print out data directly to the
+	// command line from which this node was launched.
+	if (shouldDisplayDebugInfo)
+	{
+		// An example of "printing out" the data from the "request" argument to the
+		// command line. This might be useful for debugging.
+		//ROS_INFO_STREAM("x-coordinate [m]: " << request.ownCrazyflie.x);
+		//ROS_INFO_STREAM("y-coordinate [m]: " << request.ownCrazyflie.y);
+		//ROS_INFO_STREAM("z-coordinate [m]: " << request.ownCrazyflie.z);
+		//ROS_INFO_STREAM("roll       [deg]: " << request.ownCrazyflie.roll);
+		//ROS_INFO_STREAM("pitch      [deg]: " << request.ownCrazyflie.pitch);
+		//ROS_INFO_STREAM("yaw        [deg]: " << request.ownCrazyflie.yaw);
+		//ROS_INFO_STREAM("Delta t      [s]: " << request.ownCrazyflie.acquiringTime);
+
+		ROS_INFO_STREAM("f1 [N]: " << motor1_thrustAdjustment);
+		ROS_INFO_STREAM("f2 [N]: " << motor2_thrustAdjustment);
+		ROS_INFO_STREAM("f3 [N]: " << motor3_thrustAdjustment);
+		ROS_INFO_STREAM("f4 [N]: " << motor4_thrustAdjustment);
+
+	}
+}
+
+void calculateControlOutput_viaLQRforActuators(float stateErrorBody[12], Controller::Request &request, Controller::Response &response)
+{
+	// PERFORM THE "u=Kx" LQR CONTROLLER COMPUTATION
+
+	// Instantiate the local variables for the per motor thrust
+	// adjustment. These will be requested from the Crazyflie's
+	// on-baord "inner-loop" controller
+	float motor1_thrustAdjustment = 0;
+	float motor2_thrustAdjustment = 0;
+	float motor3_thrustAdjustment = 0;
+	float motor4_thrustAdjustment = 0;
+	
+	// Perform the "-Kx" LQR computation for the rates and thrust:
+	for(int i = 0; i < 12; ++i)
+	{
+		// MOTORS 1,2,3,4
+		motor1_thrustAdjustment  -= gainMatrixMotor1[i] * stateErrorBody[i];
+		motor2_thrustAdjustment  -= gainMatrixMotor2[i] * stateErrorBody[i];
+		motor3_thrustAdjustment  -= gainMatrixMotor3[i] * stateErrorBody[i];
+		motor4_thrustAdjustment  -= gainMatrixMotor4[i] * stateErrorBody[i];
+	}
+
+
+	// UPDATE THE "RETURN" THE VARIABLE NAME "response"
+
+	// Put the computed rates and thrust into the "response" variable
+	// > For roll, pitch, and yaw:
+	response.controlOutput.roll  = motor2_thrustAdjustment;
+	response.controlOutput.pitch = motor3_thrustAdjustment;
+	response.controlOutput.yaw   = motor4_thrustAdjustment;
+	// > For the thrust adjustment we must add the feed-forward thrust to counter-act gravity.
+	// > NOTE: remember that the thrust is commanded per motor, so you sohuld
+	//         consider whether the "thrustAdjustment" computed by your
+	//         controller needed to be divided by 4 or not.
+	float thrustAdjustment = motor1_thrustAdjustment / 4.0;
+	// > NOTE: the "gravity_force_quarter" value was already divided by 4 when
+	//   it was loaded/processes from the .yaml file.
+	response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
+	response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
+	response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
+	response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
+
+	
+	// Specify that this controller is a rate controller
+	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTOR;
+	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
+	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_ANGLE;
+
+
+	// An alternate debugging technique is to print out data directly to the
+	// command line from which this node was launched.
+	if (shouldDisplayDebugInfo)
+	{
+		// An example of "printing out" the data from the "request" argument to the
+		// command line. This might be useful for debugging.
+		ROS_INFO_STREAM("x-coordinate [m]: " << request.ownCrazyflie.x);
+		ROS_INFO_STREAM("y-coordinate [m]: " << request.ownCrazyflie.y);
+		ROS_INFO_STREAM("z-coordinate [m]: " << request.ownCrazyflie.z);
+		ROS_INFO_STREAM("roll       [deg]: " << request.ownCrazyflie.roll);
+		ROS_INFO_STREAM("pitch      [deg]: " << request.ownCrazyflie.pitch);
+		ROS_INFO_STREAM("yaw        [deg]: " << request.ownCrazyflie.yaw);
+		ROS_INFO_STREAM("Delta t      [s]: " << request.ownCrazyflie.acquiringTime);
+
+	}
+}
+
+
+
+void calculateControlOutput_viaLQRforRates(float stateErrorBody[12], Controller::Request &request, Controller::Response &response)
 {
 	// PERFORM THE "u=Kx" LQR CONTROLLER COMPUTATION
 
@@ -336,19 +549,19 @@ void calculateControlOutput_viaLQRforRates(float stateErrorBody[9], Controller::
 	// > NOTE: remember that the thrust is commanded per motor, so you sohuld
 	//         consider whether the "thrustAdjustment" computed by your
 	//         controller needed to be divided by 4 or not.
-	// > NOTE: the "gravity_force" value was already divided by 4 when is was
-	//         loaded from the .yaml file via the "fetchYamlParameters"
-	//         class function in this file.
-	response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrustAdjustment + gravity_force);
-	response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrustAdjustment + gravity_force);
-	response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrustAdjustment + gravity_force);
-	response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrustAdjustment + gravity_force);
+	thrustAdjustment = thrustAdjustment / 4.0;
+	// > NOTE: the "gravity_force_quarter" value was already divided by 4 when
+	//   it was loaded/processes from the .yaml file.
+	response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
+	response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
+	response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
+	response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
 
 	
 	// Specify that this controller is a rate controller
-	// response.controlOutput.onboardControllerType = MOTOR_MODE;
-	response.controlOutput.onboardControllerType = RATE_MODE;
-	// response.controlOutput.onboardControllerType = ANGLE_MODE;
+	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTOR;
+	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
+	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_ANGLE;
 
 
 
@@ -429,7 +642,7 @@ void calculateControlOutput_viaLQRforRates(float stateErrorBody[9], Controller::
 
 
 
-void calculateControlOutput_viaLQRforAngles(float stateErrorBody[9], Controller::Request &request, Controller::Response &response)
+void calculateControlOutput_viaLQRforAngles(float stateErrorBody[12], Controller::Request &request, Controller::Response &response)
 {
 	// PERFORM THE "u=Kx" LQR CONTROLLER COMPUTATION
 
@@ -464,22 +677,25 @@ void calculateControlOutput_viaLQRforAngles(float stateErrorBody[9], Controller:
 	// > NOTE: remember that the thrust is commanded per motor, so you sohuld
 	//         consider whether the "thrustAdjustment" computed by your
 	//         controller needed to be divided by 4 or not.
-	// > NOTE: the "gravity_force" value was already divided by 4 when is was
-	//         loaded from the .yaml file via the "fetchYamlParameters"
-	//         class function in this file.
-	response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrustAdjustment + gravity_force);
-	response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrustAdjustment + gravity_force);
-	response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrustAdjustment + gravity_force);
-	response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrustAdjustment + gravity_force);
+	// > NOTE: the "gravity_force_quarter" value was already divided by 4 when
+	//         it was loaded/processes from the .yaml file.
+	response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
+	response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
+	response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
+	response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
 
 	
 	// Specify that this controller is a rate controller
-	// response.controlOutput.onboardControllerType = MOTOR_MODE;
-	// response.controlOutput.onboardControllerType = RATE_MODE;
-	response.controlOutput.onboardControllerType = ANGLE_MODE;
+	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTOR;
+	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
+	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_ANGLE;
 
 
 }
+
+
+
+
 
 
 
@@ -498,7 +714,7 @@ void calculateControlOutput_viaLQRforAngles(float stateErrorBody[9], Controller:
 //    BBBB   O   O  D   D    Y         FFF    RRRR   A   A  M M M  EEE
 //    B   B  O   O  D   D    Y         F      R  R   AAAAA  M   M  E
 //    BBBB    OOO   DDDD     Y         F      R   R  A   A  M   M  EEEEE
-//    ----------------------------------------------------------------------------------
+//    ------------------------------------------------------------------------------
 
 // The arguments for this function are as follows:
 // stateInertial
@@ -523,7 +739,7 @@ void calculateControlOutput_viaLQRforAngles(float stateErrorBody[9], Controller:
 // This is the yaw component of the intrinsic Euler angles in [radians] as measured by
 // the Vicon motion capture system
 //
-void convertIntoBodyFrame(float stateInertial[9], float (&stateBody)[9], float yaw_measured)
+void convertIntoBodyFrame(float stateInertial[12], float (&stateBody)[12], float yaw_measured)
 {
 	if (shouldPerformConvertIntoBodyFrame)
 	{
@@ -544,6 +760,11 @@ void convertIntoBodyFrame(float stateInertial[9], float (&stateBody)[9], float y
 	    stateBody[6] = stateInertial[6];
 	    stateBody[7] = stateInertial[7];
 	    stateBody[8] = stateInertial[8];
+
+	    // Fill in the (roll,pitch,yaw) velocity estimates to be returned
+	    stateBody[9]  = stateInertial[9];
+	    stateBody[10] = stateInertial[10];
+	    stateBody[11] = stateInertial[11];
 	}
 	else
 	{
@@ -561,9 +782,56 @@ void convertIntoBodyFrame(float stateInertial[9], float (&stateBody)[9], float y
 	    stateBody[6] = stateInertial[6];
 	    stateBody[7] = stateInertial[7];
 	    stateBody[8] = stateInertial[8];
+
+	    // Fill in the (roll,pitch,yaw) velocity estimates to be returned
+	    stateBody[9]  = stateInertial[9];
+	    stateBody[10] = stateInertial[10];
+	    stateBody[11] = stateInertial[11];
 	}
 }
 
+
+
+
+void convert_stateInertial_to_bodyFrameError(float stateInertial[12], float setpoint[4], float (&bodyFrameError)[12])
+{
+	// Store the current YAW in a local variable
+	float temp_stateInertial_yaw = stateInertial[8];
+
+	// Adjust the INERTIAL (x,y,z) position for the setpoint
+	stateInertial[0] = stateInertial[0] - setpoint[0];
+	stateInertial[1] = stateInertial[1] - setpoint[1];
+	stateInertial[2] = stateInertial[2] - setpoint[2];
+
+	// Fill in the yaw angle error
+	// > This error should be "unwrapped" to be in the range
+	//   ( -pi , pi )
+	// > First, get the yaw error into a local variable
+	float yawError = stateInertial[8] - setpoint[3];
+	// > Second, "unwrap" the yaw error to the interval ( -pi , pi )
+	while(yawError > PI) {yawError -= 2 * PI;}
+	while(yawError < -PI) {yawError += 2 * PI;}
+	// > Third, put the "yawError" into the "stateError" variable
+	stateInertial[8] = yawError;
+
+
+	if (yawError>(PI/6))
+	{
+		yawError = (PI/6);
+	}
+	else if (yawError<(-PI/6))
+	{
+		yawError = (-PI/6);
+	}
+
+	// CONVERSION INTO BODY FRAME
+	// Conver the state erorr from the Inertial frame into the Body frame
+	// > Note: the function "convertIntoBodyFrame" is implemented in this file
+	//   and by default does not perform any conversion. The equations to convert
+	//   the state error into the body frame should be implemented in that function
+	//   for successful completion of the PPS exercise
+	convertIntoBodyFrame(stateInertial, bodyFrameError, temp_stateInertial_yaw);
+}
 
 
 
@@ -580,12 +848,25 @@ void convertIntoBodyFrame(float stateInertial[9], float (&stateBody)[9], float y
 //    C      O   O  N N N  V   V  EEE    RRRR    SSS    I   O   O  N N N
 //    C      O   O  N  NN   V V   E      R  R       S   I   O   O  N  NN
 //     CCCC   OOO   N   N    V    EEEEE  R   R  SSSS   III   OOO   N   N
-//    ----------------------------------------------------------------------------------
+//    ------------------------------------------------------------------------------
 
 // This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
 float computeMotorPolyBackward(float thrust)
 {
-    return (-motorPoly[1] + sqrt(motorPoly[1] * motorPoly[1] - 4 * motorPoly[2] * (motorPoly[0] - thrust))) / (2 * motorPoly[2]);
+	// Compute the 16-bit command signal that generates the "thrust" force
+	float cmd = (-motorPoly[1] + sqrt(motorPoly[1] * motorPoly[1] - 4 * motorPoly[2] * (motorPoly[0] - thrust))) / (2 * motorPoly[2]);
+
+	// Saturate the signal to be 0 or in the range [1000,65000]
+	if (cmd < cmd_sixteenbit_min)
+	{
+		cmd = 0;
+	}
+	else if (cmd > cmd_sixteenbit_max)
+	{
+		cmd = cmd_sixteenbit_max;
+	}
+
+    return cmd;
 }
 
 
@@ -631,6 +912,30 @@ void xyz_yaw_to_follow_callback(const Setpoint& newSetpoint)
 	    setpoint[2] = newSetpoint.z;
 	    setpoint[3] = newSetpoint.yaw;
 	}
+}
+
+
+
+
+//  ************************************************************************************************
+//  PPPP   U   U  BBBB   L      III   SSSS  H  H       X   X  Y   Y  ZZZZZ     Y   Y    A    W     W
+//  P   P  U   U  B   B  L       I   S      H  H        X X    Y Y      Z       Y Y    A A   W     W
+//  PPPP   U   U  BBBB   L       I    SSS   HHHH         X      Y      Z         Y    A   A  W     W
+//  P      U   U  B   B  L       I       S  H  H        X X     Y     Z          Y    AAAAA   W W W
+//  P       UUU   BBBB   LLLLL  III  SSSS   H  H       X   X    Y    ZZZZZ       Y    A   A    W W
+
+// PUBLISH THE CURRENT X,Y,Z, AND YAW (if required)
+void publish_current_xyz_yaw(float x, float y, float z, float yaw)
+{
+	// publish setpoint for FollowController of another student group
+	Setpoint temp_current_xyz_yaw;
+	// Fill in the x,y,z, and yaw info directly from the data provided to this
+	// function
+	temp_current_xyz_yaw.x   = x;
+	temp_current_xyz_yaw.y   = y;
+	temp_current_xyz_yaw.z   = z;
+	temp_current_xyz_yaw.yaw = yaw;
+	my_current_xyz_yaw_publisher.publish(temp_current_xyz_yaw);
 }
 
 
@@ -752,20 +1057,33 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 
 	// THE CONTROLLER GAINS:
 
-	// A flag for which controller to use, defined as:
-	controller_type = getParameterInt( nodeHandle_for_demoController , "controller_type" );
+	// A flag for which controller to use:
+	lqr_controller_mode = getParameterInt( nodeHandle_for_demoController , "lqr_controller_mode" );
 
-	// The LQR Controller parameters for "LQR_RATE_MODE"
+	// A flag for which estimator to use:
+	estimator_method = getParameterInt( nodeHandle_for_demoController , "estimator_method" );
+
+	// The LQR Controller parameters for "LQR_MODE_MOTOR"
+	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixMotor1",                 gainMatrixMotor1,                 12);
+	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixMotor2",                 gainMatrixMotor2,                 12);
+	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixMotor3",                 gainMatrixMotor3,                 12);
+	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixMotor4",                 gainMatrixMotor4,                 12);
+
+	// The LQR Controller parameters for "LQR_MODE_RATE"
 	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixRollRate",               gainMatrixRollRate,               9);
 	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixPitchRate",              gainMatrixPitchRate,              9);
 	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixYawRate",                gainMatrixYawRate,                9);
 	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixThrust_NineStateVector", gainMatrixThrust_NineStateVector, 9);
 
-	// The LQR Controller parameters for "LQR_ANGLE_MODE"
+	// The LQR Controller parameters for "LQR_MODE_ANGLE"
 	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixRollAngle",              gainMatrixRollAngle,              6);
 	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixPitchAngle",             gainMatrixPitchAngle,             6);
 	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixThrust_SixStateVector",  gainMatrixThrust_SixStateVector,  6);
 
+
+	// 16-BIT COMMAND LIMITS
+	cmd_sixteenbit_min = getParameterFloat(nodeHandle_for_demoController, "command_sixteenbit_min");
+	cmd_sixteenbit_max = getParameterFloat(nodeHandle_for_demoController, "command_sixteenbit_max");
 
 	// DEBUGGING: Print out one of the parameters that was loaded
 	ROS_INFO_STREAM("DEBUGGING: the fetched SafeController/mass = " << cf_mass);
@@ -784,7 +1102,11 @@ void processFetchedParameters()
 {
     // Compute the feed-forward force that we need to counteract gravity (i.e., mg)
     // > in units of [Newtons]
-    gravity_force = cf_mass * 9.81/(1000*4);
+    gravity_force         = cf_mass * 9.81/(1000);
+    gravity_force_quarter = cf_mass * 9.81/(1000*4);
+
+    // Set that the estimator frequency is the same as the control frequency
+    estimator_frequency = control_frequency;
 
     // Look-up which agent should be followed
     if (shouldFollowAnotherAgent)
