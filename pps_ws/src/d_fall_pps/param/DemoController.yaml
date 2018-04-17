@@ -50,20 +50,20 @@ lqr_controller_mode : 3
 #       each of (x,y,z,roll,pitch,yaw)
 # 3  -  Quad-rotor Model Based Method
 #       Uses the model of the quad-rotor and the previous inputs
-estimator_method : 1
+estimator_method : 2
 
 
 # The LQR Controller parameters for "mode = 1"
-gainMatrixMotor1                    :  [ -0.0620, 0.0620, 0.0496,-0.0445, 0.0445, 0.0282,-0.1567,-0.1568,-0.0688,-0.0063,-0.0063,-0.0130]
-gainMatrixMotor2                    :  [  0.0620, 0.0620, 0.0496, 0.0445, 0.0445, 0.0282,-0.1567, 0.1568, 0.0688,-0.0063, 0.0063, 0.0130]
-gainMatrixMotor3                    :  [  0.0620,-0.0620, 0.0496, 0.0445,-0.0445, 0.0282, 0.1567, 0.1568,-0.0688, 0.0063, 0.0063,-0.0130]
-gainMatrixMotor4                    :  [ -0.0620,-0.0620, 0.0496,-0.0445,-0.0445, 0.0282, 0.1567,-0.1568, 0.0688, 0.0063,-0.0063, 0.0130]
+gainMatrixMotor1                    :  [ -0.0180, 0.0180, 0.0350,-0.0110, 0.0110, 0.0260,-0.0220,-0.0220,-0.0110,-0.00024,-0.00024,-0.00045]
+gainMatrixMotor2                    :  [  0.0180, 0.0180, 0.0350, 0.0110, 0.0110, 0.0260,-0.0220, 0.0220, 0.0110,-0.00024, 0.00024, 0.00045]
+gainMatrixMotor3                    :  [  0.0180,-0.0180, 0.0350, 0.0110,-0.0110, 0.0260, 0.0220, 0.0220,-0.0110, 0.00024, 0.00024,-0.00045]
+gainMatrixMotor4                    :  [ -0.0180,-0.0180, 0.0350,-0.0110,-0.0110, 0.0260, 0.0220,-0.0220, 0.0110, 0.00024,-0.00024, 0.00045]
 
 # The LQR Controller parameters for "mode = 2"
-gainMatrixThrust_TwelveStateVector  :  [ 0.00, 0.00, 0.98, 0.00, 0.00, 0.25, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00]
-gainMatrixRollTorque                :  [ 0.00,-1.80, 0.00, 0.00,-1.38, 0.00, 5.20, 0.00, 0.00, 0.00, 0.00, 0.00]
-gainMatrixPitchTorque               :  [ 1.80, 0.00, 0.00, 1.38, 0.00, 0.00, 0.00, 5.20, 0.00, 0.00, 0.00, 0.00]
-gainMatrixYawTorque                 :  [ 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.30, 0.00, 0.00, 0.00]
+gainMatrixThrust_TwelveStateVector  :  [ 0.0000, 0.0000, 0.9800, 0.0000, 0.0000, 0.25, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]
+gainMatrixRollTorque                :  [ 0.0000,-0.0017, 0.0000, 0.0000,-0.0009, 0.00, 0.0019, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]
+gainMatrixPitchTorque               :  [ 0.0017, 0.0000, 0.0000, 0.0009, 0.0000, 0.00, 0.0000, 0.0019, 0.0000, 0.0000, 0.0000, 0.0000]
+gainMatrixYawTorque                 :  [ 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.00, 0.0000, 0.0000, 0.0002, 0.0000, 0.0000, 0.0000]
 
 # The LQR Controller parameters for "mode = 3"
 gainMatrixThrust_NineStateVector    :  [ 0.00, 0.00, 0.98, 0.00, 0.00, 0.25, 0.00, 0.00, 0.00]
@@ -87,8 +87,13 @@ command_sixteenbit_max : 60000
 PMKF_Ahat_row1_for_positions  :  [  0.6723, 0.0034]
 PMKF_Ahat_row2_for_positions  :  [-12.9648, 0.9352]
 PMKF_Kinf_for_positions       :  [  0.3277,12.9648]
-# > For the (roll,pitch,yaw) angles
-PMKF_Ahat_row1_for_angles     :  [  0.5896, 0.0029]
-PMKF_Ahat_row2_for_angles     :  [-21.5535, 0.8922]
-PMKF_Kinf_for_angles          :  [  0.4104,21.5535]
 
+
+# > For the (roll,pitch,yaw) angles
+PMKF_Ahat_row1_for_angles     :  [  0.6954, 0.0035]
+PMKF_Ahat_row2_for_angles     :  [-11.0342, 0.9448]
+PMKF_Kinf_for_angles          :  [  0.3046,11.0342]
+
+#PMKF_Ahat_row1_for_angles     :  [  0.6723, 0.0034]
+#PMKF_Ahat_row2_for_angles     :  [-12.9648, 0.9352]
+#PMKF_Kinf_for_angles          :  [  0.3277,12.9648]

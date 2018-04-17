@@ -200,10 +200,10 @@ std::vector<float> gainMatrixMotor3 (12,0.0);
 std::vector<float> gainMatrixMotor4 (12,0.0);
 
 // The LQR Controller parameters for "LQR_MODE_ACTUATOR"
-std::vector<float> gainMatrixThrust_TwelveStateVector  =  { 0.00,-1.72, 0.00, 0.00,-1.34, 0.00, 5.12, 0.00, 0.00, 0.00, 0.00, 0.00};
-std::vector<float> gainMatrixRollTorque                =  { 1.72, 0.00, 0.00, 1.34, 0.00, 0.00, 0.00, 5.12, 0.00, 0.00, 0.00, 0.00};
-std::vector<float> gainMatrixPitchTorque               =  { 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.84, 0.00, 0.00, 0.00};
-std::vector<float> gainMatrixYawTorque                 =  { 0.00, 0.00, 0.25, 0.00, 0.00, 0.14, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00};
+std::vector<float> gainMatrixThrust_TwelveStateVector  (12,0.0);
+std::vector<float> gainMatrixRollTorque                (12,0.0);
+std::vector<float> gainMatrixPitchTorque               (12,0.0);
+std::vector<float> gainMatrixYawTorque                 (12,0.0);
 
 // The LQR Controller parameters for "LQR_MODE_RATE"
 std::vector<float> gainMatrixThrust_NineStateVector  =  { 0.00, 0.00, 0.25, 0.00, 0.00, 0.14, 0.00, 0.00, 0.00};
@@ -251,13 +251,13 @@ float stateInterialEstimate_viaPointMassKalmanFilter[12];
 
 // THE POINT MASS KALMAN FILTER (PMKF) GAINS AND ERROR EVOLUATION
 // > For the (x,y,z) position
-std::vector<float> PMKF_Ahat_row1_for_positions (2,0.0)
-std::vector<float> PMKF_Ahat_row2_for_positions (2,0.0)
-std::vector<float> PMKF_Kinf_for_positions      (2,0.0)
+std::vector<float> PMKF_Ahat_row1_for_positions (2,0.0);
+std::vector<float> PMKF_Ahat_row2_for_positions (2,0.0);
+std::vector<float> PMKF_Kinf_for_positions      (2,0.0);
 // > For the (roll,pitch,yaw) angles
-std::vector<float> PMKF_Ahat_row1_for_angles    (2,0.0)
-std::vector<float> PMKF_Ahat_row2_for_angles    (2,0.0)
-std::vector<float> PMKF_Kinf_for_angles         (2,0.0)
+std::vector<float> PMKF_Ahat_row1_for_angles    (2,0.0);
+std::vector<float> PMKF_Ahat_row2_for_angles    (2,0.0);
+std::vector<float> PMKF_Kinf_for_angles         (2,0.0);
 
 
 

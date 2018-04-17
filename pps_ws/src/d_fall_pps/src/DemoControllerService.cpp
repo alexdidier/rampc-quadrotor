@@ -345,6 +345,34 @@ void performEstimatorUpdate_forStateInterial_viaPointMassKalmanFilter()
 	// > yaw   position and velocity:
 	stateInterialEstimate_viaPointMassKalmanFilter[8]  = PMKF_Ahat_row1_for_angles[0]*temp_PMKFstate[8] + PMKF_Ahat_row1_for_angles[1]*temp_PMKFstate[11] + PMKF_Kinf_for_angles[0]*current_xzy_rpy_measurement[5];
 	stateInterialEstimate_viaPointMassKalmanFilter[11] = PMKF_Ahat_row2_for_angles[0]*temp_PMKFstate[8] + PMKF_Ahat_row2_for_angles[1]*temp_PMKFstate[11] + PMKF_Kinf_for_angles[1]*current_xzy_rpy_measurement[5];
+
+
+	//DebugMsg debugMsg;
+
+	// Fill the debugging message with the data provided by Vicon
+	//debugMsg.vicon_x = request.ownCrazyflie.x;
+	//debugMsg.vicon_y = request.ownCrazyflie.y;
+	//debugMsg.vicon_z = request.ownCrazyflie.z;
+	//debugMsg.vicon_roll = request.ownCrazyflie.roll;
+	//debugMsg.vicon_pitch = request.ownCrazyflie.pitch;
+	//debugMsg.vicon_yaw = request.ownCrazyflie.yaw;
+
+	// debugMsg.value_1 = thrustAdjustment;
+	// ......................
+	// debugMsg.value_10 = your_variable_name;
+
+	//debugMsg.value_1 = stateInterialEstimate_viaPointMassKalmanFilter[6];
+	//debugMsg.value_2 = stateInterialEstimate_viaPointMassKalmanFilter[9];
+	//debugMsg.value_3 = current_xzy_rpy_measurement[3];
+
+
+	//debugMsg.value_4 = stateInterialEstimate_viaPointMassKalmanFilter[0];
+	//debugMsg.value_5 = stateInterialEstimate_viaPointMassKalmanFilter[3];
+	//debugMsg.value_6 = current_xzy_rpy_measurement[0];
+
+
+	// Publish the "debugMsg"
+	//debugPublisher.publish(debugMsg);
 }
 
 
@@ -443,13 +471,12 @@ void calculateControlOutput_viaLQRforMotors(float stateErrorBody[12], Controller
 		motor4_thrustAdjustment  -= gainMatrixMotor4[i] * stateErrorBody[i];
 	}
 
+	//motor1_thrustAdjustment = -gravity_force_quarter*0.9;
+	//motor2_thrustAdjustment = -gravity_force_quarter*0.9;
+	//motor3_thrustAdjustment = -gravity_force_quarter*0.9;
+	//motor4_thrustAdjustment = -gravity_force_quarter*0.9;
 
-	motor1_thrustAdjustment = -gravity_force_quarter/2.0;
-	motor2_thrustAdjustment = -gravity_force_quarter/2.0;
-	motor3_thrustAdjustment = -gravity_force_quarter/2.0;
-	motor4_thrustAdjustment = -gravity_force_quarter/2.0;
-
-	// UPDATE THE "RETURN" THE VARIABLE NAME "response"
+	// UPDATE THE "RETURN" THE VARIABLE NAMED "response"
 
 	// Put the roll, pitch, and yaw command to zero
 	response.controlOutput.roll  = 0;
@@ -468,6 +495,30 @@ void calculateControlOutput_viaLQRforMotors(float stateErrorBody[12], Controller
 	 response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTOR;
 	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
 	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_ANGLE;
+
+
+	 DebugMsg debugMsg;
+
+	// Fill the debugging message with the data provided by Vicon
+	//debugMsg.vicon_x = request.ownCrazyflie.x;
+	//debugMsg.vicon_y = request.ownCrazyflie.y;
+	//debugMsg.vicon_z = request.ownCrazyflie.z;
+	//debugMsg.vicon_roll = request.ownCrazyflie.roll;
+	//debugMsg.vicon_pitch = request.ownCrazyflie.pitch;
+	//debugMsg.vicon_yaw = request.ownCrazyflie.yaw;
+
+	// debugMsg.value_1 = thrustAdjustment;
+	// ......................
+	// debugMsg.value_10 = your_variable_name;
+
+	debugMsg.value_1 = motor1_thrustAdjustment;
+	debugMsg.value_2 = motor2_thrustAdjustment;
+	debugMsg.value_3 = motor3_thrustAdjustment;
+	debugMsg.value_4 = motor4_thrustAdjustment;
+
+
+	// Publish the "debugMsg"
+	debugPublisher.publish(debugMsg);
 
 
 	// An alternate debugging technique is to print out data directly to the
@@ -499,47 +550,87 @@ void calculateControlOutput_viaLQRforActuators(float stateErrorBody[12], Control
 	// Instantiate the local variables for the per motor thrust
 	// adjustment. These will be requested from the Crazyflie's
 	// on-baord "inner-loop" controller
-	float motor1_thrustAdjustment = 0;
-	float motor2_thrustAdjustment = 0;
-	float motor3_thrustAdjustment = 0;
-	float motor4_thrustAdjustment = 0;
+	float thrustAdjustment = 0;
+	float rollTorque = 0;
+	float pitchTorque = 0;
+	float yawTorque = 0;
 	
 	// Perform the "-Kx" LQR computation for the rates and thrust:
 	for(int i = 0; i < 12; ++i)
 	{
 		// MOTORS 1,2,3,4
-		motor1_thrustAdjustment  -= gainMatrixMotor1[i] * stateErrorBody[i];
-		motor2_thrustAdjustment  -= gainMatrixMotor2[i] * stateErrorBody[i];
-		motor3_thrustAdjustment  -= gainMatrixMotor3[i] * stateErrorBody[i];
-		motor4_thrustAdjustment  -= gainMatrixMotor4[i] * stateErrorBody[i];
+		thrustAdjustment  -= gainMatrixThrust_TwelveStateVector[i] * stateErrorBody[i];
+		rollTorque        -= gainMatrixRollTorque[i]               * stateErrorBody[i];
+		pitchTorque       -= gainMatrixPitchTorque[i]              * stateErrorBody[i];
+		yawTorque         -= gainMatrixYawTorque[i]                * stateErrorBody[i];
 	}
 
+	// DISTRIBUTE POWER
+	float motor1_thrustAdjustment;
+	float motor2_thrustAdjustment;
+	float motor3_thrustAdjustment;
+	float motor4_thrustAdjustment;
 
-	// UPDATE THE "RETURN" THE VARIABLE NAME "response"
+	float x = 0.0325;
+	float y = 0.0325;
+	float c = 0.0060;
+
+	float tt = thrustAdjustment/4.0;
+	float tx = rollTorque / y;
+	float ty = pitchTorque / x;
+	float tc = yawTorque / c;
+
+
+	motor1_thrustAdjustment = tt  +  0.25 * ( -tx - ty - tc );
+	motor2_thrustAdjustment = tt  +  0.25 * ( -tx + ty + tc );
+	motor3_thrustAdjustment = tt  +  0.25 * (  tx + ty - tc );
+	motor4_thrustAdjustment = tt  +  0.25 * (  tx - ty + tc );
+
+
+	// UPDATE THE "RETURN" THE VARIABLE NAMED "response"
 
 	// Put the computed rates and thrust into the "response" variable
 	// > For roll, pitch, and yaw:
-	response.controlOutput.roll  = motor2_thrustAdjustment;
-	response.controlOutput.pitch = motor3_thrustAdjustment;
-	response.controlOutput.yaw   = motor4_thrustAdjustment;
+	response.controlOutput.roll  = 0;
+	response.controlOutput.pitch = 0;
+	response.controlOutput.yaw   = 0;
 	// > For the thrust adjustment we must add the feed-forward thrust to counter-act gravity.
-	// > NOTE: remember that the thrust is commanded per motor, so you sohuld
-	//         consider whether the "thrustAdjustment" computed by your
-	//         controller needed to be divided by 4 or not.
-	float thrustAdjustment = motor1_thrustAdjustment / 4.0;
 	// > NOTE: the "gravity_force_quarter" value was already divided by 4 when
 	//   it was loaded/processes from the .yaml file.
-	response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
-	response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
-	response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
-	response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
+	response.controlOutput.motorCmd1 = computeMotorPolyBackward(motor1_thrustAdjustment + gravity_force_quarter);
+	response.controlOutput.motorCmd2 = computeMotorPolyBackward(motor2_thrustAdjustment + gravity_force_quarter);
+	response.controlOutput.motorCmd3 = computeMotorPolyBackward(motor3_thrustAdjustment + gravity_force_quarter);
+	response.controlOutput.motorCmd4 = computeMotorPolyBackward(motor4_thrustAdjustment + gravity_force_quarter);
 
 	
 	// Specify that this controller is a rate controller
-	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTOR;
-	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
+	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTOR;
+	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
 	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_ANGLE;
 
+
+	DebugMsg debugMsg;
+
+	// Fill the debugging message with the data provided by Vicon
+	//debugMsg.vicon_x = request.ownCrazyflie.x;
+	//debugMsg.vicon_y = request.ownCrazyflie.y;
+	//debugMsg.vicon_z = request.ownCrazyflie.z;
+	//debugMsg.vicon_roll = request.ownCrazyflie.roll;
+	//debugMsg.vicon_pitch = request.ownCrazyflie.pitch;
+	//debugMsg.vicon_yaw = request.ownCrazyflie.yaw;
+
+	// debugMsg.value_1 = thrustAdjustment;
+	// ......................
+	// debugMsg.value_10 = your_variable_name;
+
+	debugMsg.value_1 = motor1_thrustAdjustment;
+	debugMsg.value_2 = motor2_thrustAdjustment;
+	debugMsg.value_3 = motor3_thrustAdjustment;
+	debugMsg.value_4 = motor4_thrustAdjustment;
+
+
+	// Publish the "debugMsg"
+	debugPublisher.publish(debugMsg);
 
 	// An alternate debugging technique is to print out data directly to the
 	// command line from which this node was launched.
@@ -589,7 +680,7 @@ void calculateControlOutput_viaLQRforRates(float stateErrorBody[12], Controller:
 	}
 
 
-	// UPDATE THE "RETURN" THE VARIABLE NAME "response"
+	// UPDATE THE "RETURN" THE VARIABLE NAMED "response"
 
 	// Put the computed rates and thrust into the "response" variable
 	// > For roll, pitch, and yaw:
@@ -717,7 +808,7 @@ void calculateControlOutput_viaLQRforAngles(float stateErrorBody[12], Controller
 		thrustAdjustment      -= gainMatrixThrust_SixStateVector[i] * stateErrorBody[i];
 	}
 
-	// UPDATE THE "RETURN" THE VARIABLE NAME "response"
+	// UPDATE THE "RETURN" THE VARIABLE NAMED "response"
 
 	// Put the computed rates and thrust into the "response" variable
 	// > For roll, pitch, and yaw:
@@ -1119,6 +1210,12 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixMotor2",                 gainMatrixMotor2,                 12);
 	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixMotor3",                 gainMatrixMotor3,                 12);
 	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixMotor4",                 gainMatrixMotor4,                 12);
+
+	// The LQR Controller parameters for "LQR_MODE_MOTOR"
+	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixThrust_TwelveStateVector", gainMatrixThrust_TwelveStateVector, 12);
+	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixRollTorque",               gainMatrixRollTorque,               12);
+	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixPitchTorque",              gainMatrixPitchTorque,              12);
+	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixYawTorque",                gainMatrixYawTorque,                12);
 
 	// The LQR Controller parameters for "LQR_MODE_RATE"
 	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixRollRate",               gainMatrixRollRate,               9);
