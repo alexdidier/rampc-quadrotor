@@ -471,10 +471,41 @@ void calculateControlOutput_viaLQRforMotors(float stateErrorBody[12], Controller
 		motor4_thrustAdjustment  -= gainMatrixMotor4[i] * stateErrorBody[i];
 	}
 
-	//motor1_thrustAdjustment = -gravity_force_quarter*0.9;
-	//motor2_thrustAdjustment = -gravity_force_quarter*0.9;
-	//motor3_thrustAdjustment = -gravity_force_quarter*0.9;
-	//motor4_thrustAdjustment = -gravity_force_quarter*0.9;
+	DebugMsg debugMsg;
+
+	// Fill the debugging message with the data provided by Vicon
+	//debugMsg.vicon_x = request.ownCrazyflie.x;
+	//debugMsg.vicon_y = request.ownCrazyflie.y;
+	//debugMsg.vicon_z = request.ownCrazyflie.z;
+	//debugMsg.vicon_roll = request.ownCrazyflie.roll;
+	//debugMsg.vicon_pitch = request.ownCrazyflie.pitch;
+	//debugMsg.vicon_yaw = request.ownCrazyflie.yaw;
+
+	// debugMsg.value_1 = thrustAdjustment;
+	// ......................
+	// debugMsg.value_10 = your_variable_name;
+
+	debugMsg.value_1 = stateErrorBody[6];
+	debugMsg.value_2 = stateErrorBody[9];
+
+	debugMsg.value_3 = motor1_thrustAdjustment;
+	debugMsg.value_4 = motor2_thrustAdjustment;
+	debugMsg.value_5 = motor3_thrustAdjustment;
+	debugMsg.value_6 = motor4_thrustAdjustment;
+
+
+
+
+	// Publish the "debugMsg"
+	debugPublisher.publish(debugMsg);
+
+
+
+
+	motor1_thrustAdjustment = -gravity_force_quarter*0.9;
+	motor2_thrustAdjustment = -gravity_force_quarter*0.9;
+	motor3_thrustAdjustment = -gravity_force_quarter*0.9;
+	motor4_thrustAdjustment = -gravity_force_quarter*0.9;
 
 	// UPDATE THE "RETURN" THE VARIABLE NAMED "response"
 
@@ -497,28 +528,7 @@ void calculateControlOutput_viaLQRforMotors(float stateErrorBody[12], Controller
 	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_ANGLE;
 
 
-	 DebugMsg debugMsg;
-
-	// Fill the debugging message with the data provided by Vicon
-	//debugMsg.vicon_x = request.ownCrazyflie.x;
-	//debugMsg.vicon_y = request.ownCrazyflie.y;
-	//debugMsg.vicon_z = request.ownCrazyflie.z;
-	//debugMsg.vicon_roll = request.ownCrazyflie.roll;
-	//debugMsg.vicon_pitch = request.ownCrazyflie.pitch;
-	//debugMsg.vicon_yaw = request.ownCrazyflie.yaw;
-
-	// debugMsg.value_1 = thrustAdjustment;
-	// ......................
-	// debugMsg.value_10 = your_variable_name;
-
-	debugMsg.value_1 = motor1_thrustAdjustment;
-	debugMsg.value_2 = motor2_thrustAdjustment;
-	debugMsg.value_3 = motor3_thrustAdjustment;
-	debugMsg.value_4 = motor4_thrustAdjustment;
-
-
-	// Publish the "debugMsg"
-	debugPublisher.publish(debugMsg);
+	 
 
 
 	// An alternate debugging technique is to print out data directly to the

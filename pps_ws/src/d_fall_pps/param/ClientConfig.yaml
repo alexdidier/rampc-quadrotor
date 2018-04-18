@@ -1,6 +1,6 @@
 safeController: "SafeControllerService/RateController"
 demoController: "DemoControllerService/DemoController"
-strictSafety: true
+strictSafety: false
 angleMargin: 0.6
 battery_threshold_while_flying: 2.8       # in V
 battery_threshold_while_motors_off: 3.30  # in V

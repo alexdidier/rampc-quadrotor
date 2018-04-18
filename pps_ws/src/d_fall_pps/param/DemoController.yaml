@@ -1,5 +1,5 @@
 # Mass of the crazyflie
-mass : 31
+mass : 30
 
 # Frequency of the controller, in hertz
 control_frequency : 200
@@ -27,7 +27,7 @@ follow_in_a_line_agentIDs : [1, 2, 3]
 shouldPublishDebugMessage : false
 
 # Boolean indiciating whether the debugging ROS_INFO_STREAM should be displayed or not
-shouldDisplayDebugInfo : true
+shouldDisplayDebugInfo : false
 
 
 # A flag for which LQR controller mode to use, defined as:
@@ -50,7 +50,7 @@ lqr_controller_mode : 3
 #       each of (x,y,z,roll,pitch,yaw)
 # 3  -  Quad-rotor Model Based Method
 #       Uses the model of the quad-rotor and the previous inputs
-estimator_method : 2
+estimator_method : 1
 
 
 # The LQR Controller parameters for "mode = 1"
