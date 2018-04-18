@@ -64,6 +64,13 @@
        </widget>
       </item>
       <item>
+       <widget class="Line" name="line_9">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
        <layout class="QVBoxLayout" name="verticalLayout">
         <property name="leftMargin">
          <number>6</number>
@@ -334,6 +341,13 @@
        </layout>
       </item>
       <item>
+       <widget class="Line" name="line_8">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
        <layout class="QHBoxLayout" name="horizontalLayout_8">
         <property name="leftMargin">
          <number>6</number>
@@ -355,7 +369,7 @@
            </font>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <property name="usesScrollButtons">
            <bool>true</bool>
@@ -370,7 +384,7 @@
             </font>
            </property>
            <attribute name="title">
-            <string>Safe</string>
+            <string>   Safe   </string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_5">
             <item row="0" column="0">
@@ -1014,7 +1028,7 @@
           </widget>
           <widget class="QWidget" name="tab_4">
            <attribute name="title">
-            <string>Demo</string>
+            <string>  Demo  </string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_9">
             <item row="0" column="0">
@@ -1976,6 +1990,34 @@
           </item>
           <item row="3" column="1">
            <widget class="Line" name="line_3">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="Line" name="line_4">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="1">
+           <widget class="Line" name="line_5">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="Line" name="line_6">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="Line" name="line_7">
             <property name="orientation">
              <enum>Qt::Vertical</enum>
             </property>
