@@ -1,0 +1,7 @@
+<launch>
+
+	<!-- COORDINATOR GUI -->
+    <node pkg="d_fall_pps" name="coordinator_GUI" output="screen" type="coordinator_GUI">
+	</node>
+
+</launch>
