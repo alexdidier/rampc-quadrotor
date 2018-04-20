@@ -114,10 +114,11 @@
 // LQR_MODE_ANGLE     LQR controller based on the state vector:
 //                    [position,velocity]
 //
-#define LQR_MODE_MOTOR      1
-#define LQR_MODE_ACTUATOR   2
-#define LQR_MODE_RATE       3   // (DEFAULT)
-#define LQR_MODE_ANGLE      4
+#define LQR_MODE_MOTOR               1
+#define LQR_MODE_ACTUATOR            2
+#define LQR_MODE_RATE                3   // (DEFAULT)
+#define LQR_MODE_ANGLE               4
+#define LQR_MODE_ANGLE_RATE_NESTED   5
 
 
 // These constants define the method used for estimating the Inertial
@@ -180,6 +181,9 @@ float gravity_force_quarter;
 // VARIABLES FOR THE CONTROLLER
 
 // Frequency at which the controller is running
+float vicon_frequency;
+
+// Frequency at which the controller is running
 float control_frequency;
 
 
@@ -200,21 +204,36 @@ std::vector<float> gainMatrixMotor3 (12,0.0);
 std::vector<float> gainMatrixMotor4 (12,0.0);
 
 // The LQR Controller parameters for "LQR_MODE_ACTUATOR"
-std::vector<float> gainMatrixThrust_TwelveStateVector  (12,0.0);
-std::vector<float> gainMatrixRollTorque                (12,0.0);
-std::vector<float> gainMatrixPitchTorque               (12,0.0);
-std::vector<float> gainMatrixYawTorque                 (12,0.0);
+std::vector<float> gainMatrixThrust_TwelveStateVector (12,0.0);
+std::vector<float> gainMatrixRollTorque               (12,0.0);
+std::vector<float> gainMatrixPitchTorque              (12,0.0);
+std::vector<float> gainMatrixYawTorque                (12,0.0);
 
 // The LQR Controller parameters for "LQR_MODE_RATE"
-std::vector<float> gainMatrixThrust_NineStateVector  =  { 0.00, 0.00, 0.25, 0.00, 0.00, 0.14, 0.00, 0.00, 0.00};
-std::vector<float> gainMatrixRollRate                =  { 0.00,-1.72, 0.00, 0.00,-1.34, 0.00, 5.12, 0.00, 0.00};
-std::vector<float> gainMatrixPitchRate               =  { 1.72, 0.00, 0.00, 1.34, 0.00, 0.00, 0.00, 5.12, 0.00};
-std::vector<float> gainMatrixYawRate                 =  { 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.84};
+std::vector<float> gainMatrixThrust_NineStateVector (9,0.0);
+std::vector<float> gainMatrixRollRate               (9,0.0);
+std::vector<float> gainMatrixPitchRate              (9,0.0);
+std::vector<float> gainMatrixYawRate                (9,0.0);
 
 // The LQR Controller parameters for "LQR_MODE_ANGLE"
-std::vector<float> gainMatrixThrust_SixStateVector   =  { 0.00, 0.00, 0.31, 0.00, 0.00, 0.14};
-std::vector<float> gainMatrixRollAngle               =  { 0.00,-0.20, 0.00, 0.00,-0.20, 0.00};
-std::vector<float> gainMatrixPitchAngle              =  { 0.20, 0.00, 0.00, 0.20, 0.00, 0.00};
+std::vector<float> gainMatrixThrust_SixStateVector (6,0.0);
+std::vector<float> gainMatrixRollAngle             (6,0.0);
+std::vector<float> gainMatrixPitchAngle            (6,0.0);
+
+// The LQR Controller parameters for "LQR_MODE_ANGLE_RATE_NESTED"
+std::vector<float> gainMatrixThrust_SixStateVector_50Hz (6,0.0);
+std::vector<float> gainMatrixRollAngle_50Hz             (6,0.0);
+std::vector<float> gainMatrixPitchAngle_50Hz            (6,0.0);
+
+std::vector<float> gainMatrixRollRate_Nested            (3,0.0);
+std::vector<float> gainMatrixPitchRate_Nested           (3,0.0);
+std::vector<float> gainMatrixYawRate_Nested             (3,0.0);
+
+int lqr_angleRateNested_counter = 4;
+float lqr_angleRateNested_prev_thrustAdjustment = 0.0;
+float lqr_angleRateNested_prev_rollAngle        = 0.0;
+float lqr_angleRateNested_prev_pitchAngle       = 0.0;
+float lqr_angleRateNested_prev_yawAngle         = 0.0;
 
 
 // The 16-bit command limits
@@ -365,11 +384,12 @@ ros::Subscriber xyz_yaw_to_follow_subscriber;
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response);
 
 // > The various functions that implement an LQR controller
-void calculateControlOutput_viaLQR(            float stateErrorBody[12], Controller::Request &request, Controller::Response &response);
-void calculateControlOutput_viaLQRforMotors(   float stateErrorBody[12], Controller::Request &request, Controller::Response &response);
-void calculateControlOutput_viaLQRforActuators(float stateErrorBody[12], Controller::Request &request, Controller::Response &response);
-void calculateControlOutput_viaLQRforRates(    float stateErrorBody[12], Controller::Request &request, Controller::Response &response);
-void calculateControlOutput_viaLQRforAngles(   float stateErrorBody[12], Controller::Request &request, Controller::Response &response);
+void calculateControlOutput_viaLQR(                     float stateErrorBody[12], Controller::Request &request, Controller::Response &response);
+void calculateControlOutput_viaLQRforMotors(            float stateErrorBody[12], Controller::Request &request, Controller::Response &response);
+void calculateControlOutput_viaLQRforActuators(         float stateErrorBody[12], Controller::Request &request, Controller::Response &response);
+void calculateControlOutput_viaLQRforRates(             float stateErrorBody[12], Controller::Request &request, Controller::Response &response);
+void calculateControlOutput_viaLQRforAngles(            float stateErrorBody[12], Controller::Request &request, Controller::Response &response);
+void calculateControlOutput_viaLQRforAnglesRatesNested( float stateErrorBody[12], Controller::Request &request, Controller::Response &response);
 
 // ESTIMATOR COMPUTATIONS
 void performEstimatorUpdate_forStateInterial(Controller::Request &request);

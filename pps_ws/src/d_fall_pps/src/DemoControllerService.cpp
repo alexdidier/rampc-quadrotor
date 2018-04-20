@@ -428,6 +428,15 @@ void calculateControlOutput_viaLQR(float stateErrorBody[12], Controller::Request
 			break;
 		}
 
+		// LQR controller based on the state vector:
+		// [position,velocity,angles]
+		case LQR_MODE_ANGLE_RATE_NESTED:
+		{
+			// Call the function that performs the control computations for this mode
+			calculateControlOutput_viaLQRforAnglesRatesNested(stateErrorBody,request,response);
+			break;
+		}
+
 		default:
 		{
 			// Display that the "lqr_controller_mode" was not recognised
@@ -808,7 +817,7 @@ void calculateControlOutput_viaLQRforAngles(float stateErrorBody[12], Controller
 	float thrustAdjustment = 0;
 
 	// Perform the "-Kx" LQR computation for the rates and thrust:
-	for(int i = 0; i < 9; ++i)
+	for(int i = 0; i < 6; ++i)
 	{
 		// BODY FRAME Y CONTROLLER
 		rollAngle_forResponse -= gainMatrixRollAngle[i] * stateErrorBody[i];
@@ -829,6 +838,7 @@ void calculateControlOutput_viaLQRforAngles(float stateErrorBody[12], Controller
 	// > NOTE: remember that the thrust is commanded per motor, so you sohuld
 	//         consider whether the "thrustAdjustment" computed by your
 	//         controller needed to be divided by 4 or not.
+	thrustAdjustment = thrustAdjustment / 4.0;
 	// > NOTE: the "gravity_force_quarter" value was already divided by 4 when
 	//         it was loaded/processes from the .yaml file.
 	response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
@@ -842,6 +852,116 @@ void calculateControlOutput_viaLQRforAngles(float stateErrorBody[12], Controller
 	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
 	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_ANGLE;
 
+
+}
+
+
+
+void calculateControlOutput_viaLQRforAnglesRatesNested( float stateErrorBody[12], Controller::Request &request, Controller::Response &response)
+{
+	// PERFORM THE NESTED "u=Kx" LQR CONTROLLER COMPUTATION
+
+	// Increment the counter variable
+	lqr_angleRateNested_counter++;
+
+	if (lqr_angleRateNested_counter > 4)
+	{
+		//ROS_INFO("Outer called");
+			
+		// Reset the counter to 1
+		lqr_angleRateNested_counter = 1;
+
+		// PERFORM THE OUTER "u=Kx" LQR CONTROLLER COMPUTATION
+
+		// Reset the class variable to zero for the following:
+		// > body frame roll angle,
+		// > body frame pitch angle,
+		// > body frame yaw angle,
+		// > total thrust adjustment.
+		// These will be requested from the "inner-loop" LQR controller below
+		lqr_angleRateNested_prev_rollAngle        = 0;
+		lqr_angleRateNested_prev_pitchAngle       = 0;
+		lqr_angleRateNested_prev_thrustAdjustment = 0;
+
+		// Perform the "-Kx" LQR computation for the rates and thrust:
+		for(int i = 0; i < 6; ++i)
+		{
+			// BODY FRAME Y CONTROLLER
+			lqr_angleRateNested_prev_rollAngle        -= gainMatrixRollAngle_50Hz[i] * stateErrorBody[i];
+			// BODY FRAME X CONTROLLER
+			lqr_angleRateNested_prev_pitchAngle       -= gainMatrixPitchAngle_50Hz[i] * stateErrorBody[i];
+			// > ALITUDE CONTROLLER (i.e., z-controller):
+			lqr_angleRateNested_prev_thrustAdjustment -= gainMatrixThrust_SixStateVector_50Hz[i] * stateErrorBody[i];
+		}
+
+		// BODY FRAME Z CONTROLLER
+		//lqr_angleRateNested_prev_yawAngle = setpoint[3];
+		lqr_angleRateNested_prev_yawAngle = stateErrorBody[8];
+
+
+	}
+
+	//ROS_INFO("Inner called");
+
+	// PERFORM THE INNER "u=Kx" LQR CONTROLLER COMPUTATION
+	// Instantiate the local variables for the following:
+	// > body frame roll rate,
+	// > body frame pitch rate,
+	// > body frame yaw rate,
+	// These will be requested from the Crazyflie's on-baord "inner-loop" controller
+	float rollRate_forResponse  = 0;
+	float pitchRate_forResponse = 0;
+	float yawRate_forResponse   = 0;
+
+	// Create the angle error to use for the inner controller
+	float temp_stateAngleError[3] = {
+		stateErrorBody[6] - lqr_angleRateNested_prev_rollAngle,
+		stateErrorBody[7] - lqr_angleRateNested_prev_pitchAngle,
+		lqr_angleRateNested_prev_yawAngle
+	};
+	
+	// Perform the "-Kx" LQR computation for the rates and thrust:
+	for(int i = 0; i < 4; ++i)
+	{
+		// BODY FRAME Y CONTROLLER
+		rollRate_forResponse  -= gainMatrixRollRate_Nested[i]  * temp_stateAngleError[i];
+		// BODY FRAME X CONTROLLER
+		pitchRate_forResponse -= gainMatrixPitchRate_Nested[i] * temp_stateAngleError[i];
+		// BODY FRAME Z CONTROLLER
+		yawRate_forResponse   -= gainMatrixYawRate_Nested[i]   * temp_stateAngleError[i];
+	}
+
+
+	// UPDATE THE "RETURN" THE VARIABLE NAMED "response"
+
+	// Put the computed rates and thrust into the "response" variable
+	// > For roll, pitch, and yaw:
+	response.controlOutput.roll  = rollRate_forResponse;
+	response.controlOutput.pitch = pitchRate_forResponse;
+	response.controlOutput.yaw   = yawRate_forResponse;
+	// > For the thrust adjustment we must add the feed-forward thrust to counter-act gravity.
+	// > NOTE: remember that the thrust is commanded per motor, so you sohuld
+	//         consider whether the "thrustAdjustment" computed by your
+	//         controller needed to be divided by 4 or not.
+	float thrustAdjustment = lqr_angleRateNested_prev_thrustAdjustment / 4.0;
+	// > NOTE: the "gravity_force_quarter" value was already divided by 4 when
+	//         it was loaded/processes from the .yaml file.
+	response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
+	response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
+	response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
+	response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
+
+	
+	// Specify that this controller is a rate controller
+	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTOR;
+	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
+	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_ANGLE;
+
+
+	ROS_INFO_STREAM("thrust    =" << lqr_angleRateNested_prev_thrustAdjustment );
+	ROS_INFO_STREAM("rollrate  =" << response.controlOutput.roll );
+	ROS_INFO_STREAM("pitchrate =" << response.controlOutput.pitch );
+	ROS_INFO_STREAM("yawrate   =" << response.controlOutput.yaw );
 
 }
 
@@ -1173,6 +1293,10 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 
 	// > The frequency at which the "computeControlOutput" is being called, as determined
 	//   by the frequency at which the Vicon system provides position and attitude data
+	vicon_frequency = getParameterFloat(nodeHandle_for_demoController, "vicon_frequency");
+
+	// > The frequency at which the "computeControlOutput" is being called, as determined
+	//   by the frequency at which the Vicon system provides position and attitude data
 	control_frequency = getParameterFloat(nodeHandle_for_demoController, "control_frequency");
 
 	// > The co-efficients of the quadratic conversation from 16-bit motor command to
@@ -1228,15 +1352,25 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixYawTorque",                gainMatrixYawTorque,                12);
 
 	// The LQR Controller parameters for "LQR_MODE_RATE"
+	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixThrust_NineStateVector", gainMatrixThrust_NineStateVector, 9);
 	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixRollRate",               gainMatrixRollRate,               9);
 	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixPitchRate",              gainMatrixPitchRate,              9);
 	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixYawRate",                gainMatrixYawRate,                9);
-	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixThrust_NineStateVector", gainMatrixThrust_NineStateVector, 9);
-
+	
 	// The LQR Controller parameters for "LQR_MODE_ANGLE"
+	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixThrust_SixStateVector",  gainMatrixThrust_SixStateVector,  6);
 	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixRollAngle",              gainMatrixRollAngle,              6);
 	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixPitchAngle",             gainMatrixPitchAngle,             6);
-	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixThrust_SixStateVector",  gainMatrixThrust_SixStateVector,  6);
+	
+	// The LQR Controller parameters for "LQR_MODE_ANGLE_RATE_NESTED"
+	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixThrust_SixStateVector_50Hz",  gainMatrixThrust_SixStateVector_50Hz,  6);
+	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixRollAngle_50Hz",              gainMatrixRollAngle_50Hz,              6);
+	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixPitchAngle_50Hz",             gainMatrixPitchAngle_50Hz,             6);
+
+	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixRollRate_Nested",             gainMatrixRollRate_Nested,             3);
+	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixPitchRate_Nested",            gainMatrixPitchRate_Nested,            3);
+	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixYawRate_Nested",              gainMatrixYawRate_Nested,              3);
+	
 
 
 	// 16-BIT COMMAND LIMITS
@@ -1276,7 +1410,7 @@ void processFetchedParameters()
     gravity_force_quarter = cf_mass * 9.81/(1000*4);
 
     // Set that the estimator frequency is the same as the control frequency
-    estimator_frequency = control_frequency;
+    estimator_frequency = vicon_frequency;
 
     // Look-up which agent should be followed
     if (shouldFollowAnotherAgent)
