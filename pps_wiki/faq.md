@@ -3,6 +3,7 @@ Contents:
 - [Remind me of that command again...](#remind-me-of-that-command-again)
 - [Troubleshooting :-(](#troubleshooting-)
 - [Control algorithm hints](#control-algorithm-hints)
+- [Connect to custom buttons](#connect-to-custom-buttons)
 
 ## Remind me of that command again...
 
@@ -289,3 +290,102 @@ To observe all messages published on a particular topic, after launching your no
 rostopic echo /namespace/topicname
 ```
 where ``/namespace/topicname`` needs to be replaced with the topic that you wish to echo. All messages published to this topic will be directly printed out in the command window.
+
+
+
+
+
+## Connect to custom buttons
+
+The Graphical User Interface for flying your Crazyflie offers three buttons that can be used to trigger functions within your ``CustomControllerService.cpp`` file. In order to connect the button with a function within your controller, perform the following steps.
+
+Add the following include:
+```
+#include "d_fall_pps/CustomButton.h"
+```
+
+Add the following function prototype:
+```
+// CUSTOM COMMAND RECEIVED CALLBACK
+void customCommandReceivedCallback(const CustomButton& commandReceived);
+
+```
+
+Add the following subscriber with the ``main`` function and before the ``ros::spin();`` command:
+```
+// Instantiate the local variable "customCommandSubscriber" to be a "ros::Subscriber"
+// type variable that subscribes to the "StudentCustomButton" topic and calls the class
+// function "customCommandReceivedCallback" each time a messaged is received on this topic
+// and the message received is passed as an input argument to the callback function.
+ros::Subscriber customCommandReceivedSubscriber = PPSClient_nodeHandle.subscribe("StudentCustomButton", 1, customCommandReceivedCallback);
+```
+
+
+Add the following function somewhere within your ``CustomControllerService.cpp`` file:
+```
+//    ----------------------------------------------------------------------------------
+//     CCCC  U   U   SSSS  TTTTT   OOO   M   M
+//    C      U   U  S        T    O   O  MM MM
+//    C      U   U   SSS     T    O   O  M M M
+//    C      U   U      S    T    O   O  M   M
+//     CCCC   UUU   SSSS     T     OOO   M   M
+//
+//     CCCC   OOO   M   M  M   M    A    N   N  DDDD
+//    C      O   O  MM MM  MM MM   A A   NN  N  D   D
+//    C      O   O  M M M  M M M  A   A  N N N  D   D
+//    C      O   O  M   M  M   M  AAAAA  N  NN  D   D
+//     CCCC   OOO   M   M  M   M  A   A  N   N  DDDD
+//    ----------------------------------------------------------------------------------
+
+// CUSTOM COMMAND RECEIVED CALLBACK
+void customCommandReceivedCallback(const CustomButton& commandReceived)
+{
+	// Extract the data from the message
+	int custom_button_index   = commandReceived.button_index;
+	float custom_command_code = commandReceived.command_code;
+
+	// Switch between the button pressed
+	switch(custom_button_index)
+	{
+
+		// > FOR CUSTOM BUTTON 1
+		case 1:
+		{
+			// Let the user know that this part of the code was triggered
+			ROS_INFO("Custom button 1 received in controller.");
+			// Code here to respond to custom button 1
+			
+			break;
+		}
+
+		// > FOR CUSTOM BUTTON 2
+		case 2:
+		{
+			// Let the user know that this part of the code was triggered
+			ROS_INFO("Custom button 2 received in controller.");
+			// Code here to respond to custom button 2
+
+			break;
+		}
+
+		// > FOR CUSTOM BUTTON 3
+		case 3:
+		{
+			// Let the user know that this part of the code was triggered
+			ROS_INFO_STREAM("Custom button 3 received in controller, with command code:" << custom_command_code );
+			// Code here to respond to custom button 3
+
+			break;
+		}
+
+		default:
+		{
+			// Let the user know that the command was not recognised
+			ROS_INFO_STREAM("A custom command was received in the controller but not recognised, message.button_index = " << custom_button_index << ", and message.command_code = " << custom_command_code );
+			break;
+		}
+	}
+}
+```
+
+To respond to each of the button, add your code with the respective switch cases.
