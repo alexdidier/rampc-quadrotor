@@ -56,7 +56,7 @@
 #include "d_fall_pps/ControlCommand.h"
 #include "d_fall_pps/Controller.h"
 #include "d_fall_pps/DebugMsg.h"
-//#include "d_fall_pps/DemoControllerYAML.h"
+#include "d_fall_pps/CustomButton.h"
 
 #include <std_msgs/Int32.h>
 
@@ -408,6 +408,9 @@ float computeMotorPolyBackward(float thrust);
 // SETPOINT CHANGE CALLBACK
 void setpointCallback(const Setpoint& newSetpoint);
 void xyz_yaw_to_follow_callback(const Setpoint& newSetpoint);
+
+// CUSTOM COMMAND RECEIVED CALLBACK
+void customCommandReceivedCallback(const CustomButton& commandReceived);
 
 // PUBLISH THE CURRENT X,Y,Z, AND YAW
 void publish_current_xyz_yaw(float x, float y, float z, float yaw);

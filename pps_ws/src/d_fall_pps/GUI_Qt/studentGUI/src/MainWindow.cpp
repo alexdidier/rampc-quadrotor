@@ -685,7 +685,7 @@ void MainWindow::on_customButton_1_clicked()
     msg_custom_button.command_code = 0;
     this->PPSClientStudentCustomButtonPublisher.publish(msg_custom_button);
 
-    ROS_INFO("Custom button 1 pressed");
+    ROS_INFO("Custom button 1 pressed in GUI");
 }
 
 void MainWindow::on_customButton_2_clicked()
@@ -694,7 +694,7 @@ void MainWindow::on_customButton_2_clicked()
     msg_custom_button.button_index = 2;
     msg_custom_button.command_code = 0;
     this->PPSClientStudentCustomButtonPublisher.publish(msg_custom_button);
-    ROS_INFO("Custom button 2 pressed");
+    ROS_INFO("Custom button 2 pressed in GUI");
 }
 
 void MainWindow::on_customButton_3_clicked()
@@ -703,7 +703,7 @@ void MainWindow::on_customButton_3_clicked()
     msg_custom_button.button_index = 3;
     msg_custom_button.command_code = (ui->custom_command_3->text()).toFloat();
     this->PPSClientStudentCustomButtonPublisher.publish(msg_custom_button);
-    ROS_INFO("Custom button 3 pressed");
+    ROS_INFO("Custom button 3 pressed in GUI");
 }
 
 Setpoint MainWindow::correctSetpointBox(Setpoint setpoint, CrazyflieContext context)

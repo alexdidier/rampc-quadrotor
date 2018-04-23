@@ -1144,7 +1144,6 @@ float computeMotorPolyBackward(float thrust)
 
 
 
-
 //    ----------------------------------------------------------------------------------
 //    N   N  EEEEE  W     W        SSSS  EEEEE  TTTTT  PPPP    OOO   III  N   N  TTTTT
 //    NN  N  E      W     W       S      E        T    P   P  O   O   I   NN  N    T
@@ -1186,6 +1185,71 @@ void xyz_yaw_to_follow_callback(const Setpoint& newSetpoint)
 	}
 }
 
+
+
+//    ----------------------------------------------------------------------------------
+//     CCCC  U   U   SSSS  TTTTT   OOO   M   M
+//    C      U   U  S        T    O   O  MM MM
+//    C      U   U   SSS     T    O   O  M M M
+//    C      U   U      S    T    O   O  M   M
+//     CCCC   UUU   SSSS     T     OOO   M   M
+//
+//     CCCC   OOO   M   M  M   M    A    N   N  DDDD
+//    C      O   O  MM MM  MM MM   A A   NN  N  D   D
+//    C      O   O  M M M  M M M  A   A  N N N  D   D
+//    C      O   O  M   M  M   M  AAAAA  N  NN  D   D
+//     CCCC   OOO   M   M  M   M  A   A  N   N  DDDD
+//    ----------------------------------------------------------------------------------
+
+// CUSTOM COMMAND RECEIVED CALLBACK
+void customCommandReceivedCallback(const CustomButton& commandReceived)
+{
+	// Extract the data from the message
+	int custom_button_index   = commandReceived.button_index;
+	float custom_command_code = commandReceived.command_code;
+
+	// Switch between the button pressed
+	switch(custom_button_index)
+	{
+
+		// > FOR CUSTOM BUTTON 1
+		case 1:
+		{
+			// Let the user know that this part of the code was triggered
+			ROS_INFO("Custom button 1 received in controller.");
+			// Code here to respond to custom button 1
+			
+			break;
+		}
+
+		// > FOR CUSTOM BUTTON 2
+		case 2:
+		{
+			// Let the user know that this part of the code was triggered
+			ROS_INFO("Custom button 2 received in controller.");
+			// Code here to respond to custom button 2
+
+			break;
+		}
+
+		// > FOR CUSTOM BUTTON 3
+		case 3:
+		{
+			// Let the user know that this part of the code was triggered
+			ROS_INFO_STREAM("Custom button 3 received in controller, with command code:" << custom_command_code );
+			// Code here to respond to custom button 3
+
+			break;
+		}
+
+		default:
+		{
+			// Let the user know that the command was not recognised
+			ROS_INFO_STREAM("A custom command was received in the controller but not recognised, message.button_index = " << custom_button_index << ", and message.command_code = " << custom_command_code );
+			break;
+		}
+	}
+}
 
 
 
@@ -1692,6 +1756,12 @@ int main(int argc, char* argv[]) {
     // is filled in with the student ID number of this computer. The messages published will
     // have the structure defined in the file "Setpoint.msg" (located in the "msg" folder).
     my_current_xyz_yaw_publisher = nodeHandle.advertise<Setpoint>("/" + std::to_string(my_agentID) + "/my_current_xyz_yaw_topic", 1);
+
+    // Instantiate the local variable "customCommandSubscriber" to be a "ros::Subscriber"
+    // type variable that subscribes to the "StudentCustomButton" topic and calls the class
+    // function "customCommandReceivedCallback" each time a messaged is received on this topic
+    // and the message received is passed as an input argument to the callback function.
+    ros::Subscriber customCommandReceivedSubscriber = PPSClient_nodeHandle.subscribe("StudentCustomButton", 1, customCommandReceivedCallback);
 
     // Print out some information to the user.
     ROS_INFO("DemoControllerService ready");
