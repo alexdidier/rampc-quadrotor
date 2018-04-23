@@ -114,11 +114,12 @@
 // LQR_MODE_ANGLE     LQR controller based on the state vector:
 //                    [position,velocity]
 //
-#define LQR_MODE_MOTOR               1
-#define LQR_MODE_ACTUATOR            2
-#define LQR_MODE_RATE                3   // (DEFAULT)
-#define LQR_MODE_ANGLE               4
-#define LQR_MODE_ANGLE_RATE_NESTED   5
+#define CONTROLLER_MODE_LQR_MOTOR               1
+#define CONTROLLER_MODE_LQR_ACTUATOR            2
+#define CONTROLLER_MODE_LQR_RATE                3   // (DEFAULT)
+#define CONTROLLER_MODE_LQR_ANGLE               4
+#define CONTROLLER_MODE_LQR_ANGLE_RATE_NESTED   5
+#define CONTROLLER_MODE_ANGLE_RESPONSE_TEST     6
 
 
 // These constants define the method used for estimating the Inertial
@@ -194,33 +195,33 @@ float setpoint[4] = {0.0,0.0,0.4,0.0};
 
 
 // The controller type to run in the "calculateControlOutput" function
-int lqr_controller_mode = LQR_MODE_RATE;
+int controller_mode = CONTROLLER_MODE_LQR_RATE;
 
 
-// The LQR Controller parameters for "LQR_MODE_MOTOR"
+// The LQR Controller parameters for "CONTROLLER_MODE_LQR_MOTOR"
 std::vector<float> gainMatrixMotor1 (12,0.0);
 std::vector<float> gainMatrixMotor2 (12,0.0);
 std::vector<float> gainMatrixMotor3 (12,0.0);
 std::vector<float> gainMatrixMotor4 (12,0.0);
 
-// The LQR Controller parameters for "LQR_MODE_ACTUATOR"
+// The LQR Controller parameters for "CONTROLLER_MODE_LQR_ACTUATOR"
 std::vector<float> gainMatrixThrust_TwelveStateVector (12,0.0);
 std::vector<float> gainMatrixRollTorque               (12,0.0);
 std::vector<float> gainMatrixPitchTorque              (12,0.0);
 std::vector<float> gainMatrixYawTorque                (12,0.0);
 
-// The LQR Controller parameters for "LQR_MODE_RATE"
+// The LQR Controller parameters for "CONTROLLER_MODE_LQR_RATE"
 std::vector<float> gainMatrixThrust_NineStateVector (9,0.0);
 std::vector<float> gainMatrixRollRate               (9,0.0);
 std::vector<float> gainMatrixPitchRate              (9,0.0);
 std::vector<float> gainMatrixYawRate                (9,0.0);
 
-// The LQR Controller parameters for "LQR_MODE_ANGLE"
+// The LQR Controller parameters for "CONTROLLER_MODE_LQR_ANGLE"
 std::vector<float> gainMatrixThrust_SixStateVector (6,0.0);
 std::vector<float> gainMatrixRollAngle             (6,0.0);
 std::vector<float> gainMatrixPitchAngle            (6,0.0);
 
-// The LQR Controller parameters for "LQR_MODE_ANGLE_RATE_NESTED"
+// The LQR Controller parameters for "CONTROLLER_MODE_LQR_ANGLE_RATE_NESTED"
 std::vector<float> gainMatrixThrust_SixStateVector_50Hz (6,0.0);
 std::vector<float> gainMatrixRollAngle_50Hz             (6,0.0);
 std::vector<float> gainMatrixPitchAngle_50Hz            (6,0.0);
@@ -229,11 +230,23 @@ std::vector<float> gainMatrixRollRate_Nested            (3,0.0);
 std::vector<float> gainMatrixPitchRate_Nested           (3,0.0);
 std::vector<float> gainMatrixYawRate_Nested             (3,0.0);
 
-int lqr_angleRateNested_counter = 4;
+int   lqr_angleRateNested_counter = 4;
 float lqr_angleRateNested_prev_thrustAdjustment = 0.0;
 float lqr_angleRateNested_prev_rollAngle        = 0.0;
 float lqr_angleRateNested_prev_pitchAngle       = 0.0;
 float lqr_angleRateNested_prev_yawAngle         = 0.0;
+
+// The LQR Controller parameters for "CONTROLLER_MODE_ANGLE_RESPONSE_TEST"
+int   angleResponseTest_counter = 4;
+float angleResponseTest_prev_thrustAdjustment = 0.0;
+float angleResponseTest_prev_rollAngle        = 0.0;
+float angleResponseTest_prev_pitchAngle       = 0.0;
+float angleResponseTest_prev_yawAngle         = 0.0;
+float angleResponseTest_pitchAngle_degrees;
+float angleResponseTest_pitchAngle_radians;
+float angleResponseTest_distance_meters;
+
+
 
 
 // The 16-bit command limits
@@ -390,11 +403,17 @@ void calculateControlOutput_viaLQRforActuators(         float stateErrorBody[12]
 void calculateControlOutput_viaLQRforRates(             float stateErrorBody[12], Controller::Request &request, Controller::Response &response);
 void calculateControlOutput_viaLQRforAngles(            float stateErrorBody[12], Controller::Request &request, Controller::Response &response);
 void calculateControlOutput_viaLQRforAnglesRatesNested( float stateErrorBody[12], Controller::Request &request, Controller::Response &response);
+void calculateControlOutput_viaAngleResponseTest(       float stateErrorBody[12], Controller::Request &request, Controller::Response &response);
 
 // ESTIMATOR COMPUTATIONS
 void performEstimatorUpdate_forStateInterial(Controller::Request &request);
 void performEstimatorUpdate_forStateInterial_viaFiniteDifference();
 void performEstimatorUpdate_forStateInterial_viaPointMassKalmanFilter();
+
+
+// PUBLISHING OF THE DEBUG MESSAGE
+void construct_and_publish_debug_message(Controller::Request &request, Controller::Response &response);
+
 
 // TRANSFORMATION FROM INTERIAL ESTIMATE TO BODY FRAME ERROR
 void convert_stateInertial_to_bodyFrameError(float stateInertial[12], float setpoint[4], float (&bodyFrameError)[12]);

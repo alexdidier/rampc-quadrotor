@@ -25,21 +25,30 @@ shouldFollowAnotherAgent : false
 follow_in_a_line_agentIDs : [1, 2, 3]
 
 # Boolean indiciating whether the "Debug Message" of this agent should be published or not
-shouldPublishDebugMessage : false
+shouldPublishDebugMessage : true
 
 # Boolean indiciating whether the debugging ROS_INFO_STREAM should be displayed or not
 shouldDisplayDebugInfo : false
 
 
-# A flag for which LQR controller mode to use, defined as:
-# 1  -  LQR controller based on the state vector: [position,velocity,angles,angular velocity]
+# A flag for which controller mode to use, defined as:
+# 1 CONTROLLER_MODE_LQR_MOTOR
+#    -  LQR controller based on the state vector: [position,velocity,angles,angular velocity]
 #       commands per motor thrusts
-# 2  -  LQR controller based on the state vector: [position,velocity,angles,angular velocity]
+# 2 CONTROLLER_MODE_LQR_ACTUATOR
+#    -  LQR controller based on the state vector: [position,velocity,angles,angular velocity]
 #       commands actuators of total force and bodz torques
-# 3  -  LQR controller based on the state vector: [position,velocity,angles]
-# 4  -  LQR controller based on the state vector: [position,velocity]
-# 5  -  LQR Nester angle and rate controller
-lqr_controller_mode : 5
+# 3 CONTROLLER_MODE_LQR_RATE
+#    -  LQR controller based on the state vector: [position,velocity,angles]
+# 4 CONTROLLER_MODE_LQR_ANGLE
+#    -  LQR controller based on the state vector: [position,velocity]
+# 5 CONTROLLER_MODE_LQR_ANGLE_RATE_NESTED
+#    -  LQR Nested angle and rate controller
+# 6 CONTROLLER_MODE_ANGLE_RESPONSE_TEST
+#    -  Swaps between pitch set-points to test angle set-point response time
+#       i.e., this controller test the assumption that "the inner loop is infinitely fast"
+#
+controller_mode : 6
 
 
 # A flag for which estimator to use, defined as:
@@ -87,6 +96,14 @@ gainMatrixPitchAngle_50Hz           :  [ 0.31, 0.00, 0.00, 0.25, 0.00, 0.00]
 gainMatrixRollRate_Nested           :  [ 4.00, 0.00, 0.00]
 gainMatrixPitchRate_Nested          :  [ 0.00, 4.00, 0.00]
 gainMatrixYawRate_Nested            :  [ 0.00, 0.00, 2.30]
+
+
+# The paramters for the "Angle Reponse Test" controller mode
+angleResponseTest_pitchAngle_degrees : 20
+angleResponseTest_distance_meters    : 0.02
+
+
+
 
 # The max and minimum thrust for a 16-bit command
 command_sixteenbit_min : 1000

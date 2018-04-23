@@ -187,13 +187,8 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 
 	
 
-	
-
-	
-
-	// PERFORM THE BASIC LQR CONTROLLER
+	// CARRY OUT THE CONTROLLER COMPUTATIONS
 	calculateControlOutput_viaLQR(current_bodyFrameError,request,response);
-
 
 
 
@@ -201,6 +196,12 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	if (shouldPublishCurrent_xyz_yaw)
 	{
 		publish_current_xyz_yaw(request.ownCrazyflie.x,request.ownCrazyflie.y,request.ownCrazyflie.z,request.ownCrazyflie.yaw);
+	}
+
+	// PUBLISH THE DEBUG MESSAGE (if required)
+	if (shouldPublishDebugMessage)
+	{
+		construct_and_publish_debug_message(request,response);
 	}
 
 	// RETURN "true" TO INDICATE THAT THE COMPUTATIONS WERE SUCCESSFUL
@@ -390,12 +391,12 @@ void performEstimatorUpdate_forStateInterial_viaPointMassKalmanFilter()
 void calculateControlOutput_viaLQR(float stateErrorBody[12], Controller::Request &request, Controller::Response &response)
 {
 	// SWITCH BETWEEN THE DIFFERENT LQR CONTROLLER MODES:
-	switch (lqr_controller_mode)
+	switch (controller_mode)
 	{
 		// LQR controller based on the state vector:
 		// [position,velocity,angles,angular velocity]
 		// commands per motor thrusts
-		case LQR_MODE_MOTOR:
+		case CONTROLLER_MODE_LQR_MOTOR:
 		{
 			// Call the function that performs the control computations for this mode
 			calculateControlOutput_viaLQRforMotors(stateErrorBody,request,response);
@@ -404,7 +405,7 @@ void calculateControlOutput_viaLQR(float stateErrorBody[12], Controller::Request
 		// LQR controller based on the state vector:
 		// [position,velocity,angles,angular velocity]
 		// commands actuators of total force and bodz torques
-		case LQR_MODE_ACTUATOR:
+		case CONTROLLER_MODE_LQR_ACTUATOR:
 		{
 			// Call the function that performs the control computations for this mode
 			calculateControlOutput_viaLQRforActuators(stateErrorBody,request,response);
@@ -412,7 +413,7 @@ void calculateControlOutput_viaLQR(float stateErrorBody[12], Controller::Request
 		}
 		// LQR controller based on the state vector:
 		// [position,velocity,angles]
-		case LQR_MODE_RATE:
+		case CONTROLLER_MODE_LQR_RATE:
 		{
 			// Call the function that performs the control computations for this mode
 			calculateControlOutput_viaLQRforRates(stateErrorBody,request,response);
@@ -421,7 +422,7 @@ void calculateControlOutput_viaLQR(float stateErrorBody[12], Controller::Request
 
 		// LQR controller based on the state vector:
 		// [position,velocity]
-		case LQR_MODE_ANGLE:
+		case CONTROLLER_MODE_LQR_ANGLE:
 		{
 			// Call the function that performs the control computations for this mode
 			calculateControlOutput_viaLQRforAngles(stateErrorBody,request,response);
@@ -430,17 +431,26 @@ void calculateControlOutput_viaLQR(float stateErrorBody[12], Controller::Request
 
 		// LQR controller based on the state vector:
 		// [position,velocity,angles]
-		case LQR_MODE_ANGLE_RATE_NESTED:
+		case CONTROLLER_MODE_LQR_ANGLE_RATE_NESTED:
 		{
 			// Call the function that performs the control computations for this mode
 			calculateControlOutput_viaLQRforAnglesRatesNested(stateErrorBody,request,response);
 			break;
 		}
 
+		// LQR controller based on the state vector:
+		// [position,velocity,angles]
+		case CONTROLLER_MODE_ANGLE_RESPONSE_TEST:
+		{
+			// Call the function that performs the control computations for this mode
+			calculateControlOutput_viaAngleResponseTest(stateErrorBody,request,response);
+			break;
+		}
+
 		default:
 		{
-			// Display that the "lqr_controller_mode" was not recognised
-			ROS_INFO_STREAM("ERROR: in the 'calculateControlOutput' function of the 'DemoControllerService': the 'lqr_controller_mode' is not recognised.");
+			// Display that the "controller_mode" was not recognised
+			ROS_INFO_STREAM("ERROR: in the 'calculateControlOutput' function of the 'DemoControllerService': the 'controller_mode' is not recognised.");
 			// Set everything in the response to zero
 			response.controlOutput.roll       =  0;
 			response.controlOutput.pitch      =  0;
@@ -480,7 +490,7 @@ void calculateControlOutput_viaLQRforMotors(float stateErrorBody[12], Controller
 		motor4_thrustAdjustment  -= gainMatrixMotor4[i] * stateErrorBody[i];
 	}
 
-	DebugMsg debugMsg;
+	//DebugMsg debugMsg;
 
 	// Fill the debugging message with the data provided by Vicon
 	//debugMsg.vicon_x = request.ownCrazyflie.x;
@@ -494,19 +504,19 @@ void calculateControlOutput_viaLQRforMotors(float stateErrorBody[12], Controller
 	// ......................
 	// debugMsg.value_10 = your_variable_name;
 
-	debugMsg.value_1 = stateErrorBody[6];
-	debugMsg.value_2 = stateErrorBody[9];
+	//debugMsg.value_1 = stateErrorBody[6];
+	//debugMsg.value_2 = stateErrorBody[9];
 
-	debugMsg.value_3 = motor1_thrustAdjustment;
-	debugMsg.value_4 = motor2_thrustAdjustment;
-	debugMsg.value_5 = motor3_thrustAdjustment;
-	debugMsg.value_6 = motor4_thrustAdjustment;
+	//debugMsg.value_3 = motor1_thrustAdjustment;
+	//debugMsg.value_4 = motor2_thrustAdjustment;
+	//debugMsg.value_5 = motor3_thrustAdjustment;
+	//debugMsg.value_6 = motor4_thrustAdjustment;
 
 
 
 
 	// Publish the "debugMsg"
-	debugPublisher.publish(debugMsg);
+	//debugPublisher.publish(debugMsg);
 
 
 
@@ -628,7 +638,7 @@ void calculateControlOutput_viaLQRforActuators(float stateErrorBody[12], Control
 	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_ANGLE;
 
 
-	DebugMsg debugMsg;
+	//DebugMsg debugMsg;
 
 	// Fill the debugging message with the data provided by Vicon
 	//debugMsg.vicon_x = request.ownCrazyflie.x;
@@ -642,14 +652,14 @@ void calculateControlOutput_viaLQRforActuators(float stateErrorBody[12], Control
 	// ......................
 	// debugMsg.value_10 = your_variable_name;
 
-	debugMsg.value_1 = motor1_thrustAdjustment;
-	debugMsg.value_2 = motor2_thrustAdjustment;
-	debugMsg.value_3 = motor3_thrustAdjustment;
-	debugMsg.value_4 = motor4_thrustAdjustment;
+	//debugMsg.value_1 = motor1_thrustAdjustment;
+	//debugMsg.value_2 = motor2_thrustAdjustment;
+	//debugMsg.value_3 = motor3_thrustAdjustment;
+	//debugMsg.value_4 = motor4_thrustAdjustment;
 
 
 	// Publish the "debugMsg"
-	debugPublisher.publish(debugMsg);
+	//debugPublisher.publish(debugMsg);
 
 	// An alternate debugging technique is to print out data directly to the
 	// command line from which this node was launched.
@@ -723,48 +733,6 @@ void calculateControlOutput_viaLQRforRates(float stateErrorBody[12], Controller:
 	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTOR;
 	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
 	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_ANGLE;
-
-
-
-	//  ***********************************************************
-	//  DDDD   EEEEE  BBBB   U   U   GGGG       M   M   SSSS   GGGG
-	//  D   D  E      B   B  U   U  G           MM MM  S      G
-	//  D   D  EEE    BBBB   U   U  G           M M M   SSS   G
-	//  D   D  E      B   B  U   U  G   G       M   M      S  G   G
-	//  DDDD   EEEEE  BBBB    UUU    GGGG       M   M  SSSS    GGGG
-
-    // DEBUGGING CODE:
-    // As part of the D-FaLL-System we have defined a message type names"DebugMsg".
-    // By fill this message with data and publishing it you can display the data in
-    // real time using rpt plots. Instructions for using rqt plots can be found on
-    // the wiki of the D-FaLL-System repository
-    if (shouldPublishDebugMessage)
-    {
-		// Instantiate a local variable of type "DebugMsg", see the file "DebugMsg.msg"
-		// (located in the "msg" folder) to see the full structure of this message.
-		DebugMsg debugMsg;
-
-		// Fill the debugging message with the data provided by Vicon
-		debugMsg.vicon_x = request.ownCrazyflie.x;
-		debugMsg.vicon_y = request.ownCrazyflie.y;
-		debugMsg.vicon_z = request.ownCrazyflie.z;
-		debugMsg.vicon_roll = request.ownCrazyflie.roll;
-		debugMsg.vicon_pitch = request.ownCrazyflie.pitch;
-		debugMsg.vicon_yaw = request.ownCrazyflie.yaw;
-
-		// Fill in the debugging message with any other data you would like to display
-		// in real time. For example, it might be useful to display the thrust
-		// adjustment computed by the z-altitude controller.
-		// The "DebugMsg" type has 10 properties from "value_1" to "value_10", all of
-		// type "float64" that you can fill in with data you would like to plot in
-		// real-time.
-		// debugMsg.value_1 = thrustAdjustment;
-		// ......................
-		// debugMsg.value_10 = your_variable_name;
-
-		// Publish the "debugMsg"
-		debugPublisher.publish(debugMsg);
-	}
 
 
 	// An alternate debugging technique is to print out data directly to the
@@ -957,12 +925,138 @@ void calculateControlOutput_viaLQRforAnglesRatesNested( float stateErrorBody[12]
 	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
 	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_ANGLE;
 
+	// Display some details (if requested)
+	if (shouldDisplayDebugInfo)
+	{
+		ROS_INFO_STREAM("thrust    =" << lqr_angleRateNested_prev_thrustAdjustment );
+		ROS_INFO_STREAM("rollrate  =" << response.controlOutput.roll );
+		ROS_INFO_STREAM("pitchrate =" << response.controlOutput.pitch );
+		ROS_INFO_STREAM("yawrate   =" << response.controlOutput.yaw );
+	}
+}
 
-	ROS_INFO_STREAM("thrust    =" << lqr_angleRateNested_prev_thrustAdjustment );
-	ROS_INFO_STREAM("rollrate  =" << response.controlOutput.roll );
-	ROS_INFO_STREAM("pitchrate =" << response.controlOutput.pitch );
-	ROS_INFO_STREAM("yawrate   =" << response.controlOutput.yaw );
 
+
+
+void calculateControlOutput_viaAngleResponseTest( float stateErrorBody[12], Controller::Request &request, Controller::Response &response)
+{
+	// PERFORM THE NESTED "u=Kx" LQR CONTROLLER COMPUTATION
+
+	// Increment the counter variable
+	angleResponseTest_counter++;
+
+	if (angleResponseTest_counter > 4)
+	{
+		//ROS_INFO("Outer called");
+			
+		// Reset the counter to 1
+		angleResponseTest_counter = 1;
+
+		// PERFORM THE OUTER "u=Kx" LQR CONTROLLER COMPUTATION
+
+		// Reset the class variable to zero for the following:
+		// > body frame roll angle,
+		// > body frame pitch angle,
+		// > body frame yaw angle,
+		// > total thrust adjustment.
+		// These will be requested from the "inner-loop" LQR controller below
+		angleResponseTest_prev_rollAngle        = 0;
+		//angleResponseTest_prev_pitchAngle       = 0;
+		angleResponseTest_prev_thrustAdjustment = 0;
+
+		// Perform the "-Kx" LQR computation for the rates and thrust:
+		for(int i = 0; i < 6; ++i)
+		{
+			// BODY FRAME Y CONTROLLER
+			angleResponseTest_prev_rollAngle        -= gainMatrixRollAngle_50Hz[i] * stateErrorBody[i];
+			// BODY FRAME X CONTROLLER
+			//angleResponseTest_prev_pitchAngle       -= gainMatrixPitchAngle_50Hz[i] * stateErrorBody[i];
+			// > ALITUDE CONTROLLER (i.e., z-controller):
+			angleResponseTest_prev_thrustAdjustment -= gainMatrixThrust_SixStateVector_50Hz[i] * stateErrorBody[i];
+		}
+
+		// BODY FRAME Z CONTROLLER
+		//angleResponseTest_prev_yawAngle = setpoint[3];
+		angleResponseTest_prev_yawAngle = stateErrorBody[8];
+
+		// COMPUTE THE DISTANCE FROM THE ORIGIN
+		if (stateErrorBody[0] > angleResponseTest_distance_meters)
+		{
+			angleResponseTest_prev_pitchAngle = -angleResponseTest_pitchAngle_radians;
+		}
+		else if (stateErrorBody[0] < (-angleResponseTest_distance_meters) )
+		{
+			angleResponseTest_prev_pitchAngle = angleResponseTest_pitchAngle_radians;
+		}
+
+
+
+	}
+
+	//ROS_INFO("Inner called");
+
+	// PERFORM THE INNER "u=Kx" LQR CONTROLLER COMPUTATION
+	// Instantiate the local variables for the following:
+	// > body frame roll rate,
+	// > body frame pitch rate,
+	// > body frame yaw rate,
+	// These will be requested from the Crazyflie's on-baord "inner-loop" controller
+	float rollRate_forResponse  = 0;
+	float pitchRate_forResponse = 0;
+	float yawRate_forResponse   = 0;
+
+	// Create the angle error to use for the inner controller
+	float temp_stateAngleError[3] = {
+		stateErrorBody[6] - angleResponseTest_prev_rollAngle,
+		stateErrorBody[7] - angleResponseTest_prev_pitchAngle,
+		angleResponseTest_prev_yawAngle
+	};
+	
+	// Perform the "-Kx" LQR computation for the rates and thrust:
+	for(int i = 0; i < 4; ++i)
+	{
+		// BODY FRAME Y CONTROLLER
+		rollRate_forResponse  -= gainMatrixRollRate_Nested[i]  * temp_stateAngleError[i];
+		// BODY FRAME X CONTROLLER
+		pitchRate_forResponse -= gainMatrixPitchRate_Nested[i] * temp_stateAngleError[i];
+		// BODY FRAME Z CONTROLLER
+		yawRate_forResponse   -= gainMatrixYawRate_Nested[i]   * temp_stateAngleError[i];
+	}
+
+
+	// UPDATE THE "RETURN" THE VARIABLE NAMED "response"
+
+	// Put the computed rates and thrust into the "response" variable
+	// > For roll, pitch, and yaw:
+	response.controlOutput.roll  = rollRate_forResponse;
+	response.controlOutput.pitch = pitchRate_forResponse;
+	response.controlOutput.yaw   = yawRate_forResponse;
+	// > For the thrust adjustment we must add the feed-forward thrust to counter-act gravity.
+	// > NOTE: remember that the thrust is commanded per motor, so you sohuld
+	//         consider whether the "thrustAdjustment" computed by your
+	//         controller needed to be divided by 4 or not.
+	float thrustAdjustment = angleResponseTest_prev_thrustAdjustment / 4.0;
+	// > NOTE: the "gravity_force_quarter" value was already divided by 4 when
+	//         it was loaded/processes from the .yaml file.
+	response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
+	response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
+	response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
+	response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
+
+	
+	// Specify that this controller is a rate controller
+	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTOR;
+	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
+	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_ANGLE;
+
+	// Display some details (if requested)
+	if (shouldDisplayDebugInfo)
+	{
+		ROS_INFO_STREAM("thrust    =" << angleResponseTest_prev_thrustAdjustment );
+		ROS_INFO_STREAM("rollrate  =" << response.controlOutput.roll );
+		ROS_INFO_STREAM("pitchrate =" << response.controlOutput.pitch );
+		ROS_INFO_STREAM("yawrate   =" << response.controlOutput.yaw );
+	}
 }
 
 
@@ -970,6 +1064,52 @@ void calculateControlOutput_viaLQRforAnglesRatesNested( float stateErrorBody[12]
 
 
 
+
+
+
+
+
+void construct_and_publish_debug_message(Controller::Request &request, Controller::Response &response)
+{
+	//  ***********************************************************
+	//  DDDD   EEEEE  BBBB   U   U   GGGG       M   M   SSSS   GGGG
+	//  D   D  E      B   B  U   U  G           MM MM  S      G
+	//  D   D  EEE    BBBB   U   U  G           M M M   SSS   G
+	//  D   D  E      B   B  U   U  G   G       M   M      S  G   G
+	//  DDDD   EEEEE  BBBB    UUU    GGGG       M   M  SSSS    GGGG
+
+    // DEBUGGING CODE:
+    // As part of the D-FaLL-System we have defined a message type names"DebugMsg".
+    // By fill this message with data and publishing it you can display the data in
+    // real time using rpt plots. Instructions for using rqt plots can be found on
+    // the wiki of the D-FaLL-System repository
+    
+	// Instantiate a local variable of type "DebugMsg", see the file "DebugMsg.msg"
+	// (located in the "msg" folder) to see the full structure of this message.
+	DebugMsg debugMsg;
+
+	// Fill the debugging message with the data provided by Vicon
+	debugMsg.vicon_x      = request.ownCrazyflie.x;
+	debugMsg.vicon_y      = request.ownCrazyflie.y;
+	debugMsg.vicon_z      = request.ownCrazyflie.z;
+	debugMsg.vicon_roll   = request.ownCrazyflie.roll;
+	debugMsg.vicon_pitch  = request.ownCrazyflie.pitch;
+	debugMsg.vicon_yaw    = request.ownCrazyflie.yaw;
+
+	// Fill in the debugging message with any other data you would like to display
+	// in real time. For example, it might be useful to display the thrust
+	// adjustment computed by the z-altitude controller.
+	// The "DebugMsg" type has 10 properties from "value_1" to "value_10", all of
+	// type "float64" that you can fill in with data you would like to plot in
+	// real-time.
+	// debugMsg.value_1 = thrustAdjustment;
+	// ......................
+	// debugMsg.value_10 = your_variable_name;
+	debugMsg.value_1 = angleResponseTest_prev_pitchAngle;
+
+	// Publish the "debugMsg"
+	debugPublisher.publish(debugMsg);
+}
 
 
 
@@ -1398,7 +1538,7 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 	// THE CONTROLLER GAINS:
 
 	// A flag for which controller to use:
-	lqr_controller_mode = getParameterInt( nodeHandle_for_demoController , "lqr_controller_mode" );
+	controller_mode = getParameterInt( nodeHandle_for_demoController , "controller_mode" );
 
 	// A flag for which estimator to use:
 	estimator_method = getParameterInt( nodeHandle_for_demoController , "estimator_method" );
@@ -1435,7 +1575,9 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixPitchRate_Nested",            gainMatrixPitchRate_Nested,            3);
 	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixYawRate_Nested",              gainMatrixYawRate_Nested,              3);
 	
-
+	// The parameters for the "Angle Reponse Test" controller mode
+	angleResponseTest_pitchAngle_degrees = getParameterFloat(nodeHandle_for_demoController, "angleResponseTest_pitchAngle_degrees");
+	angleResponseTest_distance_meters    = getParameterFloat(nodeHandle_for_demoController, "angleResponseTest_distance_meters");
 
 	// 16-BIT COMMAND LIMITS
 	cmd_sixteenbit_min = getParameterFloat(nodeHandle_for_demoController, "command_sixteenbit_min");
@@ -1475,6 +1617,10 @@ void processFetchedParameters()
 
     // Set that the estimator frequency is the same as the control frequency
     estimator_frequency = vicon_frequency;
+
+    // Convert from degrees to radians
+    angleResponseTest_pitchAngle_radians = (PI/180.0) * angleResponseTest_pitchAngle_degrees;
+    angleResponseTest_prev_pitchAngle = angleResponseTest_pitchAngle_radians;
 
     // Look-up which agent should be followed
     if (shouldFollowAnotherAgent)
