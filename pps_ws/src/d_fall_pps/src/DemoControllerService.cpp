@@ -1596,7 +1596,8 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 
 
 	// DEBUGGING: Print out one of the parameters that was loaded
-	ROS_INFO_STREAM("DEBUGGING: the fetched SafeController/mass = " << cf_mass);
+	ROS_INFO_STREAM("DEBUGGING: the fetched DemoController/mass = " << cf_mass);
+	ROS_INFO_STREAM("DEBUGGING: the fetched DemoController/angleResponseTest_pitchAngle_degrees = " << angleResponseTest_pitchAngle_degrees);
 
 	// Call the function that computes details an values that are needed from these
 	// parameters loaded above
