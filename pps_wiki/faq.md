@@ -311,7 +311,7 @@ void customCommandReceivedCallback(const CustomButton& commandReceived);
 
 ```
 
-Add the following subscriber with the ``main`` function and before the ``ros::spin();`` command:
+Add the following subscriber within the ``main`` function and before the ``ros::spin();`` command:
 ```
 // Instantiate the local variable "customCommandSubscriber" to be a "ros::Subscriber"
 // type variable that subscribes to the "StudentCustomButton" topic and calls the class
@@ -388,4 +388,4 @@ void customCommandReceivedCallback(const CustomButton& commandReceived)
 }
 ```
 
-To respond to each of the button, add your code with the respective switch cases.
+To respond to each of the button, add your code within the respective switch cases.
