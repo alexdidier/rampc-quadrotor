@@ -108,9 +108,9 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     requestLoadControllerYaml_from_my_GUI_Subscriber = nodeHandle.subscribe("/my_GUI/requestLoadControllerYaml", 1, &MainWindow::requestLoadControllerYaml_from_my_GUI_Callback, this);
 
     // First get student ID
-    if(!nh_PPSClient.getParam("studentID", m_student_id))
+    if(!nh_PPSClient.getParam("agentID", m_student_id))
     {
-		ROS_ERROR("Failed to get studentID");
+		ROS_ERROR("Failed to get agentID");
 	}
 
     // Then, Central manager

@@ -1789,6 +1789,10 @@ int main(int argc, char* argv[]) {
     // the "~" indcates that "self" is the node handle assigned to this variable.
     ros::NodeHandle nodeHandle("~");
 
+    // Get the namespace of this "DemoControllerService" node
+    std::string m_namespace = ros::this_node::getNamespace();
+    ROS_INFO_STREAM("For DemoController, ros::this_node::getNamespace() =  " << m_namespace);
+
     // Get the agent ID as the "ROS_NAMESPACE" this computer.
     // NOTES:
     // > If you look at the "Student.launch" file in the "launch" folder, you will see
@@ -1797,15 +1801,14 @@ int main(int argc, char* argv[]) {
     //   This line of code adds a parameter named "studentID" to the "PPSClient"
     // > Thus, to get access to this "studentID" paremeter, we first need to get a handle
     //   to the "PPSClient" node within which this controller service is nested.
-    // Get the namespace of this "DemoControllerService" node
-    std::string m_namespace = ros::this_node::getNamespace();
+
     // Get the handle to the "PPSClient" node
     ros::NodeHandle PPSClient_nodeHandle(m_namespace + "/PPSClient");
     // Get the value of the "studentID" parameter into the instance variable "my_agentID"
-    if(!PPSClient_nodeHandle.getParam("studentID", my_agentID))
+    if(!PPSClient_nodeHandle.getParam("agentID", my_agentID))
     {
     	// Throw an error if the student ID parameter could not be obtained
-		ROS_ERROR("Failed to get studentID from PPSClient");
+		ROS_ERROR("Failed to get agentID from PPSClient");
 	}
 
 
@@ -1856,7 +1859,7 @@ int main(int argc, char* argv[]) {
     // PRINT OUT SOME INFORMATION
 
     // Let the user know what namespaces are being used for linking to the parameter service
-    ROS_INFO_STREAM("The namespace string for accessing the Paramter Services are:");
+    ROS_INFO_STREAM("For DemoController: the namespace strings for accessing the Paramter Services are:");
     ROS_INFO_STREAM("namespace_to_own_agent_parameter_service    =  " << namespace_to_own_agent_parameter_service);
     ROS_INFO_STREAM("namespace_to_coordinator_parameter_service  =  " << namespace_to_coordinator_parameter_service);
 

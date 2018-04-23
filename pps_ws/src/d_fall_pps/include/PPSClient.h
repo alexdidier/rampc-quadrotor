@@ -136,8 +136,8 @@ using namespace d_fall_pps;
 //      V    A   A  R   R  III  A   A  BBBB   LLLLL  EEEEE  SSSS
 //    ----------------------------------------------------------------------------------
 
-// "studentID", gives namespace and identifier in CentralManagerService
-int studentID;
+// "agentID", gives namespace and identifier in CentralManagerService
+int agentID;
 
 // The safe controller specified in the ClientConfig.yaml, is considered stable
 ros::ServiceClient safeController;

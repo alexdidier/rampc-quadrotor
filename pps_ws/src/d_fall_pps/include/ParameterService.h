@@ -100,7 +100,7 @@ int my_type = 0;
 
 // The ID of this agent, i.e., the ID of this computer in the case that this computer is
 // and agent
-int my_agentID = 0;
+std::string my_agentID = "000";
 
 // Publisher that notifies the relevant nodes when the YAML paramters have been loaded
 // from file into ram/cache, and hence are ready to be fetched

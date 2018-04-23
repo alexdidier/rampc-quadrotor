@@ -359,8 +359,8 @@ void viconCallback(const ViconData& viconData) {
 
 void loadCrazyflieContext() {
 	CMQuery contextCall;
-	contextCall.request.studentID = studentID;
-	ROS_INFO_STREAM("StudentID:" << studentID);
+	contextCall.request.studentID = agentID;
+	ROS_INFO_STREAM("AgentID:" << agentID);
 
     CrazyflieContext new_context;
 
@@ -574,8 +574,8 @@ void fetchYamlParametersForSafeController(ros::NodeHandle& nodeHandle)
 // > Load the paramters from the Client Config YAML file
 void fetchClientConfigParameters(ros::NodeHandle& nodeHandle)
 {
-    if(!nodeHandle.getParam("studentID", studentID)) {
-        ROS_ERROR("Failed to get studentID");
+    if(!nodeHandle.getParam("agentID", agentID)) {
+        ROS_ERROR("Failed to get agentID");
     }
     if(!nodeHandle.getParam("strictSafety", strictSafety)) {
         ROS_ERROR("Failed to get strictSafety param");

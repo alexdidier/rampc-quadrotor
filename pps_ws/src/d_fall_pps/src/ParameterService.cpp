@@ -245,7 +245,7 @@ int main(int argc, char* argv[])
         case TYPE_AGENT:
         {
             //m_ros_namespace = ros::this_node::getNamespace();
-            m_ros_namespace = "/" + std::to_string(my_agentID) + '/' + "ParameterService";
+            m_ros_namespace = "/agent" + my_agentID + '/' + "ParameterService";
             ROS_INFO_STREAM("This Paramter Sercice will load .yaml file parameters into the 'base' namespace: " << m_ros_namespace);
             break;
         }
