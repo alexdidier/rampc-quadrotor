@@ -107,7 +107,7 @@ std::string my_agentID = "000";
 ros::Publisher controllerYamlReadyForFetchPublihser;
 
 
-std::string m_ros_namespace;
+std::string m_base_namespace;
 
 ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_self;
 

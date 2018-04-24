@@ -98,22 +98,22 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
     if ( (controller_to_load_yaml==LOAD_YAML_SAFE_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR) )
     {
         // Re-load the parameters of the safe controller:
-        cmd = "rosparam load " + d_fall_pps_path + "/param/SafeController.yaml " + m_ros_namespace + "/SafeController";
+        cmd = "rosparam load " + d_fall_pps_path + "/param/SafeController.yaml " + m_base_namespace + "/SafeController";
     }
     else if ( (controller_to_load_yaml==LOAD_YAML_SAFE_CONTROLLER_AGENT) && (my_type==TYPE_AGENT) )
     {
         // Re-load the parameters of the safe controller:
-        cmd = "rosparam load " + d_fall_pps_path + "/param/SafeController.yaml " + m_ros_namespace + "/SafeController";
+        cmd = "rosparam load " + d_fall_pps_path + "/param/SafeController.yaml " + m_base_namespace + "/SafeController";
     }
     else if ( (controller_to_load_yaml==LOAD_YAML_DEMO_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR) )
     {
         // Re-load the parameters of the demo controller:
-        cmd = "rosparam load " + d_fall_pps_path + "/param/DemoController.yaml " + m_ros_namespace + "/DemoController";
+        cmd = "rosparam load " + d_fall_pps_path + "/param/DemoController.yaml " + m_base_namespace + "/DemoController";
     }
     else if ( (controller_to_load_yaml==LOAD_YAML_DEMO_CONTROLLER_AGENT) && (my_type==TYPE_AGENT) )
     {
         // Re-load the parameters of the demo controller:
-        cmd = "rosparam load " + d_fall_pps_path + "/param/DemoController.yaml " + m_ros_namespace + "/DemoController";
+        cmd = "rosparam load " + d_fall_pps_path + "/param/DemoController.yaml " + m_base_namespace + "/DemoController";
     }
     else
     {
@@ -200,6 +200,11 @@ int main(int argc, char* argv[])
     // the "~" indcates that "self" is the node handle assigned to this variable.
     ros::NodeHandle nodeHandle("~");
 
+    // Get the namespace of this "ParameterService" node
+    std::string m_namespace = ros::this_node::getNamespace();
+    ROS_INFO_STREAM("For ParameterService, ros::this_node::getNamespace() =  " << m_namespace);
+
+
 
     // Get the value of the "type" parameter into a local string variable
     std::string type_string;
@@ -222,7 +227,7 @@ int main(int argc, char* argv[])
     {
         // Set "my_type" to the value indicating that it is invlid
         my_type = TYPE_INVALID;
-        ROS_ERROR("The retrieve type parameter was no recognised.");
+        ROS_ERROR("The 'type' parameter retrieved was not recognised.");
     }
 
 
@@ -244,9 +249,10 @@ int main(int argc, char* argv[])
     {
         case TYPE_AGENT:
         {
-            //m_ros_namespace = ros::this_node::getNamespace();
-            m_ros_namespace = "/agent" + my_agentID + '/' + "ParameterService";
-            ROS_INFO_STREAM("This Paramter Sercice will load .yaml file parameters into the 'base' namespace: " << m_ros_namespace);
+            //m_base_namespace = ros::this_node::getNamespace();
+            //m_base_namespace = "/agent" + my_agentID + '/' + "ParameterService";
+            m_base_namespace = m_namespace + '/' + "ParameterService";
+            ROS_INFO_STREAM("This Paramter Sercice will load .yaml file parameters into the 'base' namespace: " << m_base_namespace);
             break;
         }
 
@@ -254,9 +260,10 @@ int main(int argc, char* argv[])
         // > The master GUI
         case TYPE_COORDINATOR:
         {
-            //m_ros_namespace = ros::this_node::getNamespace();
-            m_ros_namespace = "/ParameterService";
-            ROS_INFO_STREAM("This Paramter Sercice will load .yaml file parameters into the 'base' namespace: " << m_ros_namespace);
+            //m_base_namespace = ros::this_node::getNamespace();
+            //m_base_namespace = "/ParameterService";
+            m_base_namespace = m_namespace + '/' + "ParameterService";
+            ROS_INFO_STREAM("This Paramter Sercice will load .yaml file parameters into the 'base' namespace: " << m_base_namespace);
             break;
         }
 
