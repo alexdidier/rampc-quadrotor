@@ -1,12 +1,12 @@
 <launch>
 
 	<!-- INPUT ARGUMENT OF THE AGENT's ID -->
-	<arg name="agentid" default="$(optenv DFALL_DEFAULT_ID)" />
+	<arg name="agentID" default="$(optenv DFALL_DEFAULT_AGENT_ID)" />
 
-	<!-- Example of how to use the value in agentid -->
-    <!-- <param name="param" value="$(arg agentid)"/> -->
+	<!-- Example of how to use the value in agentID -->
+    <!-- <param name="param" value="$(arg agentID)"/> -->
 
-    <group ns="agent$(arg agentid)">
+    <group ns="agent$(arg agentID)">
 
 		<!-- CRAZY RADIO -->
 		<node
@@ -26,7 +26,7 @@
 			type   = "PPSClient"
 			>
 			<rosparam command="load" file="$(find d_fall_pps)/param/ClientConfig.yaml" />
-			<param name="agentID" value="$(arg agentid)" />
+			<param name="agentID" value="$(arg agentID)" />
 		</node>
 
 		<!-- SAFE CONTROLLER -->
@@ -55,7 +55,7 @@
 			type   = "ParameterService"
 			>
 			<param name="type"     type="str"  value="agent" />
-			<param name="agentID"  type="str"  value="$(arg agentid)" />
+			<param name="agentID"  type="str"  value="$(arg agentID)" />
 			<rosparam
 				command = "load"
 				file    = "$(find d_fall_pps)/param/SafeController.yaml"
