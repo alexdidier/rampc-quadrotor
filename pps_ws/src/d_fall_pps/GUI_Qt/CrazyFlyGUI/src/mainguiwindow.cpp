@@ -51,7 +51,7 @@
 #include "d_fall_pps/CrazyflieEntry.h"
 #include "d_fall_pps/CMUpdate.h"
 #include "d_fall_pps/CMCommand.h"
-#include "CentralManagerService.h"
+#include "nodes/CentralManagerService.h"
 
 #include <ros/ros.h>
 #include <ros/network.h>

@@ -34,7 +34,7 @@
 
 
 // INCLUDE THE HEADER
-#include "DemoControllerService.h"
+#include "nodes/DemoControllerService.h"
 
 
 

@@ -236,6 +236,7 @@ include_directories(
   ${COORDINATOR_GUI_LIB_PATH_INC}   # CoordinatorGUI -- include directory inside GUI folder
   ${catkin_INCLUDE_DIRS}
   include
+  include/nodes
 )
 
 ## Declare a C++ library
@@ -252,12 +253,15 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/d_fall_pps_node.cpp)
-add_executable(ViconDataPublisher src/ViconDataPublisher.cpp)
-add_executable(PPSClient src/PPSClient.cpp)
-add_executable(SafeControllerService src/SafeControllerService.cpp)
-add_executable(DemoControllerService src/DemoControllerService.cpp)
-add_executable(CentralManagerService src/CentralManagerService.cpp src/CrazyflieIO.cpp)
-add_executable(ParameterService src/ParameterService.cpp)
+
+add_executable(ViconDataPublisher       src/nodes/ViconDataPublisher.cpp)
+add_executable(PPSClient                src/nodes/PPSClient.cpp)
+add_executable(SafeControllerService    src/nodes/SafeControllerService.cpp)
+add_executable(DemoControllerService    src/nodes/DemoControllerService.cpp)
+add_executable(StudentControllerService src/nodes/StudentControllerService.cpp)
+add_executable(MpcControllerService     src/nodes/MpcControllerService.cpp)
+add_executable(CentralManagerService    src/nodes/CentralManagerService.cpp src/CrazyflieIO.cpp)
+add_executable(ParameterService         src/nodes/ParameterService.cpp)
 
 
 
@@ -309,12 +313,14 @@ qt5_use_modules(coordinator_GUI Widgets)
 
 
 
-add_dependencies(ViconDataPublisher d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(PPSClient d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(SafeControllerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(DemoControllerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(CentralManagerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(ParameterService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(ViconDataPublisher       d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(PPSClient                d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(SafeControllerService    d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(DemoControllerService    d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(StudentControllerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(MpcControllerService     d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(CentralManagerService    d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(ParameterService         d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 # GUI-- dependencies
 add_dependencies(my_GUI d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
@@ -345,15 +351,14 @@ find_library(VICON_LIBRARY ViconDataStreamSDK_CPP HINTS lib/vicon)
 target_link_libraries(ViconDataPublisher ${catkin_LIBRARIES})
 target_link_libraries(ViconDataPublisher ${VICON_LIBRARY})
 
-target_link_libraries(PPSClient ${catkin_LIBRARIES})
+target_link_libraries(PPSClient                ${catkin_LIBRARIES})
+target_link_libraries(SafeControllerService    ${catkin_LIBRARIES})
+target_link_libraries(DemoControllerService    ${catkin_LIBRARIES})
+target_link_libraries(StudentControllerService ${catkin_LIBRARIES})
+target_link_libraries(MpcControllerService     ${catkin_LIBRARIES})
+target_link_libraries(CentralManagerService    ${catkin_LIBRARIES})
+target_link_libraries(ParameterService         ${catkin_LIBRARIES})
 
-target_link_libraries(SafeControllerService ${catkin_LIBRARIES})
-
-target_link_libraries(DemoControllerService ${catkin_LIBRARIES})
-
-target_link_libraries(CentralManagerService ${catkin_LIBRARIES})
-
-target_link_libraries(ParameterService ${catkin_LIBRARIES})
 
 # GUI -- link libraries
 target_link_libraries(my_GUI Qt5::Widgets) # GUI -- let my_GUI have acesss to Qt stuff

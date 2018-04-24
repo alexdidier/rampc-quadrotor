@@ -63,16 +63,25 @@
 //    ----------------------------------------------------------------------------------
 
 
-// For which controller parameters to load
-#define LOAD_YAML_SAFE_CONTROLLER_AGENT           1
-#define LOAD_YAML_DEMO_CONTROLLER_AGENT         2
-#define LOAD_YAML_SAFE_CONTROLLER_COORDINATOR     3
-#define LOAD_YAML_DEMO_CONTROLLER_COORDINATOR   4
+// For which controller parameters to load from file
+#define LOAD_YAML_SAFE_CONTROLLER_AGENT             1
+#define LOAD_YAML_DEMO_CONTROLLER_AGENT             2
+#define LOAD_YAML_STUDENT_CONTROLLER_AGENT          3
+#define LOAD_YAML_MPC_CONTROLLER_AGENT              4
 
+#define LOAD_YAML_SAFE_CONTROLLER_COORDINATOR       11
+#define LOAD_YAML_DEMO_CONTROLLER_COORDINATOR       12
+#define LOAD_YAML_STUDENT_CONTROLLER_COORDINATOR    13
+#define LOAD_YAML_MPC_CONTROLLER_COORDINATOR        14
+
+
+// For which controller parameters to fetch from  from file
 #define FETCH_YAML_SAFE_CONTROLLER_FROM_OWN_AGENT      1
-#define FETCH_YAML_DEMO_CONTROLLER_FROM_OWN_AGENT    2
+#define FETCH_YAML_DEMO_CONTROLLER_FROM_OWN_AGENT      2
+
+
 #define FETCH_YAML_SAFE_CONTROLLER_FROM_COORDINATOR    3
-#define FETCH_YAML_DEMO_CONTROLLER_FROM_COORDINATOR  4
+#define FETCH_YAML_DEMO_CONTROLLER_FROM_COORDINATOR    4
 
 #define TYPE_INVALID      -1
 #define TYPE_COORDINATOR   1
@@ -104,7 +113,7 @@ std::string my_agentID = "000";
 
 // Publisher that notifies the relevant nodes when the YAML paramters have been loaded
 // from file into ram/cache, and hence are ready to be fetched
-ros::Publisher controllerYamlReadyForFetchPublihser;
+ros::Publisher controllerYamlReadyForFetchPublisher;
 
 
 std::string m_base_namespace;

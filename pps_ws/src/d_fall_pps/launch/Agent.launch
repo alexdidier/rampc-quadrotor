@@ -66,6 +66,16 @@
 				file    = "$(find d_fall_pps)/param/DemoController.yaml"
 				ns      = "DemoController"
 			/>
+			<rosparam
+				command = "load"
+				file    = "$(find d_fall_pps)/param/StudentController.yaml"
+				ns      = "StudentController"
+			/>
+			<rosparam
+				command = "load"
+				file    = "$(find d_fall_pps)/param/MpcController.yaml"
+				ns      = "MpcController"
+			/>
 		</node>
 
 		<!-- AGENT GUI (aka. the "student GUI") -->

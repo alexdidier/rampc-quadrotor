@@ -34,7 +34,7 @@
 
 
 // INCLUDE THE HEADER
-#include "ParameterService.h"
+#include "nodes/ParameterService.h"
 
 
 
@@ -172,7 +172,7 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
         // ready to be fetched (i.e., using getparam())
         if (isReadyForFetch)
         {
-            controllerYamlReadyForFetchPublihser.publish(fetch_msg);
+            controllerYamlReadyForFetchPublisher.publish(fetch_msg);
         }
     }
 }
@@ -241,7 +241,7 @@ int main(int argc, char* argv[])
 
     // Publisher that notifies the relevant nodes when the YAML paramters have been loaded
     // from file into ram/cache, and hence are ready to be fetched
-    controllerYamlReadyForFetchPublihser = nodeHandle.advertise<std_msgs::Int32>("controllerYamlReadyForFetch", 1);
+    controllerYamlReadyForFetchPublisher = nodeHandle.advertise<std_msgs::Int32>("controllerYamlReadyForFetch", 1);
     
 
     // Construct the string to the namespace of this Paramater Service
