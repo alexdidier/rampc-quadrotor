@@ -42,10 +42,6 @@ set(MY_GUI_LIB_PATH_INC ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/include)
 set(STUDENT_GUI_LIB_PATH_SRC ${PROJECT_SOURCE_DIR}/GUI_Qt/studentGUI/src)
 set(STUDENT_GUI_LIB_PATH_INC ${PROJECT_SOURCE_DIR}/GUI_Qt/studentGUI/include)
 
-# CoorindatorGUI -- Add src and includes
-set(COORDINATOR_GUI_LIB_PATH_SRC ${PROJECT_SOURCE_DIR}/GUI_Qt/coordinatorGUI/src)
-set(COORDINATOR_GUI_LIB_PATH_INC ${PROJECT_SOURCE_DIR}/GUI_Qt/coordinatorGUI/include)
-
 # GUI -- Resource file
 set(MY_RESOURCE_FILE_QRC ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/CrazyFlyGUI.qrc)
 
@@ -88,17 +84,6 @@ set(SRC_HDRS_QOBJECT_STUDENT_GUI
 qt5_wrap_ui(UIS_HDRS_STUDENT_GUI ${STUDENT_GUI_LIB_PATH_SRC}/MainWindow.ui)
 qt5_wrap_cpp(SRC_MOC_HDRS_STUDENT_GUI ${SRC_HDRS_QOBJECT_STUDENT_GUI})
 
-
-# CoordinatorGUI -- Special Qt sources that need to be wrapped before being compiled
-
-set(SRC_HDRS_QOBJECT_COORDINATOR_GUI
-  ${COORDINATOR_GUI_LIB_PATH_INC}/MainWindow.h
-  ${COORDINATOR_GUI_LIB_PATH_INC}/rosNodeThread.h
-  )
-
-# CoordinatorGUI -- wrap UI file and QOBJECT files
-qt5_wrap_ui(UIS_HDRS_COORDINATOR_GUI ${COORDINATOR_GUI_LIB_PATH_SRC}/MainWindow.ui)
-qt5_wrap_cpp(SRC_MOC_HDRS_COORDINATOR_GUI ${SRC_HDRS_QOBJECT_COORDINATOR_GUI})
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -217,7 +202,6 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include ${MY_GUI_LIB_PATH_INC}            # GUI -- include headers from GUI in package
   INCLUDE_DIRS include ${STUDENT_GUI_LIB_PATH_INC}       # StudentGUI -- include headers from GUI in package
-  INCLUDE_DIRS include ${COORDINATOR_GUI_LIB_PATH_INC}   # CoordinatorGUI -- include headers from GUI in package
   LIBRARIES
   CATKIN_DEPENDS roscpp rospy std_msgs rosbag roslib
   DEPENDS
@@ -233,7 +217,6 @@ catkin_package(
 include_directories(
   ${MY_GUI_LIB_PATH_INC}            # GUI -- include directory inside GUI folder
   ${STUDENT_GUI_LIB_PATH_INC}       # StudentGUI -- include directory inside GUI folder
-  ${COORDINATOR_GUI_LIB_PATH_INC}   # CoordinatorGUI -- include directory inside GUI folder
   ${catkin_INCLUDE_DIRS}
   include
   include/nodes
@@ -291,12 +274,6 @@ set(MY_CPP_SOURCES_STUDENT_GUI              # compilation of sources
     ${STUDENT_GUI_LIB_PATH_SRC}/rosNodeThread.cpp
     )
 
-# CoordinatorGUI -- Add sources here
-set(MY_CPP_SOURCES_COORDINATOR_GUI              # compilation of sources
-    ${COORDINATOR_GUI_LIB_PATH_SRC}/MainWindow.cpp
-    ${COORDINATOR_GUI_LIB_PATH_SRC}/main.cpp
-    ${COORDINATOR_GUI_LIB_PATH_SRC}/rosNodeThread.cpp
-    )
 
 
 # GUI -- Add executables here
@@ -307,9 +284,6 @@ qt5_use_modules(my_GUI Widgets)
 add_executable(student_GUI ${MY_CPP_SOURCES_STUDENT_GUI} ${UIS_HDRS_STUDENT_GUI} ${SRC_MOC_HDRS_STUDENT_GUI})
 qt5_use_modules(student_GUI Widgets)
 
-# CoordinatorGUI -- Add executables here
-add_executable(coordinator_GUI ${MY_CPP_SOURCES_COORDINATOR_GUI} ${UIS_HDRS_COORDINATOR_GUI} ${SRC_MOC_HDRS_COORDINATOR_GUI})
-qt5_use_modules(coordinator_GUI Widgets)
 
 
 
@@ -327,9 +301,6 @@ add_dependencies(my_GUI d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGE
 
 # StudentGUI-- dependencies
 add_dependencies(student_GUI d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-
-# CoordinatorGUI-- dependencies
-add_dependencies(coordinator_GUI d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -371,10 +342,6 @@ target_link_libraries(my_GUI ${catkin_LIBRARIES})
 # StudentGUI -- link libraries
 target_link_libraries(student_GUI Qt5::Widgets) # GUI -- let my_GUI have acesss to Qt stuff
 target_link_libraries(student_GUI ${catkin_LIBRARIES})
-
-# CoordinatorGUI -- link libraries
-target_link_libraries(coordinator_GUI Qt5::Widgets) # GUI -- let coordinator_GUI have acesss to Qt stuff
-target_link_libraries(coordinator_GUI ${catkin_LIBRARIES})
 
 
 #############
