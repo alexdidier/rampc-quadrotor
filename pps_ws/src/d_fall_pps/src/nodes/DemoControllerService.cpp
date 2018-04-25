@@ -267,7 +267,7 @@ void performEstimatorUpdate_forStateInterial(Controller::Request &request)
 		default:
 		{
 			// Display that the "estimator_method" was not recognised
-			ROS_INFO_STREAM("ERROR: in the 'calculateControlOutput' function of the 'DemoControllerService': the 'estimator_method' is not recognised.");
+			ROS_INFO_STREAM("[DEMO CONTROLLER] ERROR: in the 'calculateControlOutput' function of the 'DemoControllerService': the 'estimator_method' is not recognised.");
 			// Transfer the finite difference estimate by default
 			for(int i = 0; i < 12; ++i)
 			{
@@ -450,7 +450,7 @@ void calculateControlOutput_viaLQR(float stateErrorBody[12], Controller::Request
 		default:
 		{
 			// Display that the "controller_mode" was not recognised
-			ROS_INFO_STREAM("ERROR: in the 'calculateControlOutput' function of the 'DemoControllerService': the 'controller_mode' is not recognised.");
+			ROS_INFO_STREAM("[DEMO CONTROLLER] ERROR: in the 'calculateControlOutput' function of the 'DemoControllerService': the 'controller_mode' is not recognised.");
 			// Set everything in the response to zero
 			response.controlOutput.roll       =  0;
 			response.controlOutput.pitch      =  0;
@@ -1356,7 +1356,7 @@ void customCommandReceivedCallback(const CustomButton& commandReceived)
 		case 1:
 		{
 			// Let the user know that this part of the code was triggered
-			ROS_INFO("Custom button 1 received in controller.");
+			ROS_INFO("[DEMO CONTROLLER] Custom button 1 received in controller.");
 			// Code here to respond to custom button 1
 			
 			break;
@@ -1366,7 +1366,7 @@ void customCommandReceivedCallback(const CustomButton& commandReceived)
 		case 2:
 		{
 			// Let the user know that this part of the code was triggered
-			ROS_INFO("Custom button 2 received in controller.");
+			ROS_INFO("[DEMO CONTROLLER] Custom button 2 received in controller.");
 			// Code here to respond to custom button 2
 
 			break;
@@ -1376,7 +1376,7 @@ void customCommandReceivedCallback(const CustomButton& commandReceived)
 		case 3:
 		{
 			// Let the user know that this part of the code was triggered
-			ROS_INFO_STREAM("Custom button 3 received in controller, with command code:" << custom_command_code );
+			ROS_INFO_STREAM("[DEMO CONTROLLER] Custom button 3 received in controller, with command code:" << custom_command_code );
 			// Code here to respond to custom button 3
 
 			break;
@@ -1385,7 +1385,7 @@ void customCommandReceivedCallback(const CustomButton& commandReceived)
 		default:
 		{
 			// Let the user know that the command was not recognised
-			ROS_INFO_STREAM("A custom command was received in the controller but not recognised, message.button_index = " << custom_button_index << ", and message.command_code = " << custom_command_code );
+			ROS_INFO_STREAM("[DEMO CONTROLLER] A custom command was received in the controller but not recognised, message.button_index = " << custom_button_index << ", and message.command_code = " << custom_command_code );
 			break;
 		}
 	}
@@ -1445,10 +1445,10 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
 	{
 
 		// > FOR FETCHING FROM THE AGENT'S OWN PARAMETER SERVICE
-		case FETCH_YAML_DEMO_CONTROLLER_AGENT:
+		case FETCH_YAML_DEMO_CONTROLLER_FROM_OWN_AGENT:
 		{
 			// Let the user know that this message was received
-			ROS_INFO("The DemoControllerService received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from this agent.");
+			ROS_INFO("[DEMO CONTROLLER] Received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from this agent.");
 			// Create a node handle to the parameter service running on this agent's machine
 			ros::NodeHandle nodeHandle_to_own_agent_parameter_service(namespace_to_own_agent_parameter_service);
 			// Call the function that fetches the parameters
@@ -1457,10 +1457,10 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
 		}
 
 		// > FOR FETCHING FROM THE COORDINATOR'S PARAMETER SERVICE
-		case FETCH_YAML_DEMO_CONTROLLER_COORDINATOR:
+		case FETCH_YAML_DEMO_CONTROLLER_FROM_COORDINATOR:
 		{
 			// Let the user know that this message was received
-			ROS_INFO("The DemoControllerService received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from the coordinator.");
+			ROS_INFO("[DEMO CONTROLLER] Received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from the coordinator.");
 			// Create a node handle to the parameter service running on the coordinator machine
 			ros::NodeHandle nodeHandle_to_coordinator_parameter_service(namespace_to_coordinator_parameter_service);
 			// Call the function that fetches the parameters
@@ -1596,8 +1596,8 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 
 
 	// DEBUGGING: Print out one of the parameters that was loaded
-	ROS_INFO_STREAM("DEBUGGING: the fetched DemoController/mass = " << cf_mass);
-	ROS_INFO_STREAM("DEBUGGING: the fetched DemoController/angleResponseTest_pitchAngle_degrees = " << angleResponseTest_pitchAngle_degrees);
+	ROS_INFO_STREAM("[DEMO CONTROLLER] DEBUGGING: the fetched DemoController/mass = " << cf_mass);
+	ROS_INFO_STREAM("[DEMO CONTROLLER] DEBUGGING: the fetched DemoController/angleResponseTest_pitchAngle_degrees = " << angleResponseTest_pitchAngle_degrees);
 
 	// Call the function that computes details an values that are needed from these
 	// parameters loaded above
@@ -1692,7 +1692,7 @@ void processFetchedParameters()
 
     if (shouldFollowAnotherAgent)
     {
-    	ROS_INFO_STREAM("This agent (with ID " << my_agentID << ") will now follow agent ID " << agentID_to_follow );
+    	ROS_INFO_STREAM("[DEMO CONTROLLER] This agent (with ID " << my_agentID << ") will now follow agent ID " << agentID_to_follow );
     }
 }
 
@@ -1792,7 +1792,7 @@ int main(int argc, char* argv[]) {
 
     // Get the namespace of this "DemoControllerService" node
     std::string m_namespace = ros::this_node::getNamespace();
-    ROS_INFO_STREAM("For DemoController, ros::this_node::getNamespace() =  " << m_namespace);
+    ROS_INFO_STREAM("[DEMO CONTROLLER] ros::this_node::getNamespace() =  " << m_namespace);
 
     // Get the agent ID as the "ROS_NAMESPACE" this computer.
     // NOTES:
@@ -1809,7 +1809,7 @@ int main(int argc, char* argv[]) {
     if(!PPSClient_nodeHandle.getParam("agentID", my_agentID))
     {
     	// Throw an error if the student ID parameter could not be obtained
-		ROS_ERROR("Failed to get agentID from PPSClient");
+		ROS_ERROR("[DEMO CONTROLLER] Failed to get agentID from PPSClient");
 	}
 
 
@@ -1860,9 +1860,9 @@ int main(int argc, char* argv[]) {
     // PRINT OUT SOME INFORMATION
 
     // Let the user know what namespaces are being used for linking to the parameter service
-    ROS_INFO_STREAM("For DemoController: the namespace strings for accessing the Paramter Services are:");
-    ROS_INFO_STREAM("namespace_to_own_agent_parameter_service    =  " << namespace_to_own_agent_parameter_service);
-    ROS_INFO_STREAM("namespace_to_coordinator_parameter_service  =  " << namespace_to_coordinator_parameter_service);
+    ROS_INFO_STREAM("[DEMO CONTROLLER] the namespace strings for accessing the Paramter Services are:");
+    ROS_INFO_STREAM("[DEMO CONTROLLER] namespace_to_own_agent_parameter_service    =  " << namespace_to_own_agent_parameter_service);
+    ROS_INFO_STREAM("[DEMO CONTROLLER] namespace_to_coordinator_parameter_service  =  " << namespace_to_coordinator_parameter_service);
 
 
     // FINALLY, FETCH ANY PARAMETERS REQUIRED FROM THESE "PARAMETER SERVICES"
@@ -1914,7 +1914,7 @@ int main(int argc, char* argv[]) {
     ros::Subscriber customCommandReceivedSubscriber = PPSClient_nodeHandle.subscribe("StudentCustomButton", 1, customCommandReceivedCallback);
 
     // Print out some information to the user.
-    ROS_INFO("DemoControllerService ready");
+    ROS_INFO("[DEMO CONTROLLER] Service ready :-)");
 
     // Enter an endless while loop to keep the node alive.
     ros::spin();

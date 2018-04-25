@@ -58,6 +58,9 @@
 #include "d_fall_pps/DebugMsg.h"
 #include "d_fall_pps/CustomControllerYAML.h"
 
+// Include the Parameter Service shared definitions
+#include "nodes/ParameterServiceDefinitions.h"
+
 #include <std_msgs/Int32.h>
 
 
@@ -106,12 +109,6 @@
 //
 #define LQR_RATE_MODE   1   // (DEFAULT)
 #define LQR_ANGLE_MODE  2
-
-// Constants for feching the yaml paramters
-#define FETCH_YAML_SAFE_CONTROLLER_AGENT          1
-#define FETCH_YAML_CUSTOM_CONTROLLER_AGENT        2
-#define FETCH_YAML_SAFE_CONTROLLER_COORDINATOR    3
-#define FETCH_YAML_CUSTOM_CONTROLLER_COORDINATOR  4
 
 // Namespacing the package
 using namespace d_fall_pps;
@@ -739,10 +736,10 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
 	{
 
 		// > FOR FETCHING FROM THE AGENT'S OWN PARAMETER SERVICE
-		case FETCH_YAML_CUSTOM_CONTROLLER_AGENT:
+		case FETCH_YAML_MPC_CONTROLLER_FROM_OWN_AGENT:
 		{
 			// Let the user know that this message was received
-			ROS_INFO("The CustomControllerService received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from this agent.");
+			ROS_INFO("[MPC CONTROLLER] Received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from this agent.");
 			// Create a node handle to the parameter service running on this agent's machine
 			ros::NodeHandle nodeHandle_to_own_agent_parameter_service(namespace_to_own_agent_parameter_service);
 			// Call the function that fetches the parameters
@@ -751,10 +748,10 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
 		}
 
 		// > FOR FETCHING FROM THE COORDINATOR'S PARAMETER SERVICE
-		case FETCH_YAML_CUSTOM_CONTROLLER_COORDINATOR:
+		case FETCH_YAML_MPC_CONTROLLER_FROM_COORDINATOR:
 		{
 			// Let the user know that this message was received
-			ROS_INFO("The CustomControllerService received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from the coordinator.");
+			ROS_INFO("[MPC CONTROLLER] Received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from the coordinator.");
 			// Create a node handle to the parameter service running on the coordinator machine
 			ros::NodeHandle nodeHandle_to_coordinator_parameter_service(namespace_to_coordinator_parameter_service);
 			// Call the function that fetches the parameters
@@ -781,7 +778,7 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 	// Here we load the parameters that are specified in the CustomController.yaml file
 
 	// Add the "CustomController" namespace to the "nodeHandle"
-	ros::NodeHandle nodeHandle_for_customController(nodeHandle, "CustomController");
+	ros::NodeHandle nodeHandle_for_customController(nodeHandle, "MpcController");
 
 	// > The mass of the crazyflie
 	cf_mass = getParameterFloat(nodeHandle_for_customController , "mass");
@@ -799,7 +796,7 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 
 
 	// DEBUGGING: Print out one of the parameters that was loaded
-	ROS_INFO_STREAM("DEBUGGING: the fetched CustomController/mass = " << cf_mass);
+	ROS_INFO_STREAM("[MPC CONTROLLER] DEBUGGING: the fetched CustomController/mass = " << cf_mass);
 
 	// Call the function that computes details an values that are needed from these
 	// parameters loaded above
@@ -818,7 +815,7 @@ void processFetchedParameters()
     gravity_force = cf_mass * 9.81/(1000*4);
     
     // DEBUGGING: Print out one of the computed quantities
-	ROS_INFO_STREAM("DEBUGGING: thus the graity force = " << gravity_force);
+	ROS_INFO_STREAM("[MPC CONTROLLER] DEBUGGING: thus the graity force = " << gravity_force);
 }
 
 
@@ -908,11 +905,15 @@ bool getParameterBool(ros::NodeHandle& nodeHandle, std::string name)
 int main(int argc, char* argv[]) {
     
     // Starting the ROS-node
-    ros::init(argc, argv, "CustomControllerService");
+    ros::init(argc, argv, "MpcControllerService");
 
     // Create a "ros::NodeHandle" type local variable "nodeHandle" as the current node,
     // the "~" indcates that "self" is the node handle assigned to this variable.
     ros::NodeHandle nodeHandle("~");
+
+    // Get the namespace of this "StudentControllerService" node
+    std::string m_namespace = ros::this_node::getNamespace();
+    ROS_INFO_STREAM("[MPC CONTROLLER] ros::this_node::getNamespace() =  " << m_namespace);
 
     // Get the agent ID as the "ROS_NAMESPACE" this computer.
     // NOTES:
@@ -922,15 +923,13 @@ int main(int argc, char* argv[]) {
     //   This line of code adds a parameter named "studentID" to the "PPSClient"
     // > Thus, to get access to this "studentID" paremeter, we first need to get a handle
     //   to the "PPSClient" node within which this controller service is nested.
-    // Get the namespace of this "CustomControllerService" node
-    std::string m_namespace = ros::this_node::getNamespace();
     // Get the handle to the "PPSClient" node
     ros::NodeHandle PPSClient_nodeHandle(m_namespace + "/PPSClient");
     // Get the value of the "studentID" parameter into the instance variable "my_agentID"
-    if(!PPSClient_nodeHandle.getParam("studentID", my_agentID))
+    if(!PPSClient_nodeHandle.getParam("agentID", my_agentID))
     {
     	// Throw an error if the student ID parameter could not be obtained
-		ROS_ERROR("Failed to get studentID from FollowN_1Service");
+		ROS_ERROR("[MPC CONTROLLER] Failed to get agentID from PPSClient");
 	}
 
 
@@ -981,9 +980,9 @@ int main(int argc, char* argv[]) {
     // PRINT OUT SOME INFORMATION
 
     // Let the user know what namespaces are being used for linking to the parameter service
-    ROS_INFO_STREAM("The namespace string for accessing the Paramter Services are:");
-    ROS_INFO_STREAM("namespace_to_own_agent_parameter_service    =  " << namespace_to_own_agent_parameter_service);
-    ROS_INFO_STREAM("namespace_to_coordinator_parameter_service  =  " << namespace_to_coordinator_parameter_service);
+    ROS_INFO_STREAM("[MPC CONTROLLER] The namespace string for accessing the Paramter Services are:");
+    ROS_INFO_STREAM("[MPC CONTROLLER] namespace_to_own_agent_parameter_service    =  " << namespace_to_own_agent_parameter_service);
+    ROS_INFO_STREAM("[MPC CONTROLLER] namespace_to_coordinator_parameter_service  =  " << namespace_to_coordinator_parameter_service);
 
 
     // FINALLY, FETCH ANY PARAMETERS REQUIRED FROM THESE "PARAMETER SERVICES"
@@ -1023,7 +1022,7 @@ int main(int argc, char* argv[]) {
     ros::NodeHandle namespace_nodeHandle(ros::this_node::getNamespace());
 
     // Print out some information to the user.
-    ROS_INFO("CustomControllerService ready");
+    ROS_INFO("[MPC CONTROLLER] Service ready :-)");
 
     // Enter an endless while loop to keep the node alive.
     ros::spin();

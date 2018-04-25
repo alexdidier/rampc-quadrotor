@@ -32,155 +32,11 @@
 
 
 
-//    ----------------------------------------------------------------------------------
-//    III  N   N   CCCC  L      U   U  DDDD   EEEEE   SSSS
-//     I   NN  N  C      L      U   U  D   D  E      S
-//     I   N N N  C      L      U   U  D   D  EEE     SSS
-//     I   N  NN  C      L      U   U  D   D  E          S
-//    III  N   N   CCCC  LLLLL   UUU   DDDD   EEEEE  SSSS
-//    ----------------------------------------------------------------------------------
 
-// These various headers need to be included so that this controller service can be
-// connected with the D-FaLL system.
-
-#include <math.h>
-#include <stdlib.h>
-#include "ros/ros.h"
-#include <std_msgs/String.h>
-#include <ros/package.h>
-#include "std_msgs/Float32.h"
-
-#include "d_fall_pps/CrazyflieData.h"
-#include "d_fall_pps/Setpoint.h"
-#include "d_fall_pps/ControlCommand.h"
-#include "d_fall_pps/Controller.h"
-
-#include <std_msgs/Int32.h>
+// INCLUDE THE HEADER
+#include "nodes/SafeControllerService.h"
 
 
-
-
-//    ----------------------------------------------------------------------------------
-//    DDDD   EEEEE  FFFFF  III  N   N  EEEEE   SSSS
-//    D   D  E      F       I   NN  N  E      S
-//    D   D  EEE    FFF     I   N N N  EEE     SSS
-//    D   D  E      F       I   N  NN  E          S
-//    DDDD   EEEEE  F      III  N   N  EEEEE  SSSS
-//    ----------------------------------------------------------------------------------
-
-// These constants are defined to make the code more readable and adaptable.
-
-// Universal constants
-#define PI 3.1415926535
-
-// The constants define the modes that can be used for controller the Crazyflie 2.0,
-// the constants defined here need to be in agreement with those defined in the
-// firmware running on the Crazyflie 2.0.
-// The following is a short description about each mode:
-// MOTOR_MODE    In this mode the Crazyflie will apply the requested 16-bit per motor
-//               command directly to each of the motors
-// RATE_MODE     In this mode the Crazyflie will apply the requested 16-bit per motor
-//               command directly to each of the motors, and additionally request the
-//               body frame roll, pitch, and yaw angular rates from the PID rate
-//               controllers implemented in the Crazyflie 2.0 firmware.
-// ANGE_MODE     In this mode the Crazyflie will apply the requested 16-bit per motor
-//               command directly to each of the motors, and additionally request the
-//               body frame roll, pitch, and yaw angles from the PID attitude
-//               controllers implemented in the Crazyflie 2.0 firmware.
-#define MOTOR_MODE 6
-#define RATE_MODE  7
-#define ANGLE_MODE 8
-
-// Constants for feching the yaml paramters
-#define FETCH_YAML_SAFE_CONTROLLER_AGENT          1
-#define FETCH_YAML_CUSTOM_CONTROLLER_AGENT        2
-#define FETCH_YAML_SAFE_CONTROLLER_COORDINATOR    3
-#define FETCH_YAML_CUSTOM_CONTROLLER_COORDINATOR  4
-
-// Namespacing the package
-using namespace d_fall_pps;
-
-
-
-
-//    ----------------------------------------------------------------------------------
-//    V   V    A    RRRR   III    A    BBBB   L      EEEEE   SSSS
-//    V   V   A A   R   R   I    A A   B   B  L      E      S
-//    V   V  A   A  RRRR    I   A   A  BBBB   L      EEE     SSS
-//     V V   AAAAA  R  R    I   AAAAA  B   B  L      E          S
-//      V    A   A  R   R  III  A   A  BBBB   LLLLL  EEEEE  SSSS
-//    ----------------------------------------------------------------------------------
-
-std::vector<float>  ffThrust(4);
-std::vector<float>  feedforwardMotor(4);
-float cf_mass;
-float gravity_force;
-std::vector<float>  motorPoly(3);
-
-std::vector<float>  gainMatrixRoll(9);
-std::vector<float>  gainMatrixPitch(9);
-std::vector<float>  gainMatrixYaw(9);
-std::vector<float>  gainMatrixThrust(9);
-
-//K_infinite of feedback
-std::vector<float> filterGain(6);
-//only for velocity calculation
-std::vector<float> estimatorMatrix(2);
-float prevEstimate[9];
-
-std::vector<float>  setpoint(4);
-std::vector<float> defaultSetpoint(4);
-float saturationThrust;
-
-CrazyflieData previousLocation;
-
-
-// Variable for the namespaces for the paramter services
-// > For the paramter service of this agent
-std::string namespace_to_own_agent_parameter_service;
-// > For the parameter service of the coordinator
-std::string namespace_to_coordinator_parameter_service;
-
-
-
-//    ----------------------------------------------------------------------------------
-//    FFFFF  U   U  N   N   CCCC  TTTTT  III   OOO   N   N
-//    F      U   U  NN  N  C        T     I   O   O  NN  N
-//    FFF    U   U  N N N  C        T     I   O   O  N N N
-//    F      U   U  N  NN  C        T     I   O   O  N  NN
-//    F       UUU   N   N   CCCC    T    III   OOO   N   N
-//
-//    PPPP   RRRR    OOO   TTTTT   OOO   TTTTT  Y   Y  PPPP   EEEEE   SSSS
-//    P   P  R   R  O   O    T    O   O    T     Y Y   P   P  E      S
-//    PPPP   RRRR   O   O    T    O   O    T      Y    PPPP   EEE     SSS
-//    P      R  R   O   O    T    O   O    T      Y    P      E          S
-//    P      R   R   OOO     T     OOO     T      Y    P      EEEEE  SSSS
-//    ----------------------------------------------------------------------------------
-
-// These function prototypes are not strictly required for this code to complile, but
-// adding the function prototypes here means the the functions can be written below in
-// any order. If the function prototypes are not included then the function need to
-// written below in an order that ensure each function is implemented before it is
-// called from another function, hence why the "main" function is at the bottom.
-
-// > For the CONTROL LOOP
-bool calculateControlOutput(Controller::Request &request, Controller::Response &response);
-void convertIntoBodyFrame(float est[9], float (&state)[9], float yaw_measured);
-float computeMotorPolyBackward(float thrust);
-void estimateState(Controller::Request &request, float (&est)[9]);
-
-// > For the LOAD PARAMETERS
-void yamlReadyForFetchCallback(const std_msgs::Int32& msg);
-void fetchYamlParameters(ros::NodeHandle& nodeHandle);
-void processFetchedParameters();
-
-// > For the GETPARAM()
-float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name);
-void getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length);
-int getParameterInt(ros::NodeHandle& nodeHandle, std::string name);
-void getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val, int length);
-int getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val);
-bool getParameterBool(ros::NodeHandle& nodeHandle, std::string name);
 
 
 
@@ -383,10 +239,10 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
     {
 
         // > FOR FETCHING FROM THE AGENT'S OWN PARAMETER SERVICE
-        case FETCH_YAML_SAFE_CONTROLLER_AGENT:
+        case FETCH_YAML_SAFE_CONTROLLER_FROM_OWN_AGENT:
         {
             // Let the user know that this message was received
-            ROS_INFO("The SafeControllerService received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from this machine.");
+            ROS_INFO("[SAFE CONTROLLER] Received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from this machine.");
             // Create a node handle to the parameter service running on this agent's machine
             ros::NodeHandle nodeHandle_to_own_agent_parameter_service(namespace_to_own_agent_parameter_service);
             // Call the function that fetches the parameters
@@ -395,10 +251,10 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
         }
 
         // > FOR FETCHING FROM THE COORDINATOR'S PARAMETER SERVICE
-        case FETCH_YAML_SAFE_CONTROLLER_COORDINATOR:
+        case FETCH_YAML_SAFE_CONTROLLER_FROM_COORDINATOR:
         {
             // Let the user know that this message was received
-            ROS_INFO("The SafeControllerService received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from the coordinator.");
+            ROS_INFO("[SAFE CONTROLLER] Received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from the coordinator.");
             // Create a node handle to the parameter service running on the coordinator machine
             ros::NodeHandle nodeHandle_to_coordinator_parameter_service(namespace_to_coordinator_parameter_service);
             // Call the function that fetches the parameters
@@ -448,7 +304,7 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
     getParameterFloatVector(nodeHandle_for_safeController, "defaultSetpoint", defaultSetpoint, 4);
 
     // DEBUGGING: Print out one of the parameters that was loaded
-    ROS_INFO_STREAM("DEBUGGING: the fetched SafeController/mass = " << cf_mass);
+    ROS_INFO_STREAM("[SAFE CONTROLLER] DEBUGGING: the fetched SafeController/mass = " << cf_mass);
 
     // Call the function that computes details an values that are needed from these
     // parameters loaded above
@@ -626,9 +482,9 @@ int main(int argc, char* argv[]) {
     // PRINT OUT SOME INFORMATION
 
     // Let the user know what namespaces are being used for linking to the parameter service
-    ROS_INFO_STREAM("The namespace string for accessing the Paramter Services are:");
-    ROS_INFO_STREAM("namespace_to_own_agent_parameter_service    =  " << namespace_to_own_agent_parameter_service);
-    ROS_INFO_STREAM("namespace_to_coordinator_parameter_service  =  " << namespace_to_coordinator_parameter_service);
+    ROS_INFO_STREAM("[SAFE CONTROLLER] The namespace string for accessing the Paramter Services are:");
+    ROS_INFO_STREAM("[SAFE CONTROLLER] namespace_to_own_agent_parameter_service    =  " << namespace_to_own_agent_parameter_service);
+    ROS_INFO_STREAM("[SAFE CONTROLLER] namespace_to_coordinator_parameter_service  =  " << namespace_to_coordinator_parameter_service);
 
 
     // FINALLY, FETCH ANY PARAMETERS REQUIRED FROM THESE "PARAMETER SERVICES"
@@ -647,7 +503,7 @@ int main(int argc, char* argv[]) {
 
 
     ros::ServiceServer service = nodeHandle.advertiseService("RateController", calculateControlOutput);
-    ROS_INFO("SafeControllerService ready");
+    ROS_INFO("[SAFE CONTROLLER] Service ready :-)");
     
 	// std::string package_path;
 	// package_path = ros::package::getPath("d_fall_pps") + "/";

@@ -47,6 +47,24 @@
 			>
 		</node>
 
+		<!-- STUDENT CONTROLLER -->
+		<node
+			pkg    = "d_fall_pps"
+			name   = "StudentControllerService"
+			output = "screen"
+			type   = "StudentControllerService"
+			>
+		</node>
+
+		<!-- MPC CONTROLLER -->
+		<node
+			pkg    = "d_fall_pps"
+			name   = "MpcControllerService"
+			output = "screen"
+			type   = "MpcControllerService"
+			>
+		</node>
+
 		<!-- PARAMETER SERVICE -->
 		<node
 			pkg    = "d_fall_pps"

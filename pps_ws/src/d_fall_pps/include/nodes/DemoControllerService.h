@@ -58,6 +58,9 @@
 #include "d_fall_pps/DebugMsg.h"
 #include "d_fall_pps/CustomButton.h"
 
+// Include the Parameter Service shared definitions
+#include "nodes/ParameterServiceDefinitions.h"
+
 #include <std_msgs/Int32.h>
 
 
@@ -144,12 +147,6 @@
 #define ESTIMATOR_METHOD_POINT_MASS_PER_DIMENSION   2   // (DEFAULT)
 #define ESTIMATOR_METHOD_QUADROTOR_MODEL_BASED      3
 
-
-// Constants for feching the yaml paramters
-//#define FETCH_YAML_SAFE_CONTROLLER_AGENT         1
-#define FETCH_YAML_DEMO_CONTROLLER_AGENT         2
-//#define FETCH_YAML_SAFE_CONTROLLER_COORDINATOR   3
-#define FETCH_YAML_DEMO_CONTROLLER_COORDINATOR   4
 
 // Namespacing the package
 using namespace d_fall_pps;

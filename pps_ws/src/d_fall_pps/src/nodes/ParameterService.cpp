@@ -81,7 +81,7 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
     // parameters should be loaded
     int controller_to_load_yaml = msg.data;
 
-    ROS_INFO_STREAM("The Parameter Service node received the message to load YAML parameters from file into cache");
+    ROS_INFO_STREAM("[PARAMETER SERVICE] Received the message to load YAML parameters from file into cache");
 
 
     // Instantiate a local varaible to confirm that something can actually be loaded
@@ -142,9 +142,9 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
     else
     {
         // Let the user know that the command was not recognised
-        ROS_INFO_STREAM("> Nothing to load for this parameter service with.");
-        ROS_INFO_STREAM("> The message received has 'controller_to_load_yaml'   =  " << controller_to_load_yaml);
-        ROS_INFO_STREAM("> And the type of this Parameter Service is 'my_type'  =  " << my_type);
+        ROS_INFO_STREAM("[PARAMETER SERVICE] > Nothing to load for this parameter service with.");
+        ROS_INFO_STREAM("[PARAMETER SERVICE] > The message received has 'controller_to_load_yaml'   =  " << controller_to_load_yaml);
+        ROS_INFO_STREAM("[PARAMETER SERVICE] > And the type of this Parameter Service is 'my_type'  =  " << my_type);
         // Set the boolean that prevents the fetch message from being sent
         isValidToAttemptLoad = false;
     }
@@ -155,7 +155,7 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
     if (isValidToAttemptLoad)
     {
         // Let the user know what is about to happen
-        ROS_INFO_STREAM("> The following path will be used for locating the .yaml file: " << d_fall_pps_path  << " The comand line string sent to the 'system' is: " << cmd );
+        ROS_INFO_STREAM("[PARAMETER SERVICE] > The following path will be used for locating the .yaml file: " << d_fall_pps_path  << " The comand line string sent to the 'system' is: " << cmd );
 
         // Re-load the parameters by pass the command line string via a "system" call
         // > i.e., this replicates pasting this string in a new terminal window and pressing enter
@@ -228,7 +228,7 @@ int main(int argc, char* argv[])
 
     // Get the namespace of this "ParameterService" node
     std::string m_namespace = ros::this_node::getNamespace();
-    ROS_INFO_STREAM("For ParameterService, ros::this_node::getNamespace() =  " << m_namespace);
+    ROS_INFO_STREAM("[PARAMETER SERVICE] ros::this_node::getNamespace() =  " << m_namespace);
 
 
 
@@ -237,7 +237,7 @@ int main(int argc, char* argv[])
     if(!nodeHandle.getParam("type", type_string))
     {
         // Throw an error if the agent ID parameter could not be obtained
-        ROS_ERROR("Failed to get type from ParameterService");
+        ROS_ERROR("[PARAMETER SERVICE] Failed to get type from ParameterService");
     }
 
     // Set the "my_type" instance variable based on this string loaded
@@ -253,7 +253,7 @@ int main(int argc, char* argv[])
     {
         // Set "my_type" to the value indicating that it is invlid
         my_type = TYPE_INVALID;
-        ROS_ERROR("The 'type' parameter retrieved was not recognised.");
+        ROS_ERROR("[PARAMETER SERVICE] The 'type' parameter retrieved was not recognised.");
     }
 
 
@@ -261,7 +261,7 @@ int main(int argc, char* argv[])
     if(!nodeHandle.getParam("agentID", my_agentID))
     {
         // Throw an error if the agent ID parameter could not be obtained
-        ROS_ERROR("Failed to get agentID from ParameterService");
+        ROS_ERROR("[PARAMETER SERVICE] Failed to get agentID from ParameterService");
     }
 
 
@@ -278,7 +278,7 @@ int main(int argc, char* argv[])
             //m_base_namespace = ros::this_node::getNamespace();
             //m_base_namespace = "/agent" + my_agentID + '/' + "ParameterService";
             m_base_namespace = m_namespace + '/' + "ParameterService";
-            ROS_INFO_STREAM("This Paramter Sercice will load .yaml file parameters into the 'base' namespace: " << m_base_namespace);
+            ROS_INFO_STREAM("[PARAMETER SERVICE] .yaml file parameters will be loaded into the 'base' namespace: " << m_base_namespace);
             break;
         }
 
@@ -289,13 +289,13 @@ int main(int argc, char* argv[])
             //m_base_namespace = ros::this_node::getNamespace();
             //m_base_namespace = "/ParameterService";
             m_base_namespace = m_namespace + '/' + "ParameterService";
-            ROS_INFO_STREAM("This Paramter Sercice will load .yaml file parameters into the 'base' namespace: " << m_base_namespace);
+            ROS_INFO_STREAM("[PARAMETER SERVICE] .yaml file parameters will be loaded into the 'base' namespace: " << m_base_namespace);
             break;
         }
 
         default:
         {
-            ROS_ERROR("The 'my_type' type parameter was not recognised.");
+            ROS_ERROR("[PARAMETER SERVICE] The 'my_type' type parameter was not recognised.");
             break;
         }
     }
@@ -333,7 +333,7 @@ int main(int argc, char* argv[])
             requestLoadControllerYamlSubscriber_agent_to_coordinator = nh_coordinator_for_this_agent.subscribe("/my_GUI/requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);            
 
             // Inform the user what was subscribed to:
-            ROS_INFO_STREAM("This Parameter Service has subscribed to 'requestLoadControllerYaml' messages from both the 'my_GUI' and the 'PPSClient'");
+            ROS_INFO_STREAM("[PARAMETER SERVICE] Subscribed to 'requestLoadControllerYaml' messages from both the 'my_GUI' and the 'PPSClient'");
             break;
         }
 
@@ -348,19 +348,19 @@ int main(int argc, char* argv[])
             requestLoadControllerYamlSubscriber_coordinator_to_self = nh_coordinator_for_this_coordinator.subscribe("/my_GUI/requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);
 
             // Inform the user what was subscribed to:
-            ROS_INFO_STREAM("This Parameter Service has subscribed to 'requestLoadControllerYaml' messages from 'my_GUI'");
+            ROS_INFO_STREAM("[PARAMETER SERVICE] Subscribed to 'requestLoadControllerYaml' messages from 'my_GUI'");
             break;
         }
 
         default:
         {
-            ROS_ERROR("The 'my_type' type parameter was not recognised.");
+            ROS_ERROR("[PARAMETER SERVICE] The 'my_type' type parameter was not recognised.");
             break;
         }
     }
 
 
-    ROS_INFO("CentralManagerService ready");
+    ROS_INFO("[PARAMETER SERVICE] Service ready :-)");
     ros::spin();
 
     return 0;

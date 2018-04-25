@@ -1,4 +1,4 @@
-//    Copyright (C) 2017, ETH Zurich, D-ITET, Paul Beuchat, Angel Romero, Cyrill Burgener, Marco Mueller, Philipp Friedli
+//    Copyright (C) 2017, ETH Zurich, D-ITET, Paul Beuchat, Cyrill Burgener, Marco Mueller, Philipp Friedli
 //
 //    This file is part of D-FaLL-System.
 //    
@@ -25,10 +25,9 @@
 //
 //
 //    DESCRIPTION:
-//    Place for students to implement their controller
+//    The fall-back controller that keeps the Crazyflie safe
 //
 //    ----------------------------------------------------------------------------------
-
 
 
 
@@ -44,26 +43,22 @@
 // These various headers need to be included so that this controller service can be
 // connected with the D-FaLL system.
 
-//some useful libraries
 #include <math.h>
 #include <stdlib.h>
 #include "ros/ros.h"
+#include <std_msgs/String.h>
 #include <ros/package.h>
+#include "std_msgs/Float32.h"
 
-//the generated structs from the msg-files have to be included
-#include "d_fall_pps/ViconData.h"
+#include "d_fall_pps/CrazyflieData.h"
 #include "d_fall_pps/Setpoint.h"
 #include "d_fall_pps/ControlCommand.h"
 #include "d_fall_pps/Controller.h"
-#include "d_fall_pps/DebugMsg.h"
-#include "d_fall_pps/CustomControllerYAML.h"
-
-// Include the Parameter Service shared definitions
-#include "nodes/ParameterServiceDefinitions.h"
 
 #include <std_msgs/Int32.h>
 
-
+// Include the shared definitions
+#include "nodes/ParameterServiceDefinitions.h"
 
 
 
@@ -80,7 +75,7 @@
 // Universal constants
 #define PI 3.1415926535
 
-// These constants define the modes that can be used for controller the Crazyflie 2.0,
+// The constants define the modes that can be used for controller the Crazyflie 2.0,
 // the constants defined here need to be in agreement with those defined in the
 // firmware running on the Crazyflie 2.0.
 // The following is a short description about each mode:
@@ -98,21 +93,8 @@
 #define RATE_MODE  7
 #define ANGLE_MODE 8
 
-// These constants define the controller used for computing the response in the
-// "calculateControlOutput" function
-// The following is a short description about each mode:
-// LQR_RATE_MODE      LQR controller based on the state vector:
-//                    [position,velocity,angles]
-//
-// LQR_ANGLE_MODE     LQR controller based on the state vector:
-//                    [position,velocity]
-//
-#define LQR_RATE_MODE   1   // (DEFAULT)
-#define LQR_ANGLE_MODE  2
-
 // Namespacing the package
 using namespace d_fall_pps;
-
 
 
 
@@ -125,26 +107,28 @@ using namespace d_fall_pps;
 //      V    A   A  R   R  III  A   A  BBBB   LLLLL  EEEEE  SSSS
 //    ----------------------------------------------------------------------------------
 
-// Variables for controller
-float cf_mass;                       // Crazyflie mass in grams
-std::vector<float> motorPoly(3);     // Coefficients of the 16-bit command to thrust conversion
-float control_frequency;             // Frequency at which the controller is running
-float gravity_force;                 // The weight of the Crazyflie in Newtons, i.e., mg
+std::vector<float>  ffThrust(4);
+std::vector<float>  feedforwardMotor(4);
+float cf_mass;
+float gravity_force;
+std::vector<float>  motorPoly(3);
 
-float previous_stateErrorInertial[9];     // The location error of the Crazyflie at the "previous" time step
+std::vector<float>  gainMatrixRoll(9);
+std::vector<float>  gainMatrixPitch(9);
+std::vector<float>  gainMatrixYaw(9);
+std::vector<float>  gainMatrixThrust(9);
 
-std::vector<float>  setpoint{0.0,0.0,0.4,0.0};     // The setpoints for (x,y,z) position and yaw angle, in that order
+//K_infinite of feedback
+std::vector<float> filterGain(6);
+//only for velocity calculation
+std::vector<float> estimatorMatrix(2);
+float prevEstimate[9];
 
+std::vector<float>  setpoint(4);
+std::vector<float> defaultSetpoint(4);
+float saturationThrust;
 
-// The LQR Controller parameters for "LQR_RATE_MODE"
-const float gainMatrixRollRate[9]    =  { 0.00,-1.72, 0.00, 0.00,-1.34, 0.00, 5.12, 0.00, 0.00};
-const float gainMatrixPitchRate[9]   =  { 1.72, 0.00, 0.00, 1.34, 0.00, 0.00, 0.00, 5.12, 0.00};
-const float gainMatrixYawRate[9]     =  { 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.84};
-const float gainMatrixThrust[9]  =  { 0.00, 0.00, 0.25, 0.00, 0.00, 0.14, 0.00, 0.00, 0.00};
-
-
-// ROS Publisher for debugging variables
-ros::Publisher debugPublisher;
+CrazyflieData previousLocation;
 
 
 // Variable for the namespaces for the paramter services
@@ -152,26 +136,6 @@ ros::Publisher debugPublisher;
 std::string namespace_to_own_agent_parameter_service;
 // > For the parameter service of the coordinator
 std::string namespace_to_coordinator_parameter_service;
-
-// The ID of this agent, i.e., the ID of this compute
-int my_agentID = 0;
-
-
-// RELEVANT NOTES ABOUT THE VARIABLES DECLARE HERE:
-// The "CrazyflieData" type used for the "request" variable is a
-// structure as defined in the file "CrazyflieData.msg" which has the following
-// properties:
-//     string crazyflieName              The name given to the Crazyflie in the Vicon software
-//     float64 x                         The x position of the Crazyflie [metres]
-//     float64 y                         The y position of the Crazyflie [metres]
-//     float64 z                         The z position of the Crazyflie [metres]
-//     float64 roll                      The roll component of the intrinsic Euler angles [radians]
-//     float64 pitch                     The pitch component of the intrinsic Euler angles [radians]
-//     float64 yaw                       The yaw component of the intrinsic Euler angles [radians]
-//     float64 acquiringTime #delta t    The time elapsed since the previous "CrazyflieData" was received [seconds]
-//     bool occluded                     A boolean indicted whether the Crazyflie for visible at the time of this measurement
-
-
 
 
 
@@ -195,27 +159,21 @@ int my_agentID = 0;
 // written below in an order that ensure each function is implemented before it is
 // called from another function, hence why the "main" function is at the bottom.
 
-// CONTROLLER COMPUTATIONS
+// > For the CONTROL LOOP
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response);
-
-// TRANSFORMATION OF THE (x,y) INERTIAL FRAME ERROR INTO AN (x,y) BODY FRAME ERROR
-void convertIntoBodyFrame(float stateInertial[9], float (&stateBody)[9], float yaw_measured);
-
-// CONVERSION FROM THRUST IN NEWTONS TO 16-BIT COMMAND
+void convertIntoBodyFrame(float est[9], float (&state)[9], float yaw_measured);
 float computeMotorPolyBackward(float thrust);
+void estimateState(Controller::Request &request, float (&est)[9]);
 
-// SETPOINT CHANGE CALLBACK
-void setpointCallback(const Setpoint& newSetpoint);
+// > For the LOAD PARAMETERS
+void yamlReadyForFetchCallback(const std_msgs::Int32& msg);
+void fetchYamlParameters(ros::NodeHandle& nodeHandle);
+void processFetchedParameters();
 
-// LOAD PARAMETERS
+// > For the GETPARAM()
 float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name);
 void getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length);
 int getParameterInt(ros::NodeHandle& nodeHandle, std::string name);
 void getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val, int length);
 int getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val);
 bool getParameterBool(ros::NodeHandle& nodeHandle, std::string name);
-
-void yamlReadyForFetchCallback(const std_msgs::Int32& msg);
-void fetchYamlParameters(ros::NodeHandle& nodeHandle);
-void processFetchedParameters();
-//void customYAMLasMessageCallback(const CustomControllerYAML& newCustomControllerParameters);

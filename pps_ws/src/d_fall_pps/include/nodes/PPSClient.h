@@ -57,6 +57,9 @@
 #include "std_msgs/Int32.h"
 #include "std_msgs/Float32.h"
 
+// Include the Parameter Service shared definitions
+#include "nodes/ParameterServiceDefinitions.h"
+
 // Need for having a ROS "bag" to store data for post-analysis
 //#include <rosbag/bag.h>
 
@@ -113,12 +116,6 @@
 #define CONNECTED        0
 #define CONNECTING       1
 #define DISCONNECTED     2
-
-// For which controller parameters to load
-#define FETCH_YAML_SAFE_CONTROLLER_AGENT          1
-#define FETCH_YAML_DEMO_CONTROLLER_AGENT          2
-#define FETCH_YAML_SAFE_CONTROLLER_COORDINATOR    3
-#define FETCH_YAML_DEMO_CONTROLLER_COORDINATOR    4
 
 
 // Universal constants

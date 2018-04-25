@@ -1,5 +1,5 @@
 # Mass of the crazyflie
-mass : 30
+mass : 29
 
 # Frequency of the controller, in hertz
 vicon_frequency : 200

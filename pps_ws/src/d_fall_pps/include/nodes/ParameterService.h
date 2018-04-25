@@ -53,6 +53,9 @@
 
 #include "d_fall_pps/Controller.h"
 
+// Include the shared definitions
+#include "nodes/ParameterServiceDefinitions.h"
+
 
 //    ----------------------------------------------------------------------------------
 //    DDDD   EEEEE  FFFFF  III  N   N  EEEEE   SSSS
@@ -61,35 +64,6 @@
 //    D   D  E      F       I   N  NN  E          S
 //    DDDD   EEEEE  F      III  N   N  EEEEE  SSSS
 //    ----------------------------------------------------------------------------------
-
-
-// For which controller parameters to load from file
-#define LOAD_YAML_SAFE_CONTROLLER_AGENT             1
-#define LOAD_YAML_DEMO_CONTROLLER_AGENT             2
-#define LOAD_YAML_STUDENT_CONTROLLER_AGENT          3
-#define LOAD_YAML_MPC_CONTROLLER_AGENT              4
-
-#define LOAD_YAML_SAFE_CONTROLLER_COORDINATOR       11
-#define LOAD_YAML_DEMO_CONTROLLER_COORDINATOR       12
-#define LOAD_YAML_STUDENT_CONTROLLER_COORDINATOR    13
-#define LOAD_YAML_MPC_CONTROLLER_COORDINATOR        14
-
-
-// For send commends to the controller node informing which
-// parameters to fetch
-// > NOTE: these are identical to the #defines above, but
-//         used because thez have the same name as used in
-//         the controller files
-// #define FETCH_YAML_SAFE_CONTROLLER_FROM_OWN_AGENT      1
-// #define FETCH_YAML_DEMO_CONTROLLER_FROM_OWN_AGENT      2
-// #define FETCH_YAML_STUDENT_CONTROLLER_FROM_OWN_AGENT   3
-// #define FETCH_YAML_MPC_CONTROLLER_FROM_OWN_AGENT       4
-
-// #define FETCH_YAML_SAFE_CONTROLLER_FROM_COORDINATOR      11
-// #define FETCH_YAML_DEMO_CONTROLLER_FROM_COORDINATOR      12
-// #define FETCH_YAML_STUDENT_CONTROLLER_FROM_COORDINATOR   13
-// #define FETCH_YAML_MPC_CONTROLLER_FROM_COORDINATOR       14
-
 
 // The types, i.e., agent or coordinator
 #define TYPE_INVALID      -1

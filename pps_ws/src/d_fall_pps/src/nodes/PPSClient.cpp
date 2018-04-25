@@ -65,15 +65,15 @@
 bool safetyCheck(CrazyflieData data, ControlCommand controlCommand) {
 	//position check
 	if((data.x < context.localArea.xmin) or (data.x > context.localArea.xmax)) {
-		ROS_INFO_STREAM("x safety failed");
+		ROS_INFO_STREAM("[PPS CLIENT] x safety failed");
 		return false;
 	}
 	if((data.y < context.localArea.ymin) or (data.y > context.localArea.ymax)) {
-		ROS_INFO_STREAM("y safety failed");
+		ROS_INFO_STREAM("[PPS CLIENT] y safety failed");
 		return false;
 	}
 	if((data.z < context.localArea.zmin) or (data.z > context.localArea.zmax)) {
-		ROS_INFO_STREAM("z safety failed");
+		ROS_INFO_STREAM("[PPS CLIENT] z safety failed");
 		return false;
 	}
 
@@ -82,11 +82,11 @@ bool safetyCheck(CrazyflieData data, ControlCommand controlCommand) {
 	//the angleMargin is a value in the range (0,1). The closer to 1, the closer to 90 deg are the roll and pitch angles allowed to become before the safeController takes over
 	if(strictSafety){
 		if((data.roll > PI/2*angleMargin) or (data.roll < -PI/2*angleMargin)) {
-			ROS_INFO_STREAM("roll too big.");
+			ROS_INFO_STREAM("[PPS CLIENT] roll too big.");
 			return false;
 		}
 		if((data.pitch > PI/2*angleMargin) or (data.pitch < -PI/2*angleMargin)) {
-			ROS_INFO_STREAM("pitch too big.");
+			ROS_INFO_STREAM("[PPS CLIENT] pitch too big.");
 			return false;
 		}
 	}
@@ -137,11 +137,11 @@ void takeOffCF(CrazyflieData& current_local_coordinates) //local because the set
     // setpoint_msg.yaw = current_local_coordinates.yaw;          //previous one
     setpoint_msg.yaw = 0.0;
     safeControllerServiceSetpointPublisher.publish(setpoint_msg);
-    ROS_INFO("Take OFF:");
-    ROS_INFO("------Current coordinates:");
-    ROS_INFO("X: %f, Y: %f, Z: %f", current_local_coordinates.x, current_local_coordinates.y, current_local_coordinates.z);
-    ROS_INFO("------New coordinates:");
-    ROS_INFO("X: %f, Y: %f, Z: %f", setpoint_msg.x, setpoint_msg.y, setpoint_msg.z);
+    ROS_INFO("[PPS CLIENT] Take OFF:");
+    ROS_INFO("[PPS CLIENT] ------Current coordinates:");
+    ROS_INFO("[PPS CLIENT] X: %f, Y: %f, Z: %f", current_local_coordinates.x, current_local_coordinates.y, current_local_coordinates.z);
+    ROS_INFO("[PPS CLIENT] ------New coordinates:");
+    ROS_INFO("[PPS CLIENT] X: %f, Y: %f, Z: %f", setpoint_msg.x, setpoint_msg.y, setpoint_msg.z);
 
     // now, use safe controller to go to that setpoint
     loadSafeController();
@@ -172,12 +172,12 @@ void changeFlyingStateTo(int new_state)
 {
     if(crazyradio_status == CONNECTED)
     {
-        ROS_INFO("Change state to: %d", new_state);
+        ROS_INFO("[PPS CLIENT] Change state to: %d", new_state);
         flying_state = new_state;
     }
     else
     {
-        ROS_INFO("Disconnected and trying to change state. State goes to MOTORS OFF");
+        ROS_INFO("[PPS CLIENT] Disconnected and trying to change state. State goes to MOTORS OFF");
         flying_state = STATE_MOTORS_OFF;
     }
 
@@ -225,7 +225,7 @@ void viconCallback(const ViconData& viconData) {
                     if(changed_state_flag) // stuff that will be run only once when changing state
                     {
                         changed_state_flag = false;
-                        ROS_INFO("STATE_MOTORS_OFF");
+                        ROS_INFO("[PPS CLIENT] STATE_MOTORS_OFF");
                     }
                     break;
                 case STATE_TAKE_OFF: //we need to move up from where we are now.
@@ -234,7 +234,7 @@ void viconCallback(const ViconData& viconData) {
                         changed_state_flag = false;
                         takeOffCF(local);
                         finished_take_off = false;
-                        ROS_INFO("STATE_TAKE_OFF");
+                        ROS_INFO("[PPS CLIENT] STATE_TAKE_OFF");
                         timer_takeoff = nodeHandle.createTimer(ros::Duration(duration_take_off), takeOffTimerCallback, true);
                     }
                     if(finished_take_off)
@@ -250,7 +250,7 @@ void viconCallback(const ViconData& viconData) {
                         changed_state_flag = false;
                         // need to change setpoint to the controller one
                         goToControllerSetpoint();
-                        ROS_INFO("STATE_FLYING");
+                        ROS_INFO("[PPS CLIENT] STATE_FLYING");
                     }
                     break;
                 case STATE_LAND:
@@ -259,7 +259,7 @@ void viconCallback(const ViconData& viconData) {
                         changed_state_flag = false;
                         landCF(local);
                         finished_land = false;
-                        ROS_INFO("STATE_LAND");
+                        ROS_INFO("[PPS CLIENT] STATE_LAND");
                         timer_takeoff = nodeHandle.createTimer(ros::Duration(duration_landing), landTimerCallback, true);
                     }
                     if(finished_land)
@@ -284,15 +284,15 @@ void viconCallback(const ViconData& viconData) {
                         bool success = demoController.call(controllerCall);
                         if(!success)
                         {
-                            ROS_ERROR("Failed to call demo controller, switching to safe controller");
-                            ROS_ERROR_STREAM("demo controller status: valid: " << demoController.isValid() << ", exists: " << demoController.exists());
-                            ROS_ERROR_STREAM("demo controller name: " << demoController.getService());
+                            ROS_ERROR("[PPS CLIENT] Failed to call demo controller, switching to safe controller");
+                            ROS_ERROR_STREAM("[PPS CLIENT] demo controller status: valid: " << demoController.isValid() << ", exists: " << demoController.exists());
+                            ROS_ERROR_STREAM("[PPS CLIENT] demo controller name: " << demoController.getService());
                             setInstantController(SAFE_CONTROLLER);
                         }
                         else if(!safetyCheck(global, controllerCall.response.controlOutput))
                         {
                             setInstantController(SAFE_CONTROLLER);
-                            ROS_INFO_STREAM("safety check failed, switching to safe controller");
+                            ROS_INFO_STREAM("[PPS CLIENT] safety check failed, switching to safe controller");
                         }
                     }
                     else        //SAFE_CONTROLLER and state is different from flying
@@ -328,7 +328,7 @@ void viconCallback(const ViconData& viconData) {
 
                         bool success = safeController.call(controllerCall);
                         if(!success) {
-                            ROS_ERROR_STREAM("Failed to call safe controller, valid: " << safeController.isValid() << ", exists: " << safeController.exists());
+                            ROS_ERROR_STREAM("[PPS CLIENT] Failed to call safe controller, valid: " << safeController.isValid() << ", exists: " << safeController.exists());
                         }
                     }
 
@@ -360,7 +360,7 @@ void viconCallback(const ViconData& viconData) {
 void loadCrazyflieContext() {
 	CMQuery contextCall;
 	contextCall.request.studentID = agentID;
-	ROS_INFO_STREAM("AgentID:" << agentID);
+	ROS_INFO_STREAM("[PPS CLIENT] AgentID:" << agentID);
 
     CrazyflieContext new_context;
 
@@ -368,7 +368,7 @@ void loadCrazyflieContext() {
 
 	if(centralManager.call(contextCall)) {
 		new_context = contextCall.response.crazyflieContext;
-		ROS_INFO_STREAM("CrazyflieContext:\n" << new_context);
+		ROS_INFO_STREAM("[PPS CLIENT] CrazyflieContext:\n" << new_context);
 
         if((context.crazyflieName != "") && (new_context.crazyflieName != context.crazyflieName)) //linked crazyflie name changed and it was not empty before
         {
@@ -380,7 +380,7 @@ void loadCrazyflieContext() {
             // msg.data = CMD_CRAZYFLY_MOTORS_OFF;
             // commandPublisher.publish(msg);
 
-            ROS_INFO("CF is now different for this student. Disconnect and turn it off");
+            ROS_INFO("[PPS CLIENT] CF is now different for this student. Disconnect and turn it off");
 
             std_msgs::Int32 msg;
             msg.data = CMD_DISCONNECT;
@@ -394,7 +394,7 @@ void loadCrazyflieContext() {
 	}
     else
     {
-		ROS_ERROR("Failed to load context. Waiting for next Save in DB by teacher");
+		ROS_ERROR("[PPS CLIENT] Failed to load context. Waiting for next Save in DB by teacher");
 	}
 }
 
@@ -405,12 +405,12 @@ void commandCallback(const std_msgs::Int32& commandMsg) {
 
 	switch(cmd) {
     	case CMD_USE_SAFE_CONTROLLER:
-            ROS_INFO("USE_SAFE_CONTROLLER Command received");
+            ROS_INFO("[PPS CLIENT] USE_SAFE_CONTROLLER Command received");
             setControllerUsed(SAFE_CONTROLLER);
     		break;
 
     	case CMD_USE_DEMO_CONTROLLER:
-            ROS_INFO("USE_DEMO_CONTROLLER Command received");
+            ROS_INFO("[PPS CLIENT] USE_DEMO_CONTROLLER Command received");
             setControllerUsed(DEMO_CONTROLLER);
     		break;
 
@@ -432,7 +432,7 @@ void commandCallback(const std_msgs::Int32& commandMsg) {
             break;
 
     	default:
-    		ROS_ERROR_STREAM("unexpected command number: " << cmd);
+    		ROS_ERROR_STREAM("[PPS CLIENT] unexpected command number: " << cmd);
     		break;
 	}
 }
@@ -502,10 +502,10 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
     {
         
         // > FOR FETCHING FROM THE AGENT'S OWN PARAMETER SERVICE
-        case FETCH_YAML_SAFE_CONTROLLER_AGENT:
+        case FETCH_YAML_SAFE_CONTROLLER_FROM_OWN_AGENT:
         {
             // Let the user know that this message was received
-            ROS_INFO("The PPSClient received the message that YAML parameters were (re-)loaded for the Safe Controller. > Now fetching the parameter values from this machine.");
+            ROS_INFO("[PPS CLIENT] Received the message that YAML parameters were (re-)loaded for the Safe Controller. > Now fetching the parameter values from this machine.");
             // Create a node handle to the parameter service running on this agent's machine
             ros::NodeHandle nodeHandle_to_own_agent_parameter_service(namespace_to_own_agent_parameter_service);
             // Call the function that fetches the parameters
@@ -514,11 +514,11 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
         }
 
         // > FOR FETCHING FROM THE COORDINATOR'S PARAMETER SERVICE
-        case FETCH_YAML_SAFE_CONTROLLER_COORDINATOR:
+        case FETCH_YAML_SAFE_CONTROLLER_FROM_COORDINATOR:
         {
             // Let the user know that this message was received
             // > and also from where the paramters are being fetched
-            ROS_INFO("The PPSClient received the message that YAML parameters were (re-)loaded for the Safe Controller. > Now fetching the parameter values from the coordinator.");
+            ROS_INFO("[PPS CLIENT] Received the message that YAML parameters were (re-)loaded for the Safe Controller. > Now fetching the parameter values from the coordinator.");
             // Create a node handle to the parameter service running on the coordinator machine
             ros::NodeHandle nodeHandle_to_coordinator_parameter_service(namespace_to_coordinator_parameter_service);
             // Call the function that fetches the parameters
@@ -546,27 +546,27 @@ void fetchYamlParametersForSafeController(ros::NodeHandle& nodeHandle)
 
     if(!nodeHandle_for_safeController.getParam("takeOffDistance", take_off_distance))
     {
-        ROS_ERROR("Failed to get takeOffDistance");
+        ROS_ERROR("[PPS CLIENT] Failed to get takeOffDistance");
     }
 
     if(!nodeHandle_for_safeController.getParam("landingDistance", landing_distance))
     {
-        ROS_ERROR("Failed to get landing_distance");
+        ROS_ERROR("[PPS CLIENT] Failed to get landing_distance");
     }
 
     if(!nodeHandle_for_safeController.getParam("durationTakeOff", duration_take_off))
     {
-        ROS_ERROR("Failed to get duration_take_off");
+        ROS_ERROR("[PPS CLIENT] Failed to get duration_take_off");
     }
 
     if(!nodeHandle_for_safeController.getParam("durationLanding", duration_landing))
     {
-        ROS_ERROR("Failed to get duration_landing");
+        ROS_ERROR("[PPS CLIENT] Failed to get duration_landing");
     }
 
     if(!nodeHandle_for_safeController.getParam("distanceThreshold", distance_threshold))
     {
-        ROS_ERROR("Failed to get distance_threshold");
+        ROS_ERROR("[PPS CLIENT] Failed to get distance_threshold");
     }
 }
 
@@ -575,22 +575,22 @@ void fetchYamlParametersForSafeController(ros::NodeHandle& nodeHandle)
 void fetchClientConfigParameters(ros::NodeHandle& nodeHandle)
 {
     if(!nodeHandle.getParam("agentID", agentID)) {
-        ROS_ERROR("Failed to get agentID");
+        ROS_ERROR("[PPS CLIENT] Failed to get agentID");
     }
     if(!nodeHandle.getParam("strictSafety", strictSafety)) {
-        ROS_ERROR("Failed to get strictSafety param");
+        ROS_ERROR("[PPS CLIENT] Failed to get strictSafety param");
         return;
     }
     if(!nodeHandle.getParam("angleMargin", angleMargin)) {
-        ROS_ERROR("Failed to get angleMargin param");
+        ROS_ERROR("[PPS CLIENT] Failed to get angleMargin param");
         return;
     }
     if(!nodeHandle.getParam("battery_threshold_while_flying", m_battery_threshold_while_flying)) {
-        ROS_ERROR("Failed to get battery_threshold_while_flying param");
+        ROS_ERROR("[PPS CLIENT] Failed to get battery_threshold_while_flying param");
         return;
     }
     if(!nodeHandle.getParam("battery_threshold_while_motors_off", m_battery_threshold_while_motors_off)) {
-        ROS_ERROR("Failed to get battery_threshold_while_motors_off param");
+        ROS_ERROR("[PPS CLIENT] Failed to get battery_threshold_while_motors_off param");
         return;
     }
 }
@@ -635,16 +635,16 @@ void setBatteryStateTo(int new_battery_state)
     {
         case BATTERY_STATE_NORMAL:
             m_battery_state = BATTERY_STATE_NORMAL;
-            ROS_INFO("changed battery state to normal");
+            ROS_INFO("[PPS CLIENT] changed battery state to normal");
             break;
         case BATTERY_STATE_LOW:
             m_battery_state = BATTERY_STATE_LOW;
-            ROS_INFO("changed battery state to low");
+            ROS_INFO("[PPS CLIENT] changed battery state to low");
             if(flying_state != STATE_MOTORS_OFF)
                 changeFlyingStateTo(STATE_LAND);
             break;
         default:
-            ROS_INFO("Unknown battery state command, set to normal");
+            ROS_INFO("[PPS CLIENT] Unknown battery state command, set to normal");
             m_battery_state = BATTERY_STATE_NORMAL;
             break;
     }
@@ -692,7 +692,7 @@ void CFBatteryCallback(const std_msgs::Float32& msg)
     {
         if(getBatteryState() != BATTERY_STATE_LOW)
             setBatteryStateTo(BATTERY_STATE_LOW);
-        ROS_INFO("low level battery triggered");
+        ROS_INFO("[PPS CLIENT] low level battery triggered");
     }
     else                        //maybe add hysteresis somewhere here?
     {
@@ -720,13 +720,13 @@ void loadSafeController() {
 
     std::string safeControllerName;
     if(!nodeHandle.getParam("safeController", safeControllerName)) {
-        ROS_ERROR("Failed to get safe controller name");
+        ROS_ERROR("[PPS CLIENT] Failed to get safe controller name");
         return;
     }
 
     ros::service::waitForService(safeControllerName);
     safeController = ros::service::createClient<Controller>(safeControllerName, true);
-    ROS_INFO_STREAM("loaded safe controller: " << safeController.getService());
+    ROS_INFO_STREAM("[PPS CLIENT] loaded safe controller: " << safeController.getService());
 }
 
 void loadDemoController()
@@ -736,12 +736,12 @@ void loadDemoController()
     std::string demoControllerName;
     if(!nodeHandle.getParam("demoController", demoControllerName))
     {
-        ROS_ERROR("Failed to get demo controller name");
+        ROS_ERROR("[PPS CLIENT] Failed to get demo controller name");
         return;
     }
 
     demoController = ros::service::createClient<Controller>(demoControllerName, true);
-    ROS_INFO_STREAM("Loaded demo controller " << demoController.getService());
+    ROS_INFO_STREAM("[PPS CLIENT] Loaded demo controller " << demoController.getService());
 }
 
 
@@ -874,7 +874,7 @@ int main(int argc, char* argv[])
 
     if(!nodeHandle_for_safeController.getParam("defaultSetpoint", default_setpoint))
     {
-        ROS_ERROR_STREAM("The PPSClient could not find parameter 'defaultSetpoint', as called from main(...)");
+        ROS_ERROR_STREAM("[PPS CLIENT] Could not find parameter 'defaultSetpoint', as called from main(...)");
     }
 
     // Copy the default setpoint into the class variable
@@ -889,7 +889,7 @@ int main(int argc, char* argv[])
 
 	//keeps 100 messages because otherwise ViconDataPublisher would override the data immediately
 	ros::Subscriber viconSubscriber = nodeHandle.subscribe("/ViconDataPublisher/ViconData", 100, viconCallback);
-	ROS_INFO_STREAM("successfully subscribed to ViconData");
+	ROS_INFO_STREAM("[PPS CLIENT] successfully subscribed to ViconData");
 
 	//ros::Publishers to advertise the control output
 	controlCommandPublisher = nodeHandle.advertise <ControlCommand>("ControlCommand", 1);
