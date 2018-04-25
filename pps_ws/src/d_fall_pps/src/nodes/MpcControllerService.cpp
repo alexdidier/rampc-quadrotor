@@ -344,6 +344,117 @@ void processFetchedParameters();
 //
 //
 // This function WILL NEED TO BE edited for successful completion of the PPS exercise
+
+int lqr_angleRateNested_counter = 4;
+
+void calculateControlOutput_viaLQRforAnglesRatesNested( float stateErrorBody[12], Controller::Request &request, Controller::Response &response)
+{
+	// PERFORM THE NESTED "u=Kx" LQR CONTROLLER COMPUTATION
+
+	// Increment the counter variable
+	lqr_angleRateNested_counter++;
+
+	if (lqr_angleRateNested_counter > 4)
+	{
+		//ROS_INFO("Outer called");
+		// Reset the counter to 1
+		lqr_angleRateNested_counter = 1;
+
+		// PERFORM THE OUTER "u=Kx" LQR CONTROLLER COMPUTATION
+
+		// Reset the class variable to zero for the following:
+		// > body frame roll angle,
+		// > body frame pitch angle,
+		// > body frame yaw angle,
+		// > total thrust adjustment.
+		// These will be requested from the "inner-loop" LQR controller below
+		float lqr_angleRateNested_prev_rollAngle        = 0.0;
+		float lqr_angleRateNested_prev_pitchAngle       = 0.0;
+		float lqr_angleRateNested_prev_thrustAdjustment = 0.0;
+        float lqr_angleRateNested_prev_yawAngle         = 0.0;
+
+		// Perform the "-Kx" LQR computation for the rates and thrust:
+		for(int i = 0; i < 6; ++i)
+		{
+			// BODY FRAME Y CONTROLLER
+			lqr_angleRateNested_prev_rollAngle        -= gainMatrixRollAngle_50Hz[i] * stateErrorBody[i];
+			// BODY FRAME X CONTROLLER
+			lqr_angleRateNested_prev_pitchAngle       -= gainMatrixPitchAngle_50Hz[i] * stateErrorBody[i];
+			// > ALITUDE CONTROLLER (i.e., z-controller):
+			lqr_angleRateNested_prev_thrustAdjustment -= gainMatrixThrust_SixStateVector_50Hz[i] * stateErrorBody[i];
+		}
+
+		// BODY FRAME Z CONTROLLER
+		//lqr_angleRateNested_prev_yawAngle = setpoint[3];
+		lqr_angleRateNested_prev_yawAngle = stateErrorBody[8];
+
+	}
+
+	//ROS_INFO("Inner called");
+
+	// PERFORM THE INNER "u=Kx" LQR CONTROLLER COMPUTATION
+	// Instantiate the local variables for the following:
+	// > body frame roll rate,
+	// > body frame pitch rate,
+	// > body frame yaw rate,
+	// These will be requested from the Crazyflie's on-baord "inner-loop" controller
+	float rollRate_forResponse  = 0;
+	float pitchRate_forResponse = 0;
+	float yawRate_forResponse   = 0;
+
+	// Create the angle error to use for the inner controller
+	float temp_stateAngleError[3] = {
+		stateErrorBody[6] - lqr_angleRateNested_prev_rollAngle,
+		stateErrorBody[7] - lqr_angleRateNested_prev_pitchAngle,
+		lqr_angleRateNested_prev_yawAngle
+	};
+	// Perform the "-Kx" LQR computation for the rates and thrust:
+	for(int i = 0; i < 4; ++i)
+	{
+		// BODY FRAME Y CONTROLLER
+		rollRate_forResponse  -= gainMatrixRollRate_Nested[i]  * temp_stateAngleError[i];
+		// BODY FRAME X CONTROLLER
+		pitchRate_forResponse -= gainMatrixPitchRate_Nested[i] * temp_stateAngleError[i];
+		// BODY FRAME Z CONTROLLER
+		yawRate_forResponse   -= gainMatrixYawRate_Nested[i]   * temp_stateAngleError[i];
+	}
+
+
+	// UPDATE THE "RETURN" THE VARIABLE NAMED "response"
+
+	// Put the computed rates and thrust into the "response" variable
+	// > For roll, pitch, and yaw:
+	response.controlOutput.roll  = rollRate_forResponse;
+	response.controlOutput.pitch = pitchRate_forResponse;
+	response.controlOutput.yaw   = yawRate_forResponse;
+	// > For the thrust adjustment we must add the feed-forward thrust to counter-act gravity.
+	// > NOTE: remember that the thrust is commanded per motor, so you sohuld
+	//         consider whether the "thrustAdjustment" computed by your
+	//         controller needed to be divided by 4 or not.
+	float thrustAdjustment = lqr_angleRateNested_prev_thrustAdjustment / 4.0;
+	// > NOTE: the "gravity_force_quarter" value was already divided by 4 when
+	//         it was loaded/processes from the .yaml file.
+	response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
+	response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
+	response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
+	response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
+
+	// Specify that this controller is a rate controller
+	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTOR;
+	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
+	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_ANGLE;
+
+	// Display some details (if requested)
+	if (shouldDisplayDebugInfo)
+	{
+		ROS_INFO_STREAM("thrust    =" << lqr_angleRateNested_prev_thrustAdjustment );
+		ROS_INFO_STREAM("rollrate  =" << response.controlOutput.roll );
+		ROS_INFO_STREAM("pitchrate =" << response.controlOutput.pitch );
+		ROS_INFO_STREAM("yawrate   =" << response.controlOutput.yaw );
+	}
+}
+
+
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response)
 {
 
@@ -351,244 +462,13 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	// computation here, or you may find it convienient to create functions
 	// to keep you code cleaner
 
+    // Define a local array to fill in with the state error
+	float stateErrorInertial[12];
+    float stateErrorEstimate[12];
 
-	// Define a local array to fill in with the state error
-	float stateErrorInertial[9];
+    // TODO: pass the stateErrorEstimate to the estimator so that it returns it
 
-	// Fill in the (x,y,z) position error
-	stateErrorInertial[0] = request.ownCrazyflie.x - setpoint[0];
-	stateErrorInertial[1] = request.ownCrazyflie.y - setpoint[1];
-	stateErrorInertial[2] = request.ownCrazyflie.z - setpoint[2];
-
-	// Compute an estimate of the velocity
-	// > As simply the derivative between the current and previous position
-	stateErrorInertial[3] = (stateErrorInertial[0] - previous_stateErrorInertial[0]) * control_frequency;
-	stateErrorInertial[4] = (stateErrorInertial[1] - previous_stateErrorInertial[1]) * control_frequency;
-	stateErrorInertial[5] = (stateErrorInertial[2] - previous_stateErrorInertial[2]) * control_frequency;
-
-	// Fill in the roll and pitch angle measurements directly
-	stateErrorInertial[6] = request.ownCrazyflie.roll;
-	stateErrorInertial[7] = request.ownCrazyflie.pitch;
-
-	// Fill in the yaw angle error
-	// > This error should be "unwrapped" to be in the range
-	//   ( -pi , pi )
-	// > First, get the yaw error into a local variable
-	float yawError = request.ownCrazyflie.yaw - setpoint[3];
-	// > Second, "unwrap" the yaw error to the interval ( -pi , pi )
-	while(yawError > PI) {yawError -= 2 * PI;}
-	while(yawError < -PI) {yawError += 2 * PI;}
-	// > Third, put the "yawError" into the "stateError" variable
-	stateErrorInertial[8] = yawError;
-
-
-	// CONVERSION INTO BODY FRAME
-	// Conver the state erorr from the Inertial frame into the Body frame
-	// > Note: the function "convertIntoBodyFrame" is implemented in this file
-	//   and by default does not perform any conversion. The equations to convert
-	//   the state error into the body frame should be implemented in that function
-	//   for successful completion of the PPS exercise
-	float stateErrorBody[9];
-	convertIntoBodyFrame(stateErrorInertial, stateErrorBody, request.ownCrazyflie.yaw);
-
-
-	// SAVE THE STATE ERROR TO BE USED NEXT TIME THIS FUNCTION IS CALLED
-	// > as we have already used previous error we can now update it update it
-	for(int i = 0; i < 9; ++i)
-	{
-		previous_stateErrorInertial[i] = stateErrorInertial[i];
-	}
-
-
-	//  **********************
-	//  Y   Y    A    W     W
-	//   Y Y    A A   W     W
-	//    Y    A   A  W     W
-	//    Y    AAAAA   W W W
-	//    Y    A   A    W W
-	//
-	// YAW CONTROLLER
-
-	// Instantiate the local variable for the yaw rate that will be requested
-	// from the Crazyflie's on-baord "inner-loop" controller
-	float yawRate_forResponse = 0;
-
-	// Perform the "-Kx" LQR computation for the yaw rate to respoond with
-	for(int i = 0; i < 9; ++i)
-	{
-		yawRate_forResponse -= gainMatrixYawRate[i] * stateErrorBody[i];
-	}
-
-	// Put the computed yaw rate into the "response" variable
-	response.controlOutput.yaw = yawRate_forResponse;
-
-
-
-
-	//  **************************************
-	//  BBBB    OOO   DDDD   Y   Y       ZZZZZ
-	//  B   B  O   O  D   D   Y Y           Z
-	//  BBBB   O   O  D   D    Y           Z
-	//  B   B  O   O  D   D    Y          Z
-	//  BBBB    OOO   DDDD     Y         ZZZZZ
-	//
-	// ALITUDE CONTROLLER (i.e., z-controller)
-
-	// Instantiate the local variable for the thrust adjustment that will be
-	// requested from the Crazyflie's on-baord "inner-loop" controller
-	float thrustAdjustment = 0;
-
-	// Perform the "-Kx" LQR computation for the thrust adjustment to respoond with
-	for(int i = 0; i < 9; ++i)
-	{
-		thrustAdjustment -= gainMatrixThrust[i] * stateErrorBody[i];
-	}
-
-	// Put the computed thrust adjustment into the "response" variable,
-	// as well as adding the feed-forward thrust to counter-act gravity.
-	// > NOTE: remember that the thrust is commanded per motor, so you sohuld
-	//         consider whether the "thrustAdjustment" computed by your
-	//         controller needed to be divided by 4 or not.
-	// > NOTE: the "gravity_force" value was already divided by 4 when is was
-	//         loaded from the .yaml file via the "fetchYamlParameters"
-	//         class function in this file.
-	response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrustAdjustment + gravity_force);
-	response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrustAdjustment + gravity_force);
-	response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrustAdjustment + gravity_force);
-	response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrustAdjustment + gravity_force);
-
-
-
-
-	//  **************************************
-	//  BBBB    OOO   DDDD   Y   Y       X   X
-	//  B   B  O   O  D   D   Y Y         X X
-	//  BBBB   O   O  D   D    Y           X
-	//  B   B  O   O  D   D    Y          X X
-	//  BBBB    OOO   DDDD     Y         X   X
-	//
-	// BODY FRAME X CONTROLLER
-
-	// Instantiate the local variable for the pitch rate that will be requested
-	// from the Crazyflie's on-baord "inner-loop" controller
-	float pitchRate_forResponse = 0;
-
-	// Perform the "-Kx" LQR computation for the pitch rate to respoond with
-	for(int i = 0; i < 9; ++i)
-	{
-		pitchRate_forResponse -= gainMatrixPitchRate[i] * stateErrorBody[i];
-	}
-
-	// Put the computed pitch rate into the "response" variable
-	response.controlOutput.pitch = pitchRate_forResponse;
-
-
-
-
-	//  **************************************
-	//  BBBB    OOO   DDDD   Y   Y       Y   Y
-	//  B   B  O   O  D   D   Y Y         Y Y
-	//  BBBB   O   O  D   D    Y           Y
-	//  B   B  O   O  D   D    Y           Y
-	//  BBBB    OOO   DDDD     Y           Y
-	//
-	// BODY FRAME Y CONTROLLER
-
-	// Instantiate the local variable for the roll rate that will be requested
-	// from the Crazyflie's on-baord "inner-loop" controller
-	float rollRate_forResponse = 0;
-
-	// Perform the "-Kx" LQR computation for the roll rate to respoond with
-	for(int i = 0; i < 9; ++i)
-	{
-		rollRate_forResponse -= gainMatrixRollRate[i] * stateErrorBody[i];
-	}
-
-	// Put the computed roll rate into the "response" variable
-	response.controlOutput.roll = rollRate_forResponse;
-
-
-
-
-	// PREPARE AND RETURN THE VARIABLE "response"
-
-	/*choosing the Crazyflie onBoard controller type.
-	it can either be Motor, Rate or Angle based */
-	// response.controlOutput.onboardControllerType = MOTOR_MODE;
-	response.controlOutput.onboardControllerType = RATE_MODE;
-	// response.controlOutput.onboardControllerType = ANGLE_MODE;
-
-
-
-
-
-	//  ***********************************************************
-	//  DDDD   EEEEE  BBBB   U   U   GGGG       M   M   SSSS   GGGG
-	//  D   D  E      B   B  U   U  G           MM MM  S      G
-	//  D   D  EEE    BBBB   U   U  G           M M M   SSS   G
-	//  D   D  E      B   B  U   U  G   G       M   M      S  G   G
-	//  DDDD   EEEEE  BBBB    UUU    GGGG       M   M  SSSS    GGGG
-
-    // DEBUGGING CODE:
-    // As part of the D-FaLL-System we have defined a message type names"DebugMsg".
-    // By fill this message with data and publishing it you can display the data in
-    // real time using rpt plots. Instructions for using rqt plots can be found on
-    // the wiki of the D-FaLL-System repository
-
-	// Instantiate a local variable of type "DebugMsg", see the file "DebugMsg.msg"
-	// (located in the "msg" folder) to see the full structure of this message.
-	DebugMsg debugMsg;
-
-	// Fill the debugging message with the data provided by Vicon
-	debugMsg.vicon_x = request.ownCrazyflie.x;
-	debugMsg.vicon_y = request.ownCrazyflie.y;
-	debugMsg.vicon_z = request.ownCrazyflie.z;
-	debugMsg.vicon_roll = request.ownCrazyflie.roll;
-	debugMsg.vicon_pitch = request.ownCrazyflie.pitch;
-	debugMsg.vicon_yaw = request.ownCrazyflie.yaw;
-
-	// Fill in the debugging message with any other data you would like to display
-	// in real time. For example, it might be useful to display the thrust
-	// adjustment computed by the z-altitude controller.
-	// The "DebugMsg" type has 10 properties from "value_1" to "value_10", all of
-	// type "float64" that you can fill in with data you would like to plot in
-	// real-time.
-	// debugMsg.value_1 = thrustAdjustment;
-	// ......................
-	// debugMsg.value_10 = your_variable_name;
-
-	// Publish the "debugMsg"
-	debugPublisher.publish(debugMsg);
-
-	// An alternate debugging technique is to print out data directly to the
-    // command line from which this node was launched.
-
-    // An example of "printing out" the data from the "request" argument to the
-    // command line. This might be useful for debugging.
-    // ROS_INFO_STREAM("x-coordinates: " << request.ownCrazyflie.x);
-    // ROS_INFO_STREAM("y-coordinates: " << request.ownCrazyflie.y);
-    // ROS_INFO_STREAM("z-coordinates: " << request.ownCrazyflie.z);
-    // ROS_INFO_STREAM("roll: " << request.ownCrazyflie.roll);
-    // ROS_INFO_STREAM("pitch: " << request.ownCrazyflie.pitch);
-    // ROS_INFO_STREAM("yaw: " << request.ownCrazyflie.yaw);
-    // ROS_INFO_STREAM("Delta t: " << request.ownCrazyflie.acquiringTime);
-
-    // An example of "printing out" the control actions computed.
-    // ROS_INFO_STREAM("thrustAdjustment = " << thrustAdjustment);
-    // ROS_INFO_STREAM("controlOutput.roll = " << response.controlOutput.roll);
-    // ROS_INFO_STREAM("controlOutput.pitch = " << response.controlOutput.pitch);
-    // ROS_INFO_STREAM("controlOutput.yaw = " << response.controlOutput.yaw);
-
-    // An example of "printing out" the "thrust-to-command" conversion parameters.
-    // ROS_INFO_STREAM("motorPoly 0:" << motorPoly[0]);
-    // ROS_INFO_STREAM("motorPoly 0:" << motorPoly[1]);
-    // ROS_INFO_STREAM("motorPoly 0:" << motorPoly[2]);
-
-    // An example of "printing out" the per motor 16-bit command computed.
-    // ROS_INFO_STREAM("controlOutput.cmd1 = " << response.controlOutput.motorCmd1);
-    // ROS_INFO_STREAM("controlOutput.cmd3 = " << response.controlOutput.motorCmd2);
-    // ROS_INFO_STREAM("controlOutput.cmd2 = " << response.controlOutput.motorCmd3);
-    // ROS_INFO_STREAM("controlOutput.cmd4 = " << response.controlOutput.motorCmd4);
+	perform_estimator_update_state_interial(request);
 
     // Return "true" to indicate that the control computation was performed successfully
     return true;
@@ -635,23 +515,196 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 // the Vicon motion capture system
 //
 // This function WILL NEED TO BE edited for successful completion of the PPS exercise
-void convertIntoBodyFrame(float stateInertial[9], float (&stateBody)[9], float yaw_measured)
+void convert_error_into_body_frame(float stateInertial[12], float (&stateBody)[12], float yaw_measured)
 {
-	    // Fill in the (x,y,z) position estimates to be returned
-	    stateBody[0] = stateInertial[0];
-	    stateBody[1] = stateInertial[1];
+		float sinYaw = sin(yaw_measured);
+    	float cosYaw = cos(yaw_measured);
+
+    	// Fill in the (x,y,z) position estimates to be returned
+	    stateBody[0] = stateInertial[0] * cosYaw  +  stateInertial[1] * sinYaw;
+	    stateBody[1] = stateInertial[1] * cosYaw  -  stateInertial[0] * sinYaw;
 	    stateBody[2] = stateInertial[2];
 
 	    // Fill in the (x,y,z) velocity estimates to be returned
-	    stateBody[3] = stateInertial[3];
-	    stateBody[4] = stateInertial[4];
+	    stateBody[3] = stateInertial[3] * cosYaw  +  stateInertial[4] * sinYaw;
+	    stateBody[4] = stateInertial[4] * cosYaw  -  stateInertial[3] * sinYaw;
 	    stateBody[5] = stateInertial[5];
 
 	    // Fill in the (roll,pitch,yaw) estimates to be returned
 	    stateBody[6] = stateInertial[6];
 	    stateBody[7] = stateInertial[7];
 	    stateBody[8] = stateInertial[8];
+
+	    // Fill in the (roll,pitch,yaw) velocity estimates to be returned
+	    stateBody[9]  = stateInertial[9];
+	    stateBody[10] = stateInertial[10];
+	    stateBody[11] = stateInertial[11];
 }
+
+
+//    ------------------------------------------------------------------------------
+//    EEEEE   SSSS  TTTTT  III  M   M    A    TTTTT  III   OOO   N   N
+//    E      S        T     I   MM MM   A A     T     I   O   O  NN  N
+//    EEE     SSS     T     I   M M M  A   A    T     I   O   O  N N N
+//    E          S    T     I   M   M  AAAAA    T     I   O   O  N  NN
+//    EEEEE  SSSS     T    III  M   M  A   A    T    III   OOO   N   N
+//    ------------------------------------------------------------------------------
+void perform_estimator_update_state_interial(Controller::Request &request)
+{
+
+	// PUT THE CURRENT MEASURED DATA INTO THE CLASS VARIABLE
+	// > for (x,y,z) position
+	current_xzy_rpy_measurement[0] = request.ownCrazyflie.x;
+	current_xzy_rpy_measurement[1] = request.ownCrazyflie.y;
+	current_xzy_rpy_measurement[2] = request.ownCrazyflie.z;
+	// > for (roll,pitch,yaw) angles
+	current_xzy_rpy_measurement[3] = request.ownCrazyflie.roll;
+	current_xzy_rpy_measurement[4] = request.ownCrazyflie.pitch;
+	current_xzy_rpy_measurement[5] = request.ownCrazyflie.yaw;
+
+
+	// RUN THE FINITE DIFFERENCE ESTIMATOR
+	performEstimatorUpdate_forStateInterial_viaFiniteDifference();
+
+
+	// RUN THE POINT MASS KALMAN FILTER ESTIMATOR
+	performEstimatorUpdate_forStateInterial_viaPointMassKalmanFilter();
+
+
+	// FILLE IN THE STATE INERTIAL ESTIMATE TO BE USED FOR CONTROL
+	switch (estimator_method)
+	{
+		// Estimator based on finte differences
+		case ESTIMATOR_METHOD_FINITE_DIFFERENCE:
+		{
+			// Transfer the estimate
+			for(int i = 0; i < 12; ++i)
+			{
+				current_stateInertialEstimate[i]  = stateInterialEstimate_viaFiniteDifference[i];
+			}
+			break;
+		}
+		// Estimator based on Point Mass Kalman Filter
+		case ESTIMATOR_METHOD_POINT_MASS_PER_DIMENSION:
+		{
+			// Transfer the estimate
+			for(int i = 0; i < 12; ++i)
+			{
+				current_stateInertialEstimate[i]  = stateInterialEstimate_viaPointMassKalmanFilter[i];
+			}
+			break;
+		}
+		// Handle the exception
+		default:
+		{
+			// Display that the "estimator_method" was not recognised
+			ROS_INFO_STREAM("[DEMO CONTROLLER] ERROR: in the 'calculateControlOutput' function of the 'DemoControllerService': the 'estimator_method' is not recognised.");
+			// Transfer the finite difference estimate by default
+			for(int i = 0; i < 12; ++i)
+			{
+				current_stateInertialEstimate[i]  = stateInterialEstimate_viaFiniteDifference[i];
+			}
+			break;
+		}
+	}
+
+
+	// NOW THAT THE ESTIMATORS HAVE ALL BEEN RUN, PUT THE CURRENT
+	// MEASURED DATA INTO THE CLASS VARIABLE FOR THE PREVIOUS
+	// > for (x,y,z) position
+	previous_xzy_rpy_measurement[0] = current_xzy_rpy_measurement[0];
+	previous_xzy_rpy_measurement[1] = current_xzy_rpy_measurement[1];
+	previous_xzy_rpy_measurement[2] = current_xzy_rpy_measurement[2];
+	// > for (roll,pitch,yaw) angles
+	previous_xzy_rpy_measurement[3] = current_xzy_rpy_measurement[3];
+	previous_xzy_rpy_measurement[4] = current_xzy_rpy_measurement[4];
+	previous_xzy_rpy_measurement[5] = current_xzy_rpy_measurement[5];
+}
+
+void performEstimatorUpdate_forStateInterial_viaFiniteDifference()
+{
+	// PUT IN THE CURRENT MEASUREMENT DIRECTLY
+	// > for (x,y,z) position
+	stateInterialEstimate_viaFiniteDifference[0]  = current_xzy_rpy_measurement[0];
+	stateInterialEstimate_viaFiniteDifference[1]  = current_xzy_rpy_measurement[1];
+	stateInterialEstimate_viaFiniteDifference[2]  = current_xzy_rpy_measurement[2];
+	// > for (roll,pitch,yaw) angles
+	stateInterialEstimate_viaFiniteDifference[6]  = current_xzy_rpy_measurement[3];
+	stateInterialEstimate_viaFiniteDifference[7]  = current_xzy_rpy_measurement[4];
+	stateInterialEstimate_viaFiniteDifference[8]  = current_xzy_rpy_measurement[5];
+
+	// COMPUTE THE VELOCITIES VIA FINITE DIFFERENCE
+	// > for (x,y,z) velocities
+	stateInterialEstimate_viaFiniteDifference[3]  = (current_xzy_rpy_measurement[0] - previous_xzy_rpy_measurement[0]) * estimator_frequency;
+	stateInterialEstimate_viaFiniteDifference[4]  = (current_xzy_rpy_measurement[1] - previous_xzy_rpy_measurement[1]) * estimator_frequency;
+	stateInterialEstimate_viaFiniteDifference[5]  = (current_xzy_rpy_measurement[2] - previous_xzy_rpy_measurement[2]) * estimator_frequency;
+	// > for (roll,pitch,yaw) velocities
+	stateInterialEstimate_viaFiniteDifference[9]  = (current_xzy_rpy_measurement[3] - previous_xzy_rpy_measurement[3]) * estimator_frequency;
+	stateInterialEstimate_viaFiniteDifference[10] = (current_xzy_rpy_measurement[4] - previous_xzy_rpy_measurement[4]) * estimator_frequency;
+	stateInterialEstimate_viaFiniteDifference[11] = (current_xzy_rpy_measurement[5] - previous_xzy_rpy_measurement[5]) * estimator_frequency;
+}
+
+
+
+void performEstimatorUpdate_forStateInterial_viaPointMassKalmanFilter()
+{
+	// PERFORM THE KALMAN FILTER UPDATE STEP
+	// > First take a copy of the estimator state
+	float temp_PMKFstate[12];
+	for(int i = 0; i < 12; ++i)
+	{
+		temp_PMKFstate[i]  = stateInterialEstimate_viaPointMassKalmanFilter[i];
+	}
+	// > Now perform update for:
+	// > x position and velocity:
+	stateInterialEstimate_viaPointMassKalmanFilter[0] = PMKF_Ahat_row1_for_positions[0]*temp_PMKFstate[0] + PMKF_Ahat_row1_for_positions[1]*temp_PMKFstate[3] + PMKF_Kinf_for_positions[0]*current_xzy_rpy_measurement[0];
+	stateInterialEstimate_viaPointMassKalmanFilter[3] = PMKF_Ahat_row2_for_positions[0]*temp_PMKFstate[0] + PMKF_Ahat_row2_for_positions[1]*temp_PMKFstate[3] + PMKF_Kinf_for_positions[1]*current_xzy_rpy_measurement[0];
+	// > y position and velocity:
+	stateInterialEstimate_viaPointMassKalmanFilter[1] = PMKF_Ahat_row1_for_positions[0]*temp_PMKFstate[1] + PMKF_Ahat_row1_for_positions[1]*temp_PMKFstate[4] + PMKF_Kinf_for_positions[0]*current_xzy_rpy_measurement[1];
+	stateInterialEstimate_viaPointMassKalmanFilter[4] = PMKF_Ahat_row2_for_positions[0]*temp_PMKFstate[1] + PMKF_Ahat_row2_for_positions[1]*temp_PMKFstate[4] + PMKF_Kinf_for_positions[1]*current_xzy_rpy_measurement[1];
+	// > z position and velocity:
+	stateInterialEstimate_viaPointMassKalmanFilter[2] = PMKF_Ahat_row1_for_positions[0]*temp_PMKFstate[2] + PMKF_Ahat_row1_for_positions[1]*temp_PMKFstate[5] + PMKF_Kinf_for_positions[0]*current_xzy_rpy_measurement[2];
+	stateInterialEstimate_viaPointMassKalmanFilter[5] = PMKF_Ahat_row2_for_positions[0]*temp_PMKFstate[2] + PMKF_Ahat_row2_for_positions[1]*temp_PMKFstate[5] + PMKF_Kinf_for_positions[1]*current_xzy_rpy_measurement[2];
+
+	// > roll  position and velocity:
+	stateInterialEstimate_viaPointMassKalmanFilter[6]  = PMKF_Ahat_row1_for_angles[0]*temp_PMKFstate[6] + PMKF_Ahat_row1_for_angles[1]*temp_PMKFstate[9]  + PMKF_Kinf_for_angles[0]*current_xzy_rpy_measurement[3];
+	stateInterialEstimate_viaPointMassKalmanFilter[9]  = PMKF_Ahat_row2_for_angles[0]*temp_PMKFstate[6] + PMKF_Ahat_row2_for_angles[1]*temp_PMKFstate[9]  + PMKF_Kinf_for_angles[1]*current_xzy_rpy_measurement[3];
+	// > pitch position and velocity:
+	stateInterialEstimate_viaPointMassKalmanFilter[7]  = PMKF_Ahat_row1_for_angles[0]*temp_PMKFstate[7] + PMKF_Ahat_row1_for_angles[1]*temp_PMKFstate[10] + PMKF_Kinf_for_angles[0]*current_xzy_rpy_measurement[4];
+	stateInterialEstimate_viaPointMassKalmanFilter[10] = PMKF_Ahat_row2_for_angles[0]*temp_PMKFstate[7] + PMKF_Ahat_row2_for_angles[1]*temp_PMKFstate[10] + PMKF_Kinf_for_angles[1]*current_xzy_rpy_measurement[4];
+	// > yaw   position and velocity:
+	stateInterialEstimate_viaPointMassKalmanFilter[8]  = PMKF_Ahat_row1_for_angles[0]*temp_PMKFstate[8] + PMKF_Ahat_row1_for_angles[1]*temp_PMKFstate[11] + PMKF_Kinf_for_angles[0]*current_xzy_rpy_measurement[5];
+	stateInterialEstimate_viaPointMassKalmanFilter[11] = PMKF_Ahat_row2_for_angles[0]*temp_PMKFstate[8] + PMKF_Ahat_row2_for_angles[1]*temp_PMKFstate[11] + PMKF_Kinf_for_angles[1]*current_xzy_rpy_measurement[5];
+
+
+	//DebugMsg debugMsg;
+
+	// Fill the debugging message with the data provided by Vicon
+	//debugMsg.vicon_x = request.ownCrazyflie.x;
+	//debugMsg.vicon_y = request.ownCrazyflie.y;
+	//debugMsg.vicon_z = request.ownCrazyflie.z;
+	//debugMsg.vicon_roll = request.ownCrazyflie.roll;
+	//debugMsg.vicon_pitch = request.ownCrazyflie.pitch;
+	//debugMsg.vicon_yaw = request.ownCrazyflie.yaw;
+
+	// debugMsg.value_1 = thrustAdjustment;
+	// ......................
+	// debugMsg.value_10 = your_variable_name;
+
+	//debugMsg.value_1 = stateInterialEstimate_viaPointMassKalmanFilter[6];
+	//debugMsg.value_2 = stateInterialEstimate_viaPointMassKalmanFilter[9];
+	//debugMsg.value_3 = current_xzy_rpy_measurement[3];
+
+
+	//debugMsg.value_4 = stateInterialEstimate_viaPointMassKalmanFilter[0];
+	//debugMsg.value_5 = stateInterialEstimate_viaPointMassKalmanFilter[3];
+	//debugMsg.value_6 = current_xzy_rpy_measurement[0];
+
+
+	// Publish the "debugMsg"
+	//debugPublisher.publish(debugMsg);
+}
+
 
 
 
