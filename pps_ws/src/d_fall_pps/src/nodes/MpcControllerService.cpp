@@ -63,7 +63,7 @@
 
 #include <std_msgs/Int32.h>
 
-
+#include <Eigen/Dense>
 
 
 
@@ -243,7 +243,7 @@ void processFetchedParameters();
 
 
 //    ------------------------------------------------------------------------------
-//     OOO   U   U  TTTTT  EEEEE  RRRR 
+//     OOO   U   U  TTTTT  EEEEE  RRRR
 //    O   O  U   U    T    E      R   R
 //    O   O  U   U    T    EEE    RRRR
 //    O   O  U   U    T    E      R  R
@@ -399,8 +399,6 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 		previous_stateErrorInertial[i] = stateErrorInertial[i];
 	}
 
-
-	
 
 	//  **********************
 	//  Y   Y    A    W     W

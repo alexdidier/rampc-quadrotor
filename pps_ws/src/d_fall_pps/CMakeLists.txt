@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.0)
 project(d_fall_pps)
 
 ## Add support for C++11, supported in ROS Kinetic and newer
@@ -15,8 +15,9 @@ find_package(catkin REQUIRED COMPONENTS
   genmsg
   rosbag
   roslib
-)
+  )
 
+find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 
 # GUI -- Add precompiler definitions to include ROS things in GUI compilation
 add_definitions(-DCATKIN_MAKE)
@@ -33,6 +34,7 @@ find_package(Qt5Widgets REQUIRED)
 find_package(Qt5Core REQUIRED)
 find_package(Qt5Gui REQUIRED)
 find_package(Qt5Svg REQUIRED)
+
 
 # GUI -- Add src and includes
 set(MY_GUI_LIB_PATH_SRC ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/src)
@@ -326,7 +328,7 @@ target_link_libraries(PPSClient                ${catkin_LIBRARIES})
 target_link_libraries(SafeControllerService    ${catkin_LIBRARIES})
 target_link_libraries(DemoControllerService    ${catkin_LIBRARIES})
 target_link_libraries(StudentControllerService ${catkin_LIBRARIES})
-target_link_libraries(MpcControllerService     ${catkin_LIBRARIES})
+target_link_libraries(MpcControllerService     ${catkin_LIBRARIES} Eigen3::Eigen)
 target_link_libraries(CentralManagerService    ${catkin_LIBRARIES})
 target_link_libraries(ParameterService         ${catkin_LIBRARIES})
 
