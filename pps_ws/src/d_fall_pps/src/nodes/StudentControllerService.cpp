@@ -830,7 +830,7 @@ int main(int argc, char* argv[]) {
     // that should be sent via the Crazyradio and requested from the Crazyflie, i.e.,
     // this is where the "outer loop" controller function starts. When a request is made
     // of this service the "calculateControlOutput" function is called.
-    ros::ServiceServer service = nodeHandle.advertiseService("CustomController", calculateControlOutput);
+    ros::ServiceServer service = nodeHandle.advertiseService("StudentController", calculateControlOutput);
 
     // Create a "ros::NodeHandle" type local variable "namespace_nodeHandle" that points
     // to the name space of this node, i.e., "d_fall_pps" as specified by the line:

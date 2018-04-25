@@ -83,8 +83,10 @@
 #define CF_COMMAND_TYPE_ANGLE  8
 
 // Types of controllers being used:
-#define SAFE_CONTROLLER   0
-#define DEMO_CONTROLLER   1
+#define SAFE_CONTROLLER      0
+#define DEMO_CONTROLLER      1
+#define STUDENT_CONTROLLER   3
+#define MPC_CONTROLLER       4
 
 // The constants that "command" changes in the
 // operation state of this agent
@@ -139,10 +141,15 @@ using namespace d_fall_pps;
 // "agentID", gives namespace and identifier in CentralManagerService
 int agentID;
 
-// The safe controller specified in the ClientConfig.yaml, is considered stable
+// The safe controller specified in the ClientConfig.yaml
 ros::ServiceClient safeController;
-// The Demo controller specified in the ClientConfig.yaml, is considered potentially unstable
+// The Demo controller specified in the ClientConfig.yaml
 ros::ServiceClient demoController;
+// The Demo controller specified in the ClientConfig.yaml
+ros::ServiceClient studentController;
+// The Demo controller specified in the ClientConfig.yaml
+ros::ServiceClient mpcController;
+
 
 //values for safteyCheck
 bool strictSafety;
@@ -281,6 +288,9 @@ void CFBatteryCallback(const std_msgs::Float32& msg);
 
 void loadSafeController();
 void loadDemoController();
+void loadStudentController();
+void loadMpcController();
+
 void sendMessageUsingController(int controller);
 void setInstantController(int controller);
 int getInstantController();

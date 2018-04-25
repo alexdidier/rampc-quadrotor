@@ -278,15 +278,36 @@ void viconCallback(const ViconData& viconData) {
             {
                 if(!global.occluded)    //if it is not occluded, then proceed to compute the controller output.
                 {
-                    // only enter in demo controller if we are not using safe controller AND the flying state is FLYING
-                    if(getInstantController() == DEMO_CONTROLLER && flying_state == STATE_FLYING)
+                    // Only call an "non-safe" controller if:
+                    // 1) we are not currently using safe controller, AND
+                    // 2) the flying state is FLYING
+                    if( (getInstantController() != SAFE_CONTROLLER) && (flying_state == STATE_FLYING) )
                     {
-                        bool success = demoController.call(controllerCall);
+                        // Initialise a local boolean success variable
+                        bool success = false;
+
+                        switch(getInstantController())
+                        {
+                            case DEMO_CONTROLLER:
+                                success = demoController.call(controllerCall);
+                                break;
+                            case STUDENT_CONTROLLER:
+                                success = studentController.call(controllerCall);
+                                break;
+                            case MPC_CONTROLLER:
+                                success = mpcController.call(controllerCall);
+                                break;
+                            default:
+                                ROS_ERROR("[PPS CLIENT] the current controller was not recognised");
+                                break;
+                        }
+
+                        // Ensure success and enforce safety
                         if(!success)
                         {
-                            ROS_ERROR("[PPS CLIENT] Failed to call demo controller, switching to safe controller");
-                            ROS_ERROR_STREAM("[PPS CLIENT] demo controller status: valid: " << demoController.isValid() << ", exists: " << demoController.exists());
-                            ROS_ERROR_STREAM("[PPS CLIENT] demo controller name: " << demoController.getService());
+                            ROS_ERROR("[PPS CLIENT] Failed to call a 'non-safe' controller, switching to safe controller");
+                            //ROS_ERROR_STREAM("[PPS CLIENT] 'non-safe' controller status: valid: " << demoController.isValid() << ", exists: " << demoController.exists());
+                            //ROS_ERROR_STREAM("[PPS CLIENT] 'non-safe' controller name: " << demoController.getService());
                             setInstantController(SAFE_CONTROLLER);
                         }
                         else if(!safetyCheck(global, controllerCall.response.controlOutput))
@@ -294,8 +315,11 @@ void viconCallback(const ViconData& viconData) {
                             setInstantController(SAFE_CONTROLLER);
                             ROS_INFO_STREAM("[PPS CLIENT] safety check failed, switching to safe controller");
                         }
+
+                        
                     }
-                    else        //SAFE_CONTROLLER and state is different from flying
+                    // SAFE_CONTROLLER and state is different from flying
+                    else
                     {
                         calculateDistanceToCurrentSafeSetpoint(local); // update distance, it also updates the unit vector
                         // ROS_INFO_STREAM("distance: " << distance);
@@ -413,6 +437,16 @@ void commandCallback(const std_msgs::Int32& commandMsg) {
             ROS_INFO("[PPS CLIENT] USE_DEMO_CONTROLLER Command received");
             setControllerUsed(DEMO_CONTROLLER);
     		break;
+
+        case CMD_USE_STUDENT_CONTROLLER:
+            ROS_INFO("[PPS CLIENT] USE_STUDENT_CONTROLLER Command received");
+            setControllerUsed(STUDENT_CONTROLLER);
+            break;
+
+        case CMD_USE_MPC_CONTROLLER:
+            ROS_INFO("[PPS CLIENT] USE_MPC_CONTROLLER Command received");
+            setControllerUsed(MPC_CONTROLLER);
+            break;
 
     	case CMD_CRAZYFLY_TAKE_OFF:
             if(flying_state == STATE_MOTORS_OFF)
@@ -744,6 +778,35 @@ void loadDemoController()
     ROS_INFO_STREAM("[PPS CLIENT] Loaded demo controller " << demoController.getService());
 }
 
+void loadStudentController()
+{
+    ros::NodeHandle nodeHandle("~");
+
+    std::string studentControllerName;
+    if(!nodeHandle.getParam("studentController", studentControllerName))
+    {
+        ROS_ERROR("[PPS CLIENT] Failed to get student controller name");
+        return;
+    }
+
+    studentController = ros::service::createClient<Controller>(studentControllerName, true);
+    ROS_INFO_STREAM("[PPS CLIENT] Loaded student controller " << studentController.getService());
+}
+
+void loadMpcController()
+{
+    ros::NodeHandle nodeHandle("~");
+
+    std::string mpcControllerName;
+    if(!nodeHandle.getParam("mpcController", mpcControllerName))
+    {
+        ROS_ERROR("[PPS CLIENT] Failed to get mpc controller name");
+        return;
+    }
+
+    mpcController = ros::service::createClient<Controller>(mpcControllerName, true);
+    ROS_INFO_STREAM("[PPS CLIENT] Loaded mpc controller " << mpcController.getService());
+}
 
 void sendMessageUsingController(int controller)
 {
@@ -764,6 +827,12 @@ void setInstantController(int controller) //for right now, temporal use
             break;
         case DEMO_CONTROLLER:
             loadDemoController();
+            break;
+        case STUDENT_CONTROLLER:
+            loadStudentController();
+            break;
+        case MPC_CONTROLLER:
+            loadMpcController();
             break;
         default:
             break;
