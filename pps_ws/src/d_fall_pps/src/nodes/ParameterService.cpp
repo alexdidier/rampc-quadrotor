@@ -95,25 +95,49 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
     std::string d_fall_pps_path = ros::package::getPath("d_fall_pps");
 
     // Switch between loading for the different controllers
-    if ( (controller_to_load_yaml==LOAD_YAML_SAFE_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR) )
+    //    ----------------------------------------
+    // FOR THE SAFE CONTROLLER
+    if (
+        ((controller_to_load_yaml==LOAD_YAML_SAFE_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR))
+        ||
+        ((controller_to_load_yaml==LOAD_YAML_SAFE_CONTROLLER_AGENT)       && (my_type==TYPE_AGENT))
+    )
     {
         // Re-load the parameters of the safe controller:
         cmd = "rosparam load " + d_fall_pps_path + "/param/SafeController.yaml " + m_base_namespace + "/SafeController";
     }
-    else if ( (controller_to_load_yaml==LOAD_YAML_SAFE_CONTROLLER_AGENT) && (my_type==TYPE_AGENT) )
-    {
-        // Re-load the parameters of the safe controller:
-        cmd = "rosparam load " + d_fall_pps_path + "/param/SafeController.yaml " + m_base_namespace + "/SafeController";
-    }
-    else if ( (controller_to_load_yaml==LOAD_YAML_DEMO_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR) )
-    {
-        // Re-load the parameters of the demo controller:
-        cmd = "rosparam load " + d_fall_pps_path + "/param/DemoController.yaml " + m_base_namespace + "/DemoController";
-    }
-    else if ( (controller_to_load_yaml==LOAD_YAML_DEMO_CONTROLLER_AGENT) && (my_type==TYPE_AGENT) )
+    //    ----------------------------------------
+    // FOR THE DEMO CONTROLLER
+    else if (
+        ((controller_to_load_yaml==LOAD_YAML_DEMO_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR))
+        ||
+        ((controller_to_load_yaml==LOAD_YAML_DEMO_CONTROLLER_AGENT)       && (my_type==TYPE_AGENT))
+    )
     {
         // Re-load the parameters of the demo controller:
         cmd = "rosparam load " + d_fall_pps_path + "/param/DemoController.yaml " + m_base_namespace + "/DemoController";
+    }
+    //    ----------------------------------------
+    // FOR THE STUDENT CONTROLLER
+    else if (
+        ((controller_to_load_yaml==LOAD_YAML_STUDENT_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR))
+        ||
+        ((controller_to_load_yaml==LOAD_YAML_STUDENT_CONTROLLER_AGENT)       && (my_type==TYPE_AGENT))
+    )
+    {
+        // Re-load the parameters of the demo controller:
+        cmd = "rosparam load " + d_fall_pps_path + "/param/StudentController.yaml " + m_base_namespace + "/StudentController";
+    }
+    //    ----------------------------------------
+    // FOR THE MPC CONTROLLER
+    else if (
+        ((controller_to_load_yaml==LOAD_YAML_MPC_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR))
+        ||
+        ((controller_to_load_yaml==LOAD_YAML_MPC_CONTROLLER_AGENT)       && (my_type==TYPE_AGENT))
+    )
+    {
+        // Re-load the parameters of the demo controller:
+        cmd = "rosparam load " + d_fall_pps_path + "/param/MpcController.yaml " + m_base_namespace + "/MpcController";
     }
     else
     {
@@ -147,27 +171,29 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
         // Instantiate a local variable for the fetch message
         std_msgs::Int32 fetch_msg;
         // Fill in the data of the fetch message
-        switch(controller_to_load_yaml)
-        {
-            case (LOAD_YAML_SAFE_CONTROLLER_COORDINATOR):
-                fetch_msg.data = FETCH_YAML_SAFE_CONTROLLER_FROM_COORDINATOR;
-                break;
-            case (LOAD_YAML_DEMO_CONTROLLER_COORDINATOR):
-                fetch_msg.data = FETCH_YAML_DEMO_CONTROLLER_FROM_COORDINATOR;
-                break;
-            case (LOAD_YAML_SAFE_CONTROLLER_AGENT):
-                fetch_msg.data = FETCH_YAML_SAFE_CONTROLLER_FROM_OWN_AGENT;
-                break;
-            case (LOAD_YAML_DEMO_CONTROLLER_AGENT):
-                fetch_msg.data = FETCH_YAML_DEMO_CONTROLLER_FROM_OWN_AGENT;
-                break;
-            default:
-                // Let the user know that the command was not recognised
-                ROS_INFO("Unknown 'controller to load yaml' command, thus a 'ready to fetch' message will NOT be published.");
-                // Set the boolean that prevents the fetch message from being sent
-                isReadyForFetch = false;
-                break;
-        }
+        fetch_msg.data = controller_to_load_yaml;
+        // Fill in the data of the fetch message
+        // switch(controller_to_load_yaml)
+        // {
+        //     case (LOAD_YAML_SAFE_CONTROLLER_COORDINATOR):
+        //         fetch_msg.data = FETCH_YAML_SAFE_CONTROLLER_FROM_COORDINATOR;
+        //         break;
+        //     case (LOAD_YAML_DEMO_CONTROLLER_COORDINATOR):
+        //         fetch_msg.data = FETCH_YAML_DEMO_CONTROLLER_FROM_COORDINATOR;
+        //         break;
+        //     case (LOAD_YAML_SAFE_CONTROLLER_AGENT):
+        //         fetch_msg.data = FETCH_YAML_SAFE_CONTROLLER_FROM_OWN_AGENT;
+        //         break;
+        //     case (LOAD_YAML_DEMO_CONTROLLER_AGENT):
+        //         fetch_msg.data = FETCH_YAML_DEMO_CONTROLLER_FROM_OWN_AGENT;
+        //         break;
+        //     default:
+        //         // Let the user know that the command was not recognised
+        //         ROS_INFO("Unknown 'controller to load yaml' command, thus a 'ready to fetch' message will NOT be published.");
+        //         // Set the boolean that prevents the fetch message from being sent
+        //         isReadyForFetch = false;
+        //         break;
+        // }
         // Send a message that the YAML parameter have been loaded and hence are
         // ready to be fetched (i.e., using getparam())
         if (isReadyForFetch)

@@ -75,14 +75,23 @@
 #define LOAD_YAML_MPC_CONTROLLER_COORDINATOR        14
 
 
-// For which controller parameters to fetch from  from file
-#define FETCH_YAML_SAFE_CONTROLLER_FROM_OWN_AGENT      1
-#define FETCH_YAML_DEMO_CONTROLLER_FROM_OWN_AGENT      2
+// For send commends to the controller node informing which
+// parameters to fetch
+// > NOTE: these are identical to the #defines above, but
+//         used because thez have the same name as used in
+//         the controller files
+// #define FETCH_YAML_SAFE_CONTROLLER_FROM_OWN_AGENT      1
+// #define FETCH_YAML_DEMO_CONTROLLER_FROM_OWN_AGENT      2
+// #define FETCH_YAML_STUDENT_CONTROLLER_FROM_OWN_AGENT   3
+// #define FETCH_YAML_MPC_CONTROLLER_FROM_OWN_AGENT       4
+
+// #define FETCH_YAML_SAFE_CONTROLLER_FROM_COORDINATOR      11
+// #define FETCH_YAML_DEMO_CONTROLLER_FROM_COORDINATOR      12
+// #define FETCH_YAML_STUDENT_CONTROLLER_FROM_COORDINATOR   13
+// #define FETCH_YAML_MPC_CONTROLLER_FROM_COORDINATOR       14
 
 
-#define FETCH_YAML_SAFE_CONTROLLER_FROM_COORDINATOR    3
-#define FETCH_YAML_DEMO_CONTROLLER_FROM_COORDINATOR    4
-
+// The types, i.e., agent or coordinator
 #define TYPE_INVALID      -1
 #define TYPE_COORDINATOR   1
 #define TYPE_AGENT         2
