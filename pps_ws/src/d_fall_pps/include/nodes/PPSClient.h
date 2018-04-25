@@ -85,11 +85,14 @@
 
 // The constants that "command" changes in the
 // operation state of this agent
-#define CMD_USE_SAFE_CONTROLLER   1
-#define CMD_USE_DEMO_CONTROLLER   2
-#define CMD_CRAZYFLY_TAKE_OFF     3
-#define CMD_CRAZYFLY_LAND         4
-#define CMD_CRAZYFLY_MOTORS_OFF   5
+#define CMD_USE_SAFE_CONTROLLER      1
+#define CMD_USE_DEMO_CONTROLLER      2
+#define CMD_USE_STUDENT_CONTROLLER   3
+#define CMD_USE_MPC_CONTROLLER       4
+
+#define CMD_CRAZYFLY_TAKE_OFF        11
+#define CMD_CRAZYFLY_LAND            12
+#define CMD_CRAZYFLY_MOTORS_OFF      13
 
 // Flying states
 #define STATE_MOTORS_OFF 1

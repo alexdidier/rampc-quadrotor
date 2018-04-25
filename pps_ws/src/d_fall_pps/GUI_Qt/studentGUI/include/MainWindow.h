@@ -46,8 +46,11 @@
 
 
 // Types of controllers being used:
-#define SAFE_CONTROLLER   0
-#define CUSTOM_CONTROLLER 1
+#define SAFE_CONTROLLER    0
+#define DEMO_CONTROLLER  1
+#define STUDENT_CONTROLLER 2
+#define MPC_CONTROLLER     3
+
 
 // Commands for CrazyRadio
 #define CMD_RECONNECT  0
@@ -62,11 +65,14 @@
 // operation state of this agent. These "commands"
 // are sent from this GUI node to the "PPSClient"
 // node where the command is enacted
-#define CMD_USE_SAFE_CONTROLLER   1
-#define CMD_USE_CUSTOM_CONTROLLER 2
-#define CMD_CRAZYFLY_TAKE_OFF     3
-#define CMD_CRAZYFLY_LAND         4
-#define CMD_CRAZYFLY_MOTORS_OFF   5
+#define CMD_USE_SAFE_CONTROLLER      1
+#define CMD_USE_DEMO_CONTROLLER      2
+#define CMD_USE_STUDENT_CONTROLLER   3
+#define CMD_USE_MPC_CONTROLLER       4
+
+#define CMD_CRAZYFLY_TAKE_OFF        11
+#define CMD_CRAZYFLY_LAND            12
+#define CMD_CRAZYFLY_MOTORS_OFF      13
 
 // Flying States
 #define STATE_MOTORS_OFF 1
@@ -80,9 +86,14 @@
 
 // For which controller parameters to load
 #define LOAD_YAML_SAFE_CONTROLLER_AGENT           1
-#define LOAD_YAML_CUSTOM_CONTROLLER_AGENT         2
-#define LOAD_YAML_SAFE_CONTROLLER_COORDINATOR     3
-#define LOAD_YAML_CUSTOM_CONTROLLER_COORDINATOR   4
+#define LOAD_YAML_DEMO_CONTROLLER_AGENT           2
+#define LOAD_YAML_STUDENT_CONTROLLER_AGENT        3
+#define LOAD_YAML_MPC_CONTROLLER_AGENT            4
+
+#define LOAD_YAML_SAFE_CONTROLLER_COORDINATOR     11
+#define LOAD_YAML_DEMO_CONTROLLER_COORDINATOR     12
+#define LOAD_YAML_STUDENT_CONTROLLER_COORDINATOR  13
+#define LOAD_YAML_MPC_CONTROLLER_COORDINATOR      14
 
 // Universal constants
 #define PI 3.141592653589
@@ -104,29 +115,39 @@ public:
 
 private slots:
     void updateNewViconData(const ptrToMessage& p_msg);
+
+    // # RF Crazyradio Connect Disconnect
     void on_RF_Connect_button_clicked();
+    void on_RF_disconnect_button_clicked();
 
+    // # Take off, lanf, motors off
     void on_take_off_button_clicked();
-
     void on_land_button_clicked();
-
     void on_motors_OFF_button_clicked();
 
+    // # Setpoint
     void on_set_setpoint_button_clicked();
     void on_set_setpoint_button_2_clicked();
 
-    void on_RF_disconnect_button_clicked();
-
-    void on_load_custom_yaml_button_clicked();
+    // # Load Yaml when acting as the GUI for an Agent
     void on_load_safe_yaml_button_clicked();
+    void on_load_demo_yaml_button_clicked();
+    void on_load_student_yaml_button_clicked();
+    void on_load_mpc_yaml_button_clicked();
 
-    void on_en_custom_controller_clicked();
+    // # Enable controllers
+    void on_enable_safe_controller_clicked();
+    void on_enable_demo_controller_clicked();
+    void on_enable_student_controller_clicked();
+    void on_enable_mpc_controller_clicked();
 
-    void on_en_safe_controller_clicked();
+    
 
     void on_customButton_1_clicked();
     void on_customButton_2_clicked();
     void on_customButton_3_clicked();
+
+
 private:
     Ui::MainWindow *ui;
 
@@ -138,7 +159,9 @@ private:
     std::string m_ros_namespace;
 
     ros::Timer m_timer_yaml_file_for_safe_controller;
-    ros::Timer m_timer_yaml_file_for_custom_controlller;
+    ros::Timer m_timer_yaml_file_for_demo_controller;
+    ros::Timer m_timer_yaml_file_for_student_controller;
+    ros::Timer m_timer_yaml_file_for_mpc_controller;
 
     int m_student_id;
     CrazyflieContext m_context;
@@ -189,8 +212,15 @@ private:
     void safeSetpointCallback(const Setpoint& newSetpoint);
     void customSetpointCallback(const Setpoint& newSetpoint);
     void DBChangedCallback(const std_msgs::Int32& msg);
-    void customYamlFileTimerCallback(const ros::TimerEvent&);
+
+    // # Load Yaml when acting as the GUI for an Agent
     void safeYamlFileTimerCallback(const ros::TimerEvent&);
+    void demoYamlFileTimerCallback(const ros::TimerEvent&);
+    void studentYamlFileTimerCallback(const ros::TimerEvent&);
+    void mpcYamlFileTimerCallback(const ros::TimerEvent&);
+    
+
+
     void requestLoadControllerYaml_from_my_GUI_Callback(const std_msgs::Int32& msg);
     void controllerUsedChangedCallback(const std_msgs::Int32& msg);
     void batteryStateChangedCallback(const std_msgs::Int32& msg);

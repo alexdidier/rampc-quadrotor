@@ -195,7 +195,7 @@ void MainWindow::controllerUsedChangedCallback(const std_msgs::Int32& msg)
         case SAFE_CONTROLLER:
             highlightSafeControllerTab();
             break;
-        case CUSTOM_CONTROLLER:
+        case DEMO_CONTROLLER:
             highlightCustomControllerTab();
             break;
         default:
@@ -432,6 +432,10 @@ void MainWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to ne
     }
 }
 
+
+
+//    ----------------------------------------------------------------------------------
+// # RF Crazyradio Connect Disconnect
 void MainWindow::on_RF_Connect_button_clicked()
 {
     std_msgs::Int32 msg;
@@ -440,6 +444,18 @@ void MainWindow::on_RF_Connect_button_clicked()
     ROS_INFO("command reconnect published");
 }
 
+void MainWindow::on_RF_disconnect_button_clicked()
+{
+    std_msgs::Int32 msg;
+    msg.data = CMD_DISCONNECT;
+    this->crazyRadioCommandPublisher.publish(msg);
+    ROS_INFO("command disconnect published");
+}
+
+
+
+//    ----------------------------------------------------------------------------------
+// # Take off, lanf, motors off
 void MainWindow::on_take_off_button_clicked()
 {
     std_msgs::Int32 msg;
@@ -461,6 +477,10 @@ void MainWindow::on_motors_OFF_button_clicked()
     this->PPSClientCommandPublisher.publish(msg);
 }
 
+
+
+//    ----------------------------------------------------------------------------------
+// # Setpoint
 void MainWindow::on_set_setpoint_button_clicked()
 {
     Setpoint msg_setpoint;
@@ -537,17 +557,11 @@ void MainWindow::on_set_setpoint_button_2_clicked()
     ROS_INFO_STREAM("Setpoint change clicked with:" << msg_setpoint.x << ", "<< msg_setpoint.y << ", "<< msg_setpoint.z << ", "<< msg_setpoint.yaw);
 }
 
-void MainWindow::on_RF_disconnect_button_clicked()
-{
-    std_msgs::Int32 msg;
-    msg.data = CMD_DISCONNECT;
-    this->crazyRadioCommandPublisher.publish(msg);
-    ROS_INFO("command disconnect published");
-}
 
 
 
-
+//    ----------------------------------------------------------------------------------
+// # Load Yaml when acting as the GUI for an Agent
 void MainWindow::on_load_safe_yaml_button_clicked()
 {
     // Set the "load safe yaml" button to be disabled
@@ -578,19 +592,17 @@ void MainWindow::safeYamlFileTimerCallback(const ros::TimerEvent&)
 
 
 
-
-
-void MainWindow::on_load_custom_yaml_button_clicked()
+void MainWindow::on_load_demo_yaml_button_clicked()
 {
-    // Set the "load custom yaml" button to be disabled
-    ui->load_custom_yaml_button->setEnabled(false);
+    // Set the "load demo yaml" button to be disabled
+    ui->load_demo_yaml_button->setEnabled(false);
 
     // Send a message requesting the parameters from the YAML
-    // file to be reloaded for the custom controller
+    // file to be reloaded for the demo controller
     std_msgs::Int32 msg;
-    msg.data = LOAD_YAML_CUSTOM_CONTROLLER_AGENT;
+    msg.data = LOAD_YAML_DEMO_CONTROLLER_AGENT;
     this->requestLoadControllerYamlPublisher.publish(msg);
-    ROS_INFO("Request load of custom controller YAML published");
+    ROS_INFO("Request load of demo controller YAML published");
 
     // Start a timer which will enable the button in its callback
     // > This is required because the agent node waits some time between
@@ -599,16 +611,74 @@ void MainWindow::on_load_custom_yaml_button_clicked()
     // > Thus we use this timer to prevent the user from clicking the
     //   button in the GUI repeatedly.
     ros::NodeHandle nodeHandle("~");
-    m_timer_yaml_file_for_custom_controlller = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::customYamlFileTimerCallback, this, true);    
+    m_timer_yaml_file_for_demo_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::demoYamlFileTimerCallback, this, true);
 }
 
-void MainWindow::customYamlFileTimerCallback(const ros::TimerEvent&)
+void MainWindow::demoYamlFileTimerCallback(const ros::TimerEvent&)
 {
-    // Enble the "load custom yaml" button again
-    ui->load_custom_yaml_button->setEnabled(true);
+    // Enble the "load demo yaml" button again
+    ui->load_demo_yaml_button->setEnabled(true);
 }
 
 
+
+void MainWindow::on_load_student_yaml_button_clicked()
+{
+    // Set the "load student yaml" button to be disabled
+    ui->load_student_yaml_button->setEnabled(false);
+
+    // Send a message requesting the parameters from the YAML
+    // file to be reloaded for the student controller
+    std_msgs::Int32 msg;
+    msg.data = LOAD_YAML_STUDENT_CONTROLLER_AGENT;
+    this->requestLoadControllerYamlPublisher.publish(msg);
+    ROS_INFO("Request load of student controller YAML published");
+
+    // Start a timer which will enable the button in its callback
+    // > This is required because the agent node waits some time between
+    //   re-loading the values from the YAML file and then assigning then
+    //   to the local variable of the agent.
+    // > Thus we use this timer to prevent the user from clicking the
+    //   button in the GUI repeatedly.
+    ros::NodeHandle nodeHandle("~");
+    m_timer_yaml_file_for_student_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::studentYamlFileTimerCallback, this, true);    
+}
+
+void MainWindow::studentYamlFileTimerCallback(const ros::TimerEvent&)
+{
+    // Enble the "load student yaml" button again
+    ui->load_student_yaml_button->setEnabled(true);
+}
+
+
+
+void MainWindow::on_load_mpc_yaml_button_clicked()
+{
+    // Set the "load mpc yaml" button to be disabled
+    ui->load_mpc_yaml_button->setEnabled(false);
+
+    // Send a message requesting the parameters from the YAML
+    // file to be reloaded for the mpc controller
+    std_msgs::Int32 msg;
+    msg.data = LOAD_YAML_MPC_CONTROLLER_AGENT;
+    this->requestLoadControllerYamlPublisher.publish(msg);
+    ROS_INFO("Request load of mpc controller YAML published");
+
+    // Start a timer which will enable the button in its callback
+    // > This is required because the agent node waits some time between
+    //   re-loading the values from the YAML file and then assigning then
+    //   to the local variable of the agent.
+    // > Thus we use this timer to prevent the user from clicking the
+    //   button in the GUI repeatedly.
+    ros::NodeHandle nodeHandle("~");
+    m_timer_yaml_file_for_mpc_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::mpcYamlFileTimerCallback, this, true);
+}
+
+void MainWindow::mpcYamlFileTimerCallback(const ros::TimerEvent&)
+{
+    // Enble the "load mpc yaml" button again
+    ui->load_mpc_yaml_button->setEnabled(true);
+}
 
 
 
@@ -639,10 +709,10 @@ void MainWindow::requestLoadControllerYaml_from_my_GUI_Callback(const std_msgs::
 
             break;
 
-        case LOAD_YAML_CUSTOM_CONTROLLER_AGENT:
-        case LOAD_YAML_CUSTOM_CONTROLLER_COORDINATOR:
+        case LOAD_YAML_DEMO_CONTROLLER_AGENT:
+        case LOAD_YAML_DEMO_CONTROLLER_COORDINATOR:
             // Set the "load custom yaml" button to be disabled
-            ui->load_custom_yaml_button->setEnabled(false);
+            ui->load_demo_yaml_button->setEnabled(false);
 
             // Start a timer which will enable the button in its callback
             // > This is required because the agent node waits some time between
@@ -650,7 +720,7 @@ void MainWindow::requestLoadControllerYaml_from_my_GUI_Callback(const std_msgs::
             //   to the local variable of the agent.
             // > Thus we use this timer to prevent the user from clicking the
             //   button in the GUI repeatedly.
-            m_timer_yaml_file_for_custom_controlller = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::customYamlFileTimerCallback, this, true);    
+            m_timer_yaml_file_for_demo_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::demoYamlFileTimerCallback, this, true);    
 
             break;
 
@@ -663,21 +733,39 @@ void MainWindow::requestLoadControllerYaml_from_my_GUI_Callback(const std_msgs::
 
 
 
-void MainWindow::on_en_custom_controller_clicked()
-{
-    std_msgs::Int32 msg;
-    msg.data = CMD_USE_CUSTOM_CONTROLLER;
-    this->PPSClientCommandPublisher.publish(msg);
-}
 
-
-void MainWindow::on_en_safe_controller_clicked()
+// # Enable controllers
+void MainWindow::on_enable_safe_controller_clicked()
 {
     std_msgs::Int32 msg;
     msg.data = CMD_USE_SAFE_CONTROLLER;
     this->PPSClientCommandPublisher.publish(msg);
 }
 
+void MainWindow::on_enable_demo_controller_clicked()
+{
+    std_msgs::Int32 msg;
+    msg.data = CMD_USE_DEMO_CONTROLLER;
+    this->PPSClientCommandPublisher.publish(msg);
+}
+
+void MainWindow::on_enable_student_controller_clicked()
+{
+    std_msgs::Int32 msg;
+    msg.data = CMD_USE_STUDENT_CONTROLLER;
+    this->PPSClientCommandPublisher.publish(msg);
+}
+
+void MainWindow::on_enable_mpc_controller_clicked()
+{
+    std_msgs::Int32 msg;
+    msg.data = CMD_USE_MPC_CONTROLLER;
+    this->PPSClientCommandPublisher.publish(msg);
+}
+
+
+
+// # Custom command buttons
 void MainWindow::on_customButton_1_clicked()
 {
     CustomButton msg_custom_button;
