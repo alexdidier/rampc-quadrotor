@@ -83,8 +83,8 @@
 #define CF_COMMAND_TYPE_ANGLE  8
 
 // Types of controllers being used:
-#define SAFE_CONTROLLER      0
-#define DEMO_CONTROLLER      1
+#define SAFE_CONTROLLER      1
+#define DEMO_CONTROLLER      2
 #define STUDENT_CONTROLLER   3
 #define MPC_CONTROLLER       4
 

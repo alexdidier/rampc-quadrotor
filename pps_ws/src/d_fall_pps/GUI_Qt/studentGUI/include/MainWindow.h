@@ -46,10 +46,10 @@
 
 
 // Types of controllers being used:
-#define SAFE_CONTROLLER    0
-#define DEMO_CONTROLLER  1
-#define STUDENT_CONTROLLER 2
-#define MPC_CONTROLLER     3
+#define SAFE_CONTROLLER    1
+#define DEMO_CONTROLLER    2
+#define STUDENT_CONTROLLER 3
+#define MPC_CONTROLLER     4
 
 
 // Commands for CrazyRadio
@@ -126,8 +126,10 @@ private slots:
     void on_motors_OFF_button_clicked();
 
     // # Setpoint
-    void on_set_setpoint_button_clicked();
-    void on_set_setpoint_button_2_clicked();
+    void on_set_setpoint_button_safe_clicked();
+    void on_set_setpoint_button_demo_clicked();
+    void on_set_setpoint_button_student_clicked();
+    void on_set_setpoint_button_mpc_clicked();
 
     // # Load Yaml when acting as the GUI for an Agent
     void on_load_safe_yaml_button_clicked();
@@ -167,7 +169,9 @@ private:
     CrazyflieContext m_context;
 
     Setpoint m_safe_setpoint;
-    Setpoint m_custom_setpoint;
+    Setpoint m_demo_setpoint;
+    Setpoint m_student_setpoint;
+    Setpoint m_mpc_setpoint;
 
     int m_battery_state;
 
@@ -181,8 +185,18 @@ private:
     ros::Publisher controllerSetpointPublisher;
     ros::Subscriber safeSetpointSubscriber;
 
-    ros::Publisher customSetpointPublisher;
-    ros::Subscriber customSetpointSubscriber;
+    // SUBSCRIBERS AND PUBLISHERS FOR THE SETPOINTS:
+    // > For the Demo Controller
+    ros::Publisher  demoSetpointPublisher;
+    ros::Subscriber demoSetpointSubscriber;
+    // > For the Student Controller
+    ros::Publisher  studentSetpointPublisher;
+    ros::Subscriber studentSetpointSubscriber;
+    // > For the MPC Controller
+    ros::Publisher  mpcSetpointPublisher;
+    ros::Subscriber mpcSetpointSubscriber;
+
+
 
     ros::Publisher PPSClientStudentCustomButtonPublisher;
 
@@ -209,8 +223,12 @@ private:
     void crazyRadioStatusCallback(const std_msgs::Int32& msg);
     void CFBatteryCallback(const std_msgs::Float32& msg);
     void flyingStateChangedCallback(const std_msgs::Int32& msg);
+
     void safeSetpointCallback(const Setpoint& newSetpoint);
-    void customSetpointCallback(const Setpoint& newSetpoint);
+    void demoSetpointCallback(const Setpoint& newSetpoint);
+    void studentSetpointCallback(const Setpoint& newSetpoint);
+    void mpcSetpointCallback(const Setpoint& newSetpoint);
+
     void DBChangedCallback(const std_msgs::Int32& msg);
 
     // # Load Yaml when acting as the GUI for an Agent
@@ -230,13 +248,18 @@ private:
     void setCrazyRadioStatus(int radio_status);
     void loadCrazyflieContext();
     void coordinatesToLocal(CrazyflieData& cf);
-    void initialize_custom_setpoint();
+
+    void initialize_demo_setpoint();
+    void initialize_student_setpoint();
+    void initialize_mpc_setpoint();
 
 
     void disableGUI();
     void enableGUI();
     void highlightSafeControllerTab();
-    void highlightCustomControllerTab();
+    void highlightDemoControllerTab();
+    void highlightStudentControllerTab();
+    void highlightMpcControllerTab();
 
     bool setpointInsideBox(Setpoint setpoint, CrazyflieContext context);
     Setpoint correctSetpointBox(Setpoint setpoint, CrazyflieContext context);

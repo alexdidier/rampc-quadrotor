@@ -65,8 +65,17 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
 
     ros::NodeHandle nodeHandle(m_ros_namespace);
 
-    customSetpointPublisher = nodeHandle.advertise<Setpoint>("CustomControllerService/Setpoint", 1);
-    customSetpointSubscriber = nodeHandle.subscribe("CustomControllerService/Setpoint", 1, &MainWindow::customSetpointCallback, this);
+
+    // SUBSCRIBERS AND PUBLISHERS FOR THE SETPOINTS:
+    // > For the Demo Controller
+    demoSetpointPublisher  = nodeHandle.advertise<Setpoint>("DemoControllerService/Setpoint", 1);
+    demoSetpointSubscriber = nodeHandle.subscribe("DemoControllerService/Setpoint", 1, &MainWindow::demoSetpointCallback, this);
+    // > For the Student Controller
+    studentSetpointPublisher  = nodeHandle.advertise<Setpoint>("StudentControllerService/Setpoint", 1);
+    studentSetpointSubscriber = nodeHandle.subscribe("StudentControllerService/Setpoint", 1, &MainWindow::studentSetpointCallback, this);
+    // > For the MPC Controller
+    mpcSetpointPublisher  = nodeHandle.advertise<Setpoint>("MpcControllerService/Setpoint", 1);
+    mpcSetpointSubscriber = nodeHandle.subscribe("MpcControllerService/Setpoint", 1, &MainWindow::mpcSetpointCallback, this);
 
     // subscribers
     crazyRadioStatusSubscriber = nodeHandle.subscribe("CrazyRadio/CrazyRadioStatus", 1, &MainWindow::crazyRadioStatusCallback, this);
@@ -131,10 +140,10 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     }
 
     // Copy the default setpoint into respective text fields of the GUI
-    ui->current_setpoint_x->setText(QString::number(default_setpoint[0]));
-    ui->current_setpoint_y->setText(QString::number(default_setpoint[1]));
-    ui->current_setpoint_z->setText(QString::number(default_setpoint[2]));
-    ui->current_setpoint_yaw->setText(QString::number(default_setpoint[3]));
+    ui->current_setpoint_x_safe->setText(QString::number(default_setpoint[0]));
+    ui->current_setpoint_y_safe->setText(QString::number(default_setpoint[1]));
+    ui->current_setpoint_z_safe->setText(QString::number(default_setpoint[2]));
+    ui->current_setpoint_yaw_safe->setText(QString::number(default_setpoint[3]));
 
 
     disableGUI();
@@ -145,7 +154,9 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     ui->error_label->setStyleSheet("QLabel { color : red; }");
     ui->error_label->clear();
 
-    initialize_custom_setpoint();
+    initialize_demo_setpoint();
+    initialize_student_setpoint();
+    initialize_mpc_setpoint();
 }
 
 
@@ -175,11 +186,29 @@ void MainWindow::highlightSafeControllerTab()
 {
     ui->tabWidget->tabBar()->setTabTextColor(0, Qt::green);
     ui->tabWidget->tabBar()->setTabTextColor(1, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(2, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(3, Qt::black);
 }
-void MainWindow::highlightCustomControllerTab()
+void MainWindow::highlightDemoControllerTab()
 {
     ui->tabWidget->tabBar()->setTabTextColor(0, Qt::black);
     ui->tabWidget->tabBar()->setTabTextColor(1, Qt::green);
+    ui->tabWidget->tabBar()->setTabTextColor(2, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(3, Qt::black);
+}
+void MainWindow::highlightStudentControllerTab()
+{
+    ui->tabWidget->tabBar()->setTabTextColor(0, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(1, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(2, Qt::green);
+    ui->tabWidget->tabBar()->setTabTextColor(3, Qt::black);
+}
+void MainWindow::highlightMpcControllerTab()
+{
+    ui->tabWidget->tabBar()->setTabTextColor(0, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(1, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(2, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(3, Qt::green);
 }
 
 void MainWindow::DBChangedCallback(const std_msgs::Int32& msg)
@@ -196,7 +225,13 @@ void MainWindow::controllerUsedChangedCallback(const std_msgs::Int32& msg)
             highlightSafeControllerTab();
             break;
         case DEMO_CONTROLLER:
-            highlightCustomControllerTab();
+            highlightDemoControllerTab();
+            break;
+        case STUDENT_CONTROLLER:
+            highlightStudentControllerTab();
+            break;
+        case MPC_CONTROLLER:
+            highlightMpcControllerTab();
             break;
         default:
             break;
@@ -207,20 +242,40 @@ void MainWindow::safeSetpointCallback(const Setpoint& newSetpoint)
 {
     m_safe_setpoint = newSetpoint;
     // here we get the new setpoint, need to update it in GUI
-    ui->current_setpoint_x->setText(QString::number(newSetpoint.x, 'f', 3));
-    ui->current_setpoint_y->setText(QString::number(newSetpoint.y, 'f', 3));
-    ui->current_setpoint_z->setText(QString::number(newSetpoint.z, 'f', 3));
-    ui->current_setpoint_yaw->setText(QString::number(newSetpoint.yaw * RAD2DEG, 'f', 1));
+    ui->current_setpoint_x_safe->setText(QString::number(newSetpoint.x, 'f', 3));
+    ui->current_setpoint_y_safe->setText(QString::number(newSetpoint.y, 'f', 3));
+    ui->current_setpoint_z_safe->setText(QString::number(newSetpoint.z, 'f', 3));
+    ui->current_setpoint_yaw_safe->setText(QString::number(newSetpoint.yaw * RAD2DEG, 'f', 1));
 }
 
-void MainWindow::customSetpointCallback(const Setpoint& newSetpoint)
+void MainWindow::demoSetpointCallback(const Setpoint& newSetpoint)
 {
-    m_custom_setpoint = newSetpoint;
+    m_demo_setpoint = newSetpoint;
     // here we get the new setpoint, need to update it in GUI
-    ui->current_setpoint_x_2->setText(QString::number(newSetpoint.x, 'f', 3));
-    ui->current_setpoint_y_2->setText(QString::number(newSetpoint.y, 'f', 3));
-    ui->current_setpoint_z_2->setText(QString::number(newSetpoint.z, 'f', 3));
-    ui->current_setpoint_yaw_2->setText(QString::number(newSetpoint.yaw * RAD2DEG, 'f', 1));
+    ui->current_setpoint_x_demo->setText(QString::number(newSetpoint.x, 'f', 3));
+    ui->current_setpoint_y_demo->setText(QString::number(newSetpoint.y, 'f', 3));
+    ui->current_setpoint_z_demo->setText(QString::number(newSetpoint.z, 'f', 3));
+    ui->current_setpoint_yaw_demo->setText(QString::number(newSetpoint.yaw * RAD2DEG, 'f', 1));
+}
+
+void MainWindow::studentSetpointCallback(const Setpoint& newSetpoint)
+{
+    m_student_setpoint = newSetpoint;
+    // here we get the new setpoint, need to update it in GUI
+    ui->current_setpoint_x_student->setText(QString::number(newSetpoint.x, 'f', 3));
+    ui->current_setpoint_y_student->setText(QString::number(newSetpoint.y, 'f', 3));
+    ui->current_setpoint_z_student->setText(QString::number(newSetpoint.z, 'f', 3));
+    ui->current_setpoint_yaw_student->setText(QString::number(newSetpoint.yaw * RAD2DEG, 'f', 1));
+}
+
+void MainWindow::mpcSetpointCallback(const Setpoint& newSetpoint)
+{
+    m_mpc_setpoint = newSetpoint;
+    // here we get the new setpoint, need to update it in GUI
+    ui->current_setpoint_x_mpc->setText(QString::number(newSetpoint.x, 'f', 3));
+    ui->current_setpoint_y_mpc->setText(QString::number(newSetpoint.y, 'f', 3));
+    ui->current_setpoint_z_mpc->setText(QString::number(newSetpoint.z, 'f', 3));
+    ui->current_setpoint_yaw_mpc->setText(QString::number(newSetpoint.yaw * RAD2DEG, 'f', 1));
 }
 
 void MainWindow::flyingStateChangedCallback(const std_msgs::Int32& msg)
@@ -404,30 +459,30 @@ void MainWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to ne
             coordinatesToLocal(local);
 
             // now we have the local coordinates, put them in the labels
-            ui->current_x->setText(QString::number(local.x, 'f', 3));
-            ui->current_y->setText(QString::number(local.y, 'f', 3));
-            ui->current_z->setText(QString::number(local.z, 'f', 3));
-            ui->current_yaw->setText(QString::number(local.yaw * RAD2DEG, 'f', 1));
-            ui->current_pitch->setText(QString::number(local.pitch * RAD2DEG, 'f', 1));
-            ui->current_roll->setText(QString::number(local.roll * RAD2DEG, 'f', 1));
+            ui->current_x_safe->setText(QString::number(local.x, 'f', 3));
+            ui->current_y_safe->setText(QString::number(local.y, 'f', 3));
+            ui->current_z_safe->setText(QString::number(local.z, 'f', 3));
+            ui->current_yaw_safe->setText(QString::number(local.yaw * RAD2DEG, 'f', 1));
+            ui->current_pitch_safe->setText(QString::number(local.pitch * RAD2DEG, 'f', 1));
+            ui->current_roll_safe->setText(QString::number(local.roll * RAD2DEG, 'f', 1));
 
-            ui->current_x_2->setText(QString::number(local.x, 'f', 3));
-            ui->current_y_2->setText(QString::number(local.y, 'f', 3));
-            ui->current_z_2->setText(QString::number(local.z, 'f', 3));
-            ui->current_yaw_2->setText(QString::number(local.yaw * RAD2DEG, 'f', 1));
-            ui->current_pitch_2->setText(QString::number(local.pitch * RAD2DEG, 'f', 1));
-            ui->current_roll_2->setText(QString::number(local.roll * RAD2DEG, 'f', 1));
+            ui->current_x_demo->setText(QString::number(local.x, 'f', 3));
+            ui->current_y_demo->setText(QString::number(local.y, 'f', 3));
+            ui->current_z_demo->setText(QString::number(local.z, 'f', 3));
+            ui->current_yaw_demo->setText(QString::number(local.yaw * RAD2DEG, 'f', 1));
+            ui->current_pitch_demo->setText(QString::number(local.pitch * RAD2DEG, 'f', 1));
+            ui->current_roll_demo->setText(QString::number(local.roll * RAD2DEG, 'f', 1));
 
             // also update diff
-            ui->diff_x->setText(QString::number(m_safe_setpoint.x - local.x, 'f', 3));
-            ui->diff_y->setText(QString::number(m_safe_setpoint.y - local.y, 'f', 3));
-            ui->diff_z->setText(QString::number(m_safe_setpoint.z - local.z, 'f', 3));
-            ui->diff_yaw->setText(QString::number((m_safe_setpoint.yaw - local.yaw) * RAD2DEG, 'f', 1));
+            ui->diff_x_safe->setText(QString::number(m_safe_setpoint.x - local.x, 'f', 3));
+            ui->diff_y_safe->setText(QString::number(m_safe_setpoint.y - local.y, 'f', 3));
+            ui->diff_z_safe->setText(QString::number(m_safe_setpoint.z - local.z, 'f', 3));
+            ui->diff_yaw_safe->setText(QString::number((m_safe_setpoint.yaw - local.yaw) * RAD2DEG, 'f', 1));
 
-            ui->diff_x_2->setText(QString::number(m_custom_setpoint.x - local.x, 'f', 3));
-            ui->diff_y_2->setText(QString::number(m_custom_setpoint.y - local.y, 'f', 3));
-            ui->diff_z_2->setText(QString::number(m_custom_setpoint.z - local.z, 'f', 3));
-            ui->diff_yaw_2->setText(QString::number((m_custom_setpoint.yaw - local.yaw) * RAD2DEG, 'f', 1));
+            ui->diff_x_demo->setText(QString::number(m_demo_setpoint.x - local.x, 'f', 3));
+            ui->diff_y_demo->setText(QString::number(m_demo_setpoint.y - local.y, 'f', 3));
+            ui->diff_z_demo->setText(QString::number(m_demo_setpoint.z - local.z, 'f', 3));
+            ui->diff_yaw_demo->setText(QString::number((m_demo_setpoint.yaw - local.yaw) * RAD2DEG, 'f', 1));
         }
     }
 }
@@ -481,28 +536,28 @@ void MainWindow::on_motors_OFF_button_clicked()
 
 //    ----------------------------------------------------------------------------------
 // # Setpoint
-void MainWindow::on_set_setpoint_button_clicked()
+void MainWindow::on_set_setpoint_button_safe_clicked()
 {
     Setpoint msg_setpoint;
 
     // initialize setpoint to previous one
 
-    msg_setpoint.x = (ui->current_setpoint_x->text()).toFloat();
-    msg_setpoint.y = (ui->current_setpoint_y->text()).toFloat();
-    msg_setpoint.z = (ui->current_setpoint_z->text()).toFloat();
-    msg_setpoint.yaw = (ui->current_setpoint_yaw->text()).toFloat();
+    msg_setpoint.x = (ui->current_setpoint_x_safe->text()).toFloat();
+    msg_setpoint.y = (ui->current_setpoint_y_safe->text()).toFloat();
+    msg_setpoint.z = (ui->current_setpoint_z_safe->text()).toFloat();
+    msg_setpoint.yaw = (ui->current_setpoint_yaw_safe->text()).toFloat();
 
-    if(!ui->new_setpoint_x->text().isEmpty())
-        msg_setpoint.x = (ui->new_setpoint_x->text()).toFloat();
+    if(!ui->new_setpoint_x_safe->text().isEmpty())
+        msg_setpoint.x = (ui->new_setpoint_x_safe->text()).toFloat();
 
-    if(!ui->new_setpoint_y->text().isEmpty())
-        msg_setpoint.y = (ui->new_setpoint_y->text()).toFloat();
+    if(!ui->new_setpoint_y_safe->text().isEmpty())
+        msg_setpoint.y = (ui->new_setpoint_y_safe->text()).toFloat();
 
-    if(!ui->new_setpoint_z->text().isEmpty())
-        msg_setpoint.z = (ui->new_setpoint_z->text()).toFloat();
+    if(!ui->new_setpoint_z_safe->text().isEmpty())
+        msg_setpoint.z = (ui->new_setpoint_z_safe->text()).toFloat();
 
-    if(!ui->new_setpoint_yaw->text().isEmpty())
-        msg_setpoint.yaw = (ui->new_setpoint_yaw->text()).toFloat() * DEG2RAD;
+    if(!ui->new_setpoint_yaw_safe->text().isEmpty())
+        msg_setpoint.yaw = (ui->new_setpoint_yaw_safe->text()).toFloat() * DEG2RAD;
 
 
     if(!setpointInsideBox(msg_setpoint, m_context))
@@ -523,7 +578,7 @@ void MainWindow::on_set_setpoint_button_clicked()
     ROS_INFO_STREAM("Setpoint change clicked with:" << msg_setpoint.x << ", "<< msg_setpoint.y << ", "<< msg_setpoint.z << ", "<< msg_setpoint.yaw);
 }
 
-void MainWindow::initialize_custom_setpoint()
+void MainWindow::initialize_demo_setpoint()
 {
     Setpoint msg_setpoint;
     msg_setpoint.x = 0;
@@ -531,33 +586,99 @@ void MainWindow::initialize_custom_setpoint()
     msg_setpoint.z = 0.4;
     msg_setpoint.yaw = 0;
 
-    this->customSetpointPublisher.publish(msg_setpoint);
+    this->demoSetpointPublisher.publish(msg_setpoint);
 }
 
-void MainWindow::on_set_setpoint_button_2_clicked()
+void MainWindow::initialize_student_setpoint()
+{
+    Setpoint msg_setpoint;
+    msg_setpoint.x = 0;
+    msg_setpoint.y = 0;
+    msg_setpoint.z = 0.4;
+    msg_setpoint.yaw = 0;
+
+    this->studentSetpointPublisher.publish(msg_setpoint);
+}
+
+void MainWindow::initialize_mpc_setpoint()
+{
+    Setpoint msg_setpoint;
+    msg_setpoint.x = 0;
+    msg_setpoint.y = 0;
+    msg_setpoint.z = 0.4;
+    msg_setpoint.yaw = 0;
+
+    this->mpcSetpointPublisher.publish(msg_setpoint);
+}
+
+void MainWindow::on_set_setpoint_button_demo_clicked()
 {
     Setpoint msg_setpoint;
 
-    msg_setpoint.x = (ui->current_setpoint_x_2->text()).toFloat();
-    msg_setpoint.y = (ui->current_setpoint_y_2->text()).toFloat();
-    msg_setpoint.z = (ui->current_setpoint_z_2->text()).toFloat();
-    msg_setpoint.yaw = (ui->current_setpoint_yaw_2->text()).toFloat();
+    msg_setpoint.x = (ui->current_setpoint_x_demo->text()).toFloat();
+    msg_setpoint.y = (ui->current_setpoint_y_demo->text()).toFloat();
+    msg_setpoint.z = (ui->current_setpoint_z_demo->text()).toFloat();
+    msg_setpoint.yaw = (ui->current_setpoint_yaw_demo->text()).toFloat();
 
-    if(!ui->new_setpoint_x_2->text().isEmpty())
-        msg_setpoint.x = (ui->new_setpoint_x_2->text()).toFloat();
-    if(!ui->new_setpoint_y_2->text().isEmpty())
-        msg_setpoint.y = (ui->new_setpoint_y_2->text()).toFloat();
-    if(!ui->new_setpoint_z_2->text().isEmpty())
-        msg_setpoint.z = (ui->new_setpoint_z_2->text()).toFloat();
-    if(!ui->new_setpoint_yaw_2->text().isEmpty())
-        msg_setpoint.yaw = (ui->new_setpoint_yaw_2->text()).toFloat() * DEG2RAD;
+    if(!ui->new_setpoint_x_demo->text().isEmpty())
+        msg_setpoint.x = (ui->new_setpoint_x_demo->text()).toFloat();
+    if(!ui->new_setpoint_y_demo->text().isEmpty())
+        msg_setpoint.y = (ui->new_setpoint_y_demo->text()).toFloat();
+    if(!ui->new_setpoint_z_demo->text().isEmpty())
+        msg_setpoint.z = (ui->new_setpoint_z_demo->text()).toFloat();
+    if(!ui->new_setpoint_yaw_demo->text().isEmpty())
+        msg_setpoint.yaw = (ui->new_setpoint_yaw_demo->text()).toFloat() * DEG2RAD;
 
-    this->customSetpointPublisher.publish(msg_setpoint);
+    this->demoSetpointPublisher.publish(msg_setpoint);
 
     ROS_INFO_STREAM("Setpoint change clicked with:" << msg_setpoint.x << ", "<< msg_setpoint.y << ", "<< msg_setpoint.z << ", "<< msg_setpoint.yaw);
 }
 
+void MainWindow::on_set_setpoint_button_student_clicked()
+{
+    Setpoint msg_setpoint;
 
+    msg_setpoint.x = (ui->current_setpoint_x_student->text()).toFloat();
+    msg_setpoint.y = (ui->current_setpoint_y_student->text()).toFloat();
+    msg_setpoint.z = (ui->current_setpoint_z_student->text()).toFloat();
+    msg_setpoint.yaw = (ui->current_setpoint_yaw_student->text()).toFloat();
+
+    if(!ui->new_setpoint_x_student->text().isEmpty())
+        msg_setpoint.x = (ui->new_setpoint_x_student->text()).toFloat();
+    if(!ui->new_setpoint_y_student->text().isEmpty())
+        msg_setpoint.y = (ui->new_setpoint_y_student->text()).toFloat();
+    if(!ui->new_setpoint_z_student->text().isEmpty())
+        msg_setpoint.z = (ui->new_setpoint_z_student->text()).toFloat();
+    if(!ui->new_setpoint_yaw_student->text().isEmpty())
+        msg_setpoint.yaw = (ui->new_setpoint_yaw_student->text()).toFloat() * DEG2RAD;
+
+    this->studentSetpointPublisher.publish(msg_setpoint);
+
+    ROS_INFO_STREAM("Setpoint change clicked with:" << msg_setpoint.x << ", "<< msg_setpoint.y << ", "<< msg_setpoint.z << ", "<< msg_setpoint.yaw);
+}
+
+void MainWindow::on_set_setpoint_button_mpc_clicked()
+{
+    Setpoint msg_setpoint;
+
+    msg_setpoint.x = (ui->current_setpoint_x_mpc->text()).toFloat();
+    msg_setpoint.y = (ui->current_setpoint_y_mpc->text()).toFloat();
+    msg_setpoint.z = (ui->current_setpoint_z_mpc->text()).toFloat();
+    msg_setpoint.yaw = (ui->current_setpoint_yaw_mpc->text()).toFloat();
+
+    if(!ui->new_setpoint_x_mpc->text().isEmpty())
+        msg_setpoint.x = (ui->new_setpoint_x_mpc->text()).toFloat();
+    if(!ui->new_setpoint_y_mpc->text().isEmpty())
+        msg_setpoint.y = (ui->new_setpoint_y_mpc->text()).toFloat();
+    if(!ui->new_setpoint_z_mpc->text().isEmpty())
+        msg_setpoint.z = (ui->new_setpoint_z_mpc->text()).toFloat();
+    if(!ui->new_setpoint_yaw_mpc->text().isEmpty())
+        msg_setpoint.yaw = (ui->new_setpoint_yaw_mpc->text()).toFloat() * DEG2RAD;
+
+    this->mpcSetpointPublisher.publish(msg_setpoint);
+
+    ROS_INFO_STREAM("Setpoint change clicked with:" << msg_setpoint.x << ", "<< msg_setpoint.y << ", "<< msg_setpoint.z << ", "<< msg_setpoint.yaw);
+}
 
 
 //    ----------------------------------------------------------------------------------
@@ -711,7 +832,7 @@ void MainWindow::requestLoadControllerYaml_from_my_GUI_Callback(const std_msgs::
 
         case LOAD_YAML_DEMO_CONTROLLER_AGENT:
         case LOAD_YAML_DEMO_CONTROLLER_COORDINATOR:
-            // Set the "load custom yaml" button to be disabled
+            // Set the "load demo yaml" button to be disabled
             ui->load_demo_yaml_button->setEnabled(false);
 
             // Start a timer which will enable the button in its callback
@@ -721,6 +842,36 @@ void MainWindow::requestLoadControllerYaml_from_my_GUI_Callback(const std_msgs::
             // > Thus we use this timer to prevent the user from clicking the
             //   button in the GUI repeatedly.
             m_timer_yaml_file_for_demo_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::demoYamlFileTimerCallback, this, true);    
+
+            break;
+
+        case LOAD_YAML_STUDENT_CONTROLLER_AGENT:
+        case LOAD_YAML_STUDENT_CONTROLLER_COORDINATOR:
+            // Set the "load student yaml" button to be disabled
+            ui->load_student_yaml_button->setEnabled(false);
+
+            // Start a timer which will enable the button in its callback
+            // > This is required because the agent node waits some time between
+            //   re-loading the values from the YAML file and then assigning then
+            //   to the local variable of the agent.
+            // > Thus we use this timer to prevent the user from clicking the
+            //   button in the GUI repeatedly.
+            m_timer_yaml_file_for_student_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::studentYamlFileTimerCallback, this, true);    
+
+            break;
+
+        case LOAD_YAML_MPC_CONTROLLER_AGENT:
+        case LOAD_YAML_MPC_CONTROLLER_COORDINATOR:
+            // Set the "load mpc yaml" button to be disabled
+            ui->load_mpc_yaml_button->setEnabled(false);
+
+            // Start a timer which will enable the button in its callback
+            // > This is required because the agent node waits some time between
+            //   re-loading the values from the YAML file and then assigning then
+            //   to the local variable of the agent.
+            // > Thus we use this timer to prevent the user from clicking the
+            //   button in the GUI repeatedly.
+            m_timer_yaml_file_for_mpc_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::mpcYamlFileTimerCallback, this, true);    
 
             break;
 
