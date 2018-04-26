@@ -206,6 +206,46 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
 
 
 
+bool loadYamlFiles(LoadYamlFiles::Request &request, LoadYamlFiles::Response &response)
+{
+
+    std::string yamlFileName_toLoad = request.yamlFileNames[0];
+
+    ros::NodeHandle nodeHandle("~");
+
+    std::string yamlFileNamesParamters_basenamespace = "YamlFileNames/dictionary";
+
+    std::string paramterName = yamlFileNamesParamters_basenamespace + "/" + yamlFileName_toLoad;
+
+    std::string yamlFileName_from_dictionary;
+
+    if(!nodeHandle.getParam(paramterName, yamlFileName_from_dictionary))
+    {
+        ROS_ERROR_STREAM("[PARAMETER SERVICE] Missing parameter: '" << paramterName << "'");
+        return false;
+    }
+
+    // Instantiate a local variable for the command string that will be passed to the "system":
+    std::string cmd;
+
+    // Get the abolute path to "d_fall_pps":
+    std::string d_fall_pps_path = ros::package::getPath("d_fall_pps");
+
+    // Construct the system command string for (re-)loading the parameters:
+    cmd = "rosparam load " + d_fall_pps_path + "/param" + "/" + yamlFileName_from_dictionary + ".yaml " + m_base_namespace + "/" + yamlFileName_from_dictionary;
+
+    // Let the user know what is about to happen
+    ROS_INFO_STREAM("[PARAMETER SERVICE] The following path will be used for locating the .yaml file: " << d_fall_pps_path  << " The comand line string sent to the 'system' is: " << cmd );
+
+    system(cmd.c_str());
+
+    // Pause breifly to ensure that the yaml file is fully loaded
+    ros::Duration(0.5).sleep();
+
+    return true;
+}
+
+
 
 
 
@@ -358,6 +398,16 @@ int main(int argc, char* argv[])
             break;
         }
     }
+
+
+    // Advertise the service for loading Yaml Files
+    ros::ServiceServer service = nodeHandle.advertiseService("LoadYamlFiles", loadYamlFiles);
+
+
+
+    // LOAD THE LIST OF YAML FILE NAMES
+
+
 
 
     ROS_INFO("[PARAMETER SERVICE] Service ready :-)");

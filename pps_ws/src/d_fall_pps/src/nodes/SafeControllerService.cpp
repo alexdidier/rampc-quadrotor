@@ -490,7 +490,35 @@ int main(int argc, char* argv[]) {
     // FINALLY, FETCH ANY PARAMETERS REQUIRED FROM THESE "PARAMETER SERVICES"
 
     // Call the class function that loads the parameters for this class.
+
+    // Sleep for some time (in seconds)
+    ros::Duration(1.0).sleep();
+
+    // Ask the Paramter Service to load the respective YAML file
+    std::string namespace_to_own_agent_loadYamlFiles_service = namespace_to_own_agent_parameter_service + "/LoadYamlFiles";
+    loadYamlFilesService_own_agent = ros::service::createClient<LoadYamlFiles>(namespace_to_own_agent_loadYamlFiles_service, true);
+    ROS_INFO_STREAM("[SAFE CONTROLLER] Loaded service: " << loadYamlFilesService_own_agent.getService());
+
+    LoadYamlFiles loadYamlFilesService;
+    std::vector<std::string> yamlFileNames_to_load = {"SafeController"};
+    loadYamlFilesService.request.yamlFileNames = yamlFileNames_to_load;
+    bool success = loadYamlFilesService_own_agent.call(loadYamlFilesService);
+
+    ROS_INFO_STREAM("[SAFE CONTROLLER] called Laod Yaml File service with success = " << success);
+
+    ros::Duration(2.0).sleep();
+
     fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
+
+
+    // DEBUGGING
+    // Add the "CustomController" namespace to the "nodeHandle"
+    //ros::NodeHandle nodeHandle_for_safeController(nodeHandle, "SafeController");
+    // > The mass of the crazyflie
+    //float temp_mass = getParameterFloat(nodeHandle_for_safeController, "mass");
+    //ROS_INFO_STREAM("[SAFE CONTROLLER] DEBUGGING: the fetched SafeController/mass = " << temp_mass);
+
+
 
     // *********************************************************************************
 

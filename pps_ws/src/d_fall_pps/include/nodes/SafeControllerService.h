@@ -54,6 +54,7 @@
 #include "d_fall_pps/Setpoint.h"
 #include "d_fall_pps/ControlCommand.h"
 #include "d_fall_pps/Controller.h"
+#include "d_fall_pps/LoadYamlFiles.h"
 
 #include <std_msgs/Int32.h>
 
@@ -106,6 +107,9 @@ using namespace d_fall_pps;
 //     V V   AAAAA  R  R    I   AAAAA  B   B  L      E          S
 //      V    A   A  R   R  III  A   A  BBBB   LLLLL  EEEEE  SSSS
 //    ----------------------------------------------------------------------------------
+
+// The Load Yaml Files Service
+ros::ServiceClient loadYamlFilesService_own_agent;
 
 std::vector<float>  ffThrust(4);
 std::vector<float>  feedforwardMotor(4);

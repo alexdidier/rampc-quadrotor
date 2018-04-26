@@ -986,7 +986,7 @@ int main(int argc, char* argv[]) {
     // FINALLY, FETCH ANY PARAMETERS REQUIRED FROM THESE "PARAMETER SERVICES"
 
 	// Call the class function that loads the parameters for this class.
-    fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
+    //fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
 
     // *********************************************************************************
 

@@ -52,6 +52,7 @@
 //#include <std_msgs/String.h>
 
 #include "d_fall_pps/Controller.h"
+#include "d_fall_pps/LoadYamlFiles.h"
 
 // Include the shared definitions
 #include "nodes/ParameterServiceDefinitions.h"
@@ -119,3 +120,5 @@ ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_self;
 //    ----------------------------------------------------------------------------------
 
 void requestLoadControllerYamlCallback(const std_msgs::Int32& msg);
+
+bool loadYamlFiles(LoadYamlFiles::Request &request, LoadYamlFiles::Response &response);
