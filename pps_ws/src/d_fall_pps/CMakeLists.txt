@@ -19,6 +19,25 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 
+
+# VICON DATASTREAM SDK PACKAGE
+# Ensure that the cache variable where the result would be stored is clear
+message(STATUS "NOTE: Prior to being unset: VICON_LIBRARY = " ${VICON_LIBRARY})
+unset(VICON_LIBRARY CACHE)
+message(STATUS "NOTE: After being unset: VICON_LIBRARY = " ${VICON_LIBRARY})
+
+# Find the Vicon Data Stream SDK Pacakge
+find_library(VICON_LIBRARY ViconDataStreamSDK_CPP PATHS lib/vicon NO_DEFAULT_PATH)
+message(STATUS "NOTE: After calling find_library(): VICON_LIBRARY = " ${VICON_LIBRARY})
+
+# Let the user know if the library was found or not
+if(VICON_LIBRARY)
+	message(STATUS "NOTE: the Vicon Data Stream SDK library was found")
+else()
+	message(STATUS "NOTE: the Vicon Data Stream SDK library was NOT found")
+endif()
+
+
 # GUI -- Add precompiler definitions to include ROS things in GUI compilation
 add_definitions(-DCATKIN_MAKE)
 
@@ -240,7 +259,10 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/d_fall_pps_node.cpp)
 
-add_executable(ViconDataPublisher       src/nodes/ViconDataPublisher.cpp)
+if(VICON_LIBRARY)
+	add_executable(ViconDataPublisher       src/nodes/ViconDataPublisher.cpp)
+endif()
+
 add_executable(PPSClient                src/nodes/PPSClient.cpp)
 add_executable(SafeControllerService    src/nodes/SafeControllerService.cpp)
 add_executable(DemoControllerService    src/nodes/DemoControllerService.cpp)
@@ -289,8 +311,10 @@ qt5_use_modules(student_GUI Widgets)
 
 
 
+if(VICON_LIBRARY)
+	add_dependencies(ViconDataPublisher       d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+endif()
 
-add_dependencies(ViconDataPublisher       d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(PPSClient                d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(SafeControllerService    d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(DemoControllerService    d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
@@ -320,10 +344,12 @@ add_dependencies(student_GUI d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_
 #   ${catkin_LIBRARIES}
 # )
 
-find_library(VICON_LIBRARY ViconDataStreamSDK_CPP HINTS lib/vicon)
+# find_library(VICON_LIBRARY ViconDataStreamSDK_CPP HINTS lib/vicon)
 
-target_link_libraries(ViconDataPublisher ${catkin_LIBRARIES})
-target_link_libraries(ViconDataPublisher ${VICON_LIBRARY})
+if(VICON_LIBRARY)
+	target_link_libraries(ViconDataPublisher ${catkin_LIBRARIES})
+	target_link_libraries(ViconDataPublisher ${VICON_LIBRARY})
+endif()
 
 target_link_libraries(PPSClient                ${catkin_LIBRARIES})
 target_link_libraries(SafeControllerService    ${catkin_LIBRARIES})
