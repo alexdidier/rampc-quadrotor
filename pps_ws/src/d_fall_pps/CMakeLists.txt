@@ -17,7 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   roslib
   )
 
-find_package (Eigen3 3.3 REQUIRED NO_MODULE)
+find_package (Eigen3 3.3 NO_MODULE)
 
 
 # VICON DATASTREAM SDK PACKAGE
@@ -355,7 +355,11 @@ target_link_libraries(PPSClient                ${catkin_LIBRARIES})
 target_link_libraries(SafeControllerService    ${catkin_LIBRARIES})
 target_link_libraries(DemoControllerService    ${catkin_LIBRARIES})
 target_link_libraries(StudentControllerService ${catkin_LIBRARIES})
-target_link_libraries(MpcControllerService     ${catkin_LIBRARIES} Eigen3::Eigen)
+if(Eigen3_FOUND)
+  target_link_libraries(MpcControllerService     ${catkin_LIBRARIES} Eigen3::Eigen)
+else()
+  target_link_libraries(MpcControllerService     ${catkin_LIBRARIES})
+endif()
 target_link_libraries(CentralManagerService    ${catkin_LIBRARIES})
 target_link_libraries(ParameterService         ${catkin_LIBRARIES})
 
