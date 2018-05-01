@@ -223,6 +223,13 @@ void MainGUIWindow::_init()
 
     ui->checkBox_vicon_highlight_markers->setEnabled(false);
 
+    // Add keyboard shortcuts
+    // > for "all motors off", press the space bar
+    ui->all_motors_off_button->setShortcut(tr("Space"));
+    // > for "kill GUI node", press "CTRL+C" while the GUI window is the focus
+    QShortcut* close_GUI_shortcut = new QShortcut(QKeySequence(tr("CTRL+C")), this, SLOT(close()));
+
+
     #ifdef CATKIN_MAKE
     _rosNodeThread->init();
     qRegisterMetaType<ptrToMessage>("ptrToMessage");

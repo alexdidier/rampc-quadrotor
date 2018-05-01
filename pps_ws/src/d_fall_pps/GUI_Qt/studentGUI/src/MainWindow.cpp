@@ -154,6 +154,13 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     ui->error_label->setStyleSheet("QLabel { color : red; }");
     ui->error_label->clear();
 
+    // Add keyboard shortcuts
+    // > for "all motors off", press the space bar
+    ui->motors_OFF_button->setShortcut(tr("Space"));
+    // > for "kill GUI node", press "CTRL+C" while the GUI window is the focus
+    QShortcut* close_GUI_shortcut = new QShortcut(QKeySequence(tr("CTRL+C")), this, SLOT(close()));
+
+
     initialize_demo_setpoint();
     initialize_student_setpoint();
     initialize_mpc_setpoint();
