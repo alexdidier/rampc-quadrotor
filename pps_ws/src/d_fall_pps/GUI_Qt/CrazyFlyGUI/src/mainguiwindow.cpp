@@ -44,6 +44,7 @@
 #include <QMetaType>
 #include <QDir>
 #include <regex>
+#include <QShortcut>
 
 #ifdef CATKIN_MAKE
 #include "d_fall_pps/UnlabeledMarker.h"

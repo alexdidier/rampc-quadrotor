@@ -33,6 +33,7 @@
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
 #include <string>
+#include <QShortcut>
 
 #include <ros/ros.h>
 #include <ros/network.h>
