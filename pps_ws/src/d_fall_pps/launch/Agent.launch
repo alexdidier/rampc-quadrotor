@@ -79,7 +79,7 @@
 				file    = "$(find d_fall_pps)/param/YamlFileNames.yaml"
 				ns      = "YamlFileNames"
 			/>
-			<!-- rosparam
+			<rosparam
 				command = "load"
 				file    = "$(find d_fall_pps)/param/SafeController.yaml"
 				ns      = "SafeController"
@@ -98,7 +98,7 @@
 				command = "load"
 				file    = "$(find d_fall_pps)/param/MpcController.yaml"
 				ns      = "MpcController"
-			/ -->
+			/>
 		</node>
 
 		<!-- AGENT GUI (aka. the "student GUI") -->

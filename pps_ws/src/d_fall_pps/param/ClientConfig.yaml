@@ -1,7 +1,7 @@
-safeController:    "SafeControllerService/RateController"
-demoController:    "DemoControllerService/DemoController"
-studentController: "StudentControllerService/StudentController"
-mpcController:     "MpcControllerService/MpcController"
+#safeController:    "SafeControllerService/RateController"
+#demoController:    "DemoControllerService/DemoController"
+#studentController: "StudentControllerService/StudentController"
+#mpcController:     "MpcControllerService/MpcController"
 
 strictSafety: false
 angleMargin: 0.6
