@@ -139,6 +139,17 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
         // Re-load the parameters of the demo controller:
         cmd = "rosparam load " + d_fall_pps_path + "/param/MpcController.yaml " + m_base_namespace + "/MpcController";
     }
+    //    ----------------------------------------
+    // FOR THE REMOTE CONTROLLER
+    else if (
+        ((controller_to_load_yaml==LOAD_YAML_REMOTE_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR))
+        ||
+        ((controller_to_load_yaml==LOAD_YAML_REMOTE_CONTROLLER_AGENT)       && (my_type==TYPE_AGENT))
+    )
+    {
+        // Re-load the parameters of the demo controller:
+        cmd = "rosparam load " + d_fall_pps_path + "/param/RemoteController.yaml " + m_base_namespace + "/RemoteController";
+    }
     else
     {
         // Let the user know that the command was not recognised

@@ -43,6 +43,7 @@
 #include "d_fall_pps/CrazyflieContext.h"
 #include "d_fall_pps/CrazyflieData.h"
 #include "d_fall_pps/Setpoint.h"
+#include "d_fall_pps/ViconSubscribeObjectName.h"
 
 
 // Types of controllers being used:
@@ -50,6 +51,7 @@
 #define DEMO_CONTROLLER    2
 #define STUDENT_CONTROLLER 3
 #define MPC_CONTROLLER     4
+#define REMOTE_CONTROLLER  5
 
 
 // Commands for CrazyRadio
@@ -69,6 +71,7 @@
 #define CMD_USE_DEMO_CONTROLLER      2
 #define CMD_USE_STUDENT_CONTROLLER   3
 #define CMD_USE_MPC_CONTROLLER       4
+#define CMD_USE_REMOTE_CONTROLLER    5
 
 #define CMD_CRAZYFLY_TAKE_OFF        11
 #define CMD_CRAZYFLY_LAND            12
@@ -89,11 +92,13 @@
 #define LOAD_YAML_DEMO_CONTROLLER_AGENT           2
 #define LOAD_YAML_STUDENT_CONTROLLER_AGENT        3
 #define LOAD_YAML_MPC_CONTROLLER_AGENT            4
+#define LOAD_YAML_REMOTE_CONTROLLER_AGENT         5
 
 #define LOAD_YAML_SAFE_CONTROLLER_COORDINATOR     11
 #define LOAD_YAML_DEMO_CONTROLLER_COORDINATOR     12
 #define LOAD_YAML_STUDENT_CONTROLLER_COORDINATOR  13
 #define LOAD_YAML_MPC_CONTROLLER_COORDINATOR      14
+#define LOAD_YAML_REMOTE_CONTROLLER_COORDINATOR   15
 
 // Universal constants
 #define PI 3.141592653589
@@ -136,18 +141,27 @@ private slots:
     void on_load_demo_yaml_button_clicked();
     void on_load_student_yaml_button_clicked();
     void on_load_mpc_yaml_button_clicked();
+    void on_load_remote_yaml_button_clicked();
 
     // # Enable controllers
     void on_enable_safe_controller_clicked();
     void on_enable_demo_controller_clicked();
     void on_enable_student_controller_clicked();
     void on_enable_mpc_controller_clicked();
+    void on_enable_remote_controller_clicked();
 
     
 
     void on_customButton_1_clicked();
     void on_customButton_2_clicked();
     void on_customButton_3_clicked();
+
+    // Buttons within the REMOTE controller tab
+    void on_remote_subscribe_button_clicked();
+    void on_remote_unsubscribe_button_clicked();
+    void on_remote_activate_button_clicked();
+    void on_remote_deactivate_button_clicked();
+
 
 
 private:
@@ -164,6 +178,7 @@ private:
     ros::Timer m_timer_yaml_file_for_demo_controller;
     ros::Timer m_timer_yaml_file_for_student_controller;
     ros::Timer m_timer_yaml_file_for_mpc_controller;
+    ros::Timer m_timer_yaml_file_for_remote_controller;
 
     int m_student_id;
     CrazyflieContext m_context;
@@ -185,16 +200,24 @@ private:
     ros::Publisher controllerSetpointPublisher;
     ros::Subscriber safeSetpointSubscriber;
 
-    // SUBSCRIBERS AND PUBLISHERS FOR THE SETPOINTS:
-    // > For the Demo Controller
+    // SUBSCRIBERS AND PUBLISHERS:
+    // > For the Demo Controller SETPOINTS
     ros::Publisher  demoSetpointPublisher;
     ros::Subscriber demoSetpointSubscriber;
-    // > For the Student Controller
+    // > For the Student Controller SETPOINTS
     ros::Publisher  studentSetpointPublisher;
     ros::Subscriber studentSetpointSubscriber;
-    // > For the MPC Controller
+    // > For the MPC Controller SETPOINTS
     ros::Publisher  mpcSetpointPublisher;
     ros::Subscriber mpcSetpointSubscriber;
+    // > For the Remote Controller subscribe action
+    ros::Publisher remoteSubscribePublisher;
+    // > For the Remote Controller activate action
+    ros::Publisher remoteActivatePublisher;
+    // > For the Remote Controller data
+    ros::Subscriber remoteDataSubscriber;
+    // > For the Remote Control setpoint
+    ros::Subscriber remoteControlSetpointSubscriber;
 
 
 
@@ -229,6 +252,11 @@ private:
     void studentSetpointCallback(const Setpoint& newSetpoint);
     void mpcSetpointCallback(const Setpoint& newSetpoint);
 
+
+    void remoteDataCallback(const CrazyflieData& objectData);
+    void remoteControlSetpointCallback(const CrazyflieData& setpointData);
+    
+
     void DBChangedCallback(const std_msgs::Int32& msg);
 
     // # Load Yaml when acting as the GUI for an Agent
@@ -236,6 +264,7 @@ private:
     void demoYamlFileTimerCallback(const ros::TimerEvent&);
     void studentYamlFileTimerCallback(const ros::TimerEvent&);
     void mpcYamlFileTimerCallback(const ros::TimerEvent&);
+    void remoteYamlFileTimerCallback(const ros::TimerEvent&);
     
 
 
@@ -260,6 +289,7 @@ private:
     void highlightDemoControllerTab();
     void highlightStudentControllerTab();
     void highlightMpcControllerTab();
+    void highlightRemoteControllerTab();
 
     bool setpointInsideBox(Setpoint setpoint, CrazyflieContext context);
     Setpoint correctSetpointBox(Setpoint setpoint, CrazyflieContext context);

@@ -87,6 +87,7 @@
 #define DEMO_CONTROLLER      2
 #define STUDENT_CONTROLLER   3
 #define MPC_CONTROLLER       4
+#define REMOTE_CONTROLLER    5
 
 // The constants that "command" changes in the
 // operation state of this agent
@@ -94,6 +95,7 @@
 #define CMD_USE_DEMO_CONTROLLER      2
 #define CMD_USE_STUDENT_CONTROLLER   3
 #define CMD_USE_MPC_CONTROLLER       4
+#define CMD_USE_REMOTE_CONTROLLER    5
 
 #define CMD_CRAZYFLY_TAKE_OFF        11
 #define CMD_CRAZYFLY_LAND            12
@@ -145,10 +147,12 @@ int agentID;
 ros::ServiceClient safeController;
 // The Demo controller specified in the ClientConfig.yaml
 ros::ServiceClient demoController;
-// The Demo controller specified in the ClientConfig.yaml
+// The Student controller specified in the ClientConfig.yaml
 ros::ServiceClient studentController;
-// The Demo controller specified in the ClientConfig.yaml
+// The MPC controller specified in the ClientConfig.yaml
 ros::ServiceClient mpcController;
+// The Remote controller specified in the ClientConfig.yaml
+ros::ServiceClient remoteController;
 
 
 //values for safteyCheck
@@ -264,6 +268,8 @@ void crazyRadioCommandAllAgentsCallback(const std_msgs::Int32& msg);
 
 
 
+void viconCallback(const ViconData& viconData);
+
 // > For the LOADING of YAML PARAMETERS
 void yamlReadyForFetchCallback(const std_msgs::Int32& msg);
 void fetchYamlParametersForSafeController(ros::NodeHandle& nodeHandle);
@@ -290,6 +296,7 @@ void loadSafeController();
 void loadDemoController();
 void loadStudentController();
 void loadMpcController();
+void loadRemoteController();
 
 void sendMessageUsingController(int controller);
 void setInstantController(int controller);

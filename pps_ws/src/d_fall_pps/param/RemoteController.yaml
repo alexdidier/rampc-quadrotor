@@ -1,3 +1,34 @@
+# ***************************************************************************** #
+# PARAMETERS SPECIFIC TO THE REMOTE CONTROL FEATURE
+
+# Vicon object name of the Remote to follow
+default_viconObjectName_forRemote : 'DFALL_REMOTE01'
+
+# Boolean for whether the Remote's state should be published as a message
+shouldPublishRemote_xyz_rpy : True
+
+# Boolean for whether the Remote's state should be display in the terminal window
+shouldDisplayRemote_xyz_rpy : False
+
+# Roll and pitch limit (in degrees for angles)
+remoteControlLimit_roll_degrees  : 15
+remoteControlLimit_pitch_degrees : 15
+
+# Factor by which to reduce the remote control input
+remoteConrtolSetpointFactor_roll   : 0.5
+remoteConrtolSetpointFactor_pitch  : 0.5
+remoteConrtolSetpointFactor_yaw    : 1.0
+remoteConrtolSetpointFactor_z      : 1.0
+
+# LQR Gain matrix for tracking the angle commands from the Crazyflie
+gainMatrixRollRate_forRemoteControl   :  [ 5.00, 0.00, 0.00]
+gainMatrixPitchRate_forRemoteControl  :  [ 0.00, 5.00, 0.00]
+gainMatrixYawRate_forRemoteControl    :  [ 0.00, 0.00, 2.80]
+
+# ***************************************************************************** #
+
+
+
 # Mass of the crazyflie
 mass : 29
 
@@ -11,21 +42,8 @@ motorPoly : [5.484560e-4, 1.032633e-6, 2.130295e-11]
 # Boolean for whether to execute the convert into body frame function
 shouldPerformConvertIntoBodyFrame : true
 
-# Boolean indiciating whether the (x,y,z,yaw) of this agent should be published or not
-shouldPublishCurrent_xyz_yaw : false
-
-# Boolean indicating whether the (x,y,z,yaw) setpoint of this agent should adapted in
-# an attempt to follow the "my_current_xyz_yaw_topic" from another agent
-shouldFollowAnotherAgent : false
-
-# The order in which agents should follow eachother
-# > This parameter is a vector of integers that specifies  agent ID's
-# > The order of the agent ID's is the ordering of the line formation
-# > i.e., the first ID is the leader, the second ID should follow the first ID, and so on
-follow_in_a_line_agentIDs : [1, 2, 3]
-
 # Boolean indiciating whether the "Debug Message" of this agent should be published or not
-shouldPublishDebugMessage : true
+shouldPublishDebugMessage : false
 
 # Boolean indiciating whether the debugging ROS_INFO_STREAM should be displayed or not
 shouldDisplayDebugInfo : false
@@ -64,18 +82,6 @@ controller_mode : 3
 estimator_method : 1
 
 
-# The LQR Controller parameters for "mode = 1"
-gainMatrixMotor1                    :  [ -0.0180, 0.0180, 0.0350,-0.0110, 0.0110, 0.0260,-0.0220,-0.0220,-0.0110,-0.00024,-0.00024,-0.00045]
-gainMatrixMotor2                    :  [  0.0180, 0.0180, 0.0350, 0.0110, 0.0110, 0.0260,-0.0220, 0.0220, 0.0110,-0.00024, 0.00024, 0.00045]
-gainMatrixMotor3                    :  [  0.0180,-0.0180, 0.0350, 0.0110,-0.0110, 0.0260, 0.0220, 0.0220,-0.0110, 0.00024, 0.00024,-0.00045]
-gainMatrixMotor4                    :  [ -0.0180,-0.0180, 0.0350,-0.0110,-0.0110, 0.0260, 0.0220,-0.0220, 0.0110, 0.00024,-0.00024, 0.00045]
-
-# The LQR Controller parameters for "mode = 2"
-gainMatrixThrust_TwelveStateVector  :  [ 0.0000, 0.0000, 0.9800, 0.0000, 0.0000, 0.25, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]
-gainMatrixRollTorque                :  [ 0.0000,-0.0017, 0.0000, 0.0000,-0.0009, 0.00, 0.0019, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]
-gainMatrixPitchTorque               :  [ 0.0017, 0.0000, 0.0000, 0.0009, 0.0000, 0.00, 0.0000, 0.0019, 0.0000, 0.0000, 0.0000, 0.0000]
-gainMatrixYawTorque                 :  [ 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.00, 0.0000, 0.0000, 0.0002, 0.0000, 0.0000, 0.0000]
-
 # The LQR Controller parameters for "mode = 3"
 gainMatrixThrust_NineStateVector    :  [ 0.00, 0.00, 0.98, 0.00, 0.00, 0.25, 0.00, 0.00, 0.00]
 gainMatrixRollRate                  :  [ 0.00,-1.80, 0.00, 0.00,-1.38, 0.00, 5.20, 0.00, 0.00]
@@ -87,7 +93,6 @@ gainMatrixThrust_SixStateVector     :  [ 0.00, 0.00, 0.98, 0.00, 0.00, 0.25]
 gainMatrixRollAngle                 :  [ 0.00,-0.20, 0.00, 0.00,-0.20, 0.00]
 gainMatrixPitchAngle                :  [ 0.20, 0.00, 0.00, 0.20, 0.00, 0.00]
 
-
 # The LQR Controller parameters for "mode = 5"
 gainMatrixThrust_SixStateVector_50Hz:  [ 0.00, 0.00, 0.82, 0.00, 0.00, 0.22]
 gainMatrixRollAngle_50Hz            :  [ 0.00,-0.31, 0.00, 0.00,-0.25, 0.00]
@@ -96,13 +101,6 @@ gainMatrixPitchAngle_50Hz           :  [ 0.31, 0.00, 0.00, 0.25, 0.00, 0.00]
 gainMatrixRollRate_Nested           :  [ 4.00, 0.00, 0.00]
 gainMatrixPitchRate_Nested          :  [ 0.00, 4.00, 0.00]
 gainMatrixYawRate_Nested            :  [ 0.00, 0.00, 2.30]
-
-
-# The paramters for the "Angle Reponse Test" controller mode
-angleResponseTest_pitchAngle_degrees : 25
-angleResponseTest_distance_meters    : 0.02
-
-
 
 
 # The max and minimum thrust for a 16-bit command
@@ -121,7 +119,3 @@ PMKF_Kinf_for_positions       :  [  0.3277,12.9648]
 PMKF_Ahat_row1_for_angles     :  [  0.6954, 0.0035]
 PMKF_Ahat_row2_for_angles     :  [-11.0342, 0.9448]
 PMKF_Kinf_for_angles          :  [  0.3046,11.0342]
-
-#PMKF_Ahat_row1_for_angles     :  [  0.6723, 0.0034]
-#PMKF_Ahat_row2_for_angles     :  [-12.9648, 0.9352]
-#PMKF_Kinf_for_angles          :  [  0.3277,12.9648]

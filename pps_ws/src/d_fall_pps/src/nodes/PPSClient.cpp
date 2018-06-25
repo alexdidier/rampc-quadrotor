@@ -206,7 +206,8 @@ void goToControllerSetpoint()
 
 
 //is called when new data from Vicon arrives
-void viconCallback(const ViconData& viconData) {
+void viconCallback(const ViconData& viconData)
+{
 	for(std::vector<CrazyflieData>::const_iterator it = viconData.crazyflies.begin(); it != viconData.crazyflies.end(); ++it) {
 		CrazyflieData global = *it;
 
@@ -296,6 +297,9 @@ void viconCallback(const ViconData& viconData) {
                                 break;
                             case MPC_CONTROLLER:
                                 success = mpcController.call(controllerCall);
+                                break;
+                            case REMOTE_CONTROLLER:
+                                success = remoteController.call(controllerCall);
                                 break;
                             default:
                                 ROS_ERROR("[PPS CLIENT] the current controller was not recognised");
@@ -446,6 +450,11 @@ void commandCallback(const std_msgs::Int32& commandMsg) {
         case CMD_USE_MPC_CONTROLLER:
             ROS_INFO("[PPS CLIENT] USE_MPC_CONTROLLER Command received");
             setControllerUsed(MPC_CONTROLLER);
+            break;
+
+        case CMD_USE_REMOTE_CONTROLLER:
+            ROS_INFO("[PPS CLIENT] USE_REMOTE_CONTROLLER Command received");
+            setControllerUsed(REMOTE_CONTROLLER);
             break;
 
     	case CMD_CRAZYFLY_TAKE_OFF:
@@ -808,6 +817,21 @@ void loadMpcController()
     ROS_INFO_STREAM("[PPS CLIENT] Loaded mpc controller " << mpcController.getService());
 }
 
+void loadRemoteController()
+{
+    ros::NodeHandle nodeHandle("~");
+
+    std::string remoteControllerName;
+    if(!nodeHandle.getParam("remoteController", remoteControllerName))
+    {
+        ROS_ERROR("[PPS CLIENT] Failed to get remote controller name");
+        return;
+    }
+
+    remoteController = ros::service::createClient<Controller>(remoteControllerName, true);
+    ROS_INFO_STREAM("[PPS CLIENT] Loaded remote controller " << remoteController.getService());
+}
+
 void sendMessageUsingController(int controller)
 {
     // send a message in topic for the studentGUI to read it
@@ -833,6 +857,9 @@ void setInstantController(int controller) //for right now, temporal use
             break;
         case MPC_CONTROLLER:
             loadMpcController();
+            break;
+        case REMOTE_CONTROLLER:
+            loadRemoteController();
             break;
         default:
             break;

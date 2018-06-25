@@ -59,7 +59,7 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     setCrazyRadioStatus(DISCONNECTED);
 
     m_ros_namespace = ros::this_node::getNamespace();
-    ROS_INFO("Student GUI node namespace: %s", m_ros_namespace.c_str());
+    ROS_INFO("[Student GUI] node namespace: %s", m_ros_namespace.c_str());
 
     qRegisterMetaType<ptrToMessage>("ptrToMessage");
     QObject::connect(m_rosNodeThread, SIGNAL(newViconData(const ptrToMessage&)), this, SLOT(updateNewViconData(const ptrToMessage&)));
@@ -67,16 +67,27 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     ros::NodeHandle nodeHandle(m_ros_namespace);
 
 
-    // SUBSCRIBERS AND PUBLISHERS FOR THE SETPOINTS:
-    // > For the Demo Controller
+    // SUBSCRIBERS AND PUBLISHERS:
+    // > For the Demo Controller SETPOINTS
     demoSetpointPublisher  = nodeHandle.advertise<Setpoint>("DemoControllerService/Setpoint", 1);
     demoSetpointSubscriber = nodeHandle.subscribe("DemoControllerService/Setpoint", 1, &MainWindow::demoSetpointCallback, this);
-    // > For the Student Controller
+    // > For the Student Controller SETPOINTS
     studentSetpointPublisher  = nodeHandle.advertise<Setpoint>("StudentControllerService/Setpoint", 1);
     studentSetpointSubscriber = nodeHandle.subscribe("StudentControllerService/Setpoint", 1, &MainWindow::studentSetpointCallback, this);
-    // > For the MPC Controller
+    // > For the MPC Controller SETPOINTS
     mpcSetpointPublisher  = nodeHandle.advertise<Setpoint>("MpcControllerService/Setpoint", 1);
     mpcSetpointSubscriber = nodeHandle.subscribe("MpcControllerService/Setpoint", 1, &MainWindow::mpcSetpointCallback, this);
+
+
+    // > For the Remote Controller subscribe action
+    remoteSubscribePublisher = nodeHandle.advertise<ViconSubscribeObjectName>("RemoteControllerService/ViconSubscribeObjectName", 1);
+    // > For the Remote Controller activate action
+    remoteActivatePublisher = nodeHandle.advertise<std_msgs::Int32>("RemoteControllerService/Activate", 1);
+    // > For the Remote Controller data
+    remoteDataSubscriber = nodeHandle.subscribe("RemoteControllerService/RemoteData", 1, &MainWindow::remoteDataCallback, this);;
+    // > For the Remote Controller data
+    remoteControlSetpointSubscriber = nodeHandle.subscribe("RemoteControllerService/RemoteControlSetpoint", 1, &MainWindow::remoteControlSetpointCallback, this);;
+
 
     // subscribers
     crazyRadioStatusSubscriber = nodeHandle.subscribe("CrazyRadio/CrazyRadioStatus", 1, &MainWindow::crazyRadioStatusCallback, this);
@@ -196,6 +207,7 @@ void MainWindow::highlightSafeControllerTab()
     ui->tabWidget->tabBar()->setTabTextColor(1, Qt::black);
     ui->tabWidget->tabBar()->setTabTextColor(2, Qt::black);
     ui->tabWidget->tabBar()->setTabTextColor(3, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(4, Qt::black);
 }
 void MainWindow::highlightDemoControllerTab()
 {
@@ -203,6 +215,7 @@ void MainWindow::highlightDemoControllerTab()
     ui->tabWidget->tabBar()->setTabTextColor(1, Qt::green);
     ui->tabWidget->tabBar()->setTabTextColor(2, Qt::black);
     ui->tabWidget->tabBar()->setTabTextColor(3, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(4, Qt::black);
 }
 void MainWindow::highlightStudentControllerTab()
 {
@@ -210,6 +223,7 @@ void MainWindow::highlightStudentControllerTab()
     ui->tabWidget->tabBar()->setTabTextColor(1, Qt::black);
     ui->tabWidget->tabBar()->setTabTextColor(2, Qt::green);
     ui->tabWidget->tabBar()->setTabTextColor(3, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(4, Qt::black);
 }
 void MainWindow::highlightMpcControllerTab()
 {
@@ -217,6 +231,15 @@ void MainWindow::highlightMpcControllerTab()
     ui->tabWidget->tabBar()->setTabTextColor(1, Qt::black);
     ui->tabWidget->tabBar()->setTabTextColor(2, Qt::black);
     ui->tabWidget->tabBar()->setTabTextColor(3, Qt::green);
+    ui->tabWidget->tabBar()->setTabTextColor(4, Qt::black);
+}
+void MainWindow::highlightRemoteControllerTab()
+{
+    ui->tabWidget->tabBar()->setTabTextColor(0, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(1, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(2, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(3, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(4, Qt::green);
 }
 
 void MainWindow::DBChangedCallback(const std_msgs::Int32& msg)
@@ -240,6 +263,9 @@ void MainWindow::controllerUsedChangedCallback(const std_msgs::Int32& msg)
             break;
         case MPC_CONTROLLER:
             highlightMpcControllerTab();
+            break;
+        case REMOTE_CONTROLLER:
+            highlightRemoteControllerTab();
             break;
         default:
             break;
@@ -811,6 +837,37 @@ void MainWindow::mpcYamlFileTimerCallback(const ros::TimerEvent&)
 
 
 
+
+void MainWindow::on_load_remote_yaml_button_clicked()
+{
+    // Set the "load remote yaml" button to be disabled
+    ui->load_remote_yaml_button->setEnabled(false);
+
+    // Send a message requesting the parameters from the YAML
+    // file to be reloaded for the remote controller
+    std_msgs::Int32 msg;
+    msg.data = LOAD_YAML_REMOTE_CONTROLLER_AGENT;
+    this->requestLoadControllerYamlPublisher.publish(msg);
+    ROS_INFO("[STUDENT GUI] Request load of remote controller YAML published");
+
+    // Start a timer which will enable the button in its callback
+    // > This is required because the agent node waits some time between
+    //   re-loading the values from the YAML file and then assigning then
+    //   to the local variable of the agent.
+    // > Thus we use this timer to prevent the user from clicking the
+    //   button in the GUI repeatedly.
+    ros::NodeHandle nodeHandle("~");
+    m_timer_yaml_file_for_remote_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::remoteYamlFileTimerCallback, this, true);
+}
+
+void MainWindow::remoteYamlFileTimerCallback(const ros::TimerEvent&)
+{
+    // Enble the "load remote yaml" button again
+    ui->load_remote_yaml_button->setEnabled(true);
+}
+
+
+
 void MainWindow::requestLoadControllerYaml_from_my_GUI_Callback(const std_msgs::Int32& msg)
 {
     // Extract from the "msg" for which controller the YAML
@@ -883,6 +940,21 @@ void MainWindow::requestLoadControllerYaml_from_my_GUI_Callback(const std_msgs::
 
             break;
 
+        case LOAD_YAML_REMOTE_CONTROLLER_AGENT:
+        case LOAD_YAML_REMOTE_CONTROLLER_COORDINATOR:
+            // Set the "load remote yaml" button to be disabled
+            ui->load_remote_yaml_button->setEnabled(false);
+
+            // Start a timer which will enable the button in its callback
+            // > This is required because the agent node waits some time between
+            //   re-loading the values from the YAML file and then assigning then
+            //   to the local variable of the agent.
+            // > Thus we use this timer to prevent the user from clicking the
+            //   button in the GUI repeatedly.
+            m_timer_yaml_file_for_remote_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::remoteYamlFileTimerCallback, this, true);    
+
+            break;
+
         default:
             ROS_INFO("Unknown 'all controllers to load yaml' command, thus nothing will be disabled");
             break;
@@ -922,6 +994,13 @@ void MainWindow::on_enable_mpc_controller_clicked()
     this->PPSClientCommandPublisher.publish(msg);
 }
 
+void MainWindow::on_enable_remote_controller_clicked()
+{
+    std_msgs::Int32 msg;
+    msg.data = CMD_USE_REMOTE_CONTROLLER;
+    this->PPSClientCommandPublisher.publish(msg);
+}
+
 
 
 // # Custom command buttons
@@ -952,6 +1031,102 @@ void MainWindow::on_customButton_3_clicked()
     this->PPSClientStudentCustomButtonPublisher.publish(msg_custom_button);
     ROS_INFO("Custom button 3 pressed in GUI");
 }
+
+
+
+
+
+// # Custom buttons for the REMOTE controller service
+void MainWindow::on_remote_subscribe_button_clicked()
+{
+    // Initialise the message
+    ViconSubscribeObjectName msg;
+    // Set the subscribe flag
+    msg.shouldSubscribe = true;
+    // Set the object name
+    msg.objectName = (ui->remote_object_name->text()).toUtf8().constData();
+    // Publish the message
+    this->remoteSubscribePublisher.publish(msg);
+}
+
+void MainWindow::on_remote_unsubscribe_button_clicked()
+{
+    // Initialise the message
+    ViconSubscribeObjectName msg;
+    // Set the subscribe flag
+    msg.shouldSubscribe = false;
+    // Set the object name
+    msg.objectName = (ui->remote_object_name->text()).toUtf8().constData();
+    // Publish the message
+    this->remoteSubscribePublisher.publish(msg);
+}
+
+void MainWindow::on_remote_activate_button_clicked()
+{
+    // Initialise the message
+    std_msgs::Int32 msg;
+    // Set the msg data
+    msg.data = 1;
+    // Publish the message
+    this->remoteActivatePublisher.publish(msg);
+}
+
+void MainWindow::on_remote_deactivate_button_clicked()
+{
+    // Initialise the message
+    std_msgs::Int32 msg;
+    // Set the msg data
+    msg.data = 0;
+    // Publish the message
+    this->remoteActivatePublisher.publish(msg);
+}
+
+void MainWindow::remoteDataCallback(const CrazyflieData& objectData)
+{
+    // Check if the object is occluded
+    if (objectData.occluded)
+    {
+        // Set the column heading label to have a red background
+        // > IMPORTANT: Set the background auto fill property to true
+        ui->remote_data_label->setAutoFillBackground(true);
+        // > Get the pallette currently set for the label
+        QPalette pal = ui->remote_roll_label->palette();
+        // > Set the palette property that will change the background
+        pal.setColor(QPalette::Window, QColor(Qt::red));
+        // > Update the palette for the label
+        ui->remote_data_label->setPalette(pal);
+    }
+    else
+    {
+        // Put the roll, pitch, yaw, and z data into the appropriate fields
+        ui->remote_data_roll ->setText(QString::number( objectData.roll  * RAD2DEG, 'f', 1));
+        ui->remote_data_pitch->setText(QString::number( objectData.pitch * RAD2DEG, 'f', 1));
+        ui->remote_data_yaw  ->setText(QString::number( objectData.yaw   * RAD2DEG, 'f', 1));
+        ui->remote_data_z    ->setText(QString::number( objectData.z,               'f', 2));
+
+        // Set the column heading label to have a "normal" background
+        // > IMPORTANT: Set the background auto fill property to true
+        ui->remote_data_label->setAutoFillBackground(false);
+        // > Get the pallette currently set for the roll label
+        QPalette pal = ui->remote_roll_label->palette();
+        // > Update the palette for the column heading label
+        ui->remote_data_label->setPalette(pal);
+    }
+}
+
+void MainWindow::remoteControlSetpointCallback(const CrazyflieData& setpointData)
+{
+    ui->remote_setpoint_roll ->setText(QString::number( setpointData.roll  * RAD2DEG, 'f', 1));
+    ui->remote_setpoint_pitch->setText(QString::number( setpointData.pitch * RAD2DEG, 'f', 1));
+    ui->remote_setpoint_yaw  ->setText(QString::number( setpointData.yaw   * RAD2DEG, 'f', 1));
+    ui->remote_setpoint_z    ->setText(QString::number( setpointData.z,               'f', 2));
+}
+
+
+
+
+
+
 
 Setpoint MainWindow::correctSetpointBox(Setpoint setpoint, CrazyflieContext context)
 {

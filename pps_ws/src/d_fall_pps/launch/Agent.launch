@@ -65,6 +65,15 @@
 			>
 		</node>
 
+		<!-- REMOTE CONTROLLER -->
+		<node
+			pkg    = "d_fall_pps"
+			name   = "RemoteControllerService"
+			output = "screen"
+			type   = "RemoteControllerService"
+			>
+		</node>
+
 		<!-- PARAMETER SERVICE -->
 		<node
 			pkg    = "d_fall_pps"
@@ -98,6 +107,11 @@
 				command = "load"
 				file    = "$(find d_fall_pps)/param/MpcController.yaml"
 				ns      = "MpcController"
+			/>
+			<rosparam
+				command = "load"
+				file    = "$(find d_fall_pps)/param/RemoteController.yaml"
+				ns      = "RemoteController"
 			/>
 		</node>
 

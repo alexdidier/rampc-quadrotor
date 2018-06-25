@@ -157,6 +157,7 @@ add_message_files(
   #----------------------------------------------------------------------
   DebugMsg.msg
   CustomButton.msg
+  ViconSubscribeObjectName.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -268,6 +269,7 @@ add_executable(SafeControllerService    src/nodes/SafeControllerService.cpp)
 add_executable(DemoControllerService    src/nodes/DemoControllerService.cpp)
 add_executable(StudentControllerService src/nodes/StudentControllerService.cpp)
 add_executable(MpcControllerService     src/nodes/MpcControllerService.cpp)
+add_executable(RemoteControllerService  src/nodes/RemoteControllerService.cpp)
 add_executable(CentralManagerService    src/nodes/CentralManagerService.cpp src/CrazyflieIO.cpp)
 add_executable(ParameterService         src/nodes/ParameterService.cpp)
 
@@ -320,6 +322,7 @@ add_dependencies(SafeControllerService    d_fall_pps_generate_messages_cpp ${cat
 add_dependencies(DemoControllerService    d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(StudentControllerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(MpcControllerService     d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(RemoteControllerService  d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(CentralManagerService    d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(ParameterService         d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
@@ -360,6 +363,7 @@ if(Eigen3_FOUND)
 else()
   target_link_libraries(MpcControllerService     ${catkin_LIBRARIES})
 endif()
+target_link_libraries(RemoteControllerService  ${catkin_LIBRARIES})
 target_link_libraries(CentralManagerService    ${catkin_LIBRARIES})
 target_link_libraries(ParameterService         ${catkin_LIBRARIES})
 
