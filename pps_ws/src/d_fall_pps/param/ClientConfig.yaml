@@ -3,6 +3,7 @@ demoController:    "DemoControllerService/DemoController"
 studentController: "StudentControllerService/StudentController"
 mpcController:     "MpcControllerService/MpcController"
 remoteController:  "RemoteControllerService/RemoteController"
+tuningController:  "TuningControllerService/TuningController"
 
 strictSafety: false
 angleMargin: 0.6

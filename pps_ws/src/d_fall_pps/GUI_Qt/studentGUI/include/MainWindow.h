@@ -52,6 +52,7 @@
 #define STUDENT_CONTROLLER 3
 #define MPC_CONTROLLER     4
 #define REMOTE_CONTROLLER  5
+#define TUNING_CONTROLLER  6
 
 
 // Commands for CrazyRadio
@@ -72,6 +73,7 @@
 #define CMD_USE_STUDENT_CONTROLLER   3
 #define CMD_USE_MPC_CONTROLLER       4
 #define CMD_USE_REMOTE_CONTROLLER    5
+#define CMD_USE_TUNING_CONTROLLER    6
 
 #define CMD_CRAZYFLY_TAKE_OFF        11
 #define CMD_CRAZYFLY_LAND            12
@@ -93,12 +95,14 @@
 #define LOAD_YAML_STUDENT_CONTROLLER_AGENT        3
 #define LOAD_YAML_MPC_CONTROLLER_AGENT            4
 #define LOAD_YAML_REMOTE_CONTROLLER_AGENT         5
+#define LOAD_YAML_TUNING_CONTROLLER_AGENT         6
 
 #define LOAD_YAML_SAFE_CONTROLLER_COORDINATOR     11
 #define LOAD_YAML_DEMO_CONTROLLER_COORDINATOR     12
 #define LOAD_YAML_STUDENT_CONTROLLER_COORDINATOR  13
 #define LOAD_YAML_MPC_CONTROLLER_COORDINATOR      14
 #define LOAD_YAML_REMOTE_CONTROLLER_COORDINATOR   15
+#define LOAD_YAML_TUNING_CONTROLLER_COORDINATOR   16
 
 // Universal constants
 #define PI 3.141592653589
@@ -142,6 +146,7 @@ private slots:
     void on_load_student_yaml_button_clicked();
     void on_load_mpc_yaml_button_clicked();
     void on_load_remote_yaml_button_clicked();
+    void on_load_tuning_yaml_button_clicked();
 
     // # Enable controllers
     void on_enable_safe_controller_clicked();
@@ -149,6 +154,7 @@ private slots:
     void on_enable_student_controller_clicked();
     void on_enable_mpc_controller_clicked();
     void on_enable_remote_controller_clicked();
+    void on_enable_tuning_controller_clicked();
 
     
 
@@ -161,6 +167,15 @@ private slots:
     void on_remote_unsubscribe_button_clicked();
     void on_remote_activate_button_clicked();
     void on_remote_deactivate_button_clicked();
+
+    // Buttons within the TUNING controller tab
+    void on_tuning_test_horizontal_button_clicked();
+    void on_tuning_test_vertical_button_clicked();
+    void on_tuning_test_heading_button_clicked();
+    void on_tuning_test_all_button_clicked();
+    void on_tuning_slider_horizontal_valueChanged(int value);
+    void on_tuning_slider_vertical_valueChanged(int value);
+    void on_tuning_slider_heading_valueChanged(int value);
 
 
 
@@ -179,6 +194,8 @@ private:
     ros::Timer m_timer_yaml_file_for_student_controller;
     ros::Timer m_timer_yaml_file_for_mpc_controller;
     ros::Timer m_timer_yaml_file_for_remote_controller;
+    ros::Timer m_timer_yaml_file_for_tuning_controller;
+
 
     int m_student_id;
     CrazyflieContext m_context;
@@ -210,6 +227,7 @@ private:
     // > For the MPC Controller SETPOINTS
     ros::Publisher  mpcSetpointPublisher;
     ros::Subscriber mpcSetpointSubscriber;
+
     // > For the Remote Controller subscribe action
     ros::Publisher remoteSubscribePublisher;
     // > For the Remote Controller activate action
@@ -218,6 +236,13 @@ private:
     ros::Subscriber remoteDataSubscriber;
     // > For the Remote Control setpoint
     ros::Subscriber remoteControlSetpointSubscriber;
+
+    // > For the TUNING CONTROLLER "test" button publisher
+    ros::Publisher tuningActivateTestPublisher;
+    // > For the TUNING CONTOLLER "gain" sliders
+    ros::Publisher tuningHorizontalGainPublisher;
+    ros::Publisher tuningVerticalGainPublisher;
+    ros::Publisher tuningHeadingGainPublisher;
 
 
 
@@ -265,6 +290,7 @@ private:
     void studentYamlFileTimerCallback(const ros::TimerEvent&);
     void mpcYamlFileTimerCallback(const ros::TimerEvent&);
     void remoteYamlFileTimerCallback(const ros::TimerEvent&);
+    void tuningYamlFileTimerCallback(const ros::TimerEvent&);
     
 
 
@@ -290,6 +316,7 @@ private:
     void highlightStudentControllerTab();
     void highlightMpcControllerTab();
     void highlightRemoteControllerTab();
+    void highlightTuningControllerTab();
 
     bool setpointInsideBox(Setpoint setpoint, CrazyflieContext context);
     Setpoint correctSetpointBox(Setpoint setpoint, CrazyflieContext context);

@@ -89,6 +89,15 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     remoteControlSetpointSubscriber = nodeHandle.subscribe("RemoteControllerService/RemoteControlSetpoint", 1, &MainWindow::remoteControlSetpointCallback, this);;
 
 
+    // > For the TUNING CONTROLLER "test" button publisher
+    tuningActivateTestPublisher = nodeHandle.advertise<std_msgs::Int32>("TuningControllerService/ActivateTest", 1);
+    // > For the TUNING CONTOLLER "gain" sliders
+    tuningHorizontalGainPublisher = nodeHandle.advertise<std_msgs::Int32>("TuningControllerService/HorizontalGain", 1);
+    tuningVerticalGainPublisher = nodeHandle.advertise<std_msgs::Int32>("TuningControllerService/VerticalGain", 1);
+    tuningHeadingGainPublisher = nodeHandle.advertise<std_msgs::Int32>("TuningControllerService/HeadingGain", 1);
+
+
+
     // subscribers
     crazyRadioStatusSubscriber = nodeHandle.subscribe("CrazyRadio/CrazyRadioStatus", 1, &MainWindow::crazyRadioStatusCallback, this);
 
@@ -208,6 +217,7 @@ void MainWindow::highlightSafeControllerTab()
     ui->tabWidget->tabBar()->setTabTextColor(2, Qt::black);
     ui->tabWidget->tabBar()->setTabTextColor(3, Qt::black);
     ui->tabWidget->tabBar()->setTabTextColor(4, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(5, Qt::black);
 }
 void MainWindow::highlightDemoControllerTab()
 {
@@ -216,6 +226,7 @@ void MainWindow::highlightDemoControllerTab()
     ui->tabWidget->tabBar()->setTabTextColor(2, Qt::black);
     ui->tabWidget->tabBar()->setTabTextColor(3, Qt::black);
     ui->tabWidget->tabBar()->setTabTextColor(4, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(5, Qt::black);
 }
 void MainWindow::highlightStudentControllerTab()
 {
@@ -224,6 +235,7 @@ void MainWindow::highlightStudentControllerTab()
     ui->tabWidget->tabBar()->setTabTextColor(2, Qt::green);
     ui->tabWidget->tabBar()->setTabTextColor(3, Qt::black);
     ui->tabWidget->tabBar()->setTabTextColor(4, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(5, Qt::black);
 }
 void MainWindow::highlightMpcControllerTab()
 {
@@ -232,6 +244,7 @@ void MainWindow::highlightMpcControllerTab()
     ui->tabWidget->tabBar()->setTabTextColor(2, Qt::black);
     ui->tabWidget->tabBar()->setTabTextColor(3, Qt::green);
     ui->tabWidget->tabBar()->setTabTextColor(4, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(5, Qt::black);
 }
 void MainWindow::highlightRemoteControllerTab()
 {
@@ -240,6 +253,16 @@ void MainWindow::highlightRemoteControllerTab()
     ui->tabWidget->tabBar()->setTabTextColor(2, Qt::black);
     ui->tabWidget->tabBar()->setTabTextColor(3, Qt::black);
     ui->tabWidget->tabBar()->setTabTextColor(4, Qt::green);
+    ui->tabWidget->tabBar()->setTabTextColor(5, Qt::black);
+}
+void MainWindow::highlightTuningControllerTab()
+{
+    ui->tabWidget->tabBar()->setTabTextColor(0, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(1, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(2, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(3, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(4, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(5, Qt::green);
 }
 
 void MainWindow::DBChangedCallback(const std_msgs::Int32& msg)
@@ -266,6 +289,8 @@ void MainWindow::controllerUsedChangedCallback(const std_msgs::Int32& msg)
             break;
         case REMOTE_CONTROLLER:
             highlightRemoteControllerTab();
+        case TUNING_CONTROLLER:
+            highlightTuningControllerTab();
             break;
         default:
             break;
@@ -868,6 +893,36 @@ void MainWindow::remoteYamlFileTimerCallback(const ros::TimerEvent&)
 
 
 
+void MainWindow::on_load_tuning_yaml_button_clicked()
+{
+    // Set the "load tuning yaml" button to be disabled
+    ui->load_tuning_yaml_button->setEnabled(false);
+
+    // Send a message requesting the parameters from the YAML
+    // file to be reloaded for the tuning controller
+    std_msgs::Int32 msg;
+    msg.data = LOAD_YAML_TUNING_CONTROLLER_AGENT;
+    this->requestLoadControllerYamlPublisher.publish(msg);
+    ROS_INFO("[STUDENT GUI] Request load of tuning controller YAML published");
+
+    // Start a timer which will enable the button in its callback
+    // > This is required because the agent node waits some time between
+    //   re-loading the values from the YAML file and then assigning then
+    //   to the local variable of the agent.
+    // > Thus we use this timer to prevent the user from clicking the
+    //   button in the GUI repeatedly.
+    ros::NodeHandle nodeHandle("~");
+    m_timer_yaml_file_for_tuning_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::tuningYamlFileTimerCallback, this, true);
+}
+
+void MainWindow::tuningYamlFileTimerCallback(const ros::TimerEvent&)
+{
+    // Enble the "load tuning yaml" button again
+    ui->load_tuning_yaml_button->setEnabled(true);
+}
+
+
+
 void MainWindow::requestLoadControllerYaml_from_my_GUI_Callback(const std_msgs::Int32& msg)
 {
     // Extract from the "msg" for which controller the YAML
@@ -955,6 +1010,21 @@ void MainWindow::requestLoadControllerYaml_from_my_GUI_Callback(const std_msgs::
 
             break;
 
+        case LOAD_YAML_TUNING_CONTROLLER_AGENT:
+        case LOAD_YAML_TUNING_CONTROLLER_COORDINATOR:
+            // Set the "load tuning yaml" button to be disabled
+            ui->load_tuning_yaml_button->setEnabled(false);
+
+            // Start a timer which will enable the button in its callback
+            // > This is required because the agent node waits some time between
+            //   re-loading the values from the YAML file and then assigning then
+            //   to the local variable of the agent.
+            // > Thus we use this timer to prevent the user from clicking the
+            //   button in the GUI repeatedly.
+            m_timer_yaml_file_for_tuning_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::tuningYamlFileTimerCallback, this, true);    
+
+            break;
+
         default:
             ROS_INFO("Unknown 'all controllers to load yaml' command, thus nothing will be disabled");
             break;
@@ -1001,6 +1071,13 @@ void MainWindow::on_enable_remote_controller_clicked()
     this->PPSClientCommandPublisher.publish(msg);
 }
 
+void MainWindow::on_enable_tuning_controller_clicked()
+{
+    std_msgs::Int32 msg;
+    msg.data = CMD_USE_TUNING_CONTROLLER;
+    this->PPSClientCommandPublisher.publish(msg);
+}
+
 
 
 // # Custom command buttons
@@ -1031,6 +1108,60 @@ void MainWindow::on_customButton_3_clicked()
     this->PPSClientStudentCustomButtonPublisher.publish(msg_custom_button);
     ROS_INFO("Custom button 3 pressed in GUI");
 }
+
+
+
+Setpoint MainWindow::correctSetpointBox(Setpoint setpoint, CrazyflieContext context)
+{
+    Setpoint corrected_setpoint;
+    corrected_setpoint =  setpoint;
+
+    float x_size = context.localArea.xmax - context.localArea.xmin;
+    float y_size = context.localArea.ymax - context.localArea.ymin;
+    float z_size = context.localArea.zmax - context.localArea.zmin;
+
+    if(setpoint.x > x_size/2)
+        corrected_setpoint.x = x_size/2;
+    if(setpoint.y > y_size/2)
+        corrected_setpoint.y = y_size/2;
+    if(setpoint.z > z_size)
+        corrected_setpoint.z = z_size;
+
+    if(setpoint.x < -x_size/2)
+        corrected_setpoint.x = -x_size/2;
+    if(setpoint.y < -y_size/2)
+        corrected_setpoint.y = -y_size/2;
+    if(setpoint.z < 0)
+        corrected_setpoint.z = 0;
+
+    return corrected_setpoint;
+}
+
+bool MainWindow::setpointInsideBox(Setpoint setpoint, CrazyflieContext context)
+{
+
+    float x_size = context.localArea.xmax - context.localArea.xmin;
+    float y_size = context.localArea.ymax - context.localArea.ymin;
+    float z_size = context.localArea.zmax - context.localArea.zmin;
+    //position check
+	if((setpoint.x < -x_size/2) or (setpoint.x > x_size/2)) {
+		ROS_INFO_STREAM("x outside safety box");
+		return false;
+	}
+	if((setpoint.y < -y_size/2) or (setpoint.y > y_size/2)) {
+		ROS_INFO_STREAM("y outside safety box");
+		return false;
+	}
+	if((setpoint.z < 0) or (setpoint.z > z_size)) {
+		ROS_INFO_STREAM("z outside safety box");
+		return false;
+	}
+
+	return true;
+}
+
+
+
 
 
 
@@ -1127,52 +1258,75 @@ void MainWindow::remoteControlSetpointCallback(const CrazyflieData& setpointData
 
 
 
-
-Setpoint MainWindow::correctSetpointBox(Setpoint setpoint, CrazyflieContext context)
+// TUNING CONTROLLER TAB
+void MainWindow::on_tuning_test_horizontal_button_clicked()
 {
-    Setpoint corrected_setpoint;
-    corrected_setpoint =  setpoint;
-
-    float x_size = context.localArea.xmax - context.localArea.xmin;
-    float y_size = context.localArea.ymax - context.localArea.ymin;
-    float z_size = context.localArea.zmax - context.localArea.zmin;
-
-    if(setpoint.x > x_size/2)
-        corrected_setpoint.x = x_size/2;
-    if(setpoint.y > y_size/2)
-        corrected_setpoint.y = y_size/2;
-    if(setpoint.z > z_size)
-        corrected_setpoint.z = z_size;
-
-    if(setpoint.x < -x_size/2)
-        corrected_setpoint.x = -x_size/2;
-    if(setpoint.y < -y_size/2)
-        corrected_setpoint.y = -y_size/2;
-    if(setpoint.z < 0)
-        corrected_setpoint.z = 0;
-
-    return corrected_setpoint;
+	// Initialise the message
+    std_msgs::Int32 msg;
+    // Set the msg data
+    msg.data = 1;
+    // Publish the message
+    this->tuningActivateTestPublisher.publish(msg);
 }
 
-bool MainWindow::setpointInsideBox(Setpoint setpoint, CrazyflieContext context)
+void MainWindow::on_tuning_test_vertical_button_clicked()
 {
-
-    float x_size = context.localArea.xmax - context.localArea.xmin;
-    float y_size = context.localArea.ymax - context.localArea.ymin;
-    float z_size = context.localArea.zmax - context.localArea.zmin;
-    //position check
-	if((setpoint.x < -x_size/2) or (setpoint.x > x_size/2)) {
-		ROS_INFO_STREAM("x outside safety box");
-		return false;
-	}
-	if((setpoint.y < -y_size/2) or (setpoint.y > y_size/2)) {
-		ROS_INFO_STREAM("y outside safety box");
-		return false;
-	}
-	if((setpoint.z < 0) or (setpoint.z > z_size)) {
-		ROS_INFO_STREAM("z outside safety box");
-		return false;
-	}
-
-	return true;
+	// Initialise the message
+    std_msgs::Int32 msg;
+    // Set the msg data
+    msg.data = 2;
+    // Publish the message
+    this->tuningActivateTestPublisher.publish(msg);
 }
+
+void MainWindow::on_tuning_test_heading_button_clicked()
+{
+	// Initialise the message
+    std_msgs::Int32 msg;
+    // Set the msg data
+    msg.data = 3;
+    // Publish the message
+    this->tuningActivateTestPublisher.publish(msg);
+}
+
+void MainWindow::on_tuning_test_all_button_clicked()
+{
+	// Initialise the message
+    std_msgs::Int32 msg;
+    // Set the msg data
+    msg.data = 4;
+    // Publish the message
+    this->tuningActivateTestPublisher.publish(msg);
+}
+
+void MainWindow::on_tuning_slider_horizontal_valueChanged(int value)
+{
+    // Initialise the message
+    std_msgs::Int32 msg;
+    // Set the msg data
+    msg.data = value;
+    // Publish the message
+    this->tuningHorizontalGainPublisher.publish(msg);
+}
+
+void MainWindow::on_tuning_slider_vertical_valueChanged(int value)
+{
+    // Initialise the message
+    std_msgs::Int32 msg;
+    // Set the msg data
+    msg.data = value;
+    // Publish the message
+    this->tuningVerticalGainPublisher.publish(msg);
+}
+
+void MainWindow::on_tuning_slider_heading_valueChanged(int value)
+{
+    // Initialise the message
+    std_msgs::Int32 msg;
+    // Set the msg data
+    msg.data = value;
+    // Publish the message
+    this->tuningHeadingGainPublisher.publish(msg);
+}
+
+
