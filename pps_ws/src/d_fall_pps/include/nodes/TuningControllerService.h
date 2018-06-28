@@ -202,16 +202,25 @@ int test_all_currentpoint = 1;
 std::vector<float> test_all_setpoint1 (4,0.0);
 std::vector<float> test_all_setpoint2 (4,0.0);
 
+// Parameters for flying in a circle
+float test_circle_radius = 0.2;
+float test_circle_seconds_per_rev = 5.0;
+float test_circle_height = 0.4;
+float test_circle_pirouette_per_rev = 0.0;
+float test_circle_time_to_reach_start = 0.7;
+bool isActive_fly_test_circle = false;
+int test_circle_ticks_since_start = 0;
+
 // Multipliers for the HORIZONTAL contorller
-float multiplier_horizontal = 1.0;
+float multiplier_horizontal = 0.1;
 float multiplier_horizontal_min = 0.9;
 float multiplier_horizontal_max = 1.1;
 // Multipliers for the VERTICAL contorller
-float multiplier_vertical = 1.0;
+float multiplier_vertical = 0.1;
 float multiplier_vertical_min = 0.9;
 float multiplier_vertical_max = 1.1;
 // Multipliers for the HEADING contorller
-float multiplier_heading = 1.0;
+float multiplier_heading = 0.1;
 float multiplier_heading_min = 0.9;
 float multiplier_heading_max = 1.1;
 
@@ -481,6 +490,8 @@ void processFetchedParameters();
 
 // ACTIVATE THE TESTS
 void activateTestCallback(const std_msgs::Int32& msg);
+// UPDATE SETPOINT FOR CIRCLE TEST
+void update_setpoint_for_test_circle();
 // CHANGE THE GAINS
 void horizontalGainCallback(const std_msgs::Int32& msg);
 void verticalGainCallback(const std_msgs::Int32& msg);

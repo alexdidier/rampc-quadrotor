@@ -173,6 +173,7 @@ private slots:
     void on_tuning_test_vertical_button_clicked();
     void on_tuning_test_heading_button_clicked();
     void on_tuning_test_all_button_clicked();
+    void on_tuning_test_circle_button_clicked();
     void on_tuning_slider_horizontal_valueChanged(int value);
     void on_tuning_slider_vertical_valueChanged(int value);
     void on_tuning_slider_heading_valueChanged(int value);

@@ -187,6 +187,13 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	convert_stateInertial_to_bodyFrameError(current_stateInertialEstimate,setpoint,current_bodyFrameError);
 
 	
+	// UPDATE THE SETPOINT FOR FLYING IN A CIRCLE - IF ACTIVE
+	if (isActive_fly_test_circle)
+	{
+		update_setpoint_for_test_circle();
+	}
+
+
 	// CARRY OUT THE CONTROLLER COMPUTATIONS
 	calculateControlOutput_viaLQR(current_bodyFrameError,request,response);
 
@@ -235,6 +242,12 @@ void activateTestCallback(const std_msgs::Int32& msg)
 			// Display what test will be activated
 			ROS_INFO("[TUNING CONTROLLER] Received message to perform HORIZONTAL test");
 
+			// Ensure the circle is not active
+			if (isActive_fly_test_circle)
+			{
+				isActive_fly_test_circle = false;
+			}
+
 			switch (test_horizontal_currentpoint)
 			{
 				// Currently at setpoint 1 => change to setpoint 2
@@ -274,6 +287,12 @@ void activateTestCallback(const std_msgs::Int32& msg)
 		{
 			// Display what test will be activated
 			ROS_INFO("[TUNING CONTROLLER] Received message to perform VERTICAL test");
+
+			// Ensure the circle is not active
+			if (isActive_fly_test_circle)
+			{
+				isActive_fly_test_circle = false;
+			}
 
 			switch (test_vertical_currentpoint)
 			{
@@ -315,6 +334,12 @@ void activateTestCallback(const std_msgs::Int32& msg)
 			// Display what test will be activated
 			ROS_INFO("[TUNING CONTROLLER] Received message to perform HEADING test");
 
+			// Ensure the circle is not active
+			if (isActive_fly_test_circle)
+			{
+				isActive_fly_test_circle = false;
+			}
+
 			switch (test_heading_currentpoint)
 			{
 				// Currently at setpoint 1 => change to setpoint 2
@@ -355,6 +380,12 @@ void activateTestCallback(const std_msgs::Int32& msg)
 			// Display what test will be activated
 			ROS_INFO("[TUNING CONTROLLER] Received message to perform ALL test");
 
+			// Ensure the circle is not active
+			if (isActive_fly_test_circle)
+			{
+				isActive_fly_test_circle = false;
+			}
+
 			switch (test_all_currentpoint)
 			{
 				// Currently at setpoint 1 => change to setpoint 2
@@ -388,6 +419,25 @@ void activateTestCallback(const std_msgs::Int32& msg)
 			break;
 		}
 
+		// Test FLY A CIRCLE
+		case 5:
+		{
+			// Display what test will be activated
+			ROS_INFO("[TUNING CONTROLLER] Received message to FLY IN A CIRCLE");
+
+			// Check that not already flying a circle
+			if (!isActive_fly_test_circle)
+			{
+				// Set the boolean to make the circle active
+				isActive_fly_test_circle = true;
+
+				// (Re-)set the tick counter to zero
+				test_circle_ticks_since_start = 0;
+				
+			}
+			break;
+		}
+
 
 		// Handle the exception
 		default:
@@ -399,15 +449,57 @@ void activateTestCallback(const std_msgs::Int32& msg)
 	}
 }
 
+
+void update_setpoint_for_test_circle()
+{
+	// Compute the time since start
+	float time_since_start = float(test_circle_ticks_since_start) / vicon_frequency;
+
+	// Allow time to reach the start point
+	if (time_since_start < test_circle_time_to_reach_start)
+	{
+		// Set the initial setpoint
+		setpoint[0] = test_circle_radius;
+		setpoint[1] = 0.0;
+		setpoint[2] = test_circle_height;
+		setpoint[3] = 0.0;
+	}
+	else if (time_since_start < (2.2*test_circle_seconds_per_rev) )
+	{
+		// Compute the current point in the period
+		float omega_t = ((time_since_start-test_circle_time_to_reach_start)/test_circle_seconds_per_rev) * (2*PI);
+		// Set the current setpoint on the circle
+		setpoint[0] = test_circle_radius * cos(omega_t);
+		setpoint[1] = test_circle_radius * sin(omega_t);
+		setpoint[2] = test_circle_height;
+		setpoint[3] = test_circle_pirouette_per_rev * omega_t;
+	}
+	else
+	{
+		// Turn of the flz circle mode
+		isActive_fly_test_circle = false;
+		// Return to the center
+		setpoint[0] = 0.0;
+		setpoint[1] = 0.0;
+		setpoint[2] = test_circle_height;
+		setpoint[3] = 0.0;
+	}
+
+	// Increment the tick counter
+	test_circle_ticks_since_start++;
+}
+
+
+
 // CHANGE THE GAIN FOR THE HORIZONTAL CONTROLLER
 void horizontalGainCallback(const std_msgs::Int32& msg)
 {
 	// Get the value from the message
 	float value = float(msg.data) / 1000.0;
-	
+
 	// Compute the new multiplier value
 	multiplier_horizontal = multiplier_horizontal_min + value * (multiplier_horizontal_max-multiplier_horizontal_min);
-	
+
 	// Display the value received
 	ROS_INFO_STREAM("[TUNING CONTROLLER] Received new HORIZONTAL gain with value " << value << ", the multiplier now = " << multiplier_horizontal );
 }
@@ -417,10 +509,10 @@ void verticalGainCallback(const std_msgs::Int32& msg)
 {
 	// Get the value from the message
 	float value = float(msg.data) / 1000.0;
-	
+
 	// Compute the new multiplier value
 	multiplier_vertical = multiplier_vertical_min + value * (multiplier_vertical_max-multiplier_vertical_min);
-	
+
 	// Display the value received
 	ROS_INFO_STREAM("[TUNING CONTROLLER] Received new VERTICAL gain with value " << value << ", the multiplier now = " << multiplier_vertical );
 }
@@ -430,10 +522,10 @@ void headingGainCallback(const std_msgs::Int32& msg)
 {
 	// Get the value from the message
 	float value = float(msg.data) / 1000.0;
-	
+
 	// Compute the new multiplier value
 	multiplier_heading = multiplier_heading_min + value * (multiplier_heading_max-multiplier_heading_min);
-	
+
 	// Display the value received
 	ROS_INFO_STREAM("[TUNING CONTROLLER] Received new HEADING gain with value " << value << ", the multiplier now = " << multiplier_heading );
 }
@@ -1285,6 +1377,12 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 	getParameterFloatVector(nodeHandle_for_TuningController, "test_all_setpoint1", test_all_setpoint1, 4);
 	getParameterFloatVector(nodeHandle_for_TuningController, "test_all_setpoint2", test_all_setpoint2, 4);
 
+	// Parameters for flying in a circle
+	test_circle_radius = getParameterFloat(nodeHandle_for_TuningController, "test_circle_radius");
+	test_circle_seconds_per_rev = getParameterFloat(nodeHandle_for_TuningController, "test_circle_seconds_per_rev");
+	test_circle_height = getParameterFloat(nodeHandle_for_TuningController, "test_circle_height");
+	test_circle_time_to_reach_start = getParameterFloat(nodeHandle_for_TuningController, "test_circle_time_to_reach_start");
+	test_circle_pirouette_per_rev = getParameterFloat(nodeHandle_for_TuningController, "test_circle_pirouette_per_rev");
 
 	// Multipliers for the HORIZONTAL contorller
 	multiplier_horizontal_min = getParameterFloat(nodeHandle_for_TuningController, "multiplier_horizontal_min");

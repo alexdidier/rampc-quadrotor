@@ -1299,6 +1299,16 @@ void MainWindow::on_tuning_test_all_button_clicked()
     this->tuningActivateTestPublisher.publish(msg);
 }
 
+void MainWindow::on_tuning_test_circle_button_clicked()
+{
+    // Initialise the message
+    std_msgs::Int32 msg;
+    // Set the msg data
+    msg.data = 5;
+    // Publish the message
+    this->tuningActivateTestPublisher.publish(msg);
+}
+
 void MainWindow::on_tuning_slider_horizontal_valueChanged(int value)
 {
     // Initialise the message

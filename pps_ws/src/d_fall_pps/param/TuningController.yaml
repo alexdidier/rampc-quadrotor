@@ -7,7 +7,7 @@ test_horizontal_setpoint2 : [-0.3, 0.0, 0.4, 0.0]
 
 # Setpoint for the VERTICAL test
 test_vertical_setpoint1 : [0.0, 0.0, 0.4, 0.0]
-test_vertical_setpoint2 : [0.0, 0.0, 0.8, 0.0]
+test_vertical_setpoint2 : [0.0, 0.0, 0.7, 0.0]
 
 # Setpoint for the HEADING test
 test_heading_setpoint1 : [0.0, 0.0, 0.4, 0.0]
@@ -15,14 +15,21 @@ test_heading_setpoint2 : [0.0, 0.0, 0.4, 3.14]
 
 # Setpoint for the ALL test
 test_all_setpoint1 : [0.3, 0.0, 0.4, 0.0]
-test_all_setpoint2 : [-0.3, 0.0, 0.8, 3.14]
+test_all_setpoint2 : [-0.3, 0.0, 0.7, 1.57]
+
+# Parameters for flying in a circle
+test_circle_radius : 0.40
+test_circle_seconds_per_rev : 3.0
+test_circle_height : 0.4
+test_circle_pirouette_per_rev : 0.0
+test_circle_time_to_reach_start : 0.7
 
 # Multipliers for the HORIZONTAL contorller
 multiplier_horizontal_min : 0.1
 multiplier_horizontal_max : 2.2
 # Multipliers for the VERTICAL contorller
 multiplier_vertical_min : 0.1
-multiplier_vertical_max : 1.8
+multiplier_vertical_max : 1.7
 # Multipliers for the HEADING contorller
 multiplier_heading_min : 0.05
 multiplier_heading_max : 3.0
