@@ -5,8 +5,8 @@ mpcController:     "MpcControllerService/MpcController"
 remoteController:  "RemoteControllerService/RemoteController"
 tuningController:  "TuningControllerService/TuningController"
 
-strictSafety: false
-angleMargin: 0.6
+strictSafety: true
+angleMargin: 0.8
 
 battery_threshold_while_flying: 2.8       # in V
 battery_threshold_while_motors_off: 3.30  # in V

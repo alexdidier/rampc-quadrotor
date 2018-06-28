@@ -232,6 +232,9 @@ void activateTestCallback(const std_msgs::Int32& msg)
 		// Test the HORIZONTAL controller
 		case 1:
 		{
+			// Display what test will be activated
+			ROS_INFO("[TUNING CONTROLLER] Received message to perform HORIZONTAL test");
+
 			switch (test_horizontal_currentpoint)
 			{
 				// Currently at setpoint 1 => change to setpoint 2
@@ -269,6 +272,9 @@ void activateTestCallback(const std_msgs::Int32& msg)
 		// Test the VERTICAL controller
 		case 2:
 		{
+			// Display what test will be activated
+			ROS_INFO("[TUNING CONTROLLER] Received message to perform VERTICAL test");
+
 			switch (test_vertical_currentpoint)
 			{
 				// Currently at setpoint 1 => change to setpoint 2
@@ -306,6 +312,9 @@ void activateTestCallback(const std_msgs::Int32& msg)
 		// Test the HEADING controller
 		case 3:
 		{
+			// Display what test will be activated
+			ROS_INFO("[TUNING CONTROLLER] Received message to perform HEADING test");
+
 			switch (test_heading_currentpoint)
 			{
 				// Currently at setpoint 1 => change to setpoint 2
@@ -343,6 +352,9 @@ void activateTestCallback(const std_msgs::Int32& msg)
 		// Test ALL the controllers
 		case 4:
 		{
+			// Display what test will be activated
+			ROS_INFO("[TUNING CONTROLLER] Received message to perform ALL test");
+
 			switch (test_all_currentpoint)
 			{
 				// Currently at setpoint 1 => change to setpoint 2
@@ -390,19 +402,40 @@ void activateTestCallback(const std_msgs::Int32& msg)
 // CHANGE THE GAIN FOR THE HORIZONTAL CONTROLLER
 void horizontalGainCallback(const std_msgs::Int32& msg)
 {
-
+	// Get the value from the message
+	float value = float(msg.data) / 1000.0;
+	
+	// Compute the new multiplier value
+	multiplier_horizontal = multiplier_horizontal_min + value * (multiplier_horizontal_max-multiplier_horizontal_min);
+	
+	// Display the value received
+	ROS_INFO_STREAM("[TUNING CONTROLLER] Received new HORIZONTAL gain with value " << value << ", the multiplier now = " << multiplier_horizontal );
 }
 
 // CHANGE THE GAIN FOR THE VERTICAL CONTROLLER
 void verticalGainCallback(const std_msgs::Int32& msg)
 {
-
+	// Get the value from the message
+	float value = float(msg.data) / 1000.0;
+	
+	// Compute the new multiplier value
+	multiplier_vertical = multiplier_vertical_min + value * (multiplier_vertical_max-multiplier_vertical_min);
+	
+	// Display the value received
+	ROS_INFO_STREAM("[TUNING CONTROLLER] Received new VERTICAL gain with value " << value << ", the multiplier now = " << multiplier_vertical );
 }
 
 // CHANGE THE GAIN FOR THE HEADING CONTROLLER
 void headingGainCallback(const std_msgs::Int32& msg)
 {
-
+	// Get the value from the message
+	float value = float(msg.data) / 1000.0;
+	
+	// Compute the new multiplier value
+	multiplier_heading = multiplier_heading_min + value * (multiplier_heading_max-multiplier_heading_min);
+	
+	// Display the value received
+	ROS_INFO_STREAM("[TUNING CONTROLLER] Received new HEADING gain with value " << value << ", the multiplier now = " << multiplier_heading );
 }
 
 
@@ -633,13 +666,13 @@ void calculateControlOutput_viaLQRforRates(float stateErrorBody[12], Controller:
 	for(int i = 0; i < 9; ++i)
 	{
 		// BODY FRAME Y CONTROLLER
-		rollRate_forResponse  -= gainMatrixRollRate[i] * stateErrorBody[i];
+		rollRate_forResponse  -= gainMatrixRollRate[i] * stateErrorBody[i] * multiplier_horizontal;
 		// BODY FRAME X CONTROLLER
-		pitchRate_forResponse -= gainMatrixPitchRate[i] * stateErrorBody[i];
+		pitchRate_forResponse -= gainMatrixPitchRate[i] * stateErrorBody[i] * multiplier_horizontal;
 		// BODY FRAME YAW CONTROLLER
-		yawRate_forResponse   -= gainMatrixYawRate[i] * stateErrorBody[i];
+		yawRate_forResponse   -= gainMatrixYawRate[i] * stateErrorBody[i] * multiplier_heading;
 		// > ALITUDE CONTROLLER (i.e., z-controller):
-		thrustAdjustment      -= gainMatrixThrust_NineStateVector[i] * stateErrorBody[i];
+		thrustAdjustment      -= gainMatrixThrust_NineStateVector[i] * stateErrorBody[i] * multiplier_vertical;
 	}
 
 
@@ -722,11 +755,11 @@ void calculateControlOutput_viaLQRforAngles(float stateErrorBody[12], Controller
 	for(int i = 0; i < 6; ++i)
 	{
 		// BODY FRAME Y CONTROLLER
-		rollAngle_forResponse -= gainMatrixRollAngle[i] * stateErrorBody[i];
+		rollAngle_forResponse -= gainMatrixRollAngle[i] * stateErrorBody[i] * multiplier_horizontal;
 		// BODY FRAME X CONTROLLER
-		pitchAngle_forResponse -= gainMatrixPitchAngle[i] * stateErrorBody[i];
+		pitchAngle_forResponse -= gainMatrixPitchAngle[i] * stateErrorBody[i] * multiplier_horizontal;
 		// > ALITUDE CONTROLLER (i.e., z-controller):
-		thrustAdjustment      -= gainMatrixThrust_SixStateVector[i] * stateErrorBody[i];
+		thrustAdjustment      -= gainMatrixThrust_SixStateVector[i] * stateErrorBody[i] * multiplier_vertical;
 	}
 
 	// UPDATE THE "RETURN" THE VARIABLE NAMED "response"
@@ -789,11 +822,11 @@ void calculateControlOutput_viaLQRforAnglesRatesNested( float stateErrorBody[12]
 		for(int i = 0; i < 6; ++i)
 		{
 			// BODY FRAME Y CONTROLLER
-			lqr_angleRateNested_prev_rollAngle        -= gainMatrixRollAngle_50Hz[i] * stateErrorBody[i];
+			lqr_angleRateNested_prev_rollAngle        -= gainMatrixRollAngle_50Hz[i] * stateErrorBody[i] * multiplier_horizontal;
 			// BODY FRAME X CONTROLLER
-			lqr_angleRateNested_prev_pitchAngle       -= gainMatrixPitchAngle_50Hz[i] * stateErrorBody[i];
+			lqr_angleRateNested_prev_pitchAngle       -= gainMatrixPitchAngle_50Hz[i] * stateErrorBody[i] * multiplier_horizontal;
 			// > ALITUDE CONTROLLER (i.e., z-controller):
-			lqr_angleRateNested_prev_thrustAdjustment -= gainMatrixThrust_SixStateVector_50Hz[i] * stateErrorBody[i];
+			lqr_angleRateNested_prev_thrustAdjustment -= gainMatrixThrust_SixStateVector_50Hz[i] * stateErrorBody[i] * multiplier_vertical;
 		}
 
 		// BODY FRAME Z CONTROLLER
@@ -830,7 +863,7 @@ void calculateControlOutput_viaLQRforAnglesRatesNested( float stateErrorBody[12]
 		// BODY FRAME X CONTROLLER
 		pitchRate_forResponse -= gainMatrixPitchRate_Nested[i] * temp_stateAngleError[i];
 		// BODY FRAME Z CONTROLLER
-		yawRate_forResponse   -= gainMatrixYawRate_Nested[i]   * temp_stateAngleError[i];
+		yawRate_forResponse   -= gainMatrixYawRate_Nested[i]   * temp_stateAngleError[i] * multiplier_heading;
 	}
 
 
@@ -1252,8 +1285,19 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 	getParameterFloatVector(nodeHandle_for_TuningController, "test_all_setpoint1", test_all_setpoint1, 4);
 	getParameterFloatVector(nodeHandle_for_TuningController, "test_all_setpoint2", test_all_setpoint2, 4);
 
+
+	// Multipliers for the HORIZONTAL contorller
+	multiplier_horizontal_min = getParameterFloat(nodeHandle_for_TuningController, "multiplier_horizontal_min");
+	multiplier_horizontal_max = getParameterFloat(nodeHandle_for_TuningController, "multiplier_horizontal_max");
+	// Multipliers for the VERTICAL contorller
+	multiplier_vertical_min = getParameterFloat(nodeHandle_for_TuningController, "multiplier_vertical_min");
+	multiplier_vertical_max = getParameterFloat(nodeHandle_for_TuningController, "multiplier_vertical_max");
+	// Multipliers for the HEADING contorller
+	multiplier_heading_min = getParameterFloat(nodeHandle_for_TuningController, "multiplier_heading_min");
+	multiplier_heading_max = getParameterFloat(nodeHandle_for_TuningController, "multiplier_heading_max");
+
 	// // DEBUGGING: Print out one of the parameters that was loaded
-	// ROS_INFO_STREAM("[REMOTE CONTROLLER] DEBUGGING: the fetched RemoteController/default_viconObjectName_forRemote = " << default_viconObjectName_forRemote);
+	ROS_INFO_STREAM("[TUNING CONTROLLER] DEBUGGING: the fetched TuningController/multiplier_horizontal_min = " << multiplier_horizontal_min);
 
 	// ******************************************************************************* //
 
@@ -1355,21 +1399,8 @@ void processFetchedParameters()
 	// Set that the estimator frequency is the same as the control frequency
 	estimator_frequency = vicon_frequency;
 
-
-	// // Roll and pitch limit (in degrees for angles)
-	// remoteControlLimit_roll  = remoteControlLimit_roll_degrees * PI / 180.0;
-	// remoteControlLimit_pitch = remoteControlLimit_pitch_degrees * PI / 180.0;
-
-
-	// // Use the Remote name if the variable is currently empty
-	// if (viconObjectName_forRemote == "empty")
-	// {
-	// 	viconObjectName_forRemote = default_viconObjectName_forRemote;
-	// }
-
-
 	// DEBUGGING: Print out one of the computed quantities
-	//ROS_INFO_STREAM("[REMOTE CONTROLLER] DEBUGGING: after processing the viconObjectName_forRemote = " << viconObjectName_forRemote);
+	ROS_INFO_STREAM("[TUNING CONTROLLER] DEBUGGING: after processing the gravity_force_quarter = " << gravity_force_quarter);
 }
 
 

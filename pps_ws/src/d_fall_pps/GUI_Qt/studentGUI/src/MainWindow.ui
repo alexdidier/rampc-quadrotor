@@ -2833,7 +2833,7 @@
               <item row="4" column="0">
                <widget class="QLabel" name="label_45">
                 <property name="text">
-                 <string>Vertical Controller Gain</string>
+                 <string>Vertical Controller Gain   (Vertikal Regler Verstaekung)</string>
                 </property>
                </widget>
               </item>
@@ -2905,7 +2905,7 @@
               <item row="8" column="0">
                <widget class="QLabel" name="label_46">
                 <property name="text">
-                 <string>Heading Controller Gain</string>
+                 <string>Heading Controller Gain   (Orientierung Regler Verstaekung)</string>
                 </property>
                </widget>
               </item>
@@ -2998,7 +2998,7 @@
               <item row="0" column="0">
                <widget class="QLabel" name="label_37">
                 <property name="text">
-                 <string>Horizontal Controller Gain</string>
+                 <string>Horizontal Controller Gain   (Horizontal Regler Verstaekung)</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>

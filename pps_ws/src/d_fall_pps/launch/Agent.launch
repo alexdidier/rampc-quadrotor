@@ -74,6 +74,15 @@
 			>
 		</node>
 
+		<!-- TUNING CONTROLLER -->
+		<node
+			pkg    = "d_fall_pps"
+			name   = "TuningControllerService"
+			output = "screen"
+			type   = "TuningControllerService"
+			>
+		</node>
+
 		<!-- PARAMETER SERVICE -->
 		<node
 			pkg    = "d_fall_pps"
@@ -112,6 +121,11 @@
 				command = "load"
 				file    = "$(find d_fall_pps)/param/RemoteController.yaml"
 				ns      = "RemoteController"
+			/>
+			<rosparam
+				command = "load"
+				file    = "$(find d_fall_pps)/param/TuningController.yaml"
+				ns      = "TuningController"
 			/>
 		</node>
 

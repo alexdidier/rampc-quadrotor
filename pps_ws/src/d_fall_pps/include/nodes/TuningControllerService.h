@@ -202,6 +202,19 @@ int test_all_currentpoint = 1;
 std::vector<float> test_all_setpoint1 (4,0.0);
 std::vector<float> test_all_setpoint2 (4,0.0);
 
+// Multipliers for the HORIZONTAL contorller
+float multiplier_horizontal = 1.0;
+float multiplier_horizontal_min = 0.9;
+float multiplier_horizontal_max = 1.1;
+// Multipliers for the VERTICAL contorller
+float multiplier_vertical = 1.0;
+float multiplier_vertical_min = 0.9;
+float multiplier_vertical_max = 1.1;
+// Multipliers for the HEADING contorller
+float multiplier_heading = 1.0;
+float multiplier_heading_min = 0.9;
+float multiplier_heading_max = 1.1;
+
 
 // LQR Gain matrix for tracking the angle commands from the Crazyflie
 std::vector<float> gainMatrixRollRate_forRemoteControl     (3,0.0);
@@ -268,6 +281,30 @@ float lqr_angleRateNested_prev_thrustAdjustment = 0.0;
 float lqr_angleRateNested_prev_rollAngle        = 0.0;
 float lqr_angleRateNested_prev_pitchAngle       = 0.0;
 float lqr_angleRateNested_prev_yawAngle         = 0.0;
+
+
+// // SAME GAINS AGAIN BUT INSTEAD AS DEFAULTS
+
+
+// // The LQR Controller parameters for "CONTROLLER_MODE_LQR_RATE"
+// std::vector<float> gainMatrixThrust_NineStateVector_default (9,0.0);
+// std::vector<float> gainMatrixRollRate_default               (9,0.0);
+// std::vector<float> gainMatrixPitchRate_default              (9,0.0);
+// std::vector<float> gainMatrixYawRate_default                (9,0.0);
+
+// // The LQR Controller parameters for "CONTROLLER_MODE_LQR_ANGLE"
+// std::vector<float> gainMatrixThrust_SixStateVector_default (6,0.0);
+// std::vector<float> gainMatrixRollAngle_default             (6,0.0);
+// std::vector<float> gainMatrixPitchAngle_default            (6,0.0);
+
+// // The LQR Controller parameters for "CONTROLLER_MODE_LQR_ANGLE_RATE_NESTED"
+// std::vector<float> gainMatrixThrust_SixStateVector_50Hz_default (6,0.0);
+// std::vector<float> gainMatrixRollAngle_50Hz_default             (6,0.0);
+// std::vector<float> gainMatrixPitchAngle_50Hz_default            (6,0.0);
+
+// std::vector<float> gainMatrixRollRate_Nested_default            (3,0.0);
+// std::vector<float> gainMatrixPitchRate_Nested_default           (3,0.0);
+// std::vector<float> gainMatrixYawRate_Nested_default             (3,0.0);
 
 
 // The 16-bit command limits

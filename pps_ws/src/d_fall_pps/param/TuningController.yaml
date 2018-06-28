@@ -2,20 +2,31 @@
 # PARAMETERS SPECIFIC TO THE REMOTE CONTROL FEATURE
 
 # Setpoint for the HORIZONTAL test
-test_horizontal_setpoint1 : [0.3, 0.0, 0.4, 0.0];
-test_horizontal_setpoint2 : [-0.3, 0.0, 0.4, 0.0];
+test_horizontal_setpoint1 : [0.3, 0.0, 0.4, 0.0]
+test_horizontal_setpoint2 : [-0.3, 0.0, 0.4, 0.0]
 
 # Setpoint for the VERTICAL test
-test_vertical_setpoint1 : [0.0, 0.0, 0.4, 0.0];
-test_vertical_setpoint2 : [0.0, 0.0, 0.8, 0.0];
+test_vertical_setpoint1 : [0.0, 0.0, 0.4, 0.0]
+test_vertical_setpoint2 : [0.0, 0.0, 0.8, 0.0]
 
 # Setpoint for the HEADING test
-test_heading_setpoint1 : [0.0, 0.0, 0.4, 0.0];
-test_heading_setpoint2 : [0.0, 0.0, 0.4, 1.5];
+test_heading_setpoint1 : [0.0, 0.0, 0.4, 0.0]
+test_heading_setpoint2 : [0.0, 0.0, 0.4, 3.14]
 
 # Setpoint for the ALL test
-test_all_setpoint1 : [0.3, 0.0, 0.4, 0.0];
-test_all_setpoint2 : [-0.3, 0.0, 0.8, 1.5];
+test_all_setpoint1 : [0.3, 0.0, 0.4, 0.0]
+test_all_setpoint2 : [-0.3, 0.0, 0.8, 3.14]
+
+# Multipliers for the HORIZONTAL contorller
+multiplier_horizontal_min : 0.1
+multiplier_horizontal_max : 2.2
+# Multipliers for the VERTICAL contorller
+multiplier_vertical_min : 0.1
+multiplier_vertical_max : 1.8
+# Multipliers for the HEADING contorller
+multiplier_heading_min : 0.05
+multiplier_heading_max : 3.0
+
 
 # ***************************************************************************** #
 
