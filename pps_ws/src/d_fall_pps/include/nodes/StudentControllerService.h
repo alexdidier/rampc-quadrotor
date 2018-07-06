@@ -128,8 +128,8 @@ using namespace d_fall_pps;
 // Variables for controller
 float cf_mass;                       // Crazyflie mass in grams
 std::vector<float> motorPoly(3);     // Coefficients of the 16-bit command to thrust conversion
-float control_frequency;             // Frequency at which the controller is running
-float gravity_force;                 // The weight of the Crazyflie in Newtons, i.e., mg
+float control_frequency = 200.0;             // Frequency at which the controller is running
+float gravity_force = 0.0;                 // The weight of the Crazyflie in Newtons, i.e., mg
 
 float previous_stateErrorInertial[9];     // The location error of the Crazyflie at the "previous" time step
 
@@ -137,10 +137,10 @@ std::vector<float>  setpoint{0.0,0.0,0.4,0.0};     // The setpoints for (x,y,z) 
 
 
 // The LQR Controller parameters for "LQR_RATE_MODE"
-const float gainMatrixRollRate[9]    =  { 0.00,-1.72, 0.00, 0.00,-1.34, 0.00, 5.12, 0.00, 0.00};
-const float gainMatrixPitchRate[9]   =  { 1.72, 0.00, 0.00, 1.34, 0.00, 0.00, 0.00, 5.12, 0.00};
-const float gainMatrixYawRate[9]     =  { 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.84};
-const float gainMatrixThrust[9]  =  { 0.00, 0.00, 0.25, 0.00, 0.00, 0.14, 0.00, 0.00, 0.00};
+std::vector<float> gainMatrixRollRate    =  { 0.00,-1.71, 0.00, 0.00,-1.33, 0.00, 5.12, 0.00, 0.00};
+std::vector<float> gainMatrixPitchRate   =  { 1.71, 0.00, 0.00, 1.33, 0.00, 0.00, 0.00, 5.12, 0.00};
+std::vector<float> gainMatrixYawRate     =  { 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.84};
+std::vector<float> gainMatrixThrust      =  { 0.00, 0.00, 0.19, 0.00, 0.00, 0.08, 0.00, 0.00, 0.00};
 
 
 // ROS Publisher for debugging variables

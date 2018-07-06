@@ -121,6 +121,11 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     //INFORMATION: this ugly fix was needed for the older firmware
     //outYaw *= 0.5;
 
+    //ROS_INFO_STREAM("y-error      = " << state[1]);
+    //ROS_INFO_STREAM("y-velocity   = " << state[4]);
+    //ROS_INFO_STREAM("roll         = " << state[6]);
+    //ROS_INFO_STREAM("rollRate     = " << outRoll );
+
     response.controlOutput.roll = outRoll;
     response.controlOutput.pitch = outPitch;
     response.controlOutput.yaw = outYaw;
@@ -492,22 +497,24 @@ int main(int argc, char* argv[]) {
     // Call the class function that loads the parameters for this class.
 
     // Sleep for some time (in seconds)
-    ros::Duration(1.0).sleep();
+    // ros::Duration(1.0).sleep();
 
-    // Ask the Paramter Service to load the respective YAML file
-    std::string namespace_to_own_agent_loadYamlFiles_service = namespace_to_own_agent_parameter_service + "/LoadYamlFiles";
-    loadYamlFilesService_own_agent = ros::service::createClient<LoadYamlFiles>(namespace_to_own_agent_loadYamlFiles_service, true);
-    ROS_INFO_STREAM("[SAFE CONTROLLER] Loaded service: " << loadYamlFilesService_own_agent.getService());
+    // // Ask the Paramter Service to load the respective YAML file
+    // std::string namespace_to_own_agent_loadYamlFiles_service = namespace_to_own_agent_parameter_service + "/LoadYamlFiles";
+    // loadYamlFilesService_own_agent = ros::service::createClient<LoadYamlFiles>(namespace_to_own_agent_loadYamlFiles_service, true);
+    // ROS_INFO_STREAM("[SAFE CONTROLLER] Loaded service: " << loadYamlFilesService_own_agent.getService());
 
-    LoadYamlFiles loadYamlFilesService;
-    std::vector<std::string> yamlFileNames_to_load = {"SafeController"};
-    loadYamlFilesService.request.yamlFileNames = yamlFileNames_to_load;
-    bool success = loadYamlFilesService_own_agent.call(loadYamlFilesService);
+    // LoadYamlFiles loadYamlFilesService;
+    // std::vector<std::string> yamlFileNames_to_load = {"SafeController"};
+    // loadYamlFilesService.request.yamlFileNames = yamlFileNames_to_load;
+    // bool success = loadYamlFilesService_own_agent.call(loadYamlFilesService);
 
-    ROS_INFO_STREAM("[SAFE CONTROLLER] called Laod Yaml File service with success = " << success);
+    // ROS_INFO_STREAM("[SAFE CONTROLLER] called Laod Yaml File service with success = " << success);
 
-    ros::Duration(2.0).sleep();
+    // ros::Duration(2.0).sleep();
 
+
+    // Call the class function that loads the parameters for this class.
     fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
 
 

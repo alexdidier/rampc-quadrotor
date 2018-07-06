@@ -73,7 +73,7 @@
 //     CCCC   OOO   N   N    T    R   R   OOO   LLLLL       LLLLL   OOO    OOO   P
 //    ----------------------------------------------------------------------------------
 
-// This function is the callback that is linked to the "CustomController" service that
+// This function is the callback that is linked to the "StudentController" service that
 // is advertised in the main function. This must have arguments that match the
 // "input-output" behaviour defined in the "Controller.srv" file (located in the "srv"
 // folder)
@@ -276,8 +276,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrustAdjustment + gravity_force);
 	response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrustAdjustment + gravity_force);
 
-
-
+	
 
 	//  **************************************
 	//  BBBB    OOO   DDDD   Y   Y       X   X
@@ -326,9 +325,8 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	// Put the computed roll rate into the "response" variable
 	response.controlOutput.roll = rollRate_forResponse;
 
-
-
-
+	
+	
 	// PREPARE AND RETURN THE VARIABLE "response"
 
 	/*choosing the Crazyflie onBoard controller type.
@@ -579,7 +577,7 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
 		default:
 		{
 			// Let the user know that the command was not relevant
-			//ROS_INFO("The CustomControllerService received the message that YAML parameters were (re-)loaded");
+			//ROS_INFO("The StudentControllerService received the message that YAML parameters were (re-)loaded");
 			//ROS_INFO("> However the parameters do not relate to this controller, hence nothing will be fetched.");
 			break;
 		}
@@ -592,28 +590,28 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
 // your controller easier and quicker.
 void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 {
-	// Here we load the parameters that are specified in the CustomController.yaml file
+	// Here we load the parameters that are specified in the StudentController.yaml file
 
-	// Add the "CustomController" namespace to the "nodeHandle"
-	ros::NodeHandle nodeHandle_for_customController(nodeHandle, "StudentController");
+	// Add the "StudentController" namespace to the "nodeHandle"
+	ros::NodeHandle nodeHandle_for_studentController(nodeHandle, "StudentController");
 
 	// > The mass of the crazyflie
-	cf_mass = getParameterFloat(nodeHandle_for_customController , "mass");
+	cf_mass = getParameterFloat(nodeHandle_for_studentController , "mass");
 
 	// Display one of the YAML parameters to debug if it is working correctly
 	//ROS_INFO_STREAM("DEBUGGING: mass leaded from loacl file = " << cf_mass );
 
 	// > The frequency at which the "computeControlOutput" is being called, as determined
 	//   by the frequency at which the Vicon system provides position and attitude data
-	control_frequency = getParameterFloat(nodeHandle_for_customController, "control_frequency");
+	control_frequency = getParameterFloat(nodeHandle_for_studentController, "control_frequency");
 
 	// > The co-efficients of the quadratic conversation from 16-bit motor command to
 	//   thrust force in Newtons
-	getParameterFloatVector(nodeHandle_for_customController, "motorPoly", motorPoly, 3);
+	getParameterFloatVector(nodeHandle_for_studentController, "motorPoly", motorPoly, 3);
 
 
 	// DEBUGGING: Print out one of the parameters that was loaded
-	ROS_INFO_STREAM("[STUDENT CONTROLLER] DEBUGGING: the fetched CustomController/mass = " << cf_mass);
+	ROS_INFO_STREAM("[STUDENT CONTROLLER] DEBUGGING: the fetched StudentController/mass = " << cf_mass);
 
 	// Call the function that computes details an values that are needed from these
 	// parameters loaded above
@@ -805,7 +803,7 @@ int main(int argc, char* argv[]) {
     // FINALLY, FETCH ANY PARAMETERS REQUIRED FROM THESE "PARAMETER SERVICES"
 
 	// Call the class function that loads the parameters for this class.
-    //fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
+    fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
 
     // *********************************************************************************
 
@@ -823,7 +821,7 @@ int main(int argc, char* argv[]) {
     ros::Subscriber setpointSubscriber = nodeHandle.subscribe("Setpoint", 1, setpointCallback);
 
     // Instantiate the local variable "service" to be a "ros::ServiceServer" type
-    // variable that advertises the service called "CustomController". This service has
+    // variable that advertises the service called "StudentController". This service has
     // the input-output behaviour defined in the "Controller.srv" file (located in the
     // "srv" folder). This service, when called, is provided with the most recent
     // measurement of the Crazyflie and is expected to respond with the control action

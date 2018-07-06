@@ -960,17 +960,17 @@ void calculateControlOutput_viaAngleResponseTest( float stateErrorBody[12], Cont
 		// > body frame yaw angle,
 		// > total thrust adjustment.
 		// These will be requested from the "inner-loop" LQR controller below
-		angleResponseTest_prev_rollAngle        = 0;
-		//angleResponseTest_prev_pitchAngle       = 0;
+		//angleResponseTest_prev_rollAngle        = 0;
+		angleResponseTest_prev_pitchAngle       = 0;
 		angleResponseTest_prev_thrustAdjustment = 0;
 
 		// Perform the "-Kx" LQR computation for the rates and thrust:
 		for(int i = 0; i < 6; ++i)
 		{
 			// BODY FRAME Y CONTROLLER
-			angleResponseTest_prev_rollAngle        -= gainMatrixRollAngle_50Hz[i] * stateErrorBody[i];
+			//angleResponseTest_prev_rollAngle        -= gainMatrixRollAngle_50Hz[i] * stateErrorBody[i];
 			// BODY FRAME X CONTROLLER
-			//angleResponseTest_prev_pitchAngle       -= gainMatrixPitchAngle_50Hz[i] * stateErrorBody[i];
+			angleResponseTest_prev_pitchAngle       -= gainMatrixPitchAngle_50Hz[i] * stateErrorBody[i];
 			// > ALITUDE CONTROLLER (i.e., z-controller):
 			angleResponseTest_prev_thrustAdjustment -= gainMatrixThrust_SixStateVector_50Hz[i] * stateErrorBody[i];
 		}
@@ -980,13 +980,23 @@ void calculateControlOutput_viaAngleResponseTest( float stateErrorBody[12], Cont
 		angleResponseTest_prev_yawAngle = stateErrorBody[8];
 
 		// COMPUTE THE DISTANCE FROM THE ORIGIN
-		if (stateErrorBody[0] > angleResponseTest_distance_meters)
+		// > for pitch response testing
+		// if (stateErrorBody[0] > angleResponseTest_distance_meters)
+		// {
+		// 	angleResponseTest_prev_pitchAngle = -angleResponseTest_pitchAngle_radians;
+		// }
+		// else if (stateErrorBody[0] < (-angleResponseTest_distance_meters) )
+		// {
+		// 	angleResponseTest_prev_pitchAngle =  angleResponseTest_pitchAngle_radians;
+		// }
+		// > for roll response testing
+		if (stateErrorBody[1] > angleResponseTest_distance_meters)
 		{
-			angleResponseTest_prev_pitchAngle = -angleResponseTest_pitchAngle_radians;
+			angleResponseTest_prev_rollAngle  =  angleResponseTest_pitchAngle_radians;
 		}
-		else if (stateErrorBody[0] < (-angleResponseTest_distance_meters) )
+		else if (stateErrorBody[1] < (-angleResponseTest_distance_meters) )
 		{
-			angleResponseTest_prev_pitchAngle = angleResponseTest_pitchAngle_radians;
+			angleResponseTest_prev_rollAngle  =  -angleResponseTest_pitchAngle_radians;
 		}
 
 
