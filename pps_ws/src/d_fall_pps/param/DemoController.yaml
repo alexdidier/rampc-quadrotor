@@ -12,7 +12,7 @@ motorPoly : [5.484560e-4, 1.032633e-6, 2.130295e-11]
 shouldPerformConvertIntoBodyFrame : true
 
 # Boolean indiciating whether the (x,y,z,yaw) of this agent should be published or not
-shouldPublishCurrent_xyz_yaw : false
+shouldPublishCurrent_xyz_yaw : true
 
 # Boolean indicating whether the (x,y,z,yaw) setpoint of this agent should adapted in
 # an attempt to follow the "my_current_xyz_yaw_topic" from another agent
@@ -22,7 +22,7 @@ shouldFollowAnotherAgent : false
 # > This parameter is a vector of integers that specifies  agent ID's
 # > The order of the agent ID's is the ordering of the line formation
 # > i.e., the first ID is the leader, the second ID should follow the first ID, and so on
-follow_in_a_line_agentIDs : [1, 2, 3]
+follow_in_a_line_agentIDs : [5, 6, 7]
 
 # Boolean indiciating whether the "Debug Message" of this agent should be published or not
 shouldPublishDebugMessage : true
@@ -78,8 +78,8 @@ gainMatrixYawTorque                 :  [ 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
 
 # The LQR Controller parameters for "mode = 3"
 gainMatrixThrust_NineStateVector    :  [ 0.00, 0.00, 0.98, 0.00, 0.00, 0.25, 0.00, 0.00, 0.00]
-gainMatrixRollRate                  :  [ 0.00,-1.80, 0.00, 0.00,-1.38, 0.00, 5.20, 0.00, 0.00]
-gainMatrixPitchRate                 :  [ 1.80, 0.00, 0.00, 1.38, 0.00, 0.00, 0.00, 5.20, 0.00]
+gainMatrixRollRate                  :  [ 0.00,-6.20, 0.00, 0.00,-3.00, 0.00, 5.20, 0.00, 0.00]
+gainMatrixPitchRate                 :  [ 6.20, 0.00, 0.00, 3.00, 0.00, 0.00, 0.00, 5.20, 0.00]
 gainMatrixYawRate                   :  [ 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.30]
 
 # The LQR Controller parameters for "mode = 4"
@@ -99,7 +99,7 @@ gainMatrixYawRate_Nested            :  [ 0.00, 0.00, 2.30]
 
 
 # The paramters for the "Angle Reponse Test" controller mode
-angleResponseTest_pitchAngle_degrees : 25
+angleResponseTest_pitchAngle_degrees : 7
 angleResponseTest_distance_meters    : 0.02
 
 
