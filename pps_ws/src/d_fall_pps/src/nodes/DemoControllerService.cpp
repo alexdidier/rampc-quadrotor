@@ -1653,10 +1653,14 @@ void processFetchedParameters()
 	    				// The agent ID to follow is the previous entry
 	    				agentID_to_follow = follow_in_a_line_agentIDs[i-1];	
                         shouldFollowAnotherAgent = true;
-	    				// Subscribe to the "my_current_xyz_yaw_topic" of the agent ID
+                        // Convert the agent ID to a zero padded string
+						std::ostringstream str_stream;
+						str_stream << std::setw(3) << std::setfill('0') << agentID_to_follow;
+						std::string agentID_to_follow_as_string(str_stream.str());
+						// Subscribe to the "my_current_xyz_yaw_topic" of the agent ID
 	    				// that this agent should be following
 	    				ros::NodeHandle nodeHandle("~");
-	    				xyz_yaw_to_follow_subscriber = nodeHandle.subscribe("/" + std::to_string(agentID_to_follow) + "/my_current_xyz_yaw_topic", 1, xyz_yaw_to_follow_callback);
+	    				xyz_yaw_to_follow_subscriber = nodeHandle.subscribe("/dfall/agent" + agentID_to_follow_as_string + "/DemoControllerService/my_current_xyz_yaw_topic", 1, xyz_yaw_to_follow_callback);
 	    				//ROS_INFO_STREAM("DEBUGGING: subscribed to agent ID = " << agentID_to_follow );
 	    			}
 	    			// Break out of the for loop as the assumption is that each agent ID
@@ -1905,7 +1909,7 @@ int main(int argc, char* argv[]) {
     // that advertises under the name "<my_agentID>/my_current_xyz_yaw_topic" where <my_agentID>
     // is filled in with the student ID number of this computer. The messages published will
     // have the structure defined in the file "Setpoint.msg" (located in the "msg" folder).
-    my_current_xyz_yaw_publisher = nodeHandle.advertise<Setpoint>("/" + std::to_string(my_agentID) + "/my_current_xyz_yaw_topic", 1);
+    my_current_xyz_yaw_publisher = nodeHandle.advertise<Setpoint>("my_current_xyz_yaw_topic", 1);
 
     // Instantiate the local variable "customCommandSubscriber" to be a "ros::Subscriber"
     // type variable that subscribes to the "StudentCustomButton" topic and calls the class
