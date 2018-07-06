@@ -289,6 +289,7 @@ void MainWindow::controllerUsedChangedCallback(const std_msgs::Int32& msg)
             break;
         case REMOTE_CONTROLLER:
             highlightRemoteControllerTab();
+            break;
         case TUNING_CONTROLLER:
             highlightTuningControllerTab();
             break;
