@@ -57,6 +57,7 @@
 #include "d_fall_pps/Controller.h"
 #include "d_fall_pps/DebugMsg.h"
 #include "d_fall_pps/CustomControllerYAML.h"
+#include "d_fall_pps/CustomButton.h"
 
 // Include the Parameter Service shared definitions
 #include "nodes/ParameterServiceDefinitions.h"

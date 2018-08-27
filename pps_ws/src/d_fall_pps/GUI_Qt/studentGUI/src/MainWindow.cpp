@@ -1101,7 +1101,7 @@ void MainWindow::on_demoButton_2_clicked()
     ROS_INFO("Demo button 2 pressed in GUI");
 }
 
-void MainWindow::on_customButton_3_clicked()
+void MainWindow::on_demoButton_3_clicked()
 {
     CustomButton msg_custom_button;
     msg_custom_button.button_index = 3;
@@ -1138,7 +1138,7 @@ void MainWindow::on_studentButton_3_clicked()
 {
     CustomButton msg_custom_button;
     msg_custom_button.button_index = 3;
-    msg_custom_button.command_code = (ui->demoField_3->text()).toFloat();
+    msg_custom_button.command_code = (ui->studentField_3->text()).toFloat();
     this->studentCustomButtonPublisher.publish(msg_custom_button);
     ROS_INFO("Student button 3 pressed in GUI");
 }
