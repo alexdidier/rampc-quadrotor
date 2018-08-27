@@ -524,6 +524,75 @@ void setpointCallback(const Setpoint& newSetpoint)
 
 
 
+
+
+//    ----------------------------------------------------------------------------------
+//     CCCC  U   U   SSSS  TTTTT   OOO   M   M
+//    C      U   U  S        T    O   O  MM MM
+//    C      U   U   SSS     T    O   O  M M M
+//    C      U   U      S    T    O   O  M   M
+//     CCCC   UUU   SSSS     T     OOO   M   M
+//
+//     CCCC   OOO   M   M  M   M    A    N   N  DDDD
+//    C      O   O  MM MM  MM MM   A A   NN  N  D   D
+//    C      O   O  M M M  M M M  A   A  N N N  D   D
+//    C      O   O  M   M  M   M  AAAAA  N  NN  D   D
+//     CCCC   OOO   M   M  M   M  A   A  N   N  DDDD
+//    ----------------------------------------------------------------------------------
+
+// CUSTOM COMMAND RECEIVED CALLBACK
+void customCommandReceivedCallback(const CustomButton& commandReceived)
+{
+	// Extract the data from the message
+	int custom_button_index   = commandReceived.button_index;
+	float custom_command_code = commandReceived.command_code;
+
+	// Switch between the button pressed
+	switch(custom_button_index)
+	{
+
+		// > FOR CUSTOM BUTTON 1
+		case 1:
+		{
+			// Let the user know that this part of the code was triggered
+			ROS_INFO("[STUDENT CONTROLLER] Button 1 received in controller.");
+			// Code here to respond to custom button 1
+			
+			break;
+		}
+
+		// > FOR CUSTOM BUTTON 2
+		case 2:
+		{
+			// Let the user know that this part of the code was triggered
+			ROS_INFO("[STUDENT CONTROLLER] Button 2 received in controller.");
+			// Code here to respond to custom button 2
+
+			break;
+		}
+
+		// > FOR CUSTOM BUTTON 3
+		case 3:
+		{
+			// Let the user know that this part of the code was triggered
+			ROS_INFO_STREAM("[STUDENT CONTROLLER] Button 3 received in controller, with command code:" << custom_command_code );
+			// Code here to respond to custom button 3
+
+			break;
+		}
+
+		default:
+		{
+			// Let the user know that the command was not recognised
+			ROS_INFO_STREAM("[DEMO CONTROLLER] A button clicked command was received in the controller but not recognised, message.button_index = " << custom_button_index << ", and message.command_code = " << custom_command_code );
+			break;
+		}
+	}
+}
+
+
+
+
 //    ----------------------------------------------------------------------------------
 //    L       OOO     A    DDDD
 //    L      O   O   A A   D   D
@@ -829,6 +898,12 @@ int main(int argc, char* argv[]) {
     // this is where the "outer loop" controller function starts. When a request is made
     // of this service the "calculateControlOutput" function is called.
     ros::ServiceServer service = nodeHandle.advertiseService("StudentController", calculateControlOutput);
+
+    // Instantiate the local variable "customCommandSubscriber" to be a "ros::Subscriber"
+    // type variable that subscribes to the "GUIButton" topic and calls the class
+    // function "customCommandReceivedCallback" each time a messaged is received on this topic
+    // and the message received is passed as an input argument to the callback function.
+    ros::Subscriber customCommandReceivedSubscriber = nodeHandle.subscribe("GUIButton", 1, customCommandReceivedCallback);
 
     // Create a "ros::NodeHandle" type local variable "namespace_nodeHandle" that points
     // to the name space of this node, i.e., "d_fall_pps" as specified by the line:

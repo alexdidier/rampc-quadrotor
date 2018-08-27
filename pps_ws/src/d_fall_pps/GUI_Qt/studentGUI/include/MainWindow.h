@@ -158,9 +158,13 @@ private slots:
 
     
 
-    void on_customButton_1_clicked();
-    void on_customButton_2_clicked();
-    void on_customButton_3_clicked();
+    void on_demoButton_1_clicked();
+    void on_demoButton_2_clicked();
+    void on_demoButton_3_clicked();
+
+    void on_studentButton_1_clicked();
+    void on_studentButton_2_clicked();
+    void on_studentButton_3_clicked();
 
     // Buttons within the REMOTE controller tab
     void on_remote_subscribe_button_clicked();
@@ -246,8 +250,8 @@ private:
     ros::Publisher tuningHeadingGainPublisher;
 
 
-
-    ros::Publisher PPSClientStudentCustomButtonPublisher;
+    ros::Publisher demoCustomButtonPublisher;
+    ros::Publisher studentCustomButtonPublisher;
 
     ros::Subscriber DBChangedSubscriber;
 

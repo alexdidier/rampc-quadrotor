@@ -68,12 +68,14 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
 
 
     // SUBSCRIBERS AND PUBLISHERS:
-    // > For the Demo Controller SETPOINTS
-    demoSetpointPublisher  = nodeHandle.advertise<Setpoint>("DemoControllerService/Setpoint", 1);
-    demoSetpointSubscriber = nodeHandle.subscribe("DemoControllerService/Setpoint", 1, &MainWindow::demoSetpointCallback, this);
-    // > For the Student Controller SETPOINTS
-    studentSetpointPublisher  = nodeHandle.advertise<Setpoint>("StudentControllerService/Setpoint", 1);
-    studentSetpointSubscriber = nodeHandle.subscribe("StudentControllerService/Setpoint", 1, &MainWindow::studentSetpointCallback, this);
+    // > For the Demo Controller SETPOINTS and CUSTOM COMMANDS
+    demoSetpointPublisher     = nodeHandle.advertise<Setpoint>("DemoControllerService/Setpoint", 1);
+    demoSetpointSubscriber    = nodeHandle.subscribe("DemoControllerService/Setpoint", 1, &MainWindow::demoSetpointCallback, this);
+    demoCustomButtonPublisher = nodeHandle.advertise<CustomButton>("DemoControllerService/GUIButton", 1);
+    // > For the Student Controller SETPOINTS and CUSTOM COMMANDS
+    studentSetpointPublisher     = nodeHandle.advertise<Setpoint>("StudentControllerService/Setpoint", 1);
+    studentSetpointSubscriber    = nodeHandle.subscribe("StudentControllerService/Setpoint", 1, &MainWindow::studentSetpointCallback, this);
+    studentCustomButtonPublisher = nodeHandle.advertise<CustomButton>("StudentControllerService/GUIButton", 1);
     // > For the MPC Controller SETPOINTS
     mpcSetpointPublisher  = nodeHandle.advertise<Setpoint>("MpcControllerService/Setpoint", 1);
     mpcSetpointSubscriber = nodeHandle.subscribe("MpcControllerService/Setpoint", 1, &MainWindow::mpcSetpointCallback, this);
@@ -121,9 +123,7 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     //ros::NodeHandle nh_PPSClient(m_ros_namespace + "/PPSClient");
     ros::NodeHandle nh_PPSClient("PPSClient");
     crazyRadioCommandPublisher = nh_PPSClient.advertise<std_msgs::Int32>("crazyRadioCommand", 1);
-    PPSClientCommandPublisher = nh_PPSClient.advertise<std_msgs::Int32>("Command", 1);
-
-    PPSClientStudentCustomButtonPublisher = nh_PPSClient.advertise<CustomButton>("StudentCustomButton", 1);
+    PPSClientCommandPublisher = nh_PPSClient.advertise<std_msgs::Int32>("Command", 1);    
 
 
     // > For publishing a message that requests the
@@ -1081,33 +1081,66 @@ void MainWindow::on_enable_tuning_controller_clicked()
 
 
 
-// # Custom command buttons
-void MainWindow::on_customButton_1_clicked()
+// # Custom command buttons - FOR DEMO CONTROLLER
+void MainWindow::on_demoButton_1_clicked()
 {
     CustomButton msg_custom_button;
     msg_custom_button.button_index = 1;
     msg_custom_button.command_code = 0;
-    this->PPSClientStudentCustomButtonPublisher.publish(msg_custom_button);
+    this->demoCustomButtonPublisher.publish(msg_custom_button);
 
-    ROS_INFO("Custom button 1 pressed in GUI");
+    ROS_INFO("Demo button 1 pressed in GUI");
 }
 
-void MainWindow::on_customButton_2_clicked()
+void MainWindow::on_demoButton_2_clicked()
 {
     CustomButton msg_custom_button;
     msg_custom_button.button_index = 2;
     msg_custom_button.command_code = 0;
-    this->PPSClientStudentCustomButtonPublisher.publish(msg_custom_button);
-    ROS_INFO("Custom button 2 pressed in GUI");
+    this->demoCustomButtonPublisher.publish(msg_custom_button);
+    ROS_INFO("Demo button 2 pressed in GUI");
 }
 
 void MainWindow::on_customButton_3_clicked()
 {
     CustomButton msg_custom_button;
     msg_custom_button.button_index = 3;
-    msg_custom_button.command_code = (ui->custom_command_3->text()).toFloat();
-    this->PPSClientStudentCustomButtonPublisher.publish(msg_custom_button);
-    ROS_INFO("Custom button 3 pressed in GUI");
+    msg_custom_button.command_code = (ui->demoField_3->text()).toFloat();
+    this->demoCustomButtonPublisher.publish(msg_custom_button);
+    ROS_INFO("Demo button 3 pressed in GUI");
+}
+
+
+
+
+
+// # Custom command buttons - FOR STUDENT CONTROLLER
+void MainWindow::on_studentButton_1_clicked()
+{
+    CustomButton msg_custom_button;
+    msg_custom_button.button_index = 1;
+    msg_custom_button.command_code = 0;
+    this->studentCustomButtonPublisher.publish(msg_custom_button);
+
+    ROS_INFO("Student button 1 pressed in GUI");
+}
+
+void MainWindow::on_studentButton_2_clicked()
+{
+    CustomButton msg_custom_button;
+    msg_custom_button.button_index = 2;
+    msg_custom_button.command_code = 0;
+    this->studentCustomButtonPublisher.publish(msg_custom_button);
+    ROS_INFO("Student button 2 pressed in GUI");
+}
+
+void MainWindow::on_studentButton_3_clicked()
+{
+    CustomButton msg_custom_button;
+    msg_custom_button.button_index = 3;
+    msg_custom_button.command_code = (ui->demoField_3->text()).toFloat();
+    this->studentCustomButtonPublisher.publish(msg_custom_button);
+    ROS_INFO("Student button 3 pressed in GUI");
 }
 
 

@@ -207,6 +207,9 @@ float computeMotorPolyBackward(float thrust);
 // SETPOINT CHANGE CALLBACK
 void setpointCallback(const Setpoint& newSetpoint);
 
+// CUSTOM COMMAND RECEIVED CALLBACK
+void customCommandReceivedCallback(const CustomButton& commandReceived);
+
 // LOAD PARAMETERS
 float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name);
 void getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length);

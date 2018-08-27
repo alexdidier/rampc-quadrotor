@@ -1925,7 +1925,7 @@ int main(int argc, char* argv[]) {
     // type variable that subscribes to the "StudentCustomButton" topic and calls the class
     // function "customCommandReceivedCallback" each time a messaged is received on this topic
     // and the message received is passed as an input argument to the callback function.
-    ros::Subscriber customCommandReceivedSubscriber = PPSClient_nodeHandle.subscribe("StudentCustomButton", 1, customCommandReceivedCallback);
+    ros::Subscriber customCommandReceivedSubscriber = nodeHandle.subscribe("GUIButton", 1, customCommandReceivedCallback);
 
     // Print out some information to the user.
     ROS_INFO("[DEMO CONTROLLER] Service ready :-)");
