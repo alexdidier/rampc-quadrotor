@@ -6,6 +6,9 @@
 	<!-- Example of how to use the value in agentID -->
     <!-- <param name="param" value="$(arg agentID)"/> -->
 
+    <!-- Example of how to specify the agentID from command line -->
+    <!-- roslaunch d_fall_pps agentID:=1 -->
+
     <group ns="agent$(arg agentID)">
 
 		<!-- CRAZY RADIO -->
