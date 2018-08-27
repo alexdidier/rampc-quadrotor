@@ -33,100 +33,10 @@
 
 
 
-//    ----------------------------------------------------------------------------------
-//    III  N   N   CCCC  L      U   U  DDDD   EEEEE   SSSS
-//     I   NN  N  C      L      U   U  D   D  E      S
-//     I   N N N  C      L      U   U  D   D  EEE     SSS
-//     I   N  NN  C      L      U   U  D   D  E          S
-//    III  N   N   CCCC  LLLLL   UUU   DDDD   EEEEE  SSSS
-//    ----------------------------------------------------------------------------------
-
-#include <stdlib.h>
-#include <string>
-
-#include <ros/ros.h>
-#include <ros/package.h>
-#include <ros/network.h>
-#include "std_msgs/Int32.h"
-//#include "std_msgs/Float32.h"
-//#include <std_msgs/String.h>
-
-#include "d_fall_pps/Controller.h"
+// INCLUDE THE HEADER
+#include "nodes/ParameterService.h"
 
 
-//    ----------------------------------------------------------------------------------
-//    DDDD   EEEEE  FFFFF  III  N   N  EEEEE   SSSS
-//    D   D  E      F       I   NN  N  E      S
-//    D   D  EEE    FFF     I   N N N  EEE     SSS
-//    D   D  E      F       I   N  NN  E          S
-//    DDDD   EEEEE  F      III  N   N  EEEEE  SSSS
-//    ----------------------------------------------------------------------------------
-
-
-// For which controller parameters to load
-#define LOAD_YAML_SAFE_CONTROLLER_AGENT           1
-#define LOAD_YAML_CUSTOM_CONTROLLER_AGENT         2
-#define LOAD_YAML_SAFE_CONTROLLER_COORDINATOR     3
-#define LOAD_YAML_CUSTOM_CONTROLLER_COORDINATOR   4
-
-#define FETCH_YAML_SAFE_CONTROLLER_FROM_OWN_AGENT      1
-#define FETCH_YAML_CUSTOM_CONTROLLER_FROM_OWN_AGENT    2
-#define FETCH_YAML_SAFE_CONTROLLER_FROM_COORDINATOR    3
-#define FETCH_YAML_CUSTOM_CONTROLLER_FROM_COORDINATOR  4
-
-#define TYPE_INVALID      -1
-#define TYPE_COORDINATOR   1
-#define TYPE_AGENT         2
-
-
-// Namespacing the package
-using namespace d_fall_pps;
-//using namespace std;
-
-
-
-
-//    ----------------------------------------------------------------------------------
-//    V   V    A    RRRR   III    A    BBBB   L      EEEEE   SSSS
-//    V   V   A A   R   R   I    A A   B   B  L      E      S
-//    V   V  A   A  RRRR    I   A   A  BBBB   L      EEE     SSS
-//     V V   AAAAA  R  R    I   AAAAA  B   B  L      E          S
-//      V    A   A  R   R  III  A   A  BBBB   LLLLL  EEEEE  SSSS
-//    ----------------------------------------------------------------------------------
-
-// The type of this node, i.e., agent or a coordinator, specified as a parameter in the
-// "*.launch" file
-int my_type = 0;
-
-// The ID of this agent, i.e., the ID of this computer in the case that this computer is
-// and agent
-int my_agentID = 0;
-
-// Publisher that notifies the relevant nodes when the YAML paramters have been loaded
-// from file into ram/cache, and hence are ready to be fetched
-ros::Publisher controllerYamlReadyForFetchPublihser;
-
-
-std::string m_ros_namespace;
-
-ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_self;
-
-
-//    ----------------------------------------------------------------------------------
-//    FFFFF  U   U  N   N   CCCC  TTTTT  III   OOO   N   N
-//    F      U   U  NN  N  C        T     I   O   O  NN  N
-//    FFF    U   U  N N N  C        T     I   O   O  N N N
-//    F      U   U  N  NN  C        T     I   O   O  N  NN
-//    F       UUU   N   N   CCCC    T    III   OOO   N   N
-//
-//    PPPP   RRRR    OOO   TTTTT   OOO   TTTTT  Y   Y  PPPP   EEEEE   SSSS
-//    P   P  R   R  O   O    T    O   O    T     Y Y   P   P  E      S
-//    PPPP   RRRR   O   O    T    O   O    T      Y    PPPP   EEE     SSS
-//    P      R  R   O   O    T    O   O    T      Y    P      E          S
-//    P      R   R   OOO     T     OOO     T      Y    P      EEEEE  SSSS
-//    ----------------------------------------------------------------------------------
-
-void requestLoadControllerYamlCallback(const std_msgs::Int32& msg);
 
 
 
@@ -171,7 +81,7 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
     // parameters should be loaded
     int controller_to_load_yaml = msg.data;
 
-    ROS_INFO_STREAM("The Parameter Service node received the message to load YAML parameters from file into cache");
+    ROS_INFO_STREAM("[PARAMETER SERVICE] Received the message to load YAML parameters from file into cache");
 
 
     // Instantiate a local varaible to confirm that something can actually be loaded
@@ -185,32 +95,78 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
     std::string d_fall_pps_path = ros::package::getPath("d_fall_pps");
 
     // Switch between loading for the different controllers
-    if ( (controller_to_load_yaml==LOAD_YAML_SAFE_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR) )
+    //    ----------------------------------------
+    // FOR THE SAFE CONTROLLER
+    if (
+        ((controller_to_load_yaml==LOAD_YAML_SAFE_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR))
+        ||
+        ((controller_to_load_yaml==LOAD_YAML_SAFE_CONTROLLER_AGENT)       && (my_type==TYPE_AGENT))
+    )
     {
         // Re-load the parameters of the safe controller:
-        cmd = "rosparam load " + d_fall_pps_path + "/param/SafeController.yaml " + m_ros_namespace + "/SafeController";
+        cmd = "rosparam load " + d_fall_pps_path + "/param/SafeController.yaml " + m_base_namespace + "/SafeController";
     }
-    else if ( (controller_to_load_yaml==LOAD_YAML_SAFE_CONTROLLER_AGENT) && (my_type==TYPE_AGENT) )
+    //    ----------------------------------------
+    // FOR THE DEMO CONTROLLER
+    else if (
+        ((controller_to_load_yaml==LOAD_YAML_DEMO_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR))
+        ||
+        ((controller_to_load_yaml==LOAD_YAML_DEMO_CONTROLLER_AGENT)       && (my_type==TYPE_AGENT))
+    )
     {
-        // Re-load the parameters of the safe controller:
-        cmd = "rosparam load " + d_fall_pps_path + "/param/SafeController.yaml " + m_ros_namespace + "/SafeController";
+        // Re-load the parameters of the demo controller:
+        cmd = "rosparam load " + d_fall_pps_path + "/param/DemoController.yaml " + m_base_namespace + "/DemoController";
     }
-    else if ( (controller_to_load_yaml==LOAD_YAML_CUSTOM_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR) )
+    //    ----------------------------------------
+    // FOR THE STUDENT CONTROLLER
+    else if (
+        ((controller_to_load_yaml==LOAD_YAML_STUDENT_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR))
+        ||
+        ((controller_to_load_yaml==LOAD_YAML_STUDENT_CONTROLLER_AGENT)       && (my_type==TYPE_AGENT))
+    )
     {
-        // Re-load the parameters of the custom controller:
-        cmd = "rosparam load " + d_fall_pps_path + "/param/CustomController.yaml " + m_ros_namespace + "/CustomController";
+        // Re-load the parameters of the demo controller:
+        cmd = "rosparam load " + d_fall_pps_path + "/param/StudentController.yaml " + m_base_namespace + "/StudentController";
     }
-    else if ( (controller_to_load_yaml==LOAD_YAML_CUSTOM_CONTROLLER_AGENT) && (my_type==TYPE_AGENT) )
+    //    ----------------------------------------
+    // FOR THE MPC CONTROLLER
+    else if (
+        ((controller_to_load_yaml==LOAD_YAML_MPC_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR))
+        ||
+        ((controller_to_load_yaml==LOAD_YAML_MPC_CONTROLLER_AGENT)       && (my_type==TYPE_AGENT))
+    )
     {
-        // Re-load the parameters of the custom controller:
-        cmd = "rosparam load " + d_fall_pps_path + "/param/CustomController.yaml " + m_ros_namespace + "/CustomController";
+        // Re-load the parameters of the demo controller:
+        cmd = "rosparam load " + d_fall_pps_path + "/param/MpcController.yaml " + m_base_namespace + "/MpcController";
+    }
+    //    ----------------------------------------
+    // FOR THE REMOTE CONTROLLER
+    else if (
+        ((controller_to_load_yaml==LOAD_YAML_REMOTE_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR))
+        ||
+        ((controller_to_load_yaml==LOAD_YAML_REMOTE_CONTROLLER_AGENT)       && (my_type==TYPE_AGENT))
+    )
+    {
+        // Re-load the parameters of the demo controller:
+        cmd = "rosparam load " + d_fall_pps_path + "/param/RemoteController.yaml " + m_base_namespace + "/RemoteController";
+    }
+    //    ----------------------------------------
+    // FOR THE TUNING CONTROLLER
+    else if (
+        ((controller_to_load_yaml==LOAD_YAML_TUNING_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR))
+        ||
+        ((controller_to_load_yaml==LOAD_YAML_TUNING_CONTROLLER_AGENT)       && (my_type==TYPE_AGENT))
+    )
+    {
+        // Re-load the parameters of the demo controller:
+        cmd = "rosparam load " + d_fall_pps_path + "/param/TuningController.yaml " + m_base_namespace + "/TuningController";
     }
     else
     {
         // Let the user know that the command was not recognised
-        ROS_INFO_STREAM("> Nothing to load for this parameter service with.");
-        ROS_INFO_STREAM("> The message received has 'controller_to_load_yaml'   =  " << controller_to_load_yaml);
-        ROS_INFO_STREAM("> And the type of this Parameter Service is 'my_type'  =  " << my_type);
+        ROS_INFO_STREAM("[PARAMETER SERVICE] > Nothing to load for this parameter service with.");
+        ROS_INFO_STREAM("[PARAMETER SERVICE] > The message received has 'controller_to_load_yaml'   =  " << controller_to_load_yaml);
+        ROS_INFO_STREAM("[PARAMETER SERVICE] > And the type of this Parameter Service is 'my_type'  =  " << my_type);
         // Set the boolean that prevents the fetch message from being sent
         isValidToAttemptLoad = false;
     }
@@ -221,7 +177,7 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
     if (isValidToAttemptLoad)
     {
         // Let the user know what is about to happen
-        ROS_INFO_STREAM("> The following path will be used for locating the .yaml file: " << d_fall_pps_path  << " The comand line string sent to the 'system' is: " << cmd );
+        ROS_INFO_STREAM("[PARAMETER SERVICE] > The following path will be used for locating the .yaml file: " << d_fall_pps_path  << " The comand line string sent to the 'system' is: " << cmd );
 
         // Re-load the parameters by pass the command line string via a "system" call
         // > i.e., this replicates pasting this string in a new terminal window and pressing enter
@@ -237,37 +193,79 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
         // Instantiate a local variable for the fetch message
         std_msgs::Int32 fetch_msg;
         // Fill in the data of the fetch message
-        switch(controller_to_load_yaml)
-        {
-            case (LOAD_YAML_SAFE_CONTROLLER_COORDINATOR):
-                fetch_msg.data = FETCH_YAML_SAFE_CONTROLLER_FROM_COORDINATOR;
-                break;
-            case (LOAD_YAML_CUSTOM_CONTROLLER_COORDINATOR):
-                fetch_msg.data = FETCH_YAML_CUSTOM_CONTROLLER_FROM_COORDINATOR;
-                break;
-            case (LOAD_YAML_SAFE_CONTROLLER_AGENT):
-                fetch_msg.data = FETCH_YAML_SAFE_CONTROLLER_FROM_OWN_AGENT;
-                break;
-            case (LOAD_YAML_CUSTOM_CONTROLLER_AGENT):
-                fetch_msg.data = FETCH_YAML_CUSTOM_CONTROLLER_FROM_OWN_AGENT;
-                break;
-            default:
-                // Let the user know that the command was not recognised
-                ROS_INFO("Unknown 'controller to load yaml' command, thus a 'ready to fetch' message will NOT be published.");
-                // Set the boolean that prevents the fetch message from being sent
-                isReadyForFetch = false;
-                break;
-        }
+        fetch_msg.data = controller_to_load_yaml;
+        // Fill in the data of the fetch message
+        // switch(controller_to_load_yaml)
+        // {
+        //     case (LOAD_YAML_SAFE_CONTROLLER_COORDINATOR):
+        //         fetch_msg.data = FETCH_YAML_SAFE_CONTROLLER_FROM_COORDINATOR;
+        //         break;
+        //     case (LOAD_YAML_DEMO_CONTROLLER_COORDINATOR):
+        //         fetch_msg.data = FETCH_YAML_DEMO_CONTROLLER_FROM_COORDINATOR;
+        //         break;
+        //     case (LOAD_YAML_SAFE_CONTROLLER_AGENT):
+        //         fetch_msg.data = FETCH_YAML_SAFE_CONTROLLER_FROM_OWN_AGENT;
+        //         break;
+        //     case (LOAD_YAML_DEMO_CONTROLLER_AGENT):
+        //         fetch_msg.data = FETCH_YAML_DEMO_CONTROLLER_FROM_OWN_AGENT;
+        //         break;
+        //     default:
+        //         // Let the user know that the command was not recognised
+        //         ROS_INFO("Unknown 'controller to load yaml' command, thus a 'ready to fetch' message will NOT be published.");
+        //         // Set the boolean that prevents the fetch message from being sent
+        //         isReadyForFetch = false;
+        //         break;
+        // }
         // Send a message that the YAML parameter have been loaded and hence are
         // ready to be fetched (i.e., using getparam())
         if (isReadyForFetch)
         {
-            controllerYamlReadyForFetchPublihser.publish(fetch_msg);
+            controllerYamlReadyForFetchPublisher.publish(fetch_msg);
         }
     }
 }
 
 
+
+
+bool loadYamlFiles(LoadYamlFiles::Request &request, LoadYamlFiles::Response &response)
+{
+
+    std::string yamlFileName_toLoad = request.yamlFileNames[0];
+
+    ros::NodeHandle nodeHandle("~");
+
+    std::string yamlFileNamesParamters_basenamespace = "YamlFileNames/dictionary";
+
+    std::string paramterName = yamlFileNamesParamters_basenamespace + "/" + yamlFileName_toLoad;
+
+    std::string yamlFileName_from_dictionary;
+
+    if(!nodeHandle.getParam(paramterName, yamlFileName_from_dictionary))
+    {
+        ROS_ERROR_STREAM("[PARAMETER SERVICE] Missing parameter: '" << paramterName << "'");
+        return false;
+    }
+
+    // Instantiate a local variable for the command string that will be passed to the "system":
+    std::string cmd;
+
+    // Get the abolute path to "d_fall_pps":
+    std::string d_fall_pps_path = ros::package::getPath("d_fall_pps");
+
+    // Construct the system command string for (re-)loading the parameters:
+    cmd = "rosparam load " + d_fall_pps_path + "/param" + "/" + yamlFileName_from_dictionary + ".yaml " + m_base_namespace + "/" + yamlFileName_from_dictionary;
+
+    // Let the user know what is about to happen
+    ROS_INFO_STREAM("[PARAMETER SERVICE] The following path will be used for locating the .yaml file: " << d_fall_pps_path  << " The comand line string sent to the 'system' is: " << cmd );
+
+    system(cmd.c_str());
+
+    // Pause breifly to ensure that the yaml file is fully loaded
+    ros::Duration(0.5).sleep();
+
+    return true;
+}
 
 
 
@@ -290,13 +288,18 @@ int main(int argc, char* argv[])
     // the "~" indcates that "self" is the node handle assigned to this variable.
     ros::NodeHandle nodeHandle("~");
 
+    // Get the namespace of this "ParameterService" node
+    std::string m_namespace = ros::this_node::getNamespace();
+    ROS_INFO_STREAM("[PARAMETER SERVICE] ros::this_node::getNamespace() =  " << m_namespace);
+
+
 
     // Get the value of the "type" parameter into a local string variable
     std::string type_string;
     if(!nodeHandle.getParam("type", type_string))
     {
         // Throw an error if the agent ID parameter could not be obtained
-        ROS_ERROR("Failed to get type from ParameterService");
+        ROS_ERROR("[PARAMETER SERVICE] Failed to get type from ParameterService");
     }
 
     // Set the "my_type" instance variable based on this string loaded
@@ -312,7 +315,7 @@ int main(int argc, char* argv[])
     {
         // Set "my_type" to the value indicating that it is invlid
         my_type = TYPE_INVALID;
-        ROS_ERROR("The retrieve type parameter was no recognised.");
+        ROS_ERROR("[PARAMETER SERVICE] The 'type' parameter retrieved was not recognised.");
     }
 
 
@@ -320,13 +323,13 @@ int main(int argc, char* argv[])
     if(!nodeHandle.getParam("agentID", my_agentID))
     {
         // Throw an error if the agent ID parameter could not be obtained
-        ROS_ERROR("Failed to get agentID from ParameterService");
+        ROS_ERROR("[PARAMETER SERVICE] Failed to get agentID from ParameterService");
     }
 
 
     // Publisher that notifies the relevant nodes when the YAML paramters have been loaded
     // from file into ram/cache, and hence are ready to be fetched
-    controllerYamlReadyForFetchPublihser = nodeHandle.advertise<std_msgs::Int32>("controllerYamlReadyForFetch", 1);
+    controllerYamlReadyForFetchPublisher = nodeHandle.advertise<std_msgs::Int32>("controllerYamlReadyForFetch", 1);
     
 
     // Construct the string to the namespace of this Paramater Service
@@ -334,9 +337,10 @@ int main(int argc, char* argv[])
     {
         case TYPE_AGENT:
         {
-            //m_ros_namespace = ros::this_node::getNamespace();
-            m_ros_namespace = "/" + std::to_string(my_agentID) + '/' + "ParameterService";
-            ROS_INFO_STREAM("This Paramter Sercice will load .yaml file parameters into the 'base' namespace: " << m_ros_namespace);
+            //m_base_namespace = ros::this_node::getNamespace();
+            //m_base_namespace = "/agent" + my_agentID + '/' + "ParameterService";
+            m_base_namespace = m_namespace + '/' + "ParameterService";
+            ROS_INFO_STREAM("[PARAMETER SERVICE] .yaml file parameters will be loaded into the 'base' namespace: " << m_base_namespace);
             break;
         }
 
@@ -344,15 +348,16 @@ int main(int argc, char* argv[])
         // > The master GUI
         case TYPE_COORDINATOR:
         {
-            //m_ros_namespace = ros::this_node::getNamespace();
-            m_ros_namespace = "/ParameterService";
-            ROS_INFO_STREAM("This Paramter Sercice will load .yaml file parameters into the 'base' namespace: " << m_ros_namespace);
+            //m_base_namespace = ros::this_node::getNamespace();
+            //m_base_namespace = "/ParameterService";
+            m_base_namespace = m_namespace + '/' + "ParameterService";
+            ROS_INFO_STREAM("[PARAMETER SERVICE] .yaml file parameters will be loaded into the 'base' namespace: " << m_base_namespace);
             break;
         }
 
         default:
         {
-            ROS_ERROR("The 'my_type' type parameter was not recognised.");
+            ROS_ERROR("[PARAMETER SERVICE] The 'my_type' type parameter was not recognised.");
             break;
         }
     }
@@ -390,7 +395,7 @@ int main(int argc, char* argv[])
             requestLoadControllerYamlSubscriber_agent_to_coordinator = nh_coordinator_for_this_agent.subscribe("/my_GUI/requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);            
 
             // Inform the user what was subscribed to:
-            ROS_INFO_STREAM("This Parameter Service has subscribed to 'requestLoadControllerYaml' messages from both the 'my_GUI' and the 'PPSClient'");
+            ROS_INFO_STREAM("[PARAMETER SERVICE] Subscribed to 'requestLoadControllerYaml' messages from both the 'my_GUI' and the 'PPSClient'");
             break;
         }
 
@@ -405,19 +410,29 @@ int main(int argc, char* argv[])
             requestLoadControllerYamlSubscriber_coordinator_to_self = nh_coordinator_for_this_coordinator.subscribe("/my_GUI/requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);
 
             // Inform the user what was subscribed to:
-            ROS_INFO_STREAM("This Parameter Service has subscribed to 'requestLoadControllerYaml' messages from 'my_GUI'");
+            ROS_INFO_STREAM("[PARAMETER SERVICE] Subscribed to 'requestLoadControllerYaml' messages from 'my_GUI'");
             break;
         }
 
         default:
         {
-            ROS_ERROR("The 'my_type' type parameter was not recognised.");
+            ROS_ERROR("[PARAMETER SERVICE] The 'my_type' type parameter was not recognised.");
             break;
         }
     }
 
 
-    ROS_INFO("CentralManagerService ready");
+    // Advertise the service for loading Yaml Files
+    ros::ServiceServer service = nodeHandle.advertiseService("LoadYamlFiles", loadYamlFiles);
+
+
+
+    // LOAD THE LIST OF YAML FILE NAMES
+
+
+
+
+    ROS_INFO("[PARAMETER SERVICE] Service ready :-)");
     ros::spin();
 
     return 0;

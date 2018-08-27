@@ -33,94 +33,10 @@
 
 
 
-//    ----------------------------------------------------------------------------------
-//    III  N   N   CCCC  L      U   U  DDDD   EEEEE   SSSS
-//     I   NN  N  C      L      U   U  D   D  E      S
-//     I   N N N  C      L      U   U  D   D  EEE     SSS
-//     I   N  NN  C      L      U   U  D   D  E          S
-//    III  N   N   CCCC  LLLLL   UUU   DDDD   EEEEE  SSSS
-//    ----------------------------------------------------------------------------------
-
-#include <stdlib.h>
-#include <ros/ros.h>
-#include "d_fall_pps/CrazyflieContext.h"
-#include "d_fall_pps/CrazyflieDB.h"
-
-#include "d_fall_pps/CMRead.h"
-#include "d_fall_pps/CMQuery.h"
-#include "d_fall_pps/CMUpdate.h"
-#include "d_fall_pps/CMCommand.h"
-#include "CentralManagerService.h"
-
-#include "CrazyflieIO.h"
+// INCLUDE THE HEADER
+#include "nodes/CentralManagerService.h"
 
 
-
-
-
-//    ----------------------------------------------------------------------------------
-//    DDDD   EEEEE  FFFFF  III  N   N  EEEEE   SSSS
-//    D   D  E      F       I   NN  N  E      S
-//    D   D  EEE    FFF     I   N N N  EEE     SSS
-//    D   D  E      F       I   N  NN  E          S
-//    DDDD   EEEEE  F      III  N   N  EEEEE  SSSS
-//    ----------------------------------------------------------------------------------
-
-
-// For which controller parameters to load
-#define LOAD_YAML_SAFE_CONTROLLER_AGENT          1
-#define LOAD_YAML_CUSTOM_CONTROLLER_AGENT        2
-#define LOAD_YAML_SAFE_CONTROLLER_COORDINATOR    3
-#define LOAD_YAML_CUSTOM_CONTROLLER_COORDINATOR  4
-
-// For which controller parameters and from where to fetch
-#define FETCH_YAML_SAFE_CONTROLLER_FROM_OWN_AGENT        1
-#define FETCH_YAML_CUSTOM_CONTROLLER_FROM_OWN_AGENT      2
-#define FETCH_YAML_SAFE_CONTROLLER_FROM_COORDINATOR      3
-#define FETCH_YAML_CUSTOM_CONTROLLER_FROM_COORDINATOR    4
-
-
-using namespace d_fall_pps;
-using namespace std;
-
-
-
-
-
-//    ----------------------------------------------------------------------------------
-//    V   V    A    RRRR   III    A    BBBB   L      EEEEE   SSSS
-//    V   V   A A   R   R   I    A A   B   B  L      E      S
-//    V   V  A   A  RRRR    I   A   A  BBBB   L      EEE     SSS
-//     V V   AAAAA  R  R    I   AAAAA  B   B  L      E          S
-//      V    A   A  R   R  III  A   A  BBBB   LLLLL  EEEEE  SSSS
-//    ----------------------------------------------------------------------------------
-
-CrazyflieDB crazyflieDB;
-
-
-
-
-
-//    ----------------------------------------------------------------------------------
-//    FFFFF  U   U  N   N   CCCC  TTTTT  III   OOO   N   N
-//    F      U   U  NN  N  C        T     I   O   O  NN  N
-//    FFF    U   U  N N N  C        T     I   O   O  N N N
-//    F      U   U  N  NN  C        T     I   O   O  N  NN
-//    F       UUU   N   N   CCCC    T    III   OOO   N   N
-//
-//    PPPP   RRRR    OOO   TTTTT   OOO   TTTTT  Y   Y  PPPP   EEEEE   SSSS
-//    P   P  R   R  O   O    T    O   O    T     Y Y   P   P  E      S
-//    PPPP   RRRR   O   O    T    O   O    T      Y    PPPP   EEE     SSS
-//    P      R  R   O   O    T    O   O    T      Y    P      E          S
-//    P      R   R   OOO     T     OOO     T      Y    P      EEEEE  SSSS
-//    ----------------------------------------------------------------------------------
-
-bool cmRead(CMRead::Request &request, CMRead::Response &response);
-int findEntryByStudID(unsigned int studID);
-bool cmQuery(CMQuery::Request &request, CMQuery::Response &response);
-int findEntryByCF(string name);
-bool cmUpdate(CMUpdate::Request &request, CMUpdate::Response &response);
-bool cmCommand(CMCommand::Request &request, CMCommand::Response &response);
 
 
 
@@ -139,24 +55,6 @@ bool cmCommand(CMCommand::Request &request, CMCommand::Response &response);
 //    ----------------------------------------------------------------------------------
 
 
-
-
-
-//    ----------------------------------------------------------------------------------
-//    L       OOO     A    DDDD
-//    L      O   O   A A   D   D
-//    L      O   O  A   A  D   D
-//    L      O   O  AAAAA  D   D
-//    LLLLL   OOO   A   A  DDDD
-//
-//    PPPP     A    RRRR     A    M   M  EEEEE  TTTTT  EEEEE  RRRR    SSSS
-//    P   P   A A   R   R   A A   MM MM  E        T    E      R   R  S
-//    PPPP   A   A  RRRR   A   A  M M M  EEE      T    EEE    RRRR    SSS
-//    P      AAAAA  R  R   AAAAA  M   M  E        T    E      R  R       S
-//    P      A   A  R   R  A   A  M   M  EEEEE    T    EEEEE  R   R  SSSS
-//    ----------------------------------------------------------------------------------
-
-// The requesting to load parameters is currently handled by the Paramter Service
 
 
 

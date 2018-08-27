@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.0)
 project(d_fall_pps)
 
 ## Add support for C++11, supported in ROS Kinetic and newer
@@ -15,7 +15,27 @@ find_package(catkin REQUIRED COMPONENTS
   genmsg
   rosbag
   roslib
-)
+  )
+
+find_package (Eigen3 3.3 NO_MODULE)
+
+
+# VICON DATASTREAM SDK PACKAGE
+# Ensure that the cache variable where the result would be stored is clear
+message(STATUS "NOTE: Prior to being unset: VICON_LIBRARY = " ${VICON_LIBRARY})
+unset(VICON_LIBRARY CACHE)
+message(STATUS "NOTE: After being unset: VICON_LIBRARY = " ${VICON_LIBRARY})
+
+# Find the Vicon Data Stream SDK Pacakge
+find_library(VICON_LIBRARY ViconDataStreamSDK_CPP PATHS lib/vicon NO_DEFAULT_PATH)
+message(STATUS "NOTE: After calling find_library(): VICON_LIBRARY = " ${VICON_LIBRARY})
+
+# Let the user know if the library was found or not
+if(VICON_LIBRARY)
+	message(STATUS "NOTE: the Vicon Data Stream SDK library was found")
+else()
+	message(STATUS "NOTE: the Vicon Data Stream SDK library was NOT found")
+endif()
 
 
 # GUI -- Add precompiler definitions to include ROS things in GUI compilation
@@ -33,6 +53,7 @@ find_package(Qt5Widgets REQUIRED)
 find_package(Qt5Core REQUIRED)
 find_package(Qt5Gui REQUIRED)
 find_package(Qt5Svg REQUIRED)
+
 
 # GUI -- Add src and includes
 set(MY_GUI_LIB_PATH_SRC ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/src)
@@ -85,6 +106,7 @@ qt5_wrap_ui(UIS_HDRS_STUDENT_GUI ${STUDENT_GUI_LIB_PATH_SRC}/MainWindow.ui)
 qt5_wrap_cpp(SRC_MOC_HDRS_STUDENT_GUI ${SRC_HDRS_QOBJECT_STUDENT_GUI})
 
 
+
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
@@ -134,8 +156,8 @@ add_message_files(
   CrazyflieDB.msg
   #----------------------------------------------------------------------
   DebugMsg.msg
-  CustomControllerYAML.msg
   CustomButton.msg
+  ViconSubscribeObjectName.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -146,6 +168,7 @@ add_message_files(
 # )
 add_service_files(
   FILES
+  LoadYamlFiles.srv
   Controller.srv
   CMRead.srv
   CMQuery.srv
@@ -200,8 +223,8 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include ${MY_GUI_LIB_PATH_INC} # GUI -- include headers from GUI in package
-  INCLUDE_DIRS include ${STUDENT_GUI_LIB_PATH_INC} # StudentGUI -- include headers from GUI in package
+  INCLUDE_DIRS include ${MY_GUI_LIB_PATH_INC}            # GUI -- include headers from GUI in package
+  INCLUDE_DIRS include ${STUDENT_GUI_LIB_PATH_INC}       # StudentGUI -- include headers from GUI in package
   LIBRARIES
   CATKIN_DEPENDS roscpp rospy std_msgs rosbag roslib
   DEPENDS
@@ -216,9 +239,10 @@ catkin_package(
 # include_directories(include)
 include_directories(
   ${MY_GUI_LIB_PATH_INC}            # GUI -- include directory inside GUI folder
-  ${STUDENT_GUI_LIB_PATH_INC}            # StudentGUI -- include directory inside GUI folder
+  ${STUDENT_GUI_LIB_PATH_INC}       # StudentGUI -- include directory inside GUI folder
   ${catkin_INCLUDE_DIRS}
   include
+  include/nodes
 )
 
 ## Declare a C++ library
@@ -235,15 +259,20 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/d_fall_pps_node.cpp)
-add_executable(ViconDataPublisher src/ViconDataPublisher.cpp)
-add_executable(PPSClient src/PPSClient.cpp)
-add_executable(SafeControllerService src/SafeControllerService.cpp)
-add_executable(CustomControllerService src/CustomControllerService.cpp)
-add_executable(CentralManagerService src/CentralManagerService.cpp src/CrazyflieIO.cpp)
-add_executable(ParameterService src/ParameterService.cpp)
-add_executable(CircleControllerService src/CircleControllerService.cpp)
-add_executable(FollowCrazyflieService src/FollowCrazyflieService.cpp)
-add_executable(FollowN_1Service src/FollowN_1Service.cpp)
+
+if(VICON_LIBRARY)
+	add_executable(ViconDataPublisher       src/nodes/ViconDataPublisher.cpp)
+endif()
+
+add_executable(PPSClient                src/nodes/PPSClient.cpp)
+add_executable(SafeControllerService    src/nodes/SafeControllerService.cpp)
+add_executable(DemoControllerService    src/nodes/DemoControllerService.cpp)
+add_executable(StudentControllerService src/nodes/StudentControllerService.cpp)
+add_executable(MpcControllerService     src/nodes/MpcControllerService.cpp)
+add_executable(RemoteControllerService  src/nodes/RemoteControllerService.cpp)
+add_executable(TuningControllerService  src/nodes/TuningControllerService.cpp)
+add_executable(CentralManagerService    src/nodes/CentralManagerService.cpp src/CrazyflieIO.cpp)
+add_executable(ParameterService         src/nodes/ParameterService.cpp)
 
 
 
@@ -274,6 +303,7 @@ set(MY_CPP_SOURCES_STUDENT_GUI              # compilation of sources
     )
 
 
+
 # GUI -- Add executables here
 add_executable(my_GUI ${MY_CPP_SOURCES_GUI} ${UIS_HDRS_GUI} ${SRC_MOC_HDRS_GUI} ${MY_RESOURCE_FILE_RCC})
 qt5_use_modules(my_GUI Widgets)
@@ -284,15 +314,19 @@ qt5_use_modules(student_GUI Widgets)
 
 
 
-add_dependencies(ViconDataPublisher d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(PPSClient d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(SafeControllerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(CustomControllerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(CentralManagerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(ParameterService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(CircleControllerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(FollowCrazyflieService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(FollowN_1Service d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+if(VICON_LIBRARY)
+	add_dependencies(ViconDataPublisher       d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+endif()
+
+add_dependencies(PPSClient                d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(SafeControllerService    d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(DemoControllerService    d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(StudentControllerService d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(MpcControllerService     d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(RemoteControllerService  d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(TuningControllerService  d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(CentralManagerService    d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(ParameterService         d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 # GUI-- dependencies
 add_dependencies(my_GUI d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
@@ -315,26 +349,27 @@ add_dependencies(student_GUI d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_
 #   ${catkin_LIBRARIES}
 # )
 
-find_library(VICON_LIBRARY ViconDataStreamSDK_CPP HINTS lib/vicon)
+# find_library(VICON_LIBRARY ViconDataStreamSDK_CPP HINTS lib/vicon)
 
-target_link_libraries(ViconDataPublisher ${catkin_LIBRARIES})
-target_link_libraries(ViconDataPublisher ${VICON_LIBRARY})
+if(VICON_LIBRARY)
+	target_link_libraries(ViconDataPublisher ${catkin_LIBRARIES})
+	target_link_libraries(ViconDataPublisher ${VICON_LIBRARY})
+endif()
 
-target_link_libraries(PPSClient ${catkin_LIBRARIES})
+target_link_libraries(PPSClient                ${catkin_LIBRARIES})
+target_link_libraries(SafeControllerService    ${catkin_LIBRARIES})
+target_link_libraries(DemoControllerService    ${catkin_LIBRARIES})
+target_link_libraries(StudentControllerService ${catkin_LIBRARIES})
+if(Eigen3_FOUND)
+  target_link_libraries(MpcControllerService     ${catkin_LIBRARIES} Eigen3::Eigen)
+else()
+  target_link_libraries(MpcControllerService     ${catkin_LIBRARIES})
+endif()
+target_link_libraries(RemoteControllerService  ${catkin_LIBRARIES})
+target_link_libraries(TuningControllerService  ${catkin_LIBRARIES})
+target_link_libraries(CentralManagerService    ${catkin_LIBRARIES})
+target_link_libraries(ParameterService         ${catkin_LIBRARIES})
 
-target_link_libraries(SafeControllerService ${catkin_LIBRARIES})
-
-target_link_libraries(CustomControllerService ${catkin_LIBRARIES})
-
-target_link_libraries(CentralManagerService ${catkin_LIBRARIES})
-
-target_link_libraries(ParameterService ${catkin_LIBRARIES})
-
-target_link_libraries(CircleControllerService ${catkin_LIBRARIES})
-
-target_link_libraries(FollowCrazyflieService ${catkin_LIBRARIES})
-
-target_link_libraries(FollowN_1Service ${catkin_LIBRARIES})
 
 # GUI -- link libraries
 target_link_libraries(my_GUI Qt5::Widgets) # GUI -- let my_GUI have acesss to Qt stuff
@@ -346,7 +381,6 @@ target_link_libraries(my_GUI ${catkin_LIBRARIES})
 
 # StudentGUI -- link libraries
 target_link_libraries(student_GUI Qt5::Widgets) # GUI -- let my_GUI have acesss to Qt stuff
-
 target_link_libraries(student_GUI ${catkin_LIBRARIES})
 
 

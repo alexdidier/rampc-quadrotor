@@ -44,6 +44,7 @@
 #include <QMetaType>
 #include <QDir>
 #include <regex>
+#include <QShortcut>
 
 #ifdef CATKIN_MAKE
 #include "d_fall_pps/UnlabeledMarker.h"
@@ -51,7 +52,7 @@
 #include "d_fall_pps/CrazyflieEntry.h"
 #include "d_fall_pps/CMUpdate.h"
 #include "d_fall_pps/CMCommand.h"
-#include "CentralManagerService.h"
+#include "nodes/CentralManagerService.h"
 
 #include <ros/ros.h>
 #include <ros/network.h>
@@ -222,6 +223,13 @@ void MainGUIWindow::_init()
     QObject::connect(scene, SIGNAL(numTablePiecesChanged(int)), this, SLOT(handleTablePiecesNumChanged(int)));
 
     ui->checkBox_vicon_highlight_markers->setEnabled(false);
+
+    // Add keyboard shortcuts
+    // > for "all motors off", press the space bar
+    ui->all_motors_off_button->setShortcut(tr("Space"));
+    // > for "kill GUI node", press "CTRL+C" while the GUI window is the focus
+    QShortcut* close_GUI_shortcut = new QShortcut(QKeySequence(tr("CTRL+C")), this, SLOT(close()));
+
 
     #ifdef CATKIN_MAKE
     _rosNodeThread->init();

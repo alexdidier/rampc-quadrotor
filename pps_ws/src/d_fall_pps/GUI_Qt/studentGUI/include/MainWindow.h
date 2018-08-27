@@ -43,11 +43,17 @@
 #include "d_fall_pps/CrazyflieContext.h"
 #include "d_fall_pps/CrazyflieData.h"
 #include "d_fall_pps/Setpoint.h"
+#include "d_fall_pps/ViconSubscribeObjectName.h"
 
 
 // Types of controllers being used:
-#define SAFE_CONTROLLER   0
-#define CUSTOM_CONTROLLER 1
+#define SAFE_CONTROLLER    1
+#define DEMO_CONTROLLER    2
+#define STUDENT_CONTROLLER 3
+#define MPC_CONTROLLER     4
+#define REMOTE_CONTROLLER  5
+#define TUNING_CONTROLLER  6
+
 
 // Commands for CrazyRadio
 #define CMD_RECONNECT  0
@@ -62,11 +68,16 @@
 // operation state of this agent. These "commands"
 // are sent from this GUI node to the "PPSClient"
 // node where the command is enacted
-#define CMD_USE_SAFE_CONTROLLER   1
-#define CMD_USE_CUSTOM_CONTROLLER 2
-#define CMD_CRAZYFLY_TAKE_OFF     3
-#define CMD_CRAZYFLY_LAND         4
-#define CMD_CRAZYFLY_MOTORS_OFF   5
+#define CMD_USE_SAFE_CONTROLLER      1
+#define CMD_USE_DEMO_CONTROLLER      2
+#define CMD_USE_STUDENT_CONTROLLER   3
+#define CMD_USE_MPC_CONTROLLER       4
+#define CMD_USE_REMOTE_CONTROLLER    5
+#define CMD_USE_TUNING_CONTROLLER    6
+
+#define CMD_CRAZYFLY_TAKE_OFF        11
+#define CMD_CRAZYFLY_LAND            12
+#define CMD_CRAZYFLY_MOTORS_OFF      13
 
 // Flying States
 #define STATE_MOTORS_OFF 1
@@ -80,9 +91,18 @@
 
 // For which controller parameters to load
 #define LOAD_YAML_SAFE_CONTROLLER_AGENT           1
-#define LOAD_YAML_CUSTOM_CONTROLLER_AGENT         2
-#define LOAD_YAML_SAFE_CONTROLLER_COORDINATOR     3
-#define LOAD_YAML_CUSTOM_CONTROLLER_COORDINATOR   4
+#define LOAD_YAML_DEMO_CONTROLLER_AGENT           2
+#define LOAD_YAML_STUDENT_CONTROLLER_AGENT        3
+#define LOAD_YAML_MPC_CONTROLLER_AGENT            4
+#define LOAD_YAML_REMOTE_CONTROLLER_AGENT         5
+#define LOAD_YAML_TUNING_CONTROLLER_AGENT         6
+
+#define LOAD_YAML_SAFE_CONTROLLER_COORDINATOR     11
+#define LOAD_YAML_DEMO_CONTROLLER_COORDINATOR     12
+#define LOAD_YAML_STUDENT_CONTROLLER_COORDINATOR  13
+#define LOAD_YAML_MPC_CONTROLLER_COORDINATOR      14
+#define LOAD_YAML_REMOTE_CONTROLLER_COORDINATOR   15
+#define LOAD_YAML_TUNING_CONTROLLER_COORDINATOR   16
 
 // Universal constants
 #define PI 3.141592653589
@@ -104,29 +124,66 @@ public:
 
 private slots:
     void updateNewViconData(const ptrToMessage& p_msg);
+
+    // # RF Crazyradio Connect Disconnect
     void on_RF_Connect_button_clicked();
-
-    void on_take_off_button_clicked();
-
-    void on_land_button_clicked();
-
-    void on_motors_OFF_button_clicked();
-
-    void on_set_setpoint_button_clicked();
-    void on_set_setpoint_button_2_clicked();
-
     void on_RF_disconnect_button_clicked();
 
-    void on_load_custom_yaml_button_clicked();
+    // # Take off, lanf, motors off
+    void on_take_off_button_clicked();
+    void on_land_button_clicked();
+    void on_motors_OFF_button_clicked();
+
+    // # Setpoint
+    void on_set_setpoint_button_safe_clicked();
+    void on_set_setpoint_button_demo_clicked();
+    void on_set_setpoint_button_student_clicked();
+    void on_set_setpoint_button_mpc_clicked();
+
+    // # Load Yaml when acting as the GUI for an Agent
     void on_load_safe_yaml_button_clicked();
+    void on_load_demo_yaml_button_clicked();
+    void on_load_student_yaml_button_clicked();
+    void on_load_mpc_yaml_button_clicked();
+    void on_load_remote_yaml_button_clicked();
+    void on_load_tuning_yaml_button_clicked();
 
-    void on_en_custom_controller_clicked();
+    // # Enable controllers
+    void on_enable_safe_controller_clicked();
+    void on_enable_demo_controller_clicked();
+    void on_enable_student_controller_clicked();
+    void on_enable_mpc_controller_clicked();
+    void on_enable_remote_controller_clicked();
+    void on_enable_tuning_controller_clicked();
 
-    void on_en_safe_controller_clicked();
+    
 
-    void on_customButton_1_clicked();
-    void on_customButton_2_clicked();
-    void on_customButton_3_clicked();
+    void on_demoButton_1_clicked();
+    void on_demoButton_2_clicked();
+    void on_demoButton_3_clicked();
+
+    void on_studentButton_1_clicked();
+    void on_studentButton_2_clicked();
+    void on_studentButton_3_clicked();
+
+    // Buttons within the REMOTE controller tab
+    void on_remote_subscribe_button_clicked();
+    void on_remote_unsubscribe_button_clicked();
+    void on_remote_activate_button_clicked();
+    void on_remote_deactivate_button_clicked();
+
+    // Buttons within the TUNING controller tab
+    void on_tuning_test_horizontal_button_clicked();
+    void on_tuning_test_vertical_button_clicked();
+    void on_tuning_test_heading_button_clicked();
+    void on_tuning_test_all_button_clicked();
+    void on_tuning_test_circle_button_clicked();
+    void on_tuning_slider_horizontal_valueChanged(int value);
+    void on_tuning_slider_vertical_valueChanged(int value);
+    void on_tuning_slider_heading_valueChanged(int value);
+
+
+
 private:
     Ui::MainWindow *ui;
 
@@ -138,13 +195,20 @@ private:
     std::string m_ros_namespace;
 
     ros::Timer m_timer_yaml_file_for_safe_controller;
-    ros::Timer m_timer_yaml_file_for_custom_controlller;
+    ros::Timer m_timer_yaml_file_for_demo_controller;
+    ros::Timer m_timer_yaml_file_for_student_controller;
+    ros::Timer m_timer_yaml_file_for_mpc_controller;
+    ros::Timer m_timer_yaml_file_for_remote_controller;
+    ros::Timer m_timer_yaml_file_for_tuning_controller;
+
 
     int m_student_id;
     CrazyflieContext m_context;
 
     Setpoint m_safe_setpoint;
-    Setpoint m_custom_setpoint;
+    Setpoint m_demo_setpoint;
+    Setpoint m_student_setpoint;
+    Setpoint m_mpc_setpoint;
 
     int m_battery_state;
 
@@ -158,10 +222,36 @@ private:
     ros::Publisher controllerSetpointPublisher;
     ros::Subscriber safeSetpointSubscriber;
 
-    ros::Publisher customSetpointPublisher;
-    ros::Subscriber customSetpointSubscriber;
+    // SUBSCRIBERS AND PUBLISHERS:
+    // > For the Demo Controller SETPOINTS
+    ros::Publisher  demoSetpointPublisher;
+    ros::Subscriber demoSetpointSubscriber;
+    // > For the Student Controller SETPOINTS
+    ros::Publisher  studentSetpointPublisher;
+    ros::Subscriber studentSetpointSubscriber;
+    // > For the MPC Controller SETPOINTS
+    ros::Publisher  mpcSetpointPublisher;
+    ros::Subscriber mpcSetpointSubscriber;
 
-    ros::Publisher PPSClientStudentCustomButtonPublisher;
+    // > For the Remote Controller subscribe action
+    ros::Publisher remoteSubscribePublisher;
+    // > For the Remote Controller activate action
+    ros::Publisher remoteActivatePublisher;
+    // > For the Remote Controller data
+    ros::Subscriber remoteDataSubscriber;
+    // > For the Remote Control setpoint
+    ros::Subscriber remoteControlSetpointSubscriber;
+
+    // > For the TUNING CONTROLLER "test" button publisher
+    ros::Publisher tuningActivateTestPublisher;
+    // > For the TUNING CONTOLLER "gain" sliders
+    ros::Publisher tuningHorizontalGainPublisher;
+    ros::Publisher tuningVerticalGainPublisher;
+    ros::Publisher tuningHeadingGainPublisher;
+
+
+    ros::Publisher demoCustomButtonPublisher;
+    ros::Publisher studentCustomButtonPublisher;
 
     ros::Subscriber DBChangedSubscriber;
 
@@ -186,11 +276,29 @@ private:
     void crazyRadioStatusCallback(const std_msgs::Int32& msg);
     void CFBatteryCallback(const std_msgs::Float32& msg);
     void flyingStateChangedCallback(const std_msgs::Int32& msg);
+
     void safeSetpointCallback(const Setpoint& newSetpoint);
-    void customSetpointCallback(const Setpoint& newSetpoint);
+    void demoSetpointCallback(const Setpoint& newSetpoint);
+    void studentSetpointCallback(const Setpoint& newSetpoint);
+    void mpcSetpointCallback(const Setpoint& newSetpoint);
+
+
+    void remoteDataCallback(const CrazyflieData& objectData);
+    void remoteControlSetpointCallback(const CrazyflieData& setpointData);
+    
+
     void DBChangedCallback(const std_msgs::Int32& msg);
-    void customYamlFileTimerCallback(const ros::TimerEvent&);
+
+    // # Load Yaml when acting as the GUI for an Agent
     void safeYamlFileTimerCallback(const ros::TimerEvent&);
+    void demoYamlFileTimerCallback(const ros::TimerEvent&);
+    void studentYamlFileTimerCallback(const ros::TimerEvent&);
+    void mpcYamlFileTimerCallback(const ros::TimerEvent&);
+    void remoteYamlFileTimerCallback(const ros::TimerEvent&);
+    void tuningYamlFileTimerCallback(const ros::TimerEvent&);
+    
+
+
     void requestLoadControllerYaml_from_my_GUI_Callback(const std_msgs::Int32& msg);
     void controllerUsedChangedCallback(const std_msgs::Int32& msg);
     void batteryStateChangedCallback(const std_msgs::Int32& msg);
@@ -200,13 +308,20 @@ private:
     void setCrazyRadioStatus(int radio_status);
     void loadCrazyflieContext();
     void coordinatesToLocal(CrazyflieData& cf);
-    void initialize_custom_setpoint();
+
+    void initialize_demo_setpoint();
+    void initialize_student_setpoint();
+    void initialize_mpc_setpoint();
 
 
     void disableGUI();
     void enableGUI();
     void highlightSafeControllerTab();
-    void highlightCustomControllerTab();
+    void highlightDemoControllerTab();
+    void highlightStudentControllerTab();
+    void highlightMpcControllerTab();
+    void highlightRemoteControllerTab();
+    void highlightTuningControllerTab();
 
     bool setpointInsideBox(Setpoint setpoint, CrazyflieContext context);
     Setpoint correctSetpointBox(Setpoint setpoint, CrazyflieContext context);

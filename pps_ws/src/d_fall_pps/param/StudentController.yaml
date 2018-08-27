@@ -1,5 +1,5 @@
 # Mass of the crazyflie
-mass : 31
+mass : 28
 
 # Frequency of the controller, in hertz
 control_frequency : 200
