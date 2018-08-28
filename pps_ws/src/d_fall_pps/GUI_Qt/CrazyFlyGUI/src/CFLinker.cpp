@@ -164,11 +164,17 @@ void CFLinker::link(int student_id, int cf_zone_index, std::string cf_name, std:
     links.push_back(tmp_link);
     // TODO: remove options linked from available ones
 
+    // Get the index of the currently selected CF
     int index = m_ui->comboBoxCFs->currentIndex();
-    // remove items
+    // Remove item from the CF Combo Box
     m_ui->comboBoxCFs->removeItem(index);
-    index = m_ui->comboBoxCFZones->currentIndex();
-    m_ui->comboBoxCFZones->removeItem(index);
+
+
+    // THIS WAS COMMENTED OUT TO ALLOW ASSIGNING MULTIPLE CRAYZFLIES TO ONE ZONE
+    // Get the index of the currently selected CF
+    //index = m_ui->comboBoxCFZones->currentIndex();
+    // Remove item from the CF Combo Box
+    //m_ui->comboBoxCFZones->removeItem(index);
 
     // disable item
     // m_ui->comboBoxCFs->setItemData(index, 0, Qt::UserRole - 1);

@@ -306,13 +306,14 @@ void MainGUIWindow::updateComboBoxesCFZones()
     #ifdef CATKIN_MAKE
     for(int i = 0; i < scene->crazyfly_zones.size(); i++)
     {
-        if(!cf_linker->isCFZoneLinked(scene->crazyfly_zones[i]->getIndex()))
-        {
+    	// THIS IF CHECK WAS COMMENTED OUT TO ALLOW ASSIGNING MULTIPLE CRAYZFLIES TO ONE ZONE
+        //if(!cf_linker->isCFZoneLinked(scene->crazyfly_zones[i]->getIndex()))
+        //{
             int cf_zone_index = scene->crazyfly_zones[i]->getIndex();
             QString qstr = "CrazyFlyZone ";
             qstr.append(QString::number(cf_zone_index + 1));
             ui->comboBoxCFZones->addItem(qstr);
-        }
+        //}
     }
     #endif
 }
@@ -946,27 +947,54 @@ void MainGUIWindow::on_load_from_DB_button_clicked()
 
         for(int i = 0; i < m_data_base.crazyflieEntries.size(); i++)
         {
+        	// Get the CF name from the database
             std::string cf_name = m_data_base.crazyflieEntries[i].crazyflieContext.crazyflieName;
+            // Get the radio address from the database
             std::string radio_address = m_data_base.crazyflieEntries[i].crazyflieContext.crazyflieAddress;
+            // Get the CF Zone Index from the database
             int cf_zone_index = m_data_base.crazyflieEntries[i].crazyflieContext.localArea.crazyfly_zone_index;
 
-            // we should first create the cf zones that are in the database?
+
+            // THIS WAS ADDED TO ALLOW ASSIGNING MULTIPLE CRAYZFLIES TO ONE ZONE
+            // Check if a Zone with this index already exists.
             bool cf_zone_exists;
-            qreal width = m_data_base.crazyflieEntries[i].crazyflieContext.localArea.xmax - m_data_base.crazyflieEntries[i].crazyflieContext.localArea.xmin;
-            qreal height = m_data_base.crazyflieEntries[i].crazyflieContext.localArea.ymax - m_data_base.crazyflieEntries[i].crazyflieContext.localArea.ymin;
-            QRectF tmp_rect(m_data_base.crazyflieEntries[i].crazyflieContext.localArea.xmin * FROM_METERS_TO_UNITS,
-                            - m_data_base.crazyflieEntries[i].crazyflieContext.localArea.ymax * FROM_METERS_TO_UNITS, // minus sign because qt has y-axis inverted
-                            width * FROM_METERS_TO_UNITS,
-                            height * FROM_METERS_TO_UNITS);
-            int student_id = m_data_base.crazyflieEntries[i].studentID;
+            scene->crazyfly_zones.size();
+            for(int i = 0; i < scene->crazyfly_zones.size(); i++)
+		    {
+	            int existing_cf_zone_index = scene->crazyfly_zones[i]->getIndex();
+	            if (cf_zone_index==existing_cf_zone_index)
+	            {
+	            	cf_zone_exists = true;
+	            }
+		    }
 
+            // we should first create the cf zones that are in the database?
+            if (!cf_zone_exists)
+            {
+            	// Get the size of this Zone from the database
+	            qreal width = m_data_base.crazyflieEntries[i].crazyflieContext.localArea.xmax - m_data_base.crazyflieEntries[i].crazyflieContext.localArea.xmin;
+	            qreal height = m_data_base.crazyflieEntries[i].crazyflieContext.localArea.ymax - m_data_base.crazyflieEntries[i].crazyflieContext.localArea.ymin;
+	            // Create a rectangle for disaplying the zone
+	            QRectF tmp_rect(m_data_base.crazyflieEntries[i].crazyflieContext.localArea.xmin * FROM_METERS_TO_UNITS,
+	                            - m_data_base.crazyflieEntries[i].crazyflieContext.localArea.ymax * FROM_METERS_TO_UNITS, // minus sign because qt has y-axis inverted
+	                            width * FROM_METERS_TO_UNITS,
+	                            height * FROM_METERS_TO_UNITS);
+	            // Add the zone to the scene
+	            scene->addCFZone(tmp_rect, cf_zone_index);
+        	}
 
-            scene->addCFZone(tmp_rect, cf_zone_index);
+        	// Get the student ID for this entry in the database
+        	int student_id = m_data_base.crazyflieEntries[i].studentID;
 
-
+        	// Create the link
             cf_linker->link(student_id, cf_zone_index, cf_name, radio_address);
 
         }
+
+
+        // THIS WAS ADDED TO ALLOW ASSIGNING MULTIPLE CRAYZFLIES TO ONE ZONE
+        // Update the CF Zone combo box with the zones just added
+        updateComboBoxesCFZones();
     }
     else
     {
