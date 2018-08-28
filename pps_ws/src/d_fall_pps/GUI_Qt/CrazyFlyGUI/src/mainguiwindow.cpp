@@ -145,13 +145,49 @@ void MainGUIWindow::doNumCrazyFlyZonesChanged(int n)
 
 void MainGUIWindow::_init()
 {
-    // initialize checkboxes, spinboxes,....
+    // INITIALISE VARIOUS GUI ELEMENTS
+
+	// The "CHECKBOX" for whether to display crazyflie icons
+	ui->checkBox_vicon_crazyflies->setEnabled(true);
+    ui->checkBox_vicon_crazyflies->setCheckable(true);
+    ui->checkBox_vicon_crazyflies->setChecked(true);
+
+    // The "SPIN BOX" for specifying the scaling of crazyflie icons
     ui->scaleSpinBox->setRange(0.1, 100);
     ui->scaleSpinBox->setSingleStep(0.1);
-    ui->scaleSpinBox->setValue(1);
+    ui->scaleSpinBox->setValue(5);
+    ui->scaleSpinBox->setEnabled(true);
 
-    ui->checkBox_vicon_crazyflies->setChecked(false);
-    ui->scaleSpinBox->setEnabled(false);
+    // The "CHECKBOX" for whether to display markers
+    ui->checkBox_vicon_markers->setEnabled(true);
+	ui->checkBox_vicon_markers->setCheckable(true);
+    ui->checkBox_vicon_markers->setChecked(true);
+
+    // The "CHECKBOX" for whether to highlight the displayed markers
+    ui->checkBox_vicon_highlight_markers->setEnabled(true);
+    ui->checkBox_vicon_highlight_markers->setCheckable(true);
+    ui->checkBox_vicon_highlight_markers->setChecked(true);
+
+    // The "CHECKBOX" for whether to display the Crazyflie Zones
+    ui->checkBox_crazyfly_zones->setEnabled(true);
+    ui->checkBox_crazyfly_zones->setCheckable(true);
+    ui->checkBox_crazyfly_zones->setChecked(true);
+
+    // The "CHECKBOX" for whether to display the x-y grid
+    ui->checkBox_grid->setEnabled(true);
+    ui->checkBox_grid->setCheckable(true);
+    ui->checkBox_grid->setChecked(true);
+
+    // The "CHECKBOX" for whether to display the Table
+    ui->checkBox_table->setEnabled(true);
+    ui->checkBox_table->setCheckable(true);
+    ui->checkBox_table->setChecked(true);
+
+
+    
+
+    
+    
 
 
     ui->graphicsView->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
@@ -221,8 +257,6 @@ void MainGUIWindow::_init()
     QObject::connect(scene, SIGNAL(crazyFlyZoneSelected(int)), this, SLOT(setTabIndex(int)));
     QObject::connect(scene, SIGNAL(modeChanged(int)), this, SLOT(transitionToMode(int)));
     QObject::connect(scene, SIGNAL(numTablePiecesChanged(int)), this, SLOT(handleTablePiecesNumChanged(int)));
-
-    ui->checkBox_vicon_highlight_markers->setEnabled(false);
 
     // Add keyboard shortcuts
     // > for "all motors off", press the space bar
@@ -403,6 +437,7 @@ void MainGUIWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to
             }
 
             crazyFly* tmp_p_crazyfly = new crazyFly(&(p_msg->crazyflies[i]), filename);
+            tmp_p_crazyfly->setScaleCFs(ui->scaleSpinBox->value());
             crazyflies_vector.push_back(tmp_p_crazyfly);
         }
 
