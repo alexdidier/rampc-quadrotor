@@ -44,20 +44,35 @@ Click on *SET ORIGIN* and you're set.<br>
 ## Firmware and channel
 The firmware of a crazyflie is updated by the teacher. Additionally, the teacher can set the channel of the crazyflies to prevent interference.<br>
 ### Firmware
-See
+Instructions for flashing the firmware with the Crazyflie client can be found either here:
+
 https://wiki.bitcraze.io/doc:crazyflie:client:pycfclient:index#firmware_upgrade
-for instructions on changing the firmware with the Crazyflie client. If you have
-installed it properly as described in the installation section, it can be
-started in a terminal by typing `cfclient`.<br><br>
-Basically, the steps to flash the crazyflie are:<br><br>
-1. Start `cfclient`<br>
-2. Go to Connect->Bootloader<br>
-3. Press the ON/OFF button in the Crazyflie for 3 seconds to enter bootloader
-   mode (two blue leds will start blinking)<br>
-4. In cfclient, press `Initiate bootloader cold boot`<br>
-5. Once connected to the bootloader, select the file we want to upload
-   (typically, cf2.bin) and press `Program`<br>
-6. Wait until it's done and reset the Crazyflie<br><br>
+
+or here:
+
+https://www.bitcraze.io/getting-started-with-the-crazyflie-2-0/#update-fw
+
+The compiled versions of the Crazyflie firmware that are compatible with the `D-FaLL-System` can be found in the `crazyflie-firmware` folder of the repository.
+<br><br>
+
+If you have installed the Crazyflie Client properly, as described in the installation section, it can be started via a terminal window by typing `cfclient`.
+<br><br>
+
+If flashing the firmware on the NRF bluetooth chip, then you must connect the Crazyflie to the computer using a USB cable. If you only need to flash the STM32 main processor chip, this can be done wirelessly and you need to specify the correct address in the Crazyflie Client prior to following the steps below, i.e., the 0xE7E7E7E701 type address.
+
+The steps to flash the crazyflie are:
+<br>
+1. Start the Crazyflie Client from terminal using the command `cfclient`<br>
+2. Turn the Crazyflie off<br>
+3. Start the Crazyflie in bootloader mode by pressing the ON/OFF button for 3 second. Two blue LEDs will start blinking to indicate the the Crazyflie has powered on into bootloader mode<br>
+4. In the Crazyflie Client, select `Connect -> Bootloader` from the top menu. This causes a window titled `Crazyflie Service` to appear<br>
+5. In the `Crazyflie Service` window, press the `Initiate bootloader cold boot` button<br>
+6. Once the status says `Connected to bootloader`, click the `Browse` button and select the file you wish to flash on the Crazyflie. Typically this file will be something like `cf2.bin` for flashing only the STM32 main processor, or `crazyflie-firmware.zip` for flashing both the NRF and STM32 processors<br>
+7. Click the `Program` button. The progress bar will go from 0% to 100% one time for each of the processors to be flashed<br>
+8. Wait until the uploading and writing of the new firmware is complete<br>
+9. Click the `Restart in firmware mode` button. This causes the Crazyflie to reboot and the new firmware is now running<br>
+10. Turn off the Crazyflie<br>
+11. Either click the `Cancel bootloading` button or simply close the `Crazyflie Service` window<br><br>
 
 ### Channel changing
 This is also described on the page linked above. Use the following format: 0/__xx__/2M where __xx__ stands for the radio channel.<br>
