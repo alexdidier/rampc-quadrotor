@@ -1,8 +1,8 @@
 # Setup
 Contents:
-- Vicon
-- Firmware and channel
-- Network
+- [Vicon](#vicon)
+- [Firmware and channel](#firmware-and-channel)
+- [Network](#network)
 
 ## Vicon
 ### What is Vicon
