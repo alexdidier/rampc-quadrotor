@@ -35,13 +35,11 @@
 
 std::map<std::string, std::string> channel_LUT
 {
-    // {"CF1", "A12D2"},
-    // {"CF2", "E341E"},
-    // {"CF3", "4E21A"},
-    {"cfOne", "0/76/2M/E7E7E7E701"},
-    {"cfTwo", "0/69/2M"},
-    {"cfThree", "0/72/2M"},
-    {"cfFour", "0/99/2M"},
+    {"PRO_CF01", "0/0/2M/E7E7E7E711"},
+    {"PRO_CF02", "0/8/2M/E7E7E7E712"},
+    {"PRO_CF03", "0/16/2M/E7E7E7E713"},
+    {"PRO_CF04", "0/24/2M/E7E7E7E714"},
+    {"PRO_CF05", "0/32/2M/E7E7E7E715"},
     {"PPS_CF01", "0/0/2M/E7E7E7E701"},
     {"PPS_CF02", "0/8/2M/E7E7E7E702"},
     {"PPS_CF03", "0/16/2M/E7E7E7E703"},
@@ -50,6 +48,8 @@ std::map<std::string, std::string> channel_LUT
     {"PPS_CF06", "0/40/2M/E7E7E7E706"},
     {"PPS_CF07", "0/48/2M/E7E7E7E707"},
     {"PPS_CF08", "0/56/2M/E7E7E7E708"},
-    {"PPS_CF09", "0/56/2M/E7E7E7E709"},
-    {"PPS_CF10", "0/56/2M/E7E7E7E70A"},
+    {"PPS_CF09", "0/64/2M/E7E7E7E709"},
+    {"PPS_CF10", "0/72/2M/E7E7E7E70A"},
+    {"PPS_CF11", "0/80/2M/E7E7E7E70B"},
+    {"PPS_CF12", "0/88/2M/E7E7E7E70C"},
 };
