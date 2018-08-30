@@ -45,23 +45,23 @@ Click on *SET ORIGIN* and you're set.<br>
 The firmware of a crazyflie is updated by the teacher. Additionally, the teacher can set the channel of the crazyflies to prevent interference.<br>
 ### Firmware
 Instructions for flashing the firmware with the Crazyflie client can be found either here:
-
-https://wiki.bitcraze.io/doc:crazyflie:client:pycfclient:index#firmware_upgrade
-
-or here:
-
-https://www.bitcraze.io/getting-started-with-the-crazyflie-2-0/#update-fw
-
-The compiled versions of the Crazyflie firmware that are compatible with the `D-FaLL-System` can be found in the `crazyflie-firmware` folder of the repository.
-<br><br>
-
-If you have installed the Crazyflie Client properly, as described in the installation section, it can be started via a terminal window by typing `cfclient`.
-<br><br>
-
-If flashing the firmware on the NRF bluetooth chip, then you must connect the Crazyflie to the computer using a USB cable. If you only need to flash the STM32 main processor chip, this can be done wirelessly and you need to specify the correct address in the Crazyflie Client prior to following the steps below, i.e., the 0xE7E7E7E701 type address.
-
-The steps to flash the crazyflie are:
 <br>
+https://wiki.bitcraze.io/doc:crazyflie:client:pycfclient:index#firmware_upgrade
+<br>
+or here:
+<br>
+https://www.bitcraze.io/getting-started-with-the-crazyflie-2-0/#update-fw
+<br>
+The compiled versions of the Crazyflie firmware that are compatible with the `D-FaLL-System` can be found in the `crazyflie-firmware` folder of the repository.
+<br>
+<br>
+If you have installed the Crazyflie Client properly, as described in the installation section, it can be started via a terminal window by typing `cfclient`.
+<br>
+<br>
+If flashing the firmware on the NRF bluetooth chip, then you must connect the Crazyflie to the computer using a USB cable. If you only need to flash the STM32 main processor chip, this can be done wirelessly and you need to specify the correct address in the Crazyflie Client prior to following the steps below, i.e., the 0xE7E7E7E701 type address.
+<br>
+<br>
+The steps to flash the crazyflie are:
 1. Start the Crazyflie Client from terminal using the command `cfclient`<br>
 2. Turn the Crazyflie off<br>
 3. Start the Crazyflie in bootloader mode by pressing the ON/OFF button for 3 second. Two blue LEDs will start blinking to indicate the the Crazyflie has powered on into bootloader mode<br>
