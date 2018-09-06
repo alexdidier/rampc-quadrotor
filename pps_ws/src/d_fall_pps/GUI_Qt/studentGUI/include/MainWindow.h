@@ -217,7 +217,7 @@ private:
     const float battery_voltage_empty_while_flying      =  2.80;   // in Volts
     const float battery_voltage_empty_while_motors_off  =  3.30;  // in Volts
     // BATTERY FULL VOLTAGES
-    const float battery_voltage_full_while_flying      =  3.40;   // in Volts
+    const float battery_voltage_full_while_flying      =  3.70;   // in Volts
     const float battery_voltage_full_while_motors_off  =  4.20;   // in Volts
 
     ros::Publisher crazyRadioCommandPublisher;
