@@ -23,3 +23,6 @@ HEADERS  += \
 
 FORMS    += \
          src/MainWindow.ui
+
+RESOURCES += \
+    studentgui.qrc
