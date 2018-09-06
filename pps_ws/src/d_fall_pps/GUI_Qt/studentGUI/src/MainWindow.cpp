@@ -340,6 +340,10 @@ void MainWindow::mpcSetpointCallback(const Setpoint& newSetpoint)
 
 void MainWindow::flyingStateChangedCallback(const std_msgs::Int32& msg)
 {
+	// PUT THE CURRENT STATE INTO THE CLASS VARIABLE
+	m_flying_state = msg.data;
+
+	// UPDATE THE LABEL TO DISPLAY THE FLYING STATE
     QString qstr = "Flying State: ";
     switch(msg.data)
     {
@@ -374,6 +378,13 @@ void MainWindow::batteryStateChangedCallback(const std_msgs::Int32& msg)
             // ui->groupBox_4->setEnabled(false);
 
             ui->label_battery->setText(qstr);
+
+            // SET THE IMAGE FOR THE BATTERY STATUS LABEL
+			QPixmap battery_empty_pixmap(":/images/battery_empty.png");
+			ui->label_battery->setPixmap(battery_empty_pixmap);
+			ui->label_battery->setScaledContents(true);
+
+			// SET THE CLASS VARIABLE FOR TRACKING THE BATTERY STATE
             m_battery_state = BATTERY_STATE_LOW;
             break;
         case BATTERY_STATE_NORMAL:
@@ -382,6 +393,8 @@ void MainWindow::batteryStateChangedCallback(const std_msgs::Int32& msg)
             ui->land_button->setEnabled(true);
 
             ui->label_battery->clear();
+
+            // SET THE CLASS VARIABLE FOR TRACKING THE BATTERY STATE
             m_battery_state = BATTERY_STATE_NORMAL;
             break;
         default:
@@ -418,21 +431,43 @@ void MainWindow::setCrazyRadioStatus(int radio_status)
 
 float MainWindow::fromVoltageToPercent(float voltage)
 {
-    int num_cutoffs = m_cutoff_voltages.size();
-    float hysteresis = 0.05;
+    // int num_cutoffs = m_cutoff_voltages.size();
+    // float hysteresis = 0.05;
 
-    while(m_battery_level < num_cutoffs && voltage >= m_cutoff_voltages[m_battery_level])
-    {
-        ++m_battery_level;
-    }
-    while(m_battery_level > 0 && voltage < m_cutoff_voltages[m_battery_level - 1] - hysteresis)
-    {
-        --m_battery_level;
-    }
+    // while(m_battery_level < num_cutoffs && voltage >= m_cutoff_voltages[m_battery_level])
+    // {
+    //     ++m_battery_level;
+    // }
+    // while(m_battery_level > 0 && voltage < m_cutoff_voltages[m_battery_level - 1] - hysteresis)
+    // {
+    //     --m_battery_level;
+    // }
 
-    float percentage = 100.0 * m_battery_level/num_cutoffs;
+    // float percentage = 100.0 * m_battery_level/num_cutoffs;
 
-    // should not hapen, but just in case...
+	// INITIALISE THE LOCAL VARIABLE FOR THE VOLTAGE WHEN FULL/EMPTY
+	float voltage_when_full;
+	float voltage_when_empty;
+
+	// COMPUTE THE PERCENTAGE DIFFERENTLY DEPENDING ON
+	// THE CURRENT FLYING STATE
+    if (m_flying_state == STATE_MOTORS_OFF)
+	{
+		voltage_when_empty = battery_voltage_empty_while_motors_off;
+		voltage_when_full  = battery_voltage_full_while_motors_off;
+	}
+	else
+	{
+		voltage_when_empty = battery_voltage_empty_while_flying;
+		voltage_when_full  = battery_voltage_full_while_flying;
+	}
+
+	// COMPUTE THE PERCENTAGE
+	float percentage = 100 * (voltage-voltage_when_empty)/(voltage_when_full-voltage_when_empty)
+
+
+	// CLIP THE PERCENTAGE TO BE BETWEEN [0,100]
+    // > This should not happen to often
     if(percentage > 100)
         percentage = 100;
     if(percentage < 0)
@@ -443,14 +478,81 @@ float MainWindow::fromVoltageToPercent(float voltage)
 
 void MainWindow::updateBatteryVoltage(float battery_voltage)
 {
+	// PUT THE VOLTAGE INTO THE CLASS VARIABLES
     m_battery_voltage = battery_voltage;
-    // Need to take voltage, display it and transform it to percentage
-    // int percentage = (int) fromVoltageToPercent(m_battery_voltage);
 
+    // UPDATE THE BATTERY VOLTAGE FIELD
     QString qstr = "";
     qstr.append(QString::number(battery_voltage, 'f', 2));
     qstr.append(" V");
     ui->voltage_field->setText(qstr);
+
+	// COMPUTE THE BATTERY VOLTAGE AS A PERCENTAGE
+	int battery_voltage_percentage = (int) fromVoltageToPercent(m_battery_voltage);
+
+	// UPDATE THE IMAGE DISPLAYED IN THE BATTERY VOLTAGE LABEL IMAGE
+	switch(m_battery_state)
+	{
+		// WHEN THE BATTERY IS IN A LOW STATE
+		case BATTERY_STATE_LOW:
+			// SET THE IMAGE FOR THE BATTERY STATUS LABEL
+			QPixmap battery_empty_pixmap(":/images/battery_empty.png");
+			ui->label_battery->setPixmap(battery_empty_pixmap);
+			ui->label_battery->setScaledContents(true);
+			break;
+
+		// WHEN THE BATTERY IS IN A NORMAL STATE
+		case BATTERY_STATE_NORMAL:
+			if (battery_voltage_percentage <= 0)
+			{
+				// SET THE IMAGE FOR THE BATTERY STATUS LABEL
+				QPixmap battery_empty_pixmap(":/images/battery_empty.png");
+				ui->label_battery->setPixmap(battery_empty_pixmap);
+				ui->label_battery->setScaledContents(true);
+			}
+			else if (battery_voltage_percentage <= 20)
+			{
+				// SET THE IMAGE FOR THE BATTERY STATUS LABEL
+				QPixmap battery_20_pixmap(":/images/battery_20.png");
+				ui->label_battery->setPixmap(battery_20_pixmap);
+				ui->label_battery->setScaledContents(true);
+			}
+			else if (battery_voltage_percentage <= 40)
+			{
+				// SET THE IMAGE FOR THE BATTERY STATUS LABEL
+				QPixmap battery_40_pixmap(":/images/battery_40.png");
+				ui->label_battery->setPixmap(battery_40_pixmap);
+				ui->label_battery->setScaledContents(true);
+			}
+			else if (battery_voltage_percentage <= 60)
+			{
+				// SET THE IMAGE FOR THE BATTERY STATUS LABEL
+				QPixmap battery_60_pixmap(":/images/battery_60.png");
+				ui->label_battery->setPixmap(battery_60_pixmap);
+				ui->label_battery->setScaledContents(true);
+			}
+			else if (battery_voltage_percentage <= 80)
+			{
+				// SET THE IMAGE FOR THE BATTERY STATUS LABEL
+				QPixmap battery_80_pixmap(":/images/battery_80.png");
+				ui->label_battery->setPixmap(battery_80_pixmap);
+				ui->label_battery->setScaledContents(true);
+			}
+			else
+			{
+				// SET THE IMAGE FOR THE BATTERY STATUS LABEL
+				QPixmap battery_full_pixmap(":/images/battery_full.png");
+				ui->label_battery->setPixmap(battery_full_pixmap);
+				ui->label_battery->setScaledContents(true);
+			}
+			break;
+
+
+		default:
+			break;
+	}
+
+
 }
 
 void MainWindow::CFBatteryCallback(const std_msgs::Float32& msg)

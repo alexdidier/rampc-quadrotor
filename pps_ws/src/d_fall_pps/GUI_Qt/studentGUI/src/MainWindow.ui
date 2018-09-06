@@ -169,10 +169,16 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="minimumSize">
+             <size>
+              <width>180</width>
+              <height>80</height>
+             </size>
+            </property>
             <property name="maximumSize">
              <size>
               <width>750</width>
-              <height>100</height>
+              <height>80</height>
              </size>
             </property>
             <property name="font">
@@ -186,6 +192,31 @@
            </widget>
           </item>
           <item>
+           <widget class="QLabel" name="rf_status_label">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>90</width>
+              <height>80</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>90</width>
+              <height>80</height>
+             </size>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QPushButton" name="RF_Connect_button">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
@@ -193,10 +224,16 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="minimumSize">
+             <size>
+              <width>180</width>
+              <height>80</height>
+             </size>
+            </property>
             <property name="maximumSize">
              <size>
               <width>750</width>
-              <height>100</height>
+              <height>80</height>
              </size>
             </property>
             <property name="font">
@@ -210,57 +247,65 @@
            </widget>
           </item>
           <item>
-           <layout class="QVBoxLayout" name="verticalLayout_8">
-            <item>
-             <widget class="QLineEdit" name="voltage_field">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="maximumSize">
-               <size>
-                <width>16777215</width>
-                <height>50</height>
-               </size>
-              </property>
-              <property name="font">
-               <font>
-                <pointsize>16</pointsize>
-               </font>
-              </property>
-              <property name="readOnly">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLabel" name="label_battery">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="maximumSize">
-               <size>
-                <width>16777215</width>
-                <height>50</height>
-               </size>
-              </property>
-              <property name="font">
-               <font>
-                <pointsize>16</pointsize>
-                <italic>true</italic>
-               </font>
-              </property>
-              <property name="text">
-               <string/>
-              </property>
-             </widget>
-            </item>
-           </layout>
+           <widget class="QLineEdit" name="voltage_field">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>180</width>
+              <height>80</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>400</width>
+              <height>80</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <pointsize>16</pointsize>
+             </font>
+            </property>
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_battery">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>90</width>
+              <height>80</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>90</width>
+              <height>80</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <pointsize>16</pointsize>
+              <italic>true</italic>
+             </font>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
           </item>
           <item>
            <widget class="QPushButton" name="take_off_button">
@@ -270,10 +315,16 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="minimumSize">
+             <size>
+              <width>180</width>
+              <height>80</height>
+             </size>
+            </property>
             <property name="maximumSize">
              <size>
-              <width>16777215</width>
-              <height>100</height>
+              <width>750</width>
+              <height>80</height>
              </size>
             </property>
             <property name="font">
@@ -294,10 +345,16 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="minimumSize">
+             <size>
+              <width>180</width>
+              <height>80</height>
+             </size>
+            </property>
             <property name="maximumSize">
              <size>
-              <width>16777215</width>
-              <height>100</height>
+              <width>750</width>
+              <height>80</height>
              </size>
             </property>
             <property name="font">
@@ -318,10 +375,16 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="minimumSize">
+             <size>
+              <width>180</width>
+              <height>80</height>
+             </size>
+            </property>
             <property name="maximumSize">
              <size>
-              <width>16777215</width>
-              <height>100</height>
+              <width>750</width>
+              <height>80</height>
              </size>
             </property>
             <property name="font">
