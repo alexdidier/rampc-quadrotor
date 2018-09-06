@@ -172,6 +172,16 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     ui->label_battery->setStyleSheet("QLabel { color : red; }");
     m_battery_state = BATTERY_STATE_NORMAL;
 
+    // SET THE IMAGE FOR THE BATTERY STATUS LABEL
+    QPixmap battery_empty_pixmap(":/images/battery_empty.png");
+    ui->label_battery->setPixmap(battery_empty_pixmap);
+    ui->label_battery->setScaledContents(true);
+
+    // SET THE IMAGE FOR THE BATTERY STATUS LABEL
+    QPixmap rf_disconnected_pixmap(":/images/rf_disconnected.png");
+    ui->rf_status_label->setPixmap(rf_disconnected_pixmap);
+    ui->rf_status_label->setScaledContents(true);
+
     ui->error_label->setStyleSheet("QLabel { color : red; }");
     ui->error_label->clear();
 
@@ -372,6 +382,7 @@ void MainWindow::batteryStateChangedCallback(const std_msgs::Int32& msg)
     switch(msg.data)
     {
         case BATTERY_STATE_LOW:
+        {
             qstr.append("Low Battery!");
             ui->take_off_button->setEnabled(false);
             ui->land_button->setEnabled(false);
@@ -387,7 +398,10 @@ void MainWindow::batteryStateChangedCallback(const std_msgs::Int32& msg)
 			// SET THE CLASS VARIABLE FOR TRACKING THE BATTERY STATE
             m_battery_state = BATTERY_STATE_LOW;
             break;
+        }
+
         case BATTERY_STATE_NORMAL:
+        {
             // ui->groupBox_4->setEnabled(true);
             ui->take_off_button->setEnabled(true);
             ui->land_button->setEnabled(true);
@@ -397,6 +411,8 @@ void MainWindow::batteryStateChangedCallback(const std_msgs::Int32& msg)
             // SET THE CLASS VARIABLE FOR TRACKING THE BATTERY STATE
             m_battery_state = BATTERY_STATE_NORMAL;
             break;
+        }
+
         default:
             break;
     }
@@ -463,7 +479,7 @@ float MainWindow::fromVoltageToPercent(float voltage)
 	}
 
 	// COMPUTE THE PERCENTAGE
-	float percentage = 100 * (voltage-voltage_when_empty)/(voltage_when_full-voltage_when_empty)
+	float percentage = 100 * (voltage-voltage_when_empty)/(voltage_when_full-voltage_when_empty);
 
 
 	// CLIP THE PERCENTAGE TO BE BETWEEN [0,100]
@@ -495,14 +511,17 @@ void MainWindow::updateBatteryVoltage(float battery_voltage)
 	{
 		// WHEN THE BATTERY IS IN A LOW STATE
 		case BATTERY_STATE_LOW:
+        {
 			// SET THE IMAGE FOR THE BATTERY STATUS LABEL
 			QPixmap battery_empty_pixmap(":/images/battery_empty.png");
 			ui->label_battery->setPixmap(battery_empty_pixmap);
 			ui->label_battery->setScaledContents(true);
 			break;
+        }
 
 		// WHEN THE BATTERY IS IN A NORMAL STATE
 		case BATTERY_STATE_NORMAL:
+        {
 			if (battery_voltage_percentage <= 0)
 			{
 				// SET THE IMAGE FOR THE BATTERY STATUS LABEL
@@ -546,7 +565,7 @@ void MainWindow::updateBatteryVoltage(float battery_voltage)
 				ui->label_battery->setScaledContents(true);
 			}
 			break;
-
+        }
 
 		default:
 			break;
