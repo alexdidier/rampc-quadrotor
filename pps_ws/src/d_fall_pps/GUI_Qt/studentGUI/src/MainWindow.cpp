@@ -169,21 +169,27 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
 
     disableGUI();
     highlightSafeControllerTab();
-    //ui->label_battery->setStyleSheet("QLabel { color : red; }");
+    //ui->battery_status_label->setStyleSheet("QLabel { color : red; }");
     m_battery_state = BATTERY_STATE_NORMAL;
 
     // SET THE BATTERY VOLTAGE FIELD TO BE BLANK
     QString qstr = "-.-- V";
     ui->voltage_field->setText(qstr);
     // SET THE IMAGE FOR THE BATTERY STATUS LABEL
-    QPixmap battery_empty_pixmap(":/images/battery_empty.png");
-    ui->label_battery->setPixmap(battery_empty_pixmap);
-    ui->label_battery->setScaledContents(true);
+    QPixmap battery_unknown_pixmap(":/images/battery_unknown.png");
+    ui->battery_status_label->setPixmap(battery_unknown_pixmap);
+    ui->battery_status_label->setScaledContents(true);
 
     // SET THE IMAGE FOR THE CRAZY RADIO STATUS LABEL
     QPixmap rf_disconnected_pixmap(":/images/rf_disconnected.png");
     ui->rf_status_label->setPixmap(rf_disconnected_pixmap);
     ui->rf_status_label->setScaledContents(true);
+
+    // SET THE IMAGE FOR THE FLYING STATE LABEL
+    QPixmap flying_state_off_pixmap(":/images/flying_state_off.png");
+    ui->flying_state_label->setPixmap(flying_state_off_pixmap);
+    ui->flying_state_label->setScaledContents(true);
+
 
     ui->error_label->setStyleSheet("QLabel { color : red; }");
     ui->error_label->clear();
@@ -357,25 +363,59 @@ void MainWindow::flyingStateChangedCallback(const std_msgs::Int32& msg)
 	m_flying_state = msg.data;
 
 	// UPDATE THE LABEL TO DISPLAY THE FLYING STATE
-    QString qstr = "Flying State: ";
+    //QString qstr = "Flying State: ";
     switch(msg.data)
     {
         case STATE_MOTORS_OFF:
-            qstr.append("Motors OFF");
+        {
+            //qstr.append("Motors OFF");
+            // SET THE APPROPRIATE IMAGE FOR THE FLYING STATE LABEL
+            QPixmap flying_state_off_pixmap(":/images/flying_state_off.png");
+            ui->flying_state_label->setPixmap(flying_state_off_pixmap);
+            ui->flying_state_label->setScaledContents(true);
             break;
+        }
+
         case STATE_TAKE_OFF:
-            qstr.append("Take OFF");
+        {
+            //qstr.append("Take OFF");
+            // SET THE APPROPRIATE IMAGE FOR THE FLYING STATE LABEL
+            QPixmap flying_state_enabling_pixmap(":/images/flying_state_enabling.png");
+            ui->flying_state_label->setPixmap(flying_state_enabling_pixmap);
+            ui->flying_state_label->setScaledContents(true);
             break;
+        }
+
         case STATE_FLYING:
-            qstr.append("Flying");
+        {
+            //qstr.append("Flying");
+            // SET THE APPROPRIATE IMAGE FOR THE FLYING STATE LABEL
+            QPixmap flying_state_flying_pixmap(":/images/flying_state_flying.png");
+            ui->flying_state_label->setPixmap(flying_state_flying_pixmap);
+            ui->flying_state_label->setScaledContents(true);
             break;
+        }
+
         case STATE_LAND:
-            qstr.append("Land");
+        {
+            //qstr.append("Land");
+            // SET THE APPROPRIATE IMAGE FOR THE FLYING STATE LABEL
+            QPixmap flying_state_disabling_pixmap(":/images/flying_state_disabling.png");
+            ui->flying_state_label->setPixmap(flying_state_disabling_pixmap);
+            ui->flying_state_label->setScaledContents(true);
             break;
+        }
+
         default:
+        {
+            // SET THE APPROPRIATE IMAGE FOR THE FLYING STATE LABEL
+            QPixmap flying_state_unknown_pixmap(":/images/flying_state_unknown.png");
+            ui->flying_state_label->setPixmap(flying_state_unknown_pixmap);
+            ui->flying_state_label->setScaledContents(true);
             break;
+        }
     }
-    ui->flying_state_label->setText(qstr);
+    //ui->flying_state_label->setText(qstr);
 }
 
 void MainWindow::batteryStateChangedCallback(const std_msgs::Int32& msg)
@@ -392,12 +432,12 @@ void MainWindow::batteryStateChangedCallback(const std_msgs::Int32& msg)
             // ui->groupBox_4->setEnabled(false);
 
             //qstr.append("Low Battery!");
-            //ui->label_battery->setText(qstr);
+            //ui->battery_status_label->setText(qstr);
 
             // SET THE IMAGE FOR THE BATTERY STATUS LABEL
 			QPixmap battery_empty_pixmap(":/images/battery_empty.png");
-			ui->label_battery->setPixmap(battery_empty_pixmap);
-			ui->label_battery->setScaledContents(true);
+			ui->battery_status_label->setPixmap(battery_empty_pixmap);
+			ui->battery_status_label->setScaledContents(true);
 
 			// SET THE CLASS VARIABLE FOR TRACKING THE BATTERY STATE
             m_battery_state = BATTERY_STATE_LOW;
@@ -411,7 +451,7 @@ void MainWindow::batteryStateChangedCallback(const std_msgs::Int32& msg)
             ui->land_button->setEnabled(true);
 
             // CLEAR THE BATTERY LABEL
-            //ui->label_battery->clear();
+            //ui->battery_status_label->clear();
 
             // SET THE CLASS VARIABLE FOR TRACKING THE BATTERY STATE
             m_battery_state = BATTERY_STATE_NORMAL;
@@ -450,9 +490,9 @@ void MainWindow::setCrazyRadioStatus(int radio_status)
             QString qstr = "-.-- V";
             ui->voltage_field->setText(qstr);
             // SET THE APPROPRIATE IMAGE FOR THE BATTERY STATUS LABEL
-            QPixmap battery_empty_pixmap(":/images/battery_empty.png");
-            ui->label_battery->setPixmap(battery_empty_pixmap);
-            ui->label_battery->setScaledContents(true);
+            //QPixmap battery_unknown_pixmap(":/images/battery_unknown.png");
+            //ui->battery_status_label->setPixmap(battery_unknown_pixmap);
+            //ui->battery_status_label->setScaledContents(true);
             break;
         }
 
@@ -466,9 +506,9 @@ void MainWindow::setCrazyRadioStatus(int radio_status)
             QString qstr = "-.-- V";
             ui->voltage_field->setText(qstr);
             // SET THE APPROPRIATE IMAGE FOR THE BATTERY STATUS LABEL
-            QPixmap battery_empty_pixmap(":/images/battery_empty.png");
-            ui->label_battery->setPixmap(battery_empty_pixmap);
-            ui->label_battery->setScaledContents(true);
+            QPixmap battery_unknown_pixmap(":/images/battery_unknown.png");
+            ui->battery_status_label->setPixmap(battery_unknown_pixmap);
+            ui->battery_status_label->setScaledContents(true);
             // DISABLE THE REMAINDER OF THE GUI
             disableGUI();
             break;
@@ -508,16 +548,18 @@ float MainWindow::fromVoltageToPercent(float voltage)
 
 	// COMPUTE THE PERCENTAGE DIFFERENTLY DEPENDING ON
 	// THE CURRENT FLYING STATE
-    if (m_flying_state == STATE_MOTORS_OFF)
-	{
-		voltage_when_empty = battery_voltage_empty_while_motors_off;
-		voltage_when_full  = battery_voltage_full_while_motors_off;
-	}
-	else
-	{
-		voltage_when_empty = battery_voltage_empty_while_flying;
-		voltage_when_full  = battery_voltage_full_while_flying;
-	}
+	// if (m_flying_state == STATE_MOTORS_OFF)
+	// {
+	// 	voltage_when_empty = battery_voltage_empty_while_motors_off;
+	// 	voltage_when_full  = battery_voltage_full_while_motors_off;
+	// }
+	// else
+	// {
+	// 	voltage_when_empty = battery_voltage_empty_while_flying;
+	// 	voltage_when_full  = battery_voltage_full_while_flying;
+	// }
+	voltage_when_empty = battery_voltage_empty_while_motors_off;
+	voltage_when_full  = battery_voltage_full_while_motors_off;
 
 	// COMPUTE THE PERCENTAGE
 	float percentage = 100 * (voltage-voltage_when_empty)/(voltage_when_full-voltage_when_empty);
@@ -525,10 +567,14 @@ float MainWindow::fromVoltageToPercent(float voltage)
 
 	// CLIP THE PERCENTAGE TO BE BETWEEN [0,100]
     // > This should not happen to often
-    if(percentage > 100)
-        percentage = 100;
-    if(percentage < 0)
-        percentage = 0;
+    if(percentage > 100.0)
+    {
+        percentage = 100.0;
+    }
+    if(percentage < 0.0)
+    {
+        percentage = 0.0;
+    }
 
     return percentage;
 }
@@ -555,8 +601,8 @@ void MainWindow::updateBatteryVoltage(float battery_voltage)
         {
 			// SET THE IMAGE FOR THE BATTERY STATUS LABEL
 			QPixmap battery_empty_pixmap(":/images/battery_empty.png");
-			ui->label_battery->setPixmap(battery_empty_pixmap);
-			ui->label_battery->setScaledContents(true);
+			ui->battery_status_label->setPixmap(battery_empty_pixmap);
+			ui->battery_status_label->setScaledContents(true);
 			break;
         }
 
@@ -567,49 +613,55 @@ void MainWindow::updateBatteryVoltage(float battery_voltage)
 			{
 				// SET THE IMAGE FOR THE BATTERY STATUS LABEL
 				QPixmap battery_empty_pixmap(":/images/battery_empty.png");
-				ui->label_battery->setPixmap(battery_empty_pixmap);
-				ui->label_battery->setScaledContents(true);
+				ui->battery_status_label->setPixmap(battery_empty_pixmap);
+				ui->battery_status_label->setScaledContents(true);
 			}
 			else if (battery_voltage_percentage <= 20)
 			{
 				// SET THE IMAGE FOR THE BATTERY STATUS LABEL
 				QPixmap battery_20_pixmap(":/images/battery_20.png");
-				ui->label_battery->setPixmap(battery_20_pixmap);
-				ui->label_battery->setScaledContents(true);
+				ui->battery_status_label->setPixmap(battery_20_pixmap);
+				ui->battery_status_label->setScaledContents(true);
 			}
 			else if (battery_voltage_percentage <= 40)
 			{
 				// SET THE IMAGE FOR THE BATTERY STATUS LABEL
 				QPixmap battery_40_pixmap(":/images/battery_40.png");
-				ui->label_battery->setPixmap(battery_40_pixmap);
-				ui->label_battery->setScaledContents(true);
+				ui->battery_status_label->setPixmap(battery_40_pixmap);
+				ui->battery_status_label->setScaledContents(true);
 			}
 			else if (battery_voltage_percentage <= 60)
 			{
 				// SET THE IMAGE FOR THE BATTERY STATUS LABEL
 				QPixmap battery_60_pixmap(":/images/battery_60.png");
-				ui->label_battery->setPixmap(battery_60_pixmap);
-				ui->label_battery->setScaledContents(true);
+				ui->battery_status_label->setPixmap(battery_60_pixmap);
+				ui->battery_status_label->setScaledContents(true);
 			}
 			else if (battery_voltage_percentage <= 80)
 			{
 				// SET THE IMAGE FOR THE BATTERY STATUS LABEL
 				QPixmap battery_80_pixmap(":/images/battery_80.png");
-				ui->label_battery->setPixmap(battery_80_pixmap);
-				ui->label_battery->setScaledContents(true);
+				ui->battery_status_label->setPixmap(battery_80_pixmap);
+				ui->battery_status_label->setScaledContents(true);
 			}
 			else
 			{
 				// SET THE IMAGE FOR THE BATTERY STATUS LABEL
 				QPixmap battery_full_pixmap(":/images/battery_full.png");
-				ui->label_battery->setPixmap(battery_full_pixmap);
-				ui->label_battery->setScaledContents(true);
+				ui->battery_status_label->setPixmap(battery_full_pixmap);
+				ui->battery_status_label->setScaledContents(true);
 			}
 			break;
         }
 
 		default:
+        {
+            // SET THE IMAGE FOR THE BATTERY STATUS LABEL
+            QPixmap battery_unknown_pixmap(":/images/battery_unknown.png");
+            ui->battery_status_label->setPixmap(battery_unknown_pixmap);
+            ui->battery_status_label->setScaledContents(true);
 			break;
+        }
 	}
 
 
