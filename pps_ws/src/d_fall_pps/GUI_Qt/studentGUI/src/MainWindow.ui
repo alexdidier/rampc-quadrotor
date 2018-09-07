@@ -92,7 +92,7 @@
         <item>
          <widget class="QPushButton" name="RF_disconnect_button">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -122,7 +122,7 @@
         <item>
          <widget class="QLabel" name="rf_status_label">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -147,7 +147,7 @@
         <item>
          <widget class="QPushButton" name="RF_Connect_button">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -177,20 +177,20 @@
         <item>
          <widget class="QLineEdit" name="voltage_field">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
           <property name="minimumSize">
            <size>
-            <width>160</width>
+            <width>100</width>
             <height>70</height>
            </size>
           </property>
           <property name="maximumSize">
            <size>
-            <width>160</width>
+            <width>100</width>
             <height>70</height>
            </size>
           </property>
@@ -205,9 +205,9 @@
          </widget>
         </item>
         <item>
-         <widget class="QLabel" name="battery_">
+         <widget class="QLabel" name="battery_status_label">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -238,7 +238,7 @@
         <item>
          <widget class="QPushButton" name="take_off_button">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -268,7 +268,7 @@
         <item>
          <widget class="QPushButton" name="land_button">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -298,7 +298,7 @@
         <item>
          <widget class="QLabel" name="flying_state_label">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -331,7 +331,7 @@
         <item>
          <widget class="QPushButton" name="motors_OFF_button">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -3536,7 +3536,7 @@
             <property name="maximumSize">
              <size>
               <width>180</width>
-              <height>43</height>
+              <height>30</height>
              </size>
             </property>
             <property name="font">
@@ -3563,13 +3563,13 @@
             <property name="minimumSize">
              <size>
               <width>180</width>
-              <height>43</height>
+              <height>30</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
               <width>180</width>
-              <height>43</height>
+              <height>30</height>
              </size>
             </property>
             <property name="font">
@@ -3596,13 +3596,13 @@
             <property name="minimumSize">
              <size>
               <width>180</width>
-              <height>43</height>
+              <height>30</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
               <width>180</width>
-              <height>43</height>
+              <height>30</height>
              </size>
             </property>
             <property name="font">
@@ -3770,7 +3770,7 @@
             <property name="maximumSize">
              <size>
               <width>180</width>
-              <height>43</height>
+              <height>30</height>
              </size>
             </property>
             <property name="font">
