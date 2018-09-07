@@ -526,20 +526,6 @@ void MainWindow::setCrazyRadioStatus(int radio_status)
 
 float MainWindow::fromVoltageToPercent(float voltage)
 {
-    // int num_cutoffs = m_cutoff_voltages.size();
-    // float hysteresis = 0.05;
-
-    // while(m_battery_level < num_cutoffs && voltage >= m_cutoff_voltages[m_battery_level])
-    // {
-    //     ++m_battery_level;
-    // }
-    // while(m_battery_level > 0 && voltage < m_cutoff_voltages[m_battery_level - 1] - hysteresis)
-    // {
-    //     --m_battery_level;
-    // }
-
-    // float percentage = 100.0 * m_battery_level/num_cutoffs;
-
 	// INITIALISE THE LOCAL VARIABLE FOR THE VOLTAGE WHEN FULL/EMPTY
 	float voltage_when_full;
 	float voltage_when_empty;
@@ -591,7 +577,7 @@ void MainWindow::updateBatteryVoltage(float battery_voltage)
 	// COMPUTE THE BATTERY VOLTAGE AS A PERCENTAGE
 	float battery_voltage_percentage = fromVoltageToPercent(battery_voltage);
 
-	ROS_INFO_STREAM("Battery percentage = " << battery_voltage_percentage );
+	//ROS_INFO_STREAM("Battery percentage = " << battery_voltage_percentage );
 
 	// UPDATE THE IMAGE DISPLAYED IN THE BATTERY VOLTAGE LABEL IMAGE
 	switch(m_battery_state)
@@ -734,7 +720,7 @@ void MainWindow::CFBatteryCallback(const std_msgs::Float32& msg)
 
 void MainWindow::crazyRadioStatusCallback(const std_msgs::Int32& msg)
 {
-    ROS_INFO("Callback CrazyRadioStatus called");
+    ROS_INFO("[Student GUI] Callback CrazyRadioStatus called");
     this->setCrazyRadioStatus(msg.data);
 }
 
