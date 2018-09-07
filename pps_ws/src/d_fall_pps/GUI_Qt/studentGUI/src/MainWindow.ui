@@ -3530,7 +3530,7 @@
             <property name="minimumSize">
              <size>
               <width>180</width>
-              <height>43</height>
+              <height>30</height>
              </size>
             </property>
             <property name="maximumSize">
@@ -3764,7 +3764,7 @@
             <property name="minimumSize">
              <size>
               <width>180</width>
-              <height>43</height>
+              <height>30</height>
              </size>
             </property>
             <property name="maximumSize">
@@ -3940,6 +3940,34 @@
             </property>
             <property name="text">
              <string>Tuning</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="1">
+           <widget class="Line" name="line_19">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="1">
+           <widget class="Line" name="line_20">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="1">
+           <widget class="Line" name="line_21">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="1">
+           <widget class="Line" name="line_22">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
             </property>
            </widget>
           </item>
