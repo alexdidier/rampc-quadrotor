@@ -169,15 +169,18 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
 
     disableGUI();
     highlightSafeControllerTab();
-    ui->label_battery->setStyleSheet("QLabel { color : red; }");
+    //ui->label_battery->setStyleSheet("QLabel { color : red; }");
     m_battery_state = BATTERY_STATE_NORMAL;
 
+    // SET THE BATTERY VOLTAGE FIELD TO BE BLANK
+    QString qstr = "-.-- V";
+    ui->voltage_field->setText(qstr);
     // SET THE IMAGE FOR THE BATTERY STATUS LABEL
     QPixmap battery_empty_pixmap(":/images/battery_empty.png");
     ui->label_battery->setPixmap(battery_empty_pixmap);
     ui->label_battery->setScaledContents(true);
 
-    // SET THE IMAGE FOR THE BATTERY STATUS LABEL
+    // SET THE IMAGE FOR THE CRAZY RADIO STATUS LABEL
     QPixmap rf_disconnected_pixmap(":/images/rf_disconnected.png");
     ui->rf_status_label->setPixmap(rf_disconnected_pixmap);
     ui->rf_status_label->setScaledContents(true);
@@ -383,12 +386,13 @@ void MainWindow::batteryStateChangedCallback(const std_msgs::Int32& msg)
     {
         case BATTERY_STATE_LOW:
         {
-            qstr.append("Low Battery!");
+            // DISABLE THE TAKE OFF AND LAND BUTTONS
             ui->take_off_button->setEnabled(false);
             ui->land_button->setEnabled(false);
             // ui->groupBox_4->setEnabled(false);
 
-            ui->label_battery->setText(qstr);
+            //qstr.append("Low Battery!");
+            //ui->label_battery->setText(qstr);
 
             // SET THE IMAGE FOR THE BATTERY STATUS LABEL
 			QPixmap battery_empty_pixmap(":/images/battery_empty.png");
@@ -406,7 +410,8 @@ void MainWindow::batteryStateChangedCallback(const std_msgs::Int32& msg)
             ui->take_off_button->setEnabled(true);
             ui->land_button->setEnabled(true);
 
-            ui->label_battery->clear();
+            // CLEAR THE BATTERY LABEL
+            //ui->label_battery->clear();
 
             // SET THE CLASS VARIABLE FOR TRACKING THE BATTERY STATE
             m_battery_state = BATTERY_STATE_NORMAL;
@@ -425,25 +430,61 @@ void MainWindow::setCrazyRadioStatus(int radio_status)
     switch(radio_status)
     {
         case CONNECTED:
-            // change icon, the rest of the GUI is available now
-            ui->connected_disconnected_label->setText("Crazyradio status: Connected!");
+        {
+            // SET THE APPROPRIATE IMAGE FOR THE RADIOSTATUS LABEL
+            QPixmap rf_connected_pixmap(":/images/rf_connected.png");
+            ui->rf_status_label->setPixmap(rf_connected_pixmap);
+            ui->rf_status_label->setScaledContents(true);
+            // ENABLE THE REMAINDER OF THE GUI
             enableGUI();
             break;
+        }
+
         case CONNECTING:
-            // change icon
-            ui->connected_disconnected_label->setText("Crazyradio status: Connecting...");
+        {
+            // SET THE APPROPRIATE IMAGE FOR THE RADIO STATUS LABEL
+            QPixmap rf_connecting_pixmap(":/images/rf_connecting.png");
+            ui->rf_status_label->setPixmap(rf_connecting_pixmap);
+            ui->rf_status_label->setScaledContents(true);
+            // SET THE BATTERY VOLTAGE FIELD TO BE BLANK
+            QString qstr = "-.-- V";
+            ui->voltage_field->setText(qstr);
+            // SET THE APPROPRIATE IMAGE FOR THE BATTERY STATUS LABEL
+            QPixmap battery_empty_pixmap(":/images/battery_empty.png");
+            ui->label_battery->setPixmap(battery_empty_pixmap);
+            ui->label_battery->setScaledContents(true);
             break;
+        }
+
         case DISCONNECTED:
-            // change icon, the rest of the GUI is disabled
-            ui->connected_disconnected_label->setText("Crazyradio status: Disconnected");
+        {
+            // SET THE APPROPRIATE IMAGE FOR THE RADIO STATUS LABEL
+            QPixmap rf_disconnected_pixmap(":/images/rf_disconnected.png");
+            ui->rf_status_label->setPixmap(rf_disconnected_pixmap);
+            ui->rf_status_label->setScaledContents(true);
+            // SET THE BATTERY VOLTAGE FIELD TO BE BLANK
+            QString qstr = "-.-- V";
+            ui->voltage_field->setText(qstr);
+            // SET THE APPROPRIATE IMAGE FOR THE BATTERY STATUS LABEL
+            QPixmap battery_empty_pixmap(":/images/battery_empty.png");
+            ui->label_battery->setPixmap(battery_empty_pixmap);
+            ui->label_battery->setScaledContents(true);
+            // DISABLE THE REMAINDER OF THE GUI
             disableGUI();
             break;
+        }
+
         default:
+        {
     		ROS_ERROR_STREAM("unexpected radio status: " << m_radio_status);
             break;
+        }
     }
     this->m_radio_status = radio_status;
 }
+
+
+
 
 float MainWindow::fromVoltageToPercent(float voltage)
 {
