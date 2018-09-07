@@ -89,6 +89,15 @@
 #define BATTERY_STATE_NORMAL 0
 #define BATTERY_STATE_LOW    1
 
+// Battery label image index
+#define BATTERY_LABEL_IMAGE_INDEX_EMPTY     0
+#define BATTERY_LABEL_IMAGE_INDEX_20        1
+#define BATTERY_LABEL_IMAGE_INDEX_40        2
+#define BATTERY_LABEL_IMAGE_INDEX_60        3
+#define BATTERY_LABEL_IMAGE_INDEX_80        4
+#define BATTERY_LABEL_IMAGE_INDEX_FULL      5
+#define BATTERY_LABEL_IMAGE_INDEX_UNKNOWN   6
+
 // For which controller parameters to load
 #define LOAD_YAML_SAFE_CONTROLLER_AGENT           1
 #define LOAD_YAML_DEMO_CONTROLLER_AGENT           2
@@ -219,6 +228,8 @@ private:
     // BATTERY FULL VOLTAGES
     const float battery_voltage_full_while_flying      =  3.70;   // in Volts
     const float battery_voltage_full_while_motors_off  =  4.20;   // in Volts
+
+    int m_battery_label_image_current_index;
 
     ros::Publisher crazyRadioCommandPublisher;
     ros::Subscriber crazyRadioStatusSubscriber;
