@@ -59,12 +59,18 @@ find_package(Qt5Svg REQUIRED)
 set(MY_GUI_LIB_PATH_SRC ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/src)
 set(MY_GUI_LIB_PATH_INC ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/include)
 
+# GUI -- Resource file
+set(MY_RESOURCE_FILE_QRC ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/CrazyFlyGUI.qrc)
+
+
+
 # StudentGUI -- Add src and includes
 set(STUDENT_GUI_LIB_PATH_SRC ${PROJECT_SOURCE_DIR}/GUI_Qt/studentGUI/src)
 set(STUDENT_GUI_LIB_PATH_INC ${PROJECT_SOURCE_DIR}/GUI_Qt/studentGUI/include)
 
-# GUI -- Resource file
-set(MY_RESOURCE_FILE_QRC ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/CrazyFlyGUI.qrc)
+# StudentGUI -- Resource file
+set(STUDENT_RESOURCE_FILE_QRC ${PROJECT_SOURCE_DIR}/GUI_Qt/studentGUI/studentgui.qrc)
+
 
 # #set the default path for built executables to the "bin" directory
 # set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
@@ -104,6 +110,9 @@ set(SRC_HDRS_QOBJECT_STUDENT_GUI
 # StudentGUI -- wrap UI file and QOBJECT files
 qt5_wrap_ui(UIS_HDRS_STUDENT_GUI ${STUDENT_GUI_LIB_PATH_SRC}/MainWindow.ui)
 qt5_wrap_cpp(SRC_MOC_HDRS_STUDENT_GUI ${SRC_HDRS_QOBJECT_STUDENT_GUI})
+
+# GUI -- wrap resource file qrc->rcc
+qt5_add_resources(STUDENT_RESOURCE_FILE_RCC ${STUDENT_RESOURCE_FILE_QRC})
 
 
 
@@ -309,7 +318,7 @@ add_executable(my_GUI ${MY_CPP_SOURCES_GUI} ${UIS_HDRS_GUI} ${SRC_MOC_HDRS_GUI} 
 qt5_use_modules(my_GUI Widgets)
 
 # StudentGUI -- Add executables here
-add_executable(student_GUI ${MY_CPP_SOURCES_STUDENT_GUI} ${UIS_HDRS_STUDENT_GUI} ${SRC_MOC_HDRS_STUDENT_GUI})
+add_executable(student_GUI ${MY_CPP_SOURCES_STUDENT_GUI} ${UIS_HDRS_STUDENT_GUI} ${SRC_MOC_HDRS_STUDENT_GUI} ${STUDENT_RESOURCE_FILE_RCC})
 qt5_use_modules(student_GUI Widgets)
 
 

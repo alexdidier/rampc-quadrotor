@@ -506,6 +506,11 @@ void commandAllAgentsCallback(const std_msgs::Int32& msg)
 void crazyRadioStatusCallback(const std_msgs::Int32& msg)
 {
     crazyradio_status = msg.data;
+    // RESET THE BATTERY STATE IF DISCONNECTED
+    if (crazyradio_status == DISCONNECTED)
+    {
+        setBatteryStateTo(BATTERY_STATE_NORMAL);
+    }
 }
 
 void controllerSetPointCallback(const Setpoint& newSetpoint)
@@ -708,12 +713,13 @@ void setBatteryStateTo(int new_battery_state)
 float movingAverageBatteryFilter(float new_input)
 {
     const int N = 7;
-    static float previous_output = 0;
-    static float inputs[N];
+    static float previous_output = 4.2f;
+    static float inputs[N] = {4.2f,4.2f,4.2f,4.2f,4.2f,4.2f,4.2f};
 
 
-    // imagine an array of an even number of samples, we will output the one in the middle averaged with information from all of them.
-    // for that, we only need to store some past of the signal
+    // imagine an array of an even number of samples, we will output the one
+    // in the middle averaged with information from all of them.
+    // For that, we only need to store some past of the signal
     float output = previous_output + new_input/N - inputs[N-1]/N;
 
     // update array of inputs
@@ -738,17 +744,28 @@ void CFBatteryCallback(const std_msgs::Float32& msg)
     float filtered_battery_voltage = movingAverageBatteryFilter(m_battery_voltage); //need to perform filtering here
 
     // ROS_INFO_STREAM("filtered data: " << filtered_battery_voltage);
-    if((flying_state != STATE_MOTORS_OFF && (filtered_battery_voltage < m_battery_threshold_while_flying)) ||
-       (flying_state == STATE_MOTORS_OFF && (filtered_battery_voltage < m_battery_threshold_while_motors_off)))
+    if(
+        (flying_state != STATE_MOTORS_OFF && (filtered_battery_voltage < m_battery_threshold_while_flying))
+        ||
+        (flying_state == STATE_MOTORS_OFF && (filtered_battery_voltage < m_battery_threshold_while_motors_off))
+    )
     {
         if(getBatteryState() != BATTERY_STATE_LOW)
+        {
             setBatteryStateTo(BATTERY_STATE_LOW);
-        ROS_INFO("[PPS CLIENT] low level battery triggered");
+            ROS_INFO("[PPS CLIENT] low level battery triggered");
+        }
+        
     }
-    else                        //maybe add hysteresis somewhere here?
+    else
     {
-        if(getBatteryState() != BATTERY_STATE_NORMAL)
-            setBatteryStateTo(BATTERY_STATE_NORMAL);
+        // TO AVOID BEING ABLE TO IMMEDIATELY TAKE-OFF AFTER A
+        // "BATTERY LOW" EVENT IS TRIGGERED, WE DO NOT SET THE
+        // BATTERY STATE BACK TO NORMAL
+        // if(getBatteryState() != BATTERY_STATE_NORMAL)
+        // {
+        //     setBatteryStateTo(BATTERY_STATE_NORMAL);
+        // }
     }
 }
 
@@ -1062,6 +1079,11 @@ int main(int argc, char* argv[])
 
     // know the battery level of the CF
     ros::Subscriber CFBatterySubscriber = namespaceNodeHandle.subscribe("CrazyRadio/CFBattery", 1, CFBatteryCallback);
+
+    // INITIALISE THE BATTERY VOLTAGE TO SOMETHING CLOSE TO FULL
+    // > This is used to prevent the "Low Battery" being trigged when the 
+    //   first battery voltage data is received
+    m_battery_voltage = 4.2f;
 
 	//start with safe controller
     flying_state = STATE_MOTORS_OFF;

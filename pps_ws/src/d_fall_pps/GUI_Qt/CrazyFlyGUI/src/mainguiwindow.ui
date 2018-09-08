@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1176</width>
-    <height>1180</height>
+    <height>1559</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -30,27 +30,18 @@
        <enum>QFrame::Raised</enum>
       </property>
       <layout class="QGridLayout" name="gridLayout_4">
-       <item row="2" column="1">
-        <widget class="QPushButton" name="pushButton_fitAll">
-         <property name="text">
-          <string>Fit All</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QPushButton" name="removeTable">
-         <property name="text">
-          <string>Remove Table</string>
-         </property>
-        </widget>
-       </item>
        <item row="0" column="1">
         <widget class="QGroupBox" name="groupBox">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>14</pointsize>
+          </font>
          </property>
          <property name="title">
           <string>Creation Modes</string>
@@ -60,7 +51,7 @@
            <widget class="QRadioButton" name="radioButton_table_mode">
             <property name="font">
              <font>
-              <pointsize>7</pointsize>
+              <pointsize>12</pointsize>
              </font>
             </property>
             <property name="text">
@@ -75,7 +66,7 @@
            <widget class="QRadioButton" name="radioButton_crazyfly_zones_mode">
             <property name="font">
              <font>
-              <pointsize>7</pointsize>
+              <pointsize>12</pointsize>
              </font>
             </property>
             <property name="text">
@@ -90,7 +81,7 @@
            <widget class="QRadioButton" name="radioButton_lock_mode">
             <property name="font">
              <font>
-              <pointsize>7</pointsize>
+              <pointsize>12</pointsize>
              </font>
             </property>
             <property name="text">
@@ -101,20 +92,55 @@
             </property>
            </widget>
           </item>
+          <item>
+           <widget class="QPushButton" name="removeTable">
+            <property name="font">
+             <font>
+              <pointsize>14</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>Remove Table</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_fitAll">
+            <property name="font">
+             <font>
+              <pointsize>14</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>Fit All</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </widget>
        </item>
        <item row="1" column="1">
         <widget class="QGroupBox" name="groupBox_2">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>14</pointsize>
+          </font>
+         </property>
          <property name="title">
           <string>What to show</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_5">
-          <item row="4" column="0">
+          <item row="5" column="0">
            <widget class="QCheckBox" name="checkBox_grid">
             <property name="font">
              <font>
-              <pointsize>7</pointsize>
+              <pointsize>12</pointsize>
              </font>
             </property>
             <property name="text">
@@ -125,11 +151,11 @@
             </property>
            </widget>
           </item>
-          <item row="5" column="0">
+          <item row="6" column="0">
            <widget class="QCheckBox" name="checkBox_table">
             <property name="font">
              <font>
-              <pointsize>7</pointsize>
+              <pointsize>12</pointsize>
              </font>
             </property>
             <property name="text">
@@ -140,11 +166,11 @@
             </property>
            </widget>
           </item>
-          <item row="8" column="0">
+          <item row="9" column="0">
            <widget class="QCheckBox" name="checkBox_vicon_crazyflies">
             <property name="font">
              <font>
-              <pointsize>7</pointsize>
+              <pointsize>12</pointsize>
              </font>
             </property>
             <property name="text">
@@ -159,7 +185,7 @@
            <widget class="QCheckBox" name="checkBox_crazyfly_zones">
             <property name="font">
              <font>
-              <pointsize>7</pointsize>
+              <pointsize>12</pointsize>
              </font>
             </property>
             <property name="text">
@@ -174,7 +200,7 @@
            <widget class="QCheckBox" name="checkBox_vicon_markers">
             <property name="font">
              <font>
-              <pointsize>7</pointsize>
+              <pointsize>12</pointsize>
              </font>
             </property>
             <property name="text">
@@ -185,20 +211,20 @@
             </property>
            </widget>
           </item>
-          <item row="8" column="1">
+          <item row="10" column="0">
            <widget class="QDoubleSpinBox" name="scaleSpinBox">
             <property name="font">
              <font>
-              <pointsize>7</pointsize>
+              <pointsize>12</pointsize>
              </font>
             </property>
            </widget>
           </item>
-          <item row="2" column="1">
+          <item row="3" column="0">
            <widget class="QCheckBox" name="checkBox_vicon_highlight_markers">
             <property name="font">
              <font>
-              <pointsize>6</pointsize>
+              <pointsize>12</pointsize>
              </font>
             </property>
             <property name="text">
@@ -227,10 +253,8 @@
        </item>
       </layout>
       <zorder>graphicsView</zorder>
-      <zorder>removeTable</zorder>
       <zorder>groupBox</zorder>
       <zorder>groupBox_2</zorder>
-      <zorder>pushButton_fitAll</zorder>
      </widget>
     </item>
     <item row="0" column="1">
@@ -268,6 +292,13 @@
            <height>100</height>
           </size>
          </property>
+         <property name="font">
+          <font>
+           <pointsize>14</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
          <property name="text">
           <string>All motors OFF</string>
          </property>
@@ -275,6 +306,11 @@
        </item>
        <item>
         <widget class="QTabWidget" name="tabWidget_2">
+         <property name="font">
+          <font>
+           <pointsize>14</pointsize>
+          </font>
+         </property>
          <property name="currentIndex">
           <number>0</number>
          </property>
@@ -283,11 +319,54 @@
            <string>Links</string>
           </attribute>
           <layout class="QGridLayout" name="gridLayout">
-           <item row="6" column="1" colspan="6">
-            <widget class="QLabel" name="err_message_student_id">
+           <item row="0" column="1">
+            <widget class="QPushButton" name="refresh_student_ids_button">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>20</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>600</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>Refresh IDs</string>
+             </property>
+            </widget>
+           </item>
+           <item row="13" column="1">
+            <widget class="QLabel" name="err_message_radio_address">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>10</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>600</width>
+               <height>20</height>
+              </size>
+             </property>
              <property name="font">
               <font>
-               <pointsize>7</pointsize>
+               <pointsize>10</pointsize>
               </font>
              </property>
              <property name="text">
@@ -295,37 +374,78 @@
              </property>
             </widget>
            </item>
-           <item row="15" column="1" colspan="6">
-            <widget class="QLabel" name="err_message_cf_zone">
-             <property name="font">
-              <font>
-               <pointsize>7</pointsize>
-              </font>
+           <item row="22" column="1">
+            <widget class="QPushButton" name="load_from_DB_button">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>20</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>600</width>
+               <height>30</height>
+              </size>
              </property>
              <property name="text">
-              <string>TextLabel</string>
+              <string>Load from DB</string>
              </property>
             </widget>
            </item>
-           <item row="10" column="1" colspan="6">
-            <widget class="QLabel" name="err_message_cf">
-             <property name="font">
-              <font>
-               <pointsize>7</pointsize>
-              </font>
+           <item row="12" column="1">
+            <widget class="QLineEdit" name="radioAddress_text">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
              </property>
-             <property name="text">
-              <string>TextLabel</string>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>20</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>600</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+             <property name="clearButtonEnabled">
+              <bool>false</bool>
              </property>
             </widget>
            </item>
            <item row="5" column="1">
             <widget class="QSpinBox" name="spinBox_student_ids">
              <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>600</width>
+               <height>30</height>
+              </size>
              </property>
              <property name="minimum">
               <number>1</number>
@@ -341,21 +461,89 @@
            <item row="2" column="1">
             <widget class="QListWidget" name="list_discovered_student_ids">
              <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
+             <property name="maximumSize">
+              <size>
+               <width>600</width>
+               <height>90</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+           <item row="15" column="1">
+            <widget class="QComboBox" name="comboBoxCFZones">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>20</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>600</width>
+               <height>30</height>
+              </size>
+             </property>
             </widget>
            </item>
            <item row="9" column="1">
-            <widget class="QComboBox" name="comboBoxCFs"/>
-           </item>
-           <item row="14" column="1">
-            <widget class="QComboBox" name="comboBoxCFZones"/>
+            <widget class="QComboBox" name="comboBoxCFs">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>20</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>600</width>
+               <height>30</height>
+              </size>
+             </property>
+            </widget>
            </item>
            <item row="4" column="1">
             <widget class="QLabel" name="label_4">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>15</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>600</width>
+               <height>25</height>
+              </size>
+             </property>
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
              <property name="text">
               <string>Choose Student ID:</string>
              </property>
@@ -363,38 +551,220 @@
            </item>
            <item row="7" column="1">
             <widget class="QLabel" name="label_2">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>15</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>600</width>
+               <height>25</height>
+              </size>
+             </property>
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
              <property name="text">
               <string>Choose CF to link:</string>
              </property>
             </widget>
            </item>
-           <item row="13" column="1">
+           <item row="14" column="1">
             <widget class="QLabel" name="label_3">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>15</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>600</width>
+               <height>25</height>
+              </size>
+             </property>
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
              <property name="text">
               <string>Choose CF Zone to link:</string>
              </property>
             </widget>
            </item>
-           <item row="9" column="6">
+           <item row="11" column="1">
+            <widget class="QLabel" name="label">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>15</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>600</width>
+               <height>25</height>
+              </size>
+             </property>
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>Radio Address:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="1">
+            <widget class="QLabel" name="err_message_student_id">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>10</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>600</width>
+               <height>20</height>
+              </size>
+             </property>
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>TextLabel</string>
+             </property>
+            </widget>
+           </item>
+           <item row="8" column="1">
             <widget class="QPushButton" name="refresh_cfs_button">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>20</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>600</width>
+               <height>30</height>
+              </size>
+             </property>
              <property name="text">
               <string>Refresh CFs</string>
              </property>
             </widget>
            </item>
-           <item row="2" column="6">
-            <widget class="QPushButton" name="refresh_student_ids_button">
+           <item row="23" column="1">
+            <widget class="QPushButton" name="save_in_DB_button">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>20</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>600</width>
+               <height>30</height>
+              </size>
+             </property>
              <property name="text">
-              <string>Refresh IDs</string>
+              <string>Save in DB</string>
              </property>
             </widget>
            </item>
-           <item row="16" column="1" colspan="6">
-            <widget class="QTableWidget" name="table_links">
+           <item row="16" column="1">
+            <widget class="QPushButton" name="link_button">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
              <property name="minimumSize">
               <size>
-               <width>273</width>
+               <width>0</width>
+               <height>20</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>600</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>Link!</string>
+             </property>
+            </widget>
+           </item>
+           <item row="19" column="1">
+            <widget class="QTableWidget" name="table_links">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
                <height>0</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>600</width>
+               <height>120</height>
               </size>
              </property>
              <property name="wordWrap">
@@ -411,56 +781,84 @@
              </attribute>
             </widget>
            </item>
-           <item row="14" column="6">
-            <widget class="QPushButton" name="link_button">
-             <property name="text">
-              <string>Link!</string>
-             </property>
-            </widget>
-           </item>
-           <item row="18" column="6">
+           <item row="21" column="1">
             <widget class="QPushButton" name="unlink_button">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>20</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>600</width>
+               <height>30</height>
+              </size>
+             </property>
              <property name="text">
               <string>Unlink!</string>
              </property>
             </widget>
            </item>
-           <item row="20" column="6">
-            <widget class="QPushButton" name="save_in_DB_button">
-             <property name="text">
-              <string>Save in DB</string>
+           <item row="17" column="1">
+            <widget class="QLabel" name="err_message_cf_zone">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
              </property>
-            </widget>
-           </item>
-           <item row="11" column="6">
-            <widget class="QLineEdit" name="radioAddress_text">
-             <property name="readOnly">
-              <bool>true</bool>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>10</height>
+              </size>
              </property>
-             <property name="clearButtonEnabled">
-              <bool>false</bool>
+             <property name="maximumSize">
+              <size>
+               <width>600</width>
+               <height>20</height>
+              </size>
              </property>
-            </widget>
-           </item>
-           <item row="19" column="6">
-            <widget class="QPushButton" name="load_from_DB_button">
-             <property name="text">
-              <string>Load from DB</string>
-             </property>
-            </widget>
-           </item>
-           <item row="11" column="1">
-            <widget class="QLabel" name="label">
-             <property name="text">
-              <string>Radio Address:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="12" column="6">
-            <widget class="QLabel" name="err_message_radio_address">
              <property name="font">
               <font>
-               <pointsize>7</pointsize>
+               <pointsize>10</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>TextLabel</string>
+             </property>
+            </widget>
+           </item>
+           <item row="10" column="1">
+            <widget class="QLabel" name="err_message_cf">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>10</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>600</width>
+               <height>20</height>
+              </size>
+             </property>
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
               </font>
              </property>
              <property name="text">
@@ -475,22 +873,75 @@
            <string>Command all</string>
           </attribute>
           <layout class="QGridLayout" name="gridLayout_2">
-           <item row="1" column="0">
-            <widget class="QPushButton" name="all_disconnect_button">
+           <item row="10" column="1">
+            <widget class="QPushButton" name="all_load_custom_controller_yaml_coordinator_button">
              <property name="minimumSize">
               <size>
                <width>0</width>
-               <height>50</height>
+               <height>30</height>
               </size>
              </property>
              <property name="maximumSize">
               <size>
                <width>16777215</width>
-               <height>100</height>
+               <height>50</height>
               </size>
              </property>
              <property name="text">
-              <string>Disconnect</string>
+              <string>Load Custom YAML</string>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="0" colspan="2">
+            <widget class="QLabel" name="all_yaml_label">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>20</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>40</height>
+              </size>
+             </property>
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>LOAD YAML PARAMETERS</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignBottom|Qt::AlignHCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QPushButton" name="all_take_off_button">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>50</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>Take off</string>
              </property>
             </widget>
            </item>
@@ -499,13 +950,13 @@
              <property name="minimumSize">
               <size>
                <width>0</width>
-               <height>50</height>
+               <height>30</height>
               </size>
              </property>
              <property name="maximumSize">
               <size>
                <width>16777215</width>
-               <height>100</height>
+               <height>50</height>
               </size>
              </property>
              <property name="text">
@@ -527,6 +978,12 @@
                <height>40</height>
               </size>
              </property>
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
              <property name="text">
               <string>FLYING STATE</string>
              </property>
@@ -535,85 +992,22 @@
              </property>
             </widget>
            </item>
-           <item row="3" column="0">
-            <widget class="QPushButton" name="all_take_off_button">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimumSize">
-              <size>
-               <width>0</width>
-               <height>50</height>
-              </size>
-             </property>
-             <property name="maximumSize">
-              <size>
-               <width>16777215</width>
-               <height>100</height>
-              </size>
-             </property>
-             <property name="text">
-              <string>Take off</string>
-             </property>
-            </widget>
-           </item>
            <item row="5" column="0">
             <widget class="QPushButton" name="all_enable_safe_controller_button">
              <property name="minimumSize">
               <size>
                <width>0</width>
-               <height>50</height>
+               <height>30</height>
               </size>
              </property>
              <property name="maximumSize">
               <size>
                <width>16777215</width>
-               <height>100</height>
+               <height>50</height>
               </size>
              </property>
              <property name="text">
               <string>Enable Safe</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="1">
-            <widget class="QPushButton" name="all_land_button">
-             <property name="minimumSize">
-              <size>
-               <width>0</width>
-               <height>50</height>
-              </size>
-             </property>
-             <property name="maximumSize">
-              <size>
-               <width>16777215</width>
-               <height>100</height>
-              </size>
-             </property>
-             <property name="text">
-              <string>Land</string>
-             </property>
-            </widget>
-           </item>
-           <item row="5" column="1">
-            <widget class="QPushButton" name="all_enable_custom_controller_button">
-             <property name="minimumSize">
-              <size>
-               <width>0</width>
-               <height>50</height>
-              </size>
-             </property>
-             <property name="maximumSize">
-              <size>
-               <width>16777215</width>
-               <height>100</height>
-              </size>
-             </property>
-             <property name="text">
-              <string>Enable Custom</string>
              </property>
             </widget>
            </item>
@@ -622,13 +1016,13 @@
              <property name="minimumSize">
               <size>
                <width>0</width>
-               <height>50</height>
+               <height>30</height>
               </size>
              </property>
              <property name="maximumSize">
               <size>
                <width>16777215</width>
-               <height>100</height>
+               <height>50</height>
               </size>
              </property>
              <property name="text">
@@ -636,88 +1030,79 @@
              </property>
             </widget>
            </item>
-           <item row="0" column="0" colspan="2">
-            <widget class="QLabel" name="all_radio_label">
+           <item row="1" column="0">
+            <widget class="QPushButton" name="all_disconnect_button">
              <property name="minimumSize">
               <size>
                <width>0</width>
-               <height>20</height>
+               <height>30</height>
               </size>
              </property>
              <property name="maximumSize">
               <size>
                <width>16777215</width>
-               <height>40</height>
-              </size>
-             </property>
-             <property name="lineWidth">
-              <number>1</number>
-             </property>
-             <property name="text">
-              <string>CRAZYRADIO</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignBottom|Qt::AlignHCenter</set>
-             </property>
-            </widget>
-           </item>
-           <item row="6" column="0" colspan="2">
-            <widget class="QLabel" name="all_yaml_label">
-             <property name="minimumSize">
-              <size>
-               <width>0</width>
-               <height>20</height>
-              </size>
-             </property>
-             <property name="maximumSize">
-              <size>
-               <width>16777215</width>
-               <height>40</height>
-              </size>
-             </property>
-             <property name="text">
-              <string>LOAD YAML PARAMETERS</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignBottom|Qt::AlignHCenter</set>
-             </property>
-            </widget>
-           </item>
-           <item row="10" column="0">
-            <widget class="QPushButton" name="all_load_safe_controller_yaml_coordinator_button">
-             <property name="minimumSize">
-              <size>
-               <width>0</width>
                <height>50</height>
               </size>
              </property>
+             <property name="text">
+              <string>Disconnect</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="1">
+            <widget class="QPushButton" name="all_enable_custom_controller_button">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>30</height>
+              </size>
+             </property>
              <property name="maximumSize">
               <size>
                <width>16777215</width>
-               <height>100</height>
+               <height>50</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>Enable Custom</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QPushButton" name="all_land_button">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>50</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>Land</string>
+             </property>
+            </widget>
+           </item>
+           <item row="8" column="0">
+            <widget class="QPushButton" name="all_load_safe_controller_yaml_own_agent_button">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>50</height>
               </size>
              </property>
              <property name="text">
               <string>Load Safe YAML</string>
-             </property>
-            </widget>
-           </item>
-           <item row="10" column="1">
-            <widget class="QPushButton" name="all_load_custom_controller_yaml_coordinator_button">
-             <property name="minimumSize">
-              <size>
-               <width>0</width>
-               <height>50</height>
-              </size>
-             </property>
-             <property name="maximumSize">
-              <size>
-               <width>16777215</width>
-               <height>100</height>
-              </size>
-             </property>
-             <property name="text">
-              <string>Load Custom YAML</string>
              </property>
             </widget>
            </item>
@@ -740,6 +1125,25 @@
              </property>
             </widget>
            </item>
+           <item row="10" column="0">
+            <widget class="QPushButton" name="all_load_safe_controller_yaml_coordinator_button">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>50</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>Load Safe YAML</string>
+             </property>
+            </widget>
+           </item>
            <item row="9" column="0" colspan="2">
             <widget class="QLabel" name="all_yaml_coordinator_label">
              <property name="minimumSize">
@@ -759,22 +1163,34 @@
              </property>
             </widget>
            </item>
-           <item row="8" column="0">
-            <widget class="QPushButton" name="all_load_safe_controller_yaml_own_agent_button">
+           <item row="0" column="0" colspan="2">
+            <widget class="QLabel" name="all_radio_label">
              <property name="minimumSize">
               <size>
                <width>0</width>
-               <height>50</height>
+               <height>20</height>
               </size>
              </property>
              <property name="maximumSize">
               <size>
                <width>16777215</width>
-               <height>100</height>
+               <height>40</height>
               </size>
              </property>
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="lineWidth">
+              <number>1</number>
+             </property>
              <property name="text">
-              <string>Load Safe YAML</string>
+              <string>CRAZYRADIO</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignBottom|Qt::AlignHCenter</set>
              </property>
             </widget>
            </item>
