@@ -481,11 +481,13 @@ void MainWindow::setCrazyRadioStatus(int radio_status)
         case CONNECTED:
         {
             // SET THE APPROPRIATE IMAGE FOR THE RADIOSTATUS LABEL
-            ui->rf_status_label->clear();
+            rf_status_label_mutex.lock();
+            //ui->rf_status_label->clear();
             QPixmap rf_connected_pixmap(":/images/rf_connected.png");
             ui->rf_status_label->setPixmap(rf_connected_pixmap);
             ui->rf_status_label->setScaledContents(true);
-            ui->rf_status_label->update();
+            //ui->rf_status_label->update();
+            rf_status_label_mutex.unlock();
             // ENABLE THE REMAINDER OF THE GUI
             enableGUI();
             break;
@@ -494,22 +496,26 @@ void MainWindow::setCrazyRadioStatus(int radio_status)
         case CONNECTING:
         {
             // SET THE APPROPRIATE IMAGE FOR THE RADIO STATUS LABEL
-            ui->rf_status_label->clear();
+            rf_status_label_mutex.lock();
+            //ui->rf_status_label->clear();
             QPixmap rf_connecting_pixmap(":/images/rf_connecting.png");
             ui->rf_status_label->setPixmap(rf_connecting_pixmap);
             ui->rf_status_label->setScaledContents(true);
-            ui->rf_status_label->update();
+            //ui->rf_status_label->update();
+            rf_status_label_mutex.unlock();
             break;
         }
 
         case DISCONNECTED:
         {
             // SET THE APPROPRIATE IMAGE FOR THE RADIO STATUS LABEL
-            ui->rf_status_label->clear();
+            rf_status_label_mutex.lock();
+            //ui->rf_status_label->clear();
             QPixmap rf_disconnected_pixmap(":/images/rf_disconnected.png");
             ui->rf_status_label->setPixmap(rf_disconnected_pixmap);
             ui->rf_status_label->setScaledContents(true);
-            ui->rf_status_label->update();
+            //ui->rf_status_label->update();
+            rf_status_label_mutex.unlock();
             // SET THE BATTERY VOLTAGE FIELD TO BE BLANK
             QString qstr = "-.-- V";
             voltage_field_mutex.lock();
