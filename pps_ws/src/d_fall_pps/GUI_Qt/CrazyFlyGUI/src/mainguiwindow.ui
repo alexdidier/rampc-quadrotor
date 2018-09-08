@@ -30,20 +30,6 @@
        <enum>QFrame::Raised</enum>
       </property>
       <layout class="QGridLayout" name="gridLayout_4">
-       <item row="2" column="1">
-        <widget class="QPushButton" name="pushButton_fitAll">
-         <property name="text">
-          <string>Fit All</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QPushButton" name="removeTable">
-         <property name="text">
-          <string>Remove Table</string>
-         </property>
-        </widget>
-       </item>
        <item row="0" column="1">
         <widget class="QGroupBox" name="groupBox">
          <property name="sizePolicy">
@@ -51,6 +37,11 @@
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>14</pointsize>
+          </font>
          </property>
          <property name="title">
           <string>Creation Modes</string>
@@ -60,7 +51,7 @@
            <widget class="QRadioButton" name="radioButton_table_mode">
             <property name="font">
              <font>
-              <pointsize>7</pointsize>
+              <pointsize>12</pointsize>
              </font>
             </property>
             <property name="text">
@@ -75,7 +66,7 @@
            <widget class="QRadioButton" name="radioButton_crazyfly_zones_mode">
             <property name="font">
              <font>
-              <pointsize>7</pointsize>
+              <pointsize>12</pointsize>
              </font>
             </property>
             <property name="text">
@@ -90,7 +81,7 @@
            <widget class="QRadioButton" name="radioButton_lock_mode">
             <property name="font">
              <font>
-              <pointsize>7</pointsize>
+              <pointsize>12</pointsize>
              </font>
             </property>
             <property name="text">
@@ -106,15 +97,32 @@
        </item>
        <item row="1" column="1">
         <widget class="QGroupBox" name="groupBox_2">
+         <property name="font">
+          <font>
+           <pointsize>14</pointsize>
+          </font>
+         </property>
          <property name="title">
           <string>What to show</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_5">
-          <item row="4" column="0">
+          <item row="11" column="0">
+           <widget class="QPushButton" name="pushButton_fitAll">
+            <property name="font">
+             <font>
+              <pointsize>14</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>Fit All</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="0">
            <widget class="QCheckBox" name="checkBox_grid">
             <property name="font">
              <font>
-              <pointsize>7</pointsize>
+              <pointsize>12</pointsize>
              </font>
             </property>
             <property name="text">
@@ -125,11 +133,11 @@
             </property>
            </widget>
           </item>
-          <item row="5" column="0">
+          <item row="6" column="0">
            <widget class="QCheckBox" name="checkBox_table">
             <property name="font">
              <font>
-              <pointsize>7</pointsize>
+              <pointsize>12</pointsize>
              </font>
             </property>
             <property name="text">
@@ -140,11 +148,11 @@
             </property>
            </widget>
           </item>
-          <item row="8" column="0">
+          <item row="9" column="0">
            <widget class="QCheckBox" name="checkBox_vicon_crazyflies">
             <property name="font">
              <font>
-              <pointsize>7</pointsize>
+              <pointsize>12</pointsize>
              </font>
             </property>
             <property name="text">
@@ -159,7 +167,7 @@
            <widget class="QCheckBox" name="checkBox_crazyfly_zones">
             <property name="font">
              <font>
-              <pointsize>7</pointsize>
+              <pointsize>12</pointsize>
              </font>
             </property>
             <property name="text">
@@ -174,7 +182,7 @@
            <widget class="QCheckBox" name="checkBox_vicon_markers">
             <property name="font">
              <font>
-              <pointsize>7</pointsize>
+              <pointsize>12</pointsize>
              </font>
             </property>
             <property name="text">
@@ -185,20 +193,20 @@
             </property>
            </widget>
           </item>
-          <item row="8" column="1">
+          <item row="10" column="0">
            <widget class="QDoubleSpinBox" name="scaleSpinBox">
             <property name="font">
              <font>
-              <pointsize>7</pointsize>
+              <pointsize>12</pointsize>
              </font>
             </property>
            </widget>
           </item>
-          <item row="2" column="1">
+          <item row="3" column="0">
            <widget class="QCheckBox" name="checkBox_vicon_highlight_markers">
             <property name="font">
              <font>
-              <pointsize>6</pointsize>
+              <pointsize>12</pointsize>
              </font>
             </property>
             <property name="text">
@@ -206,6 +214,18 @@
             </property>
             <property name="checkable">
              <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="12" column="0">
+           <widget class="QPushButton" name="removeTable">
+            <property name="font">
+             <font>
+              <pointsize>14</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>Remove Table</string>
             </property>
            </widget>
           </item>
@@ -227,10 +247,8 @@
        </item>
       </layout>
       <zorder>graphicsView</zorder>
-      <zorder>removeTable</zorder>
       <zorder>groupBox</zorder>
       <zorder>groupBox_2</zorder>
-      <zorder>pushButton_fitAll</zorder>
      </widget>
     </item>
     <item row="0" column="1">
@@ -268,6 +286,13 @@
            <height>100</height>
           </size>
          </property>
+         <property name="font">
+          <font>
+           <pointsize>14</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
          <property name="text">
           <string>All motors OFF</string>
          </property>
@@ -275,6 +300,11 @@
        </item>
        <item>
         <widget class="QTabWidget" name="tabWidget_2">
+         <property name="font">
+          <font>
+           <pointsize>14</pointsize>
+          </font>
+         </property>
          <property name="currentIndex">
           <number>0</number>
          </property>
@@ -283,11 +313,18 @@
            <string>Links</string>
           </attribute>
           <layout class="QGridLayout" name="gridLayout">
-           <item row="6" column="1" colspan="6">
-            <widget class="QLabel" name="err_message_student_id">
+           <item row="0" column="1">
+            <widget class="QPushButton" name="refresh_student_ids_button">
+             <property name="text">
+              <string>Refresh IDs</string>
+             </property>
+            </widget>
+           </item>
+           <item row="13" column="1">
+            <widget class="QLabel" name="err_message_radio_address">
              <property name="font">
               <font>
-               <pointsize>7</pointsize>
+               <pointsize>10</pointsize>
               </font>
              </property>
              <property name="text">
@@ -295,27 +332,20 @@
              </property>
             </widget>
            </item>
-           <item row="15" column="1" colspan="6">
-            <widget class="QLabel" name="err_message_cf_zone">
-             <property name="font">
-              <font>
-               <pointsize>7</pointsize>
-              </font>
-             </property>
+           <item row="22" column="1">
+            <widget class="QPushButton" name="load_from_DB_button">
              <property name="text">
-              <string>TextLabel</string>
+              <string>Load from DB</string>
              </property>
             </widget>
            </item>
-           <item row="10" column="1" colspan="6">
-            <widget class="QLabel" name="err_message_cf">
-             <property name="font">
-              <font>
-               <pointsize>7</pointsize>
-              </font>
+           <item row="12" column="1">
+            <widget class="QLineEdit" name="radioAddress_text">
+             <property name="readOnly">
+              <bool>true</bool>
              </property>
-             <property name="text">
-              <string>TextLabel</string>
+             <property name="clearButtonEnabled">
+              <bool>false</bool>
              </property>
             </widget>
            </item>
@@ -348,14 +378,20 @@
              </property>
             </widget>
            </item>
+           <item row="15" column="1">
+            <widget class="QComboBox" name="comboBoxCFZones"/>
+           </item>
            <item row="9" column="1">
             <widget class="QComboBox" name="comboBoxCFs"/>
            </item>
-           <item row="14" column="1">
-            <widget class="QComboBox" name="comboBoxCFZones"/>
-           </item>
            <item row="4" column="1">
             <widget class="QLabel" name="label_4">
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
              <property name="text">
               <string>Choose Student ID:</string>
              </property>
@@ -363,33 +399,71 @@
            </item>
            <item row="7" column="1">
             <widget class="QLabel" name="label_2">
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
              <property name="text">
               <string>Choose CF to link:</string>
              </property>
             </widget>
            </item>
-           <item row="13" column="1">
+           <item row="14" column="1">
             <widget class="QLabel" name="label_3">
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
              <property name="text">
               <string>Choose CF Zone to link:</string>
              </property>
             </widget>
            </item>
-           <item row="9" column="6">
+           <item row="11" column="1">
+            <widget class="QLabel" name="label">
+             <property name="text">
+              <string>Radio Address:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="1">
+            <widget class="QLabel" name="err_message_student_id">
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>TextLabel</string>
+             </property>
+            </widget>
+           </item>
+           <item row="8" column="1">
             <widget class="QPushButton" name="refresh_cfs_button">
              <property name="text">
               <string>Refresh CFs</string>
              </property>
             </widget>
            </item>
-           <item row="2" column="6">
-            <widget class="QPushButton" name="refresh_student_ids_button">
+           <item row="23" column="1">
+            <widget class="QPushButton" name="save_in_DB_button">
              <property name="text">
-              <string>Refresh IDs</string>
+              <string>Save in DB</string>
              </property>
             </widget>
            </item>
-           <item row="16" column="1" colspan="6">
+           <item row="16" column="1">
+            <widget class="QPushButton" name="link_button">
+             <property name="text">
+              <string>Link!</string>
+             </property>
+            </widget>
+           </item>
+           <item row="19" column="1">
             <widget class="QTableWidget" name="table_links">
              <property name="minimumSize">
               <size>
@@ -411,56 +485,30 @@
              </attribute>
             </widget>
            </item>
-           <item row="14" column="6">
-            <widget class="QPushButton" name="link_button">
-             <property name="text">
-              <string>Link!</string>
-             </property>
-            </widget>
-           </item>
-           <item row="18" column="6">
+           <item row="21" column="1">
             <widget class="QPushButton" name="unlink_button">
              <property name="text">
               <string>Unlink!</string>
              </property>
             </widget>
            </item>
-           <item row="20" column="6">
-            <widget class="QPushButton" name="save_in_DB_button">
-             <property name="text">
-              <string>Save in DB</string>
-             </property>
-            </widget>
-           </item>
-           <item row="11" column="6">
-            <widget class="QLineEdit" name="radioAddress_text">
-             <property name="readOnly">
-              <bool>true</bool>
-             </property>
-             <property name="clearButtonEnabled">
-              <bool>false</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="19" column="6">
-            <widget class="QPushButton" name="load_from_DB_button">
-             <property name="text">
-              <string>Load from DB</string>
-             </property>
-            </widget>
-           </item>
-           <item row="11" column="1">
-            <widget class="QLabel" name="label">
-             <property name="text">
-              <string>Radio Address:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="12" column="6">
-            <widget class="QLabel" name="err_message_radio_address">
+           <item row="17" column="1">
+            <widget class="QLabel" name="err_message_cf_zone">
              <property name="font">
               <font>
-               <pointsize>7</pointsize>
+               <pointsize>10</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>TextLabel</string>
+             </property>
+            </widget>
+           </item>
+           <item row="10" column="1">
+            <widget class="QLabel" name="err_message_cf">
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
               </font>
              </property>
              <property name="text">
@@ -526,6 +574,12 @@
                <width>16777215</width>
                <height>40</height>
               </size>
+             </property>
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
              </property>
              <property name="text">
               <string>FLYING STATE</string>
@@ -650,6 +704,12 @@
                <height>40</height>
               </size>
              </property>
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
              <property name="lineWidth">
               <number>1</number>
              </property>
@@ -674,6 +734,12 @@
                <width>16777215</width>
                <height>40</height>
               </size>
+             </property>
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
              </property>
              <property name="text">
               <string>LOAD YAML PARAMETERS</string>
@@ -830,7 +896,7 @@
      <x>0</x>
      <y>0</y>
      <width>1176</width>
-     <height>25</height>
+     <height>37</height>
     </rect>
    </property>
   </widget>
