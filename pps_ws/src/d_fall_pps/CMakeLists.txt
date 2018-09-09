@@ -71,9 +71,9 @@ set(STUDENT_RESOURCE_FILE_QRC ${PROJECT_SOURCE_DIR}/GUI_Qt/studentGUI/studentgui
 
 
 # Flying Agent GUI -- Add src, includes, forms, and resources
-set(FLYING_AGENT_GUI_LIB_PATH_SRC ${PROJECT_SOURCE_DIR}/GUI_Qt/flyingAgentGUI/src)
-set(FLYING_AGENT_GUI_LIB_PATH_INC ${PROJECT_SOURCE_DIR}/GUI_Qt/flyingAgentGUI/include)
-set(FLYING_AGENT_GUI_LIB_PATH_FORMS ${PROJECT_SOURCE_DIR}/GUI_Qt/flyingAgentGUI/forms)
+set(FLYING_AGENT_GUI_LIB_PATH_SRC      ${PROJECT_SOURCE_DIR}/GUI_Qt/flyingAgentGUI/src)
+set(FLYING_AGENT_GUI_LIB_PATH_INC      ${PROJECT_SOURCE_DIR}/GUI_Qt/flyingAgentGUI/include)
+set(FLYING_AGENT_GUI_LIB_PATH_FORMS    ${PROJECT_SOURCE_DIR}/GUI_Qt/flyingAgentGUI/forms)
 set(FLYING_AGENT_GUI_RESOURCE_FILE_QRC ${PROJECT_SOURCE_DIR}/GUI_Qt/flyingAgentGUI/flyingagentgui.qrc)
 
 
@@ -130,7 +130,7 @@ set(SRC_HDRS_QOBJECT_FLYING_AGENT_GUI
   ${FLYING_AGENT_GUI_LIB_PATH_INC}/coordinatorrow.h
   ${FLYING_AGENT_GUI_LIB_PATH_INC}/enablecontrollerloadyamlbar.h
   ${FLYING_AGENT_GUI_LIB_PATH_INC}/mainwindow.h
-  ${FLYING_AGENT_GUI_LIB_PATH_INC}/rosNodeThread.h
+  ${FLYING_AGENT_GUI_LIB_PATH_INC}/rosNodeThread_for_flyingAgentGUI.h
   ${FLYING_AGENT_GUI_LIB_PATH_INC}/safecontrollertab.h
   ${FLYING_AGENT_GUI_LIB_PATH_INC}/topbanner.h
   )
@@ -147,7 +147,7 @@ qt5_wrap_ui(UIS_HDRS_FLYING_AGENT_GUI
   )
 qt5_wrap_cpp(SRC_MOC_HDRS_FLYING_AGENT_GUI ${SRC_HDRS_QOBJECT_FLYING_AGENT_GUI})
 # Flying Agent GUI -- wrap resource file qrc->rcc
-qt5_add_resources(FLYING_AGENT_GUI_RESOURCE_FILE_RCC ${MY_RESOURCE_FILE_QRC})
+qt5_add_resources(FLYING_AGENT_GUI_RESOURCE_FILE_RCC ${FLYING_AGENT_GUI_RESOURCE_FILE_QRC})
 
 
 
@@ -269,7 +269,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include ${MY_GUI_LIB_PATH_INC}            # GUI -- include headers from GUI in package
   INCLUDE_DIRS include ${STUDENT_GUI_LIB_PATH_INC}       # StudentGUI -- include headers from GUI in package
-  INCLUDE_DIRS include ${FLYING_AGENT_GUI_LIB_PATH_INC}       # StudentGUI -- include headers from GUI in package
+  INCLUDE_DIRS include ${FLYING_AGENT_GUI_LIB_PATH_INC}  # FlyingAgentGUI -- include headers from GUI in package
   LIBRARIES
   CATKIN_DEPENDS roscpp rospy std_msgs rosbag roslib
   DEPENDS
@@ -285,7 +285,7 @@ catkin_package(
 include_directories(
   ${MY_GUI_LIB_PATH_INC}            # GUI -- include directory inside GUI folder
   ${STUDENT_GUI_LIB_PATH_INC}       # StudentGUI -- include directory inside GUI folder
-  ${FLYING_AGENT_GUI_LIB_PATH_INC}       # StudentGUI -- include directory inside GUI folder
+  ${FLYING_AGENT_GUI_LIB_PATH_INC}  # FlyingAgentGUI -- include directory inside GUI folder
   ${catkin_INCLUDE_DIRS}
   include
   include/nodes
@@ -354,14 +354,14 @@ set(MY_CPP_SOURCES_STUDENT_GUI              # compilation of sources
 
 # FLYING AGENT GUI -- Add sources here
 set(MY_CPP_SOURCES_FLYING_AGENT_GUI         # compilation of sources
+    ${FLYING_AGENT_GUI_LIB_PATH_SRC}/mainwindow.cpp
+    ${FLYING_AGENT_GUI_LIB_PATH_SRC}/main.cpp
+    ${FLYING_AGENT_GUI_LIB_PATH_SRC}/rosNodeThread_for_flyingAgentGUI.cpp
     ${FLYING_AGENT_GUI_LIB_PATH_SRC}/connectstartstopbar.cpp
     ${FLYING_AGENT_GUI_LIB_PATH_SRC}/controllertabs.cpp
     ${FLYING_AGENT_GUI_LIB_PATH_SRC}/coordinator.cpp
     ${FLYING_AGENT_GUI_LIB_PATH_SRC}/coordinatorrow.cpp
     ${FLYING_AGENT_GUI_LIB_PATH_SRC}/enablecontrollerloadyamlbar.cpp
-    ${FLYING_AGENT_GUI_LIB_PATH_SRC}/main.cpp
-    ${FLYING_AGENT_GUI_LIB_PATH_SRC}/mainwindow.cpp
-    ${FLYING_AGENT_GUI_LIB_PATH_SRC}/rosNodeThread.cpp
     ${FLYING_AGENT_GUI_LIB_PATH_SRC}/safecontrollertab.cpp
     ${FLYING_AGENT_GUI_LIB_PATH_SRC}/topbanner.cpp
     )

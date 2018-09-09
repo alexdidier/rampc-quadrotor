@@ -31,7 +31,7 @@
 
 
 #include "mainwindow.h"
-#include "ui_mainwindow.h"   // <-- this include is additional to the Qt default
+//#include "ui_mainwindow.h"   // <-- this include is additional to the Qt default
 #include <QApplication>
 
 int main(int argc, char *argv[])

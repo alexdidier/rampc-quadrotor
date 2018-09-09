@@ -1,4 +1,4 @@
-//    Copyright (C) 2017, ETH Zurich, D-ITET, Angel Romero
+//    Copyright (C) 2017, ETH Zurich, D-ITET, Paul Beuchat
 //
 //    This file is part of D-FaLL-System.
 //    
@@ -30,11 +30,13 @@
 //    ----------------------------------------------------------------------------------
 
 
-#include "rosNodeThread.h"
+#include "rosNodeThread_for_flyingAgentGUI.h"
 
-#include "d_fall_pps/CMRead.h"
-#include "d_fall_pps/CMUpdate.h"
-#include "d_fall_pps/CMCommand.h"
+// #include "d_fall_pps/CMRead.h"
+// #include "d_fall_pps/CMUpdate.h"
+// #include "d_fall_pps/CMCommand.h"
+
+// using namespace d_fall_pps;
 
 
 rosNodeThread::rosNodeThread(int argc, char** pArgv, const char * node_name,  QObject* parent)

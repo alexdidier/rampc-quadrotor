@@ -37,6 +37,7 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     ui(new Ui::MainWindow)
 {
 #ifdef CATKIN_MAKE
+    //ROS_INFO("[flyingAgentGUI] Debug Point 5");
     m_rosNodeThread = new rosNodeThread(argc, argv, "flyingAgentGUI");
 #endif
     ui->setupUi(this);

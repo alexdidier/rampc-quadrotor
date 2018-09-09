@@ -103,7 +103,10 @@ CoordinatorRow::CoordinatorRow(QWidget *parent, int agentID) :
 
 
     // LET THE USER KNOW WHAT THE BASE NAMESPACE IS
-    ROS_INFO_STREAM("[Coordinator Row GUI] using base namespace: %s" << ros_base_namespace.c_str() << ", for agentID = " << my_agentID);
+    ROS_INFO_STREAM("[Coordinator Row GUI] using base namespace: " << ros_base_namespace.c_str() << ", for agentID = " << my_agentID);
+
+    std::string temp_ros_namespace = ros::this_node::getNamespace();
+    ROS_INFO_STREAM("[Coordinator Row GUI] compared to: ros::this_node::getNamespace() = " << temp_ros_namespace.c_str());
 
     // CREATE A NODE HANDLE TO THE BASE NAMESPACE
     ros::NodeHandle base_nodeHandle(ros_base_namespace);
@@ -125,8 +128,8 @@ CoordinatorRow::CoordinatorRow(QWidget *parent, int agentID) :
     // > For updating the "flying_state_label" picture
     flyingStateSubscriber = base_nodeHandle.subscribe("PPSClient/flyingState", 1, &CoordinatorRow::flyingStateChangedCallback, this);
     // > For changes in the database that defines {agentID,cfID,flying zone} links
-    databaseChangedSubscriber = dfall_root_nodeHandle.subscribe("my_GUI/DBChanged", 1, &CoordinatorRow::databaseChangedCallback, this);;
-    centralManagerDatabaseService = dfall_root_nodeHandle.serviceClient<CMQuery>("CentralManagerService/Query", false);
+    databaseChangedSubscriber = dfall_root_nodeHandle.subscribe("/my_GUI/DBChanged", 1, &CoordinatorRow::databaseChangedCallback, this);;
+    centralManagerDatabaseService = dfall_root_nodeHandle.serviceClient<CMQuery>("/CentralManagerService/Query", false);
     // > For updating the controller that is currently operating
     controllerUsedSubscriber = base_nodeHandle.subscribe("PPSClient/controllerUsed", 1, &CoordinatorRow::controllerUsedChangedCallback, this);
 

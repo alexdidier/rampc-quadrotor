@@ -1,4 +1,4 @@
-//    Copyright (C) 2017, ETH Zurich, D-ITET, Angel Romero
+//    Copyright (C) 2017, ETH Zurich, D-ITET, Paul Beuchat
 //
 //    This file is part of D-FaLL-System.
 //    
@@ -30,8 +30,8 @@
 //    ----------------------------------------------------------------------------------
 
 
-#ifndef ___ROSNODETHREAD_H___
-#define ___ROSNODETHREAD_H___
+#ifndef ___ROSNODETHREAD_FOR_FLYINGAGENTGUI_H___
+#define ___ROSNODETHREAD_FOR_FLYINGAGENTGUI_H___
 
 #include <QtCore>
 #include <QThread>
@@ -43,11 +43,16 @@
 
 #include <ros/ros.h>
 #include <ros/network.h>
+
+#include "d_fall_pps/CMRead.h"
+#include "d_fall_pps/CMUpdate.h"
+#include "d_fall_pps/CMCommand.h"
+
 //#include "d_fall_pps/UnlabeledMarker.h"
 //#include "d_fall_pps/CrazyflieData.h"
 //#include "d_fall_pps/ViconData.h"
 
-//using namespace d_fall_pps;
+using namespace d_fall_pps;
 
 //typedef ViconData::ConstPtr ptrToMessage;
 
@@ -69,7 +74,7 @@ public:
     ros::ServiceClient m_update_db_client;
     ros::ServiceClient m_command_db_client;
 
-signals:
+//signals:
 
     //void newViconData(const ptrToMessage& p_msg);
 

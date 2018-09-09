@@ -30,14 +30,17 @@
 //    ----------------------------------------------------------------------------------
 
 
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#ifndef MAINWINDOW_FLYINGAGENTGUI_H
+#define MAINWINDOW_FLYINGAGENTGUI_H
 
 #include <QMainWindow>
 #include <QShortcut>
 
 #ifdef CATKIN_MAKE
-#include "rosNodeThread.h"
+#include <ros/ros.h>
+#include <ros/network.h>
+#include <ros/package.h>
+#include "rosNodeThread_for_flyingAgentGUI.h"
 #endif
 
 
