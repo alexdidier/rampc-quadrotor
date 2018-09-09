@@ -595,9 +595,9 @@ void CoordinatorRow::loadCrazyflieContext()
     contextCall.request.studentID = my_agentID;
     //ROS_INFO_STREAM("StudentID:" << my_agentID);
 
-    centralManager.waitForExistence(ros::Duration(-1));
+    centralManagerDatabaseService.waitForExistence(ros::Duration(-1));
 
-    if(centralManager.call(contextCall))
+    if(centralManagerDatabaseService.call(contextCall))
     {
         my_context = contextCall.response.crazyflieContext;
         ROS_INFO_STREAM("[Coordinator Row GUI] CrazyflieContext:\n" << my_context);
@@ -710,7 +710,7 @@ void CoordinatorRow::on_enable_flying_button_clicked()
 #ifdef CATKIN_MAKE
     std_msgs::Int32 msg;
     msg.data = CMD_CRAZYFLY_TAKE_OFF;
-    this->PPSClientCommandPublisher.publish(msg);
+    this->flyingStateCommandPublisher.publish(msg);
 #endif
 }
 
@@ -719,7 +719,7 @@ void CoordinatorRow::on_disable_flying_button_clicked()
 #ifdef CATKIN_MAKE
     std_msgs::Int32 msg;
     msg.data = CMD_CRAZYFLY_LAND;
-    this->PPSClientCommandPublisher.publish(msg);
+    this->flyingStateCommandPublisher.publish(msg);
 #endif
 }
 
@@ -728,6 +728,6 @@ void CoordinatorRow::on_motors_off_button_clicked()
 #ifdef CATKIN_MAKE
     std_msgs::Int32 msg;
     msg.data = CMD_CRAZYFLY_MOTORS_OFF;
-    this->PPSClientCommandPublisher.publish(msg);
+    this->flyingStateCommandPublisher.publish(msg);
 #endif
 }

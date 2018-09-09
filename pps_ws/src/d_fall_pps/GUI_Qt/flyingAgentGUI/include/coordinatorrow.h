@@ -45,8 +45,11 @@
 #include <ros/network.h>
 #include <ros/package.h>
 
+#include "d_fall_pps/AreaBounds.h"
 #include "d_fall_pps/CrazyflieContext.h"
 #include "d_fall_pps/CMQuery.h"
+
+using namespace d_fall_pps;
 #endif
 
 // TYPES OF CONTROLLER BEING USED
