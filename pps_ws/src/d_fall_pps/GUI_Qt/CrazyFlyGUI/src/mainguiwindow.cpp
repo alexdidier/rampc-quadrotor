@@ -746,7 +746,8 @@ void MainGUIWindow::on_refresh_student_ids_button_clicked()
     {
         std::string s = v_str[i];
         std::smatch m;
-        std::regex e ("\\/(\\d)\\/PPSClient");
+        //std::regex e ("\\/(\\d)\\/PPSClient");
+        std::regex e ("\\/agent(\\d\\d\\d)\\/PPSClient");
 
         // std::regex e("\\/PPSClien(.)");
 
