@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ControllerTabs</class>
+ <widget class="QWidget" name="ControllerTabs">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1150</width>
+    <height>718</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="font">
+   <font>
+    <pointsize>16</pointsize>
+   </font>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="0" column="0">
+    <widget class="QTabWidget" name="controller_tabs_widget">
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="safe_tab">
+      <attribute name="title">
+       <string>Safe</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_2">
+       <item row="0" column="0">
+        <widget class="SafeControllerTab" name="widget" native="true"/>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="demo_tab">
+      <attribute name="title">
+       <string>Demo</string>
+      </attribute>
+     </widget>
+     <widget class="QWidget" name="student_tab">
+      <attribute name="title">
+       <string>Student</string>
+      </attribute>
+     </widget>
+     <widget class="QWidget" name="mpc_tab">
+      <attribute name="title">
+       <string>MPC</string>
+      </attribute>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>SafeControllerTab</class>
+   <extends>QWidget</extends>
+   <header>safecontrollertab.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
