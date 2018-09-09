@@ -105,8 +105,9 @@ CoordinatorRow::CoordinatorRow(QWidget *parent, int agentID) :
     // LET THE USER KNOW WHAT THE BASE NAMESPACE IS
     ROS_INFO_STREAM("[Coordinator Row GUI] using base namespace: " << ros_base_namespace.c_str() << ", for agentID = " << my_agentID);
 
-    std::string temp_ros_namespace = ros::this_node::getNamespace();
-    ROS_INFO_STREAM("[Coordinator Row GUI] compared to: ros::this_node::getNamespace() = " << temp_ros_namespace.c_str());
+    // DEBUGGING FOR NAMESPACES
+    //std::string temp_ros_namespace = ros::this_node::getNamespace();
+    //ROS_INFO_STREAM("[Coordinator Row GUI] compared to: ros::this_node::getNamespace() = " << temp_ros_namespace.c_str());
 
     // CREATE A NODE HANDLE TO THE BASE NAMESPACE
     ros::NodeHandle base_nodeHandle(ros_base_namespace);

@@ -522,17 +522,17 @@ void MainWindow::setCrazyRadioStatus(int radio_status)
             ui->voltage_field->setText(qstr);
             voltage_field_mutex.unlock();
             // SET THE APPROPRIATE IMAGE FOR THE BATTERY STATUS LABEL
+            battery_status_label_mutex.lock();
             if (m_battery_label_image_current_index != BATTERY_LABEL_IMAGE_INDEX_UNKNOWN)
 			{
-				battery_status_label_mutex.lock();
 				ui->battery_status_label->clear();
 	            QPixmap battery_unknown_pixmap(":/images/battery_unknown.png");
 	            ui->battery_status_label->setPixmap(battery_unknown_pixmap);
 	            ui->battery_status_label->setScaledContents(true);
 	            m_battery_label_image_current_index = BATTERY_LABEL_IMAGE_INDEX_UNKNOWN;
 	            ui->battery_status_label->update();
-	            battery_status_label_mutex.unlock();
 	        }
+            battery_status_label_mutex.unlock();
             // DISABLE THE REMAINDER OF THE GUI
             disableGUI();
             break;

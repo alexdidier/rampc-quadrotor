@@ -5,6 +5,7 @@
 
 #include <QWidget>
 #include <QVector>
+#include <regex>
 
 namespace Ui {
 class Coordinator;
@@ -20,6 +21,8 @@ public:
 
 private:
     QVector<CoordinatorRow*> vector_of_coordinatorRows;
+
+    void remove_all_entries_from_vector_of_coordinatorRows();
 
 private slots:
     void on_refresh_button_clicked();
