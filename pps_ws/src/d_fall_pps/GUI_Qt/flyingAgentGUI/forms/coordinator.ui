@@ -67,8 +67,13 @@
    </item>
    <item>
     <widget class="QCheckBox" name="coordinate_all_checkBox">
+     <property name="font">
+      <font>
+       <pointsize>16</pointsize>
+      </font>
+     </property>
      <property name="styleSheet">
-      <string notr="true">QCheckBox::indicator{ width:40px ; height:40px }</string>
+      <string notr="true">QCheckBox::indicator{ width:30px ; height:30px }</string>
      </property>
      <property name="text">
       <string>Coordinate All</string>
@@ -88,8 +93,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>571</width>
-        <height>744</height>
+        <width>583</width>
+        <height>854</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_for_coordinatedAgentsScrollArea"/>

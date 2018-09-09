@@ -36,13 +36,13 @@
        <widget class="Coordinator" name="customWidget_coordinator" native="true">
         <property name="minimumSize">
          <size>
-          <width>900</width>
+          <width>400</width>
           <height>0</height>
          </size>
         </property>
         <property name="maximumSize">
          <size>
-          <width>1500</width>
+          <width>680</width>
           <height>16777215</height>
          </size>
         </property>
@@ -118,10 +118,16 @@
              <bool>true</bool>
             </property>
             <property name="sizePolicy">
-             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+             <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>200</width>
+              <height>0</height>
+             </size>
             </property>
             <property name="maximumSize">
              <size>
@@ -145,7 +151,7 @@
      <x>0</x>
      <y>0</y>
      <width>1862</width>
-     <height>37</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
