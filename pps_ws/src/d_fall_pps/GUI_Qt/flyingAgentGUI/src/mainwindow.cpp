@@ -40,15 +40,17 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     //ROS_INFO("[flyingAgentGUI] Debug Point 5");
     m_rosNodeThread = new rosNodeThread(argc, argv, "flyingAgentGUI");
 #endif
+
+#ifdef CATKIN_MAKE
+    m_rosNodeThread->init();
+#endif
     ui->setupUi(this);
 
     // ADD KEYBOARD SHORTCUTS
     // > For "kill GUI node", press "CTRL+C" while the GUI window is the focus
     m_close_GUI_shortcut = new QShortcut(QKeySequence(tr("CTRL+C")), this, SLOT(close()));
 
-#ifdef CATKIN_MAKE
-    m_rosNodeThread->init();
-#endif
+
 
 }
 
