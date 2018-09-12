@@ -30,8 +30,8 @@
 //    ----------------------------------------------------------------------------------
 
 
-#ifndef ___ROSNODETHREAD_H___
-#define ___ROSNODETHREAD_H___
+#ifndef ___ROSNODETHREAD_FOR_STUDENTGUI_H___
+#define ___ROSNODETHREAD_FOR_STUDENTGUI_H___
 
 #include <QtCore>
 #include <QThread>

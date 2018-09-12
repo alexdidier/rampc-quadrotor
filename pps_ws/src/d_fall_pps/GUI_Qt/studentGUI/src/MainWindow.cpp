@@ -33,7 +33,6 @@
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
 #include <string>
-#include <QShortcut>
 
 #include <ros/ros.h>
 #include <ros/network.h>
@@ -206,7 +205,7 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     // > for "all motors off", press the space bar
     ui->motors_OFF_button->setShortcut(tr("Space"));
     // > for "kill GUI node", press "CTRL+C" while the GUI window is the focus
-    QShortcut* close_GUI_shortcut = new QShortcut(QKeySequence(tr("CTRL+C")), this, SLOT(close()));
+    m_close_GUI_shortcut = new QShortcut(QKeySequence(tr("CTRL+C")), this, SLOT(close()));
 
 
     initialize_demo_setpoint();

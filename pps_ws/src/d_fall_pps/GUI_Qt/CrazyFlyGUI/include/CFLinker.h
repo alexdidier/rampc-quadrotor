@@ -38,7 +38,7 @@
 #include "crazyFlyZone.h"
 #include "ui_mainguiwindow.h"
 
-#include "rosNodeThread.h"
+#include "rosNodeThread_for_managerGUI.h"
 
 #include <QObject>
 

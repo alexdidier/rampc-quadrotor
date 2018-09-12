@@ -41,7 +41,7 @@
 
 
 #ifdef CATKIN_MAKE
-#include "rosNodeThread.h"
+#include "rosNodeThread_for_managerGUI.h"
 #include "marker.h"
 #include "crazyFly.h"
 #include "CFLinker.h"

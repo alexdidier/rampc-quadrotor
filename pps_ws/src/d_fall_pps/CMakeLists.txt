@@ -95,7 +95,7 @@ set(SRC_HDRS_QOBJECT_GUI
   ${MY_GUI_LIB_PATH_INC}/myGraphicsScene.h
   ${MY_GUI_LIB_PATH_INC}/myGraphicsView.h
   ${MY_GUI_LIB_PATH_INC}/mainguiwindow.h
-  ${MY_GUI_LIB_PATH_INC}/rosNodeThread.h
+  ${MY_GUI_LIB_PATH_INC}/rosNodeThread_for_managerGUI.h
   ${MY_GUI_LIB_PATH_INC}/CFLinker.h
   )
 # GUI -- wrap UI file and QOBJECT files
@@ -109,7 +109,7 @@ qt5_add_resources(MY_RESOURCE_FILE_RCC ${MY_RESOURCE_FILE_QRC})
 # StudentGUI -- Special Qt sources that need to be wrapped before being compiled
 set(SRC_HDRS_QOBJECT_STUDENT_GUI
   ${STUDENT_GUI_LIB_PATH_INC}/MainWindow.h
-  ${STUDENT_GUI_LIB_PATH_INC}/rosNodeThread.h
+  ${STUDENT_GUI_LIB_PATH_INC}/rosNodeThread_for_studentGUI.h
   )
 # StudentGUI -- wrap UI file and QOBJECT files
 qt5_wrap_ui(UIS_HDRS_STUDENT_GUI ${STUDENT_GUI_LIB_PATH_SRC}/MainWindow.ui)
@@ -334,7 +334,7 @@ set(MY_CPP_SOURCES_GUI              # compilation of sources
     ${MY_GUI_LIB_PATH_SRC}/myGraphicsView.cpp
     ${MY_GUI_LIB_PATH_SRC}/tablePiece.cpp
     ${MY_GUI_LIB_PATH_SRC}/marker.cpp
-    ${MY_GUI_LIB_PATH_SRC}/rosNodeThread.cpp
+    ${MY_GUI_LIB_PATH_SRC}/rosNodeThread_for_managerGUI.cpp
     ${MY_GUI_LIB_PATH_SRC}/crazyFly.cpp
     ${MY_GUI_LIB_PATH_SRC}/CFLinker.cpp
     ${MY_GUI_LIB_PATH_SRC}/channelLUT.cpp
@@ -347,7 +347,7 @@ set(MY_CPP_SOURCES_GUI              # compilation of sources
 set(MY_CPP_SOURCES_STUDENT_GUI              # compilation of sources
     ${STUDENT_GUI_LIB_PATH_SRC}/MainWindow.cpp
     ${STUDENT_GUI_LIB_PATH_SRC}/main.cpp
-    ${STUDENT_GUI_LIB_PATH_SRC}/rosNodeThread.cpp
+    ${STUDENT_GUI_LIB_PATH_SRC}/rosNodeThread_for_studentGUI.cpp
     )
 
 

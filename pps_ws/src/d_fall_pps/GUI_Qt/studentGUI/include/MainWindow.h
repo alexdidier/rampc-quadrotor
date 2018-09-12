@@ -34,11 +34,12 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QShortcut>
 
 #include <std_msgs/Int32.h>
 #include <std_msgs/Float32.h>
 
-#include "rosNodeThread.h"
+#include "rosNodeThread_for_studentGUI.h"
 
 #include "d_fall_pps/CrazyflieContext.h"
 #include "d_fall_pps/CrazyflieData.h"
@@ -195,6 +196,8 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
+
+    QShortcut* m_close_GUI_shortcut;
 
     rosNodeThread* m_rosNodeThread;
     int m_radio_status;
