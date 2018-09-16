@@ -74,7 +74,7 @@ CoordinatorRow::CoordinatorRow(QWidget *parent, int agentID) :
     battery_voltage_standby_empty  =  3.30f;
     battery_voltage_standby_full   =  4.20f;
     // > When in a "flying" type of state
-    battery_voltage_flying_empty   =  2.80f;
+    battery_voltage_flying_empty   =  2.60f;
     battery_voltage_flying_full    =  3.70f;
 
     // SET THE STARTING RADIO STATUS TO BE: DISCONNECTED
