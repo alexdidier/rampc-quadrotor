@@ -89,6 +89,15 @@
 			>
 		</node>
 
+		<!-- PICKER CONTROLLER -->
+		<node
+			pkg    = "d_fall_pps"
+			name   = "PickerControllerService"
+			output = "screen"
+			type   = "PickerControllerService"
+			>
+		</node>
+
 		<!-- PARAMETER SERVICE -->
 		<node
 			pkg    = "d_fall_pps"

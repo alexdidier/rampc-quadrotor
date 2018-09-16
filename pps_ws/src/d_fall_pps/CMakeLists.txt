@@ -128,10 +128,13 @@ set(SRC_HDRS_QOBJECT_FLYING_AGENT_GUI
   ${FLYING_AGENT_GUI_LIB_PATH_INC}/controllertabs.h
   ${FLYING_AGENT_GUI_LIB_PATH_INC}/coordinator.h
   ${FLYING_AGENT_GUI_LIB_PATH_INC}/coordinatorrow.h
+  ${FLYING_AGENT_GUI_LIB_PATH_INC}/defaultcontrollertab.h
   ${FLYING_AGENT_GUI_LIB_PATH_INC}/enablecontrollerloadyamlbar.h
   ${FLYING_AGENT_GUI_LIB_PATH_INC}/mainwindow.h
+  ${FLYING_AGENT_GUI_LIB_PATH_INC}/pickercontrollertab.h
   ${FLYING_AGENT_GUI_LIB_PATH_INC}/rosNodeThread_for_flyingAgentGUI.h
   ${FLYING_AGENT_GUI_LIB_PATH_INC}/safecontrollertab.h
+  ${FLYING_AGENT_GUI_LIB_PATH_INC}/studentcontrollertab.h
   ${FLYING_AGENT_GUI_LIB_PATH_INC}/topbanner.h
   )
 # Flying Agent GUI -- wrap UI file and QOBJECT files
@@ -140,9 +143,12 @@ qt5_wrap_ui(UIS_HDRS_FLYING_AGENT_GUI
   ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/controllertabs.ui
   ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/coordinator.ui
   ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/coordinatorrow.ui
+  ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/defaultcontrollertab.ui
   ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/enablecontrollerloadyamlbar.ui
   ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/mainwindow.ui
+  ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/pickercontrollertab.ui
   ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/safecontrollertab.ui
+  ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/studentcontrollertab.ui
   ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/topbanner.ui
   )
 qt5_wrap_cpp(SRC_MOC_HDRS_FLYING_AGENT_GUI ${SRC_HDRS_QOBJECT_FLYING_AGENT_GUI})
@@ -317,6 +323,7 @@ add_executable(StudentControllerService src/nodes/StudentControllerService.cpp)
 add_executable(MpcControllerService     src/nodes/MpcControllerService.cpp)
 add_executable(RemoteControllerService  src/nodes/RemoteControllerService.cpp)
 add_executable(TuningControllerService  src/nodes/TuningControllerService.cpp)
+add_executable(PickerControllerService  src/nodes/PickerControllerService.cpp)
 add_executable(CentralManagerService    src/nodes/CentralManagerService.cpp src/CrazyflieIO.cpp)
 add_executable(ParameterService         src/nodes/ParameterService.cpp)
 
@@ -361,8 +368,11 @@ set(MY_CPP_SOURCES_FLYING_AGENT_GUI         # compilation of sources
     ${FLYING_AGENT_GUI_LIB_PATH_SRC}/controllertabs.cpp
     ${FLYING_AGENT_GUI_LIB_PATH_SRC}/coordinator.cpp
     ${FLYING_AGENT_GUI_LIB_PATH_SRC}/coordinatorrow.cpp
+    ${FLYING_AGENT_GUI_LIB_PATH_SRC}/defaultcontrollertab.cpp
     ${FLYING_AGENT_GUI_LIB_PATH_SRC}/enablecontrollerloadyamlbar.cpp
+    ${FLYING_AGENT_GUI_LIB_PATH_SRC}/pickercontrollertab.cpp
     ${FLYING_AGENT_GUI_LIB_PATH_SRC}/safecontrollertab.cpp
+    ${FLYING_AGENT_GUI_LIB_PATH_SRC}/studentcontrollertab.cpp
     ${FLYING_AGENT_GUI_LIB_PATH_SRC}/topbanner.cpp
     )
 
@@ -396,6 +406,7 @@ add_dependencies(StudentControllerService d_fall_pps_generate_messages_cpp ${cat
 add_dependencies(MpcControllerService     d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(RemoteControllerService  d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(TuningControllerService  d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(PickerControllerService  d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(CentralManagerService    d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(ParameterService         d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
@@ -449,6 +460,7 @@ else()
 endif()
 target_link_libraries(RemoteControllerService  ${catkin_LIBRARIES})
 target_link_libraries(TuningControllerService  ${catkin_LIBRARIES})
+target_link_libraries(PickerControllerService  ${catkin_LIBRARIES})
 target_link_libraries(CentralManagerService    ${catkin_LIBRARIES})
 target_link_libraries(ParameterService         ${catkin_LIBRARIES})
 

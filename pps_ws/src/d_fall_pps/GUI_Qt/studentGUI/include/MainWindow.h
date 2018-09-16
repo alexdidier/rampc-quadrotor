@@ -323,12 +323,13 @@ private:
 
 
 	// > For the PICKER CONTROLLER
-	ros::Publisher pickerButtonPressedPublisher;
-	ros::Publisher pickerZSetpointPublisher;
-	ros::Publisher pickerYawSetpointPublisher;
-	ros::Publisher pickerMassPublisher;
-	ros::Publisher pickerXAdjustmentPublisher;
-	ros::Publisher pickerYAdjustmentPublisher;
+	ros::Publisher  pickerButtonPressedPublisher;
+	ros::Publisher  pickerZSetpointPublisher;
+	ros::Publisher  pickerYawSetpointPublisher;
+	ros::Publisher  pickerMassPublisher;
+	ros::Publisher  pickerXAdjustmentPublisher;
+	ros::Publisher  pickerYAdjustmentPublisher;
+	ros::Publisher  pickerSetpointPublisher;
 	ros::Subscriber pickerSetpointSubscriber;
 
 

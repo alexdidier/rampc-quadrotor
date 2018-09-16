@@ -641,7 +641,6 @@ void construct_and_publish_debug_message(Controller::Request &request, Controlle
 	// debugMsg.value_1 = thrustAdjustment;
 	// ......................
 	// debugMsg.value_10 = your_variable_name;
-	debugMsg.value_1 = angleResponseTest_prev_pitchAngle;
 
 	// Publish the "debugMsg"
 	debugPublisher.publish(debugMsg);
@@ -1053,7 +1052,7 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 
 
 	// DEBUGGING: Print out one of the parameters that was loaded
-	ROS_INFO_STREAM("[PICKER CONTROLLER] DEBUGGING: the fetched PickerController/mass_CF = " << cf_mass);
+	ROS_INFO_STREAM("[PICKER CONTROLLER] DEBUGGING: the fetched PickerController/mass_CF = " << m_mass_CF_grams);
 
 	// Call the function that computes details an values that are needed from these
 	// parameters loaded above
@@ -1289,7 +1288,7 @@ int main(int argc, char* argv[]) {
     // type variable that subscribes to the "StudentCustomButton" topic and calls the class
     // function "customCommandReceivedCallback" each time a messaged is received on this topic
     // and the message received is passed as an input argument to the callback function.
-    ros::Subscriber customCommandReceivedSubscriber = nodeHandle.subscribe("GUIButton", 1, customCommandReceivedCallback);
+    //ros::Subscriber buttonPressedCallbackSubscriber = nodeHandle.subscribe("GUIButton", 1, customCommandReceivedCallback);
 
 
 

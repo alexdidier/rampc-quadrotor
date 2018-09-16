@@ -105,7 +105,15 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     pickerMassPublisher           =  nodeHandle.advertise<std_msgs::Float32>("PickerControllerService/Mass", 1);
     pickerXAdjustmentPublisher    =  nodeHandle.advertise<std_msgs::Float32>("PickerControllerService/XAdjustment", 1);
     pickerYAdjustmentPublisher    =  nodeHandle.advertise<std_msgs::Float32>("PickerControllerService/YAdjustment", 1);
+    pickerSetpointPublisher       =  nodeHandle.advertise<Setpoint>("PickerControllerService/Setpoint", 1);
     pickerSetpointSubscriber      =  nodeHandle.subscribe("PickerControllerService/Setpoint", 1, &MainWindow::pickerSetpointCallback, this);
+
+    // SET ALL SLIDERS AND DIALS TO DEFAULT VALUES
+    ui->picker_z_slider->setValue( 40 );
+    ui->picker_mass_slider->setValue( 29 );
+    ui->picker_yaw_dial->setValue( 0 );
+    ui->picker_x_slider->setValue( 0 );
+    ui->picker_y_slider->setValue( 0 );
 
 
 
@@ -399,7 +407,7 @@ void MainWindow::pickerSetpointCallback(const Setpoint& newSetpoint)
 {
     m_picker_setpoint = newSetpoint;
     // here we get the new setpoint, need to update it in GUI
-    ui->picker_z_slider->setValue( int(newSetpoint.z) );
+    ui->picker_z_slider->setValue( int(newSetpoint.z*100.0) );
     ui->picker_yaw_dial->setValue( int(newSetpoint.yaw * RAD2DEG) );
     
 }
@@ -1786,7 +1794,8 @@ void MainWindow::on_tuning_slider_heading_valueChanged(int value)
 
 // > FOR THE BUTTONS
 
-void MainWindow::send_picker_button_clicked_message(int button_index){
+void MainWindow::send_picker_button_clicked_message(int button_index)
+{
     // Initialise the message
     std_msgs::Int32 msg;
     // Set the msg data
@@ -1825,22 +1834,22 @@ void MainWindow::on_picker_disconnect_button_clicked()
     // Call the function that sends the message
     send_picker_button_clicked_message(PICKER_BUTTON_DISCONNECT);
 }
-void on_picker_1_button_clicked()
+void MainWindow::on_picker_1_button_clicked()
 {
     // Call the function that sends the message
     send_picker_button_clicked_message(PICKER_BUTTON_1);
 }
-void on_picker_2_button_clicked()
+void MainWindow::on_picker_2_button_clicked()
 {
     // Call the function that sends the message
-    send_picker_button_clicked_message(PICKER_BUTTON_1);
+    send_picker_button_clicked_message(PICKER_BUTTON_2);
 }
-void on_picker_3_button_clicked()
+void MainWindow::on_picker_3_button_clicked()
 {
     // Call the function that sends the message
     send_picker_button_clicked_message(PICKER_BUTTON_3);
 }
-void on_picker_4_button_clicked()
+void MainWindow::on_picker_4_button_clicked()
 {
     // Call the function that sends the message
     send_picker_button_clicked_message(PICKER_BUTTON_4);
@@ -1850,7 +1859,7 @@ void on_picker_4_button_clicked()
 
 // > FOR THE SLIDERS AND DIAL
 
-void on_picker_x_slider_valueChanged(int value)
+void MainWindow::on_picker_x_slider_valueChanged(int value)
 {
     // Initialise the message
     std_msgs::Float32 msg;
@@ -1859,7 +1868,7 @@ void on_picker_x_slider_valueChanged(int value)
     // Publish the message
     this->pickerXAdjustmentPublisher.publish(msg);
 }
-void on_picker_y_slider_valueChanged(int value)
+void MainWindow::on_picker_y_slider_valueChanged(int value)
 {
     // Initialise the message
     std_msgs::Float32 msg;
@@ -1868,7 +1877,7 @@ void on_picker_y_slider_valueChanged(int value)
     // Publish the message
     this->pickerYAdjustmentPublisher.publish(msg);
 }
-void on_picker_z_slider_valueChanged(int value)
+void MainWindow::on_picker_z_slider_valueChanged(int value)
 {
     // Initialise the message
     std_msgs::Float32 msg;
@@ -1877,7 +1886,7 @@ void on_picker_z_slider_valueChanged(int value)
     // Publish the message
     this->pickerZSetpointPublisher.publish(msg);
 }
-void on_picker_mass_slider_valueChanged(int value)
+void MainWindow::on_picker_mass_slider_valueChanged(int value)
 {
     // Initialise the message
     std_msgs::Float32 msg;
@@ -1886,7 +1895,7 @@ void on_picker_mass_slider_valueChanged(int value)
     // Publish the message
     this->pickerMassPublisher.publish(msg);
 }
-void on_picker_yaw_dial_valueChanged(int value)
+void MainWindow::on_picker_yaw_dial_valueChanged(int value)
 {
     // Initialise the message
     std_msgs::Float32 msg;
