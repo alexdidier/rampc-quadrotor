@@ -50,13 +50,13 @@ private slots:
     void on_enable_safe_button_clicked();
     void on_enable_demo_button_clicked();
     void on_enable_student_button_clicked();
-    void on_enable_mpc_button_clicked();
+    void on_enable_default_button_clicked();
 
     // LOAD YAML BUTTONS ON-CLICK CALLBACK
     void on_load_yaml_safe_button_clicked();
     void on_load_yaml_demo_button_clicked();
     void on_load_yaml_student_button_clicked();
-    void on_load_yaml_mpc_button_clicked();
+    void on_load_yaml_default_button_clicked();
 
 private:
     Ui::EnableControllerLoadYamlBar *ui;

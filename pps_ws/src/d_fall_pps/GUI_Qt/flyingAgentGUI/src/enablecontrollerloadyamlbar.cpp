@@ -58,7 +58,7 @@ void EnableControllerLoadYamlBar::on_enable_student_button_clicked()
 #endif
 }
 
-void EnableControllerLoadYamlBar::on_enable_mpc_button_clicked()
+void EnableControllerLoadYamlBar::on_enable_default_button_clicked()
 {
 
 }
@@ -81,7 +81,7 @@ void EnableControllerLoadYamlBar::on_load_yaml_student_button_clicked()
 
 }
 
-void EnableControllerLoadYamlBar::on_load_yaml_mpc_button_clicked()
+void EnableControllerLoadYamlBar::on_load_yaml_default_button_clicked()
 {
 
 }

@@ -28,32 +28,47 @@
    <item row="0" column="0">
     <widget class="QTabWidget" name="controller_tabs_widget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>2</number>
      </property>
-     <widget class="QWidget" name="safe_tab">
+     <widget class="QWidget" name="default_tab">
       <attribute name="title">
-       <string>Safe</string>
+       <string>Default</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_2">
        <item row="0" column="0">
-        <widget class="SafeControllerTab" name="widget" native="true"/>
+        <widget class="DefaultControllerTab" name="widget" native="true"/>
        </item>
       </layout>
-     </widget>
-     <widget class="QWidget" name="demo_tab">
-      <attribute name="title">
-       <string>Demo</string>
-      </attribute>
      </widget>
      <widget class="QWidget" name="student_tab">
       <attribute name="title">
        <string>Student</string>
       </attribute>
+      <layout class="QGridLayout" name="gridLayout_4">
+       <item row="0" column="0">
+        <widget class="StudentControllerTab" name="widget_3" native="true"/>
+       </item>
+      </layout>
      </widget>
-     <widget class="QWidget" name="mpc_tab">
+     <widget class="QWidget" name="picker_tab">
       <attribute name="title">
-       <string>MPC</string>
+       <string>Picker</string>
       </attribute>
+      <layout class="QGridLayout" name="gridLayout_5">
+       <item row="0" column="0">
+        <widget class="PickerControllerTab" name="widget_4" native="true"/>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="safe_tab">
+      <attribute name="title">
+       <string>Safe</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_3">
+       <item row="0" column="0">
+        <widget class="SafeControllerTab" name="widget_2" native="true"/>
+       </item>
+      </layout>
      </widget>
     </widget>
    </item>
@@ -64,6 +79,24 @@
    <class>SafeControllerTab</class>
    <extends>QWidget</extends>
    <header>safecontrollertab.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>StudentControllerTab</class>
+   <extends>QWidget</extends>
+   <header>studentcontrollertab.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>DefaultControllerTab</class>
+   <extends>QWidget</extends>
+   <header>defaultcontrollertab.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>PickerControllerTab</class>
+   <extends>QWidget</extends>
+   <header>pickercontrollertab.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

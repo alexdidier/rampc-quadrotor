@@ -24,7 +24,10 @@ SOURCES += src/main.cpp\
     src/controllertabs.cpp \
     src/safecontrollertab.cpp \
     src/coordinator.cpp \
-    src/coordinatorrow.cpp
+    src/coordinatorrow.cpp \
+    src/studentcontrollertab.cpp \
+    src/defaultcontrollertab.cpp \
+    src/pickercontrollertab.cpp
 
 HEADERS  += include/mainwindow.h \
     include/topbanner.h \
@@ -33,7 +36,10 @@ HEADERS  += include/mainwindow.h \
     include/controllertabs.h \
     include/safecontrollertab.h \
     include/coordinator.h \
-    include/coordinatorrow.h
+    include/coordinatorrow.h \
+    include/studentcontrollertab.h \
+    include/defaultcontrollertab.h \
+    include/pickercontrollertab.h
 
 FORMS    += forms/mainwindow.ui \
     forms/topbanner.ui \
@@ -42,7 +48,10 @@ FORMS    += forms/mainwindow.ui \
     forms/controllertabs.ui \
     forms/safecontrollertab.ui \
     forms/coordinator.ui \
-    forms/coordinatorrow.ui
+    forms/coordinatorrow.ui \
+    forms/studentcontrollertab.ui \
+    forms/defaultcontrollertab.ui \
+    forms/pickercontrollertab.ui
 
 RESOURCES += \
     flyingagentgui.qrc
