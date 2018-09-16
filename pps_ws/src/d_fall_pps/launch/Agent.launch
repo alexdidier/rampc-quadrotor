@@ -142,6 +142,11 @@
 				file    = "$(find d_fall_pps)/param/TuningController.yaml"
 				ns      = "TuningController"
 			/>
+			<rosparam
+				command = "load"
+				file    = "$(find d_fall_pps)/param/PickerController.yaml"
+				ns      = "PickerController"
+			/>
 		</node>
 
 

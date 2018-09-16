@@ -331,6 +331,7 @@ private:
 	ros::Publisher  pickerYAdjustmentPublisher;
 	ros::Publisher  pickerSetpointPublisher;
 	ros::Subscriber pickerSetpointSubscriber;
+    ros::Subscriber pickerSetpointToGUISubscriber;
 
 
 

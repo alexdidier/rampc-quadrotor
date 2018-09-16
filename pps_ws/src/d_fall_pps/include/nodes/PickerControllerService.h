@@ -179,6 +179,10 @@ std::vector<float> m_dropoff_coordinates_xy_for_E(2);
 std::vector<float> m_dropoff_coordinates_xy_for_T(2);
 std::vector<float> m_dropoff_coordinates_xy_for_H(2);
 
+// Length of the string from the Crazyflie
+// to the end of the Picker, in [meters]
+float m_picker_string_length;
+
 // > The setpoints for (x,y,z) position and yaw angle, in that order
 float m_setpoint[4] = {0.0,0.0,0.4,0.0};
 
@@ -271,6 +275,10 @@ ros::Publisher debugPublisher;
 // Boolean whether to execute the convert into body frame function
 bool shouldPerformConvertIntoBodyFrame = false;
 
+// Boolean for whether to clip the current position to setpoint distance
+bool shouldSmoothVerticalSetpointChanges = false;
+bool shouldSmoothHorizonatalSetpointChanges = false;
+
 
 // VARIABLES RELATING TO THE PUBLISHING OF A DEBUG MESSAGE
 
@@ -295,6 +303,9 @@ bool shouldPublishCurrent_xyz_yaw = false;
 
 // ROS Publisher for my current (x,y,z,yaw) position
 ros::Publisher my_current_xyz_yaw_publisher;
+
+// ROS Publisher for the current setpoint
+ros::Publisher pickerSetpointToGUIPublisher;
 
 
 // RELEVANT NOTES ABOUT THE VARIABLES DECLARE HERE:
@@ -398,6 +409,8 @@ float computeMotorPolyBackward(float thrust);
 // SETPOINT CHANGE CALLBACK
 void setpointCallback(const Setpoint& newSetpoint);
 void xyz_yaw_to_follow_callback(const Setpoint& newSetpoint);
+
+void publishCurrentSetpoint();
 
 // CUSTOM COMMAND RECEIVED CALLBACK
 //void customCommandReceivedCallback(const CustomButton& commandReceived);

@@ -87,30 +87,57 @@
 void buttonPressed_gotoStart()
 {
 	ROS_INFO("[PICKER CONTROLLER] Goto Start button pressed");
+
+	shouldSmoothVerticalSetpointChanges = true;
+	m_setpoint[0] = m_pickup_coordinates_xy[0];
+	m_setpoint[1] = m_pickup_coordinates_xy[1];
+	m_setpoint[2] = m_picker_string_length + 0.10;
+	publishCurrentSetpoint();
 }
 
 void buttonPressed_connect()
 {
 	ROS_INFO("[PICKER CONTROLLER] Connect button pressed");
+
+	m_setpoint[2] = m_picker_string_length + 0.01;
+	publishCurrentSetpoint();
 }
 
 void buttonPressed_pickup()
 {
 	ROS_INFO("[PICKER CONTROLLER] Pick up button pressed");
+
+	m_mass_total_grams = m_mass_CF_grams + m_mass_E_grams;
+	m_setpoint[2] = m_picker_string_length + 0.15;
+	publishCurrentSetpoint();
 }
+
 void buttonPressed_gotoEnd()
 {
 	ROS_INFO("[PICKER CONTROLLER] Goto End button pressed");
+
+	m_setpoint[0] = m_dropoff_coordinates_xy_for_E[0];
+	m_setpoint[1] = m_dropoff_coordinates_xy_for_E[1];
+	publishCurrentSetpoint();
 }	
 
 void buttonPressed_putdown()
 {
 	ROS_INFO("[PICKER CONTROLLER] Put down button pressed");
+
+	m_setpoint[2] = m_picker_string_length - 0.10;
+	m_mass_total_grams = m_mass_CF_grams;
+	publishCurrentSetpoint();
 }
 
 void buttonPressed_disconnect()
 {
 	ROS_INFO("[PICKER CONTROLLER] Disconnect button pressed");
+
+	shouldSmoothVerticalSetpointChanges = false;
+	m_setpoint[2] = m_picker_string_length + 0.15;
+	m_mass_total_grams = m_mass_CF_grams;
+	publishCurrentSetpoint();
 }
 
 void buttonPressed_1()
@@ -725,6 +752,18 @@ void convert_stateInertial_to_bodyFrameError(float stateInertial[12], float setp
 	stateInertial[1] = stateInertial[1] - setpoint[1] - m_yAdjustment;
 	stateInertial[2] = stateInertial[2] - setpoint[2];
 
+	if (shouldSmoothVerticalSetpointChanges)
+	{
+		if (stateInertial[2] > 10.0f)
+		{
+			stateInertial[2] = 10.0f;
+		}
+		else if (stateInertial[2] < -10.0f)
+		{
+			stateInertial[2] = 10.0f;
+		}
+	}
+
 	// Fill in the yaw angle error
 	// > This error should be "unwrapped" to be in the range
 	//   ( -pi , pi )
@@ -817,6 +856,17 @@ void setpointCallback(const Setpoint& newSetpoint)
     m_setpoint[3] = newSetpoint.yaw;
 }
 
+
+void publishCurrentSetpoint()
+{
+	Setpoint msg_setpoint;
+    msg_setpoint.x   = m_setpoint[0];
+    msg_setpoint.y   = m_setpoint[1];
+    msg_setpoint.z   = m_setpoint[2];
+    msg_setpoint.yaw = m_setpoint[3];
+
+    pickerSetpointToGUIPublisher.publish(msg_setpoint);
+}
 
 
 //    ----------------------------------------------------------------------------------
@@ -995,6 +1045,9 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 	getParameterFloatVector(nodeHandle_for_pickerController, "dropoff_coordinates_xy_for_T", m_dropoff_coordinates_xy_for_T, 2);
 	getParameterFloatVector(nodeHandle_for_pickerController, "dropoff_coordinates_xy_for_H", m_dropoff_coordinates_xy_for_H, 2);
 
+	// Length of the string from the Crazyflie to the end of the Picker, in [meters]
+	m_picker_string_length = getParameterFloat(nodeHandle_for_pickerController , "picker_string_length");
+
 
 	// THE FOLLOWING PARAMETERS ARE USED FOR THE LOW-LEVEL CONTROLLER
 
@@ -1012,6 +1065,10 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 
 	// > The boolean for whether to execute the convert into body frame function
 	shouldPerformConvertIntoBodyFrame = getParameterBool(nodeHandle_for_pickerController, "shouldPerformConvertIntoBodyFrame");
+
+	// Boolean for whether to clip the current position to setpoint distance
+	shouldSmoothVerticalSetpointChanges     =  getParameterBool(nodeHandle_for_pickerController, "shouldSmoothVerticalSetpointChanges");
+	shouldSmoothHorizonatalSetpointChanges  =  getParameterBool(nodeHandle_for_pickerController, "shouldSmoothHorizonatalSetpointChanges");
 
 	// > The boolean indicating whether the (x,y,z,yaw) of this agent should be published
 	//   or not
@@ -1299,6 +1356,8 @@ int main(int argc, char* argv[]) {
     ros::Subscriber pickerMassSubscriber           =  nodeHandle.subscribe("Mass", 1, massCallback);
     ros::Subscriber pickerXAdjustmentSubscriber    =  nodeHandle.subscribe("XAdjustment", 1, xAdjustmentCallback);
     ros::Subscriber pickerYAdjustmentSubscriber    =  nodeHandle.subscribe("YAdjustment", 1, yAdjustmentCallback);
+
+    pickerSetpointToGUIPublisher = nodeHandle.advertise<Setpoint>("SetpointToGUI", 1);
 
 
 

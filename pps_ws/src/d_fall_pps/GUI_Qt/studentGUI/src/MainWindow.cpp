@@ -107,6 +107,7 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     pickerYAdjustmentPublisher    =  nodeHandle.advertise<std_msgs::Float32>("PickerControllerService/YAdjustment", 1);
     pickerSetpointPublisher       =  nodeHandle.advertise<Setpoint>("PickerControllerService/Setpoint", 1);
     pickerSetpointSubscriber      =  nodeHandle.subscribe("PickerControllerService/Setpoint", 1, &MainWindow::pickerSetpointCallback, this);
+    pickerSetpointToGUISubscriber =  nodeHandle.subscribe("PickerControllerService/SetpointToGUI", 1, &MainWindow::pickerSetpointCallback, this);
 
     // SET ALL SLIDERS AND DIALS TO DEFAULT VALUES
     ui->picker_z_slider->setValue( 40 );
