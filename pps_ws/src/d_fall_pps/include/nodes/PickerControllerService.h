@@ -185,10 +185,20 @@ float m_picker_string_length;
 
 // > The setpoints for (x,y,z) position and yaw angle, in that order
 float m_setpoint[4] = {0.0,0.0,0.4,0.0};
+float m_setpoint_for_controller[4] = {0.0,0.0,0.4,0.0};
 
 // > Small adjustments to the x-y setpoint
 float m_xAdjustment = 0.0f;
 float m_yAdjustment = 0.0f;
+
+// Boolean for whether to limit rate of change of the setpoint
+bool m_shouldSmoothSetpointChanges = true;
+
+// Max setpoint change per second
+float m_max_setpoint_change_per_second_horizontal;
+float m_max_setpoint_change_per_second_vertical;
+float m_max_setpoint_change_per_second_yaw_degrees;
+float m_max_setpoint_change_per_second_yaw_radians;
 
 
 
@@ -275,10 +285,6 @@ ros::Publisher debugPublisher;
 // Boolean whether to execute the convert into body frame function
 bool shouldPerformConvertIntoBodyFrame = false;
 
-// Boolean for whether to clip the current position to setpoint distance
-bool shouldSmoothVerticalSetpointChanges = false;
-bool shouldSmoothHorizonatalSetpointChanges = false;
-
 
 // VARIABLES RELATING TO THE PUBLISHING OF A DEBUG MESSAGE
 
@@ -348,6 +354,9 @@ ros::Publisher pickerSetpointToGUIPublisher;
 
 
 // ADDED FOR THE PICKER
+void perControlCycleOperations();
+
+// CALLBACK FROM ROS MESSAGES RECEIVED
 void buttonPressedCallback(const std_msgs::Int32& msg);
 void zSetpointCallback(const std_msgs::Float32& msg);
 void yawSetpointCallback(const std_msgs::Float32& msg);

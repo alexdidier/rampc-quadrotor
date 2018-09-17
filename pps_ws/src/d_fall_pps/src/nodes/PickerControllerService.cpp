@@ -83,15 +83,75 @@
 
 
 
+void perControlCycleOperations()
+{
+	if (m_shouldSmoothSetpointChanges)
+	{
+		for(int i = 0; i < 4; ++i)
+		{
+			float max_for_this_coordinate;
+			// FILLE IN THE STATE INERTIAL ESTIMATE TO BE USED FOR CONTROL
+			switch (i)
+			{
+				case 0:
+					max_for_this_coordinate = m_max_setpoint_change_per_second_horizontal / vicon_frequency;
+					break;
+				case 1:
+					max_for_this_coordinate = m_max_setpoint_change_per_second_horizontal / vicon_frequency;
+					break;
+				case 2:
+					max_for_this_coordinate = m_max_setpoint_change_per_second_vertical / vicon_frequency;
+					break;
+				case 3:
+					max_for_this_coordinate = m_max_setpoint_change_per_second_yaw_radians / vicon_frequency;
+					break;
+				// Handle the exception
+				default:
+					max_for_this_coordinate = 0.0f;
+					break;
+			}
+
+			// Compute the difference in setpoint
+			float setpoint_difference = m_setpoint[i] - m_setpoint_for_controller[i];
+
+			// Clip the difference to the maximum
+			if (setpoint_difference > max_for_this_coordinate)
+			{
+				setpoint_difference = max_for_this_coordinate;
+			}
+			else if (setpoint_difference < -max_for_this_coordinate)
+			{
+				setpoint_difference = -max_for_this_coordinate;
+			}
+
+			// Update the setpoint of the controller
+			m_setpoint_for_controller[i] += setpoint_difference;
+		}
+		
+	}
+	else
+	{
+		m_setpoint_for_controller[0] = m_setpoint[0];
+		m_setpoint_for_controller[1] = m_setpoint[1];
+		m_setpoint_for_controller[2] = m_setpoint[2];
+		m_setpoint_for_controller[3] = m_setpoint[3];
+	}
+}
+
+
+
+
+
+
 
 void buttonPressed_gotoStart()
 {
 	ROS_INFO("[PICKER CONTROLLER] Goto Start button pressed");
 
-	shouldSmoothVerticalSetpointChanges = true;
+	m_shouldSmoothSetpointChanges = true;
 	m_setpoint[0] = m_pickup_coordinates_xy[0];
 	m_setpoint[1] = m_pickup_coordinates_xy[1];
-	m_setpoint[2] = m_picker_string_length + 0.10;
+	m_setpoint[2] = m_picker_string_length + 0.15;
 	publishCurrentSetpoint();
 }
 
@@ -99,7 +159,7 @@ void buttonPressed_connect()
 {
 	ROS_INFO("[PICKER CONTROLLER] Connect button pressed");
 
-	m_setpoint[2] = m_picker_string_length + 0.01;
+	m_setpoint[2] = m_picker_string_length + 0.02;
 	publishCurrentSetpoint();
 }
 
@@ -108,7 +168,7 @@ void buttonPressed_pickup()
 	ROS_INFO("[PICKER CONTROLLER] Pick up button pressed");
 
 	m_mass_total_grams = m_mass_CF_grams + m_mass_E_grams;
-	m_setpoint[2] = m_picker_string_length + 0.15;
+	m_setpoint[2] = m_picker_string_length + 0.25;
 	publishCurrentSetpoint();
 }
 
@@ -125,7 +185,7 @@ void buttonPressed_putdown()
 {
 	ROS_INFO("[PICKER CONTROLLER] Put down button pressed");
 
-	m_setpoint[2] = m_picker_string_length - 0.10;
+	m_setpoint[2] = m_picker_string_length + 0.02;
 	m_mass_total_grams = m_mass_CF_grams;
 	publishCurrentSetpoint();
 }
@@ -134,7 +194,7 @@ void buttonPressed_disconnect()
 {
 	ROS_INFO("[PICKER CONTROLLER] Disconnect button pressed");
 
-	shouldSmoothVerticalSetpointChanges = false;
+	m_shouldSmoothSetpointChanges = false;
 	m_setpoint[2] = m_picker_string_length + 0.15;
 	m_mass_total_grams = m_mass_CF_grams;
 	publishCurrentSetpoint();
@@ -344,6 +404,10 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	m_time_ticks++;
 	m_time_seconds = float(m_time_ticks) / vicon_frequency;
 
+
+	// CALL THE FUNCTION FOR PER CYLCE OPERATIONS
+	perControlCycleOperations();
+
 	// THIS IS THE START OF THE "OUTER" CONTROL LOOP
 	// > i.e., this is the control loop run on this laptop
 	// > this function is called at the frequency specified
@@ -362,7 +426,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	// > Define a local array to fill in with the body frame error
 	float current_bodyFrameError[12];
 	// > Call the function to perform the conversion
-	convert_stateInertial_to_bodyFrameError(current_stateInertialEstimate,m_setpoint,current_bodyFrameError);
+	convert_stateInertial_to_bodyFrameError(current_stateInertialEstimate,m_setpoint_for_controller,current_bodyFrameError);
 
 	
 
@@ -752,16 +816,13 @@ void convert_stateInertial_to_bodyFrameError(float stateInertial[12], float setp
 	stateInertial[1] = stateInertial[1] - setpoint[1] - m_yAdjustment;
 	stateInertial[2] = stateInertial[2] - setpoint[2];
 
-	if (shouldSmoothVerticalSetpointChanges)
+	if (stateInertial[2] > 30.0f)
 	{
-		if (stateInertial[2] > 10.0f)
-		{
-			stateInertial[2] = 10.0f;
-		}
-		else if (stateInertial[2] < -10.0f)
-		{
-			stateInertial[2] = 10.0f;
-		}
+		stateInertial[2] = 30.0f;
+	}
+	else if (stateInertial[2] < -30.0f)
+	{
+		stateInertial[2] = 30.0f;
 	}
 
 	// Fill in the yaw angle error
@@ -1048,6 +1109,10 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 	// Length of the string from the Crazyflie to the end of the Picker, in [meters]
 	m_picker_string_length = getParameterFloat(nodeHandle_for_pickerController , "picker_string_length");
 
+	// Max setpoint change per second
+	m_max_setpoint_change_per_second_horizontal = getParameterFloat(nodeHandle_for_pickerController , "max_setpoint_change_per_second_horizontal");
+	m_max_setpoint_change_per_second_vertical = getParameterFloat(nodeHandle_for_pickerController , "max_setpoint_change_per_second_vertical");
+	m_max_setpoint_change_per_second_yaw_degrees = getParameterFloat(nodeHandle_for_pickerController , "max_setpoint_change_per_second_yaw_degrees");
 
 	// THE FOLLOWING PARAMETERS ARE USED FOR THE LOW-LEVEL CONTROLLER
 
@@ -1065,10 +1130,6 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 
 	// > The boolean for whether to execute the convert into body frame function
 	shouldPerformConvertIntoBodyFrame = getParameterBool(nodeHandle_for_pickerController, "shouldPerformConvertIntoBodyFrame");
-
-	// Boolean for whether to clip the current position to setpoint distance
-	shouldSmoothVerticalSetpointChanges     =  getParameterBool(nodeHandle_for_pickerController, "shouldSmoothVerticalSetpointChanges");
-	shouldSmoothHorizonatalSetpointChanges  =  getParameterBool(nodeHandle_for_pickerController, "shouldSmoothHorizonatalSetpointChanges");
 
 	// > The boolean indicating whether the (x,y,z,yaw) of this agent should be published
 	//   or not
@@ -1123,6 +1184,9 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 // your controller easier and quicker.
 void processFetchedParameters()
 {
+	// Convert from degrees to radians
+	m_max_setpoint_change_per_second_yaw_radians = DEG2RAD * m_max_setpoint_change_per_second_yaw_degrees;
+
     // Set that the estimator frequency is the same as the control frequency
     estimator_frequency = vicon_frequency;
 }

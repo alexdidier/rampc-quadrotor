@@ -17,6 +17,12 @@ dropoff_coordinates_xy_for_H : [0.28, 0.0]
 # to the end of the Picker, in [meters]
 picker_string_length : 0.38
 
+# Max setpoint change per second
+max_setpoint_change_per_second_horizontal  :  0.20 # [meters]
+max_setpoint_change_per_second_vertical    :  0.10 # [meters]
+max_setpoint_change_per_second_yaw_degrees : 90.00 # [degrees]
+
+
 
 
 
@@ -32,10 +38,6 @@ motorPoly : [5.484560e-4, 1.032633e-6, 2.130295e-11]
 
 # Boolean for whether to execute the convert into body frame function
 shouldPerformConvertIntoBodyFrame : true
-
-# Boolean for whether to clip the current position to setpoint distance
-shouldSmoothVerticalSetpointChanges : true
-shouldSmoothHorizontalSetpointChanges : true
 
 # Boolean indiciating whether the (x,y,z,yaw) of this agent should be published or not
 shouldPublishCurrent_xyz_yaw : true
