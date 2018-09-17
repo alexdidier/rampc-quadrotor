@@ -92,7 +92,8 @@
 #define PICKER_BUTTON_PICKUP        3
 #define PICKER_BUTTON_GOTOEND       4
 #define PICKER_BUTTON_PUTDOWN       5
-#define PICKER_BUTTON_DISCONNECT    6
+#define PICKER_BUTTON_SQUAT         6
+#define PICKER_BUTTON_DISCONNECT    7
 
 #define PICKER_BUTTON_1             11
 #define PICKER_BUTTON_2             12
@@ -170,6 +171,12 @@ float m_mass_H_grams;
 
 // > Total mass of the Crazyflie plus whatever it is carrying, in [grams]
 float m_mass_total_grams;
+
+// Thickness of the object at pick-up and put-down, in [meters]
+// > This should also account for extra height due to 
+//   the surface where the object is
+float m_thickness_of_object_at_pickup;
+float m_thickness_of_object_at_putdown;
 
 // (x,y) coordinates of the pickup location
 std::vector<float> m_pickup_coordinates_xy(2);
@@ -371,6 +378,7 @@ void buttonPressed_connect();
 void buttonPressed_pickup();
 void buttonPressed_gotoEnd();
 void buttonPressed_putdown();
+void buttonPressed_squat();
 void buttonPressed_disconnect();
 
 void buttonPressed_1();

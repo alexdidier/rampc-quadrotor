@@ -125,7 +125,8 @@
 #define PICKER_BUTTON_PICKUP        3
 #define PICKER_BUTTON_GOTOEND       4
 #define PICKER_BUTTON_PUTDOWN       5
-#define PICKER_BUTTON_DISCONNECT    6
+#define PICKER_BUTTON_SQUAT         6
+#define PICKER_BUTTON_DISCONNECT    7
 
 #define PICKER_BUTTON_1             11
 #define PICKER_BUTTON_2             12
@@ -220,6 +221,7 @@ private slots:
     void on_picker_pickup_button_clicked();
     void on_picker_gotoend_button_clicked();
     void on_picker_putdown_button_clicked();
+    void on_picker_squat_button_clicked();
     void on_picker_disconnect_button_clicked();
     void on_picker_1_button_clicked();
     void on_picker_2_button_clicked();

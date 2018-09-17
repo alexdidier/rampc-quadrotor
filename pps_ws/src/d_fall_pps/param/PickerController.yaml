@@ -5,6 +5,12 @@ mass_E : 3.2
 mass_T : 2.9
 mass_H : 3.3
 
+# Thickness of the object at pick-up and put-down, in [meters]
+# > This should also account for extra height due to 
+#   the surface where the object is
+thickness_of_object_at_pickup  : 0.02
+thickness_of_object_at_putdown : 0.03
+
 # (x,y) coordinates of the pickup location
 pickup_coordinates_xy : [-0.3, 0.0]
 

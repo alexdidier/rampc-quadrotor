@@ -159,7 +159,8 @@ void buttonPressed_connect()
 {
 	ROS_INFO("[PICKER CONTROLLER] Connect button pressed");
 
-	m_setpoint[2] = m_picker_string_length + 0.02;
+	m_shouldSmoothSetpointChanges = true;
+	m_setpoint[2] = m_picker_string_length + m_thickness_of_object_at_pickup;
 	publishCurrentSetpoint();
 }
 
@@ -167,6 +168,7 @@ void buttonPressed_pickup()
 {
 	ROS_INFO("[PICKER CONTROLLER] Pick up button pressed");
 
+	m_shouldSmoothSetpointChanges = true;
 	m_mass_total_grams = m_mass_CF_grams + m_mass_E_grams;
 	m_setpoint[2] = m_picker_string_length + 0.25;
 	publishCurrentSetpoint();
@@ -176,6 +178,7 @@ void buttonPressed_gotoEnd()
 {
 	ROS_INFO("[PICKER CONTROLLER] Goto End button pressed");
 
+	m_shouldSmoothSetpointChanges = true;
 	m_setpoint[0] = m_dropoff_coordinates_xy_for_E[0];
 	m_setpoint[1] = m_dropoff_coordinates_xy_for_E[1];
 	publishCurrentSetpoint();
@@ -185,7 +188,18 @@ void buttonPressed_putdown()
 {
 	ROS_INFO("[PICKER CONTROLLER] Put down button pressed");
 
-	m_setpoint[2] = m_picker_string_length + 0.02;
+	m_shouldSmoothSetpointChanges = true;
+	m_setpoint[2] = m_picker_string_length + m_thickness_of_object_at_putdown;
+	m_mass_total_grams = m_mass_CF_grams;
+	publishCurrentSetpoint();
+}
+
+void buttonPressed_squat()
+{
+	ROS_INFO("[PICKER CONTROLLER] Squat button pressed");
+
+	m_shouldSmoothSetpointChanges = true;
+	m_setpoint[2] = m_picker_string_length - 0.10;
 	m_mass_total_grams = m_mass_CF_grams;
 	publishCurrentSetpoint();
 }
@@ -968,6 +982,9 @@ void buttonPressedCallback(const std_msgs::Int32& msg)
 		case PICKER_BUTTON_PUTDOWN:
 			buttonPressed_putdown();
 			break;
+		case PICKER_BUTTON_SQUAT:
+			buttonPressed_squat();
+			break;
 		case PICKER_BUTTON_DISCONNECT:
 			buttonPressed_disconnect();
 			break;
@@ -1097,6 +1114,11 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 	m_mass_E_grams = getParameterFloat(nodeHandle_for_pickerController , "mass_E");
 	m_mass_T_grams = getParameterFloat(nodeHandle_for_pickerController , "mass_T");
 	m_mass_H_grams = getParameterFloat(nodeHandle_for_pickerController , "mass_H");
+
+	// Thickness of the object at pick-up and put-down, in [meters]
+	// > This should also account for extra height due to the surface where the object is
+	m_thickness_of_object_at_pickup  = getParameterFloat(nodeHandle_for_pickerController , "thickness_of_object_at_pickup");
+	m_thickness_of_object_at_putdown = getParameterFloat(nodeHandle_for_pickerController , "thickness_of_object_at_putdown");
 
 	// (x,y) coordinates of the pickup location
 	getParameterFloatVector(nodeHandle_for_pickerController, "pickup_coordinates_xy", m_pickup_coordinates_xy, 2);

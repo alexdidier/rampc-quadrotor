@@ -1830,6 +1830,11 @@ void MainWindow::on_picker_putdown_button_clicked()
     // Call the function that sends the message
     send_picker_button_clicked_message(PICKER_BUTTON_PUTDOWN);
 }
+void MainWindow::on_picker_squat_button_clicked()
+{
+    // Call the function that sends the message
+    send_picker_button_clicked_message(PICKER_BUTTON_SQUAT);
+}
 void MainWindow::on_picker_disconnect_button_clicked()
 {
     // Call the function that sends the message
