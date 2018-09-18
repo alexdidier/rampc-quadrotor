@@ -208,7 +208,8 @@ float m_max_setpoint_change_per_second_yaw_degrees;
 float m_max_setpoint_change_per_second_yaw_radians;
 
 
-
+// Frequency at which the controller is running
+float m_vicon_frequency;
 
 
 
@@ -216,9 +217,6 @@ float m_max_setpoint_change_per_second_yaw_radians;
 
 // THE FOLLOWING PARAMETERS ARE USED
 // FOR THE LOW-LEVEL CONTROLLER
-
-// Frequency at which the controller is running
-float vicon_frequency;
 
 // Frequency at which the controller is running
 float control_frequency;

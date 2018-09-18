@@ -58,8 +58,6 @@
 
 
 // REMINDER OF THE NAME OF USEFUL CLASS VARIABLE
-// // Current time
-// float m_time_seconds;
 // // > Mass of the Crazyflie quad-rotor, in [grams]
 // float m_mass_CF_grams;
 // // > Mass of the letters to be lifted, in [grams]
@@ -68,20 +66,67 @@
 // float m_mass_H_grams;
 // // > Total mass of the Crazyflie plus whatever it is carrying, in [grams]
 // float m_mass_total_grams;
+// // Thickness of the object at pick-up and put-down, in [meters]
+// // > This should also account for extra height due to 
+// //   the surface where the object is
+// float m_thickness_of_object_at_pickup;
+// float m_thickness_of_object_at_putdown;
 // // (x,y) coordinates of the pickup location
-// float m_pickup_coordinates_xy[2];
+// std::vector<float> m_pickup_coordinates_xy(2);
 // // (x,y) coordinates of the drop off location
-// float m_dropoff_coordinates_xy_for_E[2];
-// float m_dropoff_coordinates_xy_for_T[2];
-// float m_dropoff_coordinates_xy_for_H[2];
+// std::vector<float> m_dropoff_coordinates_xy_for_E(2);
+// std::vector<float> m_dropoff_coordinates_xy_for_T(2);
+// std::vector<float> m_dropoff_coordinates_xy_for_H(2);
+// // Length of the string from the Crazyflie
+// // to the end of the Picker, in [meters]
+// float m_picker_string_length;
 // // > The setpoints for (x,y,z) position and yaw angle, in that order
-// float m_setpoint[4];
+// float m_setpoint[4] = {0.0,0.0,0.4,0.0};
+// float m_setpoint_for_controller[4] = {0.0,0.0,0.4,0.0};
 // // > Small adjustments to the x-y setpoint
-// float m_xAdjustment;
-// float m_yAdjustment;
+// float m_xAdjustment = 0.0f;
+// float m_yAdjustment = 0.0f;
+// // Boolean for whether to limit rate of change of the setpoint
+// bool m_shouldSmoothSetpointChanges = true;
+// // Max setpoint change per second
+// float m_max_setpoint_change_per_second_horizontal;
+// float m_max_setpoint_change_per_second_vertical;
+// float m_max_setpoint_change_per_second_yaw_degrees;
+// float m_max_setpoint_change_per_second_yaw_radians;
+// // Frequency at which the controller is running
+// float m_vicon_frequency;
+
+
+// A FEW EXTRA COMMENTS ABOUT THE MOST IMPORTANT VARIABLES
+
+// Variable name:    m_setpoint
+// Description:
+// This is a float array of length 4. It specifies a location
+// in space where you want the drone to be. The 4 element are:
+// >> m_setpoint[0]   The x-poistion in [meters]
+// >> m_setpoint[1]   The y-poistion in [meters]
+// >> m_setpoint[2]   The z-poistion in [meters]
+// >> m_setpoint[3]   The yaw heading angle in [radians]
+
+
+// Variable name:    m_setpoint_for_controller
+// Description:
+// Similar to the variable "m_setpoint" this is also float array
+// of length 4 that specifies an (x,y,z,yaw) location. The
+// difference it that this variable specifies the location where
+// the low-level controller is guiding the drone to be.
+// HINT: to make changes the "m_setpoint" variable, you can edit
+// the function named "perControlCycleOperations" so that the
+// "m_setpoint_for_controller" changes by a maximum amount at
+// each cycle of the contoller
 
 
 
+// THIS FUNCTION IS CALLED AT "m_vicon_frequency" HERTZ.
+// IT CAN BE USED TO ADJUST THINGS IN "REAL TIME".
+// For example, the equation:
+// >> m_max_setpoint_change_per_second_horizontal / m_vicon_frequency
+// will convert the "change per second" to a "change per cycle".
 
 void perControlCycleOperations()
 {
@@ -94,16 +139,16 @@ void perControlCycleOperations()
 			switch (i)
 			{
 				case 0:
-					max_for_this_coordinate = m_max_setpoint_change_per_second_horizontal / vicon_frequency;
+					max_for_this_coordinate = m_max_setpoint_change_per_second_horizontal / m_vicon_frequency;
 					break;
 				case 1:
-					max_for_this_coordinate = m_max_setpoint_change_per_second_horizontal / vicon_frequency;
+					max_for_this_coordinate = m_max_setpoint_change_per_second_horizontal / m_vicon_frequency;
 					break;
 				case 2:
-					max_for_this_coordinate = m_max_setpoint_change_per_second_vertical / vicon_frequency;
+					max_for_this_coordinate = m_max_setpoint_change_per_second_vertical / m_vicon_frequency;
 					break;
 				case 3:
-					max_for_this_coordinate = m_max_setpoint_change_per_second_yaw_radians / vicon_frequency;
+					max_for_this_coordinate = m_max_setpoint_change_per_second_yaw_radians / m_vicon_frequency;
 					break;
 				// Handle the exception
 				default:
@@ -144,14 +189,21 @@ void perControlCycleOperations()
 
 
 
+// CALLBACK FUNCTION THAT RUN WHEN THE RESPECTIVE BUTTON IS PRESSED
+
 void buttonPressed_gotoStart()
 {
 	ROS_INFO("[PICKER CONTROLLER] Goto Start button pressed");
 
+	// The drone should move smoothly to the start point:
 	m_shouldSmoothSetpointChanges = true;
+	// Set the (x,y) coordinates for the start point:
 	m_setpoint[0] = m_pickup_coordinates_xy[0];
 	m_setpoint[1] = m_pickup_coordinates_xy[1];
-	m_setpoint[2] = m_picker_string_length + 0.15;
+	// Set the z coordinate to be a little more than the
+	// length of the "picker string"
+	m_setpoint[2] = m_picker_string_length + 0.10;
+	// Publish the setpoint so that the GUI updates
 	publishCurrentSetpoint();
 }
 
@@ -209,10 +261,15 @@ void buttonPressed_disconnect()
 	ROS_INFO("[PICKER CONTROLLER] Disconnect button pressed");
 
 	m_shouldSmoothSetpointChanges = false;
-	m_setpoint[2] = m_picker_string_length + 0.15;
+	m_setpoint[2] = m_picker_string_length + 0.10;
 	m_mass_total_grams = m_mass_CF_grams;
 	publishCurrentSetpoint();
 }
+
+
+
+// THESE CALLBACK FUNCTIONS ALLOW YOU TO IMPLEMENT SOME
+// CUSTOM ACTION IN RESPONSE TO THE RESPECTIVE BUTTON PRESSES
 
 void buttonPressed_1()
 {
@@ -416,7 +473,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 
 	// Keep track of time
 	m_time_ticks++;
-	m_time_seconds = float(m_time_ticks) / vicon_frequency;
+	m_time_seconds = float(m_time_ticks) / m_vicon_frequency;
 
 
 	// CALL THE FUNCTION FOR PER CYLCE OPERATIONS
@@ -1140,7 +1197,7 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 
 	// > The frequency at which the "computeControlOutput" is being called, as determined
 	//   by the frequency at which the Vicon system provides position and attitude data
-	vicon_frequency = getParameterFloat(nodeHandle_for_pickerController, "vicon_frequency");
+	m_vicon_frequency = getParameterFloat(nodeHandle_for_pickerController, "vicon_frequency");
 
 	// > The frequency at which the "computeControlOutput" is being called, as determined
 	//   by the frequency at which the Vicon system provides position and attitude data
@@ -1210,7 +1267,7 @@ void processFetchedParameters()
 	m_max_setpoint_change_per_second_yaw_radians = DEG2RAD * m_max_setpoint_change_per_second_yaw_degrees;
 
     // Set that the estimator frequency is the same as the control frequency
-    estimator_frequency = vicon_frequency;
+    estimator_frequency = m_vicon_frequency;
 }
 
 
