@@ -1825,7 +1825,7 @@ void MainWindow::on_picker_gotostart_button_clicked()
         // Construct the setpoint
         SetpointV2 msg_setpointV2;
         msg_setpointV2.buttonID = PICKER_BUTTON_GOTOSTART;
-        msg_setpointV2.isChecked = ui->picker_gotostart_checkbox->isChecked();
+        msg_setpointV2.isChecked = ui->picker_gotostart_checkBox->isChecked();
         msg_setpointV2.x = 0.0;
         msg_setpointV2.y = 0.0;
         msg_setpointV2.z = 0.0;
@@ -1853,7 +1853,7 @@ void MainWindow::on_picker_attach_button_clicked()
         // Construct the setpoint
         SetpointV2 msg_setpointV2;
         msg_setpointV2.buttonID = PICKER_BUTTON_ATTACH;
-        msg_setpointV2.isChecked = ui->picker_attach_checkbox->isChecked();;
+        msg_setpointV2.isChecked = ui->picker_attach_checkBox->isChecked();;
         msg_setpointV2.x = 0.0;
         msg_setpointV2.y = 0.0;
         msg_setpointV2.z = 0.0;
@@ -1877,7 +1877,7 @@ void MainWindow::on_picker_pickup_button_clicked()
         // Construct the setpoint
         SetpointV2 msg_setpointV2;
         msg_setpointV2.buttonID = PICKER_BUTTON_PICKUP;
-        msg_setpointV2.isChecked = ui->picker_pickup_checkbox->isChecked();;
+        msg_setpointV2.isChecked = ui->picker_pickup_checkBox->isChecked();;
         msg_setpointV2.x = 0.0;
         msg_setpointV2.y = 0.0;
         msg_setpointV2.z = 0.0;
@@ -1901,7 +1901,7 @@ void MainWindow::on_picker_gotoend_button_clicked()
         // Construct the setpoint
         SetpointV2 msg_setpointV2;
         msg_setpointV2.buttonID = PICKER_BUTTON_GOTOEND;
-        msg_setpointV2.isChecked = ui->picker_gotoend_checkbox->isChecked();;
+        msg_setpointV2.isChecked = ui->picker_gotoend_checkBox->isChecked();;
         msg_setpointV2.x = 0.0;
         msg_setpointV2.y = 0.0;
         msg_setpointV2.z = 0.0;
@@ -1927,7 +1927,7 @@ void MainWindow::on_picker_putdown_button_clicked()
         // Construct the setpoint
         SetpointV2 msg_setpointV2;
         msg_setpointV2.buttonID = PICKER_BUTTON_PUTDOWN;
-        msg_setpointV2.isChecked = ui->picker_putdown_checkbox->isChecked();;
+        msg_setpointV2.isChecked = ui->picker_putdown_checkBox->isChecked();;
         msg_setpointV2.x = 0.0;
         msg_setpointV2.y = 0.0;
         msg_setpointV2.z = 0.0;
@@ -1951,7 +1951,7 @@ void MainWindow::on_picker_squat_button_clicked()
         // Construct the setpoint
         SetpointV2 msg_setpointV2;
         msg_setpointV2.buttonID = PICKER_BUTTON_SQUAT;
-        msg_setpointV2.isChecked = ui->picker_squat_checkbox->isChecked();;
+        msg_setpointV2.isChecked = ui->picker_squat_checkBox->isChecked();;
         msg_setpointV2.x = 0.0;
         msg_setpointV2.y = 0.0;
         msg_setpointV2.z = 0.0;
@@ -1975,7 +1975,7 @@ void MainWindow::on_picker_jump_button_clicked()
         // Construct the setpoint
         SetpointV2 msg_setpointV2;
         msg_setpointV2.buttonID = PICKER_BUTTON_JUMP;
-        msg_setpointV2.isChecked = ui->picker_jump_checkbox->isChecked();;
+        msg_setpointV2.isChecked = ui->picker_jump_checkBox->isChecked();;
         msg_setpointV2.x = 0.0;
         msg_setpointV2.y = 0.0;
         msg_setpointV2.z = 0.0;
