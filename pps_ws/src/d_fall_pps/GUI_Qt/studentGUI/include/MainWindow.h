@@ -44,6 +44,7 @@
 #include "d_fall_pps/CrazyflieContext.h"
 #include "d_fall_pps/CrazyflieData.h"
 #include "d_fall_pps/Setpoint.h"
+#include "d_fall_pps/SetpointV2.h"
 #include "d_fall_pps/ViconSubscribeObjectName.h"
 
 
@@ -121,12 +122,12 @@
 
 // FOR WHICH BUTTON WAS PRESSED IN THE PICKER CONTOLLER
 #define PICKER_BUTTON_GOTOSTART     1
-#define PICKER_BUTTON_CONNECT       2
+#define PICKER_BUTTON_ATTACH        2
 #define PICKER_BUTTON_PICKUP        3
 #define PICKER_BUTTON_GOTOEND       4
 #define PICKER_BUTTON_PUTDOWN       5
 #define PICKER_BUTTON_SQUAT         6
-#define PICKER_BUTTON_DISCONNECT    7
+#define PICKER_BUTTON_JUMP          7
 
 #define PICKER_BUTTON_1             11
 #define PICKER_BUTTON_2             12
@@ -217,12 +218,12 @@ private slots:
     // Interations with the PICKER controller tab
     // > For the buttons
     void on_picker_gotostart_button_clicked();
-    void on_picker_connect_button_clicked();
+    void on_picker_attach_button_clicked();
     void on_picker_pickup_button_clicked();
     void on_picker_gotoend_button_clicked();
     void on_picker_putdown_button_clicked();
     void on_picker_squat_button_clicked();
-    void on_picker_disconnect_button_clicked();
+    void on_picker_jump_button_clicked();
     void on_picker_1_button_clicked();
     void on_picker_2_button_clicked();
     void on_picker_3_button_clicked();
@@ -335,6 +336,10 @@ private:
 	ros::Subscriber pickerSetpointSubscriber;
     ros::Subscriber pickerSetpointToGUISubscriber;
 
+    ros::Publisher  pickerButtonPressedWithSetpointPublisher;
+
+    bool shouldSendWithSetpoint_for_pickerButtons = true;
+
 
 
 
@@ -378,6 +383,7 @@ private:
 
     // > For actually sending the button message
     void send_picker_button_clicked_message(int button_index);
+    void send_picker_button_clicked_message_with_setpoint(const SetpointV2& setpointV2_to_send);
     
 
     void DBChangedCallback(const std_msgs::Int32& msg);

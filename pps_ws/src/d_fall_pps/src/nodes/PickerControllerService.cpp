@@ -207,9 +207,9 @@ void buttonPressed_gotoStart()
 	publishCurrentSetpoint();
 }
 
-void buttonPressed_connect()
+void buttonPressed_attach()
 {
-	ROS_INFO("[PICKER CONTROLLER] Connect button pressed");
+	ROS_INFO("[PICKER CONTROLLER] Attach button pressed");
 
 	m_shouldSmoothSetpointChanges = true;
 	m_setpoint[2] = m_picker_string_length + m_thickness_of_object_at_pickup;
@@ -256,9 +256,9 @@ void buttonPressed_squat()
 	publishCurrentSetpoint();
 }
 
-void buttonPressed_disconnect()
+void buttonPressed_jump()
 {
-	ROS_INFO("[PICKER CONTROLLER] Disconnect button pressed");
+	ROS_INFO("[PICKER CONTROLLER] Jump button pressed");
 
 	m_shouldSmoothSetpointChanges = false;
 	m_setpoint[2] = m_picker_string_length + 0.10;
@@ -349,6 +349,140 @@ void yAdjustmentCallback(const std_msgs::Float32& msg)
 	// Update the y-adjustment class variable
 	m_yAdjustment = y_adjustment;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// CALLBACK FUNCTION THAT RUN WHEN THE RESPECTIVE BUTTON IS PRESSED
+// > AND A SETPOINT IS PROVIDED
+
+void buttonPressedWithSetpoint_gotoStart(const SetpointV2& newSetpointV2)
+{
+	ROS_INFO("[PICKER CONTROLLER] Goto Start button pressed with a setpoint provided");
+
+	// Use the boolean for the smoothing flag
+	m_shouldSmoothSetpointChanges = newSetpointV2.isChecked;
+	// Set the (x,y,z) coordinates:
+	m_setpoint[0] = newSetpointV2.x;
+	m_setpoint[1] = newSetpointV2.y;
+	m_setpoint[2] = newSetpointV2.z;
+	// Publish the setpoint so that the GUI updates
+	publishCurrentSetpoint();
+}
+
+void buttonPressedWithSetpoint_attach(const SetpointV2& newSetpointV2)
+{
+	ROS_INFO("[PICKER CONTROLLER] Attach button pressed with a setpoint provided");
+
+	// Use the boolean for the smoothing flag
+	m_shouldSmoothSetpointChanges = newSetpointV2.isChecked;
+	// Set the z coordinate:
+	m_setpoint[2] = newSetpointV2.z;
+	// Publish the setpoint so that the GUI updates
+	publishCurrentSetpoint();
+}
+
+void buttonPressedWithSetpoint_pickup(const SetpointV2& newSetpointV2)
+{
+	ROS_INFO("[PICKER CONTROLLER] Pick up button pressed with a setpoint provided");
+
+	// Use the boolean for the smoothing flag
+	m_shouldSmoothSetpointChanges = newSetpointV2.isChecked;
+	// Set the z coordinate:
+	m_setpoint[2] = newSetpointV2.z;
+	// Update the mass of the Crazyflie
+	m_mass_total_grams = m_mass_CF_grams + m_mass_E_grams;
+	// Publish the setpoint so that the GUI updates
+	publishCurrentSetpoint();
+}
+
+void buttonPressedWithSetpoint_gotoEnd(const SetpointV2& newSetpointV2)
+{
+	ROS_INFO("[PICKER CONTROLLER] Goto End button pressed with a setpoint provided");
+
+	// Use the boolean for the smoothing flag
+	m_shouldSmoothSetpointChanges = newSetpointV2.isChecked;
+	// Set the (x,y) coordinates:
+	m_setpoint[0] = newSetpointV2.x;
+	m_setpoint[1] = newSetpointV2.y;
+	// Publish the setpoint so that the GUI updates
+	publishCurrentSetpoint();
+}
+
+void buttonPressedWithSetpoint_putdown(const SetpointV2& newSetpointV2)
+{
+	ROS_INFO("[PICKER CONTROLLER] Put down button pressed with a setpoint provided");
+
+	// Use the boolean for the smoothing flag
+	m_shouldSmoothSetpointChanges = newSetpointV2.isChecked;
+	// Set the z coordinate:
+	m_setpoint[2] = newSetpointV2.z;
+	// Update the mass of the Crazyflie
+	m_mass_total_grams = m_mass_CF_grams;
+	// Publish the setpoint so that the GUI updates
+	publishCurrentSetpoint();
+}
+
+void buttonPressedWithSetpoint_squat(const SetpointV2& newSetpointV2)
+{
+	ROS_INFO("[PICKER CONTROLLER] Squat button pressed with a setpoint provided");
+
+	// Use the boolean for the smoothing flag
+	m_shouldSmoothSetpointChanges = newSetpointV2.isChecked;
+	// Set the z coordinate:
+	m_setpoint[2] = newSetpointV2.z;
+	// Update the mass of the Crazyflie
+	m_mass_total_grams = m_mass_CF_grams;
+	// Publish the setpoint so that the GUI updates
+	publishCurrentSetpoint();
+}
+
+void buttonPressedWithSetpoint_jump(const SetpointV2& newSetpointV2)
+{
+	ROS_INFO("[PICKER CONTROLLER] Jump button pressed with a setpoint provided");
+
+	// Use the boolean for the smoothing flag
+	m_shouldSmoothSetpointChanges = newSetpointV2.isChecked;
+	// Set the z coordinate:
+	m_setpoint[2] = newSetpointV2.z;
+	// Update the mass of the Crazyflie
+	m_mass_total_grams = m_mass_CF_grams;
+	// Publish the setpoint so that the GUI updates
+	publishCurrentSetpoint();
+}
+
+
+void buttonPressedWithSetpoint_1(const SetpointV2& newSetpointV2)
+{
+	ROS_INFO("[PICKER CONTROLLER] Button 1 pressed with a setpoint provided");
+}
+
+void buttonPressedWithSetpoint_2(const SetpointV2& newSetpointV2)
+{
+	ROS_INFO("[PICKER CONTROLLER] Button 2 pressed with a setpoint provided");
+}
+
+void buttonPressedWithSetpoint_3(const SetpointV2& newSetpointV2)
+{
+	ROS_INFO("[PICKER CONTROLLER] Button 3 pressed with a setpoint provided");
+}
+
+void buttonPressedWithSetpoint_4(const SetpointV2& newSetpointV2)
+{
+	ROS_INFO("[PICKER CONTROLLER] Button 4 pressed with a setpoint provided with a setpoint provided");
+}
+
+
 
 
 
@@ -887,13 +1021,13 @@ void convert_stateInertial_to_bodyFrameError(float stateInertial[12], float setp
 	stateInertial[1] = stateInertial[1] - setpoint[1] - m_yAdjustment;
 	stateInertial[2] = stateInertial[2] - setpoint[2];
 
-	if (stateInertial[2] > 30.0f)
+	if (stateInertial[2] > 40.0f)
 	{
-		stateInertial[2] = 30.0f;
+		stateInertial[2] = 40.0f;
 	}
-	else if (stateInertial[2] < -30.0f)
+	else if (stateInertial[2] < -40.0f)
 	{
-		stateInertial[2] = 30.0f;
+		stateInertial[2] = -40.0f;
 	}
 
 	// Fill in the yaw angle error
@@ -1027,8 +1161,8 @@ void buttonPressedCallback(const std_msgs::Int32& msg)
 		case PICKER_BUTTON_GOTOSTART:
 			buttonPressed_gotoStart();
 			break;
-		case PICKER_BUTTON_CONNECT:
-			buttonPressed_connect();
+		case PICKER_BUTTON_ATTACH:
+			buttonPressed_attach();
 			break;
 		case PICKER_BUTTON_PICKUP:
 			buttonPressed_pickup();
@@ -1042,8 +1176,8 @@ void buttonPressedCallback(const std_msgs::Int32& msg)
 		case PICKER_BUTTON_SQUAT:
 			buttonPressed_squat();
 			break;
-		case PICKER_BUTTON_DISCONNECT:
-			buttonPressed_disconnect();
+		case PICKER_BUTTON_JUMP:
+			buttonPressed_jump();
 			break;
 		case PICKER_BUTTON_1:
 			buttonPressed_1();
@@ -1056,6 +1190,58 @@ void buttonPressedCallback(const std_msgs::Int32& msg)
 			break;
 		case PICKER_BUTTON_4:
 			buttonPressed_4();
+			break;
+		default:
+		{
+			// Let the user know that the command was not recognised
+			ROS_INFO_STREAM("[PICKER CONTROLLER] A button pressed message was received in the controller but not recognised, message.data = " << button_index );
+			break;
+		}
+	}
+}
+
+
+
+void buttonPressedWithSetpointCallback(const SetpointV2& newSetpointV2)
+{
+	// Extract the "buttonID" from the message
+	int button_index = newSetpointV2.buttonID;
+
+	// Switch between the button pressed
+	switch(button_index)
+	{
+		case PICKER_BUTTON_GOTOSTART:
+			buttonPressedWithSetpoint_gotoStart(newSetpointV2);
+			break;
+		case PICKER_BUTTON_ATTACH:
+			buttonPressedWithSetpoint_attach(newSetpointV2);
+			break;
+		case PICKER_BUTTON_PICKUP:
+			buttonPressedWithSetpoint_pickup(newSetpointV2);
+			break;
+		case PICKER_BUTTON_GOTOEND:
+			buttonPressedWithSetpoint_gotoEnd(newSetpointV2);
+			break;
+		case PICKER_BUTTON_PUTDOWN:
+			buttonPressedWithSetpoint_putdown(newSetpointV2);
+			break;
+		case PICKER_BUTTON_SQUAT:
+			buttonPressedWithSetpoint_squat(newSetpointV2);
+			break;
+		case PICKER_BUTTON_JUMP:
+			buttonPressedWithSetpoint_jump(newSetpointV2);
+			break;
+		case PICKER_BUTTON_1:
+			buttonPressedWithSetpoint_1(newSetpointV2);
+			break;
+		case PICKER_BUTTON_2:
+			buttonPressedWithSetpoint_2(newSetpointV2);
+			break;
+		case PICKER_BUTTON_3:
+			buttonPressedWithSetpoint_3(newSetpointV2);
+			break;
+		case PICKER_BUTTON_4:
+			buttonPressedWithSetpoint_4(newSetpointV2);
 			break;
 		default:
 		{
@@ -1501,6 +1687,8 @@ int main(int argc, char* argv[]) {
     ros::Subscriber pickerYAdjustmentSubscriber    =  nodeHandle.subscribe("YAdjustment", 1, yAdjustmentCallback);
 
     pickerSetpointToGUIPublisher = nodeHandle.advertise<Setpoint>("SetpointToGUI", 1);
+
+    ros::Subscriber pickerButtonPressedWithSetpointSubscriber  =  nodeHandle.subscribe("ButtonPressedWithSetpoint", 1, buttonPressedWithSetpointCallback);
 
 
 

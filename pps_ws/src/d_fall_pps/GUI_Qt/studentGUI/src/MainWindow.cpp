@@ -109,6 +109,8 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     pickerSetpointSubscriber      =  nodeHandle.subscribe("PickerControllerService/Setpoint", 1, &MainWindow::pickerSetpointCallback, this);
     pickerSetpointToGUISubscriber =  nodeHandle.subscribe("PickerControllerService/SetpointToGUI", 1, &MainWindow::pickerSetpointCallback, this);
 
+    pickerButtonPressedWithSetpointPublisher =  nodeHandle.advertise<SetpointV2>("PickerControllerService/ButtonPressedWithSetpoint", 1);
+
     // SET ALL SLIDERS AND DIALS TO DEFAULT VALUES
     ui->picker_z_slider->setValue( 40 );
     ui->picker_mass_slider->setValue( 29 );
@@ -1805,60 +1807,269 @@ void MainWindow::send_picker_button_clicked_message(int button_index)
     this->pickerButtonPressedPublisher.publish(msg);
 }
 
+void MainWindow::send_picker_button_clicked_message_with_setpoint(const SetpointV2& setpointV2_to_send)
+{
+    // Publish the message
+    this->pickerButtonPressedPublisher.publish(setpointV2_to_send);
+}
+
 void MainWindow::on_picker_gotostart_button_clicked()
 {
-    // Call the function that sends the message
-    send_picker_button_clicked_message(PICKER_BUTTON_GOTOSTART);
+    if (!shouldSendWithSetpoint_for_pickerButtons)
+    {
+        // Call the function that sends the message
+        send_picker_button_clicked_message(PICKER_BUTTON_GOTOSTART);
+    }
+    else
+    {
+        // Construct the setpoint
+        SetpointV2 msg_setpointV2;
+        msg_setpointV2.buttonID = PICKER_BUTTON_GOTOSTART;
+        msg_setpointV2.isChecked = ui->picker_gotostart_checkbox->isChecked();
+        msg_setpointV2.x = 0.0;
+        msg_setpointV2.y = 0.0;
+        msg_setpointV2.z = 0.0;
+        msg_setpointV2.yaw = 0.0;
+        // Get the (x,y,z) coordinates from the GUI
+        if(!ui->picker_gotostart_x->text().isEmpty())
+            msg_setpointV2.x = (ui->picker_gotostart_x->text()).toFloat();
+        if(!ui->picker_gotostart_y->text().isEmpty())
+            msg_setpointV2.y = (ui->picker_gotostart_y->text()).toFloat();
+        if(!ui->picker_gotostart_z->text().isEmpty())
+            msg_setpointV2.z = (ui->picker_gotostart_z->text()).toFloat();
+        // Call the function that sends the message
+        send_picker_button_clicked_message_with_setpoint(msg_setpointV2);
+    }
 }
-void MainWindow::on_picker_connect_button_clicked()
+void MainWindow::on_picker_attach_button_clicked()
 {
-    // Call the function that sends the message
-    send_picker_button_clicked_message(PICKER_BUTTON_CONNECT);
+    if (!shouldSendWithSetpoint_for_pickerButtons)
+    {
+        // Call the function that sends the message
+        send_picker_button_clicked_message(PICKER_BUTTON_ATTACH);
+    }
+    else
+    {
+        // Construct the setpoint
+        SetpointV2 msg_setpointV2;
+        msg_setpointV2.buttonID = PICKER_BUTTON_ATTACH;
+        msg_setpointV2.isChecked = ui->picker_attach_checkbox->isChecked();;
+        msg_setpointV2.x = 0.0;
+        msg_setpointV2.y = 0.0;
+        msg_setpointV2.z = 0.0;
+        msg_setpointV2.yaw = 0.0;
+        // Get the z coordinates from the GUI
+        if(!ui->picker_attach_z->text().isEmpty())
+            msg_setpointV2.z = (ui->picker_attach_z->text()).toFloat();
+        // Call the function that sends the message
+        send_picker_button_clicked_message_with_setpoint(msg_setpointV2);
+    }
 }
 void MainWindow::on_picker_pickup_button_clicked()
 {
-    // Call the function that sends the message
-    send_picker_button_clicked_message(PICKER_BUTTON_PICKUP);
+    if (!shouldSendWithSetpoint_for_pickerButtons)
+    {
+        // Call the function that sends the message
+        send_picker_button_clicked_message(PICKER_BUTTON_PICKUP);
+    }
+    else
+    {
+        // Construct the setpoint
+        SetpointV2 msg_setpointV2;
+        msg_setpointV2.buttonID = PICKER_BUTTON_PICKUP;
+        msg_setpointV2.isChecked = ui->picker_pickup_checkbox->isChecked();;
+        msg_setpointV2.x = 0.0;
+        msg_setpointV2.y = 0.0;
+        msg_setpointV2.z = 0.0;
+        msg_setpointV2.yaw = 0.0;
+        // Get the z coordinates from the GUI
+        if(!ui->picker_pickup_z->text().isEmpty())
+            msg_setpointV2.z = (ui->picker_pickup_z->text()).toFloat();
+        // Call the function that sends the message
+        send_picker_button_clicked_message_with_setpoint(msg_setpointV2);
+    }
 }
 void MainWindow::on_picker_gotoend_button_clicked()
 {
-    // Call the function that sends the message
-    send_picker_button_clicked_message(PICKER_BUTTON_GOTOEND);
+    if (!shouldSendWithSetpoint_for_pickerButtons)
+    {
+        // Call the function that sends the message
+        send_picker_button_clicked_message(PICKER_BUTTON_GOTOEND);
+    }
+    else
+    {
+        // Construct the setpoint
+        SetpointV2 msg_setpointV2;
+        msg_setpointV2.buttonID = PICKER_BUTTON_GOTOEND;
+        msg_setpointV2.isChecked = ui->picker_gotoend_checkbox->isChecked();;
+        msg_setpointV2.x = 0.0;
+        msg_setpointV2.y = 0.0;
+        msg_setpointV2.z = 0.0;
+        msg_setpointV2.yaw = 0.0;
+        // Get the (x,y) coordinates from the GUI
+        if(!ui->picker_gotoend_x->text().isEmpty())
+            msg_setpointV2.x = (ui->picker_gotoend_x->text()).toFloat();
+        if(!ui->picker_gotoend_y->text().isEmpty())
+            msg_setpointV2.y = (ui->picker_gotoend_y->text()).toFloat();
+        // Call the function that sends the message
+        send_picker_button_clicked_message_with_setpoint(msg_setpointV2);
+    }
 }
 void MainWindow::on_picker_putdown_button_clicked()
 {
-    // Call the function that sends the message
-    send_picker_button_clicked_message(PICKER_BUTTON_PUTDOWN);
+    if (!shouldSendWithSetpoint_for_pickerButtons)
+    {
+        // Call the function that sends the message
+        send_picker_button_clicked_message(PICKER_BUTTON_PUTDOWN);
+    }
+    else
+    {
+        // Construct the setpoint
+        SetpointV2 msg_setpointV2;
+        msg_setpointV2.buttonID = PICKER_BUTTON_PUTDOWN;
+        msg_setpointV2.isChecked = ui->picker_putdown_checkbox->isChecked();;
+        msg_setpointV2.x = 0.0;
+        msg_setpointV2.y = 0.0;
+        msg_setpointV2.z = 0.0;
+        msg_setpointV2.yaw = 0.0;
+        // Get the z coordinates from the GUI
+        if(!ui->picker_putdown_z->text().isEmpty())
+            msg_setpointV2.z = (ui->picker_putdown_z->text()).toFloat();
+        // Call the function that sends the message
+        send_picker_button_clicked_message_with_setpoint(msg_setpointV2);
+    }
 }
 void MainWindow::on_picker_squat_button_clicked()
 {
-    // Call the function that sends the message
-    send_picker_button_clicked_message(PICKER_BUTTON_SQUAT);
+    if (!shouldSendWithSetpoint_for_pickerButtons)
+    {
+        // Call the function that sends the message
+        send_picker_button_clicked_message(PICKER_BUTTON_SQUAT);
+    }
+    else
+    {
+        // Construct the setpoint
+        SetpointV2 msg_setpointV2;
+        msg_setpointV2.buttonID = PICKER_BUTTON_SQUAT;
+        msg_setpointV2.isChecked = ui->picker_squat_checkbox->isChecked();;
+        msg_setpointV2.x = 0.0;
+        msg_setpointV2.y = 0.0;
+        msg_setpointV2.z = 0.0;
+        msg_setpointV2.yaw = 0.0;
+        // Get the z coordinates from the GUI
+        if(!ui->picker_squat_z->text().isEmpty())
+            msg_setpointV2.z = (ui->picker_squat_z->text()).toFloat();
+        // Call the function that sends the message
+        send_picker_button_clicked_message_with_setpoint(msg_setpointV2);
+    }
 }
-void MainWindow::on_picker_disconnect_button_clicked()
+void MainWindow::on_picker_jump_button_clicked()
 {
-    // Call the function that sends the message
-    send_picker_button_clicked_message(PICKER_BUTTON_DISCONNECT);
+    if (!shouldSendWithSetpoint_for_pickerButtons)
+    {
+        // Call the function that sends the message
+        send_picker_button_clicked_message(PICKER_BUTTON_JUMP);
+    }
+    else
+    {
+        // Construct the setpoint
+        SetpointV2 msg_setpointV2;
+        msg_setpointV2.buttonID = PICKER_BUTTON_JUMP;
+        msg_setpointV2.isChecked = ui->picker_jump_checkbox->isChecked();;
+        msg_setpointV2.x = 0.0;
+        msg_setpointV2.y = 0.0;
+        msg_setpointV2.z = 0.0;
+        msg_setpointV2.yaw = 0.0;
+        // Get the z coordinates from the GUI
+        if(!ui->picker_jump_z->text().isEmpty())
+            msg_setpointV2.z = (ui->picker_jump_z->text()).toFloat();
+        // Call the function that sends the message
+        send_picker_button_clicked_message_with_setpoint(msg_setpointV2);
+    }
 }
 void MainWindow::on_picker_1_button_clicked()
 {
-    // Call the function that sends the message
-    send_picker_button_clicked_message(PICKER_BUTTON_1);
+    if (!shouldSendWithSetpoint_for_pickerButtons)
+    {
+        // Call the function that sends the message
+        send_picker_button_clicked_message(PICKER_BUTTON_1);
+    }
+    else
+    {
+        // Construct the setpoint
+        SetpointV2 msg_setpointV2;
+        msg_setpointV2.buttonID = PICKER_BUTTON_1;
+        msg_setpointV2.isChecked = true;
+        msg_setpointV2.x = 0.0;
+        msg_setpointV2.y = 0.0;
+        msg_setpointV2.z = 0.0;
+        msg_setpointV2.yaw = 0.0;
+        // Call the function that sends the message
+        send_picker_button_clicked_message_with_setpoint(msg_setpointV2);
+    }
 }
 void MainWindow::on_picker_2_button_clicked()
 {
-    // Call the function that sends the message
-    send_picker_button_clicked_message(PICKER_BUTTON_2);
+    if (!shouldSendWithSetpoint_for_pickerButtons)
+    {
+        // Call the function that sends the message
+        send_picker_button_clicked_message(PICKER_BUTTON_2);
+    }
+    else
+    {
+        // Construct the setpoint
+        SetpointV2 msg_setpointV2;
+        msg_setpointV2.buttonID = PICKER_BUTTON_2;
+        msg_setpointV2.isChecked = true;
+        msg_setpointV2.x = 0.0;
+        msg_setpointV2.y = 0.0;
+        msg_setpointV2.z = 0.0;
+        msg_setpointV2.yaw = 0.0;
+        // Call the function that sends the message
+        send_picker_button_clicked_message_with_setpoint(msg_setpointV2);
+    }
 }
 void MainWindow::on_picker_3_button_clicked()
 {
-    // Call the function that sends the message
-    send_picker_button_clicked_message(PICKER_BUTTON_3);
+    if (!shouldSendWithSetpoint_for_pickerButtons)
+    {
+        // Call the function that sends the message
+        send_picker_button_clicked_message(PICKER_BUTTON_3);
+    }
+    else
+    {
+        // Construct the setpoint
+        SetpointV2 msg_setpointV2;
+        msg_setpointV2.buttonID = PICKER_BUTTON_3;
+        msg_setpointV2.isChecked = true;
+        msg_setpointV2.x = 0.0;
+        msg_setpointV2.y = 0.0;
+        msg_setpointV2.z = 0.0;
+        msg_setpointV2.yaw = 0.0;
+        // Call the function that sends the message
+        send_picker_button_clicked_message_with_setpoint(msg_setpointV2);
+    }
 }
 void MainWindow::on_picker_4_button_clicked()
 {
-    // Call the function that sends the message
-    send_picker_button_clicked_message(PICKER_BUTTON_4);
+    if (!shouldSendWithSetpoint_for_pickerButtons)
+    {
+        // Call the function that sends the message
+        send_picker_button_clicked_message(PICKER_BUTTON_4);
+    }
+    else
+    {
+        // Construct the setpoint
+        SetpointV2 msg_setpointV2;
+        msg_setpointV2.buttonID = PICKER_BUTTON_4;
+        msg_setpointV2.isChecked = true;
+        msg_setpointV2.x = 0.0;
+        msg_setpointV2.y = 0.0;
+        msg_setpointV2.z = 0.0;
+        msg_setpointV2.yaw = 0.0;
+        // Call the function that sends the message
+        send_picker_button_clicked_message_with_setpoint(msg_setpointV2);
+    }
 }
 
 

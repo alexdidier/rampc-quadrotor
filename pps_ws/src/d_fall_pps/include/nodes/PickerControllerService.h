@@ -53,6 +53,7 @@
 //the generated structs from the msg-files have to be included
 #include "d_fall_pps/ViconData.h"
 #include "d_fall_pps/Setpoint.h"
+#include "d_fall_pps/SetpointV2.h"
 #include "d_fall_pps/ControlCommand.h"
 #include "d_fall_pps/Controller.h"
 #include "d_fall_pps/DebugMsg.h"
@@ -88,12 +89,12 @@
 
 // FOR WHICH BUTTON WAS PRESSED IN THE PICKER CONTOLLER
 #define PICKER_BUTTON_GOTOSTART     1
-#define PICKER_BUTTON_CONNECT       2
+#define PICKER_BUTTON_ATTACH        2
 #define PICKER_BUTTON_PICKUP        3
 #define PICKER_BUTTON_GOTOEND       4
 #define PICKER_BUTTON_PUTDOWN       5
 #define PICKER_BUTTON_SQUAT         6
-#define PICKER_BUTTON_DISCONNECT    7
+#define PICKER_BUTTON_JUMP          7
 
 #define PICKER_BUTTON_1             11
 #define PICKER_BUTTON_2             12
@@ -369,20 +370,39 @@ void massCallback(const std_msgs::Float32& msg);
 void xAdjustmentCallback(const std_msgs::Float32& msg);
 void yAdjustmentCallback(const std_msgs::Float32& msg);
 
+void buttonPressedWithSetpointCallback(const SetpointV2& newSetpointV2);
+
 
 // SEPARATE CALLBACK FUNCTIONS FOR EACH BUTTON
 void buttonPressed_gotoStart();
-void buttonPressed_connect();
+void buttonPressed_attach();
 void buttonPressed_pickup();
 void buttonPressed_gotoEnd();
 void buttonPressed_putdown();
 void buttonPressed_squat();
-void buttonPressed_disconnect();
+void buttonPressed_jump();
 
 void buttonPressed_1();
 void buttonPressed_2();
 void buttonPressed_3();
 void buttonPressed_4();
+
+
+// SEPARATE CALLBACK FUNCTIONS FOR EACH BUTTON
+// > WITH A SETPOINT IN THE MESSAGE
+void buttonPressedWithSetpoint_gotoStart(const SetpointV2& newSetpointV2);
+void buttonPressedWithSetpoint_attach(const SetpointV2& newSetpointV2);
+void buttonPressedWithSetpoint_pickup(const SetpointV2& newSetpointV2);
+void buttonPressedWithSetpoint_gotoEnd(const SetpointV2& newSetpointV2);
+void buttonPressedWithSetpoint_putdown(const SetpointV2& newSetpointV2);
+void buttonPressedWithSetpoint_squat(const SetpointV2& newSetpointV2);
+void buttonPressedWithSetpoint_jump(const SetpointV2& newSetpointV2);
+
+void buttonPressedWithSetpoint_1(const SetpointV2& newSetpointV2);
+void buttonPressedWithSetpoint_2(const SetpointV2& newSetpointV2);
+void buttonPressedWithSetpoint_3(const SetpointV2& newSetpointV2);
+void buttonPressedWithSetpoint_4(const SetpointV2& newSetpointV2);
+
 
 
 

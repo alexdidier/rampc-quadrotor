@@ -202,6 +202,7 @@ add_message_files(
   CrazyflieContext.msg
   AreaBounds.msg
   Setpoint.msg
+  SetpointV2.msg
   CrazyflieEntry.msg
   CrazyflieDB.msg
   #----------------------------------------------------------------------
