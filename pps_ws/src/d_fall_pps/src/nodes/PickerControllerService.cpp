@@ -368,7 +368,7 @@ void yAdjustmentCallback(const std_msgs::Float32& msg)
 
 void buttonPressedWithSetpoint_gotoStart(const SetpointV2& newSetpointV2)
 {
-	ROS_INFO("[PICKER CONTROLLER] Goto Start button pressed with a setpoint provided");
+	ROS_INFO_STREAM("[PICKER CONTROLLER] Goto Start button pressed: (x,y,z)=(" << newSetpointV2.x << "," << newSetpointV2.y << "," << newSetpointV2.z << "), smooth=" << int(newSetpointV2.isChecked) );
 
 	// Use the boolean for the smoothing flag
 	m_shouldSmoothSetpointChanges = newSetpointV2.isChecked;
@@ -377,24 +377,24 @@ void buttonPressedWithSetpoint_gotoStart(const SetpointV2& newSetpointV2)
 	m_setpoint[1] = newSetpointV2.y;
 	m_setpoint[2] = newSetpointV2.z;
 	// Publish the setpoint so that the GUI updates
-	publishCurrentSetpoint();
+	//publishCurrentSetpoint();
 }
 
 void buttonPressedWithSetpoint_attach(const SetpointV2& newSetpointV2)
 {
-	ROS_INFO("[PICKER CONTROLLER] Attach button pressed with a setpoint provided");
+	ROS_INFO_STREAM("[PICKER CONTROLLER] Attach button pressed: z=" << newSetpointV2.z << ", smooth=" << int(newSetpointV2.isChecked) );
 
 	// Use the boolean for the smoothing flag
 	m_shouldSmoothSetpointChanges = newSetpointV2.isChecked;
 	// Set the z coordinate:
 	m_setpoint[2] = newSetpointV2.z;
 	// Publish the setpoint so that the GUI updates
-	publishCurrentSetpoint();
+	//publishCurrentSetpoint();
 }
 
 void buttonPressedWithSetpoint_pickup(const SetpointV2& newSetpointV2)
 {
-	ROS_INFO("[PICKER CONTROLLER] Pick up button pressed with a setpoint provided");
+	ROS_INFO_STREAM("[PICKER CONTROLLER] Pick up button pressed: z=" << newSetpointV2.z << ", smooth=" << int(newSetpointV2.isChecked) );
 
 	// Use the boolean for the smoothing flag
 	m_shouldSmoothSetpointChanges = newSetpointV2.isChecked;
@@ -403,12 +403,12 @@ void buttonPressedWithSetpoint_pickup(const SetpointV2& newSetpointV2)
 	// Update the mass of the Crazyflie
 	m_mass_total_grams = m_mass_CF_grams + m_mass_E_grams;
 	// Publish the setpoint so that the GUI updates
-	publishCurrentSetpoint();
+	//publishCurrentSetpoint();
 }
 
 void buttonPressedWithSetpoint_gotoEnd(const SetpointV2& newSetpointV2)
 {
-	ROS_INFO("[PICKER CONTROLLER] Goto End button pressed with a setpoint provided");
+	ROS_INFO_STREAM("[PICKER CONTROLLER] Goto End button pressed: (x,y)=(" << newSetpointV2.x << "," << newSetpointV2.y << "), smooth=" << int(newSetpointV2.isChecked) );
 
 	// Use the boolean for the smoothing flag
 	m_shouldSmoothSetpointChanges = newSetpointV2.isChecked;
@@ -416,12 +416,12 @@ void buttonPressedWithSetpoint_gotoEnd(const SetpointV2& newSetpointV2)
 	m_setpoint[0] = newSetpointV2.x;
 	m_setpoint[1] = newSetpointV2.y;
 	// Publish the setpoint so that the GUI updates
-	publishCurrentSetpoint();
+	//publishCurrentSetpoint();
 }
 
 void buttonPressedWithSetpoint_putdown(const SetpointV2& newSetpointV2)
 {
-	ROS_INFO("[PICKER CONTROLLER] Put down button pressed with a setpoint provided");
+	ROS_INFO_STREAM("[PICKER CONTROLLER] Put down button pressed: z=" << newSetpointV2.z << ", smooth=" << int(newSetpointV2.isChecked) );
 
 	// Use the boolean for the smoothing flag
 	m_shouldSmoothSetpointChanges = newSetpointV2.isChecked;
@@ -430,12 +430,12 @@ void buttonPressedWithSetpoint_putdown(const SetpointV2& newSetpointV2)
 	// Update the mass of the Crazyflie
 	m_mass_total_grams = m_mass_CF_grams;
 	// Publish the setpoint so that the GUI updates
-	publishCurrentSetpoint();
+	//publishCurrentSetpoint();
 }
 
 void buttonPressedWithSetpoint_squat(const SetpointV2& newSetpointV2)
 {
-	ROS_INFO("[PICKER CONTROLLER] Squat button pressed with a setpoint provided");
+	ROS_INFO_STREAM("[PICKER CONTROLLER] Squat button pressed: z=" << newSetpointV2.z << ", smooth=" << int(newSetpointV2.isChecked) );
 
 	// Use the boolean for the smoothing flag
 	m_shouldSmoothSetpointChanges = newSetpointV2.isChecked;
@@ -444,12 +444,12 @@ void buttonPressedWithSetpoint_squat(const SetpointV2& newSetpointV2)
 	// Update the mass of the Crazyflie
 	m_mass_total_grams = m_mass_CF_grams;
 	// Publish the setpoint so that the GUI updates
-	publishCurrentSetpoint();
+	//publishCurrentSetpoint();
 }
 
 void buttonPressedWithSetpoint_jump(const SetpointV2& newSetpointV2)
 {
-	ROS_INFO("[PICKER CONTROLLER] Jump button pressed with a setpoint provided");
+	ROS_INFO_STREAM("[PICKER CONTROLLER] Jump button pressed: z=" << newSetpointV2.z << ", smooth=" << int(newSetpointV2.isChecked) );
 
 	// Use the boolean for the smoothing flag
 	m_shouldSmoothSetpointChanges = newSetpointV2.isChecked;
@@ -458,7 +458,7 @@ void buttonPressedWithSetpoint_jump(const SetpointV2& newSetpointV2)
 	// Update the mass of the Crazyflie
 	m_mass_total_grams = m_mass_CF_grams;
 	// Publish the setpoint so that the GUI updates
-	publishCurrentSetpoint();
+	//publishCurrentSetpoint();
 }
 
 

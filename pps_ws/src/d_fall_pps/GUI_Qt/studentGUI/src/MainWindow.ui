@@ -1073,84 +1073,6 @@
               <property name="bottomMargin">
                <number>6</number>
               </property>
-              <item row="0" column="0">
-               <layout class="QVBoxLayout" name="verticalLayout">
-                <property name="leftMargin">
-                 <number>6</number>
-                </property>
-                <property name="topMargin">
-                 <number>6</number>
-                </property>
-                <property name="rightMargin">
-                 <number>6</number>
-                </property>
-                <property name="bottomMargin">
-                 <number>6</number>
-                </property>
-                <item>
-                 <widget class="QLabel" name="label_64">
-                  <property name="text">
-                   <string>Function:</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="picker_gotostart_button">
-                  <property name="text">
-                   <string>Goto Start</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="picker_attach_button">
-                  <property name="text">
-                   <string>Attach</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="picker_pickup_button">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="text">
-                   <string>Pick-up</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="picker_gotoend_button">
-                  <property name="text">
-                   <string>Goto End</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="picker_putdown_button">
-                  <property name="text">
-                   <string>Put down</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="picker_squat_button">
-                  <property name="text">
-                   <string>Squat</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="picker_jump_button">
-                  <property name="text">
-                   <string>Jump</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
               <item row="0" column="2">
                <layout class="QHBoxLayout" name="horizontalLayout_2">
                 <property name="leftMargin">
@@ -1320,7 +1242,7 @@
                        <number>100</number>
                       </property>
                       <property name="singleStep">
-                       <number>2</number>
+                       <number>1</number>
                       </property>
                       <property name="pageStep">
                        <number>2</number>
@@ -1664,7 +1586,7 @@
                 </item>
                </layout>
               </item>
-              <item row="0" column="1">
+              <item row="0" column="0">
                <layout class="QGridLayout" name="gridLayout_20">
                 <property name="leftMargin">
                  <number>6</number>
@@ -1678,7 +1600,20 @@
                 <property name="bottomMargin">
                  <number>6</number>
                 </property>
-                <item row="2" column="0">
+                <item row="3" column="0">
+                 <widget class="QPushButton" name="picker_pickup_button">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>Pick-up</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="1">
                  <widget class="QCheckBox" name="picker_attach_checkBox">
                   <property name="styleSheet">
                    <string notr="true">QCheckBox::indicator{ width:30px ; height:30px }</string>
@@ -1688,10 +1623,7 @@
                   </property>
                  </widget>
                 </item>
-                <item row="2" column="1">
-                 <widget class="QLineEdit" name="lineEdit"/>
-                </item>
-                <item row="6" column="0">
+                <item row="6" column="1">
                  <widget class="QCheckBox" name="picker_squat_checkBox">
                   <property name="styleSheet">
                    <string notr="true">QCheckBox::indicator{ width:30px ; height:30px }</string>
@@ -1701,7 +1633,7 @@
                   </property>
                  </widget>
                 </item>
-                <item row="5" column="0">
+                <item row="5" column="1">
                  <widget class="QCheckBox" name="picker_putdown_checkBox">
                   <property name="styleSheet">
                    <string notr="true">QCheckBox::indicator{ width:30px ; height:30px }</string>
@@ -1711,7 +1643,7 @@
                   </property>
                  </widget>
                 </item>
-                <item row="4" column="0">
+                <item row="4" column="1">
                  <widget class="QCheckBox" name="picker_gotoend_checkBox">
                   <property name="styleSheet">
                    <string notr="true">QCheckBox::indicator{ width:30px ; height:30px }</string>
@@ -1721,7 +1653,7 @@
                   </property>
                  </widget>
                 </item>
-                <item row="3" column="0">
+                <item row="3" column="1">
                  <widget class="QCheckBox" name="picker_pickup_checkBox">
                   <property name="styleSheet">
                    <string notr="true">QCheckBox::indicator{ width:30px ; height:30px }</string>
@@ -1731,10 +1663,7 @@
                   </property>
                  </widget>
                 </item>
-                <item row="2" column="2">
-                 <widget class="QLineEdit" name="lineEdit_2"/>
-                </item>
-                <item row="7" column="0">
+                <item row="7" column="1">
                  <widget class="QCheckBox" name="picker_jump_checkBox">
                   <property name="styleSheet">
                    <string notr="true">QCheckBox::indicator{ width:30px ; height:30px }</string>
@@ -1744,14 +1673,23 @@
                   </property>
                  </widget>
                 </item>
-                <item row="0" column="2">
+                <item row="0" column="3">
                  <widget class="QLabel" name="label_63">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
                   <property name="text">
                    <string>y[m]</string>
                   </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
                  </widget>
                 </item>
-                <item row="1" column="0">
+                <item row="1" column="1">
                  <widget class="QCheckBox" name="picker_gotostart_checkBox">
                   <property name="styleSheet">
                    <string notr="true">QCheckBox::indicator{ width:30px ; height:30px }</string>
@@ -1761,16 +1699,320 @@
                   </property>
                  </widget>
                 </item>
-                <item row="0" column="1">
+                <item row="0" column="2">
                  <widget class="QLabel" name="label_62">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
                   <property name="text">
                    <string>x[m]</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QPushButton" name="picker_gotostart_button">
+                  <property name="text">
+                   <string>Goto Start</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="4" column="0">
+                 <widget class="QPushButton" name="picker_gotoend_button">
+                  <property name="text">
+                   <string>Goto End</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="0">
+                 <widget class="QPushButton" name="picker_attach_button">
+                  <property name="text">
+                   <string>Attach</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="2">
+                 <widget class="QLineEdit" name="picker_gotostart_x">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>100</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
+                  <property name="font">
+                   <font>
+                    <family>Courier 10 Pitch</family>
+                   </font>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="0">
+                 <widget class="QLabel" name="label_64">
+                  <property name="text">
+                   <string>Function:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="6" column="0">
+                 <widget class="QPushButton" name="picker_squat_button">
+                  <property name="text">
+                   <string>Squat</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="7" column="0">
+                 <widget class="QPushButton" name="picker_jump_button">
+                  <property name="text">
+                   <string>Jump</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="5" column="0">
+                 <widget class="QPushButton" name="picker_putdown_button">
+                  <property name="text">
+                   <string>Put down</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="4">
+                 <widget class="QLineEdit" name="picker_gotostart_z">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>100</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
+                  <property name="font">
+                   <font>
+                    <family>Courier 10 Pitch</family>
+                   </font>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="3">
+                 <widget class="QLineEdit" name="picker_gotostart_y">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>100</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
+                  <property name="font">
+                   <font>
+                    <family>Courier 10 Pitch</family>
+                   </font>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="4">
+                 <widget class="QLineEdit" name="picker_attach_z">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>100</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
+                  <property name="font">
+                   <font>
+                    <family>Courier 10 Pitch</family>
+                   </font>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="4">
+                 <widget class="QLabel" name="label_65">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>z[m]</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item row="3" column="4">
+                 <widget class="QLineEdit" name="picker_pickup_z">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>100</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
+                  <property name="font">
+                   <font>
+                    <family>Courier 10 Pitch</family>
+                   </font>
+                  </property>
+                 </widget>
+                </item>
+                <item row="4" column="2">
+                 <widget class="QLineEdit" name="picker_gotoend_x">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>100</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
+                  <property name="font">
+                   <font>
+                    <family>Courier 10 Pitch</family>
+                   </font>
+                  </property>
+                 </widget>
+                </item>
+                <item row="4" column="3">
+                 <widget class="QLineEdit" name="picker_gotoend_y">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>100</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
+                  <property name="font">
+                   <font>
+                    <family>Courier 10 Pitch</family>
+                   </font>
+                  </property>
+                 </widget>
+                </item>
+                <item row="5" column="4">
+                 <widget class="QLineEdit" name="picker_putdown_z">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>100</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
+                  <property name="font">
+                   <font>
+                    <family>Courier 10 Pitch</family>
+                   </font>
+                  </property>
+                 </widget>
+                </item>
+                <item row="6" column="4">
+                 <widget class="QLineEdit" name="picker_squat_z">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>100</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
+                  <property name="font">
+                   <font>
+                    <family>Courier 10 Pitch</family>
+                   </font>
+                  </property>
+                 </widget>
+                </item>
+                <item row="7" column="4">
+                 <widget class="QLineEdit" name="picker_jump_z">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>100</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
+                  <property name="font">
+                   <font>
+                    <family>Courier 10 Pitch</family>
+                   </font>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1">
+                 <widget class="QLabel" name="label_66">
+                  <property name="text">
+                   <string>Smooth</string>
                   </property>
                  </widget>
                 </item>
                </layout>
               </item>
              </layout>
+            </item>
+            <item row="1" column="0">
+             <spacer name="verticalSpacer_7">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
             </item>
            </layout>
           </widget>
@@ -4772,7 +5014,7 @@
      <x>0</x>
      <y>0</y>
      <width>1500</width>
-     <height>40</height>
+     <height>25</height>
     </rect>
    </property>
   </widget>

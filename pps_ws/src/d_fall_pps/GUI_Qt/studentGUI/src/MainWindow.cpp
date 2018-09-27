@@ -118,6 +118,34 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     ui->picker_x_slider->setValue( 0 );
     ui->picker_y_slider->setValue( 0 );
 
+    // SET ALL THE FIELDS TO DEFAULT VALUES
+    // > For goto start
+    ui->picker_gotostart_x->setText("-0.30");
+    ui->picker_gotostart_y->setText("+0.00");
+    ui->picker_gotostart_z->setText("+0.50");
+    // > For attach
+    ui->picker_attach_z->setText("+0.38");
+    // > For pickup
+    ui->picker_pickup_z->setText("+0.60");
+    // > For goto end
+    ui->picker_gotoend_x->setText("+0.30");
+    ui->picker_gotoend_y->setText("+0.00");
+    // > For putdown
+    ui->picker_putdown_z->setText("+0.39");
+    // > For squat
+    ui->picker_squat_z->setText("+0.35");
+    // > For jump
+    ui->picker_jump_z->setText("+0.50");
+    // > For the check boxes
+    ui->picker_gotostart_checkBox->setChecked(1);
+    ui->picker_attach_checkBox->setChecked(1);
+    ui->picker_pickup_checkBox->setChecked(1);
+    ui->picker_gotoend_checkBox->setChecked(1);
+    ui->picker_putdown_checkBox->setChecked(1);
+    ui->picker_squat_checkBox->setChecked(0);
+    ui->picker_jump_checkBox->setChecked(0);
+
+
 
 
     // subscribers
@@ -1810,7 +1838,7 @@ void MainWindow::send_picker_button_clicked_message(int button_index)
 void MainWindow::send_picker_button_clicked_message_with_setpoint(const SetpointV2& setpointV2_to_send)
 {
     // Publish the message
-    this->pickerButtonPressedPublisher.publish(setpointV2_to_send);
+    this->pickerButtonPressedWithSetpointPublisher.publish(setpointV2_to_send);
 }
 
 void MainWindow::on_picker_gotostart_button_clicked()
@@ -1837,6 +1865,8 @@ void MainWindow::on_picker_gotostart_button_clicked()
             msg_setpointV2.y = (ui->picker_gotostart_y->text()).toFloat();
         if(!ui->picker_gotostart_z->text().isEmpty())
             msg_setpointV2.z = (ui->picker_gotostart_z->text()).toFloat();
+        // Update the z slider in the GUI
+        ui->picker_z_slider->setValue( int((msg_setpointV2.z+0.005)*100.0) );
         // Call the function that sends the message
         send_picker_button_clicked_message_with_setpoint(msg_setpointV2);
     }
@@ -1861,6 +1891,8 @@ void MainWindow::on_picker_attach_button_clicked()
         // Get the z coordinates from the GUI
         if(!ui->picker_attach_z->text().isEmpty())
             msg_setpointV2.z = (ui->picker_attach_z->text()).toFloat();
+        // Update the z slider in the GUI
+        ui->picker_z_slider->setValue( int((msg_setpointV2.z+0.005)*100.0) );
         // Call the function that sends the message
         send_picker_button_clicked_message_with_setpoint(msg_setpointV2);
     }
@@ -1885,6 +1917,8 @@ void MainWindow::on_picker_pickup_button_clicked()
         // Get the z coordinates from the GUI
         if(!ui->picker_pickup_z->text().isEmpty())
             msg_setpointV2.z = (ui->picker_pickup_z->text()).toFloat();
+        // Update the z slider in the GUI
+        ui->picker_z_slider->setValue( int((msg_setpointV2.z+0.005)*100.0) );
         // Call the function that sends the message
         send_picker_button_clicked_message_with_setpoint(msg_setpointV2);
     }
@@ -1935,6 +1969,8 @@ void MainWindow::on_picker_putdown_button_clicked()
         // Get the z coordinates from the GUI
         if(!ui->picker_putdown_z->text().isEmpty())
             msg_setpointV2.z = (ui->picker_putdown_z->text()).toFloat();
+        // Update the z slider in the GUI
+        ui->picker_z_slider->setValue( int((msg_setpointV2.z+0.005)*100.0) );
         // Call the function that sends the message
         send_picker_button_clicked_message_with_setpoint(msg_setpointV2);
     }
@@ -1959,6 +1995,8 @@ void MainWindow::on_picker_squat_button_clicked()
         // Get the z coordinates from the GUI
         if(!ui->picker_squat_z->text().isEmpty())
             msg_setpointV2.z = (ui->picker_squat_z->text()).toFloat();
+        // Update the z slider in the GUI
+        ui->picker_z_slider->setValue( int((msg_setpointV2.z+0.005)*100.0) );
         // Call the function that sends the message
         send_picker_button_clicked_message_with_setpoint(msg_setpointV2);
     }
@@ -1983,6 +2021,8 @@ void MainWindow::on_picker_jump_button_clicked()
         // Get the z coordinates from the GUI
         if(!ui->picker_jump_z->text().isEmpty())
             msg_setpointV2.z = (ui->picker_jump_z->text()).toFloat();
+        // Update the z slider in the GUI
+        ui->picker_z_slider->setValue( int((msg_setpointV2.z+0.005)*100.0) );
         // Call the function that sends the message
         send_picker_button_clicked_message_with_setpoint(msg_setpointV2);
     }
@@ -2096,6 +2136,7 @@ void MainWindow::on_picker_y_slider_valueChanged(int value)
 }
 void MainWindow::on_picker_z_slider_valueChanged(int value)
 {
+    ROS_INFO_STREAM("[Student GUI] z slider int value " << value );
     // Initialise the message
     std_msgs::Float32 msg;
     // Set the msg data
