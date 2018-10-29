@@ -1,0 +1,136 @@
+\documentclass[]{report}
+
+
+% ----------------------------------------------------- %
+% PACKAGES REQUIRED
+\usepackage{enumitem}
+%\usepackage{amsmath}
+%\usepackage{amssymb}
+
+
+
+% ----------------------------------------------------- %
+% SET THE GEOMETRY OF THE PAGE
+\usepackage{geometry}
+\setlength{\paperwidth}{148mm}
+\setlength{\paperheight}{210mm}
+\setlength{\hoffset}{-20mm}  % -1in subtract latex default margin (1 inch) from hoffset
+\setlength{\textwidth}{120mm}		% Width of the Body Box   = 210mm - 50mm = 160mm
+
+\setlength{\textheight}{180mm}		% Height of the Body Box  = 297mm - 50mm = 247mm
+\setlength{\voffset}{-15mm}	% -1in subtract latex default margin (1 inch) from voffset
+
+
+% ----------------------------------------------------- %
+% SET THE PAGE STYLE
+\usepackage{fancyhdr} 
+\fancyhf{}
+\rhead{\textsc{page} \thepage}
+\pagestyle{fancy} 
+
+
+% ----------------------------------------------------- %
+% REMOVE THE PARAGRAPH INDENT
+
+
+
+% ----------------------------------------------------- %
+% THINGS THAT MAY CHANGES AS THE SYSTEM IS DEVELOPER
+\newcommand{\roslaunchcommand}{roslaunch d\_fall\_pps Agent.launch}
+\newcommand{\repositoryrootpath}{\textasciitilde/work/D-FaLL-System/}
+\newcommand{\catkinmakefullpath}{\textasciitilde/work/D-FaLL-System/pps\_ws}
+
+% ----------------------------------------------------- %
+% BEGIN THE DOCUMENT
+\begin{document}
+	
+\begin{center}
+	\huge{\textsc{D-FaLL System Cheat Sheet}}
+\end{center}
+
+\noindent
+A few useful hints, commands, web addresses, and file paths:
+	\begin{enumerate}[topsep=-1pt , itemsep=1pt ,  label = \textbf{(\arabic{*})} ]
+		\item The code can be found at the website \texttt{gitlab.ethz.ch}
+		
+		\item After logging into (or registering on) this website you can find the repository by searching for its name: \texttt{D-FaLL-System}
+		
+		\item Alternately, the full web address for the repository is:
+		
+		\begin{center}
+			\large{\texttt{gitlab.ethz.ch/D-FaLL/PandS-System/D-FaLL-System/}}
+		\end{center}
+		
+		
+		\item Once you have located the repository via the \texttt{gitlab.ethz.ch} website, the folder named \texttt{wiki} contains all the information needed to understand and use the system. Specifically, the file \texttt{workflow\_for\_students.md} contains the most relevant information for getting started.
+		
+		\item On the laptop provided, the repository is already version controlled and placed at the location:
+		
+		\begin{center}
+			\large{\texttt{\repositoryrootpath}}
+		\end{center}
+		
+		Once you have changed to this directory in a terminal window, you can ensure that you have the latest version of the code with the following:
+		
+		\begin{center}
+			\begin{tabular}{ll}
+				\large{\texttt{git checkout .}}
+					& Removes all changes
+				\\
+				\large{\texttt{git checkout master}}
+					& Switches to the ``master" branch
+				\\
+				\large{\texttt{git pull}}
+					& Updates to the latest version
+			\end{tabular}
+		\end{center}
+		
+		
+		\item From any folder you can launch the system using the command:
+		
+		\begin{center}
+			\large{\texttt{\roslaunchcommand}}
+		\end{center}
+	
+		This will launch the Graphical User Interface (GUI) that is explained on the wiki and allows you to test out the flight performance of your control algorithm on the quad-rotor. This command works because \texttt{d\_fall\_pps} is defined as the absolute path to where the \texttt{Agent.launch} file is located.
+	\end{enumerate}
+
+	\clearpage
+
+	\begin{center}
+		\textbf{After making any changes to a \texttt{.cpp} file you will need to perform the following steps to ensure that your changes take effect:}
+	\end{center}
+	
+	\begin{enumerate}[topsep=-1pt , itemsep=1pt ,  label = \textbf{(\arabic{*})} ]
+		\item Close the GUI window,
+		\item Kill the GUI process, (this is achieved by pressing the \texttt{Ctrl+c} in the terminal window from which \texttt{\roslaunchcommand} was run),
+		\item Re-compile all of the code. To do this, in a Terminal window first change to the \texttt{pps\_ws} folder of the repository (where \texttt{ws} stands for workspace), and then use the \texttt{catkin\_make} command, i.e.:
+		
+		\texttt{catkin\_make}
+		
+		\begin{center}
+			\begin{tabular}{ll}
+				\large{\texttt{cd \catkinmakefullpath}}
+				& Change directory
+				\\
+				\large{\texttt{catkin\_make}}
+				& Compile the code
+			\end{tabular}
+		\end{center}
+		
+		This will compile all the code, or throw an error if your changes have introduced errors that prevent the compilation from completing successfully.
+		
+		\item Relaunch the GUI, (by running \texttt{\roslaunchcommand} from a Terminal window).
+	\end{enumerate}
+	
+	\vspace{0.3cm}
+	
+	\noindent
+	Steps~\textbf{(1)} and \textbf{(2)} are required because the GUI and your controller is loaded into RAM when the system is launched, and so your newly compile changes in Step~\textbf{(3)} only take effect when the system is launched again in Step~\textbf{(4)}.
+	
+	\vspace{0.3cm}
+	
+	\noindent
+	Note also that the GUI will launch in Step~\textbf{(4)} even if there were compiler errors in Step~\textbf{(3)}, but it is launching the previously compiled version and hence any changes you made will not be running.
+	
+\end{document}

@@ -16,3 +16,7 @@ pps_ws/src/d_fall_pps/GUI_Qt/studentGUI/*.pro.user.*
 TAGS
 build-*
 Crazyflie.db
+
+# For LaTeX files in the wiki
+wiki/latex/*
+!wiki/latex/*.tex
