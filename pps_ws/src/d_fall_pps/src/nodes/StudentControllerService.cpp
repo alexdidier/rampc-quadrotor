@@ -699,7 +699,7 @@ void processFetchedParameters()
 {
     // Compute the feed-forward force that we need to counteract gravity (i.e., mg)
     // > in units of [Newtons]
-    cf_weight_in_newtons = cf_mass_in_grams * 9.81/(1000*4);
+    cf_weight_in_newtons = cf_mass_in_grams * 9.81/1000.0;
     
     // DEBUGGING: Print out one of the computed quantities
 	ROS_INFO_STREAM("[STUDENT CONTROLLER] DEBUGGING: thus the weight of this agent in [Newtons] = " << cf_weight_in_newtons);

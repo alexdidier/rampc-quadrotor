@@ -910,6 +910,13 @@ void MainWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to ne
             ui->current_pitch_demo->setText(QString::number(local.pitch * RAD2DEG, 'f', 1));
             ui->current_roll_demo->setText(QString::number(local.roll * RAD2DEG, 'f', 1));
 
+            ui->current_x_student->setText(QString::number(local.x, 'f', 3));
+            ui->current_y_student->setText(QString::number(local.y, 'f', 3));
+            ui->current_z_student->setText(QString::number(local.z, 'f', 3));
+            ui->current_yaw_student->setText(QString::number(local.yaw * RAD2DEG, 'f', 1));
+            ui->current_pitch_student->setText(QString::number(local.pitch * RAD2DEG, 'f', 1));
+            ui->current_roll_student->setText(QString::number(local.roll * RAD2DEG, 'f', 1));
+
             // also update diff
             ui->diff_x_safe->setText(QString::number(m_safe_setpoint.x - local.x, 'f', 3));
             ui->diff_y_safe->setText(QString::number(m_safe_setpoint.y - local.y, 'f', 3));
@@ -920,6 +927,11 @@ void MainWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to ne
             ui->diff_y_demo->setText(QString::number(m_demo_setpoint.y - local.y, 'f', 3));
             ui->diff_z_demo->setText(QString::number(m_demo_setpoint.z - local.z, 'f', 3));
             ui->diff_yaw_demo->setText(QString::number((m_demo_setpoint.yaw - local.yaw) * RAD2DEG, 'f', 1));
+
+            ui->diff_x_student->setText(QString::number(m_student_setpoint.x - local.x, 'f', 3));
+            ui->diff_y_student->setText(QString::number(m_student_setpoint.y - local.y, 'f', 3));
+            ui->diff_z_student->setText(QString::number(m_student_setpoint.z - local.z, 'f', 3));
+            ui->diff_yaw_student->setText(QString::number((m_student_setpoint.yaw - local.yaw) * RAD2DEG, 'f', 1));
         }
     }
 }
