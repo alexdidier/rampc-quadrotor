@@ -55,21 +55,27 @@ find_package(Qt5Gui REQUIRED)
 find_package(Qt5Svg REQUIRED)
 
 
-# GUI -- Add src and includes
+
+# GUI -- Add src, includes, and resources
 set(MY_GUI_LIB_PATH_SRC ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/src)
 set(MY_GUI_LIB_PATH_INC ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/include)
-
-# GUI -- Resource file
 set(MY_RESOURCE_FILE_QRC ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/CrazyFlyGUI.qrc)
 
 
 
-# StudentGUI -- Add src and includes
+# StudentGUI -- Add src, includes, and resources
 set(STUDENT_GUI_LIB_PATH_SRC ${PROJECT_SOURCE_DIR}/GUI_Qt/studentGUI/src)
 set(STUDENT_GUI_LIB_PATH_INC ${PROJECT_SOURCE_DIR}/GUI_Qt/studentGUI/include)
-
-# StudentGUI -- Resource file
 set(STUDENT_RESOURCE_FILE_QRC ${PROJECT_SOURCE_DIR}/GUI_Qt/studentGUI/studentgui.qrc)
+
+
+
+# Flying Agent GUI -- Add src, includes, forms, and resources
+set(FLYING_AGENT_GUI_LIB_PATH_SRC      ${PROJECT_SOURCE_DIR}/GUI_Qt/flyingAgentGUI/src)
+set(FLYING_AGENT_GUI_LIB_PATH_INC      ${PROJECT_SOURCE_DIR}/GUI_Qt/flyingAgentGUI/include)
+set(FLYING_AGENT_GUI_LIB_PATH_FORMS    ${PROJECT_SOURCE_DIR}/GUI_Qt/flyingAgentGUI/forms)
+set(FLYING_AGENT_GUI_RESOURCE_FILE_QRC ${PROJECT_SOURCE_DIR}/GUI_Qt/flyingAgentGUI/flyingagentgui.qrc)
+
 
 
 # #set the default path for built executables to the "bin" directory
@@ -80,6 +86,8 @@ set(STUDENT_RESOURCE_FILE_QRC ${PROJECT_SOURCE_DIR}/GUI_Qt/studentGUI/studentgui
 # GUI -- need c++11 for some things
 add_definitions(-std=c++11)
 
+
+
 # GUI -- Special Qt sources that need to be wrapped before being compiled
 # they have the Qt macro QOBJECT inside, the MOC cpp file needs to be done manually
 set(SRC_HDRS_QOBJECT_GUI
@@ -87,32 +95,65 @@ set(SRC_HDRS_QOBJECT_GUI
   ${MY_GUI_LIB_PATH_INC}/myGraphicsScene.h
   ${MY_GUI_LIB_PATH_INC}/myGraphicsView.h
   ${MY_GUI_LIB_PATH_INC}/mainguiwindow.h
-  ${MY_GUI_LIB_PATH_INC}/rosNodeThread.h
+  ${MY_GUI_LIB_PATH_INC}/rosNodeThread_for_managerGUI.h
   ${MY_GUI_LIB_PATH_INC}/CFLinker.h
   )
-
 # GUI -- wrap UI file and QOBJECT files
 qt5_wrap_ui(UIS_HDRS_GUI ${MY_GUI_LIB_PATH_SRC}/mainguiwindow.ui)
 qt5_wrap_cpp(SRC_MOC_HDRS_GUI ${SRC_HDRS_QOBJECT_GUI})
-
 # GUI -- wrap resource file qrc->rcc
 qt5_add_resources(MY_RESOURCE_FILE_RCC ${MY_RESOURCE_FILE_QRC})
 
 
 
 # StudentGUI -- Special Qt sources that need to be wrapped before being compiled
-
 set(SRC_HDRS_QOBJECT_STUDENT_GUI
   ${STUDENT_GUI_LIB_PATH_INC}/MainWindow.h
-  ${STUDENT_GUI_LIB_PATH_INC}/rosNodeThread.h
+  ${STUDENT_GUI_LIB_PATH_INC}/rosNodeThread_for_studentGUI.h
   )
-
 # StudentGUI -- wrap UI file and QOBJECT files
 qt5_wrap_ui(UIS_HDRS_STUDENT_GUI ${STUDENT_GUI_LIB_PATH_SRC}/MainWindow.ui)
 qt5_wrap_cpp(SRC_MOC_HDRS_STUDENT_GUI ${SRC_HDRS_QOBJECT_STUDENT_GUI})
-
 # GUI -- wrap resource file qrc->rcc
 qt5_add_resources(STUDENT_RESOURCE_FILE_RCC ${STUDENT_RESOURCE_FILE_QRC})
+
+
+
+# Flying Agent GUI
+# - Special Qt sources that need to be wrapped before being compiled
+#   they have the Qt macro QOBJECT inside, the MOC cpp file needs to
+#   be done manually
+set(SRC_HDRS_QOBJECT_FLYING_AGENT_GUI
+  ${FLYING_AGENT_GUI_LIB_PATH_INC}/connectstartstopbar.h
+  ${FLYING_AGENT_GUI_LIB_PATH_INC}/controllertabs.h
+  ${FLYING_AGENT_GUI_LIB_PATH_INC}/coordinator.h
+  ${FLYING_AGENT_GUI_LIB_PATH_INC}/coordinatorrow.h
+  ${FLYING_AGENT_GUI_LIB_PATH_INC}/defaultcontrollertab.h
+  ${FLYING_AGENT_GUI_LIB_PATH_INC}/enablecontrollerloadyamlbar.h
+  ${FLYING_AGENT_GUI_LIB_PATH_INC}/mainwindow.h
+  ${FLYING_AGENT_GUI_LIB_PATH_INC}/pickercontrollertab.h
+  ${FLYING_AGENT_GUI_LIB_PATH_INC}/rosNodeThread_for_flyingAgentGUI.h
+  ${FLYING_AGENT_GUI_LIB_PATH_INC}/safecontrollertab.h
+  ${FLYING_AGENT_GUI_LIB_PATH_INC}/studentcontrollertab.h
+  ${FLYING_AGENT_GUI_LIB_PATH_INC}/topbanner.h
+  )
+# Flying Agent GUI -- wrap UI file and QOBJECT files
+qt5_wrap_ui(UIS_HDRS_FLYING_AGENT_GUI
+  ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/connectstartstopbar.ui
+  ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/controllertabs.ui
+  ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/coordinator.ui
+  ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/coordinatorrow.ui
+  ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/defaultcontrollertab.ui
+  ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/enablecontrollerloadyamlbar.ui
+  ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/mainwindow.ui
+  ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/pickercontrollertab.ui
+  ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/safecontrollertab.ui
+  ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/studentcontrollertab.ui
+  ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/topbanner.ui
+  )
+qt5_wrap_cpp(SRC_MOC_HDRS_FLYING_AGENT_GUI ${SRC_HDRS_QOBJECT_FLYING_AGENT_GUI})
+# Flying Agent GUI -- wrap resource file qrc->rcc
+qt5_add_resources(FLYING_AGENT_GUI_RESOURCE_FILE_RCC ${FLYING_AGENT_GUI_RESOURCE_FILE_QRC})
 
 
 
@@ -161,6 +202,7 @@ add_message_files(
   CrazyflieContext.msg
   AreaBounds.msg
   Setpoint.msg
+  SetpointV2.msg
   CrazyflieEntry.msg
   CrazyflieDB.msg
   #----------------------------------------------------------------------
@@ -234,6 +276,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include ${MY_GUI_LIB_PATH_INC}            # GUI -- include headers from GUI in package
   INCLUDE_DIRS include ${STUDENT_GUI_LIB_PATH_INC}       # StudentGUI -- include headers from GUI in package
+  INCLUDE_DIRS include ${FLYING_AGENT_GUI_LIB_PATH_INC}  # FlyingAgentGUI -- include headers from GUI in package
   LIBRARIES
   CATKIN_DEPENDS roscpp rospy std_msgs rosbag roslib
   DEPENDS
@@ -249,6 +292,7 @@ catkin_package(
 include_directories(
   ${MY_GUI_LIB_PATH_INC}            # GUI -- include directory inside GUI folder
   ${STUDENT_GUI_LIB_PATH_INC}       # StudentGUI -- include directory inside GUI folder
+  ${FLYING_AGENT_GUI_LIB_PATH_INC}  # FlyingAgentGUI -- include directory inside GUI folder
   ${catkin_INCLUDE_DIRS}
   include
   include/nodes
@@ -280,6 +324,7 @@ add_executable(StudentControllerService src/nodes/StudentControllerService.cpp)
 add_executable(MpcControllerService     src/nodes/MpcControllerService.cpp)
 add_executable(RemoteControllerService  src/nodes/RemoteControllerService.cpp)
 add_executable(TuningControllerService  src/nodes/TuningControllerService.cpp)
+add_executable(PickerControllerService  src/nodes/PickerControllerService.cpp)
 add_executable(CentralManagerService    src/nodes/CentralManagerService.cpp src/CrazyflieIO.cpp)
 add_executable(ParameterService         src/nodes/ParameterService.cpp)
 
@@ -297,18 +342,39 @@ set(MY_CPP_SOURCES_GUI              # compilation of sources
     ${MY_GUI_LIB_PATH_SRC}/myGraphicsView.cpp
     ${MY_GUI_LIB_PATH_SRC}/tablePiece.cpp
     ${MY_GUI_LIB_PATH_SRC}/marker.cpp
-    ${MY_GUI_LIB_PATH_SRC}/rosNodeThread.cpp
+    ${MY_GUI_LIB_PATH_SRC}/rosNodeThread_for_managerGUI.cpp
     ${MY_GUI_LIB_PATH_SRC}/crazyFly.cpp
     ${MY_GUI_LIB_PATH_SRC}/CFLinker.cpp
     ${MY_GUI_LIB_PATH_SRC}/channelLUT.cpp
     ${MY_GUI_LIB_PATH_SRC}/centerMarker.cpp
     )
 
+
+
 # StudentGUI -- Add sources here
 set(MY_CPP_SOURCES_STUDENT_GUI              # compilation of sources
     ${STUDENT_GUI_LIB_PATH_SRC}/MainWindow.cpp
     ${STUDENT_GUI_LIB_PATH_SRC}/main.cpp
-    ${STUDENT_GUI_LIB_PATH_SRC}/rosNodeThread.cpp
+    ${STUDENT_GUI_LIB_PATH_SRC}/rosNodeThread_for_studentGUI.cpp
+    )
+
+
+
+# FLYING AGENT GUI -- Add sources here
+set(MY_CPP_SOURCES_FLYING_AGENT_GUI         # compilation of sources
+    ${FLYING_AGENT_GUI_LIB_PATH_SRC}/mainwindow.cpp
+    ${FLYING_AGENT_GUI_LIB_PATH_SRC}/main.cpp
+    ${FLYING_AGENT_GUI_LIB_PATH_SRC}/rosNodeThread_for_flyingAgentGUI.cpp
+    ${FLYING_AGENT_GUI_LIB_PATH_SRC}/connectstartstopbar.cpp
+    ${FLYING_AGENT_GUI_LIB_PATH_SRC}/controllertabs.cpp
+    ${FLYING_AGENT_GUI_LIB_PATH_SRC}/coordinator.cpp
+    ${FLYING_AGENT_GUI_LIB_PATH_SRC}/coordinatorrow.cpp
+    ${FLYING_AGENT_GUI_LIB_PATH_SRC}/defaultcontrollertab.cpp
+    ${FLYING_AGENT_GUI_LIB_PATH_SRC}/enablecontrollerloadyamlbar.cpp
+    ${FLYING_AGENT_GUI_LIB_PATH_SRC}/pickercontrollertab.cpp
+    ${FLYING_AGENT_GUI_LIB_PATH_SRC}/safecontrollertab.cpp
+    ${FLYING_AGENT_GUI_LIB_PATH_SRC}/studentcontrollertab.cpp
+    ${FLYING_AGENT_GUI_LIB_PATH_SRC}/topbanner.cpp
     )
 
 
@@ -317,9 +383,16 @@ set(MY_CPP_SOURCES_STUDENT_GUI              # compilation of sources
 add_executable(my_GUI ${MY_CPP_SOURCES_GUI} ${UIS_HDRS_GUI} ${SRC_MOC_HDRS_GUI} ${MY_RESOURCE_FILE_RCC})
 qt5_use_modules(my_GUI Widgets)
 
+
+
 # StudentGUI -- Add executables here
 add_executable(student_GUI ${MY_CPP_SOURCES_STUDENT_GUI} ${UIS_HDRS_STUDENT_GUI} ${SRC_MOC_HDRS_STUDENT_GUI} ${STUDENT_RESOURCE_FILE_RCC})
 qt5_use_modules(student_GUI Widgets)
+
+
+# FLYING AGENT GUI -- Add executables here
+add_executable(flyingAgentGUI ${MY_CPP_SOURCES_FLYING_AGENT_GUI} ${UIS_HDRS_FLYING_AGENT_GUI} ${SRC_MOC_HDRS_FLYING_AGENT_GUI} ${FLYING_AGENT_GUI_RESOURCE_FILE_RCC})
+qt5_use_modules(flyingAgentGUI Widgets)
 
 
 
@@ -334,14 +407,26 @@ add_dependencies(StudentControllerService d_fall_pps_generate_messages_cpp ${cat
 add_dependencies(MpcControllerService     d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(RemoteControllerService  d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(TuningControllerService  d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(PickerControllerService  d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(CentralManagerService    d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(ParameterService         d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+
+
 
 # GUI-- dependencies
 add_dependencies(my_GUI d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
+
+
 # StudentGUI-- dependencies
 add_dependencies(student_GUI d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+
+
+
+# FLYING AGENT GUI-- dependencies
+add_dependencies(flyingAgentGUI d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+
+
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -376,8 +461,10 @@ else()
 endif()
 target_link_libraries(RemoteControllerService  ${catkin_LIBRARIES})
 target_link_libraries(TuningControllerService  ${catkin_LIBRARIES})
+target_link_libraries(PickerControllerService  ${catkin_LIBRARIES})
 target_link_libraries(CentralManagerService    ${catkin_LIBRARIES})
 target_link_libraries(ParameterService         ${catkin_LIBRARIES})
+
 
 
 # GUI -- link libraries
@@ -388,9 +475,18 @@ target_link_libraries(my_GUI Qt5::Svg)
 # target_link_libraries(my_GUI my_library)
 target_link_libraries(my_GUI ${catkin_LIBRARIES})
 
+
+
 # StudentGUI -- link libraries
-target_link_libraries(student_GUI Qt5::Widgets) # GUI -- let my_GUI have acesss to Qt stuff
+target_link_libraries(student_GUI Qt5::Widgets) # GUI -- let student_GUI have acesss to Qt stuff
 target_link_libraries(student_GUI ${catkin_LIBRARIES})
+
+
+
+# Flying Agent GUI -- link libraries
+target_link_libraries(flyingAgentGUI Qt5::Widgets) # GUI -- let flyingAgentGUI have acesss to Qt stuff
+target_link_libraries(flyingAgentGUI ${catkin_LIBRARIES})
+
 
 
 #############

@@ -34,15 +34,17 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QShortcut>
 
 #include <std_msgs/Int32.h>
 #include <std_msgs/Float32.h>
 
-#include "rosNodeThread.h"
+#include "rosNodeThread_for_studentGUI.h"
 
 #include "d_fall_pps/CrazyflieContext.h"
 #include "d_fall_pps/CrazyflieData.h"
 #include "d_fall_pps/Setpoint.h"
+#include "d_fall_pps/SetpointV2.h"
 #include "d_fall_pps/ViconSubscribeObjectName.h"
 
 
@@ -53,6 +55,7 @@
 #define MPC_CONTROLLER     4
 #define REMOTE_CONTROLLER  5
 #define TUNING_CONTROLLER  6
+#define PICKER_CONTROLLER  7
 
 
 // Commands for CrazyRadio
@@ -74,6 +77,7 @@
 #define CMD_USE_MPC_CONTROLLER       4
 #define CMD_USE_REMOTE_CONTROLLER    5
 #define CMD_USE_TUNING_CONTROLLER    6
+#define CMD_USE_PICKER_CONTROLLER    7
 
 #define CMD_CRAZYFLY_TAKE_OFF        11
 #define CMD_CRAZYFLY_LAND            12
@@ -105,6 +109,7 @@
 #define LOAD_YAML_MPC_CONTROLLER_AGENT            4
 #define LOAD_YAML_REMOTE_CONTROLLER_AGENT         5
 #define LOAD_YAML_TUNING_CONTROLLER_AGENT         6
+#define LOAD_YAML_PICKER_CONTROLLER_AGENT         7
 
 #define LOAD_YAML_SAFE_CONTROLLER_COORDINATOR     11
 #define LOAD_YAML_DEMO_CONTROLLER_COORDINATOR     12
@@ -112,6 +117,23 @@
 #define LOAD_YAML_MPC_CONTROLLER_COORDINATOR      14
 #define LOAD_YAML_REMOTE_CONTROLLER_COORDINATOR   15
 #define LOAD_YAML_TUNING_CONTROLLER_COORDINATOR   16
+#define LOAD_YAML_PICKER_CONTROLLER_COORDINATOR   17
+
+
+// FOR WHICH BUTTON WAS PRESSED IN THE PICKER CONTOLLER
+#define PICKER_BUTTON_GOTOSTART     1
+#define PICKER_BUTTON_ATTACH        2
+#define PICKER_BUTTON_PICKUP        3
+#define PICKER_BUTTON_GOTOEND       4
+#define PICKER_BUTTON_PUTDOWN       5
+#define PICKER_BUTTON_SQUAT         6
+#define PICKER_BUTTON_JUMP          7
+
+#define PICKER_BUTTON_1             11
+#define PICKER_BUTTON_2             12
+#define PICKER_BUTTON_3             13
+#define PICKER_BUTTON_4             14
+
 
 // Universal constants
 #define PI 3.141592653589
@@ -156,6 +178,7 @@ private slots:
     void on_load_mpc_yaml_button_clicked();
     void on_load_remote_yaml_button_clicked();
     void on_load_tuning_yaml_button_clicked();
+    void on_load_picker_yaml_button_clicked();
 
     // # Enable controllers
     void on_enable_safe_controller_clicked();
@@ -164,6 +187,7 @@ private slots:
     void on_enable_mpc_controller_clicked();
     void on_enable_remote_controller_clicked();
     void on_enable_tuning_controller_clicked();
+    void on_enable_picker_controller_clicked();
 
     
 
@@ -191,10 +215,35 @@ private slots:
     void on_tuning_slider_vertical_valueChanged(int value);
     void on_tuning_slider_heading_valueChanged(int value);
 
+    // Interations with the PICKER controller tab
+    // > For the buttons
+    void on_picker_gotostart_button_clicked();
+    void on_picker_attach_button_clicked();
+    void on_picker_pickup_button_clicked();
+    void on_picker_gotoend_button_clicked();
+    void on_picker_putdown_button_clicked();
+    void on_picker_squat_button_clicked();
+    void on_picker_jump_button_clicked();
+    void on_picker_1_button_clicked();
+    void on_picker_2_button_clicked();
+    void on_picker_3_button_clicked();
+    void on_picker_4_button_clicked();
+    // > For the sliders
+    void on_picker_x_slider_valueChanged(int value);
+    void on_picker_y_slider_valueChanged(int value);
+    void on_picker_z_slider_valueChanged(int value);
+    void on_picker_mass_slider_valueChanged(int value);
+    // > For the dial
+    void on_picker_yaw_dial_valueChanged(int value);
+
+
+
 
 
 private:
     Ui::MainWindow *ui;
+
+    QShortcut* m_close_GUI_shortcut;
 
     rosNodeThread* m_rosNodeThread;
     int m_radio_status;
@@ -209,6 +258,7 @@ private:
     ros::Timer m_timer_yaml_file_for_mpc_controller;
     ros::Timer m_timer_yaml_file_for_remote_controller;
     ros::Timer m_timer_yaml_file_for_tuning_controller;
+    ros::Timer m_timer_yaml_file_for_picker_controller;
 
 
     int m_student_id;
@@ -218,6 +268,7 @@ private:
     Setpoint m_demo_setpoint;
     Setpoint m_student_setpoint;
     Setpoint m_mpc_setpoint;
+    Setpoint m_picker_setpoint;
 
     int m_flying_state;
     QMutex m_flying_state_mutex;
@@ -273,6 +324,25 @@ private:
     ros::Publisher tuningHeadingGainPublisher;
 
 
+
+	// > For the PICKER CONTROLLER
+	ros::Publisher  pickerButtonPressedPublisher;
+	ros::Publisher  pickerZSetpointPublisher;
+	ros::Publisher  pickerYawSetpointPublisher;
+	ros::Publisher  pickerMassPublisher;
+	ros::Publisher  pickerXAdjustmentPublisher;
+	ros::Publisher  pickerYAdjustmentPublisher;
+	ros::Publisher  pickerSetpointPublisher;
+	ros::Subscriber pickerSetpointSubscriber;
+    ros::Subscriber pickerSetpointToGUISubscriber;
+
+    ros::Publisher  pickerButtonPressedWithSetpointPublisher;
+
+    bool shouldSendWithSetpoint_for_pickerButtons = true;
+
+
+
+
     ros::Publisher demoCustomButtonPublisher;
     ros::Publisher studentCustomButtonPublisher;
 
@@ -304,10 +374,16 @@ private:
     void demoSetpointCallback(const Setpoint& newSetpoint);
     void studentSetpointCallback(const Setpoint& newSetpoint);
     void mpcSetpointCallback(const Setpoint& newSetpoint);
+    void pickerSetpointCallback(const Setpoint& newSetpoint);
 
 
     void remoteDataCallback(const CrazyflieData& objectData);
     void remoteControlSetpointCallback(const CrazyflieData& setpointData);
+
+
+    // > For actually sending the button message
+    void send_picker_button_clicked_message(int button_index);
+    void send_picker_button_clicked_message_with_setpoint(const SetpointV2& setpointV2_to_send);
     
 
     void DBChangedCallback(const std_msgs::Int32& msg);
@@ -319,6 +395,7 @@ private:
     void mpcYamlFileTimerCallback(const ros::TimerEvent&);
     void remoteYamlFileTimerCallback(const ros::TimerEvent&);
     void tuningYamlFileTimerCallback(const ros::TimerEvent&);
+    void pickerYamlFileTimerCallback(const ros::TimerEvent&);
     
 
 
@@ -335,6 +412,7 @@ private:
     void initialize_demo_setpoint();
     void initialize_student_setpoint();
     void initialize_mpc_setpoint();
+    void initialize_picker_setpoint();
 
 
     void disableGUI();
@@ -345,6 +423,7 @@ private:
     void highlightMpcControllerTab();
     void highlightRemoteControllerTab();
     void highlightTuningControllerTab();
+    void highlightPickerControllerTab();
 
     bool setpointInsideBox(Setpoint setpoint, CrazyflieContext context);
     Setpoint correctSetpointBox(Setpoint setpoint, CrazyflieContext context);

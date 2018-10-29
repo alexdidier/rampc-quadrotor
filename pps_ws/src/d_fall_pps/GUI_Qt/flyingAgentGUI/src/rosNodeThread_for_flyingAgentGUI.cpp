@@ -1,4 +1,4 @@
-//    Copyright (C) 2017, ETH Zurich, D-ITET, Angel Romero
+//    Copyright (C) 2017, ETH Zurich, D-ITET, Paul Beuchat
 //
 //    This file is part of D-FaLL-System.
 //    
@@ -25,24 +25,25 @@
 //
 //
 //    DESCRIPTION:
-//    Takes care of creating a ros node thread.
+//    Creates a thread that runs the ros node.
 //
 //    ----------------------------------------------------------------------------------
 
 
-#include "rosNodeThread.h"
+#include "rosNodeThread_for_flyingAgentGUI.h"
 
-#include "d_fall_pps/CMRead.h"
-#include "d_fall_pps/CMUpdate.h"
-#include "d_fall_pps/CMCommand.h"
+// #include "d_fall_pps/CMRead.h"
+// #include "d_fall_pps/CMUpdate.h"
+// #include "d_fall_pps/CMCommand.h"
+
+// using namespace d_fall_pps;
 
 
-rosNodeThread::rosNodeThread(int argc, char** pArgv, const char * node_name, QObject* parent)
+rosNodeThread::rosNodeThread(int argc, char** pArgv, const char * node_name,  QObject* parent)
     :   QObject(parent),
         m_Init_argc(argc),
         m_pInit_argv(pArgv),
         m_node_name(node_name)
-
 {
     /** Constructor for the node thread **/
 }
@@ -54,6 +55,7 @@ rosNodeThread::~rosNodeThread()
         ros::shutdown();
         ros::waitForShutdown();
     } // end if
+
     m_pThread->wait();
 } // end destructor
 
@@ -63,11 +65,11 @@ bool rosNodeThread::init()
     this->moveToThread(m_pThread); // QObject method
 
     connect(m_pThread, SIGNAL(started()), this, SLOT(run()));
-    ros::init(m_Init_argc, m_pInit_argv, m_node_name); // student_GUI is the name of this node
+    ros::init(m_Init_argc, m_pInit_argv, m_node_name); // flyingAgentGUI is the name of this node
 
     if (!ros::master::check())
     {
-        ROS_ERROR("Master not found, please check teacher computer is running and try again");
+        ROS_ERROR("No master found. Please make sure that there is a master roscore running");
         return false;           // do not start without ros.
     }
 
@@ -75,7 +77,7 @@ bool rosNodeThread::init()
     ros::Time::init();
     ros::NodeHandle nh("~");
 
-    m_vicon_subscriber = nh.subscribe("/ViconDataPublisher/ViconData", 100, &rosNodeThread::messageCallback, this);
+    //m_vicon_subscriber = nh.subscribe("/ViconDataPublisher/ViconData", 100, &rosNodeThread::messageCallback, this);
 
     // clients for db services:
     m_read_db_client = nh.serviceClient<CMRead>("/CentralManagerService/Read", false);
@@ -86,10 +88,27 @@ bool rosNodeThread::init()
     return true;
 } // set up the thread
 
-void rosNodeThread::messageCallback(const ptrToMessage& p_msg) // When a message arrives to the topic, this callback is executed
-{
-    emit newViconData(p_msg);   //pass the message to other places
-}
+//void rosNodeThread::messageCallback(const ptrToMessage& p_msg) // When a message arrives to the topic, this callback is executed
+//{
+//    emit newViconData(p_msg);   //pass the message to other places
+//}
+
+// void rosNodeThread::messageCallback(const ViconData& data) // When a message arrives to the topic, this callback is executed
+// {
+//     QMutex * pMutex = new QMutex();
+//     pMutex->lock();
+//     ROS_INFO_STREAM("ViconData: " << data.x << ", " << data.y << ", " << data.z);
+//     m_vicon_data.x = data.x;
+//     m_vicon_data.y = data.y;
+//     m_vicon_data.z = data.z;
+//     m_vicon_data.yaw = data.yaw;
+//     m_vicon_data.pitch = data.pitch;
+//     m_vicon_data.roll = data.roll;
+//     pMutex->unlock();
+//     delete pMutex;
+//     // Q_EMIT newViconData(m_vicon_data.x, m_vicon_data.y, m_vicon_data.z, m_vicon_data.yaw, m_vicon_data.pitch, m_vicon_data.roll);
+//     emit newViconData(m_vicon_data.x, m_vicon_data.y);
+// }
 
 void rosNodeThread::run()
 {
@@ -104,7 +123,6 @@ void rosNodeThread::run()
         // cmd_msg.linear.x = m_speed;
         // cmd_msg.angular.z = m_angle;
         pMutex->unlock();
-        // ROS_INFO("RUNNING");
 
         // sim_velocity.publish(cmd_msg);
         ros::spinOnce();

@@ -1,4 +1,4 @@
-//    Copyright (C) 2017, ETH Zurich, D-ITET, Angel Romero
+//    Copyright (C) 2017, ETH Zurich, D-ITET, Paul Beuchat
 //
 //    This file is part of D-FaLL-System.
 //    
@@ -25,13 +25,13 @@
 //
 //
 //    DESCRIPTION:
-//    Takes care of creating a ros node thread.
+//    Creates a thread that runs the ros node.
 //
 //    ----------------------------------------------------------------------------------
 
 
-#ifndef ___ROSNODETHREAD_H___
-#define ___ROSNODETHREAD_H___
+#ifndef ___ROSNODETHREAD_FOR_FLYINGAGENTGUI_H___
+#define ___ROSNODETHREAD_FOR_FLYINGAGENTGUI_H___
 
 #include <QtCore>
 #include <QThread>
@@ -43,15 +43,20 @@
 
 #include <ros/ros.h>
 #include <ros/network.h>
-#include "d_fall_pps/UnlabeledMarker.h"
-#include "d_fall_pps/CrazyflieData.h"
-#include "d_fall_pps/ViconData.h"
+
+#include "d_fall_pps/CMRead.h"
+#include "d_fall_pps/CMUpdate.h"
+#include "d_fall_pps/CMCommand.h"
+
+//#include "d_fall_pps/UnlabeledMarker.h"
+//#include "d_fall_pps/CrazyflieData.h"
+//#include "d_fall_pps/ViconData.h"
 
 using namespace d_fall_pps;
 
-typedef ViconData::ConstPtr ptrToMessage;
+//typedef ViconData::ConstPtr ptrToMessage;
 
-Q_DECLARE_METATYPE(ptrToMessage)
+//Q_DECLARE_METATYPE(ptrToMessage)
 
 
 class rosNodeThread : public QObject {
@@ -63,16 +68,15 @@ public:
     bool init();
 
     // void messageCallback(const ViconData& data);
-    void messageCallback(const ptrToMessage& p_msg);
+    //void messageCallback(const ptrToMessage& p_msg);
 
     ros::ServiceClient m_read_db_client;
     ros::ServiceClient m_update_db_client;
     ros::ServiceClient m_command_db_client;
 
+//signals:
 
-signals:
-
-    void newViconData(const ptrToMessage& p_msg);
+    //void newViconData(const ptrToMessage& p_msg);
 
 public slots:
     void run();
@@ -84,9 +88,9 @@ private:
 
     QThread * m_pThread;
 
-    ViconData m_vicon_data;
+    //ViconData m_vicon_data;
 
-    ros::Subscriber m_vicon_subscriber;
+    //ros::Subscriber m_vicon_subscriber;
     // ros::Publisher  sim_velocity;
 };
 #endif

@@ -89,6 +89,7 @@
 #define MPC_CONTROLLER       4
 #define REMOTE_CONTROLLER    5
 #define TUNING_CONTROLLER    6
+#define PICKER_CONTROLLER    7
 
 // The constants that "command" changes in the
 // operation state of this agent
@@ -98,6 +99,7 @@
 #define CMD_USE_MPC_CONTROLLER       4
 #define CMD_USE_REMOTE_CONTROLLER    5
 #define CMD_USE_TUNING_CONTROLLER    6
+#define CMD_USE_PICKER_CONTROLLER    7
 
 
 #define CMD_CRAZYFLY_TAKE_OFF        11
@@ -158,6 +160,8 @@ ros::ServiceClient mpcController;
 ros::ServiceClient remoteController;
 // The Tuning controller specified in the ClientConfig.yaml
 ros::ServiceClient tuningController;
+// The Picker controller specified in the ClientConfig.yaml
+ros::ServiceClient pickerController;
 
 
 //values for safteyCheck
@@ -303,6 +307,7 @@ void loadStudentController();
 void loadMpcController();
 void loadRemoteController();
 void loadTuningController();
+void loadPickerController();
 
 void sendMessageUsingController(int controller);
 void setInstantController(int controller);

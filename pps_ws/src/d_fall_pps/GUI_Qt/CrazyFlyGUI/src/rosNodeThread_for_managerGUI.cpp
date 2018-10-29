@@ -30,7 +30,7 @@
 //    ----------------------------------------------------------------------------------
 
 
-#include "rosNodeThread.h"
+#include "rosNodeThread_for_managerGUI.h"
 
 #include "d_fall_pps/CMRead.h"
 #include "d_fall_pps/CMUpdate.h"

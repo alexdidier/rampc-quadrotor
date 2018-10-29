@@ -228,7 +228,7 @@ void myGraphicsScene::mouseMoveEvent(QGraphicsSceneMouseEvent *mouseEvent)
                 tmp_crazyfly_zone_item->setRect(QRectF(*p1, mouseEvent->scenePos()));
                 tmp_crazyfly_zone_item->updateCenterMarker();
                 qDebug("Mouse Position: %d, %d", (mouseEvent->scenePos()).toPoint().x(), (mouseEvent->scenePos()).toPoint().y());
-                qDebug("Rectangle BottomRight Position: %d, %d", tmp_crazyfly_zone_item->rect().bottomRight().x(), tmp_crazyfly_zone_item->rect().bottomRight().y());
+                qDebug("Rectangle BottomRight Position: %f, %f", tmp_crazyfly_zone_item->rect().bottomRight().x(), tmp_crazyfly_zone_item->rect().bottomRight().y());
                 break;
             }
         }

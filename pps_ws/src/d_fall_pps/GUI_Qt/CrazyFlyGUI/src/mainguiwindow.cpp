@@ -421,7 +421,7 @@ void MainGUIWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to
             // now, if name follows our format, put the corresponding number. If not, put the unknown image
             std::string s = p_msg->crazyflies[i].crazyflieName;
             std::smatch m;
-            std::regex e ("PPS_CF([0-9]{2})");
+            std::regex e ("CF([0-9]{2})");
 
             QString filename(":/images/drone_fixed_");
 
@@ -746,7 +746,8 @@ void MainGUIWindow::on_refresh_student_ids_button_clicked()
     {
         std::string s = v_str[i];
         std::smatch m;
-        std::regex e ("\\/(\\d)\\/PPSClient");
+        //std::regex e ("\\/(\\d)\\/PPSClient");
+        std::regex e ("\\/agent(\\d\\d\\d)\\/PPSClient");
 
         // std::regex e("\\/PPSClien(.)");
 

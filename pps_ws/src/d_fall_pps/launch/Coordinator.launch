@@ -1,7 +1,27 @@
 <launch>
 
-	<!-- COORDINATOR GUI -->
-    <node pkg="d_fall_pps" name="coordinator_GUI" output="screen" type="coordinator_GUI">
-	</node>
+	<!-- INPUT ARGUMENT OF THE AGENT's ID -->
+	<arg name="coordID" default="$(optenv DFALL_DEFAULT_COORD_ID)" />
+
+	<!-- Example of how to use the value in coordID -->
+	<!-- <param name="param" value="$(arg coordID)"/> -->
+
+	<!-- Example of how to specify the coordID from command line -->
+	<!-- roslaunch d_fall_pps coordID:=001 -->
+
+	<group ns="coord$(arg coordID)">
+
+		<!-- COORDINATOR GUI -->
+		<node
+			pkg="d_fall_pps"
+			name="flyingAgentGUI"
+			output="screen"
+			type="flyingAgentGUI"
+			>
+			<param name="type"     type="str"  value="coordinator" />
+			<param name="coordID"  type="str"  value="$(arg coordID)" />
+		</node>
+
+	</group>
 
 </launch>

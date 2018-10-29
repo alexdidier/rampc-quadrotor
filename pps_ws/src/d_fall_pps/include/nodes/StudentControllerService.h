@@ -56,7 +56,6 @@
 #include "d_fall_pps/ControlCommand.h"
 #include "d_fall_pps/Controller.h"
 #include "d_fall_pps/DebugMsg.h"
-#include "d_fall_pps/CustomControllerYAML.h"
 #include "d_fall_pps/CustomButton.h"
 
 // Include the Parameter Service shared definitions
@@ -127,12 +126,12 @@ using namespace d_fall_pps;
 //    ----------------------------------------------------------------------------------
 
 // Variables for controller
-float cf_mass;                       // Crazyflie mass in grams
-std::vector<float> motorPoly(3);     // Coefficients of the 16-bit command to thrust conversion
-float control_frequency = 200.0;             // Frequency at which the controller is running
-float gravity_force = 0.0;                 // The weight of the Crazyflie in Newtons, i.e., mg
+float cf_mass_in_grams = 25.0;         // Crazyflie mass in grams
+std::vector<float> motorPoly(3);       // Coefficients of the 16-bit command to thrust conversion
+float control_frequency = 200.0;       // Frequency at which the controller is running
+float cf_weight_in_newtons = 0.0;      // The weight of the Crazyflie in Newtons, i.e., mg
 
-float previous_stateErrorInertial[9];     // The location error of the Crazyflie at the "previous" time step
+float previous_stateErrorInertial[9];  // The location error of the Crazyflie at the "previous" time step
 
 std::vector<float>  setpoint{0.0,0.0,0.4,0.0};     // The setpoints for (x,y,z) position and yaw angle, in that order
 

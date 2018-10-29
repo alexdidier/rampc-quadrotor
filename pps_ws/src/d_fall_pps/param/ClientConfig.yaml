@@ -4,11 +4,12 @@ studentController: "StudentControllerService/StudentController"
 mpcController:     "MpcControllerService/MpcController"
 remoteController:  "RemoteControllerService/RemoteController"
 tuningController:  "TuningControllerService/TuningController"
+pickerController:  "PickerControllerService/PickerController"
 
-strictSafety: true
+strictSafety: false
 angleMargin: 0.8
 
-battery_threshold_while_flying: 2.8       # in V
-battery_threshold_while_motors_off: 3.30  # in V
-battery_polling_period: 200              # in ms
+battery_threshold_while_flying: 2.60       # in V
+battery_threshold_while_motors_off: 3.30   # in V
+battery_polling_period: 200                # in ms
 

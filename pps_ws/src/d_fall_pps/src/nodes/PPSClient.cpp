@@ -304,6 +304,9 @@ void viconCallback(const ViconData& viconData)
                             case TUNING_CONTROLLER:
                                 success = tuningController.call(controllerCall);
                                 break;
+                            case PICKER_CONTROLLER:
+                                success = pickerController.call(controllerCall);
+                                break;
                             default:
                                 ROS_ERROR("[PPS CLIENT] the current controller was not recognised");
                                 break;
@@ -463,6 +466,11 @@ void commandCallback(const std_msgs::Int32& commandMsg) {
         case CMD_USE_TUNING_CONTROLLER:
             ROS_INFO("[PPS CLIENT] USE_TUNING_CONTROLLER Command received");
             setControllerUsed(TUNING_CONTROLLER);
+            break;
+
+        case CMD_USE_PICKER_CONTROLLER:
+            ROS_INFO("[PPS CLIENT] USE_PICKER_CONTROLLER Command received");
+            setControllerUsed(PICKER_CONTROLLER);
             break;
 
     	case CMD_CRAZYFLY_TAKE_OFF:
@@ -872,6 +880,21 @@ void loadTuningController()
     ROS_INFO_STREAM("[PPS CLIENT] Loaded tuning controller " << tuningController.getService());
 }
 
+void loadPickerController()
+{
+    ros::NodeHandle nodeHandle("~");
+
+    std::string pickerControllerName;
+    if(!nodeHandle.getParam("pickerController", pickerControllerName))
+    {
+        ROS_ERROR("[PPS CLIENT] Failed to get picker controller name");
+        return;
+    }
+
+    pickerController = ros::service::createClient<Controller>(pickerControllerName, true);
+    ROS_INFO_STREAM("[PPS CLIENT] Loaded picker controller " << pickerController.getService());
+}
+
 void sendMessageUsingController(int controller)
 {
     // send a message in topic for the studentGUI to read it
@@ -903,6 +926,8 @@ void setInstantController(int controller) //for right now, temporal use
             break;
         case TUNING_CONTROLLER:
             loadTuningController();
+        case PICKER_CONTROLLER:
+            loadPickerController();
             break;
         default:
             break;

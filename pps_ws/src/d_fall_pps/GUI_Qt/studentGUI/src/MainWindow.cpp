@@ -33,7 +33,6 @@
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
 #include <string>
-#include <QShortcut>
 
 #include <ros/ros.h>
 #include <ros/network.h>
@@ -97,6 +96,55 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     tuningHorizontalGainPublisher = nodeHandle.advertise<std_msgs::Int32>("TuningControllerService/HorizontalGain", 1);
     tuningVerticalGainPublisher = nodeHandle.advertise<std_msgs::Int32>("TuningControllerService/VerticalGain", 1);
     tuningHeadingGainPublisher = nodeHandle.advertise<std_msgs::Int32>("TuningControllerService/HeadingGain", 1);
+
+
+    // > For the PICKER CONTROLLER
+    pickerButtonPressedPublisher  =  nodeHandle.advertise<std_msgs::Int32>("PickerControllerService/ButtonPressed", 1);
+    pickerZSetpointPublisher      =  nodeHandle.advertise<std_msgs::Float32>("PickerControllerService/ZSetpoint", 1);
+    pickerYawSetpointPublisher    =  nodeHandle.advertise<std_msgs::Float32>("PickerControllerService/YawSetpoint", 1);
+    pickerMassPublisher           =  nodeHandle.advertise<std_msgs::Float32>("PickerControllerService/Mass", 1);
+    pickerXAdjustmentPublisher    =  nodeHandle.advertise<std_msgs::Float32>("PickerControllerService/XAdjustment", 1);
+    pickerYAdjustmentPublisher    =  nodeHandle.advertise<std_msgs::Float32>("PickerControllerService/YAdjustment", 1);
+    pickerSetpointPublisher       =  nodeHandle.advertise<Setpoint>("PickerControllerService/Setpoint", 1);
+    pickerSetpointSubscriber      =  nodeHandle.subscribe("PickerControllerService/Setpoint", 1, &MainWindow::pickerSetpointCallback, this);
+    pickerSetpointToGUISubscriber =  nodeHandle.subscribe("PickerControllerService/SetpointToGUI", 1, &MainWindow::pickerSetpointCallback, this);
+
+    pickerButtonPressedWithSetpointPublisher =  nodeHandle.advertise<SetpointV2>("PickerControllerService/ButtonPressedWithSetpoint", 1);
+
+    // SET ALL SLIDERS AND DIALS TO DEFAULT VALUES
+    ui->picker_z_slider->setValue( 40 );
+    ui->picker_mass_slider->setValue( 29 );
+    ui->picker_yaw_dial->setValue( 0 );
+    ui->picker_x_slider->setValue( 0 );
+    ui->picker_y_slider->setValue( 0 );
+
+    // SET ALL THE FIELDS TO DEFAULT VALUES
+    // > For goto start
+    ui->picker_gotostart_x->setText("-0.30");
+    ui->picker_gotostart_y->setText("+0.00");
+    ui->picker_gotostart_z->setText("+0.50");
+    // > For attach
+    ui->picker_attach_z->setText("+0.38");
+    // > For pickup
+    ui->picker_pickup_z->setText("+0.60");
+    // > For goto end
+    ui->picker_gotoend_x->setText("+0.30");
+    ui->picker_gotoend_y->setText("+0.00");
+    // > For putdown
+    ui->picker_putdown_z->setText("+0.39");
+    // > For squat
+    ui->picker_squat_z->setText("+0.35");
+    // > For jump
+    ui->picker_jump_z->setText("+0.50");
+    // > For the check boxes
+    ui->picker_gotostart_checkBox->setChecked(1);
+    ui->picker_attach_checkBox->setChecked(1);
+    ui->picker_pickup_checkBox->setChecked(1);
+    ui->picker_gotoend_checkBox->setChecked(1);
+    ui->picker_putdown_checkBox->setChecked(1);
+    ui->picker_squat_checkBox->setChecked(0);
+    ui->picker_jump_checkBox->setChecked(0);
+
 
 
 
@@ -206,12 +254,13 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     // > for "all motors off", press the space bar
     ui->motors_OFF_button->setShortcut(tr("Space"));
     // > for "kill GUI node", press "CTRL+C" while the GUI window is the focus
-    QShortcut* close_GUI_shortcut = new QShortcut(QKeySequence(tr("CTRL+C")), this, SLOT(close()));
+    m_close_GUI_shortcut = new QShortcut(QKeySequence(tr("CTRL+C")), this, SLOT(close()));
 
 
     initialize_demo_setpoint();
     initialize_student_setpoint();
     initialize_mpc_setpoint();
+    initialize_picker_setpoint();
 }
 
 
@@ -245,8 +294,9 @@ void MainWindow::highlightSafeControllerTab()
     ui->tabWidget->tabBar()->setTabTextColor(3, Qt::black);
     ui->tabWidget->tabBar()->setTabTextColor(4, Qt::black);
     ui->tabWidget->tabBar()->setTabTextColor(5, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(6, Qt::black);
 }
-void MainWindow::highlightDemoControllerTab()
+void MainWindow::highlightPickerControllerTab()
 {
     ui->tabWidget->tabBar()->setTabTextColor(0, Qt::black);
     ui->tabWidget->tabBar()->setTabTextColor(1, Qt::green);
@@ -254,8 +304,9 @@ void MainWindow::highlightDemoControllerTab()
     ui->tabWidget->tabBar()->setTabTextColor(3, Qt::black);
     ui->tabWidget->tabBar()->setTabTextColor(4, Qt::black);
     ui->tabWidget->tabBar()->setTabTextColor(5, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(6, Qt::black);
 }
-void MainWindow::highlightStudentControllerTab()
+void MainWindow::highlightDemoControllerTab()
 {
     ui->tabWidget->tabBar()->setTabTextColor(0, Qt::black);
     ui->tabWidget->tabBar()->setTabTextColor(1, Qt::black);
@@ -263,8 +314,9 @@ void MainWindow::highlightStudentControllerTab()
     ui->tabWidget->tabBar()->setTabTextColor(3, Qt::black);
     ui->tabWidget->tabBar()->setTabTextColor(4, Qt::black);
     ui->tabWidget->tabBar()->setTabTextColor(5, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(6, Qt::black);
 }
-void MainWindow::highlightMpcControllerTab()
+void MainWindow::highlightStudentControllerTab()
 {
     ui->tabWidget->tabBar()->setTabTextColor(0, Qt::black);
     ui->tabWidget->tabBar()->setTabTextColor(1, Qt::black);
@@ -272,8 +324,9 @@ void MainWindow::highlightMpcControllerTab()
     ui->tabWidget->tabBar()->setTabTextColor(3, Qt::green);
     ui->tabWidget->tabBar()->setTabTextColor(4, Qt::black);
     ui->tabWidget->tabBar()->setTabTextColor(5, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(6, Qt::black);
 }
-void MainWindow::highlightRemoteControllerTab()
+void MainWindow::highlightMpcControllerTab()
 {
     ui->tabWidget->tabBar()->setTabTextColor(0, Qt::black);
     ui->tabWidget->tabBar()->setTabTextColor(1, Qt::black);
@@ -281,6 +334,17 @@ void MainWindow::highlightRemoteControllerTab()
     ui->tabWidget->tabBar()->setTabTextColor(3, Qt::black);
     ui->tabWidget->tabBar()->setTabTextColor(4, Qt::green);
     ui->tabWidget->tabBar()->setTabTextColor(5, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(6, Qt::black);
+}
+void MainWindow::highlightRemoteControllerTab()
+{
+    ui->tabWidget->tabBar()->setTabTextColor(0, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(1, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(2, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(3, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(4, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(5, Qt::green);
+    ui->tabWidget->tabBar()->setTabTextColor(6, Qt::black);
 }
 void MainWindow::highlightTuningControllerTab()
 {
@@ -289,8 +353,10 @@ void MainWindow::highlightTuningControllerTab()
     ui->tabWidget->tabBar()->setTabTextColor(2, Qt::black);
     ui->tabWidget->tabBar()->setTabTextColor(3, Qt::black);
     ui->tabWidget->tabBar()->setTabTextColor(4, Qt::black);
-    ui->tabWidget->tabBar()->setTabTextColor(5, Qt::green);
+    ui->tabWidget->tabBar()->setTabTextColor(5, Qt::black);
+    ui->tabWidget->tabBar()->setTabTextColor(6, Qt::green);
 }
+
 
 void MainWindow::DBChangedCallback(const std_msgs::Int32& msg)
 {
@@ -319,6 +385,9 @@ void MainWindow::controllerUsedChangedCallback(const std_msgs::Int32& msg)
             break;
         case TUNING_CONTROLLER:
             highlightTuningControllerTab();
+            break;
+        case PICKER_CONTROLLER:
+            highlightPickerControllerTab();
             break;
         default:
             break;
@@ -363,6 +432,15 @@ void MainWindow::mpcSetpointCallback(const Setpoint& newSetpoint)
     ui->current_setpoint_y_mpc->setText(QString::number(newSetpoint.y, 'f', 3));
     ui->current_setpoint_z_mpc->setText(QString::number(newSetpoint.z, 'f', 3));
     ui->current_setpoint_yaw_mpc->setText(QString::number(newSetpoint.yaw * RAD2DEG, 'f', 1));
+}
+
+void MainWindow::pickerSetpointCallback(const Setpoint& newSetpoint)
+{
+    m_picker_setpoint = newSetpoint;
+    // here we get the new setpoint, need to update it in GUI
+    ui->picker_z_slider->setValue( int(newSetpoint.z*100.0) );
+    ui->picker_yaw_dial->setValue( int(newSetpoint.yaw * RAD2DEG) );
+    
 }
 
 void MainWindow::flyingStateChangedCallback(const std_msgs::Int32& msg)
@@ -522,17 +600,17 @@ void MainWindow::setCrazyRadioStatus(int radio_status)
             ui->voltage_field->setText(qstr);
             voltage_field_mutex.unlock();
             // SET THE APPROPRIATE IMAGE FOR THE BATTERY STATUS LABEL
+            battery_status_label_mutex.lock();
             if (m_battery_label_image_current_index != BATTERY_LABEL_IMAGE_INDEX_UNKNOWN)
 			{
-				battery_status_label_mutex.lock();
 				ui->battery_status_label->clear();
 	            QPixmap battery_unknown_pixmap(":/images/battery_unknown.png");
 	            ui->battery_status_label->setPixmap(battery_unknown_pixmap);
 	            ui->battery_status_label->setScaledContents(true);
 	            m_battery_label_image_current_index = BATTERY_LABEL_IMAGE_INDEX_UNKNOWN;
 	            ui->battery_status_label->update();
-	            battery_status_label_mutex.unlock();
 	        }
+            battery_status_label_mutex.unlock();
             // DISABLE THE REMAINDER OF THE GUI
             disableGUI();
             break;
@@ -832,6 +910,13 @@ void MainWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to ne
             ui->current_pitch_demo->setText(QString::number(local.pitch * RAD2DEG, 'f', 1));
             ui->current_roll_demo->setText(QString::number(local.roll * RAD2DEG, 'f', 1));
 
+            ui->current_x_student->setText(QString::number(local.x, 'f', 3));
+            ui->current_y_student->setText(QString::number(local.y, 'f', 3));
+            ui->current_z_student->setText(QString::number(local.z, 'f', 3));
+            ui->current_yaw_student->setText(QString::number(local.yaw * RAD2DEG, 'f', 1));
+            ui->current_pitch_student->setText(QString::number(local.pitch * RAD2DEG, 'f', 1));
+            ui->current_roll_student->setText(QString::number(local.roll * RAD2DEG, 'f', 1));
+
             // also update diff
             ui->diff_x_safe->setText(QString::number(m_safe_setpoint.x - local.x, 'f', 3));
             ui->diff_y_safe->setText(QString::number(m_safe_setpoint.y - local.y, 'f', 3));
@@ -842,6 +927,11 @@ void MainWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to ne
             ui->diff_y_demo->setText(QString::number(m_demo_setpoint.y - local.y, 'f', 3));
             ui->diff_z_demo->setText(QString::number(m_demo_setpoint.z - local.z, 'f', 3));
             ui->diff_yaw_demo->setText(QString::number((m_demo_setpoint.yaw - local.yaw) * RAD2DEG, 'f', 1));
+
+            ui->diff_x_student->setText(QString::number(m_student_setpoint.x - local.x, 'f', 3));
+            ui->diff_y_student->setText(QString::number(m_student_setpoint.y - local.y, 'f', 3));
+            ui->diff_z_student->setText(QString::number(m_student_setpoint.z - local.z, 'f', 3));
+            ui->diff_yaw_student->setText(QString::number((m_student_setpoint.yaw - local.yaw) * RAD2DEG, 'f', 1));
         }
     }
 }
@@ -968,6 +1058,17 @@ void MainWindow::initialize_mpc_setpoint()
     msg_setpoint.yaw = 0;
 
     this->mpcSetpointPublisher.publish(msg_setpoint);
+}
+
+void MainWindow::initialize_picker_setpoint()
+{
+    Setpoint msg_setpoint;
+    msg_setpoint.x = 0;
+    msg_setpoint.y = 0;
+    msg_setpoint.z = 0.4;
+    msg_setpoint.yaw = 0;
+
+    this->pickerSetpointPublisher.publish(msg_setpoint);
 }
 
 void MainWindow::on_set_setpoint_button_demo_clicked()
@@ -1223,6 +1324,35 @@ void MainWindow::tuningYamlFileTimerCallback(const ros::TimerEvent&)
 
 
 
+void MainWindow::on_load_picker_yaml_button_clicked()
+{
+    // Set the "load picker yaml" button to be disabled
+    ui->load_picker_yaml_button->setEnabled(false);
+
+    // Send a message requesting the parameters from the YAML
+    // file to be reloaded for the picker controller
+    std_msgs::Int32 msg;
+    msg.data = LOAD_YAML_PICKER_CONTROLLER_AGENT;
+    this->requestLoadControllerYamlPublisher.publish(msg);
+    ROS_INFO("[STUDENT GUI] Request load of picker controller YAML published");
+
+    // Start a timer which will enable the button in its callback
+    // > This is required because the agent node waits some time between
+    //   re-loading the values from the YAML file and then assigning then
+    //   to the local variable of the agent.
+    // > Thus we use this timer to prevent the user from clicking the
+    //   button in the GUI repeatedly.
+    ros::NodeHandle nodeHandle("~");
+    m_timer_yaml_file_for_picker_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::pickerYamlFileTimerCallback, this, true);
+}
+
+void MainWindow::pickerYamlFileTimerCallback(const ros::TimerEvent&)
+{
+    // Enble the "load picker yaml" button again
+    ui->load_picker_yaml_button->setEnabled(true);
+}
+
+
 void MainWindow::requestLoadControllerYaml_from_my_GUI_Callback(const std_msgs::Int32& msg)
 {
     // Extract from the "msg" for which controller the YAML
@@ -1325,6 +1455,21 @@ void MainWindow::requestLoadControllerYaml_from_my_GUI_Callback(const std_msgs::
 
             break;
 
+        case LOAD_YAML_PICKER_CONTROLLER_AGENT:
+        case LOAD_YAML_PICKER_CONTROLLER_COORDINATOR:
+            // Set the "load picker yaml" button to be disabled
+            ui->load_picker_yaml_button->setEnabled(false);
+
+            // Start a timer which will enable the button in its callback
+            // > This is required because the agent node waits some time between
+            //   re-loading the values from the YAML file and then assigning then
+            //   to the local variable of the agent.
+            // > Thus we use this timer to prevent the user from clicking the
+            //   button in the GUI repeatedly.
+            m_timer_yaml_file_for_picker_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainWindow::pickerYamlFileTimerCallback, this, true);    
+
+            break;
+
         default:
             ROS_INFO("Unknown 'all controllers to load yaml' command, thus nothing will be disabled");
             break;
@@ -1375,6 +1520,13 @@ void MainWindow::on_enable_tuning_controller_clicked()
 {
     std_msgs::Int32 msg;
     msg.data = CMD_USE_TUNING_CONTROLLER;
+    this->PPSClientCommandPublisher.publish(msg);
+}
+
+void MainWindow::on_enable_picker_controller_clicked()
+{
+    std_msgs::Int32 msg;
+    msg.data = CMD_USE_PICKER_CONTROLLER;
     this->PPSClientCommandPublisher.publish(msg);
 }
 
@@ -1671,5 +1823,357 @@ void MainWindow::on_tuning_slider_heading_valueChanged(int value)
     // Publish the message
     this->tuningHeadingGainPublisher.publish(msg);
 }
+
+
+
+
+
+
+
+
+
+
+// PICKER CONTROLLER TAB
+
+// > FOR THE BUTTONS
+
+void MainWindow::send_picker_button_clicked_message(int button_index)
+{
+    // Initialise the message
+    std_msgs::Int32 msg;
+    // Set the msg data
+    msg.data = button_index;
+    // Publish the message
+    this->pickerButtonPressedPublisher.publish(msg);
+}
+
+void MainWindow::send_picker_button_clicked_message_with_setpoint(const SetpointV2& setpointV2_to_send)
+{
+    // Publish the message
+    this->pickerButtonPressedWithSetpointPublisher.publish(setpointV2_to_send);
+}
+
+void MainWindow::on_picker_gotostart_button_clicked()
+{
+    if (!shouldSendWithSetpoint_for_pickerButtons)
+    {
+        // Call the function that sends the message
+        send_picker_button_clicked_message(PICKER_BUTTON_GOTOSTART);
+    }
+    else
+    {
+        // Construct the setpoint
+        SetpointV2 msg_setpointV2;
+        msg_setpointV2.buttonID = PICKER_BUTTON_GOTOSTART;
+        msg_setpointV2.isChecked = ui->picker_gotostart_checkBox->isChecked();
+        msg_setpointV2.x = 0.0;
+        msg_setpointV2.y = 0.0;
+        msg_setpointV2.z = 0.0;
+        msg_setpointV2.yaw = 0.0;
+        // Get the (x,y,z) coordinates from the GUI
+        if(!ui->picker_gotostart_x->text().isEmpty())
+            msg_setpointV2.x = (ui->picker_gotostart_x->text()).toFloat();
+        if(!ui->picker_gotostart_y->text().isEmpty())
+            msg_setpointV2.y = (ui->picker_gotostart_y->text()).toFloat();
+        if(!ui->picker_gotostart_z->text().isEmpty())
+            msg_setpointV2.z = (ui->picker_gotostart_z->text()).toFloat();
+        // Update the z slider in the GUI
+        ui->picker_z_slider->setValue( int((msg_setpointV2.z+0.005)*100.0) );
+        // Call the function that sends the message
+        send_picker_button_clicked_message_with_setpoint(msg_setpointV2);
+    }
+}
+void MainWindow::on_picker_attach_button_clicked()
+{
+    if (!shouldSendWithSetpoint_for_pickerButtons)
+    {
+        // Call the function that sends the message
+        send_picker_button_clicked_message(PICKER_BUTTON_ATTACH);
+    }
+    else
+    {
+        // Construct the setpoint
+        SetpointV2 msg_setpointV2;
+        msg_setpointV2.buttonID = PICKER_BUTTON_ATTACH;
+        msg_setpointV2.isChecked = ui->picker_attach_checkBox->isChecked();;
+        msg_setpointV2.x = 0.0;
+        msg_setpointV2.y = 0.0;
+        msg_setpointV2.z = 0.0;
+        msg_setpointV2.yaw = 0.0;
+        // Get the z coordinates from the GUI
+        if(!ui->picker_attach_z->text().isEmpty())
+            msg_setpointV2.z = (ui->picker_attach_z->text()).toFloat();
+        // Update the z slider in the GUI
+        ui->picker_z_slider->setValue( int((msg_setpointV2.z+0.005)*100.0) );
+        // Call the function that sends the message
+        send_picker_button_clicked_message_with_setpoint(msg_setpointV2);
+    }
+}
+void MainWindow::on_picker_pickup_button_clicked()
+{
+    if (!shouldSendWithSetpoint_for_pickerButtons)
+    {
+        // Call the function that sends the message
+        send_picker_button_clicked_message(PICKER_BUTTON_PICKUP);
+    }
+    else
+    {
+        // Construct the setpoint
+        SetpointV2 msg_setpointV2;
+        msg_setpointV2.buttonID = PICKER_BUTTON_PICKUP;
+        msg_setpointV2.isChecked = ui->picker_pickup_checkBox->isChecked();;
+        msg_setpointV2.x = 0.0;
+        msg_setpointV2.y = 0.0;
+        msg_setpointV2.z = 0.0;
+        msg_setpointV2.yaw = 0.0;
+        // Get the z coordinates from the GUI
+        if(!ui->picker_pickup_z->text().isEmpty())
+            msg_setpointV2.z = (ui->picker_pickup_z->text()).toFloat();
+        // Update the z slider in the GUI
+        ui->picker_z_slider->setValue( int((msg_setpointV2.z+0.005)*100.0) );
+        // Call the function that sends the message
+        send_picker_button_clicked_message_with_setpoint(msg_setpointV2);
+    }
+}
+void MainWindow::on_picker_gotoend_button_clicked()
+{
+    if (!shouldSendWithSetpoint_for_pickerButtons)
+    {
+        // Call the function that sends the message
+        send_picker_button_clicked_message(PICKER_BUTTON_GOTOEND);
+    }
+    else
+    {
+        // Construct the setpoint
+        SetpointV2 msg_setpointV2;
+        msg_setpointV2.buttonID = PICKER_BUTTON_GOTOEND;
+        msg_setpointV2.isChecked = ui->picker_gotoend_checkBox->isChecked();;
+        msg_setpointV2.x = 0.0;
+        msg_setpointV2.y = 0.0;
+        msg_setpointV2.z = 0.0;
+        msg_setpointV2.yaw = 0.0;
+        // Get the (x,y) coordinates from the GUI
+        if(!ui->picker_gotoend_x->text().isEmpty())
+            msg_setpointV2.x = (ui->picker_gotoend_x->text()).toFloat();
+        if(!ui->picker_gotoend_y->text().isEmpty())
+            msg_setpointV2.y = (ui->picker_gotoend_y->text()).toFloat();
+        // Call the function that sends the message
+        send_picker_button_clicked_message_with_setpoint(msg_setpointV2);
+    }
+}
+void MainWindow::on_picker_putdown_button_clicked()
+{
+    if (!shouldSendWithSetpoint_for_pickerButtons)
+    {
+        // Call the function that sends the message
+        send_picker_button_clicked_message(PICKER_BUTTON_PUTDOWN);
+    }
+    else
+    {
+        // Construct the setpoint
+        SetpointV2 msg_setpointV2;
+        msg_setpointV2.buttonID = PICKER_BUTTON_PUTDOWN;
+        msg_setpointV2.isChecked = ui->picker_putdown_checkBox->isChecked();;
+        msg_setpointV2.x = 0.0;
+        msg_setpointV2.y = 0.0;
+        msg_setpointV2.z = 0.0;
+        msg_setpointV2.yaw = 0.0;
+        // Get the z coordinates from the GUI
+        if(!ui->picker_putdown_z->text().isEmpty())
+            msg_setpointV2.z = (ui->picker_putdown_z->text()).toFloat();
+        // Update the z slider in the GUI
+        ui->picker_z_slider->setValue( int((msg_setpointV2.z+0.005)*100.0) );
+        // Call the function that sends the message
+        send_picker_button_clicked_message_with_setpoint(msg_setpointV2);
+    }
+}
+void MainWindow::on_picker_squat_button_clicked()
+{
+    if (!shouldSendWithSetpoint_for_pickerButtons)
+    {
+        // Call the function that sends the message
+        send_picker_button_clicked_message(PICKER_BUTTON_SQUAT);
+    }
+    else
+    {
+        // Construct the setpoint
+        SetpointV2 msg_setpointV2;
+        msg_setpointV2.buttonID = PICKER_BUTTON_SQUAT;
+        msg_setpointV2.isChecked = ui->picker_squat_checkBox->isChecked();;
+        msg_setpointV2.x = 0.0;
+        msg_setpointV2.y = 0.0;
+        msg_setpointV2.z = 0.0;
+        msg_setpointV2.yaw = 0.0;
+        // Get the z coordinates from the GUI
+        if(!ui->picker_squat_z->text().isEmpty())
+            msg_setpointV2.z = (ui->picker_squat_z->text()).toFloat();
+        // Update the z slider in the GUI
+        ui->picker_z_slider->setValue( int((msg_setpointV2.z+0.005)*100.0) );
+        // Call the function that sends the message
+        send_picker_button_clicked_message_with_setpoint(msg_setpointV2);
+    }
+}
+void MainWindow::on_picker_jump_button_clicked()
+{
+    if (!shouldSendWithSetpoint_for_pickerButtons)
+    {
+        // Call the function that sends the message
+        send_picker_button_clicked_message(PICKER_BUTTON_JUMP);
+    }
+    else
+    {
+        // Construct the setpoint
+        SetpointV2 msg_setpointV2;
+        msg_setpointV2.buttonID = PICKER_BUTTON_JUMP;
+        msg_setpointV2.isChecked = ui->picker_jump_checkBox->isChecked();;
+        msg_setpointV2.x = 0.0;
+        msg_setpointV2.y = 0.0;
+        msg_setpointV2.z = 0.0;
+        msg_setpointV2.yaw = 0.0;
+        // Get the z coordinates from the GUI
+        if(!ui->picker_jump_z->text().isEmpty())
+            msg_setpointV2.z = (ui->picker_jump_z->text()).toFloat();
+        // Update the z slider in the GUI
+        ui->picker_z_slider->setValue( int((msg_setpointV2.z+0.005)*100.0) );
+        // Call the function that sends the message
+        send_picker_button_clicked_message_with_setpoint(msg_setpointV2);
+    }
+}
+void MainWindow::on_picker_1_button_clicked()
+{
+    if (!shouldSendWithSetpoint_for_pickerButtons)
+    {
+        // Call the function that sends the message
+        send_picker_button_clicked_message(PICKER_BUTTON_1);
+    }
+    else
+    {
+        // Construct the setpoint
+        SetpointV2 msg_setpointV2;
+        msg_setpointV2.buttonID = PICKER_BUTTON_1;
+        msg_setpointV2.isChecked = true;
+        msg_setpointV2.x = 0.0;
+        msg_setpointV2.y = 0.0;
+        msg_setpointV2.z = 0.0;
+        msg_setpointV2.yaw = 0.0;
+        // Call the function that sends the message
+        send_picker_button_clicked_message_with_setpoint(msg_setpointV2);
+    }
+}
+void MainWindow::on_picker_2_button_clicked()
+{
+    if (!shouldSendWithSetpoint_for_pickerButtons)
+    {
+        // Call the function that sends the message
+        send_picker_button_clicked_message(PICKER_BUTTON_2);
+    }
+    else
+    {
+        // Construct the setpoint
+        SetpointV2 msg_setpointV2;
+        msg_setpointV2.buttonID = PICKER_BUTTON_2;
+        msg_setpointV2.isChecked = true;
+        msg_setpointV2.x = 0.0;
+        msg_setpointV2.y = 0.0;
+        msg_setpointV2.z = 0.0;
+        msg_setpointV2.yaw = 0.0;
+        // Call the function that sends the message
+        send_picker_button_clicked_message_with_setpoint(msg_setpointV2);
+    }
+}
+void MainWindow::on_picker_3_button_clicked()
+{
+    if (!shouldSendWithSetpoint_for_pickerButtons)
+    {
+        // Call the function that sends the message
+        send_picker_button_clicked_message(PICKER_BUTTON_3);
+    }
+    else
+    {
+        // Construct the setpoint
+        SetpointV2 msg_setpointV2;
+        msg_setpointV2.buttonID = PICKER_BUTTON_3;
+        msg_setpointV2.isChecked = true;
+        msg_setpointV2.x = 0.0;
+        msg_setpointV2.y = 0.0;
+        msg_setpointV2.z = 0.0;
+        msg_setpointV2.yaw = 0.0;
+        // Call the function that sends the message
+        send_picker_button_clicked_message_with_setpoint(msg_setpointV2);
+    }
+}
+void MainWindow::on_picker_4_button_clicked()
+{
+    if (!shouldSendWithSetpoint_for_pickerButtons)
+    {
+        // Call the function that sends the message
+        send_picker_button_clicked_message(PICKER_BUTTON_4);
+    }
+    else
+    {
+        // Construct the setpoint
+        SetpointV2 msg_setpointV2;
+        msg_setpointV2.buttonID = PICKER_BUTTON_4;
+        msg_setpointV2.isChecked = true;
+        msg_setpointV2.x = 0.0;
+        msg_setpointV2.y = 0.0;
+        msg_setpointV2.z = 0.0;
+        msg_setpointV2.yaw = 0.0;
+        // Call the function that sends the message
+        send_picker_button_clicked_message_with_setpoint(msg_setpointV2);
+    }
+}
+
+
+
+// > FOR THE SLIDERS AND DIAL
+
+void MainWindow::on_picker_x_slider_valueChanged(int value)
+{
+    // Initialise the message
+    std_msgs::Float32 msg;
+    // Set the msg data
+    msg.data = float(value) / 100.0f;
+    // Publish the message
+    this->pickerXAdjustmentPublisher.publish(msg);
+}
+void MainWindow::on_picker_y_slider_valueChanged(int value)
+{
+    // Initialise the message
+    std_msgs::Float32 msg;
+    // Set the msg data
+    msg.data = float(value) / 100.0f;
+    // Publish the message
+    this->pickerYAdjustmentPublisher.publish(msg);
+}
+void MainWindow::on_picker_z_slider_valueChanged(int value)
+{
+    ROS_INFO_STREAM("[Student GUI] z slider int value " << value );
+    // Initialise the message
+    std_msgs::Float32 msg;
+    // Set the msg data
+    msg.data = float(value) / 100.0f;
+    // Publish the message
+    this->pickerZSetpointPublisher.publish(msg);
+}
+void MainWindow::on_picker_mass_slider_valueChanged(int value)
+{
+    // Initialise the message
+    std_msgs::Float32 msg;
+    // Set the msg data
+    msg.data = float(value);
+    // Publish the message
+    this->pickerMassPublisher.publish(msg);
+}
+void MainWindow::on_picker_yaw_dial_valueChanged(int value)
+{
+    // Initialise the message
+    std_msgs::Float32 msg;
+    // Set the msg data
+    msg.data = float(value) * DEG2RAD;
+    // Publish the message
+    this->pickerYawSetpointPublisher.publish(msg);
+}
+
 
 

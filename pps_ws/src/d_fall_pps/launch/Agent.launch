@@ -3,13 +3,16 @@
 	<!-- INPUT ARGUMENT OF THE AGENT's ID -->
 	<arg name="agentID" default="$(optenv DFALL_DEFAULT_AGENT_ID)" />
 
+	<!-- INPUT ARGUMENT FOR LAUNCHING A GUI OR NOT -->
+	<arg name="withGUI" default="true" />
+
 	<!-- Example of how to use the value in agentID -->
     <!-- <param name="param" value="$(arg agentID)"/> -->
 
     <!-- Example of how to specify the agentID from command line -->
     <!-- roslaunch d_fall_pps agentID:=1 -->
 
-    <group ns="agent$(arg agentID)">
+    <group ns="$(eval 'agent' + str(agentID).zfill(3))">
 
 		<!-- CRAZY RADIO -->
 		<node
@@ -86,6 +89,15 @@
 			>
 		</node>
 
+		<!-- PICKER CONTROLLER -->
+		<node
+			pkg    = "d_fall_pps"
+			name   = "PickerControllerService"
+			output = "screen"
+			type   = "PickerControllerService"
+			>
+		</node>
+
 		<!-- PARAMETER SERVICE -->
 		<node
 			pkg    = "d_fall_pps"
@@ -130,15 +142,23 @@
 				file    = "$(find d_fall_pps)/param/TuningController.yaml"
 				ns      = "TuningController"
 			/>
+			<rosparam
+				command = "load"
+				file    = "$(find d_fall_pps)/param/PickerController.yaml"
+				ns      = "PickerController"
+			/>
 		</node>
 
+
 		<!-- AGENT GUI (aka. the "student GUI") -->
-	    <node
-	    	pkg    = "d_fall_pps"
-	    	name   = "student_GUI"
-	    	output = "screen"
-	    	type   = "student_GUI">
-		</node>
+		<group if="$(arg withGUI)">
+			<node
+				pkg    = "d_fall_pps"
+				name   = "student_GUI"
+				output = "screen"
+				type   = "student_GUI">
+			</node>
+		</group>
 		
 	</group>
 
