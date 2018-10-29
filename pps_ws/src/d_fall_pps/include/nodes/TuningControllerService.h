@@ -63,7 +63,6 @@
 #include "d_fall_pps/DebugMsg.h"
 #include "d_fall_pps/CustomButton.h"
 #include "d_fall_pps/ViconSubscribeObjectName.h"
-#include "d_fall_pps/CustomControllerYAML.h"
 
 // Include the Parameter Service shared definitions
 #include "nodes/ParameterServiceDefinitions.h"

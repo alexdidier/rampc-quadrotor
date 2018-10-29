@@ -268,13 +268,16 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	// > NOTE: remember that the thrust is commanded per motor, so you sohuld
 	//         consider whether the "thrustAdjustment" computed by your
 	//         controller needed to be divided by 4 or not.
-	// > NOTE: the "gravity_force" value was already divided by 4 when is was
-	//         loaded from the .yaml file via the "fetchYamlParameters"
-	//         class function in this file.
-	response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrustAdjustment + gravity_force);
-	response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrustAdjustment + gravity_force);
-	response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrustAdjustment + gravity_force);
-	response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrustAdjustment + gravity_force);
+	// > NOTE: the "cf_weight_in_newtons" value is the total thrust required
+	//         as feed-forward. Assuming the the Crazyflie is symmetric, this
+	//         value is divided by four.
+	float feed_forward_thrust_per_motor = cf_weight_in_newtons / 4.0;
+	// > NOTE: the function "computeMotorPolyBackward" converts the input argument
+	//         from Newtons to the 16-bit command expected by the Crazyflie.
+	response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrustAdjustment + feed_forward_thrust_per_motor);
+	response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrustAdjustment + feed_forward_thrust_per_motor);
+	response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrustAdjustment + feed_forward_thrust_per_motor);
+	response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrustAdjustment + feed_forward_thrust_per_motor);
 
 	
 
@@ -665,10 +668,10 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 	ros::NodeHandle nodeHandle_for_studentController(nodeHandle, "StudentController");
 
 	// > The mass of the crazyflie
-	cf_mass = getParameterFloat(nodeHandle_for_studentController , "mass");
+	cf_mass_in_grams = getParameterFloat(nodeHandle_for_studentController , "mass");
 
 	// Display one of the YAML parameters to debug if it is working correctly
-	//ROS_INFO_STREAM("DEBUGGING: mass leaded from loacl file = " << cf_mass );
+	//ROS_INFO_STREAM("DEBUGGING: mass leaded from loacl file = " << cf_mass_in_grams );
 
 	// > The frequency at which the "computeControlOutput" is being called, as determined
 	//   by the frequency at which the Vicon system provides position and attitude data
@@ -680,7 +683,7 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 
 
 	// DEBUGGING: Print out one of the parameters that was loaded
-	ROS_INFO_STREAM("[STUDENT CONTROLLER] DEBUGGING: the fetched StudentController/mass = " << cf_mass);
+	ROS_INFO_STREAM("[STUDENT CONTROLLER] DEBUGGING: the fetched StudentController/mass = " << cf_mass_in_grams);
 
 	// Call the function that computes details an values that are needed from these
 	// parameters loaded above
@@ -696,10 +699,10 @@ void processFetchedParameters()
 {
     // Compute the feed-forward force that we need to counteract gravity (i.e., mg)
     // > in units of [Newtons]
-    gravity_force = cf_mass * 9.81/(1000*4);
+    cf_weight_in_newtons = cf_mass_in_grams * 9.81/(1000*4);
     
     // DEBUGGING: Print out one of the computed quantities
-	ROS_INFO_STREAM("[STUDENT CONTROLLER] DEBUGGING: thus the graity force = " << gravity_force);
+	ROS_INFO_STREAM("[STUDENT CONTROLLER] DEBUGGING: thus the weight of this agent in [Newtons] = " << cf_weight_in_newtons);
 }
 
 
