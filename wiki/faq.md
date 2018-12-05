@@ -107,7 +107,7 @@ This section contains those Frequently Asked Questions that pertain to common co
 The per motor command that your algorithm requests from the Crazyflie via setting the ``response.controlOutput.motorCmd1`` property in the function ``calculateControlOutput`` is subseuently cast as a ``uint16`` type variable. Hence you should consider saturating the per motor commands computed by your algorithm before setting the value of ``response.controlOutput.motorCmd1``.
 
 
-### Why does my crazyflie stop and ``Stuent GUI`` freeze when I enable my custom controller?
+### Why does my crazyflie stop and ``Stuent GUI`` freeze when I enable my student controller?
 
 This is most likely caused by your code causing a segmentation fault, which is commonly caused due to a division by zero. This is often observed in relation to the calculation of sampling time from frequency. You need to think carefully about the order in which variables are instantiated, set to a value, and subsequently used in your code. Specifically, in the template controller code provided contains the ``control_frequency`` variable that is set to a value loaded from the ``.yaml`` parameter file. It is common to instantiate a new variable as ``t_s = 1.0 / control_frequency``. However, if the ``t_s`` variable is accidentally used before it is set to this value then it is possible that you are dividing by zero. Remember also that the values from the ``.yaml`` parameter file are loaded during runtime, as they can be changed at any time during the running of the application, so those values are not present during compile time of your code.
 
@@ -119,12 +119,12 @@ In order to make information available between the laptops, you can use the publ
 In order to publish the position of your Crazyflie you need to introduce a variable of type ``ros::Publisher`` and you can use the ``Setpoint`` message type to publish the x,y,z, and yaw of your Crazyflie.
 
 To add a publisher follow these steps:
-- Add a ``ros::Publisher`` type class variable to your ``CustomControllerService.cpp`` file:
+- Add a ``ros::Publisher`` type class variable to your ``StudentControllerService.cpp`` file:
 ```
 ros::Publisher my_current_xyz_yaw_publisher
 ```
 
-- In the ``main()`` function of your ``CustomControllerService.cpp`` file initialise your publisher:
+- In the ``main()`` function of your ``StudentControllerService.cpp`` file initialise your publisher:
 ```
 ros::NodeHandle nodeHandle("~");
 my_current_xyz_yaw_publisher = nodeHandle.advertise<Setpoint>("/<ID>/my_current_xyz_yaw_topic", 1);
@@ -133,9 +133,9 @@ where ``<ID>`` should be replaced by the ID of your computer, for example the nu
 ```
 #include "d_fall_pps/Setpoint.h"
 ```
-added at the top of  your ``CustomControllerService.cpp`` file.
+added at the top of  your ``StudentControllerService.cpp`` file.
 
-- In the ``calculateControlOutput`` function of your ``CustomControllerService.cpp`` file you can publish the current position of your Crazyflie by adding the following:
+- In the ``calculateControlOutput`` function of your ``StudentControllerService.cpp`` file you can publish the current position of your Crazyflie by adding the following:
 ```
 Setpoint temp_current_xyz_yaw;
 temp_current_xyz_yaw.x   = request.ownCrazyflie.x;
@@ -148,19 +148,19 @@ my_current_xyz_yaw_publisher.publish(temp_current_xyz_yaw);
 In order to subscribe to a message that is published in the way described above from another student's laptop, you need to define a variable of type ``ros::Subscriber`` and you specify the function that should be called each time a message is receive on the topic to which you subscribe.
 
 To subscribe to a topic follw these steps:
-- In the ``main()`` function of your ``CustomControllerService.cpp`` file initialise the subscriber:
+- In the ``main()`` function of your ``StudentControllerService.cpp`` file initialise the subscriber:
 ```
 ros::NodeHandle nodeHandle("~");
 ros::Subscriber xyz_yaw_to_follow_subscriber = nodeHandle.subscribe("/<ID>/my_current_xyz_yaw_topic", 1, xyz_yaw_to_follow_callback);
 ```
-where ``<ID>`` should be replaced by the ID of the computer from which you wish to subscribe, for example the number 8, ``my_current_xyz_yaw_topic`` must match the name of the topic being published, and ``xyz_yaw_to_follow_callback`` is the function in your ``CustomControllerService.cpp`` file that will be called when the message is received.
+where ``<ID>`` should be replaced by the ID of the computer from which you wish to subscribe, for example the number 8, ``my_current_xyz_yaw_topic`` must match the name of the topic being published, and ``xyz_yaw_to_follow_callback`` is the function in your ``StudentControllerService.cpp`` file that will be called when the message is received.
 
-- To add the callback function, first add the following function prototype to the top of your ``CustomControllerService.cpp`` file:
+- To add the callback function, first add the following function prototype to the top of your ``StudentControllerService.cpp`` file:
 ```
 void xyz_yaw_to_follow_callback(const Setpoint& newSetpoint);
 ```
 
-- Implement the ``xyz_yaw_to_follow_callback`` function in your ``CustomControllerService.cpp`` file to achieve the behaviour desired, the following example makes the setpoint of my own Crazyflie equal to the position received in the message:
+- Implement the ``xyz_yaw_to_follow_callback`` function in your ``StudentControllerService.cpp`` file to achieve the behaviour desired, the following example makes the setpoint of my own Crazyflie equal to the position received in the message:
 ```
 void xyz_yaw_to_follow_callback(const Setpoint& newSetpoint)
 {
@@ -175,9 +175,9 @@ void xyz_yaw_to_follow_callback(const Setpoint& newSetpoint)
 
 ### How can my controller receive the position of another object recognised by the Vicon system?
 
-The ``calculateControlOutput`` function of your ``CustomControllerService.cpp`` file is called everytime that the Vicon system provides new data, where this data is provided to the ``calculateControlOutput`` function in the ``request`` variable and the calculated control output to apply is returned in the ``response`` variable. In this way the ``calculateControlOutput`` function is performing in ROS what is referred to as a service. This service is advertised in the ``main()`` function of your ``CustomControllerService.cpp`` file by the line of code:
+The ``calculateControlOutput`` function of your ``StudentControllerService.cpp`` file is called everytime that the Vicon system provides new data, where this data is provided to the ``calculateControlOutput`` function in the ``request`` variable and the calculated control output to apply is returned in the ``response`` variable. In this way the ``calculateControlOutput`` function is performing in ROS what is referred to as a service. This service is advertised in the ``main()`` function of your ``StudentControllerService.cpp`` file by the line of code:
 ```
-ros::ServiceServer service = nodeHandle.advertiseService("CustomController", calculateControlOutput);
+ros::ServiceServer service = nodeHandle.advertiseService("StudentController", calculateControlOutput);
 ```
 This service is called on from the ``PPSClient.cpp`` file, and it is expected to adhere to the data structures described in ``/srv/Controller.srv``:
 ```
@@ -225,7 +225,7 @@ for(std::vector<CrazyflieData>::const_iterator it = viconData.crazyflies.begin()
 
 		if ( thisObject.crazyflieName == "name_of_object_I_am_searching_for" )
 		{
-				otherObject = thisCrazyflie;
+				otherObject = thisObject;
 				break;
 		}
 }
@@ -246,7 +246,7 @@ and immediately after these existing lines of code, add the following new lines 
 coordinatesToLocal(otherObject);
 controllerCall.request.otherCrazyflies.push_back(otherObject);
 ```
-Now the ``.otherCrazyflies`` property of the ``request`` variable that is passed to the ``calculateControlOutput`` function of your ``CustomControllerService.cpp`` file will contain the position of the ``otherObject`` as the first entry in the array, i.e., you can access the data via ``request.otherCrazyflies[0].{x,y,z,roll,pitch,yaw}``.
+Now the ``.otherCrazyflies`` property of the ``request`` variable that is passed to the ``calculateControlOutput`` function of your ``StudentControllerService.cpp`` file will contain the position of the ``otherObject`` as the first entry in the array, i.e., you can access the data via ``request.otherCrazyflies[0].{x,y,z,roll,pitch,yaw}``.
 
 
 
@@ -297,31 +297,10 @@ where ``/namespace/topicname`` needs to be replaced with the topic that you wish
 
 ## Connect to custom buttons
 
-The Graphical User Interface for flying your Crazyflie offers three buttons that can be used to trigger functions within your ``CustomControllerService.cpp`` file. In order to connect the button with a function within your controller, perform the following steps.
+The Graphical User Interface for flying your Crazyflie offers three buttons that can be used to trigger functions within your ``StudentControllerService.cpp`` file. The buttons are already connected to your code and you can respond to button presses by locating the following function within your
 
-Add the following include:
-```
-#include "d_fall_pps/CustomButton.h"
-```
+``StudentControllerService.cpp`` file:
 
-Add the following function prototype:
-```
-// CUSTOM COMMAND RECEIVED CALLBACK
-void customCommandReceivedCallback(const CustomButton& commandReceived);
-
-```
-
-Add the following subscriber within the ``main`` function and before the ``ros::spin();`` command:
-```
-// Instantiate the local variable "customCommandSubscriber" to be a "ros::Subscriber"
-// type variable that subscribes to the "StudentCustomButton" topic and calls the class
-// function "customCommandReceivedCallback" each time a messaged is received on this topic
-// and the message received is passed as an input argument to the callback function.
-ros::Subscriber customCommandReceivedSubscriber = PPSClient_nodeHandle.subscribe("StudentCustomButton", 1, customCommandReceivedCallback);
-```
-
-
-Add the following function somewhere within your ``CustomControllerService.cpp`` file:
 ```
 //    ----------------------------------------------------------------------------------
 //     CCCC  U   U   SSSS  TTTTT   OOO   M   M
