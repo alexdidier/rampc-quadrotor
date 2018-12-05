@@ -49,7 +49,7 @@ gyrosensor needs to initialize.
   Crazyflie, and a text label containing the current flying state. **It is
   important to know that we can only take off when we are in the state "Motors
   OFF", and we can only land if we are NOT in the state "Motors OFF"**<br><br>
-    * In the middle-bottom part of the GUI there are two tabs: Safe and Custom
+    * In the middle-bottom part of the GUI there are two tabs: Safe and Student
   controller. <br><br>
   In the left part of these tabs, there is information about the
   current position of the Crazyflie, and also the difference between the current
@@ -72,10 +72,10 @@ gyrosensor needs to initialize.
     `SafeController.yaml`, in the folder param (use `roscd d_fall_pps/param` in a
     terminal to go there).* **These are the safe controller parameters and should NOT be
     changed.** *Take a look at the file and get familiar with the format used,
-    since may have to write your own for the custom controller.*
+    since may have to write your own for the student controller.*
 
-### Creating your own custom controller!
-In this part, we will learn how to design our own custom controller and actually
+### Creating your own controller!
+In this part, we will learn how to design our own controller and actually
 deploy it and see it working in our Crazyflie. For this, there are a set of
 important files that should be taken into account.
 
@@ -83,27 +83,27 @@ important files that should be taken into account.
 
 * In `d_fall_pps/src`
 
-  * _CustomControllerService.cpp_ <br>
+  * _StudentControllerService.cpp_ <br>
   The file where students can implement their own controller. It provides already the ros service with the teacher. It can be used as a template.
 
 * In `d_fall_pps/param`
 
   * _ClientConfig.yaml_ <br><br>
           <img src="./pics/client_config_yaml.png" style="width: 400px;"/> <br><br>
-  This file needs to be changed to define names for the custom controller. **The safeController property shouldn't be changed!** <br>
+  This file needs to be changed to define names for the student controller. **The safeController property should not be changed!** <br>
 
       *Usage:*
 
-      *`customController: "SERVICENAME/TOPICNAME"`*
+      *`studentController: "SERVICENAME/TOPICNAME"`*
 
-      *where SERVICENAME is the name of the cpp-file that contains the custom controller (e.g. the provided template CustomControllerService) and
+      *where SERVICENAME is the name of the cpp-file that contains the student controller (e.g. the provided template StudentControllerService) and
       where TOPICNAME is the defined name for the topic which is defined insided
       the controller's code.*
 
       *`strictSafety: <bool>`*
 
       *By setting _strictSafety_ to true you limit
-      your custom controller from assuming certain angles before the safe controller
+      your student controller from assuming certain angles before the safe controller
       takes over. Set it to false and the safe controller only takes over when the
       crazyflie flies out of its defined range.*
 
@@ -163,8 +163,8 @@ important files that should be taken into account.
 <!--   * _StudentFollow.launch_ : as an example<br> -->
 <!--   As the circle launcher, this starts another service that enables one crazyflie to _copy_ the behavior of another crazyflie. For this to work, two student groups have to collaborate because some things have to manipulated manually in the cpp files of the Circle and Follow code. -->
 
-#### Steps to create a custom controller
-1. Open the file `CustomControllerService.cpp` and go through it. You should see
+#### Steps to create a student controller
+1. Open the file `StudentControllerService.cpp` and go through it. You should see
    that the file is already filled with some code. This code is a simple LQR
    controller that is offered as a template for the student to start developing
    their own controller. Change the file as you wish with your own controller
@@ -173,7 +173,7 @@ important files that should be taken into account.
         <img src="./pics/custom_controller_src.png" style="width: 700px;"/> <br><br>
 
      In the template you can also see an example of how to use the
-     `CustomController.yaml` to load parameters that you may want to change
+     `StudentController.yaml` to load parameters that you may want to change
      without having to compile or restart the system. Here, as an example, we
      pass some parameters that can be seen below:<br><br>
         <img src="./pics/custom_controller_yaml.png" style="width: 400px;"/> <br><br>
@@ -183,12 +183,12 @@ important files that should be taken into account.
    `roslaunch d_fall_pps Student.launch`. This will run the student's GUI.
 
 4. Make sure that your Crazyflie is turned ON and connect to it. Choose the tab
-   called *Custom Controller* and click on the button *Enable Custom Controller*
+   called *Student Controller* and click on the button *Enable Student Controller*
 
 5. Press the *Take Off* button and you should see your crazyflie taking OFF.
 
       *Note: for take off and landing, the crazyflie uses the safe controller. Once we
-finish taking off, if the custom controller was enabled, we automatically switch
+finish taking off, if the student controller was enabled, we automatically switch
 to it*
 
 6. If everything went correctly, now your Crazyflie is using your own
@@ -203,16 +203,16 @@ to it*
    automatically enabled to try to recover the crazyflie and bring it to the
    center of your zone.*
 
-7. If you decided to put some parameter in the `CustomController.yaml` file, you
-   can now change it and press the *Load CustomController YAML file* button in
+7. If you decided to put some parameter in the `StudentController.yaml` file, you
+   can now change it and press the *Load StudentController YAML file* button in
    the GUI. This way, you can try and see the effect of changing some parameters
    on the fly.
 
 
-#### Steps to plot debug variables from Custom Controller in a graph
+#### Steps to plot debug variables from Student Controller in a graph
 
 1. Choose the variables that we want to see in a plot from the file
-   `CustomControllerService.cpp`. Inside the function `calculateControlOutput`,
+   `StudentControllerService.cpp`. Inside the function `calculateControlOutput`,
    a part where we fill a DebugMsg with data has been written (lines 133-145 in
    previous figure). Vicon data has already been filled in (vicon\_x,
    vicon\_y,...). Additionally, there are up to 10 general purpose variables
@@ -228,11 +228,11 @@ to it*
 4. In each subplot, to add data to plot, write the name of the topic you want to
    plot in the field "Topic", e.g., if we want to plot the Z position of our
    crazyflie, we would have to write here
-   `/<student_id>/CustomControllerService/DebugTopic/vicon_z`. You can see an
+   `/<student_id>/StudentControllerService/DebugTopic/vicon_z`. You can see an
    autocompletion of the
    list of all the topics available when you start typing in the field "Topic". <br><br>
-5. Start the Student node following the steps mentioned before (`roslaunch d_fall_pps Student.launch`) and enable the Custom Controller.<br><br>
-6. Once we are using the Custom Controller, we will be seeing how the data
+5. Start the Student node following the steps mentioned before (`roslaunch d_fall_pps Student.launch`) and enable the Student Controller.<br><br>
+6. Once we are using the Student Controller, we will be seeing how the data
    selected gets plotted in the rqt plots.
 
 <!-- --- -->
