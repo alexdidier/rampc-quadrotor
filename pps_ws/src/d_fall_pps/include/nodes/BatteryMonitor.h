@@ -66,7 +66,7 @@
 //    DDDD   EEEEE  F      III  N   N  EEEEE  SSSS
 //    ----------------------------------------------------------------------------------
 
-// Battery states
+// Battery levels
 #define BATTERY_LEVEL_000            0
 #define BATTERY_LEVEL_010            1
 #define BATTERY_LEVEL_020            2
@@ -79,6 +79,10 @@
 #define BATTERY_LEVEL_090            9
 #define BATTERY_LEVEL_100           10
 #define BATTERY_LEVEL_UNAVAILABLE   -1
+
+// Battery states
+#define BATTERY_STATE_NORMAL         0
+#define BATTERY_STATE_LOW            1
 
 // The types, i.e., agent or coordinator
 #define TYPE_INVALID      -1
@@ -109,9 +113,6 @@
 //      V    A   A  R   R  III  A   A  BBBB   LLLLL  EEEEE  SSSS
 //    ----------------------------------------------------------------------------------
 
-// The level of the battery
-int m_battery_level;
-
 // The status of the crazyradio as received via messages
 //int m_crazyradio_status;
 
@@ -121,20 +122,27 @@ int m_agent_operating_state;
 // Publisher for the filtered battery voltage
 ros::Publisher filteredBatteryVoltagePublisher;
 
-// Publisher for the battery state
+// Publisher for the battery level
 ros::Publisher batteryLevelPublisher;
+
+// Publisher for changes in the battery state
+ros::Publisher batteryStateChangedPublisher;
 
 
 
 // VARIABLES THAT ARE LOADED FROM THE YAML FILE
 
 // Battery thresholds while in the "motors off" state, in [Volts]
-float m_battery_threshold_lower_while_standby = 3.30f;
-float m_battery_threshold_upper_while_standby = 4.20f;
+float yaml_battery_voltage_threshold_lower_while_standby = 3.30f;
+float yaml_battery_voltage_threshold_upper_while_standby = 4.20f;
 
 // Battery thresholds while in the "flying" state, in [Volts]
-float m_battery_threshold_lower_while_flying = 2.60f;
-float m_battery_threshold_upper_while_flying = 3.70f;
+float yaml_battery_voltage_threshold_lower_while_flying = 2.60f;
+float yaml_battery_voltage_threshold_upper_while_flying = 3.70f;
+
+// Delay before changing the state of the battery, in [number of measurements]
+// > Note that the delay in seconds therefore depends on the polling period
+int yaml_battery_delay_threshold_to_change_state = 5;
 
 
 

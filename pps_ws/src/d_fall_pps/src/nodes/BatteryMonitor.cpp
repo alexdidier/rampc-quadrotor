@@ -64,21 +64,12 @@ using namespace d_fall_pps;
 
 
 
+void agentOperatingStateCallback(const std_msgs::Int32& msg)
+{
+	// Extract the data
+	m_agent_operating_state = msg.data;
+}
 
-
-//    ----------------------------------------------------------------------------------
-//    L       OOO     A    DDDD
-//    L      O   O   A A   D   D
-//    L      O   O  A   A  D   D
-//    L      O   O  AAAAA  D   D
-//    LLLLL   OOO   A   A  DDDD
-//
-//    PPPP     A    RRRR     A    M   M  EEEEE  TTTTT  EEEEE  RRRR    SSSS
-//    P   P   A A   R   R   A A   MM MM  E        T    E      R   R  S
-//    PPPP   A   A  RRRR   A   A  M M M  EEE      T    EEE    RRRR    SSS
-//    P      AAAAA  R  R   AAAAA  M   M  E        T    E      R  R       S
-//    P      A   A  R   R  A   A  M   M  EEEEE    T    EEEEE  R   R  SSSS
-//    ----------------------------------------------------------------------------------
 
 
 
@@ -100,6 +91,8 @@ void crazyRadioStatusCallback(const std_msgs::Int32& msg)
 
 
 
+
+
 void newBatteryVoltageCallback(const std_msgs::Float32& msg)
 {
 	// Extract the data
@@ -115,71 +108,24 @@ void newBatteryVoltageCallback(const std_msgs::Float32& msg)
 	// Convert the battery percentage to a level
 	int filtered_battery_voltage_as_level = convertPercentageToLevel(filtered_battery_voltage_as_percentage);
 
-	// Then publish that the battery level is unavailable
+	// Publish that the battery voltage
+	std_msgs::Float32 filtered_battery_voltage_msg;
+	filtered_battery_voltage_msg.data = filtered_battery_voltage;
+	filteredBatteryVoltagePublisher.publish(filtered_battery_voltage_msg);
+
+	// Publish that the battery level
 	std_msgs::Int32 battery_level_msg;
-	battery_level_msg.data = BATTERY_LEVEL_UNAVAILABLE;
+	battery_level_msg.data = filtered_battery_voltage_as_level;
 	batteryLevelPublisher.publish(battery_level_msg);
 
-	// ROS_INFO_STREAM("filtered data: " << filtered_battery_voltage);
-	if(
-		(flying_state != STATE_MOTORS_OFF && (filtered_battery_voltage < m_battery_threshold_while_flying))
-		||
-		(flying_state == STATE_MOTORS_OFF && (filtered_battery_voltage < m_battery_threshold_while_motors_off))
-	)
-	{
-		if(getBatteryState() != BATTERY_STATE_LOW)
-		{
-		setBatteryStateTo(BATTERY_STATE_LOW);
-		ROS_INFO("[PPS CLIENT] low level battery triggered");
-		}
-
-	}
-	else
-	{
-	// TO AVOID BEING ABLE TO IMMEDIATELY TAKE-OFF AFTER A
-	// "BATTERY LOW" EVENT IS TRIGGERED, WE DO NOT SET THE
-	// BATTERY STATE BACK TO NORMAL
-	// if(getBatteryState() != BATTERY_STATE_NORMAL)
-	// {
-	//     setBatteryStateTo(BATTERY_STATE_NORMAL);
-	// }
-	}
+	// Update the battery state using the level
+	// > Note that the function called sends a message
+	//   only if the battery state changes
+	updateBatteryStateBasedOnLevel(filtered_battery_voltage_as_level);
 }
 
 
 
-void agentOperatingStateCallback(const std_msgs::Int32& msg)
-{
-	// Extract the data
-	m_agent_operating_state = msg.data;
-}
-
-
-int convertPercentageToLevel(float percentage)
-{
-	// Iterate through the levels
-	for (i_level=0;i_level<10;i++)
-	{
-		// Compute the threshold for this level
-		float threshold = float(i_level) * 10.0f;
-		// Add a buffer to the threshold to prevent
-		// high frequency changes to the level
-		if (m_battery_level==i_level)
-		{
-			threshold += 2.0f;
-		}
-		// Return the current index if appropriate
-		if (percentage <= threshold)
-		{
-			return i_level;
-		}
-	}
-	// If the function made it to this point without
-	// returning, then the percentage is at or above
-	// the maximum level
-	return BATTERY_LEVEL_100;
-
-}
 
 
 // > For converting a voltage to a percentage, depending on the current "my_flying_state" value
@@ -194,14 +140,14 @@ float fromVoltageToPercent(float voltage , float operating_state )
 	if (operating_state == STATE_MOTORS_OFF)
 	{
 		// Voltage limits for a "standby" type of state
-		voltage_when_empty = m_battery_threshold_lower_while_standby;
-		voltage_when_full  = m_battery_threshold_upper_while_standby;
+		voltage_when_empty = yaml_battery_voltage_threshold_lower_while_standby;
+		voltage_when_full  = yaml_battery_voltage_threshold_upper_while_standby;
 	}
 	else
 	{
 		// Voltage limits for a "flying" type of state
-		voltage_when_empty = m_battery_threshold_lower_while_flying;
-		voltage_when_full  = m_battery_threshold_upper_while_flying;
+		voltage_when_empty = yaml_battery_voltage_threshold_lower_while_flying;
+		voltage_when_full  = yaml_battery_voltage_threshold_upper_while_flying;
 	}
 
 	// COMPUTE THE PERCENTAGE
@@ -221,6 +167,95 @@ float fromVoltageToPercent(float voltage , float operating_state )
 	// RETURN THE PERCENTAGE
 	return percentage;
 }
+
+
+
+
+
+int convertPercentageToLevel(float percentage)
+{
+	// Initialise the battery level
+	static int battery_level = BATTERY_LEVEL_UNAVAILABLE;
+
+	// Iterate through the levels
+	for (i_level=0;i_level<10;i++)
+	{
+		// Compute the threshold for this level
+		float threshold = float(i_level) * 10.0f;
+		// Add a buffer to the threshold to prevent
+		// high frequency changes to the level
+		if (battery_level==i_level)
+		{
+			threshold += 2.0f;
+		}
+		// Return the current index if appropriate
+		if (percentage <= threshold)
+		{
+			return i_level;
+		}
+	}
+	// If the function made it to this point without
+	// returning, then the percentage is at or above
+	// the maximum level
+	return BATTERY_LEVEL_100;
+}
+
+
+
+
+
+void updateBatteryStateBasedOnLevel(level)
+{
+	// Initialise the battery state
+	static int battery_state = BATTERY_STATE_NORMAL;
+
+	// Initialise a counter for delaying a change of state
+	static int num_since_change = 0;
+
+	if (level == 0)
+	{
+		if (battery_state == BATTERY_STATE_NORMAL)
+		{
+			num_since_change++;
+		}
+		else
+		{
+			num_since_change = 0;
+		}
+	}
+	else if (level >= 1)
+	{
+		if (battery_state == BATTERY_STATE_LOW)
+		{
+			num_since_change++;
+		}
+		else
+		{
+			num_since_change = 0;
+		}
+	}
+
+	// Check if the "delay-to-change" threshold is reached
+	if (num_since_change >= yaml_battery_delay_threshold_to_change_state)
+	{
+		if (battery_state == BATTERY_STATE_NORMAL)
+		{
+			battery_state = BATTERY_STATE_LOW;
+		}
+		else
+		{
+			battery_state = BATTERY_STATE_NORMAL;
+		}
+		// Publish the change
+		std_msgs::Int32 battery_state_msg;
+		battery_state_msg.data = battery_state;
+		batteryStateChangedPublisher.publish(battery_state_msg);
+	}
+}
+
+
+
+
 
 
 //    ----------------------------------------------------------------------------------
@@ -251,9 +286,18 @@ int main(int argc, char* argv[])
 	// Advertise the service for loading Yaml Files
 	ros::ServiceServer service = nodeHandle.advertiseService("LoadYamlFiles", loadYamlFiles);
 
-	// Publish the battery level
-	batteryLevelPublisher = nodeHandle.advertise<std_msgs::Int32>("BatteryLevel",1);
+	// PUBLISHERS
+	// Publisher for the filtered battery voltage
+	ros::Publisher filteredBatteryVoltagePublisher = nodeHandle.advertise<std_msgs::Float32>("FilteredVoltage",1);
 
+	// Publisher for the battery level
+	batteryLevelPublisher = nodeHandle.advertise<std_msgs::Int32>("Level",1);
+
+	// Publisher for changes in the battery state
+	ros::Publisher batteryStateChangedPublisher = nodeHandle.advertise<std_msgs::Int32>("ChangedStateTo",1);
+
+
+	// SUBSCRIBERS
 	// Subscribe to the voltage of the battery
 	ros::Subscriber newBatteryVoltageSubscriber = nodeHandle.subscribe("CrazyRadio/CFBattery", 1, newBatteryVoltageCallback);
 
@@ -262,9 +306,6 @@ int main(int argc, char* argv[])
 
 	// Subscribe to the flying state of the agent
 	ros::Subscriber agentOperatingStateSubscriber = nodeHandle.subscribe("PPS_Client/flyingState", 1, agentOperatingStateCallback);
-
-	// Initialise the battery level
-	m_battery_level = BATTERY_LEVEL_UNAVAILABLE;
 
 	// Initialise the operating state
 	m_agent_operating_state = AGENT_OPERATING_STATE_MOTORS_OFF;
