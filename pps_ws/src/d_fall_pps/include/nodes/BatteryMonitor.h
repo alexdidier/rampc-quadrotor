@@ -48,7 +48,7 @@
 #include <ros/package.h>
 #include <ros/network.h>
 #include "std_msgs/Int32.h"
-//#include "std_msgs/Float32.h"
+#include "std_msgs/Float32.h"
 //#include <std_msgs/String.h>
 
 #include "d_fall_pps/Controller.h"
@@ -113,6 +113,25 @@
 //      V    A   A  R   R  III  A   A  BBBB   LLLLL  EEEEE  SSSS
 //    ----------------------------------------------------------------------------------
 
+
+// The ID of the agent that this node is monitoring
+int m_agentID;
+
+// NAMESPACES FOR THE PARAMETER SERVICES
+// > For the paramter service of this agent
+std::string m_namespace_to_own_agent_parameter_service;
+// > For the parameter service of the coordinator
+std::string m_namespace_to_coordinator_parameter_service;
+
+// SERVICE CLIENTS FOR THE PARAMETER SERVICES
+// > For the paramter service of this agent
+ros::ServiceClient m_own_agent_parameter_service_client;
+// > For the parameter service of the coordinator
+ros::ServiceClient m_coordinator_parameter_service_client;
+
+
+
+
 // The status of the crazyradio as received via messages
 //int m_crazyradio_status;
 
@@ -131,6 +150,9 @@ ros::Publisher batteryStateChangedPublisher;
 
 
 // VARIABLES THAT ARE LOADED FROM THE YAML FILE
+
+// Frequency of requesting the battery voltage, in [milliseconds]
+//float battery_polling_period = 200.0f;
 
 // Battery thresholds while in the "motors off" state, in [Volts]
 float yaml_battery_voltage_threshold_lower_while_standby = 3.30f;
@@ -162,8 +184,19 @@ int yaml_battery_delay_threshold_to_change_state = 5;
 
 void newBatteryVoltageCallback(const std_msgs::Float32& msg);
 
+float newBatteryVoltageForFilter(float new_value);
+// > For converting a voltage to a percentage,
+//   depending on the current "my_flying_state" value
 float fromVoltageToPercent(float voltage , float operating_state);
+// > For converting the percentage to a level
+int convertPercentageToLevel(float percentage);
+// > For updating the battery state based on the battery level
+//   Possible states are {normal,low}, and changes are delayed
+void updateBatteryStateBasedOnLevel(int level);
 
-int level convertVoltageToLevel(float voltage , float operating_state);
 
-
+// LOAD YAML PARAMETER FUNCTIONS
+void fetchYamlParameters(ros::NodeHandle& nodeHandle);
+void processFetchedParameters();
+float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name);
+int getParameterInt(ros::NodeHandle& nodeHandle, std::string name);

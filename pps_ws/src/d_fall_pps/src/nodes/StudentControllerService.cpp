@@ -804,7 +804,7 @@ int main(int argc, char* argv[]) {
 
     // Get the agent ID as the "ROS_NAMESPACE" this computer.
     // NOTES:
-    // > If you look at the "Student.launch" file in the "launch" folder, you will see
+    // > If you look at the "Agent.launch" file in the "launch" folder, you will see
     //   the following line of code:
     //   <param name="studentID" value="$(optenv ROS_NAMESPACE)" />
     //   This line of code adds a parameter named "studentID" to the "PPSClient"

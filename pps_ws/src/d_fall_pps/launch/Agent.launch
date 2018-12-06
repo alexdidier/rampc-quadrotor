@@ -35,6 +35,15 @@
 			<param name="agentID" value="$(arg agentID)" />
 		</node>
 
+		<!-- BATTERY MONITOR -->
+		<node
+			pkg    = "d_fall_pps"
+			name   = "BatteryMonitor"
+			output = "screen"
+			type   = "BatteryMonitor"
+			>
+		</node>
+
 		<!-- SAFE CONTROLLER -->
 		<node
 			pkg    = "d_fall_pps"
