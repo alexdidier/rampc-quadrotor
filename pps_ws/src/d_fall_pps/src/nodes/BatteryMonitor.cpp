@@ -128,7 +128,32 @@ void newBatteryVoltageCallback(const std_msgs::Float32& msg)
 // > For filtering the battery voltage
 float newBatteryVoltageForFilter(float new_value)
 {
-	return 0.0f;
+	return movingAverageBatteryFilter( new_value);
+}
+
+float movingAverageBatteryFilter(float new_input)
+{
+    const int N = 7;
+    static float previous_output = 4.2f;
+    static float inputs[N] = {4.2f,4.2f,4.2f,4.2f,4.2f,4.2f,4.2f};
+
+
+    // imagine an array of an even number of samples, we will output the one
+    // in the middle averaged with information from all of them.
+    // For that, we only need to store some past of the signal
+    float output = previous_output + new_input/N - inputs[N-1]/N;
+
+    // update array of inputs
+    for(int i = N - 1; i > 0; i--)
+    {
+        inputs[i] = inputs[i-1];
+    }
+    inputs[0] = new_input;
+
+
+    // update previous output
+    previous_output = output;
+    return output;
 }
 
 
@@ -281,94 +306,62 @@ void updateBatteryStateBasedOnLevel(int level)
 //    ----------------------------------------------------------------------------------
 
 
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-void yamlReadyForFetchCallback(const IntWithHeader & msg)
+
+void isReadyBatteryMonitorYamlCallback(const IntWithHeader & msg)
 {
 	// Check whether the message is relevant
 	bool isRevelant = checkMessageHeader( m_agentID , msg.shouldCheckForID , msg.agentIDs );
 
 	// Continue if the message is relevant
-	if  (isRevelant)
+	if (isRevelant)
 	{
 		// Extract the data
 		int parameter_service_to_load_from = msg.data;
+		// Initialise a local variable for the namespace
+		std::string namespace_to_use;
 		// Load from the respective parameter service
-		// Switch between fetching for the different controllers and from different locations
 		switch(parameter_service_to_load_from)
 		{
-
 			// > FOR FETCHING FROM THE AGENT'S OWN PARAMETER SERVICE
 			case LOAD_YAML_FROM_AGENT:
 			{
-				// Let the user know that this message was received
-				ROS_INFO("[BATTERY MONITOR] Now fetching the YAML parameter values from this agent.");
-				// Create a node handle to the parameter service of this agent
-				ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
-				// Call the function that fetches the parameters
-				fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
+				ROS_INFO("[BATTERY MONITOR] Now fetching the BatteryMonitor YAML parameter values from this agent.");
+				namespace_to_use = m_namespace_to_own_agent_parameter_service;
 				break;
 			}
-
 			// > FOR FETCHING FROM THE COORDINATOR'S PARAMETER SERVICE
 			case LOAD_YAML_FROM_COORDINATOR:
 			{
-				// Let the user know that this message was received
-				ROS_INFO("[BATTERY MONITOR] Now fetching the YAML parameter values from this agent's coordinator.");
-				// Create a node handle to the parameter service of this agent's coordinator
-				ros::NodeHandle nodeHandle_to_coordinator_parameter_service(m_namespace_to_coordinator_parameter_service);
-				// Call the function that fetches the parameters
-				fetchYamlParameters(nodeHandle_to_coordinator_parameter_service);
+				ROS_INFO("[BATTERY MONITOR] Now fetching the BatteryMonitor YAML parameter values from this agent's coordinator.");
+				namespace_to_use = m_namespace_to_coordinator_parameter_service;
 				break;
 			}
 
 			default:
 			{
-				// Let the user know that the command was not relevant
-				//ROS_INFO("The StudentControllerService received the message that YAML parameters were (re-)loaded");
-				//ROS_INFO("> However the parameters do not relate to this controller, hence nothing will be fetched.");
+				ROS_ERROR("[BATTERY MONITOR] Paramter service to load from was NOT recognised.");
+				namespace_to_use = m_namespace_to_own_agent_parameter_service;
 				break;
 			}
 		}
+		// Create a node handle to the selected parameter service
+		ros::NodeHandle nodeHandle_to_use(namespace_to_use);
+		// Call the function that fetches the parameters
+		fetchBatteryMonitorYamlParameters(nodeHandle_to_use);
 	}
 }
 
 
 
-// Check the header of a message for whether it is relevant
-bool checkMessageHeader( int agentID , bool shouldCheckForID , const std::vector<uint> & agentIDs )
+
+
+
+void fetchBatteryMonitorYamlParameters(ros::NodeHandle& nodeHandle)
 {
-	// The messag is by default relevant if the "shouldCheckForID"
-	// flag is false
-	if (!shouldCheckForID)
-	{
-		return true;
-	}
-	else
-	{
-		// Iterate through the vector of IDs
-		for ( int i_ID=0 ; i_ID < agentIDs.size() ; i_ID++ )
-		{
-			if ( agentIDs[i_ID] == agentID )
-			{
-				return true;
-			}
-		}
-	}
-	// If the function made it to here, then the message is
-	// NOT relevant, hence return false
-	return false;
-}
+	// Here we load the parameters that are specified in the file:
+	// BatteryMonitor.yaml
 
-
-
-// This function CAN BE edited for successful completion of the PPS exercise, and the
-// use of parameters fetched from the YAML file is highly recommended to make tuning of
-// your controller easier and quicker.
-void fetchYamlParameters(ros::NodeHandle& nodeHandle)
-{
-	// Here we load the parameters that are specified in the StudentController.yaml file
-
-	// Add the "StudentController" namespace to the "nodeHandle"
+	// Add the "BatteryMonitor" namespace to the "nodeHandle"
 	ros::NodeHandle nodeHandle_for_paramaters(nodeHandle, "BatteryMonitor");
 
 
@@ -391,114 +384,11 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 
 
 	// DEBUGGING: Print out one of the parameters that was loaded
-	ROS_INFO_STREAM("[BATTERY MONITOR] DEBUGGING: the fetched BatteryMonitor/battery_polling_period = " << yaml_battery_voltage_threshold_lower_while_flying);
-
-	// Call the function that computes details an values that are needed from these
-	// parameters loaded above
-	processFetchedParameters();
-}
+	ROS_INFO_STREAM("[BATTERY MONITOR] DEBUGGING: the fetched BatteryMonitor/battery_voltage_threshold_lower_while_flying = " << yaml_battery_voltage_threshold_lower_while_flying);
 
 
 
-
-
-// This function CAN BE edited for successful completion of the PPS exercise, and the
-// use of parameters loaded from the YAML file is highly recommended to make tuning of
-// your controller easier and quicker.
-void processFetchedParameters()
-{
-    // Compute the feed-forward force that we need to counteract gravity (i.e., mg)
-    // > in units of [Newtons]
-    //cf_weight_in_newtons = cf_mass_in_grams * 9.81/1000.0;
-    
-    // DEBUGGING: Print out one of the computed quantities
-	//ROS_INFO_STREAM("[STUDENT CONTROLLER] DEBUGGING: thus the weight of this agent in [Newtons] = " << cf_weight_in_newtons);
-}
-
-
-
-
-
-//    ----------------------------------------------------------------------------------
-//     GGGG  EEEEE  TTTTT  PPPP     A    RRRR     A    M   M   ( )
-//    G      E        T    P   P   A A   R   R   A A   MM MM  (   )
-//    G      EEE      T    PPPP   A   A  RRRR   A   A  M M M  (   )
-//    G   G  E        T    P      AAAAA  R  R   AAAAA  M   M  (   )
-//     GGGG  EEEEE    T    P      A   A  R   R  A   A  M   M   ( )
-//    ----------------------------------------------------------------------------------
-
-
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name)
-{
-    float val;
-    if(!nodeHandle.getParam(name, val))
-    {
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    return val;
-}
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-int getParameterInt(ros::NodeHandle& nodeHandle, std::string name)
-{
-    int val;
-    if(!nodeHandle.getParam(name, val))
-    {
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    return val;
-}
-
-
-
-
-bool getAgentIDandCoordIDfromClientNode( std::string client_namespace , int * agentID_ref , int * coordID_ref)
-{
-	// Initialise the return variable as success
-	bool return_was_successful = true;
-
-	// Create a node handle to the client
-	ros::NodeHandle client_nodeHandle(client_namespace);
-
-	// Get the value of the "agentID" parameter
-	int agentID_fetched;
-	if(!client_nodeHandle.getParam("agentID", agentID_fetched))
-	{
-		return_was_successful = false;
-	}
-	else
-	{
-		*agentID_ref = agentID_fetched;
-	}
-
-	// Get the value of the "coordID" parameter
-	int coordID_fetched;
-	if(!client_nodeHandle.getParam("coordID", coordID_fetched))
-	{
-		return_was_successful = false;
-	}
-	else
-	{
-		*coordID_ref = coordID_fetched;
-	}
-
-	// Return
-	return return_was_successful;
-}
-
-
-
-void getConstructNamespaceForCoordinatorParameterService( int coordID, std::string & coord_param_service_namespace )
-{
-	// Set the class variable "nodeHandle_to_coordinator_parameter_service" to be a node handle
-	// for the parameter service that is running on the coordinate machine
-	// NOTE: the backslash here (i.e., "/") before the name of the node ("ParameterService")
-	//       is very important because it specifies that the name is global
-	// Convert the agent ID to a zero padded string
-	std::ostringstream str_stream;
-	str_stream << std::setw(3) << std::setfill('0') << coordID;
-	std::string coordID_as_string(str_stream.str());
-	coord_param_service_namespace = "/dfall/coord" + coordID_as_string + "/ParameterService";
+	// PROCESS ANY OF THE FETCHED PARAMETERS AS NECESSARY
 }
 
 
@@ -533,7 +423,7 @@ int main(int argc, char* argv[])
 	// Stall the node IDs are not valid
 	if ( !isValid_IDs )
 	{
-		ROS_ERROR("[BATTERY SERVICE] Node NOT FUNCTIONING :-)");
+		ROS_ERROR("[BATTERY MONITOR] Node NOT FUNCTIONING :-)");
 		ros::spin();
 	}
 	else
@@ -551,10 +441,9 @@ int main(int argc, char* argv[])
 
 	// Set the class variable "m_namespace_to_coordinator_parameter_service",
 	// i.e., the namespace of parameter service for this agent's coordinator
-	getConstructNamespaceForCoordinatorParameterService( m_coordID, m_namespace_to_coordinator_parameter_service );
+	constructNamespaceForCoordinatorParameterService( m_coordID, m_namespace_to_coordinator_parameter_service );
 
 	// Inform the user of what namespaces are being used
-	ROS_INFO_STREAM("[BATTERY MONITOR] The namespace string for accessing the Paramter Services are:");
 	ROS_INFO_STREAM("[BATTERY MONITOR] m_namespace_to_own_agent_parameter_service    =  " << m_namespace_to_own_agent_parameter_service);
 	ROS_INFO_STREAM("[BATTERY MONITOR] m_namespace_to_coordinator_parameter_service  =  " << m_namespace_to_coordinator_parameter_service);
 
@@ -568,14 +457,14 @@ int main(int argc, char* argv[])
 
 	// The parameters service publish messages with names of the form:
 	// /dfall/.../ParameterService/<filename with .yaml extension>
-	ros::Subscriber batteryMonitor_yamlReady_fromAgent = nodeHandle_to_own_agent_parameter_service.subscribe(  "BatteryMonitor", 1, yamlReadyForFetchCallback);
-	ros::Subscriber batteryMonitor_yamlReady_fromCoord = nodeHandle_to_coordinator_parameter_service.subscribe("BatteryMonitor", 1, yamlReadyForFetchCallback);
+	ros::Subscriber batteryMonitor_yamlReady_fromAgent = nodeHandle_to_own_agent_parameter_service.subscribe(  "BatteryMonitor", 1, isReadyBatteryMonitorYamlCallback);
+	ros::Subscriber batteryMonitor_yamlReady_fromCoord = nodeHandle_to_coordinator_parameter_service.subscribe("BatteryMonitor", 1, isReadyBatteryMonitorYamlCallback);
 
 
 	// FETCH ANY PARAMETERS REQUIRED FROM THE "PARAMETER SERVICES"
 
 	// Call the class function that loads the parameters for this class.
-	fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
+	fetchBatteryMonitorYamlParameters(nodeHandle_to_own_agent_parameter_service);
 
 
 

@@ -43,14 +43,23 @@
 
 #include <stdlib.h>
 #include <ros/ros.h>
+
+// Include the standard message types
+#include "std_msgs/Int32.h"
+//#include "std_msgs/Float32.h"
+//#include <std_msgs/String.h>
+
+// Include the DFALL message types
 #include "d_fall_pps/CrazyflieContext.h"
 #include "d_fall_pps/CrazyflieDB.h"
 
+// Include the DFALL service types
 #include "d_fall_pps/CMRead.h"
 #include "d_fall_pps/CMQuery.h"
 #include "d_fall_pps/CMUpdate.h"
 #include "d_fall_pps/CMCommand.h"
 
+// Include other classes
 #include "CrazyflieIO.h"
 
 
@@ -102,6 +111,8 @@ using namespace std;
 //    ----------------------------------------------------------------------------------
 
 CrazyflieDB crazyflieDB;
+
+ros::Publisher m_databaseChangedPublisher;
 
 
 

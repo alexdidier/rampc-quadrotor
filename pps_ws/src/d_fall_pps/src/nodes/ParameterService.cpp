@@ -264,7 +264,8 @@ void requestLoadYamlFilenameCallback(const StringWithHeader& yaml_filename_to_lo
 
     // Create publisher as a local variable, using the filename
     // as the name of the message
-    ros::Publisher yamlParametersReadyForFetchPublisher = nodeHandle.advertise<StringWithHeader>(yaml_filename_to_load, 1);
+    ros::Publisher yamlParametersReadyForFetchPublisher = nodeHandle.advertise<IntWithHeader>(yaml_filename_to_load, 1);
+    //ros::spinOnce();
     // Create a local variable for the message
     IntWithHeader yaml_ready_msg;
     // Specify with the data the "type" of this parameter service
@@ -277,7 +278,7 @@ void requestLoadYamlFilenameCallback(const StringWithHeader& yaml_filename_to_lo
         }
         case TYPE_COORDINATOR:
         {
-            yaml_ready_msg.data = LOAD_YAML_FROM_AGENT;
+            yaml_ready_msg.data = LOAD_YAML_FROM_COORDINATOR;
             break;
         }
         default:
@@ -294,14 +295,18 @@ void requestLoadYamlFilenameCallback(const StringWithHeader& yaml_filename_to_lo
     // Copy across the vector of IDs
     if (yaml_filename_to_load_with_header.shouldCheckForID)
     {
-        int length_of_IDs = yaml_filename_to_load_with_header.agentIDs.size();
-        for ( int i_ID=0 ; i_ID<length_of_IDs ; i_ID++ )
+        for ( int i_ID=0 ; i_ID<yaml_filename_to_load_with_header.agentIDs.size() ; i_ID++ )
         {
             yaml_ready_msg.agentIDs.push_back(yaml_filename_to_load_with_header.agentIDs[i_ID]);
         }
     }
+    // Sleep to make the publisher known to ROS (in seconds)
+    ros::Duration(1.0).sleep();
     // Send the message
     yamlParametersReadyForFetchPublisher.publish(yaml_ready_msg);
+
+    // Inform the user that this was published
+    ROS_INFO_STREAM("[PARAMETER SERVICE] Published message that " << yaml_filename_to_load << " yaml parameters are ready." );
 }
 
 
@@ -472,7 +477,7 @@ int main(int argc, char* argv[])
     // loads yaml parameters
     bool isValid_namespaces = constructNamespaces();
 
-    // Stall the parameter service is the TYPE and ID are not valid
+    // Stall if the TYPE and ID are not valid
     if ( !( isValid_type_and_ID && isValid_namespaces ) )
     {
         ROS_ERROR("[PARAMETER SERVICE] Service NOT FUNCTIONING :-)");

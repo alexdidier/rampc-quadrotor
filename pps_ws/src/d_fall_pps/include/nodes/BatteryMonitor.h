@@ -59,6 +59,7 @@
 
 // Include the shared definitions
 #include "nodes/Constants.h"
+#include "classes/GetParamtersAndNamespaces.h"
 
 // SPECIFY THE PACKAGE NAMESPACE
 using namespace d_fall_pps;
@@ -75,18 +76,18 @@ using namespace d_fall_pps;
 //    ----------------------------------------------------------------------------------
 
 // Battery levels
-#define BATTERY_LEVEL_000            0
-#define BATTERY_LEVEL_010            1
-#define BATTERY_LEVEL_020            2
-#define BATTERY_LEVEL_030            3
-#define BATTERY_LEVEL_040            4
-#define BATTERY_LEVEL_050            5
-#define BATTERY_LEVEL_060            6
-#define BATTERY_LEVEL_070            7
-#define BATTERY_LEVEL_080            8
-#define BATTERY_LEVEL_090            9
-#define BATTERY_LEVEL_100           10
-#define BATTERY_LEVEL_UNAVAILABLE   -1
+// #define BATTERY_LEVEL_000            0
+// #define BATTERY_LEVEL_010            1
+// #define BATTERY_LEVEL_020            2
+// #define BATTERY_LEVEL_030            3
+// #define BATTERY_LEVEL_040            4
+// #define BATTERY_LEVEL_050            5
+// #define BATTERY_LEVEL_060            6
+// #define BATTERY_LEVEL_070            7
+// #define BATTERY_LEVEL_080            8
+// #define BATTERY_LEVEL_090            9
+// #define BATTERY_LEVEL_100           10
+// #define BATTERY_LEVEL_UNAVAILABLE   -1
 
 // Battery states
 #define BATTERY_STATE_NORMAL         0
@@ -96,13 +97,6 @@ using namespace d_fall_pps;
 #define TYPE_INVALID      -1
 #define TYPE_COORDINATOR   1
 #define TYPE_AGENT         2
-
-
-// CrazyRadio states:
-#define CRAZY_RADIO_STATE_CONNECTED      0
-#define CRAZY_RADIO_STATE_CONNECTING     1
-#define CRAZY_RADIO_STATE_DISCONNECTED   2
-
 
 // Flying states
 #define AGENT_OPERATING_STATE_MOTORS_OFF 1
@@ -187,9 +181,14 @@ int yaml_battery_delay_threshold_to_change_state = 5;
 //    P      R   R   OOO     T     OOO     T      Y    P      EEEEE  SSSS
 //    ----------------------------------------------------------------------------------
 
+// Callback for the raw voltage data
 void newBatteryVoltageCallback(const std_msgs::Float32& msg);
-
+// The selector for the filter
 float newBatteryVoltageForFilter(float new_value);
+// Moving average filter
+float movingAverageBatteryFilter(float new_input);
+
+
 // > For converting a voltage to a percentage,
 //   depending on the current "my_flying_state" value
 float fromVoltageToPercent(float voltage , float operating_state);
@@ -201,31 +200,5 @@ void updateBatteryStateBasedOnLevel(int level);
 
 
 // LOAD YAML PARAMETER FUNCTIONS
-void fetchYamlParameters(ros::NodeHandle& nodeHandle);
-void processFetchedParameters();
-
-void yamlReadyForFetchCallback(const IntWithHeader & msg);
-
-
-
-float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name);
-int getParameterInt(ros::NodeHandle& nodeHandle, std::string name);
-
-
-
-
-
-
-
-
-
-// FUNCTIONS FOR TEMPLATING A GET STUFF CLASS
-
-// Get the "agentID" and "coordID" from the client node
-bool getAgentIDandCoordIDfromClientNode( std::string client_namespace , int * agentID_ref , int * coordID_ref);
-
-// Construct the namespaces for the parameter services
-void getConstructNamespaceForCoordinatorParameterService( int coordID, std::string & coord_param_service_namespace );
-
-// Check the header of a message for whether it is relevant
-bool checkMessageHeader( int agentID , bool shouldCheckForID , const std::vector<uint> & agentIDs );
+void isReadyBatteryMonitorYamlCallback(const IntWithHeader & msg);
+void fetchBatteryMonitorYamlParameters(ros::NodeHandle& nodeHandle);

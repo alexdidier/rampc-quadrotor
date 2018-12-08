@@ -125,7 +125,7 @@ CoordinatorRow::CoordinatorRow(QWidget *parent, int agentID) :
     // > For updating the current battery state
     batteryStateSubscriber = base_nodeHandle.subscribe("PPSClient/batteryState", 1, &CoordinatorRow::batteryStateChangedCallback, this);
     // > For Flying state commands based on button clicks
-    flyingStateCommandPublisher = base_nodeHandle.advertise<std_msgs::Int32>("PPSClient/Command", 1);
+    flyingStateCommandPublisher = base_nodeHandle.advertise<d_fall_pps::IntWithHeader>("PPSClient/Command", 1);
     // > For updating the "flying_state_label" picture
     flyingStateSubscriber = base_nodeHandle.subscribe("PPSClient/flyingState", 1, &CoordinatorRow::flyingStateChangedCallback, this);
     // > For changes in the database that defines {agentID,cfID,flying zone} links
@@ -712,7 +712,8 @@ void CoordinatorRow::on_rf_disconnect_button_clicked()
 void CoordinatorRow::on_enable_flying_button_clicked()
 {
 #ifdef CATKIN_MAKE
-    std_msgs::Int32 msg;
+    d_fall_pps::IntWithHeader msg;
+    msg.shouldCheckForID = false;
     msg.data = CMD_CRAZYFLY_TAKE_OFF;
     this->flyingStateCommandPublisher.publish(msg);
 #endif
@@ -721,7 +722,8 @@ void CoordinatorRow::on_enable_flying_button_clicked()
 void CoordinatorRow::on_disable_flying_button_clicked()
 {
 #ifdef CATKIN_MAKE
-    std_msgs::Int32 msg;
+    d_fall_pps::IntWithHeader msg;
+    msg.shouldCheckForID = false;
     msg.data = CMD_CRAZYFLY_LAND;
     this->flyingStateCommandPublisher.publish(msg);
 #endif
@@ -730,7 +732,8 @@ void CoordinatorRow::on_disable_flying_button_clicked()
 void CoordinatorRow::on_motors_off_button_clicked()
 {
 #ifdef CATKIN_MAKE
-    std_msgs::Int32 msg;
+    d_fall_pps::IntWithHeader msg;
+    msg.shouldCheckForID = false;
     msg.data = CMD_CRAZYFLY_MOTORS_OFF;
     this->flyingStateCommandPublisher.publish(msg);
 #endif

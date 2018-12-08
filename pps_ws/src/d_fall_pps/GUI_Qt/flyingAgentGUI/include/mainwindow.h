@@ -41,6 +41,21 @@
 #include <ros/network.h>
 #include <ros/package.h>
 #include "rosNodeThread_for_flyingAgentGUI.h"
+
+// Include the standard message types
+#include "std_msgs/Int32.h"
+//#include "std_msgs/Float32.h"
+//#include <std_msgs/String.h>
+
+// Include the DFALL message types
+#include "d_fall_pps/StringWithHeader.h"
+
+#include "nodes/Constants.h"
+
+// Namespacing the package
+using namespace d_fall_pps;
+//using namespace std;
+
 #endif
 
 
@@ -68,6 +83,19 @@ private:
 
 #ifdef CATKIN_MAKE
     rosNodeThread* m_rosNodeThread;
+
+    // Variables for the type and ID
+    // The type of this node, i.e., agent or a coordinator, 
+    // specififed as a parameter in the "*.launch" file
+	int m_type = 0;
+
+	// The ID of this node
+	int m_ID = 0;
+
+	// The namespace into which this parameter service loads yaml parameters
+	std::string m_parameter_service_namespace;
+
+	ros::Publisher m_requestLoadYamlFilenamePublisher;
 #endif
 
 };

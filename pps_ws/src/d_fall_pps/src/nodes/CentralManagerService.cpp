@@ -157,6 +157,9 @@ bool cmCommand(CMCommand::Request &request, CMCommand::Response &response)
         case CMD_SAVE:
         {
             writeCrazyflieDB(crazyflieDB);
+            std_msgs::Int32 msg;
+            msg.data = 1;
+            m_databaseChangedPublisher.publish(msg);
             return true;
         }
 
@@ -164,6 +167,9 @@ bool cmCommand(CMCommand::Request &request, CMCommand::Response &response)
         {
             crazyflieDB.crazyflieEntries.clear();
             readCrazyflieDB(crazyflieDB);
+            std_msgs::Int32 msg;
+            msg.data = 1;
+            m_databaseChangedPublisher.publish(msg);
             return true;
         }
 
@@ -195,14 +201,8 @@ int main(int argc, char* argv[])
     ros::ServiceServer updateService = nodeHandle.advertiseService("Update", cmUpdate);
     ros::ServiceServer commandService = nodeHandle.advertiseService("Command", cmCommand);
 
-    // Get the handle to the namespace in which this coordinator is launched
-    //ros::NodeHandle namespaceNodeHandle = ros::NodeHandle();
-
-    // Subscriber for requests that the controller parameters should be re-loaded from
-    // the .YAML files on the coordinators machine, and then all the agents should be
-    // request to fetch the parameters from itself, i.e., fetch parameters from the
-    // coordinator.
-    //ros::Subscriber controllerYamlReadyForFetchSubscriber = namespaceNodeHandle.subscribe("/ParameterService/controllerYamlReadyForFetch", 1, controllerYamlReadyForFetchCallback);
+    // Publisher for when the database is saved
+    m_databaseChangedPublisher = nodeHandle.advertise<std_msgs::Int32>("DBChanged", 1);
 
 
     ROS_INFO("CentralManagerService ready");

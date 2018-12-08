@@ -119,7 +119,7 @@
 			type   = "ParameterService"
 			>
 			<param name="type"     type="str"  value="agent" />
-			<param name="agentID"  type="str"  value="$(arg agentID)" />
+			<param name="agentID"  value="$(arg agentID)" />
 			<rosparam
 				command = "load"
 				file    = "$(find d_fall_pps)/param/BatteryMonitor.yaml"
@@ -167,9 +167,12 @@
 		<group if="$(arg withGUI)">
 			<node
 				pkg    = "d_fall_pps"
-				name   = "student_GUI"
+				name   = "flyingAgentGUI"
 				output = "screen"
-				type   = "student_GUI">
+				type   = "flyingAgentGUI"
+				>
+				<param name="type"     type="str"  value="agent" />
+				<param name="agentID"  value="$(arg agentID)" />
 			</node>
 		</group>
 		

@@ -42,14 +42,21 @@
 
 #ifdef CATKIN_MAKE
 #include "rosNodeThread_for_managerGUI.h"
+
+// Include the standard message types
+#include "std_msgs/Int32.h"
+//#include "std_msgs/Float32.h"
+//#include <std_msgs/String.h>
+
+// Include the DFALL message types
+#include "d_fall_pps/IntWithHeader.h"
 #include "marker.h"
 #include "crazyFly.h"
 #include "CFLinker.h"
 
+// Include the DFALL service types
 #include "d_fall_pps/CrazyflieDB.h"
 #include "d_fall_pps/CrazyflieEntry.h"
-
-#include <std_msgs/Int32.h>
 
 
 // The constants that are sent to the agents in order to
@@ -235,7 +242,7 @@ private:
 
     std::string ros_namespace;
 
-    ros::Publisher DBChangedPublisher;
+    //ros::Publisher DBChangedPublisher;
     ros::Publisher emergencyStopPublisher;
 
     // Publsher for sending "commands" from here (the master) to all

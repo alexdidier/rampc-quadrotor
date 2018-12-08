@@ -50,7 +50,105 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     // > For "kill GUI node", press "CTRL+C" while the GUI window is the focus
     m_close_GUI_shortcut = new QShortcut(QKeySequence(tr("CTRL+C")), this, SLOT(close()));
 
+#ifdef CATKIN_MAKE
+    // Create a "ros::NodeHandle" type local variable "nodeHandle" as the current node,
+    // the "~" indcates that "self" is the node handle assigned to this variable.
+    ros::NodeHandle nodeHandle("~");
+    // Get the value of the "type" parameter into a local string variable
+    std::string type_string;
+    if(!nodeHandle.getParam("type", type_string))
+    {
+        // Throw an error if the agent ID parameter could not be obtained
+        ROS_ERROR("[FLYING AGENT GUI] Failed to get type");
+    }
 
+
+    // Set the "m_type" class variable based on this string loaded
+    if ((!type_string.compare("coordinator")))
+    {
+        m_type = TYPE_COORDINATOR;
+    }
+    else if ((!type_string.compare("agent")))
+    {
+        m_type = TYPE_AGENT;
+    }
+    else
+    {
+        // Set "m_type" to the value indicating that it is invlid
+        m_type = TYPE_INVALID;
+        ROS_ERROR("[FLYING AGENT GUI] The 'type' parameter retrieved was not recognised.");
+    }
+
+
+    // Construct the string to the namespace of this Paramater Service
+    switch (m_type)
+    {
+        case TYPE_AGENT:
+        {
+            // Get the value of the "agentID" parameter into the class variable "m_Id"
+            if(!nodeHandle.getParam("agentID", m_ID))
+            {
+                // Throw an error if the agent ID parameter could not be obtained
+                ROS_ERROR("[FLYING AGENT GUI] Failed to get agentID");
+            }
+            else
+            {
+                // Inform the user about the type and ID
+                ROS_INFO_STREAM("[FLYING AGENT GUI] Is of type AGENT with ID = " << m_ID);
+            }
+            break;
+        }
+
+        // A COORDINATOR TYPE PARAMETER SERVICE IS REQUESTED FROM:
+        // > The master GUI
+        case TYPE_COORDINATOR:
+        {
+            // Get the value of the "coordID" parameter into the class variable "m_Id"
+            if(!nodeHandle.getParam("coordID", m_ID))
+            {
+                // Throw an error if the coord ID parameter could not be obtained
+                ROS_ERROR("[FLYING AGENT GUI] Failed to get coordID");
+            }
+            else
+            {
+                // Inform the user about the type and ID
+                ROS_INFO_STREAM("[FLYING AGENT GUI] Is of type COORDINATOR with ID = " << m_ID);
+            }
+            break;
+        }
+
+        default:
+        {
+            // Throw an error if the type is not recognised
+            ROS_ERROR("[FLYING AGENT GUI] The 'm_type' variable was not recognised.");
+            break;
+        }
+    }
+
+
+
+    // Get the namespace of this "ParameterService" node
+    std::string this_node_namespace = ros::this_node::getNamespace();
+    ROS_INFO_STREAM("[FLYING AGENT GUI] ros::this_node::getNamespace() =  " << this_node_namespace);
+
+    // Construct the string to the namespace of this Paramater Service
+    m_parameter_service_namespace = this_node_namespace + '/' + "ParameterService";
+    ROS_INFO_STREAM("[FLYING AGENT GUI] parameter service is: " << m_parameter_service_namespace);
+
+    // Get the node handle to this parameter service
+    ros::NodeHandle nodeHandle_to_parameter_service(m_parameter_service_namespace);
+    m_requestLoadYamlFilenamePublisher = nodeHandle_to_parameter_service.advertise<StringWithHeader>("requestLoadYamlFilename", 1);
+
+    // Remove the show/hide coordinator menu item if launch as an agent
+    if (m_type==TYPE_AGENT)
+    {
+        // Hide the coordinator part of the GUI
+        ui->customWidget_coordinator->hide();
+        // And make the menu item unavailable
+        ui->actionShowHide_Coordinator->setEnabled(false);
+
+    }
+#endif
 
 }
 
@@ -81,8 +179,17 @@ void MainWindow::on_actionShowHide_Coordinator_triggered()
 void MainWindow::on_action_LoadYAML_BatteryMonitor_triggered()
 {
 #ifdef CATKIN_MAKE
-    // Send a message that the "BatteryMonitor" Yaml should be loaded
-    // by the appropriate Parameter Service
+    // Inform the user that the menu item was selected
+    ROS_INFO("[FLYING AGENT GUI] Load Battery Monitor YAML was clicked.");
+
+    // Create a local variable for the message
+    StringWithHeader yaml_filename_msg;
+    // Specify the data
+    yaml_filename_msg.data = "BatteryMonitor";
+    // Set for whom this applies to
+    yaml_filename_msg.shouldCheckForID = false;
+    // Send the message
+    m_requestLoadYamlFilenamePublisher.publish(yaml_filename_msg);
 #endif
 }
 
@@ -90,7 +197,16 @@ void MainWindow::on_action_LoadYAML_BatteryMonitor_triggered()
 void MainWindow::on_action_LoadYAML_ClientConfig_triggered()
 {
 #ifdef CATKIN_MAKE
-    // Send a message that the "ClientConfig" Yaml should be loaded
-    // by the appropriate Parameter Service
+    // Inform the user that the menu item was selected
+    ROS_INFO("[FLYING AGENT GUI] Load Client Config YAML was clicked.");
+
+    // Create a local variable for the message
+    StringWithHeader yaml_filename_msg;
+    // Specify the data
+    yaml_filename_msg.data = "ClientConfig";
+    // Set for whom this applies to
+    yaml_filename_msg.shouldCheckForID = false;
+    // Send the message
+    m_requestLoadYamlFilenamePublisher.publish(yaml_filename_msg);
 #endif
 }

@@ -79,14 +79,6 @@
 
 // These constants are defined to make the code more readable and adaptable.
 
-// Universal constants
-#define PI 3.1415926535
-
-#define RAD2DEG 180.0/PI
-#define DEG2RAD PI/180.0
-
-
-
 // FOR WHICH BUTTON WAS PRESSED IN THE PICKER CONTOLLER
 #define PICKER_BUTTON_GOTOSTART     1
 #define PICKER_BUTTON_ATTACH        2

@@ -76,9 +76,6 @@
 
 // These constants are defined to make the code more readable and adaptable.
 
-// Universal constants
-#define PI 3.1415926535
-
 // These constants define the modes that can be used for controller the Crazyflie 2.0,
 // the constants defined here need to be in agreement with those defined in the
 // firmware running on the Crazyflie 2.0.

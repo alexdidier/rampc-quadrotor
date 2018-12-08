@@ -275,8 +275,11 @@ void MainGUIWindow::_init()
     ros_namespace = ros::this_node::getNamespace();
 
     ros::NodeHandle nodeHandle("~");
-    DBChangedPublisher = nodeHandle.advertise<std_msgs::Int32>("DBChanged", 1);
-    emergencyStopPublisher = nodeHandle.advertise<std_msgs::Int32>("emergencyStop", 1);
+    //DBChangedPublisher = nodeHandle.advertise<std_msgs::Int32>("DBChanged", 1);
+
+    // CREATE A NODE HANDLE TO THE ROOT OF THE D-FaLL SYSTEM
+    ros::NodeHandle nodeHandle_dfall_root("/dfall");
+    emergencyStopPublisher = nodeHandle_dfall_root.advertise<d_fall_pps::IntWithHeader>("emergencyStop", 1);
 
     // Initialise the publisher for sending "commands" from here (the master)
     // to all of the agent nodes
@@ -883,9 +886,9 @@ void MainGUIWindow::on_save_in_DB_button_clicked()
     fill_database_file();
 
     // Now also publish a ROS message stating that we changed the DB, so the nodes can update it
-    std_msgs::Int32 msg;
-    msg.data = 1;
-    this->DBChangedPublisher.publish(msg);
+    //std_msgs::Int32 msg;
+    //msg.data = 1;
+    //this->DBChangedPublisher.publish(msg);
 }
 
 void MainGUIWindow::clear_database_file()
@@ -1105,10 +1108,11 @@ void MainGUIWindow::on_all_land_button_clicked()
 // > MOTORS OFF
 void MainGUIWindow::on_all_motors_off_button_clicked()
 {
-    std_msgs::Int32 msg;
+    d_fall_pps::IntWithHeader msg;
     msg.data = CMD_CRAZYFLY_MOTORS_OFF;
-    commandAllAgentsPublisher.publish(msg);
-    //emergencyStopPublisher.publish(msg);
+    msg.shouldCheckForID = false;
+    //commandAllAgentsPublisher.publish(msg);
+    emergencyStopPublisher.publish(msg);
 }
 // > ENABLE SAFE CONTROLLER
 void MainGUIWindow::on_all_enable_safe_controller_button_clicked()

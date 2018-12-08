@@ -42,6 +42,7 @@
 //    ----------------------------------------------------------------------------------
 
 #include <stdlib.h>
+#include <iostream>
 #include <string>
 
 #include <ros/ros.h>
@@ -49,17 +50,20 @@
 #include <ros/network.h>
 
 // Include the standard message types
-#include "std_msgs/Int32.h"
+//#include "std_msgs/Int32.h"
 //#include "std_msgs/Float32.h"
-#include <std_msgs/String.h>
+//#include <std_msgs/String.h>
 
 // Include the DFALL message types
 #include "d_fall_pps/IntWithHeader.h"
-//#include "d_fall_pps/FloatWithHeader.h"
-#include "d_fall_pps/StringWithHeader.h"
 
 // Include the shared definitions
 #include "nodes/Constants.h"
+
+// SPECIFY THE PACKAGE NAMESPACE
+using namespace d_fall_pps;
+//using namespace std;
+
 
 
 //    ----------------------------------------------------------------------------------
@@ -70,15 +74,6 @@
 //    DDDD   EEEEE  F      III  N   N  EEEEE  SSSS
 //    ----------------------------------------------------------------------------------
 
-// The types, i.e., agent or coordinator
-//#define TYPE_INVALID      -1
-//#define TYPE_COORDINATOR   1
-//#define TYPE_AGENT         2
-
-
-// Namespacing the package
-using namespace d_fall_pps;
-//using namespace std;
 
 
 
@@ -90,16 +85,6 @@ using namespace d_fall_pps;
 //     V V   AAAAA  R  R    I   AAAAA  B   B  L      E          S
 //      V    A   A  R   R  III  A   A  BBBB   LLLLL  EEEEE  SSSS
 //    ----------------------------------------------------------------------------------
-
-// The type of this node, i.e., agent or a coordinator, specified as a parameter in the
-// "*.launch" file
-int m_type = 0;
-
-// The ID of this node
-int m_ID = 0;
-
-// The namespace into which this parameter service loads yaml parameters
-std::string m_base_namespace;
 
 
 
@@ -119,10 +104,29 @@ std::string m_base_namespace;
 //    P      R   R   OOO     T     OOO     T      Y    P      EEEEE  SSSS
 //    ----------------------------------------------------------------------------------
 
-void requestLoadControllerYamlCallback(const std_msgs::Int32& msg);
 
-void requestLoadYamlFilenameCallback(const StringWithHeader& yamlFilenameToLoad);
 
-bool getTypeAndIDParameters();
+// GET YAML PARAMETER FUNCTIONS
+float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name);
+int getParameterInt(ros::NodeHandle& nodeHandle, std::string name);
+bool getParameterBool(ros::NodeHandle& nodeHandle, std::string name);
 
-bool constructNamespaces();
+void getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length);
+void getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val, int length);
+int getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val);
+
+
+
+// FUNCTIONS FOR GETTING IDs AND NAMESPACES
+
+// Get the "agentID" and "coordID" from the client node
+bool getAgentIDandCoordIDfromClientNode( std::string client_namespace , int * agentID_ref , int * coordID_ref);
+
+// Construct the namespaces for the coordinator
+void constructNamespaceForCoordinator( int coordID, std::string & coord_namespace );
+
+// Construct the namespaces for the coordinator's parameter services
+void constructNamespaceForCoordinatorParameterService( int coordID, std::string & coord_param_service_namespace );
+
+// Check the header of a message for whether it is relevant
+bool checkMessageHeader( int agentID , bool shouldCheckForID , const std::vector<uint> & agentIDs );

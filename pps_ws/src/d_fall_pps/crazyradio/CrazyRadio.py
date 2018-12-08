@@ -35,8 +35,9 @@
 
 import roslib; roslib.load_manifest('d_fall_pps')
 import rospy
-from d_fall_pps.msg import ControlCommand
 from std_msgs.msg import Int32
+from d_fall_pps.msg import ControlCommand
+from d_fall_pps.msg import IntWithHeader
 
 
 # General import
@@ -124,7 +125,7 @@ class PPSRadioClient:
         self.link_uri = ""
 
         self.status_pub = rospy.Publisher(node_name + '/CrazyRadioStatus', Int32, queue_size=1)
-        self.PPSClient_command_pub = rospy.Publisher('PPSClient/Command', Int32, queue_size=1)
+        self.PPSClient_command_pub = rospy.Publisher('PPSClient/Command', IntWithHeader, queue_size=1)
         time.sleep(1.0)
 
         # Initialize the CrazyFlie and add callbacks
@@ -168,7 +169,10 @@ class PPSRadioClient:
         print "Motors OFF"
         self._send_to_commander_motor(0, 0, 0, 0)
         # change state to motors OFF
-        self.PPSClient_command_pub.publish(CMD_CRAZYFLY_MOTORS_OFF)
+        msg = IntWithHeader()
+        msg.shouldCheckForID = False
+        msg.data = CMD_CRAZYFLY_MOTORS_OFF
+        self.PPSClient_command_pub.publish(msg)
         time.sleep(0.1)
         print "Disconnecting from %s" % self.link_uri
         self._cf.close_link()
@@ -225,7 +229,10 @@ class PPSRadioClient:
         """
         self.change_status_to(CONNECTED)
         # change state to motors OFF
-        cf_client.PPSClient_command_pub.publish(CMD_CRAZYFLY_MOTORS_OFF)
+        msg = IntWithHeader()
+        msg.shouldCheckForID = False
+        msg.data = CMD_CRAZYFLY_MOTORS_OFF
+        cf_client.PPSClient_command_pub.publish(msg)
 
         rospy.loginfo("Connection to %s successful: " % link_uri)
         # Config for Logging
@@ -252,7 +259,10 @@ class PPSRadioClient:
         rospy.logwarn("Disconnected from %s" % link_uri)
 
         # change state to motors OFF
-        self.PPSClient_command_pub.publish(CMD_CRAZYFLY_MOTORS_OFF)
+        msg = IntWithHeader()
+        msg.shouldCheckForID = False
+        msg.data = CMD_CRAZYFLY_MOTORS_OFF
+        self.PPSClient_command_pub.publish(msg)
 
         self.logconf.stop()
         rospy.loginfo("logconf stopped")
@@ -359,7 +369,10 @@ if __name__ == '__main__':
 
     cf_client._send_to_commander_motor(0, 0, 0, 0)
     # change state to motors OFF
-    cf_client.PPSClient_command_pub.publish(CMD_CRAZYFLY_MOTORS_OFF)
+    msg = IntWithHeader()
+    msg.shouldCheckForID = False
+    msg.data = CMD_CRAZYFLY_MOTORS_OFF
+    cf_client.PPSClient_command_pub.publish(msg)
     #wait for client to send its commands
     time.sleep(1.0)
 

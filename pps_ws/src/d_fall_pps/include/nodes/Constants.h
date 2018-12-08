@@ -30,6 +30,71 @@
 //    ----------------------------------------------------------------------------------
 
 
+//    ----------------------------------------------------------------------------------
+//    U   U
+//    U   U
+//    U   U
+//    U   U
+//     UUU
+//    ----------------------------------------------------------------------------------
+
+
+// Conversions between degrees and radians
+#define RAD2DEG 180.0/PI
+#define DEG2RAD PI/180.0
+
+// PI
+#define PI 3.141592653589
+
+
+
+
+// Types PPS firmware
+#define CF_COMMAND_TYPE_MOTORS 6
+#define CF_COMMAND_TYPE_RATE   7
+#define CF_COMMAND_TYPE_ANGLE  8
+
+// Types of controllers being used:
+#define SAFE_CONTROLLER      1
+#define DEMO_CONTROLLER      2
+#define STUDENT_CONTROLLER   3
+#define MPC_CONTROLLER       4
+#define REMOTE_CONTROLLER    5
+#define TUNING_CONTROLLER    6
+#define PICKER_CONTROLLER    7
+
+// The constants that "command" changes in the
+// operation state of this agent
+#define CMD_USE_SAFE_CONTROLLER      1
+#define CMD_USE_DEMO_CONTROLLER      2
+#define CMD_USE_STUDENT_CONTROLLER   3
+#define CMD_USE_MPC_CONTROLLER       4
+#define CMD_USE_REMOTE_CONTROLLER    5
+#define CMD_USE_TUNING_CONTROLLER    6
+#define CMD_USE_PICKER_CONTROLLER    7
+
+
+#define CMD_CRAZYFLY_TAKE_OFF        11
+#define CMD_CRAZYFLY_LAND            12
+#define CMD_CRAZYFLY_MOTORS_OFF      13
+
+// Flying states
+#define STATE_MOTORS_OFF 1
+#define STATE_TAKE_OFF   2
+#define STATE_FLYING     3
+#define STATE_LAND       4
+
+
+// Commands for CrazyRadio
+#define CMD_RECONNECT  0
+#define CMD_DISCONNECT 1
+
+
+// CrazyRadio states:
+#define CRAZY_RADIO_STATE_CONNECTED      0
+#define CRAZY_RADIO_STATE_CONNECTING     1
+#define CRAZY_RADIO_STATE_DISCONNECTED   2
+
 
 
 
@@ -74,6 +139,37 @@
 // For where to load the yaml file from
 #define LOAD_YAML_FROM_AGENT             1
 #define LOAD_YAML_FROM_COORDINATOR       2
+
+
+
+
+
+
+// The types, i.e., agent or coordinator
+#define TYPE_INVALID      -1
+#define TYPE_COORDINATOR   1
+#define TYPE_AGENT         2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

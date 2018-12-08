@@ -46,19 +46,28 @@
 #include <std_msgs/String.h>
 #include <ros/package.h>
 
-#include "d_fall_pps/Controller.h"
-#include "d_fall_pps/CMQuery.h"
+// Include the standard message types
+#include "std_msgs/Int32.h"
+#include "std_msgs/Float32.h"
+//#include <std_msgs/String.h>
 
+// Include the DFALL message types
+#include "d_fall_pps/IntWithHeader.h"
 #include "d_fall_pps/ViconData.h"
 #include "d_fall_pps/CrazyflieData.h"
 #include "d_fall_pps/ControlCommand.h"
 #include "d_fall_pps/CrazyflieContext.h"
 #include "d_fall_pps/Setpoint.h"
-#include "std_msgs/Int32.h"
-#include "std_msgs/Float32.h"
+
+// Include the DFALL service types
+#include "d_fall_pps/Controller.h"
+#include "d_fall_pps/CMQuery.h"
 
 // Include the Parameter Service shared definitions
 #include "nodes/Constants.h"
+
+// Include other classes
+#include "classes/GetParamtersAndNamespaces.h"
 
 // Need for having a ROS "bag" to store data for post-analysis
 //#include <rosbag/bag.h>
@@ -77,58 +86,7 @@
 //    DDDD   EEEEE  F      III  N   N  EEEEE  SSSS
 //    ----------------------------------------------------------------------------------
 
-// Types PPS firmware
-#define CF_COMMAND_TYPE_MOTORS 6
-#define CF_COMMAND_TYPE_RATE   7
-#define CF_COMMAND_TYPE_ANGLE  8
 
-// Types of controllers being used:
-#define SAFE_CONTROLLER      1
-#define DEMO_CONTROLLER      2
-#define STUDENT_CONTROLLER   3
-#define MPC_CONTROLLER       4
-#define REMOTE_CONTROLLER    5
-#define TUNING_CONTROLLER    6
-#define PICKER_CONTROLLER    7
-
-// The constants that "command" changes in the
-// operation state of this agent
-#define CMD_USE_SAFE_CONTROLLER      1
-#define CMD_USE_DEMO_CONTROLLER      2
-#define CMD_USE_STUDENT_CONTROLLER   3
-#define CMD_USE_MPC_CONTROLLER       4
-#define CMD_USE_REMOTE_CONTROLLER    5
-#define CMD_USE_TUNING_CONTROLLER    6
-#define CMD_USE_PICKER_CONTROLLER    7
-
-
-#define CMD_CRAZYFLY_TAKE_OFF        11
-#define CMD_CRAZYFLY_LAND            12
-#define CMD_CRAZYFLY_MOTORS_OFF      13
-
-// Flying states
-#define STATE_MOTORS_OFF 1
-#define STATE_TAKE_OFF   2
-#define STATE_FLYING     3
-#define STATE_LAND       4
-
-// Battery states
-#define BATTERY_STATE_NORMAL 0
-#define BATTERY_STATE_LOW    1
-
-// Commands for CrazyRadio
-#define CMD_RECONNECT  0
-#define CMD_DISCONNECT 1
-
-
-// CrazyRadio states:
-#define CONNECTED        0
-#define CONNECTING       1
-#define DISCONNECTED     2
-
-
-// Universal constants
-#define PI 3.141592653589
 
 // Namespacing the package
 using namespace d_fall_pps;
@@ -145,8 +103,18 @@ using namespace d_fall_pps;
 //      V    A   A  R   R  III  A   A  BBBB   LLLLL  EEEEE  SSSS
 //    ----------------------------------------------------------------------------------
 
-// "agentID", gives namespace and identifier in CentralManagerService
-int agentID;
+// The ID of the agent that this node is monitoring
+int m_agentID;
+
+// The ID of the agent that can coordinate this node
+int m_coordID;
+
+// NAMESPACES FOR THE PARAMETER SERVICES
+// > For the paramter service of this agent
+std::string m_namespace_to_own_agent_parameter_service;
+// > For the parameter service of the coordinator
+std::string m_namespace_to_coordinator_parameter_service;
+
 
 // The safe controller specified in the ClientConfig.yaml
 ros::ServiceClient safeController;
@@ -165,27 +133,36 @@ ros::ServiceClient pickerController;
 
 
 //values for safteyCheck
-bool strictSafety;
-float angleMargin;
+bool yaml_strictSafety;
+float yaml_angleMargin;
+
+
+
 
 // battery threshold
-float m_battery_threshold_while_flying;
-float m_battery_threshold_while_motors_off;
+//float m_battery_threshold_while_flying;
+//float m_battery_threshold_while_motors_off;
 
 
 // battery values
 
-int m_battery_state;
-float m_battery_voltage;
+//int m_battery_state;
+//float m_battery_voltage;
+
+
+
+
 
 Setpoint controller_setpoint;
+
+std::vector<float> yaml_default_setpoint = {0.0f, 0.0f, 0.0f, 0.0f};
 
 // variables for linear trayectory
 Setpoint current_safe_setpoint;
 double distance;
 double unit_vector[3];
 bool was_in_threshold = false;
-double distance_threshold;      //to be loaded from yaml
+double yaml_distance_threshold;      //to be loaded from yaml
 
 
 ros::ServiceClient centralManager;
@@ -232,12 +209,12 @@ int controller_used;
 
 ros::Publisher controllerUsedPublisher;
 
-std::string ros_namespace;
 
-float take_off_distance;
-float landing_distance;
-float duration_take_off;
-float duration_landing;
+
+float yaml_take_off_distance;
+float yaml_landing_distance;
+float yaml_duration_take_off;
+float yaml_duration_landing;
 
 bool finished_take_off = false;
 bool finished_land = false;
@@ -271,7 +248,7 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg);
 void fetchYamlParametersForSafeController(ros::NodeHandle& nodeHandle);
 void fetchClientConfigParameters(ros::NodeHandle& nodeHandle);
 
-void crazyRadioCommandAllAgentsCallback(const std_msgs::Int32& msg);
+
 
 
 
@@ -279,24 +256,23 @@ void crazyRadioCommandAllAgentsCallback(const std_msgs::Int32& msg);
 
 void viconCallback(const ViconData& viconData);
 
-// > For the LOADING of YAML PARAMETERS
-void yamlReadyForFetchCallback(const std_msgs::Int32& msg);
-void fetchYamlParametersForSafeController(ros::NodeHandle& nodeHandle);
-void fetchClientConfigParameters(ros::NodeHandle& nodeHandle);
+
 
 
 
 // > For the {dis/re}-connect command received from the coordinator
+//void crazyRadioCommandAllAgentsCallback(const std_msgs::Int32& msg);
 void crazyRadioCommandAllAgentsCallback(const std_msgs::Int32& msg);
 
 
-// > For the BATTERY
-int getBatteryState();
-void setBatteryStateTo(int new_battery_state);
-float movingAverageBatteryFilter(float new_input);
-void CFBatteryCallback(const std_msgs::Float32& msg);
 
 
+void crazyflieContextDatabaseChangedCallback(const std_msgs::Int32& msg);
+
+
+
+
+void commandCallback(const IntWithHeader & commandMsg);
 
 
 
@@ -314,6 +290,22 @@ void setInstantController(int controller);
 int getInstantController();
 void setControllerUsed(int controller);
 int getControllerUsed();
+
+
+// > For the BATTERY
+//int getBatteryState();
+//void setBatteryStateTo(int new_battery_state);
+//float movingAverageBatteryFilter(float new_input);
+//void CFBatteryCallback(const std_msgs::Float32& msg);
+void batteryMonitorStateChangedCallback(std_msgs::Int32 msg);
+
+
+// > For the LOADING of YAML PARAMETERS
+void isReadySafeControllerYamlCallback(const IntWithHeader & msg);
+void fetchSafeControllerYamlParameters(ros::NodeHandle& nodeHandle);
+
+void isReadyClientConfigYamlCallback(const IntWithHeader & msg);
+void fetchClientConfigYamlParameters(ros::NodeHandle& nodeHandle);
 
 
 

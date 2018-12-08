@@ -6,6 +6,7 @@ remoteController:  "RemoteControllerService/RemoteController"
 tuningController:  "TuningControllerService/TuningController"
 pickerController:  "PickerControllerService/PickerController"
 
+# Flag for whether to use angle for switching to the Safe Controller
 strictSafety: false
 angleMargin: 0.8
 
