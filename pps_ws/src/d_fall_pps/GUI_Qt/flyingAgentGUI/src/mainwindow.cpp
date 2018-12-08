@@ -76,3 +76,21 @@ void MainWindow::on_actionShowHide_Coordinator_triggered()
         ui->actionShowHide_Coordinator->setText(qstr);
     }
 }
+
+
+void MainWindow::on_action_LoadYAML_BatteryMonitor_triggered()
+{
+#ifdef CATKIN_MAKE
+    // Send a message that the "BatteryMonitor" Yaml should be loaded
+    // by the appropriate Parameter Service
+#endif
+}
+
+
+void MainWindow::on_action_LoadYAML_ClientConfig_triggered()
+{
+#ifdef CATKIN_MAKE
+    // Send a message that the "ClientConfig" Yaml should be loaded
+    // by the appropriate Parameter Service
+#endif
+}

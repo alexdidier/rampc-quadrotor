@@ -58,6 +58,8 @@ public:
 
 private slots:
     void on_actionShowHide_Coordinator_triggered();
+    void on_action_LoadYAML_BatteryMonitor_triggered();
+    void on_action_LoadYAML_ClientConfig_triggered();
 
 private:
     Ui::MainWindow *ui;
