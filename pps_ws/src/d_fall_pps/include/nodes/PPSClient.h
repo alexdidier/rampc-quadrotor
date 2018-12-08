@@ -58,7 +58,7 @@
 #include "std_msgs/Float32.h"
 
 // Include the Parameter Service shared definitions
-#include "nodes/ParameterServiceDefinitions.h"
+#include "nodes/Constants.h"
 
 // Need for having a ROS "bag" to store data for post-analysis
 //#include <rosbag/bag.h>

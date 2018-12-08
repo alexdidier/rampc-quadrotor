@@ -1,7 +1,10 @@
 <launch>
 
-	<!-- INPUT ARGUMENT OF THE AGENT's ID -->
+	<!-- INPUT ARGUMENT OF THE COORDINATOR's ID -->
 	<arg name="coordID" default="$(optenv DFALL_DEFAULT_COORD_ID)" />
+
+	<!-- INPUT ARGUMENT FOR LAUNCHING A GUI OR NOT -->
+	<arg name="withGUI" default="true" />
 
 	<!-- Example of how to use the value in coordID -->
 	<!-- <param name="param" value="$(arg coordID)"/> -->
@@ -12,14 +15,68 @@
 	<group ns="coord$(arg coordID)">
 
 		<!-- COORDINATOR GUI -->
+		<group if="$(arg withGUI)">
+			<node
+				pkg="d_fall_pps"
+				name="flyingAgentGUI"
+				output="screen"
+				type="flyingAgentGUI"
+				>
+				<param name="type"     type="str"  value="coordinator" />
+				<param name="coordID"  value="$(arg coordID)" />
+			</node>
+		</group>
+
+
+		<!-- PARAMETER SERVICE -->
 		<node
-			pkg="d_fall_pps"
-			name="flyingAgentGUI"
-			output="screen"
-			type="flyingAgentGUI"
+			pkg    = "d_fall_pps"
+			name   = "ParameterService"
+			output = "screen"
+			type   = "ParameterService"
 			>
 			<param name="type"     type="str"  value="coordinator" />
-			<param name="coordID"  type="str"  value="$(arg coordID)" />
+			<param name="coordID"  value="$(arg coordID)" />
+			<rosparam
+				command = "load"
+				file    = "$(find d_fall_pps)/param/YamlFileNames.yaml"
+				ns      = "YamlFileNames"
+			/>
+			<rosparam
+				command = "load"
+				file    = "$(find d_fall_pps)/param/SafeController.yaml"
+				ns      = "SafeController"
+			/>
+			<rosparam
+				command = "load"
+				file    = "$(find d_fall_pps)/param/DemoController.yaml"
+				ns      = "DemoController"
+			/>
+			<rosparam
+				command = "load"
+				file    = "$(find d_fall_pps)/param/StudentController.yaml"
+				ns      = "StudentController"
+			/>
+			<rosparam
+				command = "load"
+				file    = "$(find d_fall_pps)/param/MpcController.yaml"
+				ns      = "MpcController"
+			/>
+			<rosparam
+				command = "load"
+				file    = "$(find d_fall_pps)/param/RemoteController.yaml"
+				ns      = "RemoteController"
+			/>
+			<rosparam
+				command = "load"
+				file    = "$(find d_fall_pps)/param/TuningController.yaml"
+				ns      = "TuningController"
+			/>
+			<rosparam
+				command = "load"
+				file    = "$(find d_fall_pps)/param/PickerController.yaml"
+				ns      = "PickerController"
+			/>
 		</node>
 
 	</group>

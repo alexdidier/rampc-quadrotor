@@ -25,15 +25,72 @@
 //
 //
 //    DESCRIPTION:
-//    The service that manages the loading of YAML parameters
+//    Constants that are used across multiple files
 //
 //    ----------------------------------------------------------------------------------
 
 
 
 
-// DEFINES THAT ARE SHARED WITH OTHER FILES
 
+//    ----------------------------------------------------------------------------------
+//    BBBB     A    TTTTT  TTTTT  EEEEE  RRRR   Y   Y
+//    B   B   A A     T      T    E      R   R   Y Y
+//    BBBB   A   A    T      T    EEE    RRRR     Y
+//    B   B  AAAAA    T      T    E      R   R    Y
+//    BBBB   A   A    T      T    EEEEE  R   R    Y
+//    ----------------------------------------------------------------------------------
+
+// Battery levels
+#define BATTERY_LEVEL_000            0
+#define BATTERY_LEVEL_010            1
+#define BATTERY_LEVEL_020            2
+#define BATTERY_LEVEL_030            3
+#define BATTERY_LEVEL_040            4
+#define BATTERY_LEVEL_050            5
+#define BATTERY_LEVEL_060            6
+#define BATTERY_LEVEL_070            7
+#define BATTERY_LEVEL_080            8
+#define BATTERY_LEVEL_090            9
+#define BATTERY_LEVEL_100           10
+#define BATTERY_LEVEL_UNAVAILABLE   -1
+
+// Battery states
+#define BATTERY_STATE_NORMAL         0
+#define BATTERY_STATE_LOW            1
+
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//    Y   Y    A    M   M  L
+//     Y Y    A A   MM MM  L
+//      Y    A   A  M M M  L
+//      Y    AAAAA  M   M  L
+//      Y    A   A  M   M  LLLLL
+//    ----------------------------------------------------------------------------------
+
+// For where to load the yaml file from
+#define LOAD_YAML_FROM_AGENT             1
+#define LOAD_YAML_FROM_COORDINATOR       2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// OLD STUFF FOR LOADING YAML FILES
 // For which controller parameters to load from file
 #define LOAD_YAML_SAFE_CONTROLLER_AGENT             1
 #define LOAD_YAML_DEMO_CONTROLLER_AGENT             2

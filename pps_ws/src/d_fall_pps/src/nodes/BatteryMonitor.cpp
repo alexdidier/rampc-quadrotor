@@ -40,9 +40,7 @@
 
 
 
-// SPECIFY THE PACKAGE NAMESPACE
-using namespace d_fall_pps;
-//using namespace std;
+
 
 
 
@@ -284,52 +282,82 @@ void updateBatteryStateBasedOnLevel(int level)
 
 
 // This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
+void yamlReadyForFetchCallback(const IntWithHeader & msg)
 {
-	// Extract from the "msg" for which controller the and from where to fetch the YAML
-	// parameters
-	int controller_to_fetch_yaml = msg.data;
+	// Check whether the message is relevant
+	bool isRevelant = checkMessageHeader( m_agentID , msg.shouldCheckForID , msg.agentIDs );
 
-	// Switch between fetching for the different controllers and from different locations
-	switch(controller_to_fetch_yaml)
+	// Continue if the message is relevant
+	if  (isRevelant)
 	{
-
-		// > FOR FETCHING FROM THE AGENT'S OWN PARAMETER SERVICE
-		case FETCH_YAML_STUDENT_CONTROLLER_FROM_OWN_AGENT:
+		// Extract the data
+		int parameter_service_to_load_from = msg.data;
+		// Load from the respective parameter service
+		// Switch between fetching for the different controllers and from different locations
+		switch(parameter_service_to_load_from)
 		{
-			// Let the user know that this message was received
-			ROS_INFO("[STUDENT CONTROLLER] Received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from this agent.");
-			// Create a node handle to the parameter service running on this agent's machine
-			ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
-			// Call the function that fetches the parameters
-			fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
-			break;
-		}
 
-		// > FOR FETCHING FROM THE COORDINATOR'S PARAMETER SERVICE
-		case FETCH_YAML_STUDENT_CONTROLLER_FROM_COORDINATOR:
-		{
-			// Let the user know that this message was received
-			ROS_INFO("[STUDENT CONTROLLER] Received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from the coordinator.");
-			// Create a node handle to the parameter service running on the coordinator machine
-			ros::NodeHandle nodeHandle_to_coordinator_parameter_service(m_namespace_to_coordinator_parameter_service);
-			// Call the function that fetches the parameters
-			fetchYamlParameters(nodeHandle_to_coordinator_parameter_service);
-			break;
-		}
+			// > FOR FETCHING FROM THE AGENT'S OWN PARAMETER SERVICE
+			case LOAD_YAML_FROM_AGENT:
+			{
+				// Let the user know that this message was received
+				ROS_INFO("[BATTERY MONITOR] Now fetching the YAML parameter values from this agent.");
+				// Create a node handle to the parameter service of this agent
+				ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
+				// Call the function that fetches the parameters
+				fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
+				break;
+			}
 
-		default:
-		{
-			// Let the user know that the command was not relevant
-			//ROS_INFO("The StudentControllerService received the message that YAML parameters were (re-)loaded");
-			//ROS_INFO("> However the parameters do not relate to this controller, hence nothing will be fetched.");
-			break;
+			// > FOR FETCHING FROM THE COORDINATOR'S PARAMETER SERVICE
+			case LOAD_YAML_FROM_COORDINATOR:
+			{
+				// Let the user know that this message was received
+				ROS_INFO("[BATTERY MONITOR] Now fetching the YAML parameter values from this agent's coordinator.");
+				// Create a node handle to the parameter service of this agent's coordinator
+				ros::NodeHandle nodeHandle_to_coordinator_parameter_service(m_namespace_to_coordinator_parameter_service);
+				// Call the function that fetches the parameters
+				fetchYamlParameters(nodeHandle_to_coordinator_parameter_service);
+				break;
+			}
+
+			default:
+			{
+				// Let the user know that the command was not relevant
+				//ROS_INFO("The StudentControllerService received the message that YAML parameters were (re-)loaded");
+				//ROS_INFO("> However the parameters do not relate to this controller, hence nothing will be fetched.");
+				break;
+			}
 		}
 	}
 }
 
 
 
+// Check the header of a message for whether it is relevant
+bool checkMessageHeader( int agentID , bool shouldCheckForID , const std::vector<uint> & agentIDs )
+{
+	// The messag is by default relevant if the "shouldCheckForID"
+	// flag is false
+	if (!shouldCheckForID)
+	{
+		return true;
+	}
+	else
+	{
+		// Iterate through the vector of IDs
+		for ( int i_ID=0 ; i_ID < agentIDs.size() ; i_ID++ )
+		{
+			if ( agentIDs[i_ID] == agentID )
+			{
+				return true;
+			}
+		}
+	}
+	// If the function made it to here, then the message is
+	// NOT relevant, hence return false
+	return false;
+}
 
 
 
@@ -424,6 +452,55 @@ int getParameterInt(ros::NodeHandle& nodeHandle, std::string name)
 
 
 
+bool getAgentIDandCoordIDfromClientNode( std::string client_namespace , int * agentID_ref , int * coordID_ref)
+{
+	// Initialise the return variable as success
+	bool return_was_successful = true;
+
+	// Create a node handle to the client
+	ros::NodeHandle client_nodeHandle(client_namespace);
+
+	// Get the value of the "agentID" parameter
+	int agentID_fetched;
+	if(!client_nodeHandle.getParam("agentID", agentID_fetched))
+	{
+		return_was_successful = false;
+	}
+	else
+	{
+		*agentID_ref = agentID_fetched;
+	}
+
+	// Get the value of the "coordID" parameter
+	int coordID_fetched;
+	if(!client_nodeHandle.getParam("coordID", coordID_fetched))
+	{
+		return_was_successful = false;
+	}
+	else
+	{
+		*coordID_ref = coordID_fetched;
+	}
+
+	// Return
+	return return_was_successful;
+}
+
+
+
+void getConstructNamespaceForCoordinatorParameterService( int coordID, std::string & coord_param_service_namespace )
+{
+	// Set the class variable "nodeHandle_to_coordinator_parameter_service" to be a node handle
+	// for the parameter service that is running on the coordinate machine
+	// NOTE: the backslash here (i.e., "/") before the name of the node ("ParameterService")
+	//       is very important because it specifies that the name is global
+	// Convert the agent ID to a zero padded string
+	std::ostringstream str_stream;
+	str_stream << std::setw(3) << std::setfill('0') << coordID;
+	std::string coordID_as_string(str_stream.str());
+	coord_param_service_namespace = "/dfall/coord" + coordID_as_string + "/ParameterService";
+}
+
 
 //    ----------------------------------------------------------------------------------
 //    M   M    A    III  N   N
@@ -438,137 +515,72 @@ int main(int argc, char* argv[])
 	// Starting the ROS-node
 	ros::init(argc, argv, "BatteryMonitor");
 
-	// Create a "ros::NodeHandle" type local variable "nodeHandle" as the current node,
-	// the "~" indcates that "self" is the node handle assigned to this variable.
+	// Create a "ros::NodeHandle" type local variable named "nodeHandle",
+	// the "~" indcates that "self" is the node handle assigned.
 	ros::NodeHandle nodeHandle("~");
 
-	// Get the namespace of this "ParameterService" node
+	// Get the namespace of this node
 	std::string m_namespace = ros::this_node::getNamespace();
 	ROS_INFO_STREAM("[BATTERY MONITOR] ros::this_node::getNamespace() =  " << m_namespace);
 
-	// Get the agent ID as the "ROS_NAMESPACE" this computer.
-    // NOTES:
-    // > If you look at the "Agent.launch" file in the "launch" folder,
-    //   you will see the following line of code:
-    //   <param name="agentID" value="$(optenv ROS_NAMESPACE)" />
-    //   This line of code adds a parameter named "agentID" to the "PPSClient"
-    // > Thus, to get access to the "agentID" paremeter, we first need to get
-    //   a handle to the "PPSClient" node with which this battery monitor
-    //   was created.
-    // Get the handle to the "PPSClient" node
-    ros::NodeHandle PPSClient_nodeHandle(m_namespace + "/PPSClient");
-    // Get the value of the "studentID" parameter into the instance variable "my_agentID"
-    if(!PPSClient_nodeHandle.getParam("agentID", m_agentID))
-    {
-    	// Throw an error if the student ID parameter could not be obtained
-		ROS_ERROR("[BATTERY MONITOR] Failed to get agentID from PPSClient");
+
+
+	// AGENT ID AND COORDINATOR ID
+
+	// Get the ID of the agent and its coordinator
+	bool isValid_IDs = getAgentIDandCoordIDfromClientNode( m_namespace + "/PPSClient" , &m_agentID , &m_coordID);
+
+	// Stall the node IDs are not valid
+	if ( !isValid_IDs )
+	{
+		ROS_ERROR("[BATTERY SERVICE] Node NOT FUNCTIONING :-)");
+		ros::spin();
 	}
 	else
 	{
-		// Let the user know what agentID was loaded
-		ROS_INFO_STREAM("[BATTERY MONITOR] loaded agentID = " << m_agentID);
+		ROS_INFO_STREAM("[BATTERY MONITOR] loaded agentID = " << m_agentID << ", and coordID = " << m_coordID);
 	}
 
 
 
+	// PARAMETER SERVICE NAMESPACE AND NODEHANDLES:
 
-
-	// *********************************************************************************
-	// EVERYTHING THAT RELATES TO FETCHING PARAMETERS FROM A YAML FILE
-
-
-	// EVERYTHING FOR THE CONNECTION TO THIS AGENT's OWN PARAMETER SERVICE:
-
-	// Set the class variable "namespace_to_own_agent_parameter_service" to be a the
-	// namespace string for the parameter service that is running on the machine of this
-	// agent
+	// Set the class variable "m_namespace_to_own_agent_parameter_service",
+	// i.e., the namespace of parameter service for this agent
 	m_namespace_to_own_agent_parameter_service = m_namespace + "/ParameterService";
 
-	// Create a node handle to the parameter service running on this agent's machine
-	ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
+	// Set the class variable "m_namespace_to_coordinator_parameter_service",
+	// i.e., the namespace of parameter service for this agent's coordinator
+	getConstructNamespaceForCoordinatorParameterService( m_coordID, m_namespace_to_coordinator_parameter_service );
 
-	// Instantiate the local variable "controllerYamlReadyForFetchSubscriber" to be a
-	// "ros::Subscriber" type variable that subscribes to the "controllerYamlReadyForFetch" topic
-	// and calls the class function "yamlReadyForFetchCallback" each time a message is
-	// received on this topic and the message is passed as an input argument to the
-	// "yamlReadyForFetchCallback" class function.
-	ros::Subscriber controllerYamlReadyForFetchSubscriber_to_agent = nodeHandle_to_own_agent_parameter_service.subscribe("controllerYamlReadyForFetch", 1, yamlReadyForFetchCallback);
-
-
-	// EVERYTHING FOR THE CONNECTION THE COORDINATOR'S PARAMETER SERVICE:
-
-	// Set the class variable "nodeHandle_to_coordinator_parameter_service" to be a node handle
-	// for the parameter service that is running on the coordinate machine
-	// NOTE: the backslash here (i.e., "/") before the name of the node ("ParameterService")
-	//       is very important because it specifies that the name is global
-	m_namespace_to_coordinator_parameter_service = "/ParameterService";
-
-	// Create a node handle to the parameter service running on the coordinator machine
-	ros::NodeHandle nodeHandle_to_coordinator = ros::NodeHandle();
-	//ros::NodeHandle nodeHandle_to_coordinator_parameter_service = ros::NodeHandle(namespace_to_own_agent_parameter_service);
-
-
-	// Instantiate the local variable "controllerYamlReadyForFetchSubscriber" to be a
-	// "ros::Subscriber" type variable that subscribes to the "controllerYamlReadyForFetch" topic
-	// and calls the class function "yamlReadyForFetchCallback" each time a message is
-	// received on this topic and the message is passed as an input argument to the
-	// "yamlReadyForFetchCallback" class function.
-	ros::Subscriber controllerYamlReadyForFetchSubscriber_to_coordinator = nodeHandle_to_coordinator.subscribe("/ParameterService/controllerYamlReadyForFetch", 1, yamlReadyForFetchCallback);
-	//ros::Subscriber controllerYamlReadyForFetchSubscriber_to_coordinator = nodeHandle_to_coordinator_parameter_service.subscribe("controllerYamlReadyForFetch", 1, yamlReadyForFetchCallback);
-
-
-	// Set the class variable "m_own_agent_parameter_service_client"
-	// for making requests to the "LoadYamlFiles" service that is advertised
-	// by the "ParameterService" nodes
-	std::string own_agent_parameter_service_client_string = m_namespace_to_own_agent_parameter_service + "/LoadYamlFiles";
-	m_own_agent_parameter_service_client = ros::service::createClient<LoadYamlFiles>(own_agent_parameter_service_client_string, true);
-	ROS_INFO_STREAM("[BATTERY MONITOR] Loaded parameter service client: " << m_own_agent_parameter_service_client.getService());
-	
-	// PRINT OUT SOME INFORMATION
-
-	// Let the user know what namespaces are being used for linking to the parameter service
+	// Inform the user of what namespaces are being used
 	ROS_INFO_STREAM("[BATTERY MONITOR] The namespace string for accessing the Paramter Services are:");
 	ROS_INFO_STREAM("[BATTERY MONITOR] m_namespace_to_own_agent_parameter_service    =  " << m_namespace_to_own_agent_parameter_service);
 	ROS_INFO_STREAM("[BATTERY MONITOR] m_namespace_to_coordinator_parameter_service  =  " << m_namespace_to_coordinator_parameter_service);
 
+	// Create, as local variables, node handles to the parameters services
+	ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
+	ros::NodeHandle nodeHandle_to_coordinator_parameter_service(m_namespace_to_coordinator_parameter_service);
 
-	// FINALLY, FETCH ANY PARAMETERS REQUIRED FROM THESE "PARAMETER SERVICES"
+
+
+	// SUBSCRIBE TO "YAML PARAMTERS READY" MESSAGES
+
+	// The parameters service publish messages with names of the form:
+	// /dfall/.../ParameterService/<filename with .yaml extension>
+	ros::Subscriber batteryMonitor_yamlReady_fromAgent = nodeHandle_to_own_agent_parameter_service.subscribe(  "BatteryMonitor", 1, yamlReadyForFetchCallback);
+	ros::Subscriber batteryMonitor_yamlReady_fromCoord = nodeHandle_to_coordinator_parameter_service.subscribe("BatteryMonitor", 1, yamlReadyForFetchCallback);
+
+
+	// FETCH ANY PARAMETERS REQUIRED FROM THE "PARAMETER SERVICES"
 
 	// Call the class function that loads the parameters for this class.
-	//fetchYamlParameters(m_nodeHandle_to_own_agent_parameter_service);
-
-	// Load the yaml paramters
-	ros::Duration(2.0).sleep();
-	ROS_INFO_STREAM("[BATTERY MONITOR] DEBUG 1");
-	// Prepare the service call
-	LoadYamlFiles load_yaml_files_service_call;
-	std::string yaml_file_name_to_request = "BatteryMonitor";
-	load_yaml_files_service_call.request.yamlFileName = yaml_file_name_to_request;
-	// Call on the service
-	ROS_INFO_STREAM("[BATTERY MONITOR] DEBUG 2");
-	bool success = m_own_agent_parameter_service_client.call(load_yaml_files_service_call);
-	if (success)
-	{
-		// Extract the data from the response
-		float wait_time_for_yaml = load_yaml_files_service_call.response.waitTime;
-		// Wait for the specified time
-		ros::Duration(wait_time_for_yaml).sleep();
-		// Call the function that loads the yaml paramters
-		fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
-		ROS_INFO_STREAM("[BATTERY MONITOR] DEBUG 3");
-	}
-	else
-	{
-		ROS_INFO("[BATTERY MONITOR] The load yaml file service call was NOT successful.");
-	}
-
-	// *********************************************************************************
-
-
+	fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
 
 
 
 	// PUBLISHERS
+
 	// Publisher for the filtered battery voltage
 	ros::Publisher filteredBatteryVoltagePublisher = nodeHandle.advertise<std_msgs::Float32>("FilteredVoltage",1);
 
@@ -579,7 +591,9 @@ int main(int argc, char* argv[])
 	ros::Publisher batteryStateChangedPublisher = nodeHandle.advertise<std_msgs::Int32>("ChangedStateTo",1);
 
 
+
 	// SUBSCRIBERS
+
 	// Subscribe to the voltage of the battery
 	ros::Subscriber newBatteryVoltageSubscriber = nodeHandle.subscribe("CrazyRadio/CFBattery", 1, newBatteryVoltageCallback);
 
@@ -594,8 +608,9 @@ int main(int argc, char* argv[])
 
 
 
-
+	// Inform the user the this node is ready
 	ROS_INFO("[BATTERY MONITOR] Ready :-)");
+	// Spin as a single-thread node
 	ros::spin();
 
 	return 0;

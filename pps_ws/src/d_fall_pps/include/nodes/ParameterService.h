@@ -47,15 +47,19 @@
 #include <ros/ros.h>
 #include <ros/package.h>
 #include <ros/network.h>
+
+// Include the standard message types
 #include "std_msgs/Int32.h"
 //#include "std_msgs/Float32.h"
-//#include <std_msgs/String.h>
+#include <std_msgs/String.h>
 
-#include "d_fall_pps/Controller.h"
-#include "d_fall_pps/LoadYamlFiles.h"
+// Include the DFALL message types
+#include "d_fall_pps/IntWithHeader.h"
+//#include "d_fall_pps/FloatWithHeader.h"
+#include "d_fall_pps/StringWithHeader.h"
 
 // Include the shared definitions
-#include "nodes/ParameterServiceDefinitions.h"
+#include "nodes/Constants.h"
 
 
 //    ----------------------------------------------------------------------------------
@@ -89,20 +93,17 @@ using namespace d_fall_pps;
 
 // The type of this node, i.e., agent or a coordinator, specified as a parameter in the
 // "*.launch" file
-int my_type = 0;
+int m_type = 0;
 
 // The ID of this agent, i.e., the ID of this computer in the case that this computer is
 // and agent
-std::string my_agentID = "000";
+int m_ID = 0;
 
-// Publisher that notifies the relevant nodes when the YAML paramters have been loaded
-// from file into ram/cache, and hence are ready to be fetched
-ros::Publisher controllerYamlReadyForFetchPublisher;
-
-
+// The namespace into which this parameter service loads yaml parameters
 std::string m_base_namespace;
 
-ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_self;
+
+
 
 
 //    ----------------------------------------------------------------------------------
@@ -121,4 +122,8 @@ ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_self;
 
 void requestLoadControllerYamlCallback(const std_msgs::Int32& msg);
 
-bool loadYamlFiles(LoadYamlFiles::Request &request, LoadYamlFiles::Response &response);
+void requestLoadYamlFilenameCallback(const StringWithHeader& yamlFilenameToLoad);
+
+bool getTypeAndIDParameters();
+
+bool constructNamespaces();

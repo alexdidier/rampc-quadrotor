@@ -42,20 +42,28 @@
 //    ----------------------------------------------------------------------------------
 
 #include <stdlib.h>
+#include <iostream>
 #include <string>
 
 #include <ros/ros.h>
 #include <ros/package.h>
 #include <ros/network.h>
+
+// Include the standard message types
 #include "std_msgs/Int32.h"
 #include "std_msgs/Float32.h"
 //#include <std_msgs/String.h>
 
-#include "d_fall_pps/Controller.h"
-#include "d_fall_pps/LoadYamlFiles.h"
+// Include the DFALL message types
+#include "d_fall_pps/IntWithHeader.h"
 
 // Include the shared definitions
-#include "nodes/ParameterServiceDefinitions.h"
+#include "nodes/Constants.h"
+
+// SPECIFY THE PACKAGE NAMESPACE
+using namespace d_fall_pps;
+//using namespace std;
+
 
 
 //    ----------------------------------------------------------------------------------
@@ -117,17 +125,14 @@
 // The ID of the agent that this node is monitoring
 int m_agentID;
 
+// The ID of the agent that can coordinate this node
+int m_coordID;
+
 // NAMESPACES FOR THE PARAMETER SERVICES
 // > For the paramter service of this agent
 std::string m_namespace_to_own_agent_parameter_service;
 // > For the parameter service of the coordinator
 std::string m_namespace_to_coordinator_parameter_service;
-
-// SERVICE CLIENTS FOR THE PARAMETER SERVICES
-// > For the paramter service of this agent
-ros::ServiceClient m_own_agent_parameter_service_client;
-// > For the parameter service of the coordinator
-ros::ServiceClient m_coordinator_parameter_service_client;
 
 
 
@@ -198,5 +203,29 @@ void updateBatteryStateBasedOnLevel(int level);
 // LOAD YAML PARAMETER FUNCTIONS
 void fetchYamlParameters(ros::NodeHandle& nodeHandle);
 void processFetchedParameters();
+
+void yamlReadyForFetchCallback(const IntWithHeader & msg);
+
+
+
 float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name);
 int getParameterInt(ros::NodeHandle& nodeHandle, std::string name);
+
+
+
+
+
+
+
+
+
+// FUNCTIONS FOR TEMPLATING A GET STUFF CLASS
+
+// Get the "agentID" and "coordID" from the client node
+bool getAgentIDandCoordIDfromClientNode( std::string client_namespace , int * agentID_ref , int * coordID_ref);
+
+// Construct the namespaces for the parameter services
+void getConstructNamespaceForCoordinatorParameterService( int coordID, std::string & coord_param_service_namespace );
+
+// Check the header of a message for whether it is relevant
+bool checkMessageHeader( int agentID , bool shouldCheckForID , const std::vector<uint> & agentIDs );

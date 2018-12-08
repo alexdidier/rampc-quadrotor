@@ -192,7 +192,9 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
 	}
 
     // Then, Central manager
-    centralManager = nodeHandle.serviceClient<CMQuery>("/CentralManagerService/Query", false);
+    // CREATE A NODE HANDLE TO THE ROOT OF THE D-FaLL SYSTEM
+    ros::NodeHandle dfall_root_nodeHandle("/dfall");
+    centralManager = dfall_root_nodeHandle.serviceClient<CMQuery>("CentralManagerService/Query", false);
     loadCrazyflieContext();
 
 

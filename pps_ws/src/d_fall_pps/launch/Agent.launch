@@ -3,6 +3,9 @@
 	<!-- INPUT ARGUMENT OF THE AGENT's ID -->
 	<arg name="agentID" default="$(optenv DFALL_DEFAULT_AGENT_ID)" />
 
+	<!-- INPUT ARGUMENT OF THE COORDINATOR's ID -->
+	<arg name="coordID" default="$(optenv DFALL_DEFAULT_COORD_ID)" />
+
 	<!-- INPUT ARGUMENT FOR LAUNCHING A GUI OR NOT -->
 	<arg name="withGUI" default="true" />
 
@@ -33,6 +36,7 @@
 			>
 			<rosparam command="load" file="$(find d_fall_pps)/param/ClientConfig.yaml" />
 			<param name="agentID" value="$(arg agentID)" />
+			<param name="coordID" value="$(arg coordID)" />
 		</node>
 
 		<!-- BATTERY MONITOR -->
@@ -118,8 +122,8 @@
 			<param name="agentID"  type="str"  value="$(arg agentID)" />
 			<rosparam
 				command = "load"
-				file    = "$(find d_fall_pps)/param/YamlFileNames.yaml"
-				ns      = "YamlFileNames"
+				file    = "$(find d_fall_pps)/param/BatteryMonitor.yaml"
+				ns      = "BatteryMonitor"
 			/>
 			<rosparam
 				command = "load"

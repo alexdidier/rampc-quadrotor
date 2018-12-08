@@ -59,7 +59,7 @@
 #include "d_fall_pps/CustomButton.h"
 
 // Include the Parameter Service shared definitions
-#include "nodes/ParameterServiceDefinitions.h"
+#include "nodes/Constants.h"
 
 #include <std_msgs/Int32.h>
 

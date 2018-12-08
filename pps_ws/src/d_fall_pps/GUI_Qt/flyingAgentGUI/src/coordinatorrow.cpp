@@ -130,7 +130,7 @@ CoordinatorRow::CoordinatorRow(QWidget *parent, int agentID) :
     flyingStateSubscriber = base_nodeHandle.subscribe("PPSClient/flyingState", 1, &CoordinatorRow::flyingStateChangedCallback, this);
     // > For changes in the database that defines {agentID,cfID,flying zone} links
     databaseChangedSubscriber = dfall_root_nodeHandle.subscribe("/my_GUI/DBChanged", 1, &CoordinatorRow::databaseChangedCallback, this);;
-    centralManagerDatabaseService = dfall_root_nodeHandle.serviceClient<CMQuery>("/CentralManagerService/Query", false);
+    centralManagerDatabaseService = dfall_root_nodeHandle.serviceClient<CMQuery>("CentralManagerService/Query", false);
     // > For updating the controller that is currently operating
     controllerUsedSubscriber = base_nodeHandle.subscribe("PPSClient/controllerUsed", 1, &CoordinatorRow::controllerUsedChangedCallback, this);
 

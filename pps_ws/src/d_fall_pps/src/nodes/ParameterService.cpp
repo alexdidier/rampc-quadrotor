@@ -74,7 +74,7 @@
 
 
 
-
+/*
 void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
 {
     // Extract from the "msg" for which controller the YAML
@@ -98,9 +98,9 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
     //    ----------------------------------------
     // FOR THE SAFE CONTROLLER
     if (
-        ((controller_to_load_yaml==LOAD_YAML_SAFE_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR))
+        ((controller_to_load_yaml==LOAD_YAML_SAFE_CONTROLLER_COORDINATOR) && (m_type==TYPE_COORDINATOR))
         ||
-        ((controller_to_load_yaml==LOAD_YAML_SAFE_CONTROLLER_AGENT)       && (my_type==TYPE_AGENT))
+        ((controller_to_load_yaml==LOAD_YAML_SAFE_CONTROLLER_AGENT)       && (m_type==TYPE_AGENT))
     )
     {
         // Re-load the parameters of the safe controller:
@@ -109,9 +109,9 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
     //    ----------------------------------------
     // FOR THE DEMO CONTROLLER
     else if (
-        ((controller_to_load_yaml==LOAD_YAML_DEMO_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR))
+        ((controller_to_load_yaml==LOAD_YAML_DEMO_CONTROLLER_COORDINATOR) && (m_type==TYPE_COORDINATOR))
         ||
-        ((controller_to_load_yaml==LOAD_YAML_DEMO_CONTROLLER_AGENT)       && (my_type==TYPE_AGENT))
+        ((controller_to_load_yaml==LOAD_YAML_DEMO_CONTROLLER_AGENT)       && (m_type==TYPE_AGENT))
     )
     {
         // Re-load the parameters of the demo controller:
@@ -120,9 +120,9 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
     //    ----------------------------------------
     // FOR THE STUDENT CONTROLLER
     else if (
-        ((controller_to_load_yaml==LOAD_YAML_STUDENT_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR))
+        ((controller_to_load_yaml==LOAD_YAML_STUDENT_CONTROLLER_COORDINATOR) && (m_type==TYPE_COORDINATOR))
         ||
-        ((controller_to_load_yaml==LOAD_YAML_STUDENT_CONTROLLER_AGENT)       && (my_type==TYPE_AGENT))
+        ((controller_to_load_yaml==LOAD_YAML_STUDENT_CONTROLLER_AGENT)       && (m_type==TYPE_AGENT))
     )
     {
         // Re-load the parameters of the demo controller:
@@ -131,9 +131,9 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
     //    ----------------------------------------
     // FOR THE MPC CONTROLLER
     else if (
-        ((controller_to_load_yaml==LOAD_YAML_MPC_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR))
+        ((controller_to_load_yaml==LOAD_YAML_MPC_CONTROLLER_COORDINATOR) && (m_type==TYPE_COORDINATOR))
         ||
-        ((controller_to_load_yaml==LOAD_YAML_MPC_CONTROLLER_AGENT)       && (my_type==TYPE_AGENT))
+        ((controller_to_load_yaml==LOAD_YAML_MPC_CONTROLLER_AGENT)       && (m_type==TYPE_AGENT))
     )
     {
         // Re-load the parameters of the demo controller:
@@ -142,9 +142,9 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
     //    ----------------------------------------
     // FOR THE REMOTE CONTROLLER
     else if (
-        ((controller_to_load_yaml==LOAD_YAML_REMOTE_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR))
+        ((controller_to_load_yaml==LOAD_YAML_REMOTE_CONTROLLER_COORDINATOR) && (m_type==TYPE_COORDINATOR))
         ||
-        ((controller_to_load_yaml==LOAD_YAML_REMOTE_CONTROLLER_AGENT)       && (my_type==TYPE_AGENT))
+        ((controller_to_load_yaml==LOAD_YAML_REMOTE_CONTROLLER_AGENT)       && (m_type==TYPE_AGENT))
     )
     {
         // Re-load the parameters of the demo controller:
@@ -153,9 +153,9 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
     //    ----------------------------------------
     // FOR THE TUNING CONTROLLER
     else if (
-        ((controller_to_load_yaml==LOAD_YAML_TUNING_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR))
+        ((controller_to_load_yaml==LOAD_YAML_TUNING_CONTROLLER_COORDINATOR) && (m_type==TYPE_COORDINATOR))
         ||
-        ((controller_to_load_yaml==LOAD_YAML_TUNING_CONTROLLER_AGENT)       && (my_type==TYPE_AGENT))
+        ((controller_to_load_yaml==LOAD_YAML_TUNING_CONTROLLER_AGENT)       && (m_type==TYPE_AGENT))
     )
     {
         // Re-load the parameters of the demo controller:
@@ -164,9 +164,9 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
     //    ----------------------------------------
     // FOR THE PICKER CONTROLLER
     else if (
-        ((controller_to_load_yaml==LOAD_YAML_PICKER_CONTROLLER_COORDINATOR) && (my_type==TYPE_COORDINATOR))
+        ((controller_to_load_yaml==LOAD_YAML_PICKER_CONTROLLER_COORDINATOR) && (m_type==TYPE_COORDINATOR))
         ||
-        ((controller_to_load_yaml==LOAD_YAML_PICKER_CONTROLLER_AGENT)       && (my_type==TYPE_AGENT))
+        ((controller_to_load_yaml==LOAD_YAML_PICKER_CONTROLLER_AGENT)       && (m_type==TYPE_AGENT))
     )
     {
         // Re-load the parameters of the demo controller:
@@ -177,7 +177,7 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
         // Let the user know that the command was not recognised
         ROS_INFO_STREAM("[PARAMETER SERVICE] > Nothing to load for this parameter service with.");
         ROS_INFO_STREAM("[PARAMETER SERVICE] > The message received has 'controller_to_load_yaml'   =  " << controller_to_load_yaml);
-        ROS_INFO_STREAM("[PARAMETER SERVICE] > And the type of this Parameter Service is 'my_type'  =  " << my_type);
+        ROS_INFO_STREAM("[PARAMETER SERVICE] > And the type of this Parameter Service is 'm_type'  =  " << m_type);
         // Set the boolean that prevents the fetch message from being sent
         isValidToAttemptLoad = false;
     }
@@ -235,50 +235,213 @@ void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
         }
     }
 }
+*/
 
 
 
-
-bool loadYamlFiles(LoadYamlFiles::Request &request, LoadYamlFiles::Response &response)
+void requestLoadYamlFilenameCallback(const StringWithHeader& yaml_filename_to_load_with_header)
 {
-    ROS_INFO_STREAM("[PARAMETER SERVICE] DEBUG 1");
+    // LOAD THE YAML FILE
+
     // Get the yaml file name requested
-    std::string yamlFileName_toLoad = request.yamlFileName;
+    std::string yaml_filename_to_load = yaml_filename_to_load_with_header.data;
     // Get the node handle to this parameter service
     ros::NodeHandle nodeHandle("~");
-
-    // OLD: Get the yaml namespace from a yaml dictionary
-    //std::string yamlFileNamesParamters_basenamespace = "YamlFileNames/dictionary";
-    //std::string paramterName = yamlFileNamesParamters_basenamespace + "/" + yamlFileName_toLoad;
-    //std::string yamlFileName_from_dictionary;
-    //if(!nodeHandle.getParam(paramterName, yamlFileName_from_dictionary))
-    //{
-    //    ROS_ERROR_STREAM("[PARAMETER SERVICE] Missing parameter: '" << paramterName << "'");
-    //    return false;
-    //}
-
     // Instantiate a local variable for the command string that will be passed to the "system":
     std::string cmd;
-
     // Get the abolute path to "d_fall_pps":
     std::string d_fall_pps_path = ros::package::getPath("d_fall_pps");
-
     // Construct the system command string for (re-)loading the parameters:
-    cmd = "rosparam load " + d_fall_pps_path + "/param" + "/" + yamlFileName_toLoad + ".yaml " + m_base_namespace + "/" + yamlFileName_toLoad;
-
+    cmd = "rosparam load " + d_fall_pps_path + "/param" + "/" + yaml_filename_to_load + ".yaml " + m_base_namespace + "/" + yaml_filename_to_load;
     // Let the user know what is about to happen
     ROS_INFO_STREAM("[PARAMETER SERVICE] The following path will be used for locating the .yaml file: " << d_fall_pps_path  << " The comand line string sent to the 'system' is: " << cmd );
-
+    // Send the "load yaml" command to the system
     system(cmd.c_str());
 
-    // Pause breifly to ensure that the yaml file is fully loaded
-    //ros::Duration(0.5).sleep();
 
-    // Set the response wait time
-    response.waitTime = 2.0f;
-    ROS_INFO_STREAM("[PARAMETER SERVICE] DEBUG 2");
 
-    return true;
+    // PUBLISH A MESSAGE THAT THE YAML FILE WAS LOADED
+
+    // Create publisher as a local variable, using the filename
+    // as the name of the message
+    ros::Publisher yamlParametersReadyForFetchPublisher = nodeHandle.advertise<StringWithHeader>(yaml_filename_to_load, 1);
+    // Create a local variable for the message
+    IntWithHeader yaml_ready_msg;
+    // Specify with the data the "type" of this parameter service
+    switch (m_type)
+    {
+        case TYPE_AGENT:
+        {
+            yaml_ready_msg.data = LOAD_YAML_FROM_AGENT;
+            break;
+        }
+        case TYPE_COORDINATOR:
+        {
+            yaml_ready_msg.data = LOAD_YAML_FROM_AGENT;
+            break;
+        }
+        default:
+        {
+            // Throw an error if the type is not recognised
+            ROS_ERROR("[PARAMETER SERVICE] The 'm_type' variable was not recognised.");
+            // Specify to load from the agent by default
+            yaml_ready_msg.data = LOAD_YAML_FROM_AGENT;
+            break;
+        }
+    }
+    // Copy across the boolean field
+    yaml_ready_msg.shouldCheckForID = yaml_filename_to_load_with_header.shouldCheckForID;
+    // Copy across the vector of IDs
+    if (yaml_filename_to_load_with_header.shouldCheckForID)
+    {
+        int length_of_IDs = yaml_filename_to_load_with_header.agentIDs.size();
+        for ( int i_ID=0 ; i_ID<length_of_IDs ; i_ID++ )
+        {
+            yaml_ready_msg.agentIDs.push_back(yaml_filename_to_load_with_header.agentIDs[i_ID]);
+        }
+    }
+    // Send the message
+    yamlParametersReadyForFetchPublisher.publish(yaml_ready_msg);
+}
+
+
+
+
+
+bool getTypeAndIDParameters()
+{
+    // Initialise the return variable as success
+    bool return_was_successful = true;
+
+    // Create a "ros::NodeHandle" type local variable "nodeHandle" as the current node,
+    // the "~" indcates that "self" is the node handle assigned to this variable.
+    ros::NodeHandle nodeHandle("~");
+
+    // Get the value of the "type" parameter into a local string variable
+    std::string type_string;
+    if(!nodeHandle.getParam("type", type_string))
+    {
+        // Throw an error if the agent ID parameter could not be obtained
+        ROS_ERROR("[PARAMETER SERVICE] Failed to get type");
+    }
+
+    // Set the "m_type" class variable based on this string loaded
+    if ((!type_string.compare("coordinator")))
+    {
+        m_type = TYPE_COORDINATOR;
+    }
+    else if ((!type_string.compare("agent")))
+    {
+        m_type = TYPE_AGENT;
+    }
+    else
+    {
+        // Set "m_type" to the value indicating that it is invlid
+        m_type = TYPE_INVALID;
+        return_was_successful = false;
+        ROS_ERROR("[PARAMETER SERVICE] The 'type' parameter retrieved was not recognised.");
+    }
+
+
+    // Construct the string to the namespace of this Paramater Service
+    switch (m_type)
+    {
+        case TYPE_AGENT:
+        {
+            // Get the value of the "agentID" parameter into the class variable "m_Id"
+            if(!nodeHandle.getParam("agentID", m_ID))
+            {
+                // Throw an error if the agent ID parameter could not be obtained
+                return_was_successful = false;
+                ROS_ERROR("[PARAMETER SERVICE] Failed to get agentID");
+            }
+            else
+            {
+                // Inform the user about the type and ID
+                ROS_INFO_STREAM("[PARAMETER SERVICE] Is of type AGENT with ID = " << m_ID);
+            }
+            break;
+        }
+
+        // A COORDINATOR TYPE PARAMETER SERVICE IS REQUESTED FROM:
+        // > The master GUI
+        case TYPE_COORDINATOR:
+        {
+            // Get the value of the "coordID" parameter into the class variable "m_Id"
+            if(!nodeHandle.getParam("coordID", m_ID))
+            {
+                // Throw an error if the coord ID parameter could not be obtained
+                return_was_successful = false;
+                ROS_ERROR("[PARAMETER SERVICE] Failed to get coordID");
+            }
+            else
+            {
+                // Inform the user about the type and ID
+                ROS_INFO_STREAM("[PARAMETER SERVICE] Is of type COORDINATOR with ID = " << m_ID);
+            }
+            break;
+        }
+
+        default:
+        {
+            // Throw an error if the type is not recognised
+            return_was_successful = false;
+            ROS_ERROR("[PARAMETER SERVICE] The 'm_type' variable was not recognised.");
+            break;
+        }
+    }
+
+    // Return
+    return return_was_successful;
+}
+
+
+
+
+
+bool constructNamespaces()
+{
+    // Initialise the return variable as success
+    bool return_was_successful = true;
+
+    // Get the namespace of this "ParameterService" node
+    std::string this_node_namespace = ros::this_node::getNamespace();
+    ROS_INFO_STREAM("[PARAMETER SERVICE] ros::this_node::getNamespace() =  " << this_node_namespace);
+
+    // Construct the string to the namespace of this Paramater Service
+    switch (m_type)
+    {
+        case TYPE_AGENT:
+        {
+            //m_base_namespace = ros::this_node::getNamespace();
+            //m_base_namespace = "/agent" + m_Id + '/' + "ParameterService";
+            m_base_namespace = this_node_namespace + '/' + "ParameterService";
+            ROS_INFO_STREAM("[PARAMETER SERVICE] .yaml file parameters will be loaded into the 'base' namespace: " << m_base_namespace);
+            break;
+        }
+
+        // A COORDINATOR TYPE PARAMETER SERVICE IS REQUESTED FROM:
+        // > The master GUI
+        case TYPE_COORDINATOR:
+        {
+            //m_base_namespace = ros::this_node::getNamespace();
+            //m_base_namespace = "/ParameterService";
+            m_base_namespace = this_node_namespace + '/' + "ParameterService";
+            ROS_INFO_STREAM("[PARAMETER SERVICE] .yaml file parameters will be loaded into the 'base' namespace: " << m_base_namespace);
+            break;
+        }
+
+        default:
+        {
+            // Throw an error if the type is not recognised
+            return_was_successful = false;
+            ROS_ERROR("[PARAMETER SERVICE] The 'm_type' type parameter was not recognised.");
+            break;
+        }
+    }
+
+    // Return
+    return return_was_successful;
 }
 
 
@@ -302,151 +465,26 @@ int main(int argc, char* argv[])
     // the "~" indcates that "self" is the node handle assigned to this variable.
     ros::NodeHandle nodeHandle("~");
 
-    // Get the namespace of this "ParameterService" node
-    std::string m_namespace = ros::this_node::getNamespace();
-    ROS_INFO_STREAM("[PARAMETER SERVICE] ros::this_node::getNamespace() =  " << m_namespace);
+    // Get the type and ID of this parameter service
+    bool isValid_type_and_ID = getTypeAndIDParameters();
 
+    // Construct the namespace into which this parameter service
+    // loads yaml parameters
+    bool isValid_namespaces = constructNamespaces();
 
-
-    // Get the value of the "type" parameter into a local string variable
-    std::string type_string;
-    if(!nodeHandle.getParam("type", type_string))
+    // Stall the parameter service is the TYPE and ID are not valid
+    if ( !( isValid_type_and_ID && isValid_namespaces ) )
     {
-        // Throw an error if the agent ID parameter could not be obtained
-        ROS_ERROR("[PARAMETER SERVICE] Failed to get type from ParameterService");
+        ROS_ERROR("[PARAMETER SERVICE] Service NOT FUNCTIONING :-)");
+        ros::spin();
     }
 
-    // Set the "my_type" instance variable based on this string loaded
-    if ((!type_string.compare("coordinator")))
-    {
-        my_type = TYPE_COORDINATOR;
-    }
-    else if ((!type_string.compare("agent")))
-    {
-        my_type = TYPE_AGENT;
-    }
-    else
-    {
-        // Set "my_type" to the value indicating that it is invlid
-        my_type = TYPE_INVALID;
-        ROS_ERROR("[PARAMETER SERVICE] The 'type' parameter retrieved was not recognised.");
-    }
+    // Subscribe to the messages that request loading a yaml file
+    ros::Subscriber requestLoadYamlFilenameSubscriber = nodeHandle.subscribe("requestLoadYamlFilename", 1, requestLoadYamlFilenameCallback);
 
-
-    // Get the value of the "agentID" parameter into the instance variable "my_agentID"
-    if(!nodeHandle.getParam("agentID", my_agentID))
-    {
-        // Throw an error if the agent ID parameter could not be obtained
-        ROS_ERROR("[PARAMETER SERVICE] Failed to get agentID from ParameterService");
-    }
-
-
-    // Publisher that notifies the relevant nodes when the YAML paramters have been loaded
-    // from file into ram/cache, and hence are ready to be fetched
-    controllerYamlReadyForFetchPublisher = nodeHandle.advertise<std_msgs::Int32>("controllerYamlReadyForFetch", 1);
-    
-
-    // Construct the string to the namespace of this Paramater Service
-    switch (my_type)
-    {
-        case TYPE_AGENT:
-        {
-            //m_base_namespace = ros::this_node::getNamespace();
-            //m_base_namespace = "/agent" + my_agentID + '/' + "ParameterService";
-            m_base_namespace = m_namespace + '/' + "ParameterService";
-            ROS_INFO_STREAM("[PARAMETER SERVICE] .yaml file parameters will be loaded into the 'base' namespace: " << m_base_namespace);
-            break;
-        }
-
-        // A COORDINATOR TYPE PARAMETER SERVICE IS REQUESTED FROM:
-        // > The master GUI
-        case TYPE_COORDINATOR:
-        {
-            //m_base_namespace = ros::this_node::getNamespace();
-            //m_base_namespace = "/ParameterService";
-            m_base_namespace = m_namespace + '/' + "ParameterService";
-            ROS_INFO_STREAM("[PARAMETER SERVICE] .yaml file parameters will be loaded into the 'base' namespace: " << m_base_namespace);
-            break;
-        }
-
-        default:
-        {
-            ROS_ERROR("[PARAMETER SERVICE] The 'my_type' type parameter was not recognised.");
-            break;
-        }
-    }
-
-    
-
-
-    // SUBSCRIBE TO THE APPROPRIATE "request" MESSAGES DEPENDING ON THE "my_type"
-    // Delare the subscribers as local variables here so that they persist for the life
-    // time of this main() function. The varaibles will be assigned in the switch case below
-    // > Subscribers for when this Parameter Service node is: TYPE_AGENT
-    ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_self;
-    ros::Subscriber requestLoadControllerYamlSubscriber_agent_to_coordinator;
-    // > Subscribers for when this Parameter Service node is: TYPE_COORDINATOR
-    ros::Subscriber requestLoadControllerYamlSubscriber_coordinator_to_self;
-
-    // SUBSCRIBE TO THE APPROPRIATE "request" MESSAGES DEPENDING ON THE "my_type"
-    switch (my_type)
-    {
-        // AN AGENT TYPE PARAMETER SERVICE IS REQUESTED FROM:
-        // > The master GUI
-        // > The agent's own "PPSClient" node
-        case TYPE_AGENT:
-        {
-            // Subscribing to the agent's own PPSclient
-            // > First: Construct a node handle to the PPSclient
-            ros::NodeHandle nh_PPSClient_for_this_agent("PPSClient");
-            // > Second: Subscribe to the "requestLoadControllerYaml" topic
-            requestLoadControllerYamlSubscriber_agent_to_self = nh_PPSClient_for_this_agent.subscribe("requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);
-
-            // Subscribing to the coordinator
-            // > First: construct a node handle to the coordinator
-            ros::NodeHandle nh_coordinator_for_this_agent = ros::NodeHandle();
-            // > Second: Subscribe to the "requestLoadControllerYaml" topic
-            requestLoadControllerYamlSubscriber_agent_to_coordinator = nh_coordinator_for_this_agent.subscribe("/my_GUI/requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);            
-
-            // Inform the user what was subscribed to:
-            ROS_INFO_STREAM("[PARAMETER SERVICE] Subscribed to 'requestLoadControllerYaml' messages from both the 'my_GUI' and the 'PPSClient'");
-            break;
-        }
-
-        // A COORDINATOR TYPE PARAMETER SERVICE IS REQUESTED FROM:
-        // > The master GUI
-        case TYPE_COORDINATOR:
-        {
-            // Subscribing to the coordinator's own "my_GUI" 
-            // > First: Get the node handle required
-            ros::NodeHandle nh_coordinator_for_this_coordinator = ros::NodeHandle();
-            // > Second: Subscribe to requests from: the master GUI
-            requestLoadControllerYamlSubscriber_coordinator_to_self = nh_coordinator_for_this_coordinator.subscribe("/my_GUI/requestLoadControllerYaml", 1, requestLoadControllerYamlCallback);
-
-            // Inform the user what was subscribed to:
-            ROS_INFO_STREAM("[PARAMETER SERVICE] Subscribed to 'requestLoadControllerYaml' messages from 'my_GUI'");
-            break;
-        }
-
-        default:
-        {
-            ROS_ERROR("[PARAMETER SERVICE] The 'my_type' type parameter was not recognised.");
-            break;
-        }
-    }
-
-
-    // Advertise the service for loading Yaml Files
-    ros::ServiceServer service = nodeHandle.advertiseService("LoadYamlFiles", loadYamlFiles);
-
-
-
-    // LOAD THE LIST OF YAML FILE NAMES
-
-
-
-
+    // Inform the user the this node is ready
     ROS_INFO("[PARAMETER SERVICE] Service ready :-)");
+    // Spin as a single-thread node
     ros::spin();
 
     return 0;

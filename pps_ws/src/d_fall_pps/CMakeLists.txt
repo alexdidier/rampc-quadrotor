@@ -205,7 +205,11 @@ add_message_files(
   SetpointV2.msg
   CrazyflieEntry.msg
   CrazyflieDB.msg
-  #----------------------------------------------------------------------
+  #------------------------
+  IntWithHeader.msg
+  FloatWithHeader.msg
+  StringWithHeader.msg
+  #------------------------
   DebugMsg.msg
   CustomButton.msg
   ViconSubscribeObjectName.msg
@@ -219,7 +223,6 @@ add_message_files(
 # )
 add_service_files(
   FILES
-  LoadYamlFiles.srv
   Controller.srv
   CMRead.srv
   CMQuery.srv
