@@ -80,7 +80,13 @@ void EnableControllerLoadYamlBar::on_enable_student_button_clicked()
 
 void EnableControllerLoadYamlBar::on_enable_default_button_clicked()
 {
-
+#ifdef CATKIN_MAKE
+    //d_fall_pps::IntWithHeader msg;
+    //fillIntMessageHeader(msg);
+    //msg.data = CMD_USE_STUDENT_CONTROLLER;
+    //this->commandPublisher.publish(msg);
+    //ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Enable Student Controller");
+#endif
 }
 
 

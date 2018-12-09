@@ -509,7 +509,7 @@ void ConnectStartStopBar::on_rf_connect_button_clicked()
     fillIntMessageHeader(msg);
     msg.data = CMD_RECONNECT;
     this->crazyRadioCommandPublisher.publish(msg);
-    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Enable Safe Controller");
+    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Connect button clicked");
 #endif
 }
 
@@ -520,7 +520,7 @@ void ConnectStartStopBar::on_rf_disconnect_button_clicked()
     fillIntMessageHeader(msg);
     msg.data = CMD_DISCONNECT;
     this->crazyRadioCommandPublisher.publish(msg);
-    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Enable Safe Controller");
+    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Disconnect button clicked");
 #endif
 }
 
@@ -531,6 +531,7 @@ void ConnectStartStopBar::on_enable_flying_button_clicked()
     fillIntMessageHeader(msg);
     msg.data = CMD_CRAZYFLY_TAKE_OFF;
     this->flyingStateCommandPublisher.publish(msg);
+    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Enable flying button clicked");
 #endif
 }
 
@@ -541,6 +542,7 @@ void ConnectStartStopBar::on_disable_flying_button_clicked()
     fillIntMessageHeader(msg);
     msg.data = CMD_CRAZYFLY_LAND;
     this->flyingStateCommandPublisher.publish(msg);
+    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Disable flying button clicked");
 #endif
 }
 
@@ -551,6 +553,7 @@ void ConnectStartStopBar::on_motors_off_button_clicked()
     fillIntMessageHeader(msg);
     msg.data = CMD_CRAZYFLY_MOTORS_OFF;
     this->flyingStateCommandPublisher.publish(msg);
+    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Motors-off button clicked");
 #endif
 }
 

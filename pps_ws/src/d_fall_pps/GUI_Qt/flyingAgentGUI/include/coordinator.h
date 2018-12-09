@@ -19,6 +19,7 @@ public:
     explicit Coordinator(QWidget *parent = 0);
     ~Coordinator();
 
+
 private:
     QVector<CoordinatorRow*> vector_of_coordinatorRows;
 

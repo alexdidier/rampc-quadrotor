@@ -94,6 +94,11 @@ public:
     // > Set the level of detail to display
     void setLevelOfDetailToDisplay(int level);
 
+
+signals:
+    void shouldCoordinateChanged(int newValue);
+
+
 private:
     // --------------------------------------------------- //
     // PRIVATE VARIABLES
