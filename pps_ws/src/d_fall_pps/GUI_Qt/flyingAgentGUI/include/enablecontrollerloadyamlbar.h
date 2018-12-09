@@ -2,6 +2,7 @@
 #define ENABLECONTROLLERLOADYAMLBAR_H
 
 #include <QWidget>
+#include <QMutex>
 
 #ifdef CATKIN_MAKE
 #include <ros/ros.h>
@@ -58,6 +59,11 @@ public:
     explicit EnableControllerLoadYamlBar(QWidget *parent = 0);
     ~EnableControllerLoadYamlBar();
 
+
+public slots:
+    void setAgentIDsToCoordinate(QVector<int> agentIDs , bool shouldCoordinateAll);
+
+
 private slots:
 
     // ENABLE CONTROLLER BUTTONS ON-CLICK CALLBACK
@@ -85,6 +91,12 @@ private:
 
     // The ID  of this node
     int m_ID;
+
+    // For coordinating multiple agents
+    std::vector<int> m_vector_of_agentIDs_toCoordinate;
+    bool m_shouldCoordinateAll = true;
+    QMutex m_agentIDs_toCoordinate_mutex;
+
 
 #ifdef CATKIN_MAKE
     // PUBLISHERS AND SUBSRIBERS

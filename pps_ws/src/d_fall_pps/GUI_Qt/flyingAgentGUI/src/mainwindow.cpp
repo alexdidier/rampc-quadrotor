@@ -102,6 +102,11 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
             ui->customWidget_connectStartStopBar , &ConnectStartStopBar::setAgentIDsToCoordinate
             );
 
+    QObject::connect(
+            ui->customWidget_coordinator , &Coordinator::agentIDsToCoordinateChanged ,
+            ui->customWidget_enableControllerLoadYamlBar , &EnableControllerLoadYamlBar::setAgentIDsToCoordinate
+            );
+
 }
 
 MainWindow::~MainWindow()

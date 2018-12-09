@@ -61,6 +61,13 @@ void Coordinator::on_refresh_button_clicked()
             // Check the box if "coordinate all" is checked
             temp_coordinatorRow->setShouldCoordinate(shouldCoordinateAll);
 
+            // Connect the "should coordinate value changed" signal to
+            // the respective slot
+            QObject::connect(
+                    temp_coordinatorRow , &CoordinatorRow::shouldCoordinateThisAgentValueChanged ,
+                    this , &Coordinator::setShouldCoordinateThisAgent
+                    );
+
             // Add to the vector of coordinator rows
             vector_of_coordinatorRows.append(temp_coordinatorRow);
             vector_of_shouldCoordinate_perRow.append(shouldCoordinateAll);

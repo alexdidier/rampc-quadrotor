@@ -117,6 +117,51 @@ void EnableControllerLoadYamlBar::on_load_yaml_default_button_clicked()
 
 
 //    ----------------------------------------------------------------------------------
+//      A     GGGG  EEEEE  N   N  TTTTT     III  DDDD    SSSS
+//     A A   G      E      NN  N    T        I   D   D  S
+//    A   A  G      EEE    N N N    T        I   D   D   SSS
+//    AAAAA  G   G  E      N  NN    T        I   D   D      S
+//    A   A   GGGG  EEEEE  N   N    T       III  DDDD   SSSS
+//    ----------------------------------------------------------------------------------
+
+
+void EnableControllerLoadYamlBar::setAgentIDsToCoordinate(QVector<int> agentIDs , bool shouldCoordinateAll)
+{
+
+    // Lock the mutex
+    m_agentIDs_toCoordinate_mutex.lock();
+    // Add the "coordinate all" flag
+    m_shouldCoordinateAll = shouldCoordinateAll;
+    // Clear the previous list of agent IDs
+    m_vector_of_agentIDs_toCoordinate.clear();
+    // Copy across the agent IDs, if necessary
+    if (!shouldCoordinateAll)
+    {
+        for ( int irow = 0 ; irow < agentIDs.length() ; irow++ )
+        {
+            m_vector_of_agentIDs_toCoordinate.push_back( agentIDs[irow] );
+        }
+    }
+    // Unlock the mutex
+    m_agentIDs_toCoordinate_mutex.unlock();
+
+#ifdef CATKIN_MAKE
+#else
+    // TO ASSIST WITH DEBUGGING WHEN COMPILED AND RUN IN "QtCreator"
+    QTextStream(stdout) << "[CONNECT START STOP GUI BAR] is coordinating agentIDs:";
+    for ( int irow = 0 ; irow < agentIDs.length() ; irow++ )
+    {
+        QTextStream(stdout) << " " << agentIDs[irow];
+    }
+    QTextStream(stdout) << " " << endl;
+#endif
+}
+
+
+
+
+
+//    ----------------------------------------------------------------------------------
 //    M   M   SSSS   GGG      H   H  EEEEE    A    DDDD   EEEEE  RRRR
 //    MM MM  S      G   G     H   H  E       A A   D   D  E      R   R
 //    M M M   SSS   G         HHHHH  EEE    A   A  D   D  EEE    RRRR
@@ -139,8 +184,20 @@ void EnableControllerLoadYamlBar::fillIntMessageHeader( d_fall_pps::IntWithHeade
         }
         case TYPE_COORDINATOR:
         {
-            msg.shouldCheckForID = true;
-            msg.agentIDs.push_back(7);
+            // Lock the mutex
+            m_agentIDs_toCoordinate_mutex.lock();
+            // Add the "coordinate all" flag
+            msg.shouldCheckForID = !(m_shouldCoordinateAll);
+            // Add the agent IDs if necessary
+            if (!m_shouldCoordinateAll)
+            {
+                for ( int irow = 0 ; irow < m_vector_of_agentIDs_toCoordinate.size() ; irow++ )
+                {
+                    msg.agentIDs.push_back( m_vector_of_agentIDs_toCoordinate[irow] );
+                }
+            }
+            // Unlock the mutex
+            m_agentIDs_toCoordinate_mutex.unlock();
             break;
         }
 

@@ -639,7 +639,7 @@ void ConnectStartStopBar::fillIntMessageHeader( d_fall_pps::IntWithHeader & msg 
             // Add the agent IDs if necessary
             if (!m_shouldCoordinateAll)
             {
-                for ( int irow = 0 ; irow < m_vector_of_agentIDs_toCoordinate.length() ; irow++ )
+                for ( int irow = 0 ; irow < m_vector_of_agentIDs_toCoordinate.size() ; irow++ )
                 {
                     msg.agentIDs.push_back( m_vector_of_agentIDs_toCoordinate[irow] );
                 }
