@@ -93,6 +93,15 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     }
 #endif
 
+    // CONNECT TO THE COORDINATOR SIGNAL TO BE ALWAYS UPDATED
+    // WITH THE LIST OF AGENT IDs TO COORDINATE
+    // Connect the "should coordinate value changed" signal to
+    // the respective slot
+    QObject::connect(
+            ui->customWidget_coordinator , &Coordinator::agentIDsToCoordinateChanged ,
+            ui->customWidget_connectStartStopBar , &ConnectStartStopBar::setAgentIDsToCoordinate
+            );
+
 }
 
 MainWindow::~MainWindow()

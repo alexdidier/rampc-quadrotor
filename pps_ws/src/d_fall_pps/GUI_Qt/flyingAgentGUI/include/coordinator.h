@@ -7,6 +7,8 @@
 #include <QVector>
 #include <regex>
 
+#include <QTextStream>
+
 namespace Ui {
 class Coordinator;
 }
@@ -20,8 +22,20 @@ public:
     ~Coordinator();
 
 
+public slots:
+    void setShouldCoordinateThisAgent(int agentID , bool shouldCoordinate);
+
+
+signals:
+    void agentIDsToCoordinateChanged(QVector<int> agentIDs , bool shouldCoordinateAll);
+
+
 private:
     QVector<CoordinatorRow*> vector_of_coordinatorRows;
+
+    QVector<bool> vector_of_shouldCoordinate_perRow;
+
+    QVector<int> vector_of_agentID_perRow;
 
     int level_of_detail_to_display = 1;
 
@@ -37,6 +51,8 @@ private slots:
     void on_delete_button_clicked();
 
     void on_coordinate_all_checkBox_clicked();
+
+    void emit_signal_with_agentIDs_toCoordinate();
 
 private:
     Ui::Coordinator *ui;

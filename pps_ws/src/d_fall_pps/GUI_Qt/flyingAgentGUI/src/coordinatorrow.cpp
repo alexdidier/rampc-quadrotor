@@ -741,3 +741,12 @@ void CoordinatorRow::on_motors_off_button_clicked()
     this->flyingStateCommandPublisher.publish(msg);
 #endif
 }
+
+void CoordinatorRow::on_shouldCoordinate_checkBox_clicked()
+{
+    // Get the state of the "should coordinate" check box
+    bool shouldCoordinate = ui->shouldCoordinate_checkBox->isChecked();
+
+    // Send out a signal with this information
+    emit shouldCoordinateThisAgentValueChanged( m_agentID , shouldCoordinate );
+}

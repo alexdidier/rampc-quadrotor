@@ -5,6 +5,8 @@
 #include <QWidget>
 #include <QMutex>
 
+#include <QTextStream>
+
 #ifdef CATKIN_MAKE
 #include <ros/ros.h>
 #include <ros/network.h>
@@ -55,6 +57,11 @@ public:
     explicit ConnectStartStopBar(QWidget *parent = 0);
     ~ConnectStartStopBar();
 
+
+public slots:
+    void setAgentIDsToCoordinate(QVector<int> agentIDs , bool shouldCoordinateAll);
+
+
 private:
 	// --------------------------------------------------- //
     // PRIVATE VARIABLES
@@ -69,6 +76,12 @@ private:
 
 	// The namespace into which node operates
 	std::string m_base_namespace;
+
+    // For coordinating multiple agents
+    std::vector<int> m_vector_of_agentIDs_toCoordinate;
+    bool m_shouldCoordinateAll = true;
+    QMutex m_agentIDs_toCoordinate_mutex;
+
 
 
 

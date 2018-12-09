@@ -47,6 +47,7 @@ ConnectStartStopBar::ConnectStartStopBar(QWidget *parent) :
 {
     ui->setupUi(this);
 
+
 #ifdef CATKIN_MAKE
     // Get the namespace of this node
     std::string this_namespace = ros::this_node::getNamespace();
@@ -62,6 +63,10 @@ ConnectStartStopBar::ConnectStartStopBar(QWidget *parent) :
         ROS_ERROR("[CONNECT START STOP GUI BAR] Node NOT FUNCTIONING :-)");
         ros::spin();
     }
+#else
+    // Default as a coordinator when compiling with QtCreator
+    m_type = TYPE_COORDINATOR;
+    m_ID = 1;
 #endif
 
     // SET THE INITIAL VALUE OF THE PRIVATE VARIABLES FOR THIS CLASS
@@ -131,7 +136,6 @@ ConnectStartStopBar::ConnectStartStopBar(QWidget *parent) :
     {
         //loadCrazyflieContext();
     }
-
 
     // ADD KEYBOARD SHORTCUTS
     // > For "all motors off", press the space bar
@@ -560,6 +564,50 @@ void ConnectStartStopBar::on_motors_off_button_clicked()
 
 
 
+//    ----------------------------------------------------------------------------------
+//      A     GGGG  EEEEE  N   N  TTTTT     III  DDDD    SSSS
+//     A A   G      E      NN  N    T        I   D   D  S
+//    A   A  G      EEE    N N N    T        I   D   D   SSS
+//    AAAAA  G   G  E      N  NN    T        I   D   D      S
+//    A   A   GGGG  EEEEE  N   N    T       III  DDDD   SSSS
+//    ----------------------------------------------------------------------------------
+
+
+void ConnectStartStopBar::setAgentIDsToCoordinate(QVector<int> agentIDs , bool shouldCoordinateAll)
+{
+
+    // Lock the mutex
+    m_agentIDs_toCoordinate_mutex.lock();
+    // Add the "coordinate all" flag
+    m_shouldCoordinateAll = shouldCoordinateAll;
+    // Clear the previous list of agent IDs
+    m_vector_of_agentIDs_toCoordinate.clear();
+    // Copy across the agent IDs, if necessary
+    if (!shouldCoordinateAll)
+    {
+        for ( int irow = 0 ; irow < agentIDs.length() ; irow++ )
+        {
+            m_vector_of_agentIDs_toCoordinate.push_back( agentIDs[irow] );
+        }
+    }
+    // Unlock the mutex
+    m_agentIDs_toCoordinate_mutex.unlock();
+
+#ifdef CATKIN_MAKE
+#else
+    // TO ASSIST WITH DEBUGGING WHEN COMPILED AND RUN IN "QtCreator"
+    QTextStream(stdout) << "[CONNECT START STOP GUI BAR] is coordinating agentIDs:";
+    for ( int irow = 0 ; irow < agentIDs.length() ; irow++ )
+    {
+        QTextStream(stdout) << " " << agentIDs[irow];
+    }
+    QTextStream(stdout) << " " << endl;
+#endif
+}
+
+
+
+
 
 //    ----------------------------------------------------------------------------------
 //    M   M   SSSS   GGG      H   H  EEEEE    A    DDDD   EEEEE  RRRR
@@ -584,8 +632,20 @@ void ConnectStartStopBar::fillIntMessageHeader( d_fall_pps::IntWithHeader & msg 
         }
         case TYPE_COORDINATOR:
         {
-            msg.shouldCheckForID = true;
-            msg.agentIDs.push_back(7);
+            // Lock the mutex
+            m_agentIDs_toCoordinate_mutex.lock();
+            // Add the "coordinate all" flag
+            msg.shouldCheckForID = !(m_shouldCoordinateAll);
+            // Add the agent IDs if necessary
+            if (!m_shouldCoordinateAll)
+            {
+                for ( int irow = 0 ; irow < m_vector_of_agentIDs_toCoordinate.length() ; irow++ )
+                {
+                    msg.agentIDs.push_back( m_vector_of_agentIDs_toCoordinate[irow] );
+                }
+            }
+            // Unlock the mutex
+            m_agentIDs_toCoordinate_mutex.unlock();
             break;
         }
 

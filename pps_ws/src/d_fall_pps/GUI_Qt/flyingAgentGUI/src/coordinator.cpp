@@ -20,6 +20,9 @@ void Coordinator::on_refresh_button_clicked()
     // DELETE ALL EXISTING ROWS
     remove_all_entries_from_vector_of_coordinatorRows();
 
+    // Get the state of the "coordinate all" is check box
+    bool shouldCoordinateAll = ui->coordinate_all_checkBox->isChecked();
+
 
 #ifdef CATKIN_MAKE
     // USE A REGULAR EXPRESSION TO IDENTIFY NODES THAT EXIST
@@ -56,17 +59,12 @@ void Coordinator::on_refresh_button_clicked()
             CoordinatorRow *temp_coordinatorRow = new CoordinatorRow(this,this_agentID);
 
             // Check the box if "coordinate all" is checked
-            if (ui->coordinate_all_checkBox->isChecked())
-            {
-                temp_coordinatorRow->setShouldCoordinate(true);
-            }
-            else
-            {
-                temp_coordinatorRow->setShouldCoordinate(false);
-            }
+            temp_coordinatorRow->setShouldCoordinate(shouldCoordinateAll);
 
             // Add to the vector of coordinator rows
             vector_of_coordinatorRows.append(temp_coordinatorRow);
+            vector_of_shouldCoordinate_perRow.append(shouldCoordinateAll);
+            vector_of_agentID_perRow.append(this_agentID);
 
             ui->coordinated_agents_scrollAreaWidgetContents->layout()->addWidget(temp_coordinatorRow);
         }
@@ -81,22 +79,26 @@ void Coordinator::on_refresh_button_clicked()
         CoordinatorRow *temp_coordinatorRow = new CoordinatorRow(this,i_agent);
 
         // Check the box if "coordinate all" is checked
-        if (ui->coordinate_all_checkBox->isChecked())
-        {
-            temp_coordinatorRow->setShouldCoordinate(true);
-        }
-        else
-        {
-            temp_coordinatorRow->setShouldCoordinate(false);
-        }
+        temp_coordinatorRow->setShouldCoordinate(shouldCoordinateAll);
+
+        // Connect the "should coordinate value changed" signal to
+        // the respective slot
+        QObject::connect(
+                temp_coordinatorRow , &CoordinatorRow::shouldCoordinateThisAgentValueChanged ,
+                this , &Coordinator::setShouldCoordinateThisAgent
+                );
 
         // Add to the vector of coordinator rows
         vector_of_coordinatorRows.append(temp_coordinatorRow);
+        vector_of_shouldCoordinate_perRow.append(shouldCoordinateAll);
+        vector_of_agentID_perRow.append(i_agent);
 
         ui->coordinated_agents_scrollAreaWidgetContents->layout()->addWidget(temp_coordinatorRow);
     }
 #endif
 
+    // Send out a signal with the current IDs to coordinate
+    emit_signal_with_agentIDs_toCoordinate();
     
     // Call the function that applies this level
     // of detail to all the entries
@@ -134,6 +136,9 @@ void Coordinator::on_delete_button_clicked()
 {
     // Call the function that performs the task requested
     remove_all_entries_from_vector_of_coordinatorRows();
+
+    // Send out a signal with the current IDs to coordinate
+    emit_signal_with_agentIDs_toCoordinate();
 }
 
 void Coordinator::remove_all_entries_from_vector_of_coordinatorRows()
@@ -144,6 +149,8 @@ void Coordinator::remove_all_entries_from_vector_of_coordinatorRows()
     }
     // Clear the vector
     vector_of_coordinatorRows.clear();
+    vector_of_shouldCoordinate_perRow.clear();
+    vector_of_agentID_perRow.clear();
 }
 
 void Coordinator::apply_level_of_detail_to_all_entries(int level)
@@ -164,5 +171,80 @@ void Coordinator::on_coordinate_all_checkBox_clicked()
     for ( int irow = 0 ; irow < vector_of_coordinatorRows.length() ; irow++ )
     {
         vector_of_coordinatorRows[irow]->setShouldCoordinate( shouldCoordinateAll );
+        vector_of_shouldCoordinate_perRow[irow] = shouldCoordinateAll;
     }
+
+    // Send out a signal with the current IDs to coordinate
+    emit_signal_with_agentIDs_toCoordinate();
+}
+
+
+void Coordinator::setShouldCoordinateThisAgent(int agentID , bool shouldCoordinate)
+{
+    // Find the row with the matching ID, and update the "shouldCoordinate" vector
+    for ( int irow = 0 ; irow < vector_of_agentID_perRow.length() ; irow++ )
+    {
+        if (vector_of_agentID_perRow[irow] == agentID)
+        {
+            vector_of_shouldCoordinate_perRow[irow] = shouldCoordinate;
+            break;
+        }
+    }
+
+    // Update the "Coordinate All Check Box" as appropriate
+    bool shouldCoordinateAll = true;
+    if (!shouldCoordinate)
+    {
+        shouldCoordinateAll = false;
+    }
+    else
+    {
+        for ( int irow = 0 ; irow < vector_of_shouldCoordinate_perRow.length() ; irow++ )
+        {
+            if (!(vector_of_shouldCoordinate_perRow[irow]))
+            {
+                shouldCoordinateAll = false;
+                break;
+            }
+        }
+    }
+    ui->coordinate_all_checkBox->setChecked(shouldCoordinateAll);
+
+    // Send out a signal with the current IDs to coordinate
+    emit_signal_with_agentIDs_toCoordinate();
+}
+
+void Coordinator::emit_signal_with_agentIDs_toCoordinate()
+{
+    // Initilise a boolean for whether to coordinate all
+    bool shouldCoordinateAll = true;
+    // Send out a signal with the current IDs to coordinate
+    QVector<int> agentIDsToCoordinate;
+    for ( int irow = 0 ; irow < vector_of_shouldCoordinate_perRow.length() ; irow++ )
+    {
+        if (vector_of_shouldCoordinate_perRow[irow])
+        {
+            agentIDsToCoordinate.append(vector_of_agentID_perRow[irow]);
+        }
+        else
+        {
+            shouldCoordinateAll = false;
+        }
+    }
+    emit agentIDsToCoordinateChanged( agentIDsToCoordinate , shouldCoordinateAll );
+
+
+#ifdef CATKIN_MAKE
+#else
+    // TO ASSIST WITH DEBUGGING WHEN COMPILED AND RUN IN "QtCreator"
+    QTextStream(stdout) << "[COORDINATOR] is coordinating agentIDs:";
+    for ( int irow = 0 ; irow < vector_of_shouldCoordinate_perRow.length() ; irow++ )
+    {
+        if (vector_of_shouldCoordinate_perRow[irow])
+        {
+            QTextStream(stdout) << " " << vector_of_agentID_perRow[irow];
+        }
+    }
+    QTextStream(stdout) << " " << endl;
+#endif
 }

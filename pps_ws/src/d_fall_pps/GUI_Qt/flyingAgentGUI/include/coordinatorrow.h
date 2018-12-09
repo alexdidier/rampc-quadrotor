@@ -96,7 +96,7 @@ public:
 
 
 signals:
-    void shouldCoordinateChanged(int newValue);
+    void shouldCoordinateThisAgentValueChanged(int agentID , bool shouldCoordinate);
 
 
 private:
@@ -218,6 +218,9 @@ private slots:
     void on_enable_flying_button_clicked();
     void on_disable_flying_button_clicked();
     void on_motors_off_button_clicked();
+
+    // > For the "should coordinate" checkbox
+    void on_shouldCoordinate_checkBox_clicked();
 
 };
 
