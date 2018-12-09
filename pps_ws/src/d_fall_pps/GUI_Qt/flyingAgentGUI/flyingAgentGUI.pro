@@ -39,7 +39,8 @@ HEADERS  += include/mainwindow.h \
     include/coordinatorrow.h \
     include/studentcontrollertab.h \
     include/defaultcontrollertab.h \
-    include/pickercontrollertab.h
+    include/pickercontrollertab.h \
+    include/Constants_for_Qt_compile.h
 
 FORMS    += forms/mainwindow.ui \
     forms/topbanner.ui \

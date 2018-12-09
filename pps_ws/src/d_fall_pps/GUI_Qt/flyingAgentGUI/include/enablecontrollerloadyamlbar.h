@@ -25,6 +25,11 @@
 #include "nodes/Constants.h"
 
 // using namespace d_fall_pps;
+
+#else
+// Include the shared definitions
+#include "include/Constants_for_Qt_compile.h"
+
 #endif
 
 

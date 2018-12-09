@@ -22,19 +22,19 @@
    <item row="0" column="0">
     <layout class="QHBoxLayout" name="horizontalLayout">
      <property name="spacing">
-      <number>6</number>
+      <number>12</number>
      </property>
      <property name="leftMargin">
       <number>6</number>
      </property>
      <property name="topMargin">
-      <number>6</number>
+      <number>0</number>
      </property>
      <property name="rightMargin">
       <number>6</number>
      </property>
      <property name="bottomMargin">
-      <number>6</number>
+      <number>0</number>
      </property>
      <item>
       <widget class="QPushButton" name="rf_disconnect_button">
@@ -113,6 +113,9 @@
      </item>
      <item>
       <widget class="QLineEdit" name="battery_voltage_lineEdit">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
        <property name="sizePolicy">
         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -144,6 +147,9 @@
        <property name="alignment">
         <set>Qt::AlignCenter</set>
        </property>
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
      <item>
@@ -172,7 +178,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="take_off_button">
+      <widget class="QPushButton" name="enable_flying_button">
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -197,7 +203,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="land_button">
+      <widget class="QPushButton" name="disable_flying_button">
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
          <horstretch>0</horstretch>

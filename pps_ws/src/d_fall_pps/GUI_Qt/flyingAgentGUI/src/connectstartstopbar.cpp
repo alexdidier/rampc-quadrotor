@@ -504,20 +504,24 @@ void ConnectStartStopBar::setFlyingState(int new_flying_state)
 
 void ConnectStartStopBar::on_rf_connect_button_clicked()
 {
+#ifdef CATKIN_MAKE
     d_fall_pps::IntWithHeader msg;
     fillIntMessageHeader(msg);
     msg.data = CMD_RECONNECT;
     this->crazyRadioCommandPublisher.publish(msg);
     ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Enable Safe Controller");
+#endif
 }
 
 void ConnectStartStopBar::on_rf_disconnect_button_clicked()
 {
+#ifdef CATKIN_MAKE
     d_fall_pps::IntWithHeader msg;
     fillIntMessageHeader(msg);
     msg.data = CMD_DISCONNECT;
     this->crazyRadioCommandPublisher.publish(msg);
     ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Enable Safe Controller");
+#endif
 }
 
 void ConnectStartStopBar::on_enable_flying_button_clicked()
