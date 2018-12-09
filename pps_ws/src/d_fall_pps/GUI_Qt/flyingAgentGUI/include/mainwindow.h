@@ -71,32 +71,44 @@ public:
     explicit MainWindow(int argc, char **argv, QWidget *parent = 0);
     ~MainWindow();
 
-private slots:
-    void on_actionShowHide_Coordinator_triggered();
-    void on_action_LoadYAML_BatteryMonitor_triggered();
-    void on_action_LoadYAML_ClientConfig_triggered();
+
 
 private:
     Ui::MainWindow *ui;
 
     QShortcut* m_close_GUI_shortcut;
 
+    // > For the type of this node,
+    //   i.e., an agent or a coordinator
+    int m_type = 0;
+
+    // > For the ID of this node
+    int m_ID = 0;
+
 #ifdef CATKIN_MAKE
     rosNodeThread* m_rosNodeThread;
-
-    // Variables for the type and ID
-    // The type of this node, i.e., agent or a coordinator, 
-    // specififed as a parameter in the "*.launch" file
-	int m_type = 0;
-
-	// The ID of this node
-	int m_ID = 0;
 
 	// The namespace into which this parameter service loads yaml parameters
 	std::string m_parameter_service_namespace;
 
 	ros::Publisher m_requestLoadYamlFilenamePublisher;
 #endif
+
+
+    // --------------------------------------------------- //
+    // PRIVATE FUNCTIONS
+#ifdef CATKIN_MAKE
+    bool getTypeAndIDParameters();
+#endif
+
+
+
+
+private slots:
+    // PRIVATE METHODS FOR MENU ITEM CALLBACKS
+    void on_actionShowHide_Coordinator_triggered();
+    void on_action_LoadYAML_BatteryMonitor_triggered();
+    void on_action_LoadYAML_ClientConfig_triggered();
 
 };
 

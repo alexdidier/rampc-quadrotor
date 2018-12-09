@@ -13,7 +13,7 @@ EnableControllerLoadYamlBar::EnableControllerLoadYamlBar(QWidget *parent) :
 
     // Get the namespace of this node
     std::string this_namespace = ros::this_node::getNamespace();
-    ROS_INFO_STREAM("[FLYING AGENT GUI] ros::this_node::getNamespace() =  " << this_namespace);
+    ROS_INFO_STREAM("[ENABLE CONTROLLER LOAD YAML GUI BAR] ros::this_node::getNamespace() =  " << this_namespace);
 
     // Get the type and ID of this flying agent GUI
     bool isValid_type_and_ID = getTypeAndIDParameters();
@@ -21,7 +21,7 @@ EnableControllerLoadYamlBar::EnableControllerLoadYamlBar(QWidget *parent) :
     // Stall if the node IDs are not valid
     if ( !isValid_type_and_ID )
     {
-        ROS_ERROR("[FLYING AGENT GUI] Node NOT FUNCTIONING :-)");
+        ROS_ERROR("[ENABLE CONTROLLER LOAD YAML GUI BAR] Node NOT FUNCTIONING :-)");
         ros::spin();
     }
 
@@ -52,7 +52,7 @@ void EnableControllerLoadYamlBar::on_enable_safe_button_clicked()
     fillIntMessageHeader(msg);
     msg.data = CMD_USE_SAFE_CONTROLLER;
     this->commandPublisher.publish(msg);
-    ROS_INFO("[FLYING AGENT GUI] Enable Safe Controller");
+    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Enable Safe Controller");
 #endif
 }
 
@@ -63,7 +63,7 @@ void EnableControllerLoadYamlBar::on_enable_demo_button_clicked()
     fillIntMessageHeader(msg);
     msg.data = CMD_USE_DEMO_CONTROLLER;
     this->commandPublisher.publish(msg);
-    ROS_INFO("[FLYING AGENT GUI] Enable Demo Controller");
+    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Enable Demo Controller");
 #endif
 }
 
@@ -74,7 +74,7 @@ void EnableControllerLoadYamlBar::on_enable_student_button_clicked()
     fillIntMessageHeader(msg);
     msg.data = CMD_USE_STUDENT_CONTROLLER;
     this->commandPublisher.publish(msg);
-    ROS_INFO("[FLYING AGENT GUI] Enable Student Controller");
+    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Enable Student Controller");
 #endif
 }
 
@@ -107,6 +107,19 @@ void EnableControllerLoadYamlBar::on_load_yaml_default_button_clicked()
 }
 
 
+
+
+
+//    ----------------------------------------------------------------------------------
+//    M   M   SSSS   GGG      H   H  EEEEE    A    DDDD   EEEEE  RRRR
+//    MM MM  S      G   G     H   H  E       A A   D   D  E      R   R
+//    M M M   SSS   G         HHHHH  EEE    A   A  D   D  EEE    RRRR
+//    M   M      S  G   G     H   H  E      AAAAA  D   D  E      R   R
+//    M   M  SSSS    GGGG     H   H  EEEEE  A   A  DDDD   EEEEE  R   R
+//    ----------------------------------------------------------------------------------
+
+
+
 #ifdef CATKIN_MAKE
 // Fill the head for a message
 void EnableControllerLoadYamlBar::fillIntMessageHeader( d_fall_pps::IntWithHeader & msg )
@@ -128,12 +141,26 @@ void EnableControllerLoadYamlBar::fillIntMessageHeader( d_fall_pps::IntWithHeade
         default:
         {
             msg.shouldCheckForID = true;
-            ROS_ERROR("[FLYING AGENT GUI] The 'm_type' variable was not recognised.");
+            ROS_ERROR("[ENABLE CONTROLLER LOAD YAML GUI BAR] The 'm_type' variable was not recognised.");
             break;
         }
     } 
 }
 #endif
+
+
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//    III  DDDD       &&&      TTTTT  Y   Y  PPPP   EEEEE
+//     I   D   D     &           T     Y Y   P   P  E
+//     I   D   D      &          T      Y    PPPP   EEE
+//     I   D   D     & & &       T      Y    P      E
+//    III  DDDD       &&&        T      Y    P      EEEEE
+//    ----------------------------------------------------------------------------------
+
 
 
 #ifdef CATKIN_MAKE
@@ -151,7 +178,7 @@ bool EnableControllerLoadYamlBar::getTypeAndIDParameters()
     if(!nodeHandle.getParam("type", type_string))
     {
         // Throw an error if the agent ID parameter could not be obtained
-        ROS_ERROR("[FLYING AGENT GUI] Failed to get type");
+        ROS_ERROR("[ENABLE CONTROLLER LOAD YAML GUI BAR] Failed to get type");
     }
 
     // Set the "m_type" class variable based on this string loaded
@@ -168,7 +195,7 @@ bool EnableControllerLoadYamlBar::getTypeAndIDParameters()
         // Set "m_type" to the value indicating that it is invlid
         m_type = TYPE_INVALID;
         return_was_successful = false;
-        ROS_ERROR("[FLYING AGENT GUI] The 'type' parameter retrieved was not recognised.");
+        ROS_ERROR("[ENABLE CONTROLLER LOAD YAML GUI BAR] The 'type' parameter retrieved was not recognised.");
     }
 
 
@@ -182,12 +209,12 @@ bool EnableControllerLoadYamlBar::getTypeAndIDParameters()
             {
                 // Throw an error if the agent ID parameter could not be obtained
                 return_was_successful = false;
-                ROS_ERROR("[FLYING AGENT GUI] Failed to get agentID");
+                ROS_ERROR("[ENABLE CONTROLLER LOAD YAML GUI BAR] Failed to get agentID");
             }
             else
             {
                 // Inform the user about the type and ID
-                ROS_INFO_STREAM("[FLYING AGENT GUI] Is of type AGENT with ID = " << m_ID);
+                ROS_INFO_STREAM("[ENABLE CONTROLLER LOAD YAML GUI BAR] Is of type AGENT with ID = " << m_ID);
             }
             break;
         }
@@ -201,12 +228,12 @@ bool EnableControllerLoadYamlBar::getTypeAndIDParameters()
             {
                 // Throw an error if the coord ID parameter could not be obtained
                 return_was_successful = false;
-                ROS_ERROR("[FLYING AGENT GUI] Failed to get coordID");
+                ROS_ERROR("[ENABLE CONTROLLER LOAD YAML GUI BAR] Failed to get coordID");
             }
             else
             {
                 // Inform the user about the type and ID
-                ROS_INFO_STREAM("[FLYING AGENT GUI] Is of type COORDINATOR with ID = " << m_ID);
+                ROS_INFO_STREAM("[ENABLE CONTROLLER LOAD YAML GUI BAR] Is of type COORDINATOR with ID = " << m_ID);
             }
             break;
         }
@@ -215,7 +242,7 @@ bool EnableControllerLoadYamlBar::getTypeAndIDParameters()
         {
             // Throw an error if the type is not recognised
             return_was_successful = false;
-            ROS_ERROR("[FLYING AGENT GUI] The 'm_type' variable was not recognised.");
+            ROS_ERROR("[ENABLE CONTROLLER LOAD YAML GUI BAR] The 'm_type' variable was not recognised.");
             break;
         }
     }

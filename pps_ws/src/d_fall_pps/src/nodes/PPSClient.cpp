@@ -416,7 +416,8 @@ void loadCrazyflieContext() {
 
             ROS_INFO("[PPS CLIENT] CF is now different for this student. Disconnect and turn it off");
 
-            std_msgs::Int32 msg;
+            IntWithHeader msg;
+            msg.shouldCheckForID = false;
             msg.data = CMD_DISCONNECT;
             crazyRadioCommandPublisher.publish(msg);
         }
@@ -552,22 +553,6 @@ void safeSetPointCallback(const Setpoint& newSetpoint)
 
 
 
-
-
-
-
-
-
-void crazyRadioCommandAllAgentsCallback(const std_msgs::Int32& msg)
-{
-    // The "msg" received can be directly published on the "crazyRadioCommandPublisher"
-    // class variable because it is same format message
-    // > NOTE: this may be inefficient to "just" pass on the message,
-    //   the intention is that it is more transparent that the "coordinator"
-    //   node requests all agents to (re/dis)-connect from, and the
-    //   individual agents pass this along to their respective radio node.
-    crazyRadioCommandPublisher.publish(msg);
-}
 
 
 
@@ -1268,7 +1253,7 @@ int main(int argc, char* argv[])
 
 
     //this topic lets us use the terminal to communicate with crazyRadio node.
-    crazyRadioCommandPublisher = nodeHandle.advertise<std_msgs::Int32>("crazyRadioCommand", 1);
+    crazyRadioCommandPublisher = nodeHandle.advertise<IntWithHeader>("crazyRadioCommand", 1);
 
     // this topic will publish flying state whenever it changes.
     flyingStatePublisher = nodeHandle.advertise<std_msgs::Int32>("flyingState", 1);
@@ -1301,9 +1286,6 @@ int main(int argc, char* argv[])
 
     // crazyradio status. Connected, connecting or disconnected
     ros::Subscriber crazyRadioStatusSubscriber = namespaceNodeHandle.subscribe("CrazyRadio/CrazyRadioStatus", 1, crazyRadioStatusCallback);
-
-    // Subscriber for "crazyRadioCommandAllAgents" commands that are sent from the coordinator node
-    ros::Subscriber crazyRadioCommandAllAgentsSubscriber = namespaceNodeHandle.subscribe("/my_GUI/crazyRadioCommandAllAgents", 1, crazyRadioCommandAllAgentsCallback);
 
 
 

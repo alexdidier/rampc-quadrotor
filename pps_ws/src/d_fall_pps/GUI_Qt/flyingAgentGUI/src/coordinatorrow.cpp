@@ -30,8 +30,15 @@
 //    ----------------------------------------------------------------------------------
 
 
+
+
+
 #include "coordinatorrow.h"
 #include "ui_coordinatorrow.h"
+
+
+
+
 
 CoordinatorRow::CoordinatorRow(QWidget *parent, int agentID) :
     QWidget(parent),
@@ -60,31 +67,27 @@ CoordinatorRow::CoordinatorRow(QWidget *parent, int agentID) :
     std::string ros_base_namespace = qstr_ros_base_namespace.toStdString();
 
     // SET THE INITIAL VALUE OF THE PRIVATE VARIABLES FOR THIS CLASS
-    // > For keeping track of the current RF Crazyradio state
-    my_radio_status = CONNECTED;
     // > For keeping track of the current battery state
-    my_battery_state = BATTERY_STATE_NORMAL;
+    m_battery_state = BATTERY_STATE_NORMAL;
     // > For keeping track of which image is currently displayed
-    my_battery_status_label_image_current_index = -999;
-    // > For keeping track of the current operating state
-    my_flying_state = STATE_MOTORS_OFF;
+    m_battery_status_label_image_current_index = -999;
 
-    // FOR BATTERY VOLTAGE LIMITS (THESE SHOULD BE READ IN AS PARAMTERS)
-    // > When in a "standby" type of state
-    battery_voltage_standby_empty  =  3.30f;
-    battery_voltage_standby_full   =  4.20f;
-    // > When in a "flying" type of state
-    battery_voltage_flying_empty   =  2.60f;
-    battery_voltage_flying_full    =  3.70f;
 
     // SET THE STARTING RADIO STATUS TO BE: DISCONNECTED
-    // > this also updates the image for the "rf_status_label", "battery_voltage_lineEdit", and "battery_status_label"
-    setCrazyRadioStatus(DISCONNECTED);
+    setCrazyRadioStatus(CRAZY_RADIO_STATE_DISCONNECTED);
+
+    // SET THE STARTING BATTERY VOLTAGE TO BE: UNKNOWN
+    setBatteryVoltageText(-1.0f);
+
+    // SET THE STARTING BATTERY LEVEL TO BE: UNAVAILABLE
+    setBatteryImageBasedOnLevel(BATTERY_LEVEL_UNAVAILABLE);
+    
     // SET THE STARTING FLYING STATE STATUS TO BE: MOTORS OFF
-    // > this also updates the image for the "flying_state_label"
     setFlyingState(CMD_CRAZYFLY_MOTORS_OFF);
+    
     // SET THE DEFAULT NAME FOR THE SELECTED CONTROLLER
     setControllerEnabled(SAFE_CONTROLLER);
+
 
 #ifdef CATKIN_MAKE
     //m_rosNodeThread = new rosNodeThread(argc, argv, "coordinatorRowGUI");
@@ -103,11 +106,11 @@ CoordinatorRow::CoordinatorRow(QWidget *parent, int agentID) :
 
 
     // LET THE USER KNOW WHAT THE BASE NAMESPACE IS
-    ROS_INFO_STREAM("[Coordinator Row GUI] using base namespace: " << ros_base_namespace.c_str() << ", for agentID = " << m_agentID);
+    ROS_INFO_STREAM("[COORDINATOR ROW GUI] using base namespace: " << ros_base_namespace.c_str() << ", for agentID = " << m_agentID);
 
     // DEBUGGING FOR NAMESPACES
     //std::string temp_ros_namespace = ros::this_node::getNamespace();
-    //ROS_INFO_STREAM("[Coordinator Row GUI] compared to: ros::this_node::getNamespace() = " << temp_ros_namespace.c_str());
+    //ROS_INFO_STREAM("[COORDINATOR ROW GUI] compared to: ros::this_node::getNamespace() = " << temp_ros_namespace.c_str());
 
     // CREATE A NODE HANDLE TO THE BASE NAMESPACE
     ros::NodeHandle base_nodeHandle(ros_base_namespace);
@@ -117,19 +120,21 @@ CoordinatorRow::CoordinatorRow(QWidget *parent, int agentID) :
 
     // SUBSCRIBERS AND PUBLISHERS:
     // > For Crazyradio commands based on button clicks
-    crazyRadioCommandPublisher = base_nodeHandle.advertise<std_msgs::Int32>("PPSClient/crazyRadioCommand", 1);
+    crazyRadioCommandPublisher = base_nodeHandle.advertise<d_fall_pps::IntWithHeader>("PPSClient/crazyRadioCommand", 1);
     // > For updating the "rf_status_label" picture
     crazyRadioStatusSubscriber = base_nodeHandle.subscribe("CrazyRadio/CrazyRadioStatus", 1, &CoordinatorRow::crazyRadioStatusCallback, this);
     // > For updating the current battery voltage
-    batteryVoltageSubscriber = base_nodeHandle.subscribe("CrazyRadio/CFBattery", 1, &CoordinatorRow::batteryVoltageCallback, this);
+    batteryVoltageSubscriber = base_nodeHandle.subscribe("BatteryMonitor/FilteredVoltage", 1, &CoordinatorRow::batteryVoltageCallback, this);
     // > For updating the current battery state
-    batteryStateSubscriber = base_nodeHandle.subscribe("PPSClient/batteryState", 1, &CoordinatorRow::batteryStateChangedCallback, this);
+    //batteryStateSubscriber = base_nodeHandle.subscribe("BatteryMonitor/ChangedStateTo", 1, &CoordinatorRow::batteryStateChangedCallback, this);
+    // > For updating the current battery level
+    batteryLevelSubscriber = base_nodeHandle.subscribe("BatteryMonitor/Level", 1, &CoordinatorRow::batteryLevelCallback, this);
     // > For Flying state commands based on button clicks
     flyingStateCommandPublisher = base_nodeHandle.advertise<d_fall_pps::IntWithHeader>("PPSClient/Command", 1);
     // > For updating the "flying_state_label" picture
     flyingStateSubscriber = base_nodeHandle.subscribe("PPSClient/flyingState", 1, &CoordinatorRow::flyingStateChangedCallback, this);
     // > For changes in the database that defines {agentID,cfID,flying zone} links
-    databaseChangedSubscriber = dfall_root_nodeHandle.subscribe("/my_GUI/DBChanged", 1, &CoordinatorRow::databaseChangedCallback, this);;
+    databaseChangedSubscriber = dfall_root_nodeHandle.subscribe("CentralManagerService/DBChanged", 1, &CoordinatorRow::databaseChangedCallback, this);;
     centralManagerDatabaseService = dfall_root_nodeHandle.serviceClient<CMQuery>("CentralManagerService/Query", false);
     // > For updating the controller that is currently operating
     controllerUsedSubscriber = base_nodeHandle.subscribe("PPSClient/controllerUsed", 1, &CoordinatorRow::controllerUsedChangedCallback, this);
@@ -242,13 +247,23 @@ void CoordinatorRow::enableFlyingStateButtons()
 
 
 
+//    ----------------------------------------------------------------------------------
+//     CCCC  RRRR     A    ZZZZZ  Y   Y  RRRR     A    DDDD   III   OOO
+//    C      R   R   A A      Z    Y Y   R   R   A A   D   D   I   O   O
+//    C      RRRR   A   A    Z      Y    RRRR   A   A  D   D   I   O   O
+//    C      R   R  AAAAA   Z       Y    R   R  AAAAA  D   D   I   O   O
+//     CCCC  R   R  A   A  ZZZZZ    Y    R   R  A   A  DDDD   III   OOO
+//    ----------------------------------------------------------------------------------
+
+
+
 #ifdef CATKIN_MAKE
 // PRIVATE CALLBACKS IN RESPONSE TO ROS MESSAGES
 
 // > For the Battery Voltage
 void CoordinatorRow::crazyRadioStatusCallback(const std_msgs::Int32& msg)
 {
-    //ROS_INFO_STEAM("[Coordinator Row GUI] Crazy Radio Status Callback called for agentID = " << m_agentID);
+    //ROS_INFO_STEAM("[COORDINATOR ROW GUI] Crazy Radio Status Callback called for agentID = " << m_agentID);
     setCrazyRadioStatus( msg.data );
 }
 #endif
@@ -261,69 +276,46 @@ void CoordinatorRow::setCrazyRadioStatus(int new_radio_status)
     // add more things whenever the status is changed
     switch(new_radio_status)
     {
-        case CONNECTED:
+        case CRAZY_RADIO_STATE_CONNECTED:
         {
             // SET THE APPROPRIATE IMAGE FOR THE RADIOSTATUS LABEL
-            my_rf_status_label_mutex.lock();
+            //m_rf_status_label_mutex.lock();
             //ui->rf_status_label->clear();
             QPixmap rf_connected_pixmap(":/images/rf_connected.png");
             ui->rf_status_label->setPixmap(rf_connected_pixmap);
             ui->rf_status_label->setScaledContents(true);
             //ui->rf_status_label->update();
-            my_rf_status_label_mutex.unlock();
-            // ENABLE THE REMAINDER OF THE GUI
-            my_battery_state_mutex.lock();
-            if (my_battery_state == BATTERY_STATE_NORMAL)
-            {
-                enableFlyingStateButtons();
-            }
-            my_battery_state_mutex.unlock();
+            //m_rf_status_label_mutex.unlock();
 
+            // ENABLE THE REMAINDER OF THE GUI
+            enableFlyingStateButtons();
             break;
         }
 
-        case CONNECTING:
+        case CRAZY_RADIO_STATE_CONNECTING:
         {
             // SET THE APPROPRIATE IMAGE FOR THE RADIO STATUS LABEL
-            my_rf_status_label_mutex.lock();
+            //m_rf_status_label_mutex.lock();
             //ui->rf_status_label->clear();
             QPixmap rf_connecting_pixmap(":/images/rf_connecting.png");
             ui->rf_status_label->setPixmap(rf_connecting_pixmap);
             ui->rf_status_label->setScaledContents(true);
             //ui->rf_status_label->update();
-            my_rf_status_label_mutex.unlock();
+            //m_rf_status_label_mutex.unlock();
             break;
         }
 
-        case DISCONNECTED:
+        case CRAZY_RADIO_STATE_DISCONNECTED:
         {
             // SET THE APPROPRIATE IMAGE FOR THE RADIO STATUS LABEL
-            my_rf_status_label_mutex.lock();
+            //m_rf_status_label_mutex.lock();
             //ui->rf_status_label->clear();
             QPixmap rf_disconnected_pixmap(":/images/rf_disconnected.png");
             ui->rf_status_label->setPixmap(rf_disconnected_pixmap);
             ui->rf_status_label->setScaledContents(true);
             //ui->rf_status_label->update();
-            my_rf_status_label_mutex.unlock();
-            // SET THE BATTERY VOLTAGE FIELD TO BE BLANK
-            QString qstr = "-.-- V";
-            my_battery_voltage_lineEdit_mutex.lock();
-            ui->battery_voltage_lineEdit->setText(qstr);
-            my_battery_voltage_lineEdit_mutex.unlock();
-            // SET THE APPROPRIATE IMAGE FOR THE BATTERY STATUS LABEL
-            // > Lock the mutex for accessing both "my_battery_status_label_image_current_index"
-            //   and "ui->battery_status_label"
-            my_battery_status_label_mutex.lock();
-            if (my_battery_status_label_image_current_index != BATTERY_LABEL_IMAGE_INDEX_UNKNOWN)
-            {
-                ui->battery_status_label->clear();
-                QPixmap battery_unknown_pixmap(":/images/battery_unknown.png");
-                ui->battery_status_label->setPixmap(battery_unknown_pixmap);
-                ui->battery_status_label->setScaledContents(true);
-                my_battery_status_label_image_current_index = BATTERY_LABEL_IMAGE_INDEX_UNKNOWN;
-                ui->battery_status_label->update();
-            }
-            my_battery_status_label_mutex.unlock();
+            //m_rf_status_label_mutex.unlock();
+
             // DISABLE THE REMAINDER OF THE GUI
             disableFlyingStateButtons();
             break;
@@ -334,8 +326,19 @@ void CoordinatorRow::setCrazyRadioStatus(int new_radio_status)
             break;
         }
     }
-    my_radio_status = new_radio_status;
 }
+
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//    BBBB     A    TTTTT  TTTTT  EEEEE  RRRR   Y   Y
+//    B   B   A A     T      T    E      R   R   Y Y
+//    BBBB   A   A    T      T    EEE    RRRR     Y
+//    B   B  AAAAA    T      T    E      R   R    Y
+//    BBBB   A   A    T      T    EEEEE  R   R    Y
+//    ----------------------------------------------------------------------------------
 
 
 
@@ -345,14 +348,21 @@ void CoordinatorRow::setCrazyRadioStatus(int new_radio_status)
 // > For the Battery Voltage
 void CoordinatorRow::batteryVoltageCallback(const std_msgs::Float32& msg)
 {
-    setBatteryVoltageTextAndImage( msg.data );
+    //setBatteryVoltageTextAndImage( msg.data );
+    setBatteryVoltageText( msg.data );
 }
 
 
 void CoordinatorRow::batteryStateChangedCallback(const std_msgs::Int32& msg)
 {
-    //ROS_INFO_STEAM("[Coordinator Row GUI] Battery State Changed Callback called for agentID = " << m_agentID);
+    //ROS_INFO_STEAM("[COORDINATOR ROW GUI] Battery State Changed Callback called for agentID = " << m_agentID);
     setBatteryState( msg.data );
+}
+
+
+void CoordinatorRow::batteryLevelCallback(const std_msgs::Int32& msg)
+{
+    setBatteryImageBasedOnLevel( msg.data );
 }
 #endif
 
@@ -363,214 +373,133 @@ void CoordinatorRow::batteryStateChangedCallback(const std_msgs::Int32& msg)
 // > For updating the battery state
 void CoordinatorRow::setBatteryState(int new_battery_state)
 {
-    // LOCK THE MUTEX FOR THE WHOLE SWITCH CASE STATEMENT
-    my_battery_state_mutex.lock();
-    // Switch depending the the new battery state provided
-    switch(new_battery_state)
-    {
-        case BATTERY_STATE_LOW:
-        {
-            // MAKE UNAVAILABLE THE BUTTONS FOR ENABLING AND DISABLING FLIGHT
-            disableFlyingStateButtons();
-
-            // SET THE CLASS VARIABLE FOR TRACKING THE BATTERY STATE
-            my_battery_state = BATTERY_STATE_LOW;
-            break;
-        }
-
-        case BATTERY_STATE_NORMAL:
-        {
-            // MAKE UNAVAILABLE THE BUTTONS FOR ENABLING AND DISABLING FLIGHT
-            enableFlyingStateButtons();
-
-            // SET THE CLASS VARIABLE FOR TRACKING THE BATTERY STATE
-            my_battery_state = BATTERY_STATE_NORMAL;
-            break;
-        }
-
-        default:
-            break;
-    }
-    // UNLOCK THE MUTEX
-    my_battery_state_mutex.unlock();
+    // SET THE CLASS VARIABLE FOR TRACKING THE BATTERY STATE
+    m_battery_state = new_battery_state;
 }
 
-// > For the battery voltage label and image
-void CoordinatorRow::setBatteryVoltageTextAndImage(float battery_voltage)
-{
-    setBatteryVoltageText( battery_voltage );
-    setBatteryVoltageImage( battery_voltage );
-}
+
 
 // > For updating the battery voltage shown in the UI elements of "battery_voltage_lineEdit"
 void CoordinatorRow::setBatteryVoltageText(float battery_voltage)
 {
     // Lock the mutex
-    my_battery_voltage_lineEdit_mutex.lock();
+    //m_battery_voltage_lineEdit_mutex.lock();
     // Construct the text string
     QString qstr = "";
-    qstr.append(QString::number(battery_voltage, 'f', 2));
+    if (battery_voltage >= 0.0f)
+    {
+        qstr.append(QString::number(battery_voltage, 'f', 2));
+    }
+    else
+    {
+        qstr.append("-.--");
+    }
     qstr.append(" V");
     // Set the text to the battery voltage line edit
     ui->battery_voltage_lineEdit->setText(qstr);
     // Unlock the mutex
-    my_battery_voltage_lineEdit_mutex.unlock();
+    //m_battery_voltage_lineEdit_mutex.unlock();
 }
 
-// > For updating the battery voltage shown in the UI elements of "battery_status_label"
-void CoordinatorRow::setBatteryVoltageImage(float battery_voltage)
+
+
+// > For updating the battery image shown in the UI element of "battery_status_label"
+void CoordinatorRow::setBatteryImageBasedOnLevel(int battery_level)
 {
     // COMPUTE THE BATTERY VOLTAGE AS A PERCENTAGE
-    float battery_voltage_percentage = fromVoltageToPercent(battery_voltage);
+    //float battery_voltage_percentage = fromVoltageToPercent(battery_voltage);
 
-    // CONVERT THE VOLTAGE PERCENTAGE TO AN INDEX OF WHICH BATTERY LEVEL IMAGE TO DISPLAY
+    // CONVERT THE VOLTAGE LEVEL TO AN INDEX OF WHICH BATTERY LEVEL IMAGE TO DISPLAY
     // > Initialise a local variable that will be set in the switch case below
-    int new_battery_label_image_index = BATTERY_LABEL_IMAGE_INDEX_UNKNOWN;
+    int new_image_index = BATTERY_LABEL_IMAGE_INDEX_UNKNOWN;
     // > Initialise a local variable for the string of which image to use
     QString qstr_new_image = "";
     qstr_new_image.append(":/images/");
-    // > Get the value of the "my_battery_state" variable into a local variable
-    my_battery_state_mutex.lock();
-    int local_copy_of_my_battery_state = my_battery_state;
-    my_battery_state_mutex.unlock();
-    // > Switch based on the current battery state, first locking the mutex for accessing
-    //   both "my_battery_status_label_image_current_index" and "ui->battery_status_label"
-    my_battery_status_label_mutex.lock();
-    switch(local_copy_of_my_battery_state)
+    
+    // Fill in these two local variables accordingly
+    switch(battery_level)
     {
-        // WHEN THE BATTERY IS IN A LOW STATE
-        case BATTERY_STATE_LOW:
+        case BATTERY_LEVEL_000:
         {
-            new_battery_label_image_index = BATTERY_LABEL_IMAGE_INDEX_EMPTY;
+            new_image_index = BATTERY_LABEL_IMAGE_INDEX_EMPTY;
             qstr_new_image.append("battery_empty.png");
             break;
         }
-
-        // WHEN THE BATTERY IS IN A NORMAL STATE
-        case BATTERY_STATE_NORMAL:
+        case BATTERY_LEVEL_010:
+        case BATTERY_LEVEL_020:
         {
-
-            if (
-                ((my_battery_status_label_image_current_index != BATTERY_LABEL_IMAGE_INDEX_EMPTY) && (battery_voltage_percentage <= 0.0f))
-                ||
-                ((my_battery_status_label_image_current_index == BATTERY_LABEL_IMAGE_INDEX_EMPTY) && (battery_voltage_percentage <= 2.0f))
-            )
-            {
-                new_battery_label_image_index = BATTERY_LABEL_IMAGE_INDEX_EMPTY;
-                qstr_new_image.append("battery_empty.png");
-            }
-            else if (
-                ((my_battery_status_label_image_current_index != BATTERY_LABEL_IMAGE_INDEX_20) && (battery_voltage_percentage <= 20.0f))
-                ||
-                ((my_battery_status_label_image_current_index == BATTERY_LABEL_IMAGE_INDEX_20) && (battery_voltage_percentage <= 22.0f))
-            )
-            {
-                new_battery_label_image_index = BATTERY_LABEL_IMAGE_INDEX_20;
-                qstr_new_image.append("battery_20.png");
-            }
-            else if (
-                ((my_battery_status_label_image_current_index != BATTERY_LABEL_IMAGE_INDEX_40) && (battery_voltage_percentage <= 40.0f))
-                ||
-                ((my_battery_status_label_image_current_index == BATTERY_LABEL_IMAGE_INDEX_40) && (battery_voltage_percentage <= 42.0f))
-            )
-            {
-                new_battery_label_image_index = BATTERY_LABEL_IMAGE_INDEX_40;
-                qstr_new_image.append("battery_40.png");
-            }
-            else if (
-                ((my_battery_status_label_image_current_index != BATTERY_LABEL_IMAGE_INDEX_60) && (battery_voltage_percentage <= 60.0f))
-                ||
-                ((my_battery_status_label_image_current_index == BATTERY_LABEL_IMAGE_INDEX_60) && (battery_voltage_percentage <= 62.0f))
-            )
-            {
-                new_battery_label_image_index = BATTERY_LABEL_IMAGE_INDEX_60;
-                qstr_new_image.append("battery_60.png");
-            }
-            else if (
-                ((my_battery_status_label_image_current_index != BATTERY_LABEL_IMAGE_INDEX_80) && (battery_voltage_percentage <= 80.0f))
-                ||
-                ((my_battery_status_label_image_current_index == BATTERY_LABEL_IMAGE_INDEX_80) && (battery_voltage_percentage <= 82.0f))
-            )
-            {
-                new_battery_label_image_index = BATTERY_LABEL_IMAGE_INDEX_80;
-                qstr_new_image.append("battery_80.png");
-            }
-            else
-            {
-                new_battery_label_image_index = BATTERY_LABEL_IMAGE_INDEX_FULL;
-                qstr_new_image.append("battery_full.png");
-            }
+            new_image_index = BATTERY_LABEL_IMAGE_INDEX_20;
+            qstr_new_image.append("battery_20.png");
             break;
         }
-
+        case BATTERY_LEVEL_030:
+        case BATTERY_LEVEL_040:
+        {
+            new_image_index = BATTERY_LABEL_IMAGE_INDEX_40;
+            qstr_new_image.append("battery_40.png");
+            break;
+        }
+        case BATTERY_LEVEL_050:
+        case BATTERY_LEVEL_060:
+        {
+            new_image_index = BATTERY_LABEL_IMAGE_INDEX_60;
+            qstr_new_image.append("battery_60.png");
+            break;
+        }
+        case BATTERY_LEVEL_070:
+        case BATTERY_LEVEL_080:
+        {
+            new_image_index = BATTERY_LABEL_IMAGE_INDEX_80;
+            qstr_new_image.append("battery_80.png");
+            break;
+        }
+        case BATTERY_LEVEL_090:
+        case BATTERY_LEVEL_100:
+        {
+            new_image_index = BATTERY_LABEL_IMAGE_INDEX_FULL;
+            qstr_new_image.append("battery_full.png");
+            break;
+        }
+        case BATTERY_LEVEL_UNAVAILABLE:
+        {
+            new_image_index = BATTERY_LABEL_IMAGE_INDEX_UNVAILABLE;
+            qstr_new_image.append("battery_unknown.png");
+            break;
+        }
         default:
         {
-            new_battery_label_image_index = BATTERY_LABEL_IMAGE_INDEX_UNKNOWN;
+            new_image_index = BATTERY_LABEL_IMAGE_INDEX_UNKNOWN;
             qstr_new_image.append("battery_unknown.png");
             break;
         }
     }
     // UPDATE THE IMAGE DISPLAYED BASED ON THE "new index"
     // > Only if it is different from the current index
-    if (my_battery_status_label_image_current_index != new_battery_label_image_index)
+    m_battery_status_label_mutex.lock();
+    if (m_battery_status_label_image_current_index != new_image_index)
     {
         // SET THE IMAGE FOR THE BATTERY STATUS LABEL
         ui->battery_status_label->clear();
         QPixmap battery_image_pixmap(qstr_new_image);
         ui->battery_status_label->setPixmap(battery_image_pixmap);
         ui->battery_status_label->setScaledContents(true);
-        my_battery_status_label_image_current_index = new_battery_label_image_index;
+        m_battery_status_label_image_current_index = new_image_index;
         ui->battery_status_label->update();
     }
-    // Finally unlock the mutex
-    my_battery_status_label_mutex.unlock();
+    m_battery_status_label_mutex.unlock();
 }
 
 
-// > For converting a voltage to a percentage, depending on the current "my_flying_state" value
-float CoordinatorRow::fromVoltageToPercent(float voltage)
-{
-    // INITIALISE THE LOCAL VARIABLE FOR THE VOLTAGE WHEN FULL/EMPTY
-    float voltage_when_full;
-    float voltage_when_empty;
 
-    // COMPUTE THE PERCENTAGE DIFFERENTLY DEPENDING ON
-    // THE CURRENT FLYING STATE
-    // > First lock the mutex before accessing the "my_flying_state" variable
-    my_flying_state_mutex.lock();
-    if (my_flying_state == STATE_MOTORS_OFF)
-    {
-        // Voltage limits for a "standby" type of state
-        voltage_when_empty = battery_voltage_standby_empty;
-        voltage_when_full  = battery_voltage_standby_full;
-    }
-    else
-    {
-        // Voltage limits for a "flying" type of state
-        voltage_when_empty = battery_voltage_flying_empty;
-        voltage_when_full  = battery_voltage_flying_full;
-    }
-    // > Unlock the mutex
-    my_flying_state_mutex.unlock();
 
-    // COMPUTE THE PERCENTAGE
-    float percentage = 100.0f * (voltage-voltage_when_empty)/(voltage_when_full-voltage_when_empty);
 
-    // CLIP THE PERCENTAGE TO BE BETWEEN [0,100]
-    // > This should not happen to often
-    if(percentage > 100.0f)
-    {
-        percentage = 100.0f;
-    }
-    if(percentage < 0.0f)
-    {
-        percentage = 0.0f;
-    }
-
-    // RETURN THE PERCENTAGE
-    return percentage;
-}
-
+//    ----------------------------------------------------------------------------------
+//    FFFFF  L      Y   Y  III   GGGG      SSSS  TTTTT    A    TTTTT  EEEE
+//    F      L       Y Y    I   G         S        T     A A     T    E
+//    FFF    L        Y     I   G          SSS     T    A   A    T    EEE
+//    F      L        Y     I   G   G         S    T    AAAAA    T    E
+//    F      LLLLL    Y    III   GGGG     SSSS     T    A   A    T    EEEEE
+//    ----------------------------------------------------------------------------------
 
 
 
@@ -578,18 +507,13 @@ float CoordinatorRow::fromVoltageToPercent(float voltage)
 #ifdef CATKIN_MAKE
 void CoordinatorRow::flyingStateChangedCallback(const std_msgs::Int32& msg)
 {
-    //ROS_INFO_STEAM("[Coordinator Row GUI] Flying State Changed Callback called for agentID = " << m_agentID);
+    //ROS_INFO_STEAM("[COORDINATOR ROW GUI] Flying State Changed Callback called for agentID = " << m_agentID);
     setFlyingState(msg.data);
 }
 #endif
 
 void CoordinatorRow::setFlyingState(int new_flying_state)
 {
-    // PUT THE CURRENT STATE INTO THE CLASS VARIABLE
-    my_flying_state_mutex.lock();
-    my_flying_state = new_flying_state;
-    my_flying_state_mutex.unlock();
-
     // UPDATE THE LABEL TO DISPLAY THE FLYING STATE
     switch(new_flying_state)
     {
@@ -642,12 +566,18 @@ void CoordinatorRow::setFlyingState(int new_flying_state)
 }
 
 
+
+
+
+
+
+
 // RESPONDING TO CHANGES IN THE DATABASE
 #ifdef CATKIN_MAKE
 // > For the notification that the database was changes, received on the "DatabaseChangedSubscriber"
 void CoordinatorRow::databaseChangedCallback(const std_msgs::Int32& msg)
 {
-    //ROS_INFO_STEAM("[Coordinator Row GUI] Database Changed Callback called for agentID = " << m_agentID);
+    //ROS_INFO_STEAM("[COORDINATOR ROW GUI] Database Changed Callback called for agentID = " << m_agentID);
     loadCrazyflieContext();
 }
 #endif
@@ -666,13 +596,13 @@ void CoordinatorRow::loadCrazyflieContext()
     if(centralManagerDatabaseService.call(contextCall))
     {
         my_context = contextCall.response.crazyflieContext;
-        ROS_INFO_STREAM("[Coordinator Row GUI] CrazyflieContext:\n" << my_context);
+        ROS_INFO_STREAM("[COORDINATOR ROW GUI] CrazyflieContext:\n" << my_context);
 
         qstr_crazyflie_name.append(QString::fromStdString(my_context.crazyflieName));
     }
     else
     {
-        ROS_ERROR_STREAM("[Coordinator Row GUI] Failed to load context for agentID = " << m_agentID);
+        ROS_ERROR_STREAM("[COORDINATOR ROW GUI] Failed to load context for agentID = " << m_agentID);
     }
     // This updating of the radio only needs to be done by the actual agent's node
     //ros::NodeHandle nh("CrazyRadio");
@@ -698,7 +628,7 @@ void CoordinatorRow::loadCrazyflieContext()
 // > For the controller currently operating, received on "controllerUsedSubscriber"
 void CoordinatorRow::controllerUsedChangedCallback(const std_msgs::Int32& msg)
 {
-    //ROS_INFO_STEAM("[Coordinator Row GUI] Controller Used Changed Callback called for agentID = " << m_agentID);
+    //ROS_INFO_STEAM("[COORDINATOR ROW GUI] Controller Used Changed Callback called for agentID = " << m_agentID);
     setControllerEnabled(msg.data);
 }
 #endif
@@ -749,30 +679,39 @@ void CoordinatorRow::setControllerEnabled(int new_controller)
 
 
 
-//    ------------------------------------------------------------------- //
-// # RF Crazyradio Connect Disconnect
+
+//    ----------------------------------------------------------------------------------
+//    BBBB   U   U  TTTTT  TTTTT   OOO   N   N   SSSS
+//    B   B  U   U    T      T    O   O  NN  N  S
+//    BBBB   U   U    T      T    O   O  N N N   SSS
+//    B   B  U   U    T      T    O   O  N  NN      S
+//    BBBB    UUU     T      T     OOO   N   N  SSSS
+//    ----------------------------------------------------------------------------------
+
+
+
 void CoordinatorRow::on_rf_connect_button_clicked()
 {
 #ifdef CATKIN_MAKE
-    std_msgs::Int32 msg;
+    d_fall_pps::IntWithHeader msg;
+    msg.shouldCheckForID = false;
     msg.data = CMD_RECONNECT;
     this->crazyRadioCommandPublisher.publish(msg);
-    ROS_INFO("[FLYING AGENT GUI] Command to RF reconnect published");
+    ROS_INFO("[COORDINATOR ROW GUI] Command to RF reconnect published");
 #endif
 }
 
 void CoordinatorRow::on_rf_disconnect_button_clicked()
 {
 #ifdef CATKIN_MAKE
-    std_msgs::Int32 msg;
+    d_fall_pps::IntWithHeader msg;
+    msg.shouldCheckForID = false;
     msg.data = CMD_DISCONNECT;
     this->crazyRadioCommandPublisher.publish(msg);
-    ROS_INFO("[FLYING AGENT GUI] Command to RF disconnect published");
+    ROS_INFO("[COORDINATOR ROW GUI] Command to RF disconnect published");
 #endif
 }
 
-//    ------------------------------------------------------------------- //
-// # Take off, land, motors off
 void CoordinatorRow::on_enable_flying_button_clicked()
 {
 #ifdef CATKIN_MAKE

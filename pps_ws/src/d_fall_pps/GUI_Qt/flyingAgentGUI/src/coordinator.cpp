@@ -94,12 +94,13 @@ void Coordinator::on_refresh_button_clicked()
         vector_of_coordinatorRows.append(temp_coordinatorRow);
 
         ui->coordinated_agents_scrollAreaWidgetContents->layout()->addWidget(temp_coordinatorRow);
-
-        // Call the function that applies this level
-        // of detail to all the entries
-        apply_level_of_detail_to_all_entries(level_of_detail_to_display);
     }
 #endif
+
+    
+    // Call the function that applies this level
+    // of detail to all the entries
+    apply_level_of_detail_to_all_entries(level_of_detail_to_display);
 }
 
 

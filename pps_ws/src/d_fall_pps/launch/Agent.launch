@@ -24,7 +24,7 @@
 			output = "screen"
 			type   = "CrazyRadio.py"
 			>
-			<rosparam command="load" file="$(find d_fall_pps)/param/ClientConfig.yaml" />
+			<rosparam command="load" file="$(find d_fall_pps)/param/BatteryMonitor.yaml" />
 		</node>
 
 		<!-- PPS CLIENT -->
@@ -34,7 +34,6 @@
 			output = "screen"
 			type   = "PPSClient"
 			>
-			<rosparam command="load" file="$(find d_fall_pps)/param/ClientConfig.yaml" />
 			<param name="agentID" value="$(arg agentID)" />
 			<param name="coordID" value="$(arg coordID)" />
 		</node>
@@ -120,6 +119,11 @@
 			>
 			<param name="type"     type="str"  value="agent" />
 			<param name="agentID"  value="$(arg agentID)" />
+			<rosparam
+				command = "load"
+				file    = "$(find d_fall_pps)/param/ClientConfig.yaml"
+				ns      = "PPSClient"
+			/>
 			<rosparam
 				command = "load"
 				file    = "$(find d_fall_pps)/param/BatteryMonitor.yaml"

@@ -51,89 +51,32 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     m_close_GUI_shortcut = new QShortcut(QKeySequence(tr("CTRL+C")), this, SLOT(close()));
 
 #ifdef CATKIN_MAKE
+    // Get the namespace of this node
+    std::string this_namespace = ros::this_node::getNamespace();
+    ROS_INFO_STREAM("[FLYING AGENT GUI MAIN WINDOW] ros::this_node::getNamespace() =  " << this_namespace);
+
+
+    // Get the type and ID of this parameter service
+    bool isValid_type_and_ID = getTypeAndIDParameters();
+
+    // Stall if the TYPE and ID are not valid
+    if ( !isValid_type_and_ID )
+    {
+        ROS_ERROR("[FLYING AGENT GUI MAIN WINDOW] Node NOT FUNCTIONING :-)");
+        ros::spin();
+    }
+    
     // Create a "ros::NodeHandle" type local variable "nodeHandle" as the current node,
     // the "~" indcates that "self" is the node handle assigned to this variable.
     ros::NodeHandle nodeHandle("~");
-    // Get the value of the "type" parameter into a local string variable
-    std::string type_string;
-    if(!nodeHandle.getParam("type", type_string))
-    {
-        // Throw an error if the agent ID parameter could not be obtained
-        ROS_ERROR("[FLYING AGENT GUI] Failed to get type");
-    }
-
-
-    // Set the "m_type" class variable based on this string loaded
-    if ((!type_string.compare("coordinator")))
-    {
-        m_type = TYPE_COORDINATOR;
-    }
-    else if ((!type_string.compare("agent")))
-    {
-        m_type = TYPE_AGENT;
-    }
-    else
-    {
-        // Set "m_type" to the value indicating that it is invlid
-        m_type = TYPE_INVALID;
-        ROS_ERROR("[FLYING AGENT GUI] The 'type' parameter retrieved was not recognised.");
-    }
-
-
-    // Construct the string to the namespace of this Paramater Service
-    switch (m_type)
-    {
-        case TYPE_AGENT:
-        {
-            // Get the value of the "agentID" parameter into the class variable "m_Id"
-            if(!nodeHandle.getParam("agentID", m_ID))
-            {
-                // Throw an error if the agent ID parameter could not be obtained
-                ROS_ERROR("[FLYING AGENT GUI] Failed to get agentID");
-            }
-            else
-            {
-                // Inform the user about the type and ID
-                ROS_INFO_STREAM("[FLYING AGENT GUI] Is of type AGENT with ID = " << m_ID);
-            }
-            break;
-        }
-
-        // A COORDINATOR TYPE PARAMETER SERVICE IS REQUESTED FROM:
-        // > The master GUI
-        case TYPE_COORDINATOR:
-        {
-            // Get the value of the "coordID" parameter into the class variable "m_Id"
-            if(!nodeHandle.getParam("coordID", m_ID))
-            {
-                // Throw an error if the coord ID parameter could not be obtained
-                ROS_ERROR("[FLYING AGENT GUI] Failed to get coordID");
-            }
-            else
-            {
-                // Inform the user about the type and ID
-                ROS_INFO_STREAM("[FLYING AGENT GUI] Is of type COORDINATOR with ID = " << m_ID);
-            }
-            break;
-        }
-
-        default:
-        {
-            // Throw an error if the type is not recognised
-            ROS_ERROR("[FLYING AGENT GUI] The 'm_type' variable was not recognised.");
-            break;
-        }
-    }
-
-
 
     // Get the namespace of this "ParameterService" node
     std::string this_node_namespace = ros::this_node::getNamespace();
-    ROS_INFO_STREAM("[FLYING AGENT GUI] ros::this_node::getNamespace() =  " << this_node_namespace);
+    ROS_INFO_STREAM("[FLYING AGENT GUI MAIN WINDOW] ros::this_node::getNamespace() =  " << this_node_namespace);
 
     // Construct the string to the namespace of this Paramater Service
     m_parameter_service_namespace = this_node_namespace + '/' + "ParameterService";
-    ROS_INFO_STREAM("[FLYING AGENT GUI] parameter service is: " << m_parameter_service_namespace);
+    ROS_INFO_STREAM("[FLYING AGENT GUI MAIN WINDOW] parameter service is: " << m_parameter_service_namespace);
 
     // Get the node handle to this parameter service
     ros::NodeHandle nodeHandle_to_parameter_service(m_parameter_service_namespace);
@@ -180,7 +123,7 @@ void MainWindow::on_action_LoadYAML_BatteryMonitor_triggered()
 {
 #ifdef CATKIN_MAKE
     // Inform the user that the menu item was selected
-    ROS_INFO("[FLYING AGENT GUI] Load Battery Monitor YAML was clicked.");
+    ROS_INFO("[FLYING AGENT GUI MAIN WINDOW] Load Battery Monitor YAML was clicked.");
 
     // Create a local variable for the message
     StringWithHeader yaml_filename_msg;
@@ -198,7 +141,7 @@ void MainWindow::on_action_LoadYAML_ClientConfig_triggered()
 {
 #ifdef CATKIN_MAKE
     // Inform the user that the menu item was selected
-    ROS_INFO("[FLYING AGENT GUI] Load Client Config YAML was clicked.");
+    ROS_INFO("[FLYING AGENT GUI MAIN WINDOW] Load Client Config YAML was clicked.");
 
     // Create a local variable for the message
     StringWithHeader yaml_filename_msg;
@@ -210,3 +153,106 @@ void MainWindow::on_action_LoadYAML_ClientConfig_triggered()
     m_requestLoadYamlFilenamePublisher.publish(yaml_filename_msg);
 #endif
 }
+
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//    III  DDDD       &&&      TTTTT  Y   Y  PPPP   EEEEE
+//     I   D   D     &           T     Y Y   P   P  E
+//     I   D   D      &          T      Y    PPPP   EEE
+//     I   D   D     & & &       T      Y    P      E
+//    III  DDDD       &&&        T      Y    P      EEEEE
+//    ----------------------------------------------------------------------------------
+
+
+
+#ifdef CATKIN_MAKE
+bool MainWindow::getTypeAndIDParameters()
+{
+    // Initialise the return variable as success
+    bool return_was_successful = true;
+
+    // Create a "ros::NodeHandle" type local variable "nodeHandle" as the current node,
+    // the "~" indcates that "self" is the node handle assigned to this variable.
+    ros::NodeHandle nodeHandle("~");
+
+    // Get the value of the "type" parameter into a local string variable
+    std::string type_string;
+    if(!nodeHandle.getParam("type", type_string))
+    {
+        // Throw an error if the agent ID parameter could not be obtained
+        ROS_ERROR("[ENABLE CONTROLLER LOAD YAML GUI BAR] Failed to get type");
+    }
+
+    // Set the "m_type" class variable based on this string loaded
+    if ((!type_string.compare("coordinator")))
+    {
+        m_type = TYPE_COORDINATOR;
+    }
+    else if ((!type_string.compare("agent")))
+    {
+        m_type = TYPE_AGENT;
+    }
+    else
+    {
+        // Set "m_type" to the value indicating that it is invlid
+        m_type = TYPE_INVALID;
+        return_was_successful = false;
+        ROS_ERROR("[ENABLE CONTROLLER LOAD YAML GUI BAR] The 'type' parameter retrieved was not recognised.");
+    }
+
+
+    // Construct the string to the namespace of this Paramater Service
+    switch (m_type)
+    {
+        case TYPE_AGENT:
+        {
+            // Get the value of the "agentID" parameter into the class variable "m_Id"
+            if(!nodeHandle.getParam("agentID", m_ID))
+            {
+                // Throw an error if the agent ID parameter could not be obtained
+                return_was_successful = false;
+                ROS_ERROR("[ENABLE CONTROLLER LOAD YAML GUI BAR] Failed to get agentID");
+            }
+            else
+            {
+                // Inform the user about the type and ID
+                ROS_INFO_STREAM("[ENABLE CONTROLLER LOAD YAML GUI BAR] Is of type AGENT with ID = " << m_ID);
+            }
+            break;
+        }
+
+        // A COORDINATOR TYPE PARAMETER SERVICE IS REQUESTED FROM:
+        // > The master GUI
+        case TYPE_COORDINATOR:
+        {
+            // Get the value of the "coordID" parameter into the class variable "m_Id"
+            if(!nodeHandle.getParam("coordID", m_ID))
+            {
+                // Throw an error if the coord ID parameter could not be obtained
+                return_was_successful = false;
+                ROS_ERROR("[ENABLE CONTROLLER LOAD YAML GUI BAR] Failed to get coordID");
+            }
+            else
+            {
+                // Inform the user about the type and ID
+                ROS_INFO_STREAM("[ENABLE CONTROLLER LOAD YAML GUI BAR] Is of type COORDINATOR with ID = " << m_ID);
+            }
+            break;
+        }
+
+        default:
+        {
+            // Throw an error if the type is not recognised
+            return_was_successful = false;
+            ROS_ERROR("[ENABLE CONTROLLER LOAD YAML GUI BAR] The 'm_type' variable was not recognised.");
+            break;
+        }
+    }
+
+    // Return
+    return return_was_successful;
+}
+#endif

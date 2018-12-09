@@ -260,12 +260,6 @@ void viconCallback(const ViconData& viconData);
 
 
 
-// > For the {dis/re}-connect command received from the coordinator
-//void crazyRadioCommandAllAgentsCallback(const std_msgs::Int32& msg);
-void crazyRadioCommandAllAgentsCallback(const std_msgs::Int32& msg);
-
-
-
 
 void crazyflieContextDatabaseChangedCallback(const std_msgs::Int32& msg);
 

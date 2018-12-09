@@ -70,9 +70,9 @@ private slots:
 private:
     Ui::EnableControllerLoadYamlBar *ui;
 
-#ifdef CATKIN_MAKE
+
     // --------------------------------------------------- //
-    // PRIVATE VARIABLES FOR ROS
+    // PRIVATE VARIABLES
 
     // The type of this node, i.e., agent or a coordinator,
     // specified as a parameter in the "*.launch" file
@@ -81,22 +81,24 @@ private:
     // The ID  of this node
     int m_ID;
 
+#ifdef CATKIN_MAKE
     // PUBLISHERS AND SUBSRIBERS
     // > For {take-off,land,motors-off} and controller selection
     ros::Publisher commandPublisher;
+#endif
 
     // --------------------------------------------------- //
-    // PRIVATE FUNCTIONS FOR ROS
+    // PRIVATE FUNCTIONS
 
+#ifdef CATKIN_MAKE
     // Fill the head for a message
     void fillIntMessageHeader( d_fall_pps::IntWithHeader & msg );
 
     // Get the paramters that specify the type and ID
     bool getTypeAndIDParameters();
-
-
-
 #endif
+
+
 };
 
 #endif // ENABLECONTROLLERLOADYAMLBAR_H

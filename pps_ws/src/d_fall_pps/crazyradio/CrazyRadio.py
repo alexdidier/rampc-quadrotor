@@ -146,7 +146,7 @@ class PPSRadioClient:
         self.change_status_to(DISCONNECTED)
 
     def change_status_to(self, new_status):
-        print "status changed to: %s" % new_status
+        print "[CRAZY RADIO] status changed to: %s" % new_status
         self._status = new_status
         self.status_pub.publish(new_status)
 
@@ -160,13 +160,13 @@ class PPSRadioClient:
         # update link from ros params
         self.update_link_uri()
 
-        print "Connecting to %s" % self.link_uri
+        print "[CRAZY RADIO] Connecting to %s" % self.link_uri
         self.change_status_to(CONNECTING)
-        rospy.loginfo("connecting...")
+        rospy.loginfo("[CRAZY RADIO] connecting...")
         self._cf.open_link(self.link_uri)
 
     def disconnect(self):
-        print "Motors OFF"
+        print "[CRAZY RADIO] sending Motors OFF command before disconnecting"
         self._send_to_commander_motor(0, 0, 0, 0)
         # change state to motors OFF
         msg = IntWithHeader()
@@ -174,7 +174,7 @@ class PPSRadioClient:
         msg.data = CMD_CRAZYFLY_MOTORS_OFF
         self.PPSClient_command_pub.publish(msg)
         time.sleep(0.1)
-        print "Disconnecting from %s" % self.link_uri
+        print "[CRAZY RADIO] Disconnecting from %s" % self.link_uri
         self._cf.close_link()
         self.change_status_to(DISCONNECTED)
 
@@ -200,7 +200,7 @@ class PPSRadioClient:
 
 
     def _logging_error(self, logconf, msg):
-        print "Error when logging %s" % logconf.name
+        print "[CRAZY RADIO] Error when logging %s" % logconf.name
 
     # def _init_logging(self):
 
@@ -215,12 +215,12 @@ class PPSRadioClient:
         if self.logconf.valid:
             self.logconf.data_received_cb.add_callback(self._data_received_callback)
             self.logconf.error_cb.add_callback(self._logging_error)
-            print "logconf valid"
+            print "[CRAZY RADIO] logconf valid"
         else:
-            print "logconf invalid"
+            print "[CRAZY RADIO] logconf invalid"
 
         self.logconf.start()
-        print "logconf start"
+        print "[CRAZY RADIO] logconf start"
 
     def _connected(self, link_uri):
         """
@@ -234,7 +234,7 @@ class PPSRadioClient:
         msg.data = CMD_CRAZYFLY_MOTORS_OFF
         cf_client.PPSClient_command_pub.publish(msg)
 
-        rospy.loginfo("Connection to %s successful: " % link_uri)
+        rospy.loginfo("[CRAZY RADIO] Connection to %s successful: " % link_uri)
         # Config for Logging
         self._start_logging()
 
@@ -245,18 +245,18 @@ class PPSRadioClient:
         """Callback when connection initial connection fails (i.e no Crazyflie
         at the specified address)"""
         self.change_status_to(DISCONNECTED)
-        rospy.logerr("Connection to %s failed: %s" % (link_uri, msg))
+        rospy.logerr("[CRAZY RADIO] Connection to %s failed: %s" % (link_uri, msg))
 
     def _connection_lost(self, link_uri, msg):
         """Callback when disconnected after a connection has been made (i.e
         Crazyflie moves out of range)"""
         self.change_status_to(DISCONNECTED)
-        rospy.logerr("Connection to %s lost: %s" % (link_uri, msg))
+        rospy.logerr("[CRAZY RADIO] Connection to %s lost: %s" % (link_uri, msg))
 
     def _disconnected(self, link_uri):
         """Callback when the Crazyflie is disconnected (called in all cases)"""
         self.change_status_to(DISCONNECTED)
-        rospy.logwarn("Disconnected from %s" % link_uri)
+        rospy.logwarn("[CRAZY RADIO] Disconnected from %s" % link_uri)
 
         # change state to motors OFF
         msg = IntWithHeader()
@@ -295,23 +295,45 @@ class PPSRadioClient:
 
     def crazyRadioCommandCallback(self, msg):
         """Callback to tell CrazyRadio to reconnect"""
-        print "crazyRadio command received %s" % msg.data
 
-        if msg.data == CMD_RECONNECT:            # reconnect, check _status first and then do whatever needs to be done
-            print "entered reconnect"
-            print "_status: %s" % self._status
-            if self.get_status() == DISCONNECTED:
-                print "entered disconnected"
-                self.connect()
-            if self.get_status() == CONNECTED:
-                self.status_pub.publish(CONNECTED)
+        print "[CRAZY RADIO]  DEBUGGING received command"
 
-        elif msg.data == CMD_DISCONNECT:
-            print "disconnect received"
-            if self.get_status() != DISCONNECTED: # what happens if we disconnect while we are in connecting state?
-                self.disconnect()
-            else:
-                self.status_pub.publish(DISCONNECTED)
+        # Initialise a boolean flag that the command is NOT relevant
+        command_is_relevant = False
+
+        # Check the header details of the message for it relevance
+        if (!msg.shouldCheckForID):
+            command_is_relevant = True
+        else
+            for this_ID in msg.agentIDs:
+                if (this_ID == m_agentID):
+                    command_is_relevant = True
+                    break
+
+        # Only consider the command if it is relevant
+        if (command_is_relevant):
+            #print "[CRAZY RADIO] received command to: %s" % msg.data
+            if msg.data == CMD_RECONNECT:
+                if self.get_status() == DISCONNECTED:
+                    print "[CRAZY RADIO] received command to CONNECT (current status is DISCONNECTED)"
+                    self.connect()
+                elif self.get_status() == CONNECTING:
+                    print "[CRAZY RADIO] received command to CONNECT (current status is CONNECTING)"
+                    #self.status_pub.publish(CONNECTING)
+                elif self.get_status() == CONNECTED:
+                    print "[CRAZY RADIO] received command to CONNECT (current status is CONNECTED)"
+                    #self.status_pub.publish(CONNECTED)
+
+            elif msg.data == CMD_DISCONNECT:
+                if self.get_status() == CONNECTED:
+                    print "[CRAZY RADIO] received command to DISCONNECT (current status is CONNECTED)"
+                    self.disconnect()
+                elif self.get_status() == CONNECTING:
+                    print "[CRAZY RADIO] received command to DISCONNECT (current status is CONNECTING)"
+                    #self.status_pub.publish(CONNECTING)
+                elif self.get_status() == DISCONNECTED:
+                    print "[CRAZY RADIO] received command to DISCONNECT (current status is DISCONNECTED)"
+                    #self.status_pub.publish(DISCONNECTED)
 
 def controlCommandCallback(data):
     """Callback for controller actions"""
@@ -333,12 +355,17 @@ def controlCommandCallback(data):
 
 
 if __name__ == '__main__':
+
+    # Starting the ROS-node
     global node_name
     node_name = "CrazyRadio"
     rospy.init_node(node_name, anonymous=True)
 
+    # Get the namespace of this node
     global ros_namespace
     ros_namespace = rospy.get_namespace()
+
+
     # Initialize the low-level drivers (don't list the debug drivers)
     cflib.crtp.init_drivers(enable_debug_driver=False)
 
@@ -349,23 +376,42 @@ if __name__ == '__main__':
     #use this following two lines to connect without data from CentralManager
     # radio_address = "radio://0/72/2M"
     # rospy.loginfo("manual address loaded")
+
+    # Fetch the YAML paramter "battery polling period"
     global battery_polling_period
     battery_polling_period = rospy.get_param(ros_namespace + "/CrazyRadio/battery_polling_period")
 
+    # Fetch the YAML paramter "agentID" and "coordID"
+    global m_agentID
+    m_agentID = rospy.get_param(ros_namespace + "/PPSClient/agentID")
+    coordID   = rospy.get_param(ros_namespace + "/PPSClient/coordID")
+    # Convert the coordinator ID to a zero-padded string
+    coordID_as_string = format(coordID, '03')
+
+
+    # Initialise a publisher for the battery voltage
     global cfbattery_pub
     cfbattery_pub = rospy.Publisher(node_name + '/CFBattery', Float32, queue_size=10)
 
+    # Initialise a "PPSRadioClient" type variable that handles
+    # all communication over the CrazyRadio
     global cf_client
-
     cf_client = PPSRadioClient()
-    rospy.Subscriber("PPSClient/crazyRadioCommand", Int32, cf_client.crazyRadioCommandCallback) # allows commands from scripts
+
+    # Subscribe to the commands for when to (dis-)connect the
+    # CrazyRadio connection with the Crazyflie
+    # > For the radio commands from the PPSClient of this agent
+    rospy.Subscriber("PPSClient/crazyRadioCommand", IntWithHeader, cf_client.crazyRadioCommandCallback)
+    # > For the radio command from the coordinator
+    rospy.Subscriber("/dfall/coord" + coordID_as_string + "/PPSClient/crazyRadioCommand", IntWithHeader, cf_client.crazyRadioCommandCallback)
+
 
     time.sleep(1.0)
 
     rospy.Subscriber("PPSClient/ControlCommand", ControlCommand, controlCommandCallback)
 
     rospy.spin()
-    rospy.loginfo("Turning off crazyflie")
+    rospy.loginfo("[CRAZY RADIO] Turning off crazyflie")
 
     cf_client._send_to_commander_motor(0, 0, 0, 0)
     # change state to motors OFF
@@ -378,7 +424,7 @@ if __name__ == '__main__':
 
 
     bag.close()
-    rospy.loginfo("bag closed")
+    rospy.loginfo("[CRAZY RADIO] bag closed")
 
     cf_client._cf.close_link()
-    rospy.loginfo("Link closed")
+    rospy.loginfo("[CRAZY RADIO] Link closed")
