@@ -36,27 +36,27 @@
 CoordinatorRow::CoordinatorRow(QWidget *parent, int agentID) :
     QWidget(parent),
     ui(new Ui::CoordinatorRow),
-    my_agentID(agentID)
+    m_agentID(agentID)
 {
     ui->setupUi(this);
 
     // CONVERT THE AGENT ID TO A ZERO PADDED STRING
     // > This is the c++ method:
     //std::ostringstream str_stream;
-    //str_stream << std::setw(3) << std::setfill('0') << my_agentID;
+    //str_stream << std::setw(3) << std::setfill('0') << m_agentID;
     //std::string agentID_as_string(str_stream.str());
     // > This is the Qt method
-    //my_agentID_as_string = QString("%1").arg(my_agentID, 3, 10, QChar('0'));
+    //m_agentID_as_string = QString("%1").arg(m_agentID, 3, 10, QChar('0'));
     //   For which the syntax is:
     //   - Arg1: the number
     //   - Arg2: how many 0 you want?
     //   - Arg3: The base (10 - decimal, 16 hexadecimal)
     // > Alternate Qt method:
-    my_agentID_as_string = QString::number(my_agentID).rightJustified(3, '0');
+    m_agentID_as_string = QString::number(m_agentID).rightJustified(3, '0');
 
     // CONVERT THE AGENT ID TO A STRING FOR THE BASE NAMESPACE
     QString qstr_ros_base_namespace = "/dfall/agent";
-    qstr_ros_base_namespace.append(my_agentID_as_string);
+    qstr_ros_base_namespace.append(m_agentID_as_string);
     std::string ros_base_namespace = qstr_ros_base_namespace.toStdString();
 
     // SET THE INITIAL VALUE OF THE PRIVATE VARIABLES FOR THIS CLASS
@@ -103,7 +103,7 @@ CoordinatorRow::CoordinatorRow(QWidget *parent, int agentID) :
 
 
     // LET THE USER KNOW WHAT THE BASE NAMESPACE IS
-    ROS_INFO_STREAM("[Coordinator Row GUI] using base namespace: " << ros_base_namespace.c_str() << ", for agentID = " << my_agentID);
+    ROS_INFO_STREAM("[Coordinator Row GUI] using base namespace: " << ros_base_namespace.c_str() << ", for agentID = " << m_agentID);
 
     // DEBUGGING FOR NAMESPACES
     //std::string temp_ros_namespace = ros::this_node::getNamespace();
@@ -141,7 +141,7 @@ CoordinatorRow::CoordinatorRow(QWidget *parent, int agentID) :
     loadCrazyflieContext();
 
     // FOR DEBUGGING:
-    //ui->shouldCoordinate_checkBox->setText(my_agentID_as_string);
+    //ui->shouldCoordinate_checkBox->setText(m_agentID_as_string);
     //ui->shouldCoordinate_checkBox->setText(QString::fromStdString(base_namespace));
 }
 
@@ -159,6 +159,68 @@ void CoordinatorRow::setShouldCoordinate(bool shouldCoordinate)
 {
     ui->shouldCoordinate_checkBox->setChecked( shouldCoordinate );
 }
+
+void CoordinatorRow::setLevelOfDetailToDisplay(int level)
+{
+    switch (level)
+    {
+    case 0:
+    {
+        ui->motors_off_button->setVisible(true);
+        ui->enable_flying_button->setVisible(true);
+        ui->disable_flying_button->setVisible(true);
+
+        ui->battery_voltage_lineEdit->setVisible(true);
+
+        ui->rf_connect_button->setVisible(true);
+        ui->rf_disconnect_button->setVisible(true);
+
+        QString qstr_for_checkbox_label = "ID";
+        qstr_for_checkbox_label.append(QString::number(m_agentID));
+        qstr_for_checkbox_label.append(", ");
+        qstr_for_checkbox_label.append(m_crazyflie_name_as_string);
+        ui->shouldCoordinate_checkBox->setText(qstr_for_checkbox_label);
+        break;
+    }
+    case 1:
+    {
+        ui->motors_off_button->setVisible(false);
+        ui->enable_flying_button->setVisible(false);
+        ui->disable_flying_button->setVisible(false);
+
+        ui->battery_voltage_lineEdit->setVisible(false);
+
+        ui->rf_connect_button->setVisible(false);
+        ui->rf_disconnect_button->setVisible(false);
+
+        QString qstr_for_checkbox_label = "ID";
+        qstr_for_checkbox_label.append(QString::number(m_agentID));
+        ui->shouldCoordinate_checkBox->setText(qstr_for_checkbox_label);
+
+
+        break;
+    }
+    default:
+    {
+        ui->motors_off_button->setVisible(true);
+        ui->enable_flying_button->setVisible(true);
+        ui->disable_flying_button->setVisible(true);
+
+        ui->battery_voltage_lineEdit->setVisible(true);
+
+        ui->rf_connect_button->setVisible(true);
+        ui->rf_disconnect_button->setVisible(true);
+
+        QString qstr_for_checkbox_label = "ID";
+        qstr_for_checkbox_label.append(QString::number(m_agentID));
+        qstr_for_checkbox_label.append(", ");
+        qstr_for_checkbox_label.append(m_crazyflie_name_as_string);
+        ui->shouldCoordinate_checkBox->setText(qstr_for_checkbox_label);
+        break;
+    }
+    }
+}
+
 
 // > For making the "enable flight" and "disable flight" buttons unavailable
 void CoordinatorRow::disableFlyingStateButtons()
@@ -186,7 +248,7 @@ void CoordinatorRow::enableFlyingStateButtons()
 // > For the Battery Voltage
 void CoordinatorRow::crazyRadioStatusCallback(const std_msgs::Int32& msg)
 {
-    //ROS_INFO_STEAM("[Coordinator Row GUI] Crazy Radio Status Callback called for agentID = " << my_agentID);
+    //ROS_INFO_STEAM("[Coordinator Row GUI] Crazy Radio Status Callback called for agentID = " << m_agentID);
     setCrazyRadioStatus( msg.data );
 }
 #endif
@@ -289,7 +351,7 @@ void CoordinatorRow::batteryVoltageCallback(const std_msgs::Float32& msg)
 
 void CoordinatorRow::batteryStateChangedCallback(const std_msgs::Int32& msg)
 {
-    //ROS_INFO_STEAM("[Coordinator Row GUI] Battery State Changed Callback called for agentID = " << my_agentID);
+    //ROS_INFO_STEAM("[Coordinator Row GUI] Battery State Changed Callback called for agentID = " << m_agentID);
     setBatteryState( msg.data );
 }
 #endif
@@ -516,7 +578,7 @@ float CoordinatorRow::fromVoltageToPercent(float voltage)
 #ifdef CATKIN_MAKE
 void CoordinatorRow::flyingStateChangedCallback(const std_msgs::Int32& msg)
 {
-    //ROS_INFO_STEAM("[Coordinator Row GUI] Flying State Changed Callback called for agentID = " << my_agentID);
+    //ROS_INFO_STEAM("[Coordinator Row GUI] Flying State Changed Callback called for agentID = " << m_agentID);
     setFlyingState(msg.data);
 }
 #endif
@@ -585,7 +647,7 @@ void CoordinatorRow::setFlyingState(int new_flying_state)
 // > For the notification that the database was changes, received on the "DatabaseChangedSubscriber"
 void CoordinatorRow::databaseChangedCallback(const std_msgs::Int32& msg)
 {
-    //ROS_INFO_STEAM("[Coordinator Row GUI] Database Changed Callback called for agentID = " << my_agentID);
+    //ROS_INFO_STEAM("[Coordinator Row GUI] Database Changed Callback called for agentID = " << m_agentID);
     loadCrazyflieContext();
 }
 #endif
@@ -596,8 +658,8 @@ void CoordinatorRow::loadCrazyflieContext()
     QString qstr_crazyflie_name = "";
 #ifdef CATKIN_MAKE
     CMQuery contextCall;
-    contextCall.request.studentID = my_agentID;
-    //ROS_INFO_STREAM("StudentID:" << my_agentID);
+    contextCall.request.studentID = m_agentID;
+    //ROS_INFO_STREAM("StudentID:" << m_agentID);
 
     centralManagerDatabaseService.waitForExistence(ros::Duration(-1));
 
@@ -610,7 +672,7 @@ void CoordinatorRow::loadCrazyflieContext()
     }
     else
     {
-        ROS_ERROR_STREAM("[Coordinator Row GUI] Failed to load context for agentID = " << my_agentID);
+        ROS_ERROR_STREAM("[Coordinator Row GUI] Failed to load context for agentID = " << m_agentID);
     }
     // This updating of the radio only needs to be done by the actual agent's node
     //ros::NodeHandle nh("CrazyRadio");
@@ -622,11 +684,13 @@ void CoordinatorRow::loadCrazyflieContext()
 
     // Construct and set the string for the checkbox label
     QString qstr_for_checkbox_label = "ID";
-    qstr_for_checkbox_label.append(QString::number(my_agentID));
-    qstr_for_checkbox_label.append(", CF");
+    qstr_for_checkbox_label.append(QString::number(m_agentID));
+    qstr_for_checkbox_label.append(", ");
     qstr_for_checkbox_label.append(qstr_crazyflie_name);
     ui->shouldCoordinate_checkBox->setText(qstr_for_checkbox_label);
 
+    // Set the name of the Crazyflie to the class variable
+    m_crazyflie_name_as_string = qstr_crazyflie_name;
 }
 
 
@@ -634,7 +698,7 @@ void CoordinatorRow::loadCrazyflieContext()
 // > For the controller currently operating, received on "controllerUsedSubscriber"
 void CoordinatorRow::controllerUsedChangedCallback(const std_msgs::Int32& msg)
 {
-    //ROS_INFO_STEAM("[Coordinator Row GUI] Controller Used Changed Callback called for agentID = " << my_agentID);
+    //ROS_INFO_STEAM("[Coordinator Row GUI] Controller Used Changed Callback called for agentID = " << m_agentID);
     setControllerEnabled(msg.data);
 }
 #endif

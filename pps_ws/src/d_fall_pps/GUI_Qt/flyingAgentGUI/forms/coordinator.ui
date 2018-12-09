@@ -21,6 +21,12 @@
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QLabel" name="coordintor_title_label">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="font">
       <font>
        <weight>75</weight>
@@ -37,6 +43,12 @@
    </item>
    <item>
     <widget class="QLabel" name="coordinator_id_label">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="font">
       <font>
        <weight>75</weight>
@@ -59,9 +71,16 @@
     </widget>
    </item>
    <item>
+    <widget class="QPushButton" name="toggle_details_button">
+     <property name="text">
+      <string>Toggle Details</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QPushButton" name="delete_button">
      <property name="text">
-      <string>Delete</string>
+      <string>Remove All</string>
      </property>
     </widget>
    </item>
@@ -85,6 +104,12 @@
    </item>
    <item>
     <widget class="QScrollArea" name="coordinated_agents_scrollArea">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="widgetResizable">
       <bool>true</bool>
      </property>
@@ -93,8 +118,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>583</width>
-        <height>854</height>
+        <width>565</width>
+        <height>622</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_for_coordinatedAgentsScrollArea"/>

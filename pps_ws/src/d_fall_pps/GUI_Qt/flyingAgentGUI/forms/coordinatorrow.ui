@@ -55,14 +55,14 @@
    <item>
     <widget class="QCheckBox" name="shouldCoordinate_checkBox">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+      <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
      <property name="minimumSize">
       <size>
-       <width>180</width>
+       <width>50</width>
        <height>35</height>
       </size>
      </property>
@@ -323,20 +323,20 @@
    <item>
     <widget class="QLabel" name="controller_enabled_label">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+      <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
      <property name="minimumSize">
       <size>
-       <width>70</width>
+       <width>50</width>
        <height>35</height>
       </size>
      </property>
      <property name="maximumSize">
       <size>
-       <width>70</width>
+       <width>180</width>
        <height>35</height>
       </size>
      </property>

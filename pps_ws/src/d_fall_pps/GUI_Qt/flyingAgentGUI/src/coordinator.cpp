@@ -94,8 +94,39 @@ void Coordinator::on_refresh_button_clicked()
         vector_of_coordinatorRows.append(temp_coordinatorRow);
 
         ui->coordinated_agents_scrollAreaWidgetContents->layout()->addWidget(temp_coordinatorRow);
+
+        // Call the function that applies this level
+        // of detail to all the entries
+        apply_level_of_detail_to_all_entries(level_of_detail_to_display);
     }
 #endif
+}
+
+
+void Coordinator::on_toggle_details_button_clicked()
+{
+    // Toggle the level of detail to display
+    switch (level_of_detail_to_display)
+    {
+    case 0:
+    {
+        level_of_detail_to_display = 1;
+        break;
+    }
+    case 1:
+    {
+        level_of_detail_to_display = 0;
+        break;
+    }
+    default:
+    {
+        level_of_detail_to_display = 0;
+        break;
+    }
+    }
+    // Call the function that applies this level
+    // of detail to all the entries
+    apply_level_of_detail_to_all_entries(level_of_detail_to_display);
 }
 
 void Coordinator::on_delete_button_clicked()
@@ -112,6 +143,15 @@ void Coordinator::remove_all_entries_from_vector_of_coordinatorRows()
     }
     // Clear the vector
     vector_of_coordinatorRows.clear();
+}
+
+void Coordinator::apply_level_of_detail_to_all_entries(int level)
+{
+    // Apply this to all the rows
+    for ( int irow = 0 ; irow < vector_of_coordinatorRows.length() ; irow++ )
+    {
+        vector_of_coordinatorRows[irow]->setLevelOfDetailToDisplay( level );
+    }
 }
 
 void Coordinator::on_coordinate_all_checkBox_clicked()

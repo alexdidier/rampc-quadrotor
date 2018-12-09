@@ -126,6 +126,8 @@ public:
     // PUBLIC METHODS FOR SETTING PROPERTIES
     // > Set the state of the checkbox
     void setShouldCoordinate(bool shouldCoordinate);
+    // > Set the level of detail to display
+    void setLevelOfDetailToDisplay(int level);
 
 private:
     // --------------------------------------------------- //
@@ -133,9 +135,11 @@ private:
     Ui::CoordinatorRow *ui;
 
     // > For the ID of which agent this "coordinator row" relates to
-    int my_agentID;
+    int m_agentID;
     // > For using the agent ID in constructing namespaces
-    QString my_agentID_as_string;
+    QString m_agentID_as_string;
+    // > For the name of the allocated Crazyflie
+    QString m_crazyflie_name_as_string;
 
     // > For keeping track of the current RF Crazyradio state
     int my_radio_status;

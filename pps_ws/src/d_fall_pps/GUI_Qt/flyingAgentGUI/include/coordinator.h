@@ -22,10 +22,16 @@ public:
 private:
     QVector<CoordinatorRow*> vector_of_coordinatorRows;
 
+    int level_of_detail_to_display = 1;
+
     void remove_all_entries_from_vector_of_coordinatorRows();
+
+    void apply_level_of_detail_to_all_entries(int level);
 
 private slots:
     void on_refresh_button_clicked();
+
+    void on_toggle_details_button_clicked();
 
     void on_delete_button_clicked();
 
