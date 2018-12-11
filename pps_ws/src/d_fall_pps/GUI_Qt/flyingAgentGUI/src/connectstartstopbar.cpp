@@ -50,8 +50,8 @@ ConnectStartStopBar::ConnectStartStopBar(QWidget *parent) :
 
 #ifdef CATKIN_MAKE
     // Get the namespace of this node
-    std::string this_namespace = ros::this_node::getNamespace();
-    ROS_INFO_STREAM("[CONNECT START STOP GUI BAR] ros::this_node::getNamespace() =  " << this_namespace);
+    std::string base_namespace = ros::this_node::getNamespace();
+    ROS_INFO_STREAM("[CONNECT START STOP GUI BAR] ros::this_node::getNamespace() =  " << base_namespace);
 
 
     // Get the type and ID of this parameter service
@@ -98,7 +98,7 @@ ConnectStartStopBar::ConnectStartStopBar(QWidget *parent) :
 
 #ifdef CATKIN_MAKE
     // CREATE A NODE HANDLE TO THE BASE NAMESPACE
-    ros::NodeHandle base_nodeHandle(this_namespace);
+    ros::NodeHandle base_nodeHandle(base_namespace);
 
     // CREATE A NODE HANDLE TO THE ROOT OF THE D-FaLL SYSTEM
     ros::NodeHandle dfall_root_nodeHandle("/dfall");
@@ -132,10 +132,11 @@ ConnectStartStopBar::ConnectStartStopBar(QWidget *parent) :
 
     // FURTHER INITILIASATIONS NEED TO OCCUR AFTER THE ROS RELATED
     // INITIALISATIONS ARE COMPLETE
-    if (m_type == TYPE_AGENT)
-    {
+    //if (m_type == TYPE_AGENT)
+    //{
+        // The loading of the "Context" is handled by the "topbanner"
         //loadCrazyflieContext();
-    }
+    //}
 
     // ADD KEYBOARD SHORTCUTS
     // > For "all motors off", press the space bar
@@ -152,17 +153,17 @@ ConnectStartStopBar::~ConnectStartStopBar()
 // > For making the "enable flight" and "disable flight" buttons unavailable
 void ConnectStartStopBar::disableFlyingStateButtons()
 {
-    //ui->motors_off_button->setEnabled(true);
-    //ui->enable_flying_button->setEnabled(false);
-    //ui->disable_flying_button->setEnabled(false);
+    ui->motors_off_button->setEnabled(true);
+    ui->enable_flying_button->setEnabled(false);
+    ui->disable_flying_button->setEnabled(false);
 }
 
 // > For making the "enable flight" and "disable flight" buttons available
 void ConnectStartStopBar::enableFlyingStateButtons()
 {
-    //ui->motors_off_button->setEnabled(true);
-    //ui->enable_flying_button->setEnabled(true);
-    //ui->disable_flying_button->setEnabled(true);
+    ui->motors_off_button->setEnabled(true);
+    ui->enable_flying_button->setEnabled(true);
+    ui->disable_flying_button->setEnabled(true);
 }
 
 
@@ -473,7 +474,6 @@ void ConnectStartStopBar::setFlyingState(int new_flying_state)
 
         case STATE_LAND:
         {
-            //qstr.append("Land");
             // SET THE APPROPRIATE IMAGE FOR THE FLYING STATE LABEL
             QPixmap flying_state_disabling_pixmap(":/images/flying_state_disabling.png");
             ui->flying_state_label->setPixmap(flying_state_disabling_pixmap);

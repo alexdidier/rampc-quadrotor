@@ -113,22 +113,30 @@
 //     uint8 onboardControllerType       The flag sent to the Crazyflie for indicating how to implement the command
 // 
 // IMPORTANT NOTES FOR "onboardControllerType"  AND AXIS CONVENTIONS
-// > The allowed values for "onboardControllerType" are in the "Defines" section at the
-//   top of this file, they are:
-//   CF_COMMAND_TYPE_MOTOR
-//   CF_COMMAND_TYPE_RATE
-//   CF_COMMAND_TYPE_ANGLE.
-// > With CF_COMMAND_TYPE_RATE the ".roll", ".ptich", and ".yaw" properties of "response.ControlCommand"
-//   specify the angular rate in [radians/second] that will be requested from the
-//   PID controllers running in the Crazyflie 2.0 firmware.
-// > With CF_COMMAND_TYPE_RATE the ".motorCmd1" to ".motorCmd4" properties of "response.ControlCommand"
-//   are the baseline motor commands requested from the Crazyflie, with the adjustment
-//   for body rates being added on top of this in the firmware (i.e., as per the code
-//   of the "distribute_power" function provided in exercise sheet 2).
-// > With CF_COMMAND_TYPE_RATE the axis convention for the roll, pitch, and yaw body rates returned
-//   in "response.ControlCommand" should use right-hand coordinate axes with x-forward
-//   and z-upwards (i.e., the positive z-axis is aligned with the direction of positive
-//   thrust). To assist, teh following is an ASCII art of this convention:
+// > The allowed values for "onboardControllerType" are in the "Defines"
+//   section in the header file, they are:
+//   - CF_COMMAND_TYPE_MOTORS
+//   - CF_COMMAND_TYPE_RATE
+//   - CF_COMMAND_TYPE_ANGLE
+//
+// > For completeing the class exercises it is only required to use
+//   the CF_COMMAND_TYPE_RATE option.
+//
+// > For the CF_COMMAND_TYPE_RATE optoin:
+//   1) the ".roll", ".ptich", and ".yaw" properties of
+//      "response.ControlCommand" specify the angular rate in
+//      [radians/second] that will be requested from the PID controllers
+//      running in the Crazyflie 2.0 firmware.
+//   2) the ".motorCmd1" to ".motorCmd4" properties of
+//      "response.ControlCommand" are the baseline motor commands
+//      requested from the Crazyflie, with the adjustment for body rates
+//      being added on top of this in the firmware (i.e., as per the
+//      code of the "distribute_power" found in the firmware).
+//   3) the axis convention for the roll, pitch, and yaw body rates
+//      returned in "response.ControlCommand" should use right-hand
+//      coordinate axes with x-forward and z-upwards (i.e., the positive
+//      z-axis is aligned with the direction of positive thrust). To
+//      assist, the following is an ASCII art of this convention.
 //
 // ASCII ART OF THE CRAZYFLIE 2.0 LAYOUT
 //
@@ -459,7 +467,7 @@ void calculateControlOutput_viaLQR(float stateErrorBody[12], Controller::Request
 			response.controlOutput.motorCmd2  =  0;
 			response.controlOutput.motorCmd3  =  0;
 			response.controlOutput.motorCmd4  =  0;
-			response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTOR;
+			response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTORS;
 			break;
 		}
 	}
@@ -542,7 +550,7 @@ void calculateControlOutput_viaLQRforMotors(float stateErrorBody[12], Controller
 
 	
 	// Specify that this controller is a rate controller
-	 response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTOR;
+	 response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTORS;
 	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
 	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_ANGLE;
 
@@ -633,7 +641,7 @@ void calculateControlOutput_viaLQRforActuators(float stateErrorBody[12], Control
 
 	
 	// Specify that this controller is a rate controller
-	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTOR;
+	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTORS;
 	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
 	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_ANGLE;
 
@@ -730,7 +738,7 @@ void calculateControlOutput_viaLQRforRates(float stateErrorBody[12], Controller:
 
 	
 	// Specify that this controller is a rate controller
-	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTOR;
+	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTORS;
 	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
 	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_ANGLE;
 
@@ -816,7 +824,7 @@ void calculateControlOutput_viaLQRforAngles(float stateErrorBody[12], Controller
 
 	
 	// Specify that this controller is a rate controller
-	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTOR;
+	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTORS;
 	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
 	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_ANGLE;
 
@@ -921,7 +929,7 @@ void calculateControlOutput_viaLQRforAnglesRatesNested( float stateErrorBody[12]
 
 	
 	// Specify that this controller is a rate controller
-	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTOR;
+	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTORS;
 	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
 	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_ANGLE;
 
@@ -1055,7 +1063,7 @@ void calculateControlOutput_viaAngleResponseTest( float stateErrorBody[12], Cont
 
 	
 	// Specify that this controller is a rate controller
-	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTOR;
+	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTORS;
 	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
 	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_ANGLE;
 
@@ -1443,94 +1451,97 @@ void publish_current_xyz_yaw(float x, float y, float z, float yaw)
 //    ----------------------------------------------------------------------------------
 
 
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
+// This function DOES NOT NEED TO BE edited for successful completion
+// ofthe exercise
+void isReadyDemoControllerYamlCallback(const IntWithHeader & msg)
 {
-	// Extract from the "msg" for which controller the and from where to fetch the YAML
-	// parameters
-	int controller_to_fetch_yaml = msg.data;
+	// Check whether the message is relevant
+	bool isRevelant = checkMessageHeader( m_agentID , msg.shouldCheckForID , msg.agentIDs );
 
-	// Switch between fetching for the different controllers and from different locations
-	switch(controller_to_fetch_yaml)
+	// Continue if the message is relevant
+	if (isRevelant)
 	{
-
-		// > FOR FETCHING FROM THE AGENT'S OWN PARAMETER SERVICE
-		case FETCH_YAML_DEMO_CONTROLLER_FROM_OWN_AGENT:
+		// Extract the data
+		int parameter_service_to_load_from = msg.data;
+		// Initialise a local variable for the namespace
+		std::string namespace_to_use;
+		// Load from the respective parameter service
+		switch(parameter_service_to_load_from)
 		{
-			// Let the user know that this message was received
-			ROS_INFO("[DEMO CONTROLLER] Received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from this agent.");
-			// Create a node handle to the parameter service running on this agent's machine
-			ros::NodeHandle nodeHandle_to_own_agent_parameter_service(namespace_to_own_agent_parameter_service);
-			// Call the function that fetches the parameters
-			fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
-			break;
-		}
+			// > FOR FETCHING FROM THE AGENT'S OWN PARAMETER SERVICE
+			case LOAD_YAML_FROM_AGENT:
+			{
+				ROS_INFO("[DEMO CONTROLLER] Now fetching the DemoController YAML parameter values from this agent.");
+				namespace_to_use = m_namespace_to_own_agent_parameter_service;
+				break;
+			}
+			// > FOR FETCHING FROM THE COORDINATOR'S PARAMETER SERVICE
+			case LOAD_YAML_FROM_COORDINATOR:
+			{
+				ROS_INFO("[DEMO CONTROLLER] Now fetching the DemoController YAML parameter values from this agent's coordinator.");
+				namespace_to_use = m_namespace_to_coordinator_parameter_service;
+				break;
+			}
 
-		// > FOR FETCHING FROM THE COORDINATOR'S PARAMETER SERVICE
-		case FETCH_YAML_DEMO_CONTROLLER_FROM_COORDINATOR:
-		{
-			// Let the user know that this message was received
-			ROS_INFO("[DEMO CONTROLLER] Received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from the coordinator.");
-			// Create a node handle to the parameter service running on the coordinator machine
-			ros::NodeHandle nodeHandle_to_coordinator_parameter_service(namespace_to_coordinator_parameter_service);
-			// Call the function that fetches the parameters
-			fetchYamlParameters(nodeHandle_to_coordinator_parameter_service);
-			break;
+			default:
+			{
+				ROS_ERROR("[STUDENT CONTROLLER] Paramter service to load from was NOT recognised.");
+				namespace_to_use = m_namespace_to_own_agent_parameter_service;
+				break;
+			}
 		}
-
-		default:
-		{
-			// Let the user know that the command was not relevant
-			//ROS_INFO("The DemoControllerService received the message that YAML parameters were (re-)loaded");
-			//ROS_INFO("> However the parameters do not relate to this controller, hence nothing will be fetched.");
-			break;
-		}
+		// Create a node handle to the selected parameter service
+		ros::NodeHandle nodeHandle_to_use(namespace_to_use);
+		// Call the function that fetches the parameters
+		fetchDemoControllerYamlParameters(nodeHandle_to_use);
 	}
 }
+
 
 
 // This function CAN BE edited for successful completion of the PPS exercise, and the
 // use of parameters fetched from the YAML file is highly recommended to make tuning of
 // your controller easier and quicker.
-void fetchYamlParameters(ros::NodeHandle& nodeHandle)
+void fetchDemoControllerYamlParameters(ros::NodeHandle& nodeHandle)
 {
-	// Here we load the parameters that are specified in the DemoController.yaml file
+	// Here we load the parameters that are specified in the file:
+	// DemoController.yaml file
 
 	// Add the "DemoController" namespace to the "nodeHandle"
-	ros::NodeHandle nodeHandle_for_demoController(nodeHandle, "DemoController");
+	ros::NodeHandle nodeHandle_for_paraMaters(nodeHandle, "DemoController");
 
 	// > The mass of the crazyflie
-	cf_mass = getParameterFloat(nodeHandle_for_demoController , "mass");
+	cf_mass = getParameterFloat(nodeHandle_for_paraMaters , "mass");
 
 	// Display one of the YAML parameters to debug if it is working correctly
 	//ROS_INFO_STREAM("DEBUGGING: mass leaded from loacl file = " << cf_mass );
 
 	// > The frequency at which the "computeControlOutput" is being called, as determined
 	//   by the frequency at which the Vicon system provides position and attitude data
-	vicon_frequency = getParameterFloat(nodeHandle_for_demoController, "vicon_frequency");
+	vicon_frequency = getParameterFloat(nodeHandle_for_paraMaters, "vicon_frequency");
 
 	// > The frequency at which the "computeControlOutput" is being called, as determined
 	//   by the frequency at which the Vicon system provides position and attitude data
-	control_frequency = getParameterFloat(nodeHandle_for_demoController, "control_frequency");
+	control_frequency = getParameterFloat(nodeHandle_for_paraMaters, "control_frequency");
 
 	// > The co-efficients of the quadratic conversation from 16-bit motor command to
 	//   thrust force in Newtons
-	getParameterFloatVector(nodeHandle_for_demoController, "motorPoly", motorPoly, 3);
+	getParameterFloatVector(nodeHandle_for_paraMaters, "motorPoly", motorPoly, 3);
 
 	// > The boolean for whether to execute the convert into body frame function
-	shouldPerformConvertIntoBodyFrame = getParameterBool(nodeHandle_for_demoController, "shouldPerformConvertIntoBodyFrame");
+	shouldPerformConvertIntoBodyFrame = getParameterBool(nodeHandle_for_paraMaters, "shouldPerformConvertIntoBodyFrame");
 
 	// > The boolean indicating whether the (x,y,z,yaw) of this agent should be published
 	//   or not
-	shouldPublishCurrent_xyz_yaw = getParameterBool(nodeHandle_for_demoController, "shouldPublishCurrent_xyz_yaw");
+	shouldPublishCurrent_xyz_yaw = getParameterBool(nodeHandle_for_paraMaters, "shouldPublishCurrent_xyz_yaw");
 
 	// > The boolean indicating whether the (x,y,z,yaw) setpoint of this agent should adapted in
 	//   an attempt to follow the "my_current_xyz_yaw_topic" from another agent
-	shouldFollowAnotherAgent = getParameterBool(nodeHandle_for_demoController, "shouldFollowAnotherAgent");
+	shouldFollowAnotherAgent = getParameterBool(nodeHandle_for_paraMaters, "shouldFollowAnotherAgent");
 
 	// > The ordered vector for ID's that specifies how the agents should follow eachother
 	follow_in_a_line_agentIDs.clear();
-	int temp_number_of_agents_in_a_line = getParameterIntVectorWithUnknownLength(nodeHandle_for_demoController, "follow_in_a_line_agentIDs", follow_in_a_line_agentIDs);
+	int temp_number_of_agents_in_a_line = getParameterIntVectorWithUnknownLength(nodeHandle_for_paraMaters, "follow_in_a_line_agentIDs", follow_in_a_line_agentIDs);
 	// > Double check that the sizes agree
 	if ( temp_number_of_agents_in_a_line != follow_in_a_line_agentIDs.size() )
 	{
@@ -1539,70 +1550,70 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 	}
 
 	// Boolean indiciating whether the "Debug Message" of this agent should be published or not
-	shouldPublishDebugMessage = getParameterBool(nodeHandle_for_demoController, "shouldPublishDebugMessage");
+	shouldPublishDebugMessage = getParameterBool(nodeHandle_for_paraMaters, "shouldPublishDebugMessage");
 
 	// Boolean indiciating whether the debugging ROS_INFO_STREAM should be displayed or not
-	shouldDisplayDebugInfo = getParameterBool(nodeHandle_for_demoController, "shouldDisplayDebugInfo");
+	shouldDisplayDebugInfo = getParameterBool(nodeHandle_for_paraMaters, "shouldDisplayDebugInfo");
 
 
 	// THE CONTROLLER GAINS:
 
 	// A flag for which controller to use:
-	controller_mode = getParameterInt( nodeHandle_for_demoController , "controller_mode" );
+	controller_mode = getParameterInt( nodeHandle_for_paraMaters , "controller_mode" );
 
 	// A flag for which estimator to use:
-	estimator_method = getParameterInt( nodeHandle_for_demoController , "estimator_method" );
+	estimator_method = getParameterInt( nodeHandle_for_paraMaters , "estimator_method" );
 
 	// The LQR Controller parameters for "LQR_MODE_MOTOR"
-	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixMotor1",                 gainMatrixMotor1,                 12);
-	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixMotor2",                 gainMatrixMotor2,                 12);
-	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixMotor3",                 gainMatrixMotor3,                 12);
-	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixMotor4",                 gainMatrixMotor4,                 12);
+	getParameterFloatVector(nodeHandle_for_paraMaters, "gainMatrixMotor1",                 gainMatrixMotor1,                 12);
+	getParameterFloatVector(nodeHandle_for_paraMaters, "gainMatrixMotor2",                 gainMatrixMotor2,                 12);
+	getParameterFloatVector(nodeHandle_for_paraMaters, "gainMatrixMotor3",                 gainMatrixMotor3,                 12);
+	getParameterFloatVector(nodeHandle_for_paraMaters, "gainMatrixMotor4",                 gainMatrixMotor4,                 12);
 
 	// The LQR Controller parameters for "LQR_MODE_MOTOR"
-	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixThrust_TwelveStateVector", gainMatrixThrust_TwelveStateVector, 12);
-	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixRollTorque",               gainMatrixRollTorque,               12);
-	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixPitchTorque",              gainMatrixPitchTorque,              12);
-	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixYawTorque",                gainMatrixYawTorque,                12);
+	getParameterFloatVector(nodeHandle_for_paraMaters, "gainMatrixThrust_TwelveStateVector", gainMatrixThrust_TwelveStateVector, 12);
+	getParameterFloatVector(nodeHandle_for_paraMaters, "gainMatrixRollTorque",               gainMatrixRollTorque,               12);
+	getParameterFloatVector(nodeHandle_for_paraMaters, "gainMatrixPitchTorque",              gainMatrixPitchTorque,              12);
+	getParameterFloatVector(nodeHandle_for_paraMaters, "gainMatrixYawTorque",                gainMatrixYawTorque,                12);
 
 	// The LQR Controller parameters for "LQR_MODE_RATE"
-	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixThrust_NineStateVector", gainMatrixThrust_NineStateVector, 9);
-	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixRollRate",               gainMatrixRollRate,               9);
-	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixPitchRate",              gainMatrixPitchRate,              9);
-	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixYawRate",                gainMatrixYawRate,                9);
+	getParameterFloatVector(nodeHandle_for_paraMaters, "gainMatrixThrust_NineStateVector", gainMatrixThrust_NineStateVector, 9);
+	getParameterFloatVector(nodeHandle_for_paraMaters, "gainMatrixRollRate",               gainMatrixRollRate,               9);
+	getParameterFloatVector(nodeHandle_for_paraMaters, "gainMatrixPitchRate",              gainMatrixPitchRate,              9);
+	getParameterFloatVector(nodeHandle_for_paraMaters, "gainMatrixYawRate",                gainMatrixYawRate,                9);
 	
 	// The LQR Controller parameters for "LQR_MODE_ANGLE"
-	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixThrust_SixStateVector",  gainMatrixThrust_SixStateVector,  6);
-	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixRollAngle",              gainMatrixRollAngle,              6);
-	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixPitchAngle",             gainMatrixPitchAngle,             6);
+	getParameterFloatVector(nodeHandle_for_paraMaters, "gainMatrixThrust_SixStateVector",  gainMatrixThrust_SixStateVector,  6);
+	getParameterFloatVector(nodeHandle_for_paraMaters, "gainMatrixRollAngle",              gainMatrixRollAngle,              6);
+	getParameterFloatVector(nodeHandle_for_paraMaters, "gainMatrixPitchAngle",             gainMatrixPitchAngle,             6);
 	
 	// The LQR Controller parameters for "LQR_MODE_ANGLE_RATE_NESTED"
-	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixThrust_SixStateVector_50Hz",  gainMatrixThrust_SixStateVector_50Hz,  6);
-	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixRollAngle_50Hz",              gainMatrixRollAngle_50Hz,              6);
-	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixPitchAngle_50Hz",             gainMatrixPitchAngle_50Hz,             6);
+	getParameterFloatVector(nodeHandle_for_paraMaters, "gainMatrixThrust_SixStateVector_50Hz",  gainMatrixThrust_SixStateVector_50Hz,  6);
+	getParameterFloatVector(nodeHandle_for_paraMaters, "gainMatrixRollAngle_50Hz",              gainMatrixRollAngle_50Hz,              6);
+	getParameterFloatVector(nodeHandle_for_paraMaters, "gainMatrixPitchAngle_50Hz",             gainMatrixPitchAngle_50Hz,             6);
 
-	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixRollRate_Nested",             gainMatrixRollRate_Nested,             3);
-	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixPitchRate_Nested",            gainMatrixPitchRate_Nested,            3);
-	getParameterFloatVector(nodeHandle_for_demoController, "gainMatrixYawRate_Nested",              gainMatrixYawRate_Nested,              3);
+	getParameterFloatVector(nodeHandle_for_paraMaters, "gainMatrixRollRate_Nested",             gainMatrixRollRate_Nested,             3);
+	getParameterFloatVector(nodeHandle_for_paraMaters, "gainMatrixPitchRate_Nested",            gainMatrixPitchRate_Nested,            3);
+	getParameterFloatVector(nodeHandle_for_paraMaters, "gainMatrixYawRate_Nested",              gainMatrixYawRate_Nested,              3);
 	
 	// The parameters for the "Angle Reponse Test" controller mode
-	angleResponseTest_pitchAngle_degrees = getParameterFloat(nodeHandle_for_demoController, "angleResponseTest_pitchAngle_degrees");
-	angleResponseTest_distance_meters    = getParameterFloat(nodeHandle_for_demoController, "angleResponseTest_distance_meters");
+	angleResponseTest_pitchAngle_degrees = getParameterFloat(nodeHandle_for_paraMaters, "angleResponseTest_pitchAngle_degrees");
+	angleResponseTest_distance_meters    = getParameterFloat(nodeHandle_for_paraMaters, "angleResponseTest_distance_meters");
 
 	// 16-BIT COMMAND LIMITS
-	cmd_sixteenbit_min = getParameterFloat(nodeHandle_for_demoController, "command_sixteenbit_min");
-	cmd_sixteenbit_max = getParameterFloat(nodeHandle_for_demoController, "command_sixteenbit_max");
+	cmd_sixteenbit_min = getParameterFloat(nodeHandle_for_paraMaters, "command_sixteenbit_min");
+	cmd_sixteenbit_max = getParameterFloat(nodeHandle_for_paraMaters, "command_sixteenbit_max");
 
 
 	// THE POINT MASS KALMAN FILTER (PMKF) GAINS AND ERROR EVOLUATION
 	// > For the (x,y,z) position
-	getParameterFloatVector(nodeHandle_for_demoController, "PMKF_Ahat_row1_for_positions",  PMKF_Ahat_row1_for_positions,  2);
-	getParameterFloatVector(nodeHandle_for_demoController, "PMKF_Ahat_row2_for_positions",  PMKF_Ahat_row2_for_positions,  2);
-	getParameterFloatVector(nodeHandle_for_demoController, "PMKF_Kinf_for_positions"     ,  PMKF_Kinf_for_positions     ,  2);
+	getParameterFloatVector(nodeHandle_for_paraMaters, "PMKF_Ahat_row1_for_positions",  PMKF_Ahat_row1_for_positions,  2);
+	getParameterFloatVector(nodeHandle_for_paraMaters, "PMKF_Ahat_row2_for_positions",  PMKF_Ahat_row2_for_positions,  2);
+	getParameterFloatVector(nodeHandle_for_paraMaters, "PMKF_Kinf_for_positions"     ,  PMKF_Kinf_for_positions     ,  2);
 	// > For the (roll,pitch,yaw) angles
-	getParameterFloatVector(nodeHandle_for_demoController, "PMKF_Ahat_row1_for_angles",  PMKF_Ahat_row1_for_angles,  2);
-	getParameterFloatVector(nodeHandle_for_demoController, "PMKF_Ahat_row2_for_angles",  PMKF_Ahat_row2_for_angles,  2);
-	getParameterFloatVector(nodeHandle_for_demoController, "PMKF_Kinf_for_angles"     ,  PMKF_Kinf_for_angles     ,  2);
+	getParameterFloatVector(nodeHandle_for_paraMaters, "PMKF_Ahat_row1_for_angles",  PMKF_Ahat_row1_for_angles,  2);
+	getParameterFloatVector(nodeHandle_for_paraMaters, "PMKF_Ahat_row2_for_angles",  PMKF_Ahat_row2_for_angles,  2);
+	getParameterFloatVector(nodeHandle_for_paraMaters, "PMKF_Kinf_for_angles"     ,  PMKF_Kinf_for_angles     ,  2);
 
 
 	// DEBUGGING: Print out one of the parameters that was loaded
@@ -1646,7 +1657,7 @@ void processFetchedParameters()
 	    	for ( int i=0 ; i<follow_in_a_line_agentIDs.size() ; i++ )
 	    	{
 	    		// Check if the current entry matches the ID of this agent
-	    		if (follow_in_a_line_agentIDs[i] == my_agentID)
+	    		if (follow_in_a_line_agentIDs[i] == m_agentID)
 	    		{
 	    			// Set the boolean flag that we have found out own agent ID
 	    			foundMyAgentID = true;
@@ -1681,106 +1692,35 @@ void processFetchedParameters()
 	    	// Check whether we found our own agent ID
 	    	if (!foundMyAgentID)
 	    	{
-                //ROS_INFO("DEBUGGING: not following because my ID was not found");
-	    		// Revert to the default of not following any agent
-    			shouldFollowAnotherAgent = false;
-    			agentID_to_follow = 0;
-	    	}
-    	}
-    	else
-    	{
-    		// As the "follow_in_a_line_agentIDs" vector has length zero, revert to the
-    		// default of not following any agent
-    		shouldFollowAnotherAgent = false;
-    		agentID_to_follow = 0;
-    		//ROS_INFO("DEBUGGING: not following because line vector has length zero");
-    	}
-    }
-    else
-    {
-    	// Set to its default value the integer specifying the ID of the agent that will
-    	// be followed by this agent
+				//ROS_INFO("DEBUGGING: not following because my ID was not found");
+				// Revert to the default of not following any agent
+				shouldFollowAnotherAgent = false;
+				agentID_to_follow = 0;
+			}
+		}
+		else
+		{
+			// As the "follow_in_a_line_agentIDs" vector has length zero, revert to the
+			// default of not following any agent
+			shouldFollowAnotherAgent = false;
+			agentID_to_follow = 0;
+			//ROS_INFO("DEBUGGING: not following because line vector has length zero");
+		}
+	}
+	else
+	{
+		// Set to its default value the integer specifying the ID of the agent that will
+		// be followed by this agent
 		agentID_to_follow = 0;
 		//ROS_INFO("DEBUGGING: not following because I was asked not to follow");
-    }
+	}
 
-    if (shouldFollowAnotherAgent)
-    {
-    	ROS_INFO_STREAM("[DEMO CONTROLLER] This agent (with ID " << my_agentID << ") will now follow agent ID " << agentID_to_follow );
-    }
+	if (shouldFollowAnotherAgent)
+	{
+		ROS_INFO_STREAM("[DEMO CONTROLLER] This agent (with ID " << m_agentID << ") will now follow agent ID " << agentID_to_follow );
+	}
 }
 
-
-
-
-//    ----------------------------------------------------------------------------------
-//     GGGG  EEEEE  TTTTT  PPPP     A    RRRR     A    M   M   ( )
-//    G      E        T    P   P   A A   R   R   A A   MM MM  (   )
-//    G      EEE      T    PPPP   A   A  RRRR   A   A  M M M  (   )
-//    G   G  E        T    P      AAAAA  R  R   AAAAA  M   M  (   )
-//     GGGG  EEEEE    T    P      A   A  R   R  A   A  M   M   ( )
-//    ----------------------------------------------------------------------------------
-
-
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name)
-{
-    float val;
-    if(!nodeHandle.getParam(name, val))
-    {
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    return val;
-}
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-void getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length)
-{
-    if(!nodeHandle.getParam(name, val)){
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    if(val.size() != length) {
-        ROS_ERROR_STREAM("parameter '" << name << "' has wrong array length, " << length << " needed");
-    }
-}
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-int getParameterInt(ros::NodeHandle& nodeHandle, std::string name)
-{
-    int val;
-    if(!nodeHandle.getParam(name, val))
-    {
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    return val;
-}
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-void getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val, int length)
-{
-    if(!nodeHandle.getParam(name, val)){
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    if(val.size() != length) {
-        ROS_ERROR_STREAM("parameter '" << name << "' has wrong array length, " << length << " needed");
-    }
-}
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-int getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val)
-{
-    if(!nodeHandle.getParam(name, val)){
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    return val.size();
-}
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-bool getParameterBool(ros::NodeHandle& nodeHandle, std::string name)
-{
-    bool val;
-    if(!nodeHandle.getParam(name, val))
-    {
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    return val;
-}
-    
 
 
 
@@ -1796,143 +1736,181 @@ bool getParameterBool(ros::NodeHandle& nodeHandle, std::string name)
 
 // This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
 int main(int argc, char* argv[]) {
-    
-    // Starting the ROS-node
-    ros::init(argc, argv, "DemoControllerService");
 
-    // Create a "ros::NodeHandle" type local variable "nodeHandle" as the current node,
-    // the "~" indcates that "self" is the node handle assigned to this variable.
-    ros::NodeHandle nodeHandle("~");
+	// Starting the ROS-node
+	ros::init(argc, argv, "DemoControllerService");
 
-    // Get the namespace of this "DemoControllerService" node
-    std::string m_namespace = ros::this_node::getNamespace();
-    ROS_INFO_STREAM("[DEMO CONTROLLER] ros::this_node::getNamespace() =  " << m_namespace);
+	// Create a "ros::NodeHandle" type local variable "nodeHandle" as the current node,
+	// the "~" indcates that "self" is the node handle assigned to this variable.
+	ros::NodeHandle nodeHandle("~");
 
-    // Get the agent ID as the "ROS_NAMESPACE" this computer.
-    // NOTES:
-    // > If you look at the "Student.launch" file in the "launch" folder, you will see
-    //   the following line of code:
-    //   <param name="studentID" value="$(optenv ROS_NAMESPACE)" />
-    //   This line of code adds a parameter named "studentID" to the "PPSClient"
-    // > Thus, to get access to this "studentID" paremeter, we first need to get a handle
-    //   to the "PPSClient" node within which this controller service is nested.
+	// Get the namespace of this "DemoControllerService" node
+	std::string m_namespace = ros::this_node::getNamespace();
+	ROS_INFO_STREAM("[DEMO CONTROLLER] ros::this_node::getNamespace() =  " << m_namespace);
 
-    // Get the handle to the "PPSClient" node
-    ros::NodeHandle PPSClient_nodeHandle(m_namespace + "/PPSClient");
-    // Get the value of the "studentID" parameter into the instance variable "my_agentID"
-    if(!PPSClient_nodeHandle.getParam("agentID", my_agentID))
-    {
-    	// Throw an error if the student ID parameter could not be obtained
-		ROS_ERROR("[DEMO CONTROLLER] Failed to get agentID from PPSClient");
+
+
+	// AGENT ID AND COORDINATOR ID
+
+	// NOTES:
+	// > If you look at the "Agent.launch" file in the "launch" folder,
+	//   you will see the following line of code:
+	//   <param name="agentID" value="$(optenv ROS_NAMESPACE)" />
+	//   This line of code adds a parameter named "agentID" to the
+	//   "PPSClient" node.
+	// > Thus, to get access to this "studentID" paremeter, we first
+	//   need to get a handle to the "PPSClient" node within which this
+	//   controller service is nested.
+
+
+	// Get the ID of the agent and its coordinator
+	bool isValid_IDs = getAgentIDandCoordIDfromClientNode( m_namespace + "/PPSClient" , &m_agentID , &m_coordID);
+
+	// Stall the node IDs are not valid
+	if ( !isValid_IDs )
+	{
+		ROS_ERROR("[DEMO CONTROLLER] Node NOT FUNCTIONING :-)");
+		ros::spin();
+	}
+	else
+	{
+		ROS_INFO_STREAM("[DEMO CONTROLLER] loaded agentID = " << m_agentID << ", and coordID = " << m_coordID);
 	}
 
 
-	// *********************************************************************************
-	// EVERYTHING THAT RELATES TO FETCHING PARAMETERS FROM A YAML FILE
+	// PARAMETER SERVICE NAMESPACE AND NODEHANDLES:
+
+	// NOTES:
+	// > The parameters that are specified thorugh the *.yaml files
+	//   are managed by a separate node called the "Parameter Service"
+	// > A separate node is used for reasons of speed and generality
+	// > To allow for a distirbuted architecture, there are two
+	//   "ParamterService" nodes that are relevant:
+	//   1) the one that is nested under the "m_agentID" namespace
+	//   2) the one that is nested under the "m_coordID" namespace
+	// > The following lines of code create the namespace (as strings)
+	//   to there two relevant "ParameterService" nodes.
+	// > The node handles are also created because they are needed
+	//   for the ROS Subscriptions that follow.
+
+	// Set the class variable "m_namespace_to_own_agent_parameter_service",
+	// i.e., the namespace of parameter service for this agent
+	m_namespace_to_own_agent_parameter_service = m_namespace + "/ParameterService";
+
+	// Set the class variable "m_namespace_to_coordinator_parameter_service",
+	// i.e., the namespace of parameter service for this agent's coordinator
+	constructNamespaceForCoordinatorParameterService( m_coordID, m_namespace_to_coordinator_parameter_service );
+
+	// Inform the user of what namespaces are being used
+	ROS_INFO_STREAM("[DEMO CONTROLLER] m_namespace_to_own_agent_parameter_service    =  " << m_namespace_to_own_agent_parameter_service);
+	ROS_INFO_STREAM("[DEMO CONTROLLER] m_namespace_to_coordinator_parameter_service  =  " << m_namespace_to_coordinator_parameter_service);
+
+	// Create, as local variables, node handles to the parameters services
+	ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
+	ros::NodeHandle nodeHandle_to_coordinator_parameter_service(m_namespace_to_coordinator_parameter_service);
 
 
-	// EVERYTHING FOR THE CONNECTION TO THIS AGENT's OWN PARAMETER SERVICE:
 
-	// Set the class variable "namespace_to_own_agent_parameter_service" to be a the
-    // namespace string for the parameter service that is running on the machine of this
-    // agent
-    namespace_to_own_agent_parameter_service = m_namespace + "/ParameterService";
+	// SUBSCRIBE TO "YAML PARAMTERS READY" MESSAGES
 
-    // Create a node handle to the parameter service running on this agent's machine
-    ros::NodeHandle nodeHandle_to_own_agent_parameter_service(namespace_to_own_agent_parameter_service);
-
-    // Instantiate the local variable "controllerYamlReadyForFetchSubscriber" to be a
-    // "ros::Subscriber" type variable that subscribes to the "controllerYamlReadyForFetch" topic
-    // and calls the class function "yamlReadyForFetchCallback" each time a message is
-    // received on this topic and the message is passed as an input argument to the
-    // "yamlReadyForFetchCallback" class function.
-    ros::Subscriber controllerYamlReadyForFetchSubscriber_to_agent = nodeHandle_to_own_agent_parameter_service.subscribe("controllerYamlReadyForFetch", 1, yamlReadyForFetchCallback);
+	// The parameter service publishes messages with names of the form:
+	// /dfall/.../ParameterService/<filename with .yaml extension>
+	ros::Subscriber demoContoller_yamlReady_fromAgent = nodeHandle_to_own_agent_parameter_service.subscribe(  "DemoController", 1, isReadyDemoControllerYamlCallback);
+	ros::Subscriber demoContoller_yamlReady_fromCoord = nodeHandle_to_coordinator_parameter_service.subscribe("DemoController", 1, isReadyDemoControllerYamlCallback);
 
 
-    // EVERYTHING FOR THE CONNECTION THE COORDINATOR'S PARAMETER SERVICE:
 
-    // Set the class variable "nodeHandle_to_coordinator_parameter_service" to be a node handle
-    // for the parameter service that is running on the coordinate machine
-    // NOTE: the backslash here (i.e., "/") before the name of the node ("ParameterService")
-    //       is very important because it specifies that the name is global
-    namespace_to_coordinator_parameter_service = "/ParameterService";
+	// GIVE YAML VARIABLES AN INITIAL VALUE
 
-    // Create a node handle to the parameter service running on the coordinator machine
-    ros::NodeHandle nodeHandle_to_coordinator = ros::NodeHandle();
-    //ros::NodeHandle nodeHandle_to_coordinator_parameter_service = ros::NodeHandle(namespace_to_own_agent_parameter_service);
-    
-
-    // Instantiate the local variable "controllerYamlReadyForFetchSubscriber" to be a
-    // "ros::Subscriber" type variable that subscribes to the "controllerYamlReadyForFetch" topic
-    // and calls the class function "yamlReadyForFetchCallback" each time a message is
-    // received on this topic and the message is passed as an input argument to the
-    // "yamlReadyForFetchCallback" class function.
-    ros::Subscriber controllerYamlReadyForFetchSubscriber_to_coordinator = nodeHandle_to_coordinator.subscribe("/ParameterService/controllerYamlReadyForFetch", 1, yamlReadyForFetchCallback);
-    //ros::Subscriber controllerYamlReadyForFetchSubscriber_to_coordinator = nodeHandle_to_coordinator_parameter_service.subscribe("controllerYamlReadyForFetch", 1, yamlReadyForFetchCallback);
+	// This can be done either here or as part of declaring the variable
+	// in the header file
+	//yaml_cf_mass_in_grams = 25.0;
 
 
-    // PRINT OUT SOME INFORMATION
 
-    // Let the user know what namespaces are being used for linking to the parameter service
-    ROS_INFO_STREAM("[DEMO CONTROLLER] the namespace strings for accessing the Paramter Services are:");
-    ROS_INFO_STREAM("[DEMO CONTROLLER] namespace_to_own_agent_parameter_service    =  " << namespace_to_own_agent_parameter_service);
-    ROS_INFO_STREAM("[DEMO CONTROLLER] namespace_to_coordinator_parameter_service  =  " << namespace_to_coordinator_parameter_service);
+	// FETCH ANY PARAMETERS REQUIRED FROM THE "PARAMETER SERVICES"
+
+	// The yaml files for the controllers are not added to "Parametr
+	// Service" as part of launching.
+	// The process for loading the yaml parameters is to send a
+	// message containing the filename of the *.yaml file, and
+	// then a message will be received on the above subscribers
+	// when the paramters are ready.
+
+	// Create a publisher for request the yaml load
+	// > created as a local variable
+	// > note importantly that the final argument is "true", this
+	//   enables "latching" on the connection. When a connection is 
+	//   latched, the last message published is saved and
+	//   automatically sent to any future subscribers that connect.
+	ros::Publisher requestLoadYamlFilenamePublisher = nodeHandle_to_own_agent_parameter_service.advertise<StringWithHeader>("requestLoadYamlFilename", 1, true);
+	// Create a local variable for the message
+	StringWithHeader yaml_filename_msg;
+	// Specify the data
+	yaml_filename_msg.data = "DemoController";
+	// Set for whom this applies to
+	yaml_filename_msg.shouldCheckForID = false;
+	// Sleep to make the publisher known to ROS (in seconds)
+	//ros::Duration(1.0).sleep();
+	// Send the message
+	requestLoadYamlFilenamePublisher.publish(yaml_filename_msg);
 
 
-    // FINALLY, FETCH ANY PARAMETERS REQUIRED FROM THESE "PARAMETER SERVICES"
 
 	// Call the class function that loads the parameters for this class.
-    fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
-
-    // *********************************************************************************
+	//fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
 
 
 
-    // Instantiate the instance variable "debugPublisher" to be a "ros::Publisher" that
-    // advertises under the name "DebugTopic" and is a message with the structure
-    // defined in the file "DebugMsg.msg" (located in the "msg" folder).
-    debugPublisher = nodeHandle.advertise<DebugMsg>("DebugTopic", 1);
 
-    // Instantiate the local variable "setpointSubscriber" to be a "ros::Subscriber"
-    // type variable that subscribes to the "Setpoint" topic and calls the class function
-    // "setpointCallback" each time a messaged is received on this topic and the message
-    // is passed as an input argument to the "setpointCallback" class function.
-    ros::Subscriber setpointSubscriber = nodeHandle.subscribe("Setpoint", 1, setpointCallback);
+	// PUBLISHERS AND SUBSCRIBERS
 
-    // Instantiate the local variable "service" to be a "ros::ServiceServer" type
-    // variable that advertises the service called "DemoController". This service has
-    // the input-output behaviour defined in the "Controller.srv" file (located in the
-    // "srv" folder). This service, when called, is provided with the most recent
-    // measurement of the Crazyflie and is expected to respond with the control action
-    // that should be sent via the Crazyradio and requested from the Crazyflie, i.e.,
-    // this is where the "outer loop" controller function starts. When a request is made
-    // of this service the "calculateControlOutput" function is called.
-    ros::ServiceServer service = nodeHandle.advertiseService("DemoController", calculateControlOutput);
+	// Instantiate the class variable "m_debugPublisher" to be a
+	// "ros::Publisher". This variable advertises under the name
+	// "DebugTopic" and is a message with the structure defined
+	//  in the file "DebugMsg.msg" (located in the "msg" folder).
+	debugPublisher = nodeHandle.advertise<DebugMsg>("DebugTopic", 1);
 
-    // Create a "ros::NodeHandle" type local variable "namespace_nodeHandle" that points
-    // to the name space of this node, i.e., "d_fall_pps" as specified by the line:
-    //     "using namespace d_fall_pps;"
-    // in the "DEFINES" section at the top of this file.
-    ros::NodeHandle namespace_nodeHandle(ros::this_node::getNamespace());
+	// Instantiate the local variable "setpointSubscriber" to be a "ros::Subscriber"
+	// type variable that subscribes to the "Setpoint" topic and calls the class function
+	// "setpointCallback" each time a messaged is received on this topic and the message
+	// is passed as an input argument to the "setpointCallback" class function.
+	ros::Subscriber setpointSubscriber = nodeHandle.subscribe("Setpoint", 1, setpointCallback);
 
-    // Instantiate the instance variable "my_current_xyz_yaw_publisher" to be a "ros::Publisher"
-    // that advertises under the name "<my_agentID>/my_current_xyz_yaw_topic" where <my_agentID>
-    // is filled in with the student ID number of this computer. The messages published will
-    // have the structure defined in the file "Setpoint.msg" (located in the "msg" folder).
-    my_current_xyz_yaw_publisher = nodeHandle.advertise<Setpoint>("my_current_xyz_yaw_topic", 1);
+	// Instantiate the local variable "service" to be a "ros::ServiceServer" type
+	// variable that advertises the service called "DemoController". This service has
+	// the input-output behaviour defined in the "Controller.srv" file (located in the
+	// "srv" folder). This service, when called, is provided with the most recent
+	// measurement of the Crazyflie and is expected to respond with the control action
+	// that should be sent via the Crazyradio and requested from the Crazyflie, i.e.,
+	// this is where the "outer loop" controller function starts. When a request is made
+	// of this service the "calculateControlOutput" function is called.
+	ros::ServiceServer service = nodeHandle.advertiseService("DemoController", calculateControlOutput);
 
-    // Instantiate the local variable "customCommandSubscriber" to be a "ros::Subscriber"
-    // type variable that subscribes to the "StudentCustomButton" topic and calls the class
-    // function "customCommandReceivedCallback" each time a messaged is received on this topic
-    // and the message received is passed as an input argument to the callback function.
-    ros::Subscriber customCommandReceivedSubscriber = nodeHandle.subscribe("GUIButton", 1, customCommandReceivedCallback);
+	// Create a "ros::NodeHandle" type local variable "namespace_nodeHandle" that points
+	// to the name space of this node, i.e., "d_fall_pps" as specified by the line:
+	//     "using namespace d_fall_pps;"
+	// in the "DEFINES" section at the top of this file.
+	ros::NodeHandle namespace_nodeHandle(ros::this_node::getNamespace());
 
-    // Print out some information to the user.
-    ROS_INFO("[DEMO CONTROLLER] Service ready :-)");
+	// Instantiate the instance variable "my_current_xyz_yaw_publisher" to be a "ros::Publisher"
+	// that advertises under the name "<m_agentID>/my_current_xyz_yaw_topic" where <m_agentID>
+	// is filled in with the student ID number of this computer. The messages published will
+	// have the structure defined in the file "Setpoint.msg" (located in the "msg" folder).
+	my_current_xyz_yaw_publisher = nodeHandle.advertise<Setpoint>("my_current_xyz_yaw_topic", 1);
 
-    // Enter an endless while loop to keep the node alive.
-    ros::spin();
+	// Instantiate the local variable "customCommandSubscriber" to be a "ros::Subscriber"
+	// type variable that subscribes to the "StudentCustomButton" topic and calls the class
+	// function "customCommandReceivedCallback" each time a messaged is received on this topic
+	// and the message received is passed as an input argument to the callback function.
+	ros::Subscriber customCommandReceivedSubscriber = nodeHandle.subscribe("GUIButton", 1, customCommandReceivedCallback);
 
-    // Return zero if the "ross::spin" is cancelled.
-    return 0;
+	// Print out some information to the user.
+	ROS_INFO("[DEMO CONTROLLER] Service ready :-)");
+
+	// Enter an endless while loop to keep the node alive.
+	ros::spin();
+
+	// Return zero if the "ross::spin" is cancelled.
+	return 0;
 }

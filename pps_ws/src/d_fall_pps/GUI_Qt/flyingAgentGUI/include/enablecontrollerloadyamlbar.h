@@ -12,10 +12,11 @@
 // Include the standard message types
 #include "std_msgs/Int32.h"
 #include "std_msgs/Float32.h"
-//#include <std_msgs/String.h>
+#include <std_msgs/String.h>
 
 // Include the DFALL message types
 #include "d_fall_pps/IntWithHeader.h"
+#include "d_fall_pps/StringWithHeader.h"
 
 // Include the DFALL service types
 // #include "d_fall_pps/AreaBounds.h"
@@ -102,14 +103,18 @@ private:
     // PUBLISHERS AND SUBSRIBERS
     // > For {take-off,land,motors-off} and controller selection
     ros::Publisher commandPublisher;
+    // > For requesting the loading of yaml files
+    ros::Publisher m_requestLoadYamlFilenamePublisher;
+
 #endif
 
     // --------------------------------------------------- //
     // PRIVATE FUNCTIONS
 
 #ifdef CATKIN_MAKE
-    // Fill the head for a message
+    // Fill the header for a message
     void fillIntMessageHeader( d_fall_pps::IntWithHeader & msg );
+    void fillStringMessageHeader( d_fall_pps::StringWithHeader & msg );
 
     // Get the paramters that specify the type and ID
     bool getTypeAndIDParameters();

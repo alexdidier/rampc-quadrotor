@@ -63,7 +63,7 @@
 #include "d_fall_pps/Controller.h"
 #include "d_fall_pps/CMQuery.h"
 
-// Include the Parameter Service shared definitions
+// Include the shared definitions
 #include "nodes/Constants.h"
 
 // Include other classes
@@ -72,7 +72,12 @@
 // Need for having a ROS "bag" to store data for post-analysis
 //#include <rosbag/bag.h>
 
-#include "d_fall_pps/ControlCommand.h"
+
+
+
+
+// Namespacing the package
+using namespace d_fall_pps;
 
 
 
@@ -88,8 +93,7 @@
 
 
 
-// Namespacing the package
-using namespace d_fall_pps;
+
 
 
 
@@ -244,10 +248,16 @@ ros::Timer timer_land;
 
 
 // > For the LOAD PARAMETERS
-void yamlReadyForFetchCallback(const std_msgs::Int32& msg);
-void fetchYamlParametersForSafeController(ros::NodeHandle& nodeHandle);
-void fetchClientConfigParameters(ros::NodeHandle& nodeHandle);
+//void yamlReadyForFetchCallback(const std_msgs::Int32& msg);
+//void fetchYamlParametersForSafeController(ros::NodeHandle& nodeHandle);
+//void fetchClientConfigParameters(ros::NodeHandle& nodeHandle);
 
+// > For the LOADING of YAML PARAMETERS
+void isReadySafeControllerYamlCallback(const IntWithHeader & msg);
+void fetchSafeControllerYamlParameters(ros::NodeHandle& nodeHandle);
+
+void isReadyClientConfigYamlCallback(const IntWithHeader & msg);
+void fetchClientConfigYamlParameters(ros::NodeHandle& nodeHandle);
 
 
 
@@ -292,16 +302,3 @@ int getControllerUsed();
 //float movingAverageBatteryFilter(float new_input);
 //void CFBatteryCallback(const std_msgs::Float32& msg);
 void batteryMonitorStateChangedCallback(std_msgs::Int32 msg);
-
-
-// > For the LOADING of YAML PARAMETERS
-void isReadySafeControllerYamlCallback(const IntWithHeader & msg);
-void fetchSafeControllerYamlParameters(ros::NodeHandle& nodeHandle);
-
-void isReadyClientConfigYamlCallback(const IntWithHeader & msg);
-void fetchClientConfigYamlParameters(ros::NodeHandle& nodeHandle);
-
-
-
-
-

@@ -57,7 +57,7 @@
 #include "nodes/Constants.h"
 
 // SPECIFY THE PACKAGE NAMESPACE
-using namespace d_fall_pps;
+//using namespace d_fall_pps;
 
 #else
 // Include the shared definitions
@@ -131,21 +131,32 @@ private:
     // --------------------------------------------------- //
     // PRIVATE FUNCTIONS
 
-    // > For updating the RF Radio status shown in the UI element of "rf_status_label"
-    void setCrazyRadioStatus(int radio_status);
-    // > For updating the battery state
-    void setBatteryState(int new_battery_state);
-    // > For updating the battery voltage shown in the UI elements of "battery_voltage_lineEdit" and "battery_status_label"
-    void setBatteryVoltageText(float battery_voltage);
-    void setBatteryImageBasedOnLevel(int battery_level);
-    // > For making the "enable flight" and "disable flight" buttons (un-)available
+    // > For making the "enable flight" and "disable flight" buttons
+    //   (un-)available
     void disableFlyingStateButtons();
     void enableFlyingStateButtons();
-    // > For updating the "my_flying_state" variable, and the UI element of "flying_state_label"
+
+    // > For updating the RF Radio status shown in the UI element
+    //   of "rf_status_label"
+    void setCrazyRadioStatus(int radio_status);
+
+    // > For updating the battery state
+    void setBatteryState(int new_battery_state);
+    // > For updating the battery voltage shown in the UI elements
+    //   of "battery_voltage_lineEdit" and "battery_status_label"
+    void setBatteryVoltageText(float battery_voltage);
+    void setBatteryImageBasedOnLevel(int battery_level);
+
+    // > For updating the "my_flying_state" variable, and the
+    //   UI element of "flying_state_label"
     void setFlyingState(int new_flying_state);
-    // > For loading the "context" for this agent, i.e., the {agentID,cfID,flying zone} tuple
+
+    // > For loading the "context" for this agent,
+    //   i.e., the {agentID,cfID,flying zone} tuple
     void loadCrazyflieContext();
-    // > For updating the text in the UI element of "controller_enabled_label"
+
+    // > For updating the text in the UI element of
+    //   "controller_enabled_label"
     void setControllerEnabled(int new_controller);
 
 
@@ -154,30 +165,27 @@ private:
     // --------------------------------------------------- //
     // PRIVATE VARIABLES FOR ROS
 
-    // > For running this is a ROS node thread
-    //rosNodeThread* myrosNodeThread;
-
-    // > For the namespace of this node
-    std::string my_ros_namespace;
-
     // > For the "context" of this agent
-    CrazyflieContext my_context;
+    d_fall_pps::CrazyflieContext my_context;
 
     // PUBLISHERS AND SUBSRIBERS
     // > For Crazyradio commands based on button clicks
     ros::Publisher crazyRadioCommandPublisher;
     // > For updating the "rf_status_label" picture
     ros::Subscriber crazyRadioStatusSubscriber;
+
     // > For updating the current battery voltage
     ros::Subscriber batteryVoltageSubscriber;
     // > For updating the current battery state
     //ros::Subscriber batteryStateSubscriber;
     // > For updating the current battery level
     ros::Subscriber batteryLevelSubscriber;
+
     // > For Flying state commands based on button clicks
     ros::Publisher flyingStateCommandPublisher;
     // > For updating the "flying_state_label" picture
     ros::Subscriber flyingStateSubscriber;
+
     // > For changes in the database that defines {agentID,cfID,flying zone} links
     ros::Subscriber databaseChangedSubscriber;
     ros::ServiceClient centralManagerDatabaseService;
@@ -188,19 +196,30 @@ private:
     // --------------------------------------------------- //
     // PRIVATE CALLBACKS IN RESPONSE TO ROS MESSAGES
 
-    // > For the CrazyRadio status, received on the "crazyRadioStatusSubscriber"
+    // > For the CrazyRadio status, received on the
+    //   "crazyRadioStatusSubscriber"
     void crazyRadioStatusCallback(const std_msgs::Int32& msg);
-    // > For the Battery Voltage, received on the "batteryVoltageSubscriber"
+
+    // > For the Battery Voltage, received on the
+    //   "batteryVoltageSubscriber"
     void batteryVoltageCallback(const std_msgs::Float32& msg);
-    // > For the Battery State, receieved on the "batteryStateSubscriber"
+    // > For the Battery State, receieved on the
+    //   "batteryStateSubscriber"
     void batteryStateChangedCallback(const std_msgs::Int32& msg);
-    // > For the Battery Level, receieved on the "batteryLevelSubscriber"
+    // > For the Battery Level, receieved on the
+    //   "batteryLevelSubscriber"
     void batteryLevelCallback(const std_msgs::Int32& msg);
-    // > For the Flying State, received on the "flyingStateSubscriber"
+
+    // > For the Flying State, received on the
+    //   "flyingStateSubscriber"
     void flyingStateChangedCallback(const std_msgs::Int32& msg);
-    // > For the notification that the database was changes, received on the "DatabaseChangedSubscriber"
+
+    // > For the notification that the database was changes,
+    //   received on the "DatabaseChangedSubscriber"
     void databaseChangedCallback(const std_msgs::Int32& msg);
-    // > For the controller currently operating, received on "controllerUsedSubscriber"
+
+    // > For the controller currently operating, received on
+    //   "controllerUsedSubscriber"
     void controllerUsedChangedCallback(const std_msgs::Int32& msg);
 
 

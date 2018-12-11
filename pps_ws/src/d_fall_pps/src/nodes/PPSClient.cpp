@@ -483,6 +483,7 @@ void commandCallback(const IntWithHeader & msg) {
                 break;
 
         	case CMD_CRAZYFLY_TAKE_OFF:
+                ROS_INFO("[PPS CLIENT] TAKE_OFF Command received");
                 if(flying_state == STATE_MOTORS_OFF)
                 {
                     changeFlyingStateTo(STATE_TAKE_OFF);
@@ -490,12 +491,14 @@ void commandCallback(const IntWithHeader & msg) {
         		break;
 
         	case CMD_CRAZYFLY_LAND:
+                ROS_INFO("[PPS CLIENT] LAND Command received");
                 if(flying_state != STATE_MOTORS_OFF)
                 {
                     changeFlyingStateTo(STATE_LAND);
                 }
         		break;
             case CMD_CRAZYFLY_MOTORS_OFF:
+                ROS_INFO("[PPS CLIENT] MOTORS_OFF Command received");
                 changeFlyingStateTo(STATE_MOTORS_OFF);
                 break;
 
@@ -508,11 +511,13 @@ void commandCallback(const IntWithHeader & msg) {
 
 void crazyflieContextDatabaseChangedCallback(const std_msgs::Int32& msg)
 {
+    ROS_INFO("[PPS CLIENT] Received message that the Context Database Changed");
     loadCrazyflieContext();
 }
 
 void emergencyStopCallback(const IntWithHeader & msg)
 {
+    ROS_INFO("[PPS CLIENT] Received message to EMERGENCY STOP");
     commandCallback(msg);
 }
 
@@ -523,6 +528,7 @@ void emergencyStopCallback(const IntWithHeader & msg)
 
 void crazyRadioStatusCallback(const std_msgs::Int32& msg)
 {
+    ROS_INFO_STREAM("[PPS CLIENT] Received message with Crazy Radio Status = " << msg.data );
     crazyradio_status = msg.data;
     // RESET THE BATTERY STATE IF DISCONNECTED
     //if (crazyradio_status == CRAZY_RADIO_STATE_DISCONNECTED)
@@ -585,7 +591,9 @@ void safeSetPointCallback(const Setpoint& newSetpoint)
 
 
 void loadSafeController() {
-    ros::NodeHandle nodeHandle("~");
+    //ros::NodeHandle nodeHandle("~");
+    ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
+    ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "ClientConfig");
 
     std::string safeControllerName;
     if(!nodeHandle.getParam("safeController", safeControllerName)) {
@@ -600,7 +608,9 @@ void loadSafeController() {
 
 void loadDemoController()
 {
-    ros::NodeHandle nodeHandle("~");
+    //ros::NodeHandle nodeHandle("~");
+    ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
+    ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "ClientConfig");
 
     std::string demoControllerName;
     if(!nodeHandle.getParam("demoController", demoControllerName))
@@ -615,7 +625,9 @@ void loadDemoController()
 
 void loadStudentController()
 {
-    ros::NodeHandle nodeHandle("~");
+    //ros::NodeHandle nodeHandle("~");
+    ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
+    ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "ClientConfig");
 
     std::string studentControllerName;
     if(!nodeHandle.getParam("studentController", studentControllerName))
@@ -630,7 +642,9 @@ void loadStudentController()
 
 void loadMpcController()
 {
-    ros::NodeHandle nodeHandle("~");
+    //ros::NodeHandle nodeHandle("~");
+    ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
+    ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "ClientConfig");
 
     std::string mpcControllerName;
     if(!nodeHandle.getParam("mpcController", mpcControllerName))
@@ -645,7 +659,9 @@ void loadMpcController()
 
 void loadRemoteController()
 {
-    ros::NodeHandle nodeHandle("~");
+    //ros::NodeHandle nodeHandle("~");
+    ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
+    ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "ClientConfig");
 
     std::string remoteControllerName;
     if(!nodeHandle.getParam("remoteController", remoteControllerName))
@@ -660,7 +676,9 @@ void loadRemoteController()
 
 void loadTuningController()
 {
-    ros::NodeHandle nodeHandle("~");
+    //ros::NodeHandle nodeHandle("~");
+    ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
+    ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "ClientConfig");
 
     std::string tuningControllerName;
     if(!nodeHandle.getParam("tuningController", tuningControllerName))
@@ -675,7 +693,9 @@ void loadTuningController()
 
 void loadPickerController()
 {
-    ros::NodeHandle nodeHandle("~");
+    //ros::NodeHandle nodeHandle("~");
+    ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
+    ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "ClientConfig");
 
     std::string pickerControllerName;
     if(!nodeHandle.getParam("pickerController", pickerControllerName))
@@ -768,15 +788,27 @@ void batteryMonitorStateChangedCallback(std_msgs::Int32 msg)
     int new_battery_state = msg.data;
 
     // Take action if changed to low battery state
-    if ((flying_state != STATE_MOTORS_OFF) && (new_battery_state == BATTERY_STATE_LOW))
+    if (new_battery_state == BATTERY_STATE_LOW)
     {
-        ROS_INFO("[PPS CLIENT] low level battery triggered, now landing.");
-        changeFlyingStateTo(STATE_LAND);
+        if (flying_state != STATE_MOTORS_OFF)
+        {
+            ROS_INFO("[PPS CLIENT] low level battery triggered, now landing.");
+            changeFlyingStateTo(STATE_LAND);
+        }
+        else
+        {
+            ROS_INFO("[PPS CLIENT] low level battery triggered, please turn off the Crazyflie.");
+        }
     }
-    else if ((flying_state == STATE_MOTORS_OFF) && (new_battery_state == BATTERY_STATE_LOW))
+    else if (new_battery_state == BATTERY_STATE_NORMAL)
     {
-        ROS_INFO("[PPS CLIENT] low level battery triggered, please turn off the Crazyflie.");
+        ROS_INFO("[PPS CLIENT] received message that battery state changed to normal");
     }
+    else
+    {
+        ROS_INFO("[PPS CLIENT] received message that battery state changed to something unknown");
+    }
+    
 }
 
 
@@ -1152,7 +1184,7 @@ int main(int argc, char* argv[])
 
     // SUBSCRIBE TO "YAML PARAMTERS READY" MESSAGES
 
-    // The parameters service publish messages with names of the form:
+    // The parameter service publishes messages with names of the form:
     // /dfall/.../ParameterService/<filename with .yaml extension>
     ros::Subscriber clientConfig_yamlReady_fromAgent = nodeHandle_to_own_agent_parameter_service.subscribe(  "ClientConfig", 1, isReadyClientConfigYamlCallback);
     ros::Subscriber clientConfig_yamlReady_fromCoord = nodeHandle_to_coordinator_parameter_service.subscribe("ClientConfig", 1, isReadyClientConfigYamlCallback);

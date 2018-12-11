@@ -114,20 +114,30 @@
 //     uint8 onboardControllerType       The flag sent to the Crazyflie for indicating how to implement the command
 // 
 // IMPORTANT NOTES FOR "onboardControllerType"  AND AXIS CONVENTIONS
-// > The allowed values for "onboardControllerType" are in the "Defines" section at the
-//   top of this file, they are MOTOR_MODE, RATE_MODE, OR ANGLE_MODE.
-// > In the PPS exercise we will only use the RATE_MODE.
-// > In RATE_MODE the ".roll", ".ptich", and ".yaw" properties of "response.ControlCommand"
-//   specify the angular rate in [radians/second] that will be requested from the
-//   PID controllers running in the Crazyflie 2.0 firmware.
-// > In RATE_MODE the ".motorCmd1" to ".motorCmd4" properties of "response.ControlCommand"
-//   are the baseline motor commands requested from the Crazyflie, with the adjustment
-//   for body rates being added on top of this in the firmware (i.e., as per the code
-//   of the "distribute_power" function provided in exercise sheet 2).
-// > In RATE_MODE the axis convention for the roll, pitch, and yaw body rates returned
-//   in "response.ControlCommand" should use right-hand coordinate axes with x-forward
-//   and z-upwards (i.e., the positive z-axis is aligned with the direction of positive
-//   thrust). To assist, teh following is an ASCII art of this convention:
+// > The allowed values for "onboardControllerType" are in the "Defines"
+//   section in the header file, they are:
+//   - CF_COMMAND_TYPE_MOTORS
+//   - CF_COMMAND_TYPE_RATE
+//   - CF_COMMAND_TYPE_ANGLE
+//
+// > For completeing the class exercises it is only required to use
+//   the CF_COMMAND_TYPE_RATE option.
+//
+// > For the CF_COMMAND_TYPE_RATE optoin:
+//   1) the ".roll", ".ptich", and ".yaw" properties of
+//      "response.ControlCommand" specify the angular rate in
+//      [radians/second] that will be requested from the PID controllers
+//      running in the Crazyflie 2.0 firmware.
+//   2) the ".motorCmd1" to ".motorCmd4" properties of
+//      "response.ControlCommand" are the baseline motor commands
+//      requested from the Crazyflie, with the adjustment for body rates
+//      being added on top of this in the firmware (i.e., as per the
+//      code of the "distribute_power" found in the firmware).
+//   3) the axis convention for the roll, pitch, and yaw body rates
+//      returned in "response.ControlCommand" should use right-hand
+//      coordinate axes with x-forward and z-upwards (i.e., the positive
+//      z-axis is aligned with the direction of positive thrust). To
+//      assist, the following is an ASCII art of this convention.
 //
 // ASCII ART OF THE CRAZYFLIE 2.0 LAYOUT
 //
@@ -173,15 +183,15 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	float stateErrorInertial[9];
 
 	// Fill in the (x,y,z) position error
-	stateErrorInertial[0] = request.ownCrazyflie.x - setpoint[0];
-	stateErrorInertial[1] = request.ownCrazyflie.y - setpoint[1];
-	stateErrorInertial[2] = request.ownCrazyflie.z - setpoint[2];
+	stateErrorInertial[0] = request.ownCrazyflie.x - m_setpoint[0];
+	stateErrorInertial[1] = request.ownCrazyflie.y - m_setpoint[1];
+	stateErrorInertial[2] = request.ownCrazyflie.z - m_setpoint[2];
 
 	// Compute an estimate of the velocity
 	// > As simply the derivative between the current and previous position
-	stateErrorInertial[3] = (stateErrorInertial[0] - previous_stateErrorInertial[0]) * control_frequency;
-	stateErrorInertial[4] = (stateErrorInertial[1] - previous_stateErrorInertial[1]) * control_frequency;
-	stateErrorInertial[5] = (stateErrorInertial[2] - previous_stateErrorInertial[2]) * control_frequency;
+	stateErrorInertial[3] = (stateErrorInertial[0] - m_previous_stateErrorInertial[0]) * yaml_control_frequency;
+	stateErrorInertial[4] = (stateErrorInertial[1] - m_previous_stateErrorInertial[1]) * yaml_control_frequency;
+	stateErrorInertial[5] = (stateErrorInertial[2] - m_previous_stateErrorInertial[2]) * yaml_control_frequency;
 
 	// Fill in the roll and pitch angle measurements directly
 	stateErrorInertial[6] = request.ownCrazyflie.roll;
@@ -191,7 +201,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	// > This error should be "unwrapped" to be in the range
 	//   ( -pi , pi )
 	// > First, get the yaw error into a local variable
-	float yawError = request.ownCrazyflie.yaw - setpoint[3];
+	float yawError = request.ownCrazyflie.yaw - m_setpoint[3];
 	// > Second, "unwrap" the yaw error to the interval ( -pi , pi )
 	while(yawError > PI) {yawError -= 2 * PI;}
 	while(yawError < -PI) {yawError += 2 * PI;}
@@ -213,7 +223,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	// > as we have already used previous error we can now update it update it
 	for(int i = 0; i < 9; ++i)
 	{
-		previous_stateErrorInertial[i] = stateErrorInertial[i];
+		m_previous_stateErrorInertial[i] = stateErrorInertial[i];
 	}
 
 
@@ -235,7 +245,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	// Perform the "-Kx" LQR computation for the yaw rate to respoond with
 	for(int i = 0; i < 9; ++i)
 	{
-		yawRate_forResponse -= gainMatrixYawRate[i] * stateErrorBody[i];
+		yawRate_forResponse -= m_gainMatrixYawRate[i] * stateErrorBody[i];
 	}
 
 	// Put the computed yaw rate into the "response" variable
@@ -260,7 +270,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	// Perform the "-Kx" LQR computation for the thrust adjustment to respoond with
 	for(int i = 0; i < 9; ++i)
 	{
-		thrustAdjustment -= gainMatrixThrust[i] * stateErrorBody[i];
+		thrustAdjustment -= m_gainMatrixThrust[i] * stateErrorBody[i];
 	}
 
 	// Put the computed thrust adjustment into the "response" variable,
@@ -268,10 +278,10 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	// > NOTE: remember that the thrust is commanded per motor, so you sohuld
 	//         consider whether the "thrustAdjustment" computed by your
 	//         controller needed to be divided by 4 or not.
-	// > NOTE: the "cf_weight_in_newtons" value is the total thrust required
+	// > NOTE: the "m_cf_weight_in_newtons" value is the total thrust required
 	//         as feed-forward. Assuming the the Crazyflie is symmetric, this
 	//         value is divided by four.
-	float feed_forward_thrust_per_motor = cf_weight_in_newtons / 4.0;
+	float feed_forward_thrust_per_motor = m_cf_weight_in_newtons / 4.0;
 	// > NOTE: the function "computeMotorPolyBackward" converts the input argument
 	//         from Newtons to the 16-bit command expected by the Crazyflie.
 	response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrustAdjustment + feed_forward_thrust_per_motor);
@@ -297,7 +307,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	// Perform the "-Kx" LQR computation for the pitch rate to respoond with
 	for(int i = 0; i < 9; ++i)
 	{
-		pitchRate_forResponse -= gainMatrixPitchRate[i] * stateErrorBody[i];
+		pitchRate_forResponse -= m_gainMatrixPitchRate[i] * stateErrorBody[i];
 	}
 
 	// Put the computed pitch rate into the "response" variable
@@ -322,7 +332,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	// Perform the "-Kx" LQR computation for the roll rate to respoond with
 	for(int i = 0; i < 9; ++i)
 	{
-		rollRate_forResponse -= gainMatrixRollRate[i] * stateErrorBody[i];
+		rollRate_forResponse -= m_gainMatrixRollRate[i] * stateErrorBody[i];
 	}
 
 	// Put the computed roll rate into the "response" variable
@@ -334,9 +344,9 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 
 	/*choosing the Crazyflie onBoard controller type.
 	it can either be Motor, Rate or Angle based */
-	// response.controlOutput.onboardControllerType = MOTOR_MODE;
-	response.controlOutput.onboardControllerType = RATE_MODE;
-	// response.controlOutput.onboardControllerType = ANGLE_MODE;
+	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTORS;
+	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
+	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_ANGLE;
 
 
 
@@ -349,11 +359,11 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	//  D   D  E      B   B  U   U  G   G       M   M      S  G   G
 	//  DDDD   EEEEE  BBBB    UUU    GGGG       M   M  SSSS    GGGG
 
-    // DEBUGGING CODE:
-    // As part of the D-FaLL-System we have defined a message type names"DebugMsg".
-    // By fill this message with data and publishing it you can display the data in
-    // real time using rpt plots. Instructions for using rqt plots can be found on
-    // the wiki of the D-FaLL-System repository
+	// DEBUGGING CODE:
+	// As part of the D-FaLL-System we have defined a message type names"DebugMsg".
+	// By fill this message with data and publishing it you can display the data in
+	// real time using rpt plots. Instructions for using rqt plots can be found on
+	// the wiki of the D-FaLL-System repository
 
 	// Instantiate a local variable of type "DebugMsg", see the file "DebugMsg.msg"
 	// (located in the "msg" folder) to see the full structure of this message.
@@ -378,41 +388,41 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	// debugMsg.value_10 = your_variable_name;
 
 	// Publish the "debugMsg"
-	debugPublisher.publish(debugMsg);
+	m_debugPublisher.publish(debugMsg);
 
 	// An alternate debugging technique is to print out data directly to the
-    // command line from which this node was launched.
+	// command line from which this node was launched.
 
-    // An example of "printing out" the data from the "request" argument to the
-    // command line. This might be useful for debugging.
-    // ROS_INFO_STREAM("x-coordinates: " << request.ownCrazyflie.x);
-    // ROS_INFO_STREAM("y-coordinates: " << request.ownCrazyflie.y);
-    // ROS_INFO_STREAM("z-coordinates: " << request.ownCrazyflie.z);
-    // ROS_INFO_STREAM("roll: " << request.ownCrazyflie.roll);
-    // ROS_INFO_STREAM("pitch: " << request.ownCrazyflie.pitch);
-    // ROS_INFO_STREAM("yaw: " << request.ownCrazyflie.yaw);
-    // ROS_INFO_STREAM("Delta t: " << request.ownCrazyflie.acquiringTime);
+	// An example of "printing out" the data from the "request" argument to the
+	// command line. This might be useful for debugging.
+	// ROS_INFO_STREAM("x-coordinates: " << request.ownCrazyflie.x);
+	// ROS_INFO_STREAM("y-coordinates: " << request.ownCrazyflie.y);
+	// ROS_INFO_STREAM("z-coordinates: " << request.ownCrazyflie.z);
+	// ROS_INFO_STREAM("roll: " << request.ownCrazyflie.roll);
+	// ROS_INFO_STREAM("pitch: " << request.ownCrazyflie.pitch);
+	// ROS_INFO_STREAM("yaw: " << request.ownCrazyflie.yaw);
+	// ROS_INFO_STREAM("Delta t: " << request.ownCrazyflie.acquiringTime);
 
-    // An example of "printing out" the control actions computed.
-    // ROS_INFO_STREAM("thrustAdjustment = " << thrustAdjustment);
-    // ROS_INFO_STREAM("controlOutput.roll = " << response.controlOutput.roll);
-    // ROS_INFO_STREAM("controlOutput.pitch = " << response.controlOutput.pitch);
-    // ROS_INFO_STREAM("controlOutput.yaw = " << response.controlOutput.yaw);
+	// An example of "printing out" the control actions computed.
+	// ROS_INFO_STREAM("thrustAdjustment = " << thrustAdjustment);
+	// ROS_INFO_STREAM("controlOutput.roll = " << response.controlOutput.roll);
+	// ROS_INFO_STREAM("controlOutput.pitch = " << response.controlOutput.pitch);
+	// ROS_INFO_STREAM("controlOutput.yaw = " << response.controlOutput.yaw);
 
-    // An example of "printing out" the "thrust-to-command" conversion parameters.
-    // ROS_INFO_STREAM("motorPoly 0:" << motorPoly[0]);
-    // ROS_INFO_STREAM("motorPoly 0:" << motorPoly[1]);
-    // ROS_INFO_STREAM("motorPoly 0:" << motorPoly[2]);
+	// An example of "printing out" the "thrust-to-command" conversion parameters.
+	// ROS_INFO_STREAM("motorPoly 0:" << yaml_motorPoly[0]);
+	// ROS_INFO_STREAM("motorPoly 1:" << yaml_motorPoly[1]);
+	// ROS_INFO_STREAM("motorPoly 2:" << yaml_motorPoly[2]);
 
-    // An example of "printing out" the per motor 16-bit command computed.
-    // ROS_INFO_STREAM("controlOutput.cmd1 = " << response.controlOutput.motorCmd1);
-    // ROS_INFO_STREAM("controlOutput.cmd3 = " << response.controlOutput.motorCmd2);
-    // ROS_INFO_STREAM("controlOutput.cmd2 = " << response.controlOutput.motorCmd3);
-    // ROS_INFO_STREAM("controlOutput.cmd4 = " << response.controlOutput.motorCmd4);
+	// An example of "printing out" the per motor 16-bit command computed.
+	// ROS_INFO_STREAM("controlOutput.cmd1 = " << response.controlOutput.motorCmd1);
+	// ROS_INFO_STREAM("controlOutput.cmd3 = " << response.controlOutput.motorCmd2);
+	// ROS_INFO_STREAM("controlOutput.cmd2 = " << response.controlOutput.motorCmd3);
+	// ROS_INFO_STREAM("controlOutput.cmd4 = " << response.controlOutput.motorCmd4);
 
-    // Return "true" to indicate that the control computation was performed successfully
-    return true;
-}
+	// Return "true" to indicate that the control computation was performed successfully
+	return true;
+	}
 
 
 
@@ -457,20 +467,20 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 // This function WILL NEED TO BE edited for successful completion of the PPS exercise
 void convertIntoBodyFrame(float stateInertial[9], float (&stateBody)[9], float yaw_measured)
 {
-	    // Fill in the (x,y,z) position estimates to be returned
-	    stateBody[0] = stateInertial[0];
-	    stateBody[1] = stateInertial[1];
-	    stateBody[2] = stateInertial[2];
+	// Fill in the (x,y,z) position estimates to be returned
+	stateBody[0] = stateInertial[0];
+	stateBody[1] = stateInertial[1];
+	stateBody[2] = stateInertial[2];
 
-	    // Fill in the (x,y,z) velocity estimates to be returned
-	    stateBody[3] = stateInertial[3];
-	    stateBody[4] = stateInertial[4];
-	    stateBody[5] = stateInertial[5];
+	// Fill in the (x,y,z) velocity estimates to be returned
+	stateBody[3] = stateInertial[3];
+	stateBody[4] = stateInertial[4];
+	stateBody[5] = stateInertial[5];
 
-	    // Fill in the (roll,pitch,yaw) estimates to be returned
-	    stateBody[6] = stateInertial[6];
-	    stateBody[7] = stateInertial[7];
-	    stateBody[8] = stateInertial[8];
+	// Fill in the (roll,pitch,yaw) estimates to be returned
+	stateBody[6] = stateInertial[6];
+	stateBody[7] = stateInertial[7];
+	stateBody[8] = stateInertial[8];
 }
 
 
@@ -491,10 +501,26 @@ void convertIntoBodyFrame(float stateInertial[9], float (&stateBody)[9], float y
 //     CCCC   OOO   N   N    V    EEEEE  R   R  SSSS   III   OOO   N   N
 //    ----------------------------------------------------------------------------------
 
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+// This function DOES NEED TO BE edited for successful completion of
+// the exercise
 float computeMotorPolyBackward(float thrust)
 {
-    return (-motorPoly[1] + sqrt(motorPoly[1] * motorPoly[1] - 4 * motorPoly[2] * (motorPoly[0] - thrust))) / (2 * motorPoly[2]);
+	// Compute the 16-but command that would produce the requested
+	// "thrust" based on the quadratic mapping that is described
+	// by the coefficients in the "yaml_motorPoly" variable.
+	float cmd_16bit = (-yaml_motorPoly[1] + sqrt(yaml_motorPoly[1] * yaml_motorPoly[1] - 4 * yaml_motorPoly[2] * (yaml_motorPoly[0] - thrust))) / (2 * yaml_motorPoly[2]);
+
+
+
+	// > Could this formula compute a result "cmd_16bit" that is
+	//   greater than ((2^16)-1)?
+	// > What might happen when such a number is case as a 16-bit
+	//   integer? In other words, what is uint16(cmd_sixteen_bit)?
+
+
+
+	// Return the result
+	return cmd_16bit;
 }
 
 
@@ -518,10 +544,10 @@ float computeMotorPolyBackward(float thrust)
 // This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
 void setpointCallback(const Setpoint& newSetpoint)
 {
-    setpoint[0] = newSetpoint.x;
-    setpoint[1] = newSetpoint.y;
-    setpoint[2] = newSetpoint.z;
-    setpoint[3] = newSetpoint.yaw;
+	m_setpoint[0] = newSetpoint.x;
+	m_setpoint[1] = newSetpoint.y;
+	m_setpoint[2] = newSetpoint.z;
+	m_setpoint[3] = newSetpoint.yaw;
 }
 
 
@@ -611,170 +637,100 @@ void customCommandReceivedCallback(const CustomButton& commandReceived)
 //    ----------------------------------------------------------------------------------
 
 
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
+// This function DOES NOT NEED TO BE edited for successful completion
+// ofthe exercise
+void isReadyStudentControllerYamlCallback(const IntWithHeader & msg)
 {
-	// Extract from the "msg" for which controller the and from where to fetch the YAML
-	// parameters
-	int controller_to_fetch_yaml = msg.data;
+	// Check whether the message is relevant
+	bool isRevelant = checkMessageHeader( m_agentID , msg.shouldCheckForID , msg.agentIDs );
 
-	// Switch between fetching for the different controllers and from different locations
-	switch(controller_to_fetch_yaml)
+	// Continue if the message is relevant
+	if (isRevelant)
 	{
-
-		// > FOR FETCHING FROM THE AGENT'S OWN PARAMETER SERVICE
-		case FETCH_YAML_STUDENT_CONTROLLER_FROM_OWN_AGENT:
+		// Extract the data
+		int parameter_service_to_load_from = msg.data;
+		// Initialise a local variable for the namespace
+		std::string namespace_to_use;
+		// Load from the respective parameter service
+		switch(parameter_service_to_load_from)
 		{
-			// Let the user know that this message was received
-			ROS_INFO("[STUDENT CONTROLLER] Received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from this agent.");
-			// Create a node handle to the parameter service running on this agent's machine
-			ros::NodeHandle nodeHandle_to_own_agent_parameter_service(namespace_to_own_agent_parameter_service);
-			// Call the function that fetches the parameters
-			fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
-			break;
-		}
+			// > FOR FETCHING FROM THE AGENT'S OWN PARAMETER SERVICE
+			case LOAD_YAML_FROM_AGENT:
+			{
+				ROS_INFO("[STUDENT CONTROLLER] Now fetching the StudentController YAML parameter values from this agent.");
+				namespace_to_use = m_namespace_to_own_agent_parameter_service;
+				break;
+			}
+			// > FOR FETCHING FROM THE COORDINATOR'S PARAMETER SERVICE
+			case LOAD_YAML_FROM_COORDINATOR:
+			{
+				ROS_INFO("[STUDENT CONTROLLER] Now fetching the StudentController YAML parameter values from this agent's coordinator.");
+				namespace_to_use = m_namespace_to_coordinator_parameter_service;
+				break;
+			}
 
-		// > FOR FETCHING FROM THE COORDINATOR'S PARAMETER SERVICE
-		case FETCH_YAML_STUDENT_CONTROLLER_FROM_COORDINATOR:
-		{
-			// Let the user know that this message was received
-			ROS_INFO("[STUDENT CONTROLLER] Received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from the coordinator.");
-			// Create a node handle to the parameter service running on the coordinator machine
-			ros::NodeHandle nodeHandle_to_coordinator_parameter_service(namespace_to_coordinator_parameter_service);
-			// Call the function that fetches the parameters
-			fetchYamlParameters(nodeHandle_to_coordinator_parameter_service);
-			break;
+			default:
+			{
+				ROS_ERROR("[STUDENT CONTROLLER] Paramter service to load from was NOT recognised.");
+				namespace_to_use = m_namespace_to_own_agent_parameter_service;
+				break;
+			}
 		}
-
-		default:
-		{
-			// Let the user know that the command was not relevant
-			//ROS_INFO("The StudentControllerService received the message that YAML parameters were (re-)loaded");
-			//ROS_INFO("> However the parameters do not relate to this controller, hence nothing will be fetched.");
-			break;
-		}
+		// Create a node handle to the selected parameter service
+		ros::NodeHandle nodeHandle_to_use(namespace_to_use);
+		// Call the function that fetches the parameters
+		fetchStudentControllerYamlParameters(nodeHandle_to_use);
 	}
 }
 
 
-// This function CAN BE edited for successful completion of the PPS exercise, and the
-// use of parameters fetched from the YAML file is highly recommended to make tuning of
-// your controller easier and quicker.
-void fetchYamlParameters(ros::NodeHandle& nodeHandle)
+// This function CAN BE edited for successful completion of the
+// exercise, and the use of parameters fetched from the YAML file
+// is highly recommended to make tuning of your controller easier
+// and quicker.
+void fetchStudentControllerYamlParameters(ros::NodeHandle& nodeHandle)
 {
-	// Here we load the parameters that are specified in the StudentController.yaml file
+	// Here we load the parameters that are specified in the file:
+	// StudentController.yaml
 
 	// Add the "StudentController" namespace to the "nodeHandle"
-	ros::NodeHandle nodeHandle_for_studentController(nodeHandle, "StudentController");
+	ros::NodeHandle nodeHandle_for_paramaters(nodeHandle, "StudentController");
+
+
+
+	// GET THE PARAMETERS:
 
 	// > The mass of the crazyflie
-	cf_mass_in_grams = getParameterFloat(nodeHandle_for_studentController , "mass");
+	yaml_cf_mass_in_grams = getParameterFloat(nodeHandle_for_paramaters , "mass");
 
 	// Display one of the YAML parameters to debug if it is working correctly
-	//ROS_INFO_STREAM("DEBUGGING: mass leaded from loacl file = " << cf_mass_in_grams );
+	//ROS_INFO_STREAM("DEBUGGING: mass leaded from loacl file = " << yaml_cf_mass_in_grams );
 
 	// > The frequency at which the "computeControlOutput" is being called, as determined
 	//   by the frequency at which the Vicon system provides position and attitude data
-	control_frequency = getParameterFloat(nodeHandle_for_studentController, "control_frequency");
+	yaml_control_frequency = getParameterFloat(nodeHandle_for_paramaters, "control_frequency");
 
 	// > The co-efficients of the quadratic conversation from 16-bit motor command to
 	//   thrust force in Newtons
-	getParameterFloatVector(nodeHandle_for_studentController, "motorPoly", motorPoly, 3);
+	getParameterFloatVector(nodeHandle_for_paramaters, "motorPoly", yaml_motorPoly, 3);
 
 
-	// DEBUGGING: Print out one of the parameters that was loaded
-	ROS_INFO_STREAM("[STUDENT CONTROLLER] DEBUGGING: the fetched StudentController/mass = " << cf_mass_in_grams);
 
-	// Call the function that computes details an values that are needed from these
-	// parameters loaded above
-	processFetchedParameters();
+	// > DEBUGGING: Print out one of the parameters that was loaded to
+	//   debug if the fetching of parameters worked correctly
+	ROS_INFO_STREAM("[STUDENT CONTROLLER] DEBUGGING: the fetched StudentController/mass = " << yaml_cf_mass_in_grams);
 
+
+
+	// PROCESS THE PARAMTERS
+
+	// > Compute the feed-forward force that we need to counteract
+	//   gravity (i.e., mg) in units of [Newtons]
+	m_cf_weight_in_newtons = yaml_cf_mass_in_grams * 9.81/1000.0;
+
+	// DEBUGGING: Print out one of the computed quantities
+	ROS_INFO_STREAM("[STUDENT CONTROLLER] DEBUGGING: thus the weight of this agent in [Newtons] = " << m_cf_weight_in_newtons);
 }
-
-
-// This function CAN BE edited for successful completion of the PPS exercise, and the
-// use of parameters loaded from the YAML file is highly recommended to make tuning of
-// your controller easier and quicker.
-void processFetchedParameters()
-{
-    // Compute the feed-forward force that we need to counteract gravity (i.e., mg)
-    // > in units of [Newtons]
-    cf_weight_in_newtons = cf_mass_in_grams * 9.81/1000.0;
-    
-    // DEBUGGING: Print out one of the computed quantities
-	ROS_INFO_STREAM("[STUDENT CONTROLLER] DEBUGGING: thus the weight of this agent in [Newtons] = " << cf_weight_in_newtons);
-}
-
-
-
-//    ----------------------------------------------------------------------------------
-//     GGGG  EEEEE  TTTTT  PPPP     A    RRRR     A    M   M   ( )
-//    G      E        T    P   P   A A   R   R   A A   MM MM  (   )
-//    G      EEE      T    PPPP   A   A  RRRR   A   A  M M M  (   )
-//    G   G  E        T    P      AAAAA  R  R   AAAAA  M   M  (   )
-//     GGGG  EEEEE    T    P      A   A  R   R  A   A  M   M   ( )
-//    ----------------------------------------------------------------------------------
-
-
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name)
-{
-    float val;
-    if(!nodeHandle.getParam(name, val))
-    {
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    return val;
-}
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-void getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length)
-{
-    if(!nodeHandle.getParam(name, val)){
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    if(val.size() != length) {
-        ROS_ERROR_STREAM("parameter '" << name << "' has wrong array length, " << length << " needed");
-    }
-}
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-int getParameterInt(ros::NodeHandle& nodeHandle, std::string name)
-{
-    int val;
-    if(!nodeHandle.getParam(name, val))
-    {
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    return val;
-}
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-void getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val, int length)
-{
-    if(!nodeHandle.getParam(name, val)){
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    if(val.size() != length) {
-        ROS_ERROR_STREAM("parameter '" << name << "' has wrong array length, " << length << " needed");
-    }
-}
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-int getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val)
-{
-    if(!nodeHandle.getParam(name, val)){
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    return val.size();
-}
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-bool getParameterBool(ros::NodeHandle& nodeHandle, std::string name)
-{
-    bool val;
-    if(!nodeHandle.getParam(name, val))
-    {
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    return val;
-}
-    
 
 
 
@@ -790,101 +746,140 @@ bool getParameterBool(ros::NodeHandle& nodeHandle, std::string name)
 
 // This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
 int main(int argc, char* argv[]) {
-    
-    // Starting the ROS-node
-    ros::init(argc, argv, "StudentControllerService");
 
-    // Create a "ros::NodeHandle" type local variable "nodeHandle" as the current node,
-    // the "~" indcates that "self" is the node handle assigned to this variable.
-    ros::NodeHandle nodeHandle("~");
+	// Starting the ROS-node
+	ros::init(argc, argv, "StudentControllerService");
 
-    // Get the namespace of this "StudentControllerService" node
-    std::string m_namespace = ros::this_node::getNamespace();
-    ROS_INFO_STREAM("[STUDENT CONTROLLER] ros::this_node::getNamespace() =  " << m_namespace);
+	// Create a "ros::NodeHandle" type local variable "nodeHandle" as the current node,
+	// the "~" indcates that "self" is the node handle assigned to this variable.
+	ros::NodeHandle nodeHandle("~");
 
-    // Get the agent ID as the "ROS_NAMESPACE" this computer.
-    // NOTES:
-    // > If you look at the "Agent.launch" file in the "launch" folder, you will see
-    //   the following line of code:
-    //   <param name="studentID" value="$(optenv ROS_NAMESPACE)" />
-    //   This line of code adds a parameter named "studentID" to the "PPSClient"
-    // > Thus, to get access to this "studentID" paremeter, we first need to get a handle
-    //   to the "PPSClient" node within which this controller service is nested.
-    // Get the handle to the "PPSClient" node
-    ros::NodeHandle PPSClient_nodeHandle(m_namespace + "/PPSClient");
-    // Get the value of the "studentID" parameter into the instance variable "my_agentID"
-    if(!PPSClient_nodeHandle.getParam("agentID", my_agentID))
-    {
-    	// Throw an error if the student ID parameter could not be obtained
-		ROS_ERROR("[STUDENT CONTROLLER] Failed to get agentID from PPSClient");
+	// Get the namespace of this "StudentControllerService" node
+	std::string m_namespace = ros::this_node::getNamespace();
+	ROS_INFO_STREAM("[STUDENT CONTROLLER] ros::this_node::getNamespace() =  " << m_namespace);
+
+
+
+	// AGENT ID AND COORDINATOR ID
+
+	// NOTES:
+	// > If you look at the "Agent.launch" file in the "launch" folder,
+	//   you will see the following line of code:
+	//   <param name="agentID" value="$(optenv ROS_NAMESPACE)" />
+	//   This line of code adds a parameter named "agentID" to the
+	//   "PPSClient" node.
+	// > Thus, to get access to this "studentID" paremeter, we first
+	//   need to get a handle to the "PPSClient" node within which this
+	//   controller service is nested.
+
+
+	// Get the ID of the agent and its coordinator
+	bool isValid_IDs = getAgentIDandCoordIDfromClientNode( m_namespace + "/PPSClient" , &m_agentID , &m_coordID);
+
+	// Stall the node IDs are not valid
+	if ( !isValid_IDs )
+	{
+		ROS_ERROR("[STUDENT CONTROLLER] Node NOT FUNCTIONING :-)");
+		ros::spin();
+	}
+	else
+	{
+		ROS_INFO_STREAM("[STUDENT CONTROLLER] loaded agentID = " << m_agentID << ", and coordID = " << m_coordID);
 	}
 
 
-	// *********************************************************************************
-	// EVERYTHING THAT RELATES TO FETCHING PARAMETERS FROM A YAML FILE
 
+	// PARAMETER SERVICE NAMESPACE AND NODEHANDLES:
 
-	// EVERYTHING FOR THE CONNECTION TO THIS AGENT's OWN PARAMETER SERVICE:
+	// NOTES:
+	// > The parameters that are specified thorugh the *.yaml files
+	//   are managed by a separate node called the "Parameter Service"
+	// > A separate node is used for reasons of speed and generality
+	// > To allow for a distirbuted architecture, there are two
+	//   "ParamterService" nodes that are relevant:
+	//   1) the one that is nested under the "m_agentID" namespace
+	//   2) the one that is nested under the "m_coordID" namespace
+	// > The following lines of code create the namespace (as strings)
+	//   to there two relevant "ParameterService" nodes.
+	// > The node handles are also created because they are needed
+	//   for the ROS Subscriptions that follow.
 
-	// Set the class variable "namespace_to_own_agent_parameter_service" to be a the
-    // namespace string for the parameter service that is running on the machine of this
-    // agent
-    namespace_to_own_agent_parameter_service = m_namespace + "/ParameterService";
+	// Set the class variable "m_namespace_to_own_agent_parameter_service",
+	// i.e., the namespace of parameter service for this agent
+	m_namespace_to_own_agent_parameter_service = m_namespace + "/ParameterService";
 
-    // Create a node handle to the parameter service running on this agent's machine
-    ros::NodeHandle nodeHandle_to_own_agent_parameter_service(namespace_to_own_agent_parameter_service);
+	// Set the class variable "m_namespace_to_coordinator_parameter_service",
+	// i.e., the namespace of parameter service for this agent's coordinator
+	constructNamespaceForCoordinatorParameterService( m_coordID, m_namespace_to_coordinator_parameter_service );
 
-    // Instantiate the local variable "controllerYamlReadyForFetchSubscriber" to be a
-    // "ros::Subscriber" type variable that subscribes to the "controllerYamlReadyForFetch" topic
-    // and calls the class function "yamlReadyForFetchCallback" each time a message is
-    // received on this topic and the message is passed as an input argument to the
-    // "yamlReadyForFetchCallback" class function.
-    ros::Subscriber controllerYamlReadyForFetchSubscriber_to_agent = nodeHandle_to_own_agent_parameter_service.subscribe("controllerYamlReadyForFetch", 1, yamlReadyForFetchCallback);
+	// Inform the user of what namespaces are being used
+	ROS_INFO_STREAM("[STUDENT CONTROLLER] m_namespace_to_own_agent_parameter_service    =  " << m_namespace_to_own_agent_parameter_service);
+	ROS_INFO_STREAM("[STUDENT CONTROLLER] m_namespace_to_coordinator_parameter_service  =  " << m_namespace_to_coordinator_parameter_service);
 
-
-    // EVERYTHING FOR THE CONNECTION THE COORDINATOR'S PARAMETER SERVICE:
-
-    // Set the class variable "nodeHandle_to_coordinator_parameter_service" to be a node handle
-    // for the parameter service that is running on the coordinate machine
-    // NOTE: the backslash here (i.e., "/") before the name of the node ("ParameterService")
-    //       is very important because it specifies that the name is global
-    namespace_to_coordinator_parameter_service = "/ParameterService";
-
-    // Create a node handle to the parameter service running on the coordinator machine
-    ros::NodeHandle nodeHandle_to_coordinator = ros::NodeHandle();
-    //ros::NodeHandle nodeHandle_to_coordinator_parameter_service = ros::NodeHandle(namespace_to_own_agent_parameter_service);
-    
-
-    // Instantiate the local variable "controllerYamlReadyForFetchSubscriber" to be a
-    // "ros::Subscriber" type variable that subscribes to the "controllerYamlReadyForFetch" topic
-    // and calls the class function "yamlReadyForFetchCallback" each time a message is
-    // received on this topic and the message is passed as an input argument to the
-    // "yamlReadyForFetchCallback" class function.
-    ros::Subscriber controllerYamlReadyForFetchSubscriber_to_coordinator = nodeHandle_to_coordinator.subscribe("/ParameterService/controllerYamlReadyForFetch", 1, yamlReadyForFetchCallback);
-    //ros::Subscriber controllerYamlReadyForFetchSubscriber_to_coordinator = nodeHandle_to_coordinator_parameter_service.subscribe("controllerYamlReadyForFetch", 1, yamlReadyForFetchCallback);
-
-
-    // PRINT OUT SOME INFORMATION
-
-    // Let the user know what namespaces are being used for linking to the parameter service
-    ROS_INFO_STREAM("[STUDENT CONTROLLER] The namespace string for accessing the Paramter Services are:");
-    ROS_INFO_STREAM("[STUDENT CONTROLLER] namespace_to_own_agent_parameter_service    =  " << namespace_to_own_agent_parameter_service);
-    ROS_INFO_STREAM("[STUDENT CONTROLLER] namespace_to_coordinator_parameter_service  =  " << namespace_to_coordinator_parameter_service);
-
-
-    // FINALLY, FETCH ANY PARAMETERS REQUIRED FROM THESE "PARAMETER SERVICES"
-
-	// Call the class function that loads the parameters for this class.
-    fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
-
-    // *********************************************************************************
+	// Create, as local variables, node handles to the parameters services
+	ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
+	ros::NodeHandle nodeHandle_to_coordinator_parameter_service(m_namespace_to_coordinator_parameter_service);
 
 
 
-    // Instantiate the instance variable "debugPublisher" to be a "ros::Publisher" that
-    // advertises under the name "DebugTopic" and is a message with the structure
-    // defined in the file "DebugMsg.msg" (located in the "msg" folder).
-    debugPublisher = nodeHandle.advertise<DebugMsg>("DebugTopic", 1);
+	// SUBSCRIBE TO "YAML PARAMTERS READY" MESSAGES
+
+	// The parameter service publishes messages with names of the form:
+	// /dfall/.../ParameterService/<filename with .yaml extension>
+	ros::Subscriber safeContoller_yamlReady_fromAgent = nodeHandle_to_own_agent_parameter_service.subscribe(  "StudentController", 1, isReadyStudentControllerYamlCallback);
+	ros::Subscriber safeContoller_yamlReady_fromCoord = nodeHandle_to_coordinator_parameter_service.subscribe("StudentController", 1, isReadyStudentControllerYamlCallback);
+
+
+
+	// GIVE YAML VARIABLES AN INITIAL VALUE
+
+	// This can be done either here or as part of declaring the variable
+	// in the header file
+	yaml_cf_mass_in_grams = 25.0;
+	yaml_motorPoly[0] = 5.484560e-4;
+	yaml_motorPoly[1] = 1.032633e-6;
+	yaml_motorPoly[2] = 2.130295e-11;
+	yaml_control_frequency = 200.0;
+
+
+
+	// FETCH ANY PARAMETERS REQUIRED FROM THE "PARAMETER SERVICES"
+
+	// The yaml files for the controllers are not added to "Parameter
+	// Service" as part of launching.
+	// The process for loading the yaml parameters is to send a
+	// message containing the filename of the *.yaml file, and
+	// then a message will be received on the above subscribers
+	// when the paramters are ready.
+
+	// Create a publisher for request the yaml load
+	// > created as a local variable
+	// > note importantly that the final argument is "true", this
+	//   enables "latching" on the connection. When a connection is 
+	//   latched, the last message published is saved and
+	//   automatically sent to any future subscribers that connect. 
+    ros::Publisher requestLoadYamlFilenamePublisher = nodeHandle_to_own_agent_parameter_service.advertise<StringWithHeader>("requestLoadYamlFilename", 1, true);
+	// Create a local variable for the message
+    StringWithHeader yaml_filename_msg;
+    // Specify the data
+    yaml_filename_msg.data = "StudentController";
+    // Set for whom this applies to
+    yaml_filename_msg.shouldCheckForID = false;
+    // Sleep to make the publisher known to ROS (in seconds)
+    //ros::Duration(1.0).sleep();
+    // Send the message
+    requestLoadYamlFilenamePublisher.publish(yaml_filename_msg);
+
+
+
+
+    // PUBLISHERS AND SUBSCRIBERS
+
+    // Instantiate the class variable "m_debugPublisher" to be a
+    // "ros::Publisher". This variable advertises under the name
+    // "DebugTopic" and is a message with the structure defined
+    //  in the file "DebugMsg.msg" (located in the "msg" folder).
+    m_debugPublisher = nodeHandle.advertise<DebugMsg>("DebugTopic", 1);
 
     // Instantiate the local variable "setpointSubscriber" to be a "ros::Subscriber"
     // type variable that subscribes to the "Setpoint" topic and calls the class function

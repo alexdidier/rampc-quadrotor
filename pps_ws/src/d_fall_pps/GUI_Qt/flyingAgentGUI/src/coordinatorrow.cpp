@@ -62,9 +62,9 @@ CoordinatorRow::CoordinatorRow(QWidget *parent, int agentID) :
     m_agentID_as_string = QString::number(m_agentID).rightJustified(3, '0');
 
     // CONVERT THE AGENT ID TO A STRING FOR THE BASE NAMESPACE
-    QString qstr_ros_base_namespace = "/dfall/agent";
-    qstr_ros_base_namespace.append(m_agentID_as_string);
-    std::string ros_base_namespace = qstr_ros_base_namespace.toStdString();
+    QString qstr_base_namespace = "/dfall/agent";
+    qstr_base_namespace.append(m_agentID_as_string);
+    std::string base_namespace = qstr_base_namespace.toStdString();
 
     // SET THE INITIAL VALUE OF THE PRIVATE VARIABLES FOR THIS CLASS
     // > For keeping track of the current battery state
@@ -90,52 +90,43 @@ CoordinatorRow::CoordinatorRow(QWidget *parent, int agentID) :
 
 
 #ifdef CATKIN_MAKE
-    //m_rosNodeThread = new rosNodeThread(argc, argv, "coordinatorRowGUI");
-    //m_rosNodeThread->init();
-
-    //m_ros_namespace = ros::this_node::getNamespace();
-
-    //qRegisterMetaType<ptrToMessage>("ptrToMessage");
-    //QObject::connect(m_rosNodeThread, SIGNAL(newViconData(const ptrToMessage&)), this, SLOT(updateNewViconData(const ptrToMessage&)));
-
-    //ros::NodeHandle nodeHandle(m_ros_namespace);
-
-    // communication with PPS Client, just to make it possible to communicate through terminal also we use PPSClient's name
-    //ros::NodeHandle nh_PPSClient(m_ros_namespace + "/PPSClient");
-    //ros::NodeHandle nh_PPSClient("PPSClient");
-
 
     // LET THE USER KNOW WHAT THE BASE NAMESPACE IS
-    ROS_INFO_STREAM("[COORDINATOR ROW GUI] using base namespace: " << ros_base_namespace.c_str() << ", for agentID = " << m_agentID);
+    ROS_INFO_STREAM("[COORDINATOR ROW agentID:" << m_agentID << " GUI] using base namespace: " << base_namespace.c_str() << ", for agentID = " << m_agentID);
 
     // DEBUGGING FOR NAMESPACES
     //std::string temp_ros_namespace = ros::this_node::getNamespace();
     //ROS_INFO_STREAM("[COORDINATOR ROW GUI] compared to: ros::this_node::getNamespace() = " << temp_ros_namespace.c_str());
 
     // CREATE A NODE HANDLE TO THE BASE NAMESPACE
-    ros::NodeHandle base_nodeHandle(ros_base_namespace);
+    ros::NodeHandle base_nodeHandle(base_namespace);
 
     // CREATE A NODE HANDLE TO THE ROOT OF THE D-FaLL SYSTEM
     ros::NodeHandle dfall_root_nodeHandle("/dfall");
 
     // SUBSCRIBERS AND PUBLISHERS:
+
     // > For Crazyradio commands based on button clicks
     crazyRadioCommandPublisher = base_nodeHandle.advertise<d_fall_pps::IntWithHeader>("PPSClient/crazyRadioCommand", 1);
     // > For updating the "rf_status_label" picture
     crazyRadioStatusSubscriber = base_nodeHandle.subscribe("CrazyRadio/CrazyRadioStatus", 1, &CoordinatorRow::crazyRadioStatusCallback, this);
+
     // > For updating the current battery voltage
     batteryVoltageSubscriber = base_nodeHandle.subscribe("BatteryMonitor/FilteredVoltage", 1, &CoordinatorRow::batteryVoltageCallback, this);
     // > For updating the current battery state
     //batteryStateSubscriber = base_nodeHandle.subscribe("BatteryMonitor/ChangedStateTo", 1, &CoordinatorRow::batteryStateChangedCallback, this);
     // > For updating the current battery level
     batteryLevelSubscriber = base_nodeHandle.subscribe("BatteryMonitor/Level", 1, &CoordinatorRow::batteryLevelCallback, this);
+
     // > For Flying state commands based on button clicks
     flyingStateCommandPublisher = base_nodeHandle.advertise<d_fall_pps::IntWithHeader>("PPSClient/Command", 1);
     // > For updating the "flying_state_label" picture
     flyingStateSubscriber = base_nodeHandle.subscribe("PPSClient/flyingState", 1, &CoordinatorRow::flyingStateChangedCallback, this);
+
     // > For changes in the database that defines {agentID,cfID,flying zone} links
     databaseChangedSubscriber = dfall_root_nodeHandle.subscribe("CentralManagerService/DBChanged", 1, &CoordinatorRow::databaseChangedCallback, this);;
-    centralManagerDatabaseService = dfall_root_nodeHandle.serviceClient<CMQuery>("CentralManagerService/Query", false);
+    centralManagerDatabaseService = dfall_root_nodeHandle.serviceClient<d_fall_pps::CMQuery>("CentralManagerService/Query", false);
+
     // > For updating the controller that is currently operating
     controllerUsedSubscriber = base_nodeHandle.subscribe("PPSClient/controllerUsed", 1, &CoordinatorRow::controllerUsedChangedCallback, this);
 
@@ -145,9 +136,6 @@ CoordinatorRow::CoordinatorRow(QWidget *parent, int agentID) :
     // INITIALISATIONS ARE COMPLETE
     loadCrazyflieContext();
 
-    // FOR DEBUGGING:
-    //ui->shouldCoordinate_checkBox->setText(m_agentID_as_string);
-    //ui->shouldCoordinate_checkBox->setText(QString::fromStdString(base_namespace));
 }
 
 CoordinatorRow::~CoordinatorRow()
@@ -546,7 +534,6 @@ void CoordinatorRow::setFlyingState(int new_flying_state)
 
         case STATE_LAND:
         {
-            //qstr.append("Land");
             // SET THE APPROPRIATE IMAGE FOR THE FLYING STATE LABEL
             QPixmap flying_state_disabling_pixmap(":/images/flying_state_disabling.png");
             ui->flying_state_label->setPixmap(flying_state_disabling_pixmap);
@@ -569,6 +556,13 @@ void CoordinatorRow::setFlyingState(int new_flying_state)
 
 
 
+//    ----------------------------------------------------------------------------------
+//     CCCC   OOO   N   N  TTTTT  EEEEE  X   X  TTTTT
+//    C      O   O  NN  N    T    E       X X     T
+//    C      O   O  N N N    T    EEE      X      T
+//    C      O   O  N  NN    T    E       X X     T
+//     CCCC   OOO   N   N    T    EEEEE  X   X    T
+//    ----------------------------------------------------------------------------------
 
 
 
@@ -587,7 +581,7 @@ void CoordinatorRow::loadCrazyflieContext()
 {
     QString qstr_crazyflie_name = "";
 #ifdef CATKIN_MAKE
-    CMQuery contextCall;
+    d_fall_pps::CMQuery contextCall;
     contextCall.request.studentID = m_agentID;
     //ROS_INFO_STREAM("StudentID:" << m_agentID);
 
@@ -596,13 +590,13 @@ void CoordinatorRow::loadCrazyflieContext()
     if(centralManagerDatabaseService.call(contextCall))
     {
         my_context = contextCall.response.crazyflieContext;
-        ROS_INFO_STREAM("[COORDINATOR ROW GUI] CrazyflieContext:\n" << my_context);
+        ROS_INFO_STREAM("[COORDINATOR ROW agentID:" << m_agentID << " GUI] CrazyflieContext:\n" << my_context);
 
         qstr_crazyflie_name.append(QString::fromStdString(my_context.crazyflieName));
     }
     else
     {
-        ROS_ERROR_STREAM("[COORDINATOR ROW GUI] Failed to load context for agentID = " << m_agentID);
+        ROS_ERROR_STREAM("[COORDINATOR ROW agentID:" << m_agentID << " GUI] Failed to load context for agentID = " << m_agentID);
     }
     // This updating of the radio only needs to be done by the actual agent's node
     //ros::NodeHandle nh("CrazyRadio");
@@ -622,6 +616,18 @@ void CoordinatorRow::loadCrazyflieContext()
     // Set the name of the Crazyflie to the class variable
     m_crazyflie_name_as_string = qstr_crazyflie_name;
 }
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//     CCCC   OOO   N   N  TTTTT  RRRR    OOO   L      L      EEEEE  RRRR
+//    C      O   O  NN  N    T    R   R  O   O  L      L      E      R   R
+//    C      O   O  N N N    T    RRRR   O   O  L      L      EEE    RRRR
+//    C      O   O  N  NN    T    R   R  O   O  L      L      E      R   R
+//     CCCC   OOO   N   N    T    R   R   OOO   LLLLL  LLLLL  EEEEE  R   R
+//    ----------------------------------------------------------------------------------
+
 
 
 #ifdef CATKIN_MAKE
@@ -697,7 +703,7 @@ void CoordinatorRow::on_rf_connect_button_clicked()
     msg.shouldCheckForID = false;
     msg.data = CMD_RECONNECT;
     this->crazyRadioCommandPublisher.publish(msg);
-    ROS_INFO("[COORDINATOR ROW GUI] Command to RF reconnect published");
+    ROS_INFO_STREAM("[COORDINATOR ROW agentID:" << m_agentID << " GUI] Connect button clicked");
 #endif
 }
 
@@ -708,7 +714,7 @@ void CoordinatorRow::on_rf_disconnect_button_clicked()
     msg.shouldCheckForID = false;
     msg.data = CMD_DISCONNECT;
     this->crazyRadioCommandPublisher.publish(msg);
-    ROS_INFO("[COORDINATOR ROW GUI] Command to RF disconnect published");
+    ROS_INFO_STREAM("[COORDINATOR ROW agentID:" << m_agentID << " GUI] Disconnect button clicked");
 #endif
 }
 
@@ -719,6 +725,7 @@ void CoordinatorRow::on_enable_flying_button_clicked()
     msg.shouldCheckForID = false;
     msg.data = CMD_CRAZYFLY_TAKE_OFF;
     this->flyingStateCommandPublisher.publish(msg);
+    ROS_INFO_STREAM("[COORDINATOR ROW agentID:" << m_agentID << " GUI] Enable flying button clicked");
 #endif
 }
 
@@ -729,6 +736,7 @@ void CoordinatorRow::on_disable_flying_button_clicked()
     msg.shouldCheckForID = false;
     msg.data = CMD_CRAZYFLY_LAND;
     this->flyingStateCommandPublisher.publish(msg);
+    ROS_INFO_STREAM("[COORDINATOR ROW agentID:" << m_agentID << " GUI] Disable flying button clicked");
 #endif
 }
 
@@ -739,6 +747,7 @@ void CoordinatorRow::on_motors_off_button_clicked()
     msg.shouldCheckForID = false;
     msg.data = CMD_CRAZYFLY_MOTORS_OFF;
     this->flyingStateCommandPublisher.publish(msg);
+    ROS_INFO_STREAM("[COORDINATOR ROW agentID:" << m_agentID << " GUI] Motors-off button clicked");
 #endif
 }
 

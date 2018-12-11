@@ -146,7 +146,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
     // ROS_INFO_STREAM("controlOutput.cmd2 = " << response.controlOutput.motorCmd3);
     // ROS_INFO_STREAM("controlOutput.cmd4 = " << response.controlOutput.motorCmd4);
 
-    response.controlOutput.onboardControllerType = RATE_MODE;
+    response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
 
     previousLocation = request.ownCrazyflie;
 

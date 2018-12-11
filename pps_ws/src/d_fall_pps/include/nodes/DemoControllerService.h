@@ -50,7 +50,14 @@
 #include "ros/ros.h"
 #include <ros/package.h>
 
+// Include the standard message types
+#include "std_msgs/Int32.h"
+#include "std_msgs/Float32.h"
+#include <std_msgs/String.h>
+
 //the generated structs from the msg-files have to be included
+#include "d_fall_pps/IntWithHeader.h"
+#include "d_fall_pps/StringWithHeader.h"
 #include "d_fall_pps/ViconData.h"
 #include "d_fall_pps/Setpoint.h"
 #include "d_fall_pps/ControlCommand.h"
@@ -61,7 +68,18 @@
 // Include the Parameter Service shared definitions
 #include "nodes/Constants.h"
 
-#include <std_msgs/Int32.h>
+// Include other classes
+#include "classes/GetParamtersAndNamespaces.h"
+
+// Need for having a ROS "bag" to store data for post-analysis
+//#include <rosbag/bag.h>
+
+
+
+
+
+// Namespacing the package
+using namespace d_fall_pps;
 
 
 
@@ -77,23 +95,33 @@
 
 // These constants are defined to make the code more readable and adaptable.
 
-// These constants define the modes that can be used for controller the Crazyflie 2.0,
-// the constants defined here need to be in agreement with those defined in the
-// firmware running on the Crazyflie 2.0.
+// These constants define the modes that can be used for controller this is
+// running on-board the Crazyflie 2.0.
+// Therefore, the constants defined here need to be in agreement with those
+// defined in the firmware running on-board the Crazyflie 2.0.
 // The following is a short description about each mode:
-// MOTOR_MODE    In this mode the Crazyflie will apply the requested 16-bit per motor
-//               command directly to each of the motors
-// RATE_MODE     In this mode the Crazyflie will apply the requested 16-bit per motor
-//               command directly to each of the motors, and additionally request the
-//               body frame roll, pitch, and yaw angular rates from the PID rate
-//               controllers implemented in the Crazyflie 2.0 firmware.
-// ANGE_MODE     In this mode the Crazyflie will apply the requested 16-bit per motor
-//               command directly to each of the motors, and additionally request the
-//               body frame roll, pitch, and yaw angles from the PID attitude
-//               controllers implemented in the Crazyflie 2.0 firmware.
-#define CF_COMMAND_TYPE_MOTOR   6
-#define CF_COMMAND_TYPE_RATE    7
-#define CF_COMMAND_TYPE_ANGLE   8
+//
+// CF_COMMAND_TYPE_MOTORS
+//     In this mode the Crazyflie will apply the requested 16-bit per motor
+//     command directly to each of the motors
+//
+// CF_COMMAND_TYPE_RATE
+//     In this mode the Crazyflie will apply the requested 16-bit per motor
+//     command directly to each of the motors, and additionally request the
+//     body frame roll, pitch, and yaw angular rates from the PID rate
+//     controllers implemented in the Crazyflie 2.0 firmware.
+//
+// CF_COMMAND_TYPE_ANGLE
+//     In this mode the Crazyflie will apply the requested 16-bit per motor
+//     command directly to each of the motors, and additionally request the
+//     body frame roll, pitch, and yaw angles from the PID attitude
+//     controllers implemented in the Crazyflie 2.0 firmware.
+//#define CF_COMMAND_TYPE_MOTORS 6
+//#define CF_COMMAND_TYPE_RATE   7
+//#define CF_COMMAND_TYPE_ANGLE  8
+
+
+
 
 
 // These constants define the controller used for computing the response in the
@@ -122,6 +150,9 @@
 #define CONTROLLER_MODE_ANGLE_RESPONSE_TEST     6
 
 
+
+
+
 // These constants define the method used for estimating the Inertial
 // frame state.
 // All methods are run at all times, this flag indicates which estimate
@@ -143,10 +174,6 @@
 #define ESTIMATOR_METHOD_FINITE_DIFFERENCE          1
 #define ESTIMATOR_METHOD_POINT_MASS_PER_DIMENSION   2   // (DEFAULT)
 #define ESTIMATOR_METHOD_QUADROTOR_MODEL_BASED      3
-
-
-// Namespacing the package
-using namespace d_fall_pps;
 
 
 
@@ -289,9 +316,9 @@ std::vector<float> PMKF_Kinf_for_angles         (2,0.0);
 
 // VARIABLES FOR THE NAMESPACES FOR THE PARAMETER SERVICES
 // > For the paramter service of this agent
-std::string namespace_to_own_agent_parameter_service;
+std::string m_namespace_to_own_agent_parameter_service;
 // > For the parameter service of the coordinator
-std::string namespace_to_coordinator_parameter_service;
+std::string m_namespace_to_coordinator_parameter_service;
 
 
 // ROS PUBLISHER FOR SENDING OUT THE DEBUG MESSAGES
@@ -317,7 +344,10 @@ bool shouldDisplayDebugInfo = false;
 // POSITION
 
 // The ID of this agent, i.e., the ID of this compute
-int my_agentID = 0;
+int m_agentID = 0;
+
+// The ID of this agent, i.e., the ID of this compute
+int m_coordID = 0;
 
 // Boolean indicating whether the (x,y,z,yaw) of this agent should be published or not
 // > The default behaviour is: do not publish,
@@ -429,14 +459,7 @@ void customCommandReceivedCallback(const CustomButton& commandReceived);
 void publish_current_xyz_yaw(float x, float y, float z, float yaw);
 
 // LOAD PARAMETERS
-float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name);
-void  getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length);
-int   getParameterInt(ros::NodeHandle& nodeHandle, std::string name);
-void  getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val, int length);
-int   getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val);
-bool  getParameterBool(ros::NodeHandle& nodeHandle, std::string name);
-
-void yamlReadyForFetchCallback(const std_msgs::Int32& msg);
-void fetchYamlParameters(ros::NodeHandle& nodeHandle);
+void isReadyDemoControllerYamlCallback(const IntWithHeader & msg);
+void fetchDemoControllerYamlParameters(ros::NodeHandle& nodeHandle);
 void processFetchedParameters();
 

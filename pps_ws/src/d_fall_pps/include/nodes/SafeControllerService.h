@@ -48,18 +48,34 @@
 #include "ros/ros.h"
 #include <std_msgs/String.h>
 #include <ros/package.h>
-#include "std_msgs/Float32.h"
 
+// Include the standard message types
+#include "std_msgs/Int32.h"
+#include "std_msgs/Float32.h"
+//#include <std_msgs/String.h>
+
+// Include the DFALL message types
+#include "d_fall_pps/IntWithHeader.h"
 #include "d_fall_pps/CrazyflieData.h"
 #include "d_fall_pps/Setpoint.h"
 #include "d_fall_pps/ControlCommand.h"
 #include "d_fall_pps/Controller.h"
-#include "d_fall_pps/LoadYamlFiles.h"
 
-#include <std_msgs/Int32.h>
 
 // Include the shared definitions
 #include "nodes/Constants.h"
+
+// Include other classes
+#include "classes/GetParamtersAndNamespaces.h"
+
+
+
+
+
+// Namespacing the package
+using namespace d_fall_pps;
+
+
 
 
 
@@ -73,26 +89,36 @@
 
 // These constants are defined to make the code more readable and adaptable.
 
-// The constants define the modes that can be used for controller the Crazyflie 2.0,
-// the constants defined here need to be in agreement with those defined in the
-// firmware running on the Crazyflie 2.0.
-// The following is a short description about each mode:
-// MOTOR_MODE    In this mode the Crazyflie will apply the requested 16-bit per motor
-//               command directly to each of the motors
-// RATE_MODE     In this mode the Crazyflie will apply the requested 16-bit per motor
-//               command directly to each of the motors, and additionally request the
-//               body frame roll, pitch, and yaw angular rates from the PID rate
-//               controllers implemented in the Crazyflie 2.0 firmware.
-// ANGE_MODE     In this mode the Crazyflie will apply the requested 16-bit per motor
-//               command directly to each of the motors, and additionally request the
-//               body frame roll, pitch, and yaw angles from the PID attitude
-//               controllers implemented in the Crazyflie 2.0 firmware.
-#define MOTOR_MODE 6
-#define RATE_MODE  7
-#define ANGLE_MODE 8
 
-// Namespacing the package
-using namespace d_fall_pps;
+// NOTE: these constants are already defined in the "Constant.h" header file
+//       and are repeated here for convenience
+
+// These constants define the modes that can be used for controller this is
+// running on-board the Crazyflie 2.0.
+// Therefore, the constants defined here need to be in agreement with those
+// defined in the firmware running on-board the Crazyflie 2.0.
+// The following is a short description about each mode:
+//
+// CF_COMMAND_TYPE_MOTORS
+//     In this mode the Crazyflie will apply the requested 16-bit per motor
+//     command directly to each of the motors
+//
+// CF_COMMAND_TYPE_RATE
+//     In this mode the Crazyflie will apply the requested 16-bit per motor
+//     command directly to each of the motors, and additionally request the
+//     body frame roll, pitch, and yaw angular rates from the PID rate
+//     controllers implemented in the Crazyflie 2.0 firmware.
+//
+// CF_COMMAND_TYPE_ANGLE
+//     In this mode the Crazyflie will apply the requested 16-bit per motor
+//     command directly to each of the motors, and additionally request the
+//     body frame roll, pitch, and yaw angles from the PID attitude
+//     controllers implemented in the Crazyflie 2.0 firmware.
+//#define CF_COMMAND_TYPE_MOTORS 6
+//#define CF_COMMAND_TYPE_RATE   7
+//#define CF_COMMAND_TYPE_ANGLE  8
+
+
 
 
 

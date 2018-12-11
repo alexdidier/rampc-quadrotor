@@ -74,15 +74,6 @@
 			>
 		</node>
 
-		<!-- MPC CONTROLLER -->
-		<node
-			pkg    = "d_fall_pps"
-			name   = "MpcControllerService"
-			output = "screen"
-			type   = "MpcControllerService"
-			>
-		</node>
-
 		<!-- REMOTE CONTROLLER -->
 		<node
 			pkg    = "d_fall_pps"
@@ -133,21 +124,6 @@
 				command = "load"
 				file    = "$(find d_fall_pps)/param/SafeController.yaml"
 				ns      = "SafeController"
-			/>
-			<rosparam
-				command = "load"
-				file    = "$(find d_fall_pps)/param/DemoController.yaml"
-				ns      = "DemoController"
-			/>
-			<rosparam
-				command = "load"
-				file    = "$(find d_fall_pps)/param/StudentController.yaml"
-				ns      = "StudentController"
-			/>
-			<rosparam
-				command = "load"
-				file    = "$(find d_fall_pps)/param/MpcController.yaml"
-				ns      = "MpcController"
 			/>
 			<rosparam
 				command = "load"

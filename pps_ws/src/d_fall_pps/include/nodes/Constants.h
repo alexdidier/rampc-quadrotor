@@ -30,6 +30,9 @@
 //    ----------------------------------------------------------------------------------
 
 
+
+
+
 //    ----------------------------------------------------------------------------------
 //    U   U
 //    U   U
@@ -49,10 +52,53 @@
 
 
 
-// Types PPS firmware
+
+//    ----------------------------------------------------------------------------------
+//    
+//    
+//    
+//    
+//    
+//    ----------------------------------------------------------------------------------
+
+
+
+// These constants define the modes that can be used for controller this is
+// running on-board the Crazyflie 2.0.
+// Therefore, the constants defined here need to be in agreement with those
+// defined in the firmware running on-board the Crazyflie 2.0.
+// The following is a short description about each mode:
+//
+// CF_COMMAND_TYPE_MOTORS
+//     In this mode the Crazyflie will apply the requested 16-bit per motor
+//     command directly to each of the motors
+//
+// CF_COMMAND_TYPE_RATE
+//     In this mode the Crazyflie will apply the requested 16-bit per motor
+//     command directly to each of the motors, and additionally request the
+//     body frame roll, pitch, and yaw angular rates from the PID rate
+//     controllers implemented in the Crazyflie 2.0 firmware.
+//
+// CF_COMMAND_TYPE_ANGLE
+//     In this mode the Crazyflie will apply the requested 16-bit per motor
+//     command directly to each of the motors, and additionally request the
+//     body frame roll, pitch, and yaw angles from the PID attitude
+//     controllers implemented in the Crazyflie 2.0 firmware.
 #define CF_COMMAND_TYPE_MOTORS 6
 #define CF_COMMAND_TYPE_RATE   7
 #define CF_COMMAND_TYPE_ANGLE  8
+
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//    
+//    
+//    
+//    
+//    
+//    ----------------------------------------------------------------------------------
 
 // Types of controllers being used:
 #define SAFE_CONTROLLER      1

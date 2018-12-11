@@ -1,3 +1,35 @@
+//    Copyright (C) 2018, ETH Zurich, D-ITET, Paul Beuchat
+//
+//    This file is part of D-FaLL-System.
+//
+//    D-FaLL-System is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    D-FaLL-System is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with D-FaLL-System.  If not, see <http://www.gnu.org/licenses/>.
+//
+//
+//    ----------------------------------------------------------------------------------
+//    DDDD        FFFFF        L     L           SSSS  Y   Y   SSSS  TTTTT  EEEEE  M   M
+//    D   D       F      aaa   L     L          S       Y Y   S        T    E      MM MM
+//    D   D  ---  FFFF  a   a  L     L     ---   SSS     Y     SSS     T    EEE    M M M
+//    D   D       F     a  aa  L     L              S    Y        S    T    E      M   M
+//    DDDD        F      aa a  LLLL  LLLL       SSSS     Y    SSSS     T    EEEEE  M   M
+//
+//
+//    DESCRIPTION:
+//    The bar of the GUI for (dis-)connecting (from)to the Crazyradio
+//    and for sending the {take-off,land,motors-off} commands//
+//    ----------------------------------------------------------------------------------
+
+
 #ifndef CONNECTSTARTSTOPBAR_H
 #define CONNECTSTARTSTOPBAR_H
 
@@ -74,9 +106,6 @@ private:
 	// > For the ID of this node
 	int m_ID = 0;
 
-	// The namespace into which node operates
-	std::string m_base_namespace;
-
     // For coordinating multiple agents
     std::vector<int> m_vector_of_agentIDs_toCoordinate;
     bool m_shouldCoordinateAll = true;
@@ -99,26 +128,7 @@ private:
     //QMutex m_battery_voltage_lineEdit_mutex;
     // > For the "battery_status_label" UI element
     QMutex m_battery_status_label_mutex;
-    
 
-
-#ifdef CATKIN_MAKE
-	// PUBLISHERS AND SUBSRIBERS
-    // > For Crazyradio commands based on button clicks
-    ros::Publisher crazyRadioCommandPublisher;
-    // > For updating the "rf_status_label" picture
-    ros::Subscriber crazyRadioStatusSubscriber;
-    // > For updating the current battery voltage
-    ros::Subscriber batteryVoltageSubscriber;
-    // > For updating the current battery state
-    //ros::Subscriber batteryStateSubscriber;
-    // > For updating the current battery level
-    ros::Subscriber batteryLevelSubscriber;
-    // > For Flying state commands based on button clicks
-    ros::Publisher flyingStateCommandPublisher;
-    // > For updating the "flying_state_label" picture
-    ros::Subscriber flyingStateSubscriber;
-#endif
 
 
     // --------------------------------------------------- //
@@ -129,22 +139,50 @@ private:
     void disableFlyingStateButtons();
     void enableFlyingStateButtons();
 
-    // > For updating the RF Radio status shown in the
-    //   UI element of "rf_status_label"
+    // > For updating the RF Radio status shown in the UI element
+    //   of "rf_status_label"
     void setCrazyRadioStatus(int radio_status);
+
     // > For updating the battery state
     void setBatteryState(int new_battery_state);
     // > For updating the battery voltage shown in the UI elements 
     //   of "battery_voltage_lineEdit" and "battery_status_label"
     void setBatteryVoltageText(float battery_voltage);
     void setBatteryImageBasedOnLevel(int battery_level);
-    // > For updating the "my_flying_state" variable, and
-    //   the UI element of "flying_state_label"
+
+    // > For updating the "my_flying_state" variable, and the
+    //   UI element of "flying_state_label"
     void setFlyingState(int new_flying_state);
 
 
 
 #ifdef CATKIN_MAKE
+    // --------------------------------------------------- //
+    // PRIVATE VARIABLES FOR ROS
+
+
+    // PUBLISHERS AND SUBSRIBERS
+    // > For Crazyradio commands based on button clicks
+    ros::Publisher crazyRadioCommandPublisher;
+    // > For updating the "rf_status_label" picture
+    ros::Subscriber crazyRadioStatusSubscriber;
+
+    // > For updating the current battery voltage
+    ros::Subscriber batteryVoltageSubscriber;
+    // > For updating the current battery state
+    //ros::Subscriber batteryStateSubscriber;
+    // > For updating the current battery level
+    ros::Subscriber batteryLevelSubscriber;
+
+    // > For Flying state commands based on button clicks
+    ros::Publisher flyingStateCommandPublisher;
+    // > For updating the "flying_state_label" picture
+    ros::Subscriber flyingStateSubscriber;
+
+
+    // --------------------------------------------------- //
+    // PRIVATE CALLBACKS IN RESPONSE TO ROS MESSAGES
+
     // Get the type and ID of this node
     bool getTypeAndIDParameters();
 	// Fill the head for a message
@@ -153,6 +191,7 @@ private:
     // > For the CrazyRadio status, received on the
     //   "crazyRadioStatusSubscriber"
     void crazyRadioStatusCallback(const std_msgs::Int32& msg);
+
     // > For the Battery Voltage, received on the
     //   "batteryVoltageSubscriber"
     void batteryVoltageCallback(const std_msgs::Float32& msg);
@@ -162,6 +201,7 @@ private:
     // > For the Battery Level, receieved on the
     //   "batteryLevelSubscriber"
     void batteryLevelCallback(const std_msgs::Int32& msg);
+
     // > For the Flying State, received on the
     //   "flyingStateSubscriber"
     void flyingStateChangedCallback(const std_msgs::Int32& msg);

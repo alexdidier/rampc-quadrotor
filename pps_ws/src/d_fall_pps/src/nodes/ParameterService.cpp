@@ -264,7 +264,7 @@ void requestLoadYamlFilenameCallback(const StringWithHeader& yaml_filename_to_lo
 
     // Create publisher as a local variable, using the filename
     // as the name of the message
-    ros::Publisher yamlParametersReadyForFetchPublisher = nodeHandle.advertise<IntWithHeader>(yaml_filename_to_load, 1);
+    ros::Publisher yamlParametersReadyForFetchPublisher = nodeHandle.advertise<IntWithHeader>(yaml_filename_to_load, 1, true);
     //ros::spinOnce();
     // Create a local variable for the message
     IntWithHeader yaml_ready_msg;

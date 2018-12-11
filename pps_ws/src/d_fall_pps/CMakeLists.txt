@@ -325,8 +325,10 @@ add_executable(PPSClient                 src/nodes/PPSClient.cpp
 add_executable(BatteryMonitor            src/nodes/BatteryMonitor.cpp
                                          src/classes/GetParamtersAndNamespaces.cpp)
 add_executable(SafeControllerService     src/nodes/SafeControllerService.cpp)
-add_executable(DemoControllerService     src/nodes/DemoControllerService.cpp)
-add_executable(StudentControllerService  src/nodes/StudentControllerService.cpp)
+add_executable(DemoControllerService     src/nodes/DemoControllerService.cpp
+                                         src/classes/GetParamtersAndNamespaces.cpp)
+add_executable(StudentControllerService  src/nodes/StudentControllerService.cpp
+                                         src/classes/GetParamtersAndNamespaces.cpp)
 add_executable(MpcControllerService      src/nodes/MpcControllerService.cpp)
 add_executable(RemoteControllerService   src/nodes/RemoteControllerService.cpp)
 add_executable(TuningControllerService   src/nodes/TuningControllerService.cpp)

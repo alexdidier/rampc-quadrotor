@@ -296,15 +296,13 @@ class PPSRadioClient:
     def crazyRadioCommandCallback(self, msg):
         """Callback to tell CrazyRadio to reconnect"""
 
-        print "[CRAZY RADIO]  DEBUGGING received command"
-
         # Initialise a boolean flag that the command is NOT relevant
         command_is_relevant = False
 
         # Check the header details of the message for it relevance
-        if (!msg.shouldCheckForID):
+        if (msg.shouldCheckForID == False):
             command_is_relevant = True
-        else
+        else:
             for this_ID in msg.agentIDs:
                 if (this_ID == m_agentID):
                     command_is_relevant = True
@@ -398,6 +396,8 @@ if __name__ == '__main__':
     global cf_client
     cf_client = PPSRadioClient()
 
+    print "[CRAZY RADIO] DEBUG 2"
+
     # Subscribe to the commands for when to (dis-)connect the
     # CrazyRadio connection with the Crazyflie
     # > For the radio commands from the PPSClient of this agent
@@ -410,6 +410,7 @@ if __name__ == '__main__':
 
     rospy.Subscriber("PPSClient/ControlCommand", ControlCommand, controlCommandCallback)
 
+    print "[CRAZY RADIO] Node READY :-)"
     rospy.spin()
     rospy.loginfo("[CRAZY RADIO] Turning off crazyflie")
 

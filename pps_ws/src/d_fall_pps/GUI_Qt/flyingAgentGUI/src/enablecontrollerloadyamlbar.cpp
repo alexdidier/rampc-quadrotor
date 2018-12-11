@@ -31,6 +31,10 @@ EnableControllerLoadYamlBar::EnableControllerLoadYamlBar(QWidget *parent) :
 
     // CREATE THE COMMAND PUBLISHER
     commandPublisher = nodeHandle_for_this_gui.advertise<d_fall_pps::IntWithHeader>("PPSClient/Command", 1);
+
+    // CREATE THE REQUEST LOAD YAML FILE PUBLISHER
+    // Get the node handle to this parameter service
+    m_requestLoadYamlFilenamePublisher = nodeHandle_for_this_gui.advertise<d_fall_pps::StringWithHeader>("ParameterService/requestLoadYamlFilename", 1);
 #endif
 
 }
@@ -94,17 +98,41 @@ void EnableControllerLoadYamlBar::on_enable_default_button_clicked()
 
 void EnableControllerLoadYamlBar::on_load_yaml_safe_button_clicked()
 {
+#ifdef CATKIN_MAKE
 
+#endif
 }
 
 void EnableControllerLoadYamlBar::on_load_yaml_demo_button_clicked()
 {
-
+#ifdef CATKIN_MAKE
+    // Create a local variable for the message
+    d_fall_pps::StringWithHeader yaml_filename_msg;
+    // Set for whom this applies to
+    fillStringMessageHeader(yaml_filename_msg);
+    // Specify the data
+    yaml_filename_msg.data = "DemoController";
+    // Send the message
+    m_requestLoadYamlFilenamePublisher.publish(yaml_filename_msg);
+    // Inform the user that the menu item was selected
+    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Load Demo Controller YAML was clicked.");
+#endif
 }
 
 void EnableControllerLoadYamlBar::on_load_yaml_student_button_clicked()
 {
-
+#ifdef CATKIN_MAKE
+    // Create a local variable for the message
+    d_fall_pps::StringWithHeader yaml_filename_msg;
+    // Set for whom this applies to
+    fillStringMessageHeader(yaml_filename_msg);
+    // Specify the data
+    yaml_filename_msg.data = "StudentController";
+    // Send the message
+    m_requestLoadYamlFilenamePublisher.publish(yaml_filename_msg);
+    // Inform the user that the menu item was selected
+    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Load Student Controller YAML was clicked.");
+#endif
 }
 
 void EnableControllerLoadYamlBar::on_load_yaml_default_button_clicked()
@@ -174,6 +202,50 @@ void EnableControllerLoadYamlBar::setAgentIDsToCoordinate(QVector<int> agentIDs 
 #ifdef CATKIN_MAKE
 // Fill the head for a message
 void EnableControllerLoadYamlBar::fillIntMessageHeader( d_fall_pps::IntWithHeader & msg )
+{
+    switch (m_type)
+    {
+        case TYPE_AGENT:
+        {
+            msg.shouldCheckForID = false;
+            break;
+        }
+        case TYPE_COORDINATOR:
+        {
+            // Lock the mutex
+            m_agentIDs_toCoordinate_mutex.lock();
+            // Add the "coordinate all" flag
+            msg.shouldCheckForID = !(m_shouldCoordinateAll);
+            // Add the agent IDs if necessary
+            if (!m_shouldCoordinateAll)
+            {
+                for ( int irow = 0 ; irow < m_vector_of_agentIDs_toCoordinate.size() ; irow++ )
+                {
+                    msg.agentIDs.push_back( m_vector_of_agentIDs_toCoordinate[irow] );
+                }
+            }
+            // Unlock the mutex
+            m_agentIDs_toCoordinate_mutex.unlock();
+            break;
+        }
+
+        default:
+        {
+            msg.shouldCheckForID = true;
+            ROS_ERROR("[ENABLE CONTROLLER LOAD YAML GUI BAR] The 'm_type' variable was not recognised.");
+            break;
+        }
+    } 
+}
+#endif
+
+
+
+
+
+#ifdef CATKIN_MAKE
+// Fill the head for a message
+void EnableControllerLoadYamlBar::fillStringMessageHeader( d_fall_pps::StringWithHeader & msg )
 {
     switch (m_type)
     {
