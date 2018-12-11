@@ -100,7 +100,7 @@ private:
 
 
 
-    #ifdef CATKIN_MAKE
+#ifdef CATKIN_MAKE
     // --------------------------------------------------- //
     // PRIVATE VARIABLES FOR ROS
 
@@ -123,9 +123,15 @@ private:
     // > For the notification that the database was changes,
     //   received on the "DatabaseChangedSubscriber"
     void databaseChangedCallback(const std_msgs::Int32& msg);
-
-
 #endif
+
+
+private slots:
+
+    // PRIVATE METHODS FOR BUTTON CALLBACKS
+    // > For the emergency stop button
+    void on_emergency_stop_button_clicked();
+
 };
 
 #endif // TOPBANNER_H

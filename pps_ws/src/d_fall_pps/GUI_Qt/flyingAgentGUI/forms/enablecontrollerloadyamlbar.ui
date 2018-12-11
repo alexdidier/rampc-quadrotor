@@ -41,13 +41,13 @@
        <property name="minimumSize">
         <size>
          <width>60</width>
-         <height>70</height>
+         <height>50</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
          <width>180</width>
-         <height>70</height>
+         <height>50</height>
         </size>
        </property>
        <property name="font">
@@ -72,13 +72,13 @@
        <property name="minimumSize">
         <size>
          <width>0</width>
-         <height>70</height>
+         <height>50</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
          <width>16777215</width>
-         <height>70</height>
+         <height>50</height>
         </size>
        </property>
        <property name="font">
@@ -106,13 +106,13 @@
        <property name="minimumSize">
         <size>
          <width>60</width>
-         <height>70</height>
+         <height>50</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
          <width>180</width>
-         <height>70</height>
+         <height>50</height>
         </size>
        </property>
        <property name="font">
@@ -246,13 +246,13 @@
        <property name="minimumSize">
         <size>
          <width>60</width>
-         <height>70</height>
+         <height>50</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
          <width>180</width>
-         <height>70</height>
+         <height>50</height>
         </size>
        </property>
        <property name="font">
@@ -277,13 +277,13 @@
        <property name="minimumSize">
         <size>
          <width>60</width>
-         <height>70</height>
+         <height>50</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
          <width>180</width>
-         <height>70</height>
+         <height>50</height>
         </size>
        </property>
        <property name="font">

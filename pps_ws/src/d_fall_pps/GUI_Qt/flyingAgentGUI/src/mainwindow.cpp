@@ -121,12 +121,14 @@ void MainWindow::on_actionShowHide_Coordinator_triggered()
     if ( ui->customWidget_coordinator->isHidden() )
     {
         ui->customWidget_coordinator->show();
+        ui->coordinator_to_main_panel_vertical_line->show();
         QString qstr = "Hide Coordinator";
         ui->actionShowHide_Coordinator->setText(qstr);
     }
     else
     {
         ui->customWidget_coordinator->hide();
+        ui->coordinator_to_main_panel_vertical_line->hide();
         QString qstr = "Show Coordinator";
         ui->actionShowHide_Coordinator->setText(qstr);
     }

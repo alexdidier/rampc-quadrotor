@@ -36,7 +36,12 @@
 #include "topbanner.h"
 #include "ui_topbanner.h"
 
+#ifdef CATKIN_MAKE
+#else
+// Include the shared definitions
+#include "include/Constants_for_Qt_compile.h"
 
+#endif
 
 
 
@@ -45,12 +50,19 @@ TopBanner::TopBanner(QWidget *parent) :
     ui(new Ui::TopBanner)
 {
     ui->setupUi(this);
+    (":/images/rf_connected.png");
+    QPixmap pixmap(":/images/rf_connected.png");
+    QIcon ButtonIcon(pixmap);
+    ui->emergency_stop_button->setText("");
+    ui->emergency_stop_button->setIcon(ButtonIcon);
+    ui->emergency_stop_button->setIconSize(QSize(50,50));
+    //ui->emergency_stop_button->setIconSize(pixmap.rect().size());
 
 
 #ifdef CATKIN_MAKE
     // Get the namespace of this node
     std::string base_namespace = ros::this_node::getNamespace();
-    ROS_INFO_STREAM("[CONNECT START STOP GUI BAR] ros::this_node::getNamespace() =  " << base_namespace);
+    ROS_INFO_STREAM("[TOP BANNER GUI] ros::this_node::getNamespace() =  " << base_namespace);
 
 
     // Get the type and ID of this parameter service
@@ -59,7 +71,7 @@ TopBanner::TopBanner(QWidget *parent) :
     // Stall if the TYPE and ID are not valid
     if ( !isValid_type_and_ID )
     {
-        ROS_ERROR("[CONNECT START STOP GUI BAR] Node NOT FUNCTIONING :-)");
+        ROS_ERROR("[TOP BANNER GUI] Node NOT FUNCTIONING :-)");
         ros::spin();
     }
 #else
@@ -133,7 +145,7 @@ TopBanner::~TopBanner()
 // > For the notification that the database was changes, received on the "DatabaseChangedSubscriber"
 void TopBanner::databaseChangedCallback(const std_msgs::Int32& msg)
 {
-    //ROS_INFO_STEAM("[COORDINATOR ROW GUI] Database Changed Callback called for agentID = " << m_agentID);
+    //ROS_INFO_STEAM("[TOP BANNER GUI] Database Changed Callback called for agentID = " << m_agentID);
     loadCrazyflieContext();
 }
 #endif
@@ -194,6 +206,30 @@ void TopBanner::loadCrazyflieContext()
 
 
 
+//    ----------------------------------------------------------------------------------
+//    BBBB   U   U  TTTTT  TTTTT   OOO   N   N   SSSS
+//    B   B  U   U    T      T    O   O  NN  N  S
+//    BBBB   U   U    T      T    O   O  N N N   SSS
+//    B   B  U   U    T      T    O   O  N  NN      S
+//    BBBB    UUU     T      T     OOO   N   N  SSSS
+//    ----------------------------------------------------------------------------------
+
+
+
+void TopBanner::on_emergency_stop_button_clicked()
+{
+#ifdef CATKIN_MAKE
+    d_fall_pps::IntWithHeader msg;
+    fillIntMessageHeader(msg);
+    msg.data = CMD_RECONNECT;
+    this->crazyRadioCommandPublisher.publish(msg);
+    ROS_INFO("[TOP BANNER GUI] EMERGENCY STOP button clicked");
+#endif
+}
+
+
+
+
 
 //    ----------------------------------------------------------------------------------
 //    III  DDDD       &&&      TTTTT  Y   Y  PPPP   EEEEE
@@ -220,7 +256,7 @@ bool TopBanner::getTypeAndIDParameters()
     if(!nodeHandle.getParam("type", type_string))
     {
         // Throw an error if the agent ID parameter could not be obtained
-        ROS_ERROR("[CONNECT START STOP GUI BAR] Failed to get type");
+        ROS_ERROR("[TOP BANNER GUI] Failed to get type");
     }
 
     // Set the "m_type" class variable based on this string loaded
@@ -237,7 +273,7 @@ bool TopBanner::getTypeAndIDParameters()
         // Set "m_type" to the value indicating that it is invlid
         m_type = TYPE_INVALID;
         return_was_successful = false;
-        ROS_ERROR("[CONNECT START STOP GUI BAR] The 'type' parameter retrieved was not recognised.");
+        ROS_ERROR("[TOP BANNER GUI] The 'type' parameter retrieved was not recognised.");
     }
 
 
@@ -251,12 +287,12 @@ bool TopBanner::getTypeAndIDParameters()
             {
                 // Throw an error if the agent ID parameter could not be obtained
                 return_was_successful = false;
-                ROS_ERROR("[CONNECT START STOP GUI BAR] Failed to get agentID");
+                ROS_ERROR("[TOP BANNER GUI] Failed to get agentID");
             }
             else
             {
                 // Inform the user about the type and ID
-                ROS_INFO_STREAM("[CONNECT START STOP GUI BAR] Is of type AGENT with ID = " << m_ID);
+                ROS_INFO_STREAM("[TOP BANNER GUI] Is of type AGENT with ID = " << m_ID);
             }
             break;
         }
@@ -270,12 +306,12 @@ bool TopBanner::getTypeAndIDParameters()
             {
                 // Throw an error if the coord ID parameter could not be obtained
                 return_was_successful = false;
-                ROS_ERROR("[CONNECT START STOP GUI BAR] Failed to get coordID");
+                ROS_ERROR("[TOP BANNER GUI] Failed to get coordID");
             }
             else
             {
                 // Inform the user about the type and ID
-                ROS_INFO_STREAM("[CONNECT START STOP GUI BAR] Is of type COORDINATOR with ID = " << m_ID);
+                ROS_INFO_STREAM("[TOP BANNER GUI] Is of type COORDINATOR with ID = " << m_ID);
             }
             break;
         }
@@ -284,7 +320,7 @@ bool TopBanner::getTypeAndIDParameters()
         {
             // Throw an error if the type is not recognised
             return_was_successful = false;
-            ROS_ERROR("[CONNECT START STOP GUI BAR] The 'm_type' variable was not recognised.");
+            ROS_ERROR("[TOP BANNER GUI] The 'm_type' variable was not recognised.");
             break;
         }
     }

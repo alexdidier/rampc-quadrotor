@@ -172,17 +172,6 @@ void EnableControllerLoadYamlBar::setAgentIDsToCoordinate(QVector<int> agentIDs 
     }
     // Unlock the mutex
     m_agentIDs_toCoordinate_mutex.unlock();
-
-#ifdef CATKIN_MAKE
-#else
-    // TO ASSIST WITH DEBUGGING WHEN COMPILED AND RUN IN "QtCreator"
-    QTextStream(stdout) << "[CONNECT START STOP GUI BAR] is coordinating agentIDs:";
-    for ( int irow = 0 ; irow < agentIDs.length() ; irow++ )
-    {
-        QTextStream(stdout) << " " << agentIDs[irow];
-    }
-    QTextStream(stdout) << " " << endl;
-#endif
 }
 
 
