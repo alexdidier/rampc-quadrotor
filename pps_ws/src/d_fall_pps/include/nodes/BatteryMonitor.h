@@ -191,7 +191,7 @@ float movingAverageBatteryFilter(float new_input);
 
 // > For converting a voltage to a percentage,
 //   depending on the current "my_flying_state" value
-float fromVoltageToPercent(float voltage , float operating_state);
+float fromVoltageToPercent(float voltage , int operating_state);
 // > For converting the percentage to a level
 int convertPercentageToLevel(float percentage);
 // > For updating the battery state based on the battery level

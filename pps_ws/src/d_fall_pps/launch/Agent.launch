@@ -113,7 +113,7 @@
 			<rosparam
 				command = "load"
 				file    = "$(find d_fall_pps)/param/ClientConfig.yaml"
-				ns      = "PPSClient"
+				ns      = "ClientConfig"
 			/>
 			<rosparam
 				command = "load"

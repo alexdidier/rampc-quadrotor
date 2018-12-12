@@ -161,7 +161,7 @@ float movingAverageBatteryFilter(float new_input)
 
 
 // > For converting a voltage to a percentage, depending on the current "my_flying_state" value
-float fromVoltageToPercent(float voltage , float operating_state )
+float fromVoltageToPercent(float voltage , int operating_state )
 {
 	// INITIALISE THE LOCAL VARIABLE FOR THE VOLTAGE WHEN FULL/EMPTY
 	float voltage_when_full;
@@ -471,26 +471,34 @@ int main(int argc, char* argv[])
 	// PUBLISHERS
 
 	// Publisher for the filtered battery voltage
-	ros::Publisher filteredBatteryVoltagePublisher = nodeHandle.advertise<std_msgs::Float32>("FilteredVoltage",1);
+	filteredBatteryVoltagePublisher = nodeHandle.advertise<std_msgs::Float32>("FilteredVoltage",1);
 
 	// Publisher for the battery level
 	batteryLevelPublisher = nodeHandle.advertise<std_msgs::Int32>("Level",1);
 
 	// Publisher for changes in the battery state
-	ros::Publisher batteryStateChangedPublisher = nodeHandle.advertise<std_msgs::Int32>("ChangedStateTo",1);
+	batteryStateChangedPublisher = nodeHandle.advertise<std_msgs::Int32>("ChangedStateTo",1);
 
 
 
 	// SUBSCRIBERS
 
+	// Get a node handle to the Crazy Radio
+	std::string namespace_to_crazyradio = m_namespace + "/CrazyRadio";
+    ros::NodeHandle nodeHandle_to_crazyradio(namespace_to_crazyradio);
+
+    // Get a node handle to the PPS Client
+	std::string namespace_to_ppsclient = m_namespace + "/PPSClient";
+    ros::NodeHandle nodeHandle_to_ppsclient(namespace_to_ppsclient);
+
 	// Subscribe to the voltage of the battery
-	ros::Subscriber newBatteryVoltageSubscriber = nodeHandle.subscribe("CrazyRadio/CFBattery", 1, newBatteryVoltageCallback);
+	ros::Subscriber newBatteryVoltageSubscriber = nodeHandle_to_crazyradio.subscribe("CFBattery", 1, newBatteryVoltageCallback);
 
 	// Subscribe to the status of the Crazyradio: connected, connecting or disconnected
-	ros::Subscriber crazyRadioStatusSubscriber = nodeHandle.subscribe("CrazyRadio/CrazyRadioStatus", 1, crazyRadioStatusCallback);
+	ros::Subscriber crazyRadioStatusSubscriber = nodeHandle_to_crazyradio.subscribe("CrazyRadioStatus", 1, crazyRadioStatusCallback);
 
 	// Subscribe to the flying state of the agent
-	ros::Subscriber agentOperatingStateSubscriber = nodeHandle.subscribe("PPS_Client/flyingState", 1, agentOperatingStateCallback);
+	ros::Subscriber agentOperatingStateSubscriber = nodeHandle_to_ppsclient.subscribe("flyingState", 1, agentOperatingStateCallback);
 
 	// Initialise the operating state
 	m_agent_operating_state = AGENT_OPERATING_STATE_MOTORS_OFF;
