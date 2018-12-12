@@ -75,12 +75,14 @@ bool rosNodeThread::init()
     ros::Time::init();
     ros::NodeHandle nh("~");
 
-    m_vicon_subscriber = nh.subscribe("/ViconDataPublisher/ViconData", 100, &rosNodeThread::messageCallback, this);
+    ros::NodeHandle nodeHandle_dfall_root("/dfall");
+
+    m_vicon_subscriber = nodeHandle_dfall_root.subscribe("ViconDataPublisher/ViconData", 100, &rosNodeThread::messageCallback, this);
 
     // clients for db services:
-    m_read_db_client = nh.serviceClient<CMRead>("/CentralManagerService/Read", false);
-    m_update_db_client = nh.serviceClient<CMUpdate>("/CentralManagerService/Update", false);
-    m_command_db_client = nh.serviceClient<CMCommand>("/CentralManagerService/Command", false);
+    m_read_db_client = nodeHandle_dfall_root.serviceClient<CMRead>("CentralManagerService/Read", false);
+    m_update_db_client = nodeHandle_dfall_root.serviceClient<CMUpdate>("CentralManagerService/Update", false);
+    m_command_db_client = nodeHandle_dfall_root.serviceClient<CMCommand>("CentralManagerService/Command", false);
 
     m_pThread->start();
     return true;
