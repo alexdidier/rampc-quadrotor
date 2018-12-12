@@ -750,8 +750,9 @@ int main(int argc, char* argv[]) {
 	// Starting the ROS-node
 	ros::init(argc, argv, "StudentControllerService");
 
-	// Create a "ros::NodeHandle" type local variable "nodeHandle" as the current node,
-	// the "~" indcates that "self" is the node handle assigned to this variable.
+	// Create a "ros::NodeHandle" type local variable "nodeHandle"
+	// as the current node, the "~" indcates that "self" is the
+	// node handle assigned to this variable.
 	ros::NodeHandle nodeHandle("~");
 
 	// Get the namespace of this "StudentControllerService" node

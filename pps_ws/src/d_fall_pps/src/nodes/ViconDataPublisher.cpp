@@ -43,27 +43,223 @@ using namespace ViconDataStreamSDK::CPP;
 using namespace d_fall_pps;
 
 int main(int argc, char* argv[]) {
+
+
+
+    // Starting the ROS-node
     ros::init(argc, argv, "ViconDataPublisher");
 
+
+
+    // Create a "ros::NodeHandle" type local variable "nodeHandle"
+    // as the current node, the "~" indcates that "self" is the
+    // node handle assigned to this variable.
     ros::NodeHandle nodeHandle("~");
+
+
+
+    // Initialise ROS time
     ros::Time::init();
 
+
+
+    // PUBLISHER FOR THE MOTION CAPTURE DATA
+    // > Created as a local variable becuase the "looping" of
+    //   ros is handled directly in the "while (ros::ok())"
+    //   loop below, i.e., this variable will not
+    //   go out-of-scope
     ros::Publisher viconDataPublisher =
         nodeHandle.advertise<ViconData>("ViconData", 1);
 
 
-    #ifdef TESTING_FAKE_DATA
+
+#ifdef TESTING_FAKE_DATA
+    testFakeData(viconDataPublisher);
+#else
+
+
+
+    // CLIENT FOR GETTING DATA FROM THE VICON DATA STREAM SDK
+    // > The "Client" variable type is defined in the header
+    //   "DataStreamClient.h"
+    Client vicon_client;
+
+
+    // HOSTNAME (IP ADDRESS) OF THE "VICON COMPUTER"
+    // > This is specified in the "ViconConfig.yaml" file
+    // > That yaml file is added to this node during launch
+    // > The "Vicon Computer" runs the "Tacker" software that
+    //   is the heart of the Vicon Motion Capture system
+    std::string hostName;
+    if(!nodeHandle.getParam("hostName", hostName)) {
+        ROS_ERROR("Failed to get hostName");
+        return 1;
+    }
+
+
+
+    // CONNECT TO THE HOST (i.e., TO THE "VICON COMPUTER")
+
+    // Inform the user this is about to be attempted
+    ROS_INFO_STREAM("[VICON DATA PUBLISHER] Connecting to Vicon host with name: " << hostName );
+
+    // Attempt to connect in a while loop
+    while (!vicon_client.IsConnected().Connected)
+    {
+        // Get the connection status
+        bool ok = (vicon_client.Connect(hostName).Result == Result::Success);
+
+        if (!ok)
+        {
+            // If failed: inform the user and wait a bit
+            ROS_ERROR("[VICON DATA PUBLISHER] ERROR - connection failed... attempting again in 1 second");
+            ros::Duration(1.0).sleep();
+        }
+        else
+        {
+            // If successful: inform the user
+            ROS_INFO("[VICON DATA PUBLISHER] Connected successfully to host");
+        }
+    }
+
+
+
+    // SPECIFY THE SETTING OF THE VICON CLIENT
+
+    // Set "stream mode" parameter
+    // > OPTIONS: { ServerPush , ClientPull }
+    // > The "ServerPush" option should have the lowest latency
+    vicon_client.SetStreamMode(ViconDataStreamSDK::CPP::StreamMode::ServerPush); 
+
+    // Set what type of data should be provided
+    vicon_client.EnableSegmentData();
+    vicon_client.EnableMarkerData();
+    vicon_client.EnableUnlabeledMarkerData();
+    vicon_client.EnableDeviceData();
+
+    // Set the inertial frame convention such that positive
+    // Z points upwards
+    vicon_client.SetAxisMapping(Direction::Forward, Direction::Left, Direction::Up);
+
+
+
+    // 
+    while (ros::ok())
+    {
+        // Get a frame
+        while (vicon_client.GetFrame().Result != Result::Success) {
+            // Sleep a little so that we don't lumber the CPU with a busy poll
+            ros::Duration(0.001).sleep();
+        }
+
+        // Initilise a "ViconData" struct
+        // > This is defined in the "ViconData.msg" file
+        ViconData viconData;
+
+        // Unlabeled markers, for GUI
+        unsigned int unlabeledMarkerCount = vicon_client.GetUnlabeledMarkerCount().MarkerCount;
+
+        UnlabeledMarker marker;
+        for(int unlabeledMarkerIndex = 0; unlabeledMarkerIndex < unlabeledMarkerCount; unlabeledMarkerIndex++)
+        {
+
+            Output_GetUnlabeledMarkerGlobalTranslation OutputTranslation =
+                vicon_client.GetUnlabeledMarkerGlobalTranslation(unlabeledMarkerIndex);
+
+            marker.index = unlabeledMarkerIndex;
+            marker.x = OutputTranslation.Translation[0]/1000.0f;
+            marker.y = OutputTranslation.Translation[1]/1000.0f;
+            marker.z = OutputTranslation.Translation[2]/1000.0f;
+
+            viconData.markers.push_back(marker);
+        }
+
+        unsigned int subjectCount = vicon_client.GetSubjectCount().SubjectCount;
+
+        // //Process the data and publish on topic
+        for (int index = 0; index < subjectCount; index++) {
+       		std::string subjectName = vicon_client.GetSubjectName(index).SubjectName;
+            std::string segmentName = vicon_client.GetSegmentName(subjectName, 0).SegmentName;
+
+
+            //continue only if the received frame is for the correct crazyflie
+            Output_GetSegmentGlobalTranslation outputTranslation =
+                    vicon_client.GetSegmentGlobalTranslation(subjectName, segmentName);
+            //ROS_INFO_STREAM("translation occluded: " << outputTranslation.Occluded);
+
+            Output_GetSegmentGlobalRotationQuaternion outputRotation =
+                    vicon_client.GetSegmentGlobalRotationQuaternion(subjectName, segmentName);
+            //ROS_INFO_STREAM("translation occluded: " << outputRotation.Occluded);
+
+            //calculate position and rotation of Crazyflie
+            double quat_x = outputRotation.Rotation[0];
+            double quat_y = outputRotation.Rotation[1];
+            double quat_z = outputRotation.Rotation[2];
+            double quat_w = outputRotation.Rotation[3];
+
+            //TODO check whether this transformation is correct
+            double roll = atan2(2 * (quat_w * quat_x + quat_y * quat_z), 1 - 2 * (quat_x * quat_x + quat_y * quat_y));
+            double pitch = asin(2 * (quat_w * quat_y - quat_z * quat_x));
+            double yaw = atan2(2 * (quat_w * quat_z + quat_x * quat_y), 1 - 2 * (quat_y * quat_y + quat_z * quat_z));
+
+            //calculate time until frame data was received
+            Output_GetLatencyTotal outputLatencyTotal = vicon_client.GetLatencyTotal();
+            double totalViconLatency;
+            if (outputLatencyTotal.Result == Result::Success) {
+                totalViconLatency = outputLatencyTotal.Total;
+            } else {
+                totalViconLatency = 0;
+            }
+
+            
+            //build message
+            CrazyflieData cfData;
+            cfData.crazyflieName = subjectName;
+
+            cfData.occluded = outputTranslation.Occluded;
+
+            cfData.x = outputTranslation.Translation[0] / 1000.0f;
+            cfData.y = outputTranslation.Translation[1] / 1000.0f;
+            cfData.z = outputTranslation.Translation[2] / 1000.0f;
+            cfData.roll = roll;
+            cfData.pitch = pitch;
+            cfData.yaw = yaw;
+            cfData.acquiringTime = totalViconLatency;
+            // if(!outputTranslation.Occluded)
+            viconData.crazyflies.push_back(cfData);
+        }
+        viconDataPublisher.publish(viconData);
+    }
+    // END OF "while (ros::ok())"
+
+    // The code only reaches this point if the while loop is
+    // broken, hence disable and diconnect the Vicon client
+    vicon_client.DisableSegmentData();
+    vicon_client.DisableMarkerData();
+    vicon_client.DisableUnlabeledMarkerData();
+    vicon_client.DisableDeviceData();
+
+    vicon_client.Disconnect();
+#endif
+}
+
+
+
+
+
+void testFakeData(ros::Publisher viconDataPublisher)
+{
     // Test faking data part
     float f = 0;
     int i = 0;
 
-    ROS_INFO("TESTING_FAKE_DATA.................................");
+    ROS_INFO("[VICON DATA PUBLISHER] TESTING_FAKE_DATA");
     while(ros::ok())
     {
         if(i % 1000 == 0)
         {
-        	ROS_INFO("iteration #%d",i);
-    	}
+            ROS_INFO("iteration #%d",i);
+        }
 
         // Testing piece of code
         ViconData viconData;
@@ -131,128 +327,4 @@ int main(int argc, char* argv[]) {
 
         viconDataPublisher.publish(viconData); // testing data
     }
-    #else
-
-    Client client;
-
-    std::string hostName;
-    if(!nodeHandle.getParam("hostName", hostName)) {
-        ROS_ERROR("Failed to get hostName");
-        return 1;
-    }
-
-    ROS_INFO_STREAM("Connecting to " << hostName << " ...");
-    while (!client.IsConnected().Connected) {
-        bool ok = (client.Connect(hostName).Result == Result::Success);
-
-        if (!ok) {
-            ROS_ERROR("Error - connection failed...");
-            ros::Duration(1.0).sleep();
-        } else {
-            ROS_INFO("Connected successfully");
-        }
-    }
-
-    //set data stream parameters
-    client.SetStreamMode(ViconDataStreamSDK::CPP::StreamMode::ServerPush); //maybe ServerPush instead of ClientPull for less latency
-
-    client.EnableSegmentData();
-    client.EnableMarkerData();
-    client.EnableUnlabeledMarkerData();
-    client.EnableDeviceData();
-
-    // Set the global up axis, such that Z is up
-    client.SetAxisMapping(Direction::Forward, Direction::Left, Direction::Up);
-
-    while (ros::ok()) {
-        // Get a frame
-        while (client.GetFrame().Result != Result::Success) {
-            // Sleep a little so that we don't lumber the CPU with a busy poll
-            ros::Duration(0.001).sleep();
-        }
-
-        ViconData viconData;
-
-        // Unlabeled markers, for GUI
-        unsigned int unlabeledMarkerCount = client.GetUnlabeledMarkerCount().MarkerCount;
-
-        UnlabeledMarker marker;
-        for(int unlabeledMarkerIndex = 0; unlabeledMarkerIndex < unlabeledMarkerCount; unlabeledMarkerIndex++)
-        {
-
-            Output_GetUnlabeledMarkerGlobalTranslation OutputTranslation =
-                client.GetUnlabeledMarkerGlobalTranslation(unlabeledMarkerIndex);
-
-            marker.index = unlabeledMarkerIndex;
-            marker.x = OutputTranslation.Translation[0]/1000.0f;
-            marker.y = OutputTranslation.Translation[1]/1000.0f;
-            marker.z = OutputTranslation.Translation[2]/1000.0f;
-
-            viconData.markers.push_back(marker);
-        }
-
-        unsigned int subjectCount = client.GetSubjectCount().SubjectCount;
-
-        // //Process the data and publish on topic
-        for (int index = 0; index < subjectCount; index++) {
-       		std::string subjectName = client.GetSubjectName(index).SubjectName;
-            std::string segmentName = client.GetSegmentName(subjectName, 0).SegmentName;
-
-
-            //continue only if the received frame is for the correct crazyflie
-            Output_GetSegmentGlobalTranslation outputTranslation =
-                    client.GetSegmentGlobalTranslation(subjectName, segmentName);
-            //ROS_INFO_STREAM("translation occluded: " << outputTranslation.Occluded);
-
-            Output_GetSegmentGlobalRotationQuaternion outputRotation =
-                    client.GetSegmentGlobalRotationQuaternion(subjectName, segmentName);
-            //ROS_INFO_STREAM("translation occluded: " << outputRotation.Occluded);
-
-            //calculate position and rotation of Crazyflie
-            double quat_x = outputRotation.Rotation[0];
-            double quat_y = outputRotation.Rotation[1];
-            double quat_z = outputRotation.Rotation[2];
-            double quat_w = outputRotation.Rotation[3];
-
-            //TODO check whether this transformation is correct
-            double roll = atan2(2 * (quat_w * quat_x + quat_y * quat_z), 1 - 2 * (quat_x * quat_x + quat_y * quat_y));
-            double pitch = asin(2 * (quat_w * quat_y - quat_z * quat_x));
-            double yaw = atan2(2 * (quat_w * quat_z + quat_x * quat_y), 1 - 2 * (quat_y * quat_y + quat_z * quat_z));
-
-            //calculate time until frame data was received
-            Output_GetLatencyTotal outputLatencyTotal = client.GetLatencyTotal();
-            double totalViconLatency;
-            if (outputLatencyTotal.Result == Result::Success) {
-                totalViconLatency = outputLatencyTotal.Total;
-            } else {
-                totalViconLatency = 0;
-            }
-
-            //build message
-            CrazyflieData cfData;
-            cfData.crazyflieName = subjectName;
-
-            cfData.occluded = outputTranslation.Occluded;
-
-            cfData.x = outputTranslation.Translation[0] / 1000.0f;
-            cfData.y = outputTranslation.Translation[1] / 1000.0f;
-            cfData.z = outputTranslation.Translation[2] / 1000.0f;
-            cfData.roll = roll;
-            cfData.pitch = pitch;
-            cfData.yaw = yaw;
-            cfData.acquiringTime = totalViconLatency;
-            // if(!outputTranslation.Occluded)
-            viconData.crazyflies.push_back(cfData);
-        }
-        viconDataPublisher.publish(viconData);
-    }
-
-    client.DisableSegmentData();
-    client.DisableMarkerData();
-    client.DisableUnlabeledMarkerData();
-    client.DisableDeviceData();
-
-    client.Disconnect();
-    #endif
-
 }
