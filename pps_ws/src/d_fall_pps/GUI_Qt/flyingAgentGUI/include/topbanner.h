@@ -49,7 +49,7 @@
 //#include <std_msgs/String.h>
 
 // Include the DFALL message types
-//#include "d_fall_pps/IntWithHeader.h"
+#include "d_fall_pps/IntWithHeader.h"
 #include "d_fall_pps/AreaBounds.h"
 #include "d_fall_pps/CrazyflieContext.h"
 #include "d_fall_pps/CMQuery.h"

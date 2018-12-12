@@ -219,10 +219,10 @@ void TopBanner::loadCrazyflieContext()
 void TopBanner::on_emergency_stop_button_clicked()
 {
 #ifdef CATKIN_MAKE
-    d_fall_pps::IntWithHeader msg;
-    fillIntMessageHeader(msg);
-    msg.data = CMD_RECONNECT;
-    this->crazyRadioCommandPublisher.publish(msg);
+    // d_fall_pps::IntWithHeader msg;
+    // fillIntMessageHeader(msg);
+    // msg.data = CMD_RECONNECT;
+    // this->crazyRadioCommandPublisher.publish(msg);
     ROS_INFO("[TOP BANNER GUI] EMERGENCY STOP button clicked");
 #endif
 }
