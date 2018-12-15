@@ -28,7 +28,7 @@
    <item row="0" column="0">
     <widget class="QTabWidget" name="controller_tabs_widget">
      <property name="currentIndex">
-      <number>3</number>
+      <number>2</number>
      </property>
      <widget class="QWidget" name="default_tab">
       <attribute name="title">
@@ -36,7 +36,7 @@
       </attribute>
       <layout class="QGridLayout" name="gridLayout_2">
        <item row="0" column="0">
-        <widget class="DefaultControllerTab" name="widget" native="true"/>
+        <widget class="DefaultControllerTab" name="default_controller_tab_widget" native="true"/>
        </item>
       </layout>
      </widget>
@@ -46,7 +46,7 @@
       </attribute>
       <layout class="QGridLayout" name="gridLayout_4">
        <item row="0" column="0">
-        <widget class="StudentControllerTab" name="widget_3" native="true"/>
+        <widget class="StudentControllerTab" name="student_controller_tab_widget" native="true"/>
        </item>
       </layout>
      </widget>

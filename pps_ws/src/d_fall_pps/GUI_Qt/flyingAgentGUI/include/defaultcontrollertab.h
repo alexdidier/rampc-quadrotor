@@ -2,7 +2,34 @@
 #define DEFAULTCONTROLLERTAB_H
 
 #include <QWidget>
+#include <QVector>
 #include <QTextStream>
+
+#ifdef CATKIN_MAKE
+#include <ros/ros.h>
+#include <ros/network.h>
+#include <ros/package.h>
+
+// Include the standard message types
+//#include "std_msgs/Int32.h"
+//#include "std_msgs/Float32.h"
+//#include <std_msgs/String.h>
+
+// Include the DFALL message types
+//#include "d_fall_pps/IntWithHeader.h"
+#include "d_fall_pps/SetpointWithHeader.h"
+
+// Include the shared definitions
+#include "nodes/Constants.h"
+
+// SPECIFY THE PACKAGE NAMESPACE
+//using namespace d_fall_pps;
+
+#else
+// Include the shared definitions
+//#include "include/Constants_for_Qt_compile.h"
+
+#endif
 
 namespace Ui {
 class DefaultControllerTab;
@@ -16,6 +43,11 @@ public:
     explicit DefaultControllerTab(QWidget *parent = 0);
     ~DefaultControllerTab();
 
+
+public slots:
+    void setMeasuredPose(QVector<float> measuredPose);
+
+
 private slots:
     void on_lineEdit_setpoint_new_x_returnPressed();
     void on_lineEdit_setpoint_new_y_returnPressed();
@@ -24,8 +56,26 @@ private slots:
 
     void on_set_setpoint_button_clicked();
 
+    void on_default_setpoint_button_clicked();
+
+    void on_x_increment_plus_button_clicked();
+    void on_x_increment_minus_button_clicked();
+    void on_y_increment_plus_button_clicked();
+    void on_y_increment_minus_button_clicked();
+    void on_z_increment_plus_button_clicked();
+    void on_z_increment_minus_button_clicked();
+    void on_yaw_increment_plus_button_clicked();
+    void on_yaw_increment_minus_button_clicked();
+
 private:
     Ui::DefaultControllerTab *ui;
+
+#ifdef CATKIN_MAKE
+    SetpointWithHeader m_defaultSetpoint;
+#endif
+
+    void publishSetpoint(float x, float y, float z, float yaw);
+
 };
 
 #endif // DEFAULTCONTROLLERTAB_H
