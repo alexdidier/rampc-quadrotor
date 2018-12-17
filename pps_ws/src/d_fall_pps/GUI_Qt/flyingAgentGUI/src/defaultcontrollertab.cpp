@@ -54,25 +54,44 @@ void DefaultControllerTab::setMeasuredPose(float x , float y , float z , float r
 {
     if (!occluded)
     {
+        // INITIALISE A STRING VARIABLE FOR ADDING THE "+"
+        QString qstr = "";
         // UPDATE THE MEASUREMENT COLUMN
-        ui->lineEdit_measured_x    ->setText(QString::number( x     ));
-        ui->lineEdit_measured_y    ->setText(QString::number( y     ));
-        ui->lineEdit_measured_z    ->setText(QString::number( z     ));
-        ui->lineEdit_measured_roll ->setText(QString::number( roll  ));
-        ui->lineEdit_measured_pitch->setText(QString::number( pitch ));
-        ui->lineEdit_measured_yaw  ->setText(QString::number( yaw   ));
+        if (x < 0.0f) qstr = ""; else qstr = "+";
+        ui->lineEdit_measured_x    ->setText(qstr + QString::number( x, 'f', 3));
+        if (y < 0.0f) qstr = ""; else qstr = "+";
+        ui->lineEdit_measured_y    ->setText(qstr + QString::number( y, 'f', 3));
+        if (z < 0.0f) qstr = ""; else qstr = "+";
+        ui->lineEdit_measured_z    ->setText(qstr + QString::number( z, 'f', 3));
+
+        if (roll < 0.0f) qstr = ""; else qstr = "+";
+        ui->lineEdit_measured_roll ->setText(qstr + QString::number( roll  * RAD2DEG, 'f', 1));
+        if (pitch < 0.0f) qstr = ""; else qstr = "+";
+        ui->lineEdit_measured_pitch->setText(qstr + QString::number( pitch * RAD2DEG, 'f', 1));
+        if (yaw < 0.0f) qstr = ""; else qstr = "+";
+        ui->lineEdit_measured_yaw  ->setText(qstr + QString::number( yaw   * RAD2DEG, 'f', 1));
 
         // GET THE CURRENT SETPOINT
-        float curr_x_setpoint   = (ui->lineEdit_setpoint_current_x->text()  ).toFloat();;
-        float curr_y_setpoint   = (ui->lineEdit_setpoint_current_y->text()  ).toFloat();;
-        float curr_z_setpoint   = (ui->lineEdit_setpoint_current_z->text()  ).toFloat();;
-        float curr_yaw_setpoint = (ui->lineEdit_setpoint_current_yaw->text()).toFloat();;
+        float error_x   = x   - (ui->lineEdit_setpoint_current_x->text()  ).toFloat();
+        float error_y   = y   - (ui->lineEdit_setpoint_current_y->text()  ).toFloat();
+        float error_z   = z   - (ui->lineEdit_setpoint_current_z->text()  ).toFloat();
+        float error_yaw = yaw - (ui->lineEdit_setpoint_current_yaw->text()).toFloat();
 
         // UPDATE THE ERROR COLUMN
-        ui->lineEdit_error_x  ->setText(QString::number( x   - curr_x_setpoint   ));
-        ui->lineEdit_error_y  ->setText(QString::number( y   - curr_y_setpoint   ));
-        ui->lineEdit_error_z  ->setText(QString::number( z   - curr_z_setpoint   ));
-        ui->lineEdit_error_yaw->setText(QString::number( yaw - curr_yaw_setpoint ));
+        if (error_x < 0.0f) qstr = ""; else qstr = "+";
+        ui->lineEdit_error_x  ->setText(qstr + QString::number( error_x, 'f', 3));
+        if (error_y < 0.0f) qstr = ""; else qstr = "+";
+        ui->lineEdit_error_y  ->setText(qstr + QString::number( error_y, 'f', 3));
+        if (error_z < 0.0f) qstr = ""; else qstr = "+";
+        ui->lineEdit_error_z  ->setText(qstr + QString::number( error_z, 'f', 3));
+
+        if (error_yaw < 0.0f) qstr = ""; else qstr = "+";
+        ui->lineEdit_error_yaw->setText(qstr + QString::number( error_yaw * RAD2DEG, 'f', 1));
+    }
+    else
+    {
+        //ui->label_measured_title->setTextColor(Qt::green);
+        //ui->label_measured_title_line2
     }
 }
 
