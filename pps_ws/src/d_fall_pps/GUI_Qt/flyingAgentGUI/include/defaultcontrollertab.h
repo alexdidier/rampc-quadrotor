@@ -28,7 +28,7 @@
 
 #else
 // Include the shared definitions
-//#include "include/Constants_for_Qt_compile.h"
+#include "include/Constants_for_Qt_compile.h"
 
 #endif
 

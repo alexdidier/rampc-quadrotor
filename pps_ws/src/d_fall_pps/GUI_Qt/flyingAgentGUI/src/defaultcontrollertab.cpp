@@ -7,6 +7,11 @@ DefaultControllerTab::DefaultControllerTab(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    // Hide the two red frames that are used to indcated
+    // when pose data is occluded
+    ui->red_frame_position_left->setVisible(false);
+    ui->red_frame_position_right->setVisible(false);
+
 
 
 #ifdef CATKIN_MAKE
@@ -87,11 +92,20 @@ void DefaultControllerTab::setMeasuredPose(float x , float y , float z , float r
 
         if (error_yaw < 0.0f) qstr = ""; else qstr = "+";
         ui->lineEdit_error_yaw->setText(qstr + QString::number( error_yaw * RAD2DEG, 'f', 1));
+
+        // Ensure the red frames are not visible
+        if ( ui->red_frame_position_left->isVisible() )
+            ui->red_frame_position_left->setVisible(true);
+        if ( ui->red_frame_position_right->isVisible() )
+            ui->red_frame_position_right->setVisible(true);
     }
     else
     {
-        //ui->label_measured_title->setTextColor(Qt::green);
-        //ui->label_measured_title_line2
+        // Make visible the red frames to indicate occluded
+        if ( !(ui->red_frame_position_left->isVisible()) )
+            ui->red_frame_position_left->setVisible(true);
+        if ( !(ui->red_frame_position_right->isVisible()) )
+            ui->red_frame_position_right->setVisible(true);
     }
 }
 

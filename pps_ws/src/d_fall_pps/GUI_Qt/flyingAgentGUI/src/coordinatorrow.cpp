@@ -451,7 +451,7 @@ void CoordinatorRow::setBatteryImageBasedOnLevel(int battery_level)
         case BATTERY_LEVEL_UNAVAILABLE:
         {
             new_image_index = BATTERY_LABEL_IMAGE_INDEX_UNVAILABLE;
-            qstr_new_image.append("battery_unknown.png");
+            qstr_new_image.append("battery_unavailable.png");
             break;
         }
         default:
