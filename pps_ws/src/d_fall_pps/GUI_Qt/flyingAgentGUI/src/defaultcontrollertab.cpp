@@ -10,6 +10,32 @@ DefaultControllerTab::DefaultControllerTab(QWidget *parent) :
 
 
 #ifdef CATKIN_MAKE
+
+    //ros::init();
+
+    // Get the namespace of this node
+    std::string this_namespace = ros::this_node::getNamespace();
+    ROS_INFO_STREAM("[DEFAULT CONTROLLER TAB GUI] ros::this_node::getNamespace() =  " << this_namespace);
+
+    // Get the type and ID of this flying agent GUI
+    bool isValid_type_and_ID = getTypeAndIDParameters();
+
+    // Stall if the node IDs are not valid
+    if ( !isValid_type_and_ID )
+    {
+        ROS_ERROR("[DEFAULT CONTROLLER TAB GUI] Node NOT FUNCTIONING :-)");
+        ros::spin();
+    }
+
+
+    // CREATE A NODE HANDLE TO THIS GUI
+    ros::NodeHandle nodeHandle_for_this_gui(this_namespace);
+
+    // CREATE THE COMMAND PUBLISHER
+    requestSetpointChangePublisher = nodeHandle_for_this_gui.advertise<d_fall_pps::SetpointWithHeader>("DefaultControllerService/RequestSetpointChange", 1);
+
+
+    // Set the default setpoint
     m_defaultSetpoint.x   = 0.0f;
     m_defaultSetpoint.y   = 0.0f;
     m_defaultSetpoint.z   = 0.5f;
@@ -24,39 +50,42 @@ DefaultControllerTab::~DefaultControllerTab()
 }
 
 
-void DefaultControllerTab::setMeasuredPose(QVector<float> measuredPose)
+void DefaultControllerTab::setMeasuredPose(float x , float y , float z , float roll , float pitch , float yaw , bool occluded)
 {
-    // UPDATE THE MEASUREMENT COLUMN
-    ui->lineEdit_measured_x    ->setText(QString::number( measuredPose[0] ));
-    ui->lineEdit_measured_y    ->setText(QString::number( measuredPose[1] ));
-    ui->lineEdit_measured_z    ->setText(QString::number( measuredPose[2] ));
-    ui->lineEdit_measured_roll ->setText(QString::number( measuredPose[3] ));
-    ui->lineEdit_measured_pitch->setText(QString::number( measuredPose[4] ));
-    ui->lineEdit_measured_yaw  ->setText(QString::number( measuredPose[5] ));
+    if (!occluded)
+    {
+        // UPDATE THE MEASUREMENT COLUMN
+        ui->lineEdit_measured_x    ->setText(QString::number( x     ));
+        ui->lineEdit_measured_y    ->setText(QString::number( y     ));
+        ui->lineEdit_measured_z    ->setText(QString::number( z     ));
+        ui->lineEdit_measured_roll ->setText(QString::number( roll  ));
+        ui->lineEdit_measured_pitch->setText(QString::number( pitch ));
+        ui->lineEdit_measured_yaw  ->setText(QString::number( yaw   ));
 
-    // GET THE CURRENT SETPOINT
-    float curr_x_setpoint   = (ui->lineEdit_setpoint_current_x->text()  ).toFloat();;
-    float curr_y_setpoint   = (ui->lineEdit_setpoint_current_y->text()  ).toFloat();;
-    float curr_z_setpoint   = (ui->lineEdit_setpoint_current_z->text()  ).toFloat();;
-    float curr_yaw_setpoint = (ui->lineEdit_setpoint_current_yaw->text()).toFloat();;
+        // GET THE CURRENT SETPOINT
+        float curr_x_setpoint   = (ui->lineEdit_setpoint_current_x->text()  ).toFloat();;
+        float curr_y_setpoint   = (ui->lineEdit_setpoint_current_y->text()  ).toFloat();;
+        float curr_z_setpoint   = (ui->lineEdit_setpoint_current_z->text()  ).toFloat();;
+        float curr_yaw_setpoint = (ui->lineEdit_setpoint_current_yaw->text()).toFloat();;
 
-    // UPDATE THE ERROR COLUMN
-    ui->lineEdit_error_x  ->setText(QString::number( measuredPose[0] - curr_x_setpoint   ));
-    ui->lineEdit_error_y  ->setText(QString::number( measuredPose[1] - curr_y_setpoint   ));
-    ui->lineEdit_error_z  ->setText(QString::number( measuredPose[2] - curr_z_setpoint   ));
-    ui->lineEdit_error_yaw->setText(QString::number( measuredPose[5] - curr_yaw_setpoint ));
+        // UPDATE THE ERROR COLUMN
+        ui->lineEdit_error_x  ->setText(QString::number( x   - curr_x_setpoint   ));
+        ui->lineEdit_error_y  ->setText(QString::number( y   - curr_y_setpoint   ));
+        ui->lineEdit_error_z  ->setText(QString::number( z   - curr_z_setpoint   ));
+        ui->lineEdit_error_yaw->setText(QString::number( yaw - curr_yaw_setpoint ));
+    }
 }
 
 
 
-void publishSetpoint(float x, float y, float z, float yaw)
+void DefaultControllerTab::publishSetpoint(float x, float y, float z, float yaw)
 {
 #ifdef CATKIN_MAKE
     // Initialise the message as a local variable
-    SetpointWithHeader msg;
+    d_fall_pps::SetpointWithHeader msg;
 
     // Fill the header of the message
-    fillSetpointHeader( msg );
+    fillSetpointMessageHeader( msg );
 
     // Fill in the (x,y,z,yaw) values
     msg.x   = x;
@@ -65,10 +94,10 @@ void publishSetpoint(float x, float y, float z, float yaw)
     msg.yaw = yaw;
 
     // Publish the setpoint
-    this->controllerSetpointPublisher.publish(msg);
+    this->requestSetpointChangePublisher.publish(msg);
 
     // Inform the user about the change
-    ROS_INFO_STREAM("[DEFAULT CONTROLLER GUI] Published request for setpoint request for: [" << x << ", "<< y << ", "<< z << ", "<< yaw << "]");
+    ROS_INFO_STREAM("[DEFAULT CONTROLLER GUI] Published request for setpoint change to: [" << x << ", "<< y << ", "<< z << ", "<< yaw << "]");
 #else
     // TO ASSIST WITH DEBUGGING WHEN COMPILED AND RUN IN "QtCreator"
     QTextStream(stdout) << "[DEFAULT CONTROLLER GUI] would publish request for: [" << x << ", "<< y << ", "<< z << ", "<< yaw << "]";
@@ -156,9 +185,9 @@ void DefaultControllerTab::on_x_increment_plus_button_clicked()
     {
         // Call the function to publish the setpoint
         publishSetpoint(
-                (ui->lineEdit_setpoint_current_x->text()  ).toFloat() + (ui->lineEdit_setpoint_increment_x->text()).toFloat()
-                (ui->lineEdit_setpoint_current_y->text()  ).toFloat()
-                (ui->lineEdit_setpoint_current_z->text()  ).toFloat()
+                (ui->lineEdit_setpoint_current_x->text()  ).toFloat() + (ui->lineEdit_setpoint_increment_x->text()).toFloat(),
+                (ui->lineEdit_setpoint_current_y->text()  ).toFloat(),
+                (ui->lineEdit_setpoint_current_z->text()  ).toFloat(),
                 (ui->lineEdit_setpoint_current_yaw->text()).toFloat()
             );
     }
@@ -330,3 +359,160 @@ void DefaultControllerTab::on_yaw_increment_minus_button_clicked()
     }
 #endif
 }
+
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//    M   M   SSSS   GGG      H   H  EEEEE    A    DDDD   EEEEE  RRRR
+//    MM MM  S      G   G     H   H  E       A A   D   D  E      R   R
+//    M M M   SSS   G         HHHHH  EEE    A   A  D   D  EEE    RRRR
+//    M   M      S  G   G     H   H  E      AAAAA  D   D  E      R   R
+//    M   M  SSSS    GGGG     H   H  EEEEE  A   A  DDDD   EEEEE  R   R
+//    ----------------------------------------------------------------------------------
+
+
+
+#ifdef CATKIN_MAKE
+// Fill the head for a message
+void DefaultControllerTab::fillSetpointMessageHeader( d_fall_pps::SetpointWithHeader & msg )
+{
+    switch (m_type)
+    {
+        case TYPE_AGENT:
+        {
+            msg.shouldCheckForAgentID = false;
+            break;
+        }
+        case TYPE_COORDINATOR:
+        {
+            // Lock the mutex
+            m_agentIDs_toCoordinate_mutex.lock();
+            // Add the "coordinate all" flag
+            msg.shouldCheckForAgentID = !(m_shouldCoordinateAll);
+            // Add the agent IDs if necessary
+            if (!m_shouldCoordinateAll)
+            {
+                for ( int irow = 0 ; irow < m_vector_of_agentIDs_toCoordinate.size() ; irow++ )
+                {
+                    msg.agentIDs.push_back( m_vector_of_agentIDs_toCoordinate[irow] );
+                }
+            }
+            // Unlock the mutex
+            m_agentIDs_toCoordinate_mutex.unlock();
+            break;
+        }
+
+        default:
+        {
+            msg.shouldCheckForAgentID = true;
+            ROS_ERROR("[DEFAULT CONTROLLER TAB GUI] The 'm_type' variable was not recognised.");
+            break;
+        }
+    } 
+}
+#endif
+
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//    III  DDDD       &&&      TTTTT  Y   Y  PPPP   EEEEE
+//     I   D   D     &           T     Y Y   P   P  E
+//     I   D   D      &          T      Y    PPPP   EEE
+//     I   D   D     & & &       T      Y    P      E
+//    III  DDDD       &&&        T      Y    P      EEEEE
+//    ----------------------------------------------------------------------------------
+
+
+
+#ifdef CATKIN_MAKE
+bool DefaultControllerTab::getTypeAndIDParameters()
+{
+    // Initialise the return variable as success
+    bool return_was_successful = true;
+
+    // Create a "ros::NodeHandle" type local variable "nodeHandle" as the current node,
+    // the "~" indcates that "self" is the node handle assigned to this variable.
+    ros::NodeHandle nodeHandle("~");
+
+    // Get the value of the "type" parameter into a local string variable
+    std::string type_string;
+    if(!nodeHandle.getParam("type", type_string))
+    {
+        // Throw an error if the agent ID parameter could not be obtained
+        ROS_ERROR("[DEFAULT CONTROLLER TAB GUI] Failed to get type");
+    }
+
+    // Set the "m_type" class variable based on this string loaded
+    if ((!type_string.compare("coordinator")))
+    {
+        m_type = TYPE_COORDINATOR;
+    }
+    else if ((!type_string.compare("agent")))
+    {
+        m_type = TYPE_AGENT;
+    }
+    else
+    {
+        // Set "m_type" to the value indicating that it is invlid
+        m_type = TYPE_INVALID;
+        return_was_successful = false;
+        ROS_ERROR("[DEFAULT CONTROLLER TAB GUI] The 'type' parameter retrieved was not recognised.");
+    }
+
+
+    // Construct the string to the namespace of this Paramater Service
+    switch (m_type)
+    {
+        case TYPE_AGENT:
+        {
+            // Get the value of the "agentID" parameter into the class variable "m_Id"
+            if(!nodeHandle.getParam("agentID", m_ID))
+            {
+                // Throw an error if the agent ID parameter could not be obtained
+                return_was_successful = false;
+                ROS_ERROR("[DEFAULT CONTROLLER TAB GUI] Failed to get agentID");
+            }
+            else
+            {
+                // Inform the user about the type and ID
+                ROS_INFO_STREAM("[DEFAULT CONTROLLER TAB GUI] Is of type AGENT with ID = " << m_ID);
+            }
+            break;
+        }
+
+        // A COORDINATOR TYPE PARAMETER SERVICE IS REQUESTED FROM:
+        // > The master GUI
+        case TYPE_COORDINATOR:
+        {
+            // Get the value of the "coordID" parameter into the class variable "m_Id"
+            if(!nodeHandle.getParam("coordID", m_ID))
+            {
+                // Throw an error if the coord ID parameter could not be obtained
+                return_was_successful = false;
+                ROS_ERROR("[DEFAULT CONTROLLER TAB GUI] Failed to get coordID");
+            }
+            else
+            {
+                // Inform the user about the type and ID
+                ROS_INFO_STREAM("[DEFAULT CONTROLLER TAB GUI] Is of type COORDINATOR with ID = " << m_ID);
+            }
+            break;
+        }
+
+        default:
+        {
+            // Throw an error if the type is not recognised
+            return_was_successful = false;
+            ROS_ERROR("[DEFAULT CONTROLLER TAB GUI] The 'm_type' variable was not recognised.");
+            break;
+        }
+    }
+
+    // Return
+    return return_was_successful;
+}
+#endif

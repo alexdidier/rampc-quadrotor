@@ -2,6 +2,7 @@
 #define CONTROLLERTABS_H
 
 #include <QWidget>
+#include <QMutex>
 #include <QVector>
 
 #ifdef CATKIN_MAKE
@@ -18,6 +19,7 @@
 //#include "d_fall_pps/IntWithHeader.h"
 //#include "d_fall_pps/SetpointWithHeader.h"
 #include "d_fall_pps/CrazyflieData.h"
+#include "d_fall_pps/ViconData.h"
 
 // Include the shared definitions
 //#include "nodes/Constants.h"
@@ -45,11 +47,26 @@ public:
 
 
 signals:
-    void measuredPoseValueChanged(QVector<float> measuredPose);
+    void measuredPoseValueChanged(float x , float y , float z , float roll , float pitch , float yaw , bool occluded);
 
 
 private:
     Ui::ControllerTabs *ui;
+
+    // --------------------------------------------------- //
+    // PRIVATE VARIABLES
+
+    // The type of this node, i.e., agent or a coordinator,
+    // specified as a parameter in the "*.launch" file
+    int m_type = 0;
+
+    // The ID  of this node
+    int m_ID;
+
+    // For coordinating multiple agents
+    std::vector<int> m_vector_of_agentIDs_toCoordinate;
+    bool m_shouldCoordinateAll = true;
+    QMutex m_agentIDs_toCoordinate_mutex;
 
 
 #ifdef CATKIN_MAKE
@@ -58,17 +75,20 @@ private:
 
     // SUBSRIBER
     // > For the pose data from a motion capture system
-    ros::Subscriber poseDataSubscriber;
+    ros::Subscriber m_poseDataSubscriber;
+#endif
 
 
+#ifdef CATKIN_MAKE
     // --------------------------------------------------- //
     // PRIVATE CALLBACKS IN RESPONSE TO ROS MESSAGES
 
     // > For the controller currently operating, received on
     //   "controllerUsedSubscriber"
-    void poseDataReceivedCallback(const d_fall_pps::CrazyflieData& msg);
+    void poseDataReceivedCallback(const d_fall_pps::ViconData& viconData);
 
-
+    // Get the paramters that specify the type and ID
+    bool getTypeAndIDParameters();
 #endif
 
 

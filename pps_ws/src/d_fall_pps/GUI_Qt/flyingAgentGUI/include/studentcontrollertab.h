@@ -46,7 +46,7 @@ public:
 
 
 public slots:
-    void setMeasuredPose(QVector<float> measuredPose);
+    void setMeasuredPose(float x , float y , float z , float roll , float pitch , float yaw , bool occluded);
 
 
 private:

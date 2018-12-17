@@ -2,6 +2,7 @@
 #define DEFAULTCONTROLLERTAB_H
 
 #include <QWidget>
+#include <QMutex>
 #include <QVector>
 #include <QTextStream>
 
@@ -45,7 +46,7 @@ public:
 
 
 public slots:
-    void setMeasuredPose(QVector<float> measuredPose);
+    void setMeasuredPose(float x , float y , float z , float roll , float pitch , float yaw , bool occluded);
 
 
 private slots:
@@ -70,8 +71,43 @@ private slots:
 private:
     Ui::DefaultControllerTab *ui;
 
+    // --------------------------------------------------- //
+    // PRIVATE VARIABLES
+
+    // The type of this node, i.e., agent or a coordinator,
+    // specified as a parameter in the "*.launch" file
+    int m_type = 0;
+
+    // The ID  of this node
+    int m_ID;
+
+    // For coordinating multiple agents
+    std::vector<int> m_vector_of_agentIDs_toCoordinate;
+    bool m_shouldCoordinateAll = true;
+    QMutex m_agentIDs_toCoordinate_mutex;
+
+
+
 #ifdef CATKIN_MAKE
-    SetpointWithHeader m_defaultSetpoint;
+    // Variable for storing the default setpoint
+    d_fall_pps::SetpointWithHeader m_defaultSetpoint;
+
+    // PUBLISHER
+    // > For requesting the setpoint to be changed
+    ros::Publisher requestSetpointChangePublisher;
+#endif
+
+
+    // --------------------------------------------------- //
+    // PRIVATE FUNCTIONS
+
+
+#ifdef CATKIN_MAKE
+    // Fill the header for a message
+    void fillSetpointMessageHeader( d_fall_pps::SetpointWithHeader & msg );
+
+    // Get the paramters that specify the type and ID
+    bool getTypeAndIDParameters();
 #endif
 
     void publishSetpoint(float x, float y, float z, float yaw);

@@ -209,6 +209,7 @@ add_message_files(
   IntWithHeader.msg
   FloatWithHeader.msg
   StringWithHeader.msg
+  SetpointWithHeader.msg
   #------------------------
   DebugMsg.msg
   CustomButton.msg
