@@ -47,6 +47,7 @@ public:
 
 public slots:
     void setMeasuredPose(float x , float y , float z , float roll , float pitch , float yaw , bool occluded);
+    void poseDataUnavailableSlot();
 
 
 private slots:

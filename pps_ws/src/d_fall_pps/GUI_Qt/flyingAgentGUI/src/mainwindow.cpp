@@ -107,6 +107,27 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
             ui->customWidget_enableControllerLoadYamlBar , &EnableControllerLoadYamlBar::setAgentIDsToCoordinate
             );
 
+    QObject::connect(
+            ui->customWidget_coordinator , &Coordinator::agentIDsToCoordinateChanged ,
+            ui->customWidget_topBanner , &TopBanner::setAgentIDsToCoordinate
+            );
+
+    QObject::connect(
+            ui->customWidget_coordinator , &Coordinator::agentIDsToCoordinateChanged ,
+            ui->customWidget_controller_tabs , &ControllerTabs::setAgentIDsToCoordinate
+            );
+
+    // CONNECT SIGNAL/SLOT FOR PASSING THE OBJECT NAME FOR WHICH
+    // POSE DATA SHOULD BE DISPLAYED
+    // This is passed from the "top banner" to the "controller tabs"
+    // because the "top banner" is in charge of fetching the object
+    // name from the database, and the "controller tabs" are where
+    // the pose data is displayed
+    QObject::connect(
+            ui->customWidget_topBanner , &TopBanner::objectNameForDisplayingPoseDataValueChanged ,
+            ui->customWidget_controller_tabs , &ControllerTabs::setObjectNameForDisplayingPoseData
+            );
+
 }
 
 MainWindow::~MainWindow()

@@ -63,18 +63,18 @@ void DefaultControllerTab::setMeasuredPose(float x , float y , float z , float r
         QString qstr = "";
         // UPDATE THE MEASUREMENT COLUMN
         if (x < 0.0f) qstr = ""; else qstr = "+";
-        ui->lineEdit_measured_x    ->setText(qstr + QString::number( x, 'f', 3));
+        ui->lineEdit_measured_x->setText(qstr + QString::number( x, 'f', 3));
         if (y < 0.0f) qstr = ""; else qstr = "+";
-        ui->lineEdit_measured_y    ->setText(qstr + QString::number( y, 'f', 3));
+        ui->lineEdit_measured_y->setText(qstr + QString::number( y, 'f', 3));
         if (z < 0.0f) qstr = ""; else qstr = "+";
-        ui->lineEdit_measured_z    ->setText(qstr + QString::number( z, 'f', 3));
+        ui->lineEdit_measured_z->setText(qstr + QString::number( z, 'f', 3));
 
         if (roll < 0.0f) qstr = ""; else qstr = "+";
-        ui->lineEdit_measured_roll ->setText(qstr + QString::number( roll  * RAD2DEG, 'f', 1));
+        ui->lineEdit_measured_roll->setText(qstr + QString::number( roll  * RAD2DEG, 'f', 1));
         if (pitch < 0.0f) qstr = ""; else qstr = "+";
         ui->lineEdit_measured_pitch->setText(qstr + QString::number( pitch * RAD2DEG, 'f', 1));
         if (yaw < 0.0f) qstr = ""; else qstr = "+";
-        ui->lineEdit_measured_yaw  ->setText(qstr + QString::number( yaw   * RAD2DEG, 'f', 1));
+        ui->lineEdit_measured_yaw->setText(qstr + QString::number( yaw   * RAD2DEG, 'f', 1));
 
         // GET THE CURRENT SETPOINT
         float error_x   = x   - (ui->lineEdit_setpoint_current_x->text()  ).toFloat();
@@ -84,20 +84,20 @@ void DefaultControllerTab::setMeasuredPose(float x , float y , float z , float r
 
         // UPDATE THE ERROR COLUMN
         if (error_x < 0.0f) qstr = ""; else qstr = "+";
-        ui->lineEdit_error_x  ->setText(qstr + QString::number( error_x, 'f', 3));
+        ui->lineEdit_error_x->setText(qstr + QString::number( error_x, 'f', 3));
         if (error_y < 0.0f) qstr = ""; else qstr = "+";
-        ui->lineEdit_error_y  ->setText(qstr + QString::number( error_y, 'f', 3));
+        ui->lineEdit_error_y->setText(qstr + QString::number( error_y, 'f', 3));
         if (error_z < 0.0f) qstr = ""; else qstr = "+";
-        ui->lineEdit_error_z  ->setText(qstr + QString::number( error_z, 'f', 3));
+        ui->lineEdit_error_z->setText(qstr + QString::number( error_z, 'f', 3));
 
         if (error_yaw < 0.0f) qstr = ""; else qstr = "+";
         ui->lineEdit_error_yaw->setText(qstr + QString::number( error_yaw * RAD2DEG, 'f', 1));
 
         // Ensure the red frames are not visible
         if ( ui->red_frame_position_left->isVisible() )
-            ui->red_frame_position_left->setVisible(true);
+            ui->red_frame_position_left->setVisible(false);
         if ( ui->red_frame_position_right->isVisible() )
-            ui->red_frame_position_right->setVisible(true);
+            ui->red_frame_position_right->setVisible(false);
     }
     else
     {
@@ -107,6 +107,25 @@ void DefaultControllerTab::setMeasuredPose(float x , float y , float z , float r
         if ( !(ui->red_frame_position_right->isVisible()) )
             ui->red_frame_position_right->setVisible(true);
     }
+}
+
+
+void DefaultControllerTab::poseDataUnavailableSlot()
+{
+    ui->lineEdit_measured_x->setText("xx.xx");
+    ui->lineEdit_measured_y->setText("xx.xx");
+    ui->lineEdit_measured_z->setText("xx.xx");
+
+    ui->lineEdit_measured_roll->setText("xx.xx");
+    ui->lineEdit_measured_pitch->setText("xx.xx");
+    ui->lineEdit_measured_yaw->setText("xx.xx");
+
+    ui->lineEdit_error_x->setText("xx.xx");
+    ui->lineEdit_error_y->setText("xx.xx");
+    ui->lineEdit_error_z->setText("xx.xx");
+    ui->lineEdit_error_yaw->setText("xx.xx");
+
+
 }
 
 

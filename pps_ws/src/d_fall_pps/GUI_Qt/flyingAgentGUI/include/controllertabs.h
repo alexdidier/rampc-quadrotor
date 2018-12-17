@@ -46,8 +46,14 @@ public:
     ~ControllerTabs();
 
 
+public slots:
+    void setAgentIDsToCoordinate(QVector<int> agentIDs , bool shouldCoordinateAll);
+    void setObjectNameForDisplayingPoseData( QString object_name );
+
+
 signals:
     void measuredPoseValueChanged(float x , float y , float z , float roll , float pitch , float yaw , bool occluded);
+    void poseDataUnavailableSignal();
 
 
 private:
@@ -67,6 +73,15 @@ private:
     std::vector<int> m_vector_of_agentIDs_toCoordinate;
     bool m_shouldCoordinateAll = true;
     QMutex m_agentIDs_toCoordinate_mutex;
+
+    // The object name for which motion capture pose data
+    // will be "emitted" using the "measuredPoseValueChanged"
+    // signal
+    std::string m_object_name_for_emitting_pose_data;
+
+    // Flag for whether pose data should be emitted, this is
+    // to save looking through the data when it is unnecessary
+    bool m_should_search_pose_data_for_object_name = false;
 
 
 #ifdef CATKIN_MAKE

@@ -37,6 +37,8 @@
 #define TOPBANNER_H
 
 #include <QWidget>
+#include <QMutex>
+#include <QTimer>
 
 #ifdef CATKIN_MAKE
 #include <ros/ros.h>
@@ -74,6 +76,15 @@ public:
     explicit TopBanner(QWidget *parent = 0);
     ~TopBanner();
 
+
+public slots:
+    void setAgentIDsToCoordinate(QVector<int> agentIDs , bool shouldCoordinateAll);
+
+
+signals:
+    void objectNameForDisplayingPoseDataValueChanged( QString object_name );
+
+
 private:
 	// --------------------------------------------------- //
     // PRIVATE VARIABLES
@@ -86,9 +97,18 @@ private:
 	// > For the ID of this node
 	int m_ID = 0;
 
+	// For coordinating multiple agents
+    std::vector<int> m_vector_of_agentIDs_toCoordinate;
+    bool m_shouldCoordinateAll = true;
+    QMutex m_agentIDs_toCoordinate_mutex;
+
 	// The namespace into which node operates
 	std::string m_base_namespace;
 
+	// The object name for which motion capture pose data
+    // will be "emitted" using the "measuredPoseValueChanged"
+    // signal
+    QString m_object_name_for_emitting_pose_data;
 
 
 	// --------------------------------------------------- //
@@ -96,7 +116,9 @@ private:
 
     // > For loading the "context" for this agent,
     //   i.e., the {agentID,cfID,flying zone} tuple
-    void loadCrazyflieContext();
+    void loadCrazyflieContext(int ID_to_request_from_database , int emit_after_milliseconds);
+
+    
 
 
 
@@ -131,6 +153,10 @@ private slots:
     // PRIVATE METHODS FOR BUTTON CALLBACKS
     // > For the emergency stop button
     void on_emergency_stop_button_clicked();
+
+    // > For emitting a signal with the object name after
+    //   some small delay
+    void emitObjectNameForDisplayingPoseDataValueChanged();
 
 };
 

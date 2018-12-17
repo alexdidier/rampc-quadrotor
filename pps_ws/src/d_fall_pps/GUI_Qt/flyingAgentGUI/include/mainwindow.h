@@ -89,6 +89,12 @@ private:
     // > For the ID of this node
     int m_ID = 0;
 
+    // For coordinating multiple agents
+    std::vector<int> m_vector_of_agentIDs_toCoordinate;
+    bool m_shouldCoordinateAll = true;
+    QMutex m_agentIDs_toCoordinate_mutex;
+    
+
 #ifdef CATKIN_MAKE
     rosNodeThread* m_rosNodeThread;
 

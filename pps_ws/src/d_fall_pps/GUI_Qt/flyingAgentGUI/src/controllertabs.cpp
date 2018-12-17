@@ -8,6 +8,9 @@ ControllerTabs::ControllerTabs(QWidget *parent) :
     ui->setupUi(this);
 
 
+    // Initialise the object name as blank
+    m_object_name_for_emitting_pose_data = "";
+
 
     // CONNECT THE "MEASURED POST" SIGNAL TO EACH OF
     // THE TABS
@@ -22,6 +25,16 @@ ControllerTabs::ControllerTabs(QWidget *parent) :
             this , &ControllerTabs::measuredPoseValueChanged ,
             ui->student_controller_tab_widget , &StudentControllerTab::setMeasuredPose
         );
+
+
+    // CONNECT THE "MEASUREMENTS UNAVAILABLE" SIGNAL TO
+    // EACH OF THE TABS
+    QObject::connect(
+            this , &ControllerTabs::poseDataUnavailableSignal ,
+            ui->default_controller_tab_widget , &DefaultControllerTab::poseDataUnavailableSlot
+        );
+
+    
 
 
 
@@ -64,45 +77,95 @@ ControllerTabs::~ControllerTabs()
 
 
 
+
+void ControllerTabs::setObjectNameForDisplayingPoseData( QString object_name )
+{
+    if (object_name.isEmpty())
+    {
+        // Set the class variable accordingly
+        m_object_name_for_emitting_pose_data = "";
+        // Update the flag accordingly
+        m_should_search_pose_data_for_object_name = false;
+        // Emit a signal to let the tabs know
+        emit poseDataUnavailableSignal();
+        // Inform the user
+        ROS_INFO("[CONTROLLER TABS GUI] No longer emitting pose data for any object.");
+    }
+    else
+    {
+        // Set the class variable accordingly
+        m_object_name_for_emitting_pose_data = object_name.toStdString();
+        // Update the flag accordingly
+        m_should_search_pose_data_for_object_name = true;
+        // Inform the user
+        #ifdef CATKIN_MAKE
+            ROS_INFO_STREAM("[CONTROLLER TABS GUI] now emitting data for object named: " << m_object_name_for_emitting_pose_data );
+        #endif
+    }
+}
+
+
 #ifdef CATKIN_MAKE
 // > For the controller currently operating, received on
 //   "controllerUsedSubscriber"
 void ControllerTabs::poseDataReceivedCallback(const d_fall_pps::ViconData& viconData)
 {
-    for(std::vector<d_fall_pps::CrazyflieData>::const_iterator it = viconData.crazyflies.begin(); it != viconData.crazyflies.end(); ++it)
+    if (m_should_search_pose_data_for_object_name)
     {
-        d_fall_pps::CrazyflieData pose_in_global_frame = *it;
-
-        if(pose_in_global_frame.crazyflieName == "CF05")
+        for(std::vector<d_fall_pps::CrazyflieData>::const_iterator it = viconData.crazyflies.begin(); it != viconData.crazyflies.end(); ++it)
         {
-            emit measuredPoseValueChanged(
-                    pose_in_global_frame.x,
-                    pose_in_global_frame.y,
-                    pose_in_global_frame.z,
-                    pose_in_global_frame.roll,
-                    pose_in_global_frame.pitch,
-                    pose_in_global_frame.yaw,
-                    pose_in_global_frame.occluded
-                );
+            d_fall_pps::CrazyflieData pose_in_global_frame = *it;
+
+            if(pose_in_global_frame.crazyflieName == m_object_name_for_emitting_pose_data)
+            {
+                emit measuredPoseValueChanged(
+                        pose_in_global_frame.x,
+                        pose_in_global_frame.y,
+                        pose_in_global_frame.z,
+                        pose_in_global_frame.roll,
+                        pose_in_global_frame.pitch,
+                        pose_in_global_frame.yaw,
+                        pose_in_global_frame.occluded
+                    );
+            }
         }
     }
-
-
-    // OLD STYLE    
-    // // Initialise a Qvector to sending around
-    // QVector<float> poseDataForSignal;
-    // // Fill in the data
-    // poseDataForSignal.push_back(msg.x);
-    // poseDataForSignal.push_back(msg.y);
-    // poseDataForSignal.push_back(msg.z);
-    // poseDataForSignal.push_back(msg.roll);
-    // poseDataForSignal.push_back(msg.pitch);
-    // poseDataForSignal.push_back(msg.yaw);
-    // // Emit the signal
-    // emit measuredPoseValueChanged(poseDataForSignal);
-
 }
 #endif
+
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//      A     GGGG  EEEEE  N   N  TTTTT     III  DDDD    SSSS
+//     A A   G      E      NN  N    T        I   D   D  S
+//    A   A  G      EEE    N N N    T        I   D   D   SSS
+//    AAAAA  G   G  E      N  NN    T        I   D   D      S
+//    A   A   GGGG  EEEEE  N   N    T       III  DDDD   SSSS
+//    ----------------------------------------------------------------------------------
+
+
+void ControllerTabs::setAgentIDsToCoordinate(QVector<int> agentIDs , bool shouldCoordinateAll)
+{
+
+    // Lock the mutex
+    m_agentIDs_toCoordinate_mutex.lock();
+    // Add the "coordinate all" flag
+    m_shouldCoordinateAll = shouldCoordinateAll;
+    // Clear the previous list of agent IDs
+    m_vector_of_agentIDs_toCoordinate.clear();
+    // Copy across the agent IDs, if necessary
+    if (!shouldCoordinateAll)
+    {
+        for ( int irow = 0 ; irow < agentIDs.length() ; irow++ )
+        {
+            m_vector_of_agentIDs_toCoordinate.push_back( agentIDs[irow] );
+        }
+    }
+    // Unlock the mutex
+    m_agentIDs_toCoordinate_mutex.unlock();
+}
 
 
 

@@ -59,6 +59,9 @@ TopBanner::TopBanner(QWidget *parent) :
     //ui->emergency_stop_button->setIconSize(pixmap.rect().size());
 
 
+    m_object_name_for_emitting_pose_data = "";
+
+
 #ifdef CATKIN_MAKE
     // Get the namespace of this node
     std::string base_namespace = ros::this_node::getNamespace();
@@ -89,13 +92,9 @@ TopBanner::TopBanner(QWidget *parent) :
     // CREATE A NODE HANDLE TO THE ROOT OF THE D-FaLL SYSTEM
     ros::NodeHandle dfall_root_nodeHandle("/dfall");
 
-    // SUBSCRIBER AND SERVICE:
-    if (m_type == TYPE_AGENT)
-    {
-    	// > For changes in the database that defines {agentID,cfID,flying zone} links
-    	databaseChangedSubscriber = dfall_root_nodeHandle.subscribe("CentralManagerService/DBChanged", 1, &TopBanner::databaseChangedCallback, this);;
-    	centralManagerDatabaseService = dfall_root_nodeHandle.serviceClient<d_fall_pps::CMQuery>("CentralManagerService/Query", false);
-    }
+	// > For changes in the database that defines {agentID,cfID,flying zone} links
+	databaseChangedSubscriber = dfall_root_nodeHandle.subscribe("CentralManagerService/DBChanged", 1, &TopBanner::databaseChangedCallback, this);;
+	centralManagerDatabaseService = dfall_root_nodeHandle.serviceClient<d_fall_pps::CMQuery>("CentralManagerService/Query", false);
 #endif
 
 
@@ -103,7 +102,7 @@ TopBanner::TopBanner(QWidget *parent) :
     // INITIALISATIONS ARE COMPLETE
     if (m_type == TYPE_AGENT)
     {
-    	loadCrazyflieContext();
+    	loadCrazyflieContext(m_ID,1000);
     }
     else if (m_type == TYPE_COORDINATOR)
     {
@@ -146,61 +145,86 @@ TopBanner::~TopBanner()
 void TopBanner::databaseChangedCallback(const std_msgs::Int32& msg)
 {
     //ROS_INFO_STEAM("[TOP BANNER GUI] Database Changed Callback called for agentID = " << m_agentID);
-    loadCrazyflieContext();
+    loadCrazyflieContext(m_ID,0);
 }
 #endif
 
+
+
+void TopBanner::emitObjectNameForDisplayingPoseDataValueChanged()
+{
+    emit objectNameForDisplayingPoseDataValueChanged( m_object_name_for_emitting_pose_data );
+    ROS_INFO_STREAM("[TOP BANNER GUI] Object name \"" << m_object_name_for_emitting_pose_data.toStdString() << "\" emitted for the controller tabs.");
+}
+
+
 // > For loading the "context" for this agent, i.e., the {agentID,cfID,flying zone} tuple
-void TopBanner::loadCrazyflieContext()
+void TopBanner::loadCrazyflieContext(int ID_to_request_from_database , int emit_after_milliseconds)
 {
 
     QString qstr_crazyflie_name = "";
 
-	if (m_type == TYPE_AGENT)
-	{
-
 #ifdef CATKIN_MAKE
-		d_fall_pps::CMQuery contextCall;
-		contextCall.request.studentID = m_ID;
-		//ROS_INFO_STREAM("StudentID:" << m_agentID);
+	d_fall_pps::CMQuery contextCall;
+	contextCall.request.studentID = ID_to_request_from_database;
+	//ROS_INFO_STREAM("StudentID:" << m_agentID);
 
-		centralManagerDatabaseService.waitForExistence(ros::Duration(-1));
+	centralManagerDatabaseService.waitForExistence(ros::Duration(-1));
 
-		if(centralManagerDatabaseService.call(contextCall))
-		{
-			my_context = contextCall.response.crazyflieContext;
-			ROS_INFO_STREAM("[TOP BANNER GUI] CrazyflieContext:\n" << my_context);
+	if(centralManagerDatabaseService.call(contextCall))
+	{
+		my_context = contextCall.response.crazyflieContext;
+		ROS_INFO_STREAM("[TOP BANNER GUI] CrazyflieContext:\n" << my_context);
 
-			qstr_crazyflie_name.append(QString::fromStdString(my_context.crazyflieName));
-		}
-		else
-		{
-			ROS_ERROR_STREAM("[TOP BANNER GUI] Failed to load context for agentID = " << m_ID);
-		}
-		// This updating of the radio only needs to be done by the actual agent's node
-		//ros::NodeHandle nh("CrazyRadio");
-		//nh.setParam("crazyFlieAddress", m_context.crazyflieAddress);
-#else
-		// Set the Crazyflie Name String to be a question mark
-		qstr_crazyflie_name.append("?");
-#endif
+		qstr_crazyflie_name.append(QString::fromStdString(my_context.crazyflieName));
 
-		// Construct and set the string for the checkbox label
-		QString qstr_title = "Flying Device GUI: for AGENT ID ";
-		qstr_title.append( QString::number(m_ID) );
-		qstr_title.append(", connected to ");
-		qstr_title.append(qstr_crazyflie_name);
-		ui->top_banner_label->setText(qstr_title);
+        m_object_name_for_emitting_pose_data = QString::fromStdString(my_context.crazyflieName);
 
+        // Emit the crazyflie name
+        // > This signal is connected to the "controller tabs" widget
+        //   and is used for filtering with motion capture data to
+        //   display in the tabs for each controller
+        if (emit_after_milliseconds == 0)
+        {
+            emit objectNameForDisplayingPoseDataValueChanged( QString::fromStdString(my_context.crazyflieName) );
+            ROS_INFO_STREAM("[TOP BANNER GUI] Object name \"" << my_context.crazyflieName << "\" emitted for the controller tabs.");
+        }
+        else
+        {
+            QTimer::singleShot(emit_after_milliseconds, this, SLOT( emitObjectNameForDisplayingPoseDataValueChanged() ) );
+        }
 	}
 	else
 	{
-#ifdef CATKIN_MAKE
-		ROS_ERROR("[TOP BANNER GUI] loadCrazyflieContext called by a node that is NOT of type AGENT.");
-#endif
-		qstr_crazyflie_name.append("??");
-	}
+		ROS_ERROR_STREAM("[TOP BANNER GUI] Failed to load context for agentID = " << m_ID);
 
+        m_object_name_for_emitting_pose_data = "";
+
+        if (emit_after_milliseconds == 0)
+        {
+            QString qstr = "";
+            emit objectNameForDisplayingPoseDataValueChanged( qstr );
+            ROS_INFO_STREAM("[TOP BANNER GUI] emitted for the controller tabs that no object name is available.");
+        }
+        else
+        {
+            QTimer::singleShot(emit_after_milliseconds, this, SLOT( emitObjectNameForDisplayingPoseDataValueChanged() ) );
+        }
+	}
+	// This updating of the radio only needs to be done by the actual agent's node
+	//ros::NodeHandle nh("CrazyRadio");
+	//nh.setParam("crazyFlieAddress", m_context.crazyflieAddress);
+#else
+	// Set the Crazyflie Name String to be a question mark
+	qstr_crazyflie_name.append("?");
+#endif
+
+	// Construct and set the string for the checkbox label
+	QString qstr_title = "Flying Device GUI: for AGENT ID ";
+	qstr_title.append( QString::number(m_ID) );
+	qstr_title.append(", connected to ");
+	qstr_title.append(qstr_crazyflie_name);
+	ui->top_banner_label->setText(qstr_title);
 }
 
 
@@ -226,6 +250,61 @@ void TopBanner::on_emergency_stop_button_clicked()
     ROS_INFO("[TOP BANNER GUI] EMERGENCY STOP button clicked");
 #endif
 }
+
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//      A     GGGG  EEEEE  N   N  TTTTT     III  DDDD    SSSS
+//     A A   G      E      NN  N    T        I   D   D  S
+//    A   A  G      EEE    N N N    T        I   D   D   SSS
+//    AAAAA  G   G  E      N  NN    T        I   D   D      S
+//    A   A   GGGG  EEEEE  N   N    T       III  DDDD   SSSS
+//    ----------------------------------------------------------------------------------
+
+
+void TopBanner::setAgentIDsToCoordinate(QVector<int> agentIDs , bool shouldCoordinateAll)
+{
+
+    // Lock the mutex
+    m_agentIDs_toCoordinate_mutex.lock();
+    // Add the "coordinate all" flag
+    m_shouldCoordinateAll = shouldCoordinateAll;
+    // Clear the previous list of agent IDs
+    m_vector_of_agentIDs_toCoordinate.clear();
+    // Copy across the agent IDs, if necessary
+    if (!shouldCoordinateAll)
+    {
+        for ( int irow = 0 ; irow < agentIDs.length() ; irow++ )
+        {
+            m_vector_of_agentIDs_toCoordinate.push_back( agentIDs[irow] );
+        }
+    }
+    // Unlock the mutex
+    m_agentIDs_toCoordinate_mutex.unlock();
+
+    // If there is only one agent to coordinate,
+    // then load the context for that agent
+    if (agentIDs.length() == 1)
+    {
+        loadCrazyflieContext(agentIDs[0],0);
+    }
+    else
+    {
+        // Set the label appropriate for a cooridnator
+        QString qstr_title = "Flying Device GUI: for COORDINATOR ID ";
+        qstr_title.append( QString::number(m_ID) );
+        ui->top_banner_label->setText(qstr_title);
+
+        // Update the class variable for the name
+        m_object_name_for_emitting_pose_data = "";
+        // Emit the empty name as a signal
+        QString qstr = "";
+        emit objectNameForDisplayingPoseDataValueChanged( qstr );
+    }
+}
+
 
 
 
