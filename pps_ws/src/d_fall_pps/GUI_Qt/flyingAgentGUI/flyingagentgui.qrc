@@ -16,6 +16,6 @@
         <file>images/flying_state_flying.png</file>
         <file>images/flying_state_off.png</file>
         <file>images/flying_state_unknown.png</file>
-        <file>images/flying_state_unavilable.png</file>
+        <file>images/flying_state_unavailable.png</file>
     </qresource>
 </RCC>

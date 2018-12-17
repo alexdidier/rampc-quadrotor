@@ -86,7 +86,7 @@ ConnectStartStopBar::ConnectStartStopBar(QWidget *parent) :
     setBatteryImageBasedOnLevel(BATTERY_LEVEL_UNAVAILABLE);
 
     // SET THE STARTING FLYING STATE STATUS TO BE: MOTORS OFF
-    setFlyingState(CMD_CRAZYFLY_MOTORS_OFF);
+    setFlyingState(STATE_UNAVAILABLE);
 
     // ENSURE THE F:YING STATE BUTTONS ARE AVAILABLE FOR A COORDINATOR
     if (m_type == TYPE_COORDINATOR)
@@ -101,7 +101,7 @@ ConnectStartStopBar::ConnectStartStopBar(QWidget *parent) :
     ros::NodeHandle base_nodeHandle(base_namespace);
 
     // CREATE A NODE HANDLE TO THE ROOT OF THE D-FaLL SYSTEM
-    ros::NodeHandle dfall_root_nodeHandle("/dfall");
+    //ros::NodeHandle dfall_root_nodeHandle("/dfall");
 
     // SUBSCRIBERS AND PUBLISHERS:
 
@@ -481,6 +481,15 @@ void ConnectStartStopBar::setFlyingState(int new_flying_state)
             break;
         }
 
+        case STATE_UNAVAILABLE:
+        {
+            // SET THE APPROPRIATE IMAGE FOR THE FLYING STATE LABEL
+            QPixmap flying_state_disabling_pixmap(":/images/flying_state_unavailable.png");
+            ui->flying_state_label->setPixmap(flying_state_disabling_pixmap);
+            ui->flying_state_label->setScaledContents(true);
+            break;
+        }
+
         default:
         {
             // SET THE APPROPRIATE IMAGE FOR THE FLYING STATE LABEL
@@ -592,6 +601,79 @@ void ConnectStartStopBar::setAgentIDsToCoordinate(QVector<int> agentIDs , bool s
     }
     // Unlock the mutex
     m_agentIDs_toCoordinate_mutex.unlock();
+
+
+#ifdef CATKIN_MAKE
+    // If there is only one agent to coordinate,
+    // then subscribe to the relevant data
+    if (agentIDs.length() == 1)
+    {
+
+        // > Create the appropriate node handle
+        QString agent_base_namespace = "/dfall/agent" + QString::number(agentIDs[0]).rightJustified(3, '0');
+        ros::NodeHandle agent_base_nodeHandle(agent_base_namespace.toStdString());
+
+        // > Request the current flying state
+        ros::ServiceClient getCurrentFlyingStateService = agent_base_nodeHandle.serviceClient<d_fall_pps::IntIntService>("PPSClient/getCurrentFlyingState", false);
+        d_fall_pps::IntIntService getFlyingStateCall;
+        getFlyingStateCall.request.data = 0;
+        getCurrentFlyingStateService.waitForExistence(ros::Duration(2.0));
+        if(getCurrentFlyingStateService.call(getFlyingStateCall))
+        {
+            setFlyingState(getFlyingStateCall.response.data);
+        }
+        else
+        {
+            setFlyingState(STATE_UNAVAILABLE);
+        }
+
+        // > Request the current status of the crazy radio
+        ros::ServiceClient getCurrentCrazyRadioStateService = agent_base_nodeHandle.serviceClient<d_fall_pps::IntIntService>("CrazyRadio/getCurrentCrazyRadioStatus", false);
+        d_fall_pps::IntIntService getCrazyRadioCall;
+        getCrazyRadioCall.request.data = 0;
+        getCurrentCrazyRadioStateService.waitForExistence(ros::Duration(2.0));
+        if(getCurrentCrazyRadioStateService.call(getCrazyRadioCall))
+        {
+            setCrazyRadioStatus(getCrazyRadioCall.response.data);
+        }
+        else
+        {
+            setCrazyRadioStatus(CRAZY_RADIO_STATE_DISCONNECTED);
+        }
+
+        // > For updating the "rf_status_label" picture
+        crazyRadioStatusSubscriber = agent_base_nodeHandle.subscribe("CrazyRadio/CrazyRadioStatus", 1, &ConnectStartStopBar::crazyRadioStatusCallback, this);
+
+        // > For updating the current battery voltage
+        batteryVoltageSubscriber = agent_base_nodeHandle.subscribe("BatteryMonitor/FilteredVoltage", 1, &ConnectStartStopBar::batteryVoltageCallback, this);
+
+        // > For updating the current battery state
+        //batteryStateSubscriber = agent_base_nodeHandle.subscribe("BatteryMonitor/ChangedStateTo", 1, &ConnectStartStopBar::batteryStateChangedCallback, this);
+
+        // > For updating the current battery level
+        batteryLevelSubscriber = agent_base_nodeHandle.subscribe("BatteryMonitor/Level", 1, &ConnectStartStopBar::batteryLevelCallback, this);
+
+        // > For updating the "flying_state_label" picture
+        flyingStateSubscriber = agent_base_nodeHandle.subscribe("PPSClient/flyingState", 1, &ConnectStartStopBar::flyingStateChangedCallback, this);
+    }
+    else
+    {
+        // Unsubscribe
+        crazyRadioStatusSubscriber.shutdown();
+        batteryVoltageSubscriber.shutdown();
+        //batteryStateSubscriber.shutdown();
+        batteryLevelSubscriber.shutdown();
+        flyingStateSubscriber.shutdown();
+
+        // Set information back to the default
+        setCrazyRadioStatus(CRAZY_RADIO_STATE_DISCONNECTED);
+        setBatteryVoltageText(-1.0f);
+        setBatteryImageBasedOnLevel(BATTERY_LEVEL_UNAVAILABLE);
+        setFlyingState(STATE_UNAVAILABLE);
+
+    }
+#endif
+
 
 #ifdef CATKIN_MAKE
 #else

@@ -52,6 +52,7 @@
 #include "d_fall_pps/AreaBounds.h"
 #include "d_fall_pps/CrazyflieContext.h"
 #include "d_fall_pps/CMQuery.h"
+#include "d_fall_pps/IntIntService.h"
 
 // Include the shared definitions
 #include "nodes/Constants.h"
@@ -155,6 +156,14 @@ private:
     //   i.e., the {agentID,cfID,flying zone} tuple
     void loadCrazyflieContext();
 
+    // > For requesting the current flying state
+    //   i.e., using the service advertised by the PPS client
+    void getCurrentFlyingState();
+
+    // > For requesting the current state of the Crazy Radio
+    //   i.e., using the service advertised by the PPS client
+    void getCurrentCrazyRadioState();
+
     // > For updating the text in the UI element of
     //   "controller_enabled_label"
     void setControllerEnabled(int new_controller);
@@ -191,6 +200,14 @@ private:
     ros::ServiceClient centralManagerDatabaseService;
     // > For updating the controller that is currently operating
     ros::Subscriber controllerUsedSubscriber;
+
+    // > For requesting the current flying state,
+    //   this is used only for initialising the icon
+    ros::ServiceClient getCurrentFlyingStateService;
+
+    // > For requesting the current state of the Crazy Radio,
+    //   this is used only for initialising the icon
+    ros::ServiceClient getCurrentCrazyRadioStateService;
 
 
     // --------------------------------------------------- //

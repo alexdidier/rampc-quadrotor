@@ -79,10 +79,11 @@
 #define CMD_CRAZYFLY_MOTORS_OFF      13
 
 // Flying states
-#define STATE_MOTORS_OFF 1
-#define STATE_TAKE_OFF   2
-#define STATE_FLYING     3
-#define STATE_LAND       4
+#define STATE_MOTORS_OFF     1
+#define STATE_TAKE_OFF       2
+#define STATE_FLYING         3
+#define STATE_LAND           4
+#define STATE_UNAVAILABLE    5
 
 
 // Commands for CrazyRadio

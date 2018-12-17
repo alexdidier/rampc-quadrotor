@@ -83,7 +83,7 @@ CoordinatorRow::CoordinatorRow(QWidget *parent, int agentID) :
     setBatteryImageBasedOnLevel(BATTERY_LEVEL_UNAVAILABLE);
     
     // SET THE STARTING FLYING STATE STATUS TO BE: MOTORS OFF
-    setFlyingState(CMD_CRAZYFLY_MOTORS_OFF);
+    setFlyingState(STATE_UNAVAILABLE);
     
     // SET THE DEFAULT NAME FOR THE SELECTED CONTROLLER
     setControllerEnabled(SAFE_CONTROLLER);
@@ -130,11 +130,25 @@ CoordinatorRow::CoordinatorRow(QWidget *parent, int agentID) :
     // > For updating the controller that is currently operating
     controllerUsedSubscriber = base_nodeHandle.subscribe("PPSClient/controllerUsed", 1, &CoordinatorRow::controllerUsedChangedCallback, this);
 
+    // > For requesting the current flying state,
+    //   this is used only for initialising the icon
+    getCurrentFlyingStateService = base_nodeHandle.serviceClient<d_fall_pps::IntIntService>("PPSClient/getCurrentFlyingState", false);
+
+    // > For requesting the current state of the Crazy Radio,
+    //   this is used only for initialising the icon
+    getCurrentCrazyRadioStateService = base_nodeHandle.serviceClient<d_fall_pps::IntIntService>("CrazyRadio/getCurrentCrazyRadioStatus", false);
+
 #endif
 
     // FURTHER INITILIASATIONS NEED TO OCCUR AFTER THE ROS RELATED
     // INITIALISATIONS ARE COMPLETE
     loadCrazyflieContext();
+
+    // > Request the current flying state
+    getCurrentFlyingState();
+
+    // > Request the current state of the Crazy Radio
+    getCurrentCrazyRadioState();
 
 }
 
@@ -541,6 +555,15 @@ void CoordinatorRow::setFlyingState(int new_flying_state)
             break;
         }
 
+        case STATE_UNAVAILABLE:
+        {
+            // SET THE APPROPRIATE IMAGE FOR THE FLYING STATE LABEL
+            QPixmap flying_state_disabling_pixmap(":/images/flying_state_unavailable.png");
+            ui->flying_state_label->setPixmap(flying_state_disabling_pixmap);
+            ui->flying_state_label->setScaledContents(true);
+            break;
+        }
+
         default:
         {
             // SET THE APPROPRIATE IMAGE FOR THE FLYING STATE LABEL
@@ -615,6 +638,41 @@ void CoordinatorRow::loadCrazyflieContext()
 
     // Set the name of the Crazyflie to the class variable
     m_crazyflie_name_as_string = qstr_crazyflie_name;
+}
+
+
+
+void CoordinatorRow::getCurrentFlyingState()
+{
+    d_fall_pps::IntIntService getFlyingStateCall;
+    getFlyingStateCall.request.data = 0;
+    getCurrentFlyingStateService.waitForExistence(ros::Duration(2.0));
+    if(getCurrentFlyingStateService.call(getFlyingStateCall))
+    {
+        setFlyingState(getFlyingStateCall.response.data);
+    }
+    else
+    {
+        setFlyingState(STATE_UNAVAILABLE);
+    }
+}
+
+
+
+
+void CoordinatorRow::getCurrentCrazyRadioState()
+{
+    d_fall_pps::IntIntService getCrazyRadioCall;
+    getCrazyRadioCall.request.data = 0;
+    getCurrentCrazyRadioStateService.waitForExistence(ros::Duration(2.0));
+    if(getCurrentCrazyRadioStateService.call(getCrazyRadioCall))
+    {
+        setCrazyRadioStatus(getCrazyRadioCall.response.data);
+    }
+    else
+    {
+        setCrazyRadioStatus(CRAZY_RADIO_STATE_DISCONNECTED);
+    }
 }
 
 

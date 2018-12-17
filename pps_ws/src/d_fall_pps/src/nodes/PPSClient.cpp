@@ -911,6 +911,25 @@ void CFBatteryCallback(const std_msgs::Float32& msg)
 
 
 
+
+
+
+
+bool getCurrentFlyingStateServiceCallback(IntIntService::Request &request, IntIntService::Response &response)
+{
+    // Put the flying state into the response variable
+    response.data = flying_state;
+    // Return
+    return true;
+}
+
+
+
+
+
+
+
+
 //    ----------------------------------------------------------------------------------
 //    L       OOO     A    DDDD
 //    L      O   O   A A   D   D
@@ -1345,6 +1364,10 @@ int main(int argc, char* argv[])
     flying_state = STATE_MOTORS_OFF;
     setControllerUsed(SAFE_CONTROLLER);
     setInstantController(SAFE_CONTROLLER); //initialize this also, so we notify GUI
+
+
+    // Advertise the service for the current flying state
+    ros::ServiceServer getCurrentFlyingStateService = nodeHandle.advertiseService("getCurrentFlyingState", getCurrentFlyingStateServiceCallback);
 
     
 

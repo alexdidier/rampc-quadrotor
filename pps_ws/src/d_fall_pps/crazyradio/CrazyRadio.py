@@ -38,6 +38,7 @@ import rospy
 from std_msgs.msg import Int32
 from d_fall_pps.msg import ControlCommand
 from d_fall_pps.msg import IntWithHeader
+from d_fall_pps.srv import IntIntService
 
 
 # General import
@@ -333,6 +334,16 @@ class PPSRadioClient:
                     print "[CRAZY RADIO] received command to DISCONNECT (current status is DISCONNECTED)"
                     #self.status_pub.publish(DISCONNECTED)
 
+
+
+    def getCurrentCrazyRadioStatusServiceCallback(self, req):
+        """Callback to service the request for the connection status"""
+        # Directly return the current status
+        return self._status
+
+
+
+
 def controlCommandCallback(data):
     """Callback for controller actions"""
     #rospy.loginfo("controller callback : %s, %s, %s", data.roll, data.pitch, data.yaw)
@@ -348,6 +359,8 @@ def controlCommandCallback(data):
     elif data.onboardControllerType == TYPE_PPS_ANGLE:
         cf_client._send_to_commander_angle(data.motorCmd1, data.motorCmd2, data.motorCmd3, data.motorCmd4, data.roll, -data.pitch, -data.yaw)
         # cf_client._send_to_commander(data.roll, -data.pitch, -data.yaw, 0, data.motorCmd1, data.motorCmd2, data.motorCmd3, data.motorCmd4, data.onboardControllerType)
+
+
 
 
 
@@ -404,6 +417,12 @@ if __name__ == '__main__':
     rospy.Subscriber("PPSClient/crazyRadioCommand", IntWithHeader, cf_client.crazyRadioCommandCallback)
     # > For the radio command from the coordinator
     rospy.Subscriber("/dfall/coord" + coordID_as_string + "/PPSClient/crazyRadioCommand", IntWithHeader, cf_client.crazyRadioCommandCallback)
+
+
+    # Advertise a Serice for the current status
+    # of the Crazy Radio connect
+    s = rospy.Service(node_name + "/getCurrentCrazyRadioStatus", IntIntService , cf_client.getCurrentCrazyRadioStatusServiceCallback)
+
 
 
     time.sleep(1.0)

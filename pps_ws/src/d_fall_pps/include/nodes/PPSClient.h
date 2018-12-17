@@ -62,6 +62,7 @@
 // Include the DFALL service types
 #include "d_fall_pps/Controller.h"
 #include "d_fall_pps/CMQuery.h"
+#include "d_fall_pps/IntIntService.h"
 
 // Include the shared definitions
 #include "nodes/Constants.h"
@@ -302,3 +303,7 @@ int getControllerUsed();
 //float movingAverageBatteryFilter(float new_input);
 //void CFBatteryCallback(const std_msgs::Float32& msg);
 void batteryMonitorStateChangedCallback(std_msgs::Int32 msg);
+
+
+// > For the FLYING STATE
+bool getCurrentFlyingStateServiceCallback(IntIntService::Request &request, IntIntService::Response &response);

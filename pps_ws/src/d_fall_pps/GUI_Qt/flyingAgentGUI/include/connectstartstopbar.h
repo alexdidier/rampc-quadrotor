@@ -53,6 +53,7 @@
 #include "d_fall_pps/IntWithHeader.h"
 #include "d_fall_pps/AreaBounds.h"
 #include "d_fall_pps/CrazyflieContext.h"
+#include "d_fall_pps/IntIntService.h"
 #include "d_fall_pps/CMQuery.h"
 
 // Include the shared definitions
