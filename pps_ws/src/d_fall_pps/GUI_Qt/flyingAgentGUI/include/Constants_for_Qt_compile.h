@@ -49,6 +49,38 @@
 
 
 
+
+
+//    ----------------------------------------------------------------------------------
+//    
+//    
+//    
+//    
+//    
+//    ----------------------------------------------------------------------------------
+
+
+
+// The types, i.e., agent or coordinator
+#define TYPE_INVALID      -1
+#define TYPE_COORDINATOR   1
+#define TYPE_AGENT         2
+
+
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//    
+//    
+//    
+//    
+//    
+//    ----------------------------------------------------------------------------------
+
+
+
 // Types PPS firmware
 #define CF_COMMAND_TYPE_MOTORS 6
 #define CF_COMMAND_TYPE_RATE   7
@@ -145,12 +177,16 @@
 
 
 
+//    ----------------------------------------------------------------------------------
+//    
+//    
+//    
+//    
+//    
+//    ----------------------------------------------------------------------------------
 
-// The types, i.e., agent or coordinator
-#define TYPE_INVALID      -1
-#define TYPE_COORDINATOR   1
-#define TYPE_AGENT         2
-
+// For standard buttons in the GUI
+#define REQUEST_DEFAULT_SETPOINT_BUTTON_ID    100
 
 
 

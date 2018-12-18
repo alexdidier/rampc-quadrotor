@@ -25,7 +25,7 @@
 //
 //
 //    DESCRIPTION:
-//    Place for students to implement their controller
+//    The fall-back controller
 //
 //    ----------------------------------------------------------------------------------
 
@@ -58,6 +58,7 @@
 // Include the DFALL message types
 #include "d_fall_pps/IntWithHeader.h"
 #include "d_fall_pps/StringWithHeader.h"
+#include "d_fall_pps/SetpointWithHeader.h"
 #include "d_fall_pps/ViconData.h"
 #include "d_fall_pps/Setpoint.h"
 #include "d_fall_pps/ControlCommand.h"
@@ -98,38 +99,7 @@ using namespace d_fall_pps;
 
 // These constants are defined to make the code more readable and adaptable.
 
-
-
-// NOTE: these constants are already defined in the "Constant.h" header file
-//       and are repeated here for convenience
-
-// These constants define the modes that can be used for controller this is
-// running on-board the Crazyflie 2.0.
-// Therefore, the constants defined here need to be in agreement with those
-// defined in the firmware running on-board the Crazyflie 2.0.
-// The following is a short description about each mode:
-//
-// CF_COMMAND_TYPE_MOTORS
-//     In this mode the Crazyflie will apply the requested 16-bit per motor
-//     command directly to each of the motors
-//
-// CF_COMMAND_TYPE_RATE
-//     In this mode the Crazyflie will apply the requested 16-bit per motor
-//     command directly to each of the motors, and additionally request the
-//     body frame roll, pitch, and yaw angular rates from the PID rate
-//     controllers implemented in the Crazyflie 2.0 firmware.
-//
-// CF_COMMAND_TYPE_ANGLE
-//     In this mode the Crazyflie will apply the requested 16-bit per motor
-//     command directly to each of the motors, and additionally request the
-//     body frame roll, pitch, and yaw angles from the PID attitude
-//     controllers implemented in the Crazyflie 2.0 firmware.
-//#define CF_COMMAND_TYPE_MOTORS 6
-//#define CF_COMMAND_TYPE_RATE   7
-//#define CF_COMMAND_TYPE_ANGLE  8
-
-
-
+// NOTE: manz constants are already defined in the "Constant.h" header file
 
 
 
@@ -159,13 +129,31 @@ std::string m_namespace_to_coordinator_parameter_service;
 
 
 
-// Variables for controller
-float yaml_cf_mass_in_grams = 25.0;         // Crazyflie mass in grams
-std::vector<float> yaml_motorPoly(3);       // Coefficients of the 16-bit command to thrust conversion
-float yaml_control_frequency = 200.0;       // Frequency at which the controller is running
-float m_cf_weight_in_newtons = 0.0;      // The weight of the Crazyflie in Newtons, i.e., mg
+// The mass of the crazyflie, in [grams]
+float yaml_cf_mass_in_grams = 25.0;
 
-float m_previous_stateErrorInertial[9];  // The location error of the Crazyflie at the "previous" time step
+// Coefficients of the 16-bit command to thrust conversion
+//std::vector<float> yaml_motorPoly(3);
+std::vector<float> yaml_motorPoly = {5.484560e-4, 1.032633e-6, 2.130295e-11};
+
+// Frequency at which the controller is running
+float yaml_control_frequency = 200.0;
+
+// The min and max for saturating 16 bit thrust commands
+float yaml_command_sixteenbit_min = 1000;
+float yaml_command_sixteenbit_max = 65000;
+
+// The default setpoint, the ordering is (x,y,z,yaw),
+// with unit [meters,meters,meters,radians]
+std::vector<float> yaml_default_setpoint = {0.0,0.0,0.4,0.0};
+
+
+
+// The weight of the Crazyflie in Newtons, i.e., mg
+float m_cf_weight_in_newtons = 0.0;
+
+// The location error of the Crazyflie at the "previous" time step
+float m_previous_stateErrorInertial[9];
 
 std::vector<float>  m_setpoint{0.0,0.0,0.4,0.0};     // The setpoints for (x,y,z) position and yaw angle, in that order
 
@@ -179,6 +167,10 @@ std::vector<float> m_gainMatrixThrust      =  { 0.00, 0.00, 0.19, 0.00, 0.00, 0.
 
 // ROS Publisher for debugging variables
 ros::Publisher m_debugPublisher;
+
+// ROS Publisher for inform the network about
+// changes to the setpoin
+ros::Publisher m_setpointChangedPublisher;
 
 
 
@@ -230,27 +222,16 @@ void convertIntoBodyFrame(float stateInertial[9], float (&stateBody)[9], float y
 // CONVERSION FROM THRUST IN NEWTONS TO 16-BIT COMMAND
 float computeMotorPolyBackward(float thrust);
 
-// SETPOINT CHANGE CALLBACK
-void setpointCallback(const Setpoint& newSetpoint);
+// REQUEST SETPOINT CHANGE CALLBACK
+void requestSetpointChangeCallback(const SetpointWithHeader& newSetpoint);
+
+// CHANGE SETPOINT FUNCTION
+void setNewSetpoint(float x, float y, float z, float yaw);
 
 // CUSTOM COMMAND RECEIVED CALLBACK
 void customCommandReceivedCallback(const CustomButton& commandReceived);
 
 
 // > For the LOADING of YAML PARAMETERS
-void isReadyStudentControllerYamlCallback(const IntWithHeader & msg);
-void fetchStudentControllerYamlParameters(ros::NodeHandle& nodeHandle);
-
-
-// LOAD PARAMETERS
-//float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name);
-//void getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length);
-//int getParameterInt(ros::NodeHandle& nodeHandle, std::string name);
-//void getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val, int length);
-//int getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val);
-//bool getParameterBool(ros::NodeHandle& nodeHandle, std::string name);
-
-//void yamlReadyForFetchCallback(const std_msgs::Int32& msg);
-//void fetchYamlParameters(ros::NodeHandle& nodeHandle);
-//void processFetchedParameters();
-//void customYAMLasMessageCallback(const CustomControllerYAML& newCustomControllerParameters);
+void isReadyDefaultControllerYamlCallback(const IntWithHeader & msg);
+void fetchDefaultControllerYamlParameters(ros::NodeHandle& nodeHandle);

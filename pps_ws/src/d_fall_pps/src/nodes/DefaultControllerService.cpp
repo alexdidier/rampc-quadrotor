@@ -25,7 +25,7 @@
 //
 //
 //    DESCRIPTION:
-//    Place for students to implement their controller
+//    The fall-back controller
 //
 //    ----------------------------------------------------------------------------------
 
@@ -34,7 +34,7 @@
 
 
 // INCLUDE THE HEADER
-#include "nodes/StudentControllerService.h"
+#include "nodes/DefaultControllerService.h"
 
 
 
@@ -73,7 +73,7 @@
 //     CCCC   OOO   N   N    T    R   R   OOO   LLLLL       LLLLL   OOO    OOO   P
 //    ----------------------------------------------------------------------------------
 
-// This function is the callback that is linked to the "StudentController" service that
+// This function is the callback that is linked to the "DefaultController" service that
 // is advertised in the main function. This must have arguments that match the
 // "input-output" behaviour defined in the "Controller.srv" file (located in the "srv"
 // folder)
@@ -227,114 +227,74 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	}
 
 
-	
 
-	//  **********************
-	//  Y   Y    A    W     W
-	//   Y Y    A A   W     W
-	//    Y    A   A  W     W
-	//    Y    AAAAA   W W W
-	//    Y    A   A    W W
-	//
+	
 	// YAW CONTROLLER
 
-	// Instantiate the local variable for the yaw rate that will be requested
-	// from the Crazyflie's on-baord "inner-loop" controller
+	// Perform the "-Kx" LQR computation for the yaw rate
+	// to respond with
 	float yawRate_forResponse = 0;
-
-	// Perform the "-Kx" LQR computation for the yaw rate to respoond with
 	for(int i = 0; i < 9; ++i)
 	{
 		yawRate_forResponse -= m_gainMatrixYawRate[i] * stateErrorBody[i];
 	}
-
 	// Put the computed yaw rate into the "response" variable
 	response.controlOutput.yaw = yawRate_forResponse;
 
 
 
 
-	//  **************************************
-	//  BBBB    OOO   DDDD   Y   Y       ZZZZZ
-	//  B   B  O   O  D   D   Y Y           Z
-	//  BBBB   O   O  D   D    Y           Z
-	//  B   B  O   O  D   D    Y          Z
-	//  BBBB    OOO   DDDD     Y         ZZZZZ
-	//
 	// ALITUDE CONTROLLER (i.e., z-controller)
-
-	// Instantiate the local variable for the thrust adjustment that will be
-	// requested from the Crazyflie's on-baord "inner-loop" controller
+	
+	// Perform the "-Kx" LQR computation for the thrust adjustment
+	// to use for computing the response with
 	float thrustAdjustment = 0;
-
-	// Perform the "-Kx" LQR computation for the thrust adjustment to respoond with
 	for(int i = 0; i < 9; ++i)
 	{
 		thrustAdjustment -= m_gainMatrixThrust[i] * stateErrorBody[i];
 	}
 
-	// Put the computed thrust adjustment into the "response" variable,
-	// as well as adding the feed-forward thrust to counter-act gravity.
-	// > NOTE: remember that the thrust is commanded per motor, so you sohuld
-	//         consider whether the "thrustAdjustment" computed by your
-	//         controller needed to be divided by 4 or not.
-	// > NOTE: the "m_cf_weight_in_newtons" value is the total thrust required
-	//         as feed-forward. Assuming the the Crazyflie is symmetric, this
-	//         value is divided by four.
+	// Add the feed-forward thrust before putting in the response
 	float feed_forward_thrust_per_motor = m_cf_weight_in_newtons / 4.0;
-	// > NOTE: the function "computeMotorPolyBackward" converts the input argument
-	//         from Newtons to the 16-bit command expected by the Crazyflie.
-	response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrustAdjustment + feed_forward_thrust_per_motor);
-	response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrustAdjustment + feed_forward_thrust_per_motor);
-	response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrustAdjustment + feed_forward_thrust_per_motor);
-	response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrustAdjustment + feed_forward_thrust_per_motor);
+	float thrust_per_motor = thrustAdjustment + feed_forward_thrust_per_motor;
+
+	// > NOTE: the function "computeMotorPolyBackward" converts the
+	//         input argument from Newtons to the 16-bit command
+	//         expected by the Crazyflie.
+	response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrust_per_motor);
+	response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrust_per_motor);
+	response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrust_per_motor);
+	response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrust_per_motor);
 
 	
-
-	//  **************************************
-	//  BBBB    OOO   DDDD   Y   Y       X   X
-	//  B   B  O   O  D   D   Y Y         X X
-	//  BBBB   O   O  D   D    Y           X
-	//  B   B  O   O  D   D    Y          X X
-	//  BBBB    OOO   DDDD     Y         X   X
-	//
 	// BODY FRAME X CONTROLLER
 
-	// Instantiate the local variable for the pitch rate that will be requested
-	// from the Crazyflie's on-baord "inner-loop" controller
+	// Perform the "-Kx" LQR computation for the pitch rate
+	// to respoond with
 	float pitchRate_forResponse = 0;
-
-	// Perform the "-Kx" LQR computation for the pitch rate to respoond with
 	for(int i = 0; i < 9; ++i)
 	{
 		pitchRate_forResponse -= m_gainMatrixPitchRate[i] * stateErrorBody[i];
 	}
-
 	// Put the computed pitch rate into the "response" variable
 	response.controlOutput.pitch = pitchRate_forResponse;
 
 
 
 
-	//  **************************************
-	//  BBBB    OOO   DDDD   Y   Y       Y   Y
-	//  B   B  O   O  D   D   Y Y         Y Y
-	//  BBBB   O   O  D   D    Y           Y
-	//  B   B  O   O  D   D    Y           Y
-	//  BBBB    OOO   DDDD     Y           Y
-	//
 	// BODY FRAME Y CONTROLLER
 
 	// Instantiate the local variable for the roll rate that will be requested
 	// from the Crazyflie's on-baord "inner-loop" controller
-	float rollRate_forResponse = 0;
+	
 
-	// Perform the "-Kx" LQR computation for the roll rate to respoond with
+	// Perform the "-Kx" LQR computation for the roll rate
+	// to respoond with
+	float rollRate_forResponse = 0;
 	for(int i = 0; i < 9; ++i)
 	{
 		rollRate_forResponse -= m_gainMatrixRollRate[i] * stateErrorBody[i];
 	}
-
 	// Put the computed roll rate into the "response" variable
 	response.controlOutput.roll = rollRate_forResponse;
 
@@ -467,14 +427,18 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 // This function WILL NEED TO BE edited for successful completion of the PPS exercise
 void convertIntoBodyFrame(float stateInertial[9], float (&stateBody)[9], float yaw_measured)
 {
+
+	float sinYaw = sin(yaw_measured);
+	float cosYaw = cos(yaw_measured);
+
 	// Fill in the (x,y,z) position estimates to be returned
-	stateBody[0] = stateInertial[0];
-	stateBody[1] = stateInertial[1];
+	stateBody[0] = stateInertial[0] * cosYaw  +  stateInertial[1] * sinYaw;
+	stateBody[1] = stateInertial[1] * cosYaw  -  stateInertial[0] * sinYaw;
 	stateBody[2] = stateInertial[2];
 
 	// Fill in the (x,y,z) velocity estimates to be returned
-	stateBody[3] = stateInertial[3];
-	stateBody[4] = stateInertial[4];
+	stateBody[3] = stateInertial[3] * cosYaw  +  stateInertial[4] * sinYaw;
+	stateBody[4] = stateInertial[4] * cosYaw  -  stateInertial[3] * sinYaw;
 	stateBody[5] = stateInertial[5];
 
 	// Fill in the (roll,pitch,yaw) estimates to be returned
@@ -510,14 +474,15 @@ float computeMotorPolyBackward(float thrust)
 	// by the coefficients in the "yaml_motorPoly" variable.
 	float cmd_16bit = (-yaml_motorPoly[1] + sqrt(yaml_motorPoly[1] * yaml_motorPoly[1] - 4 * yaml_motorPoly[2] * (yaml_motorPoly[0] - thrust))) / (2 * yaml_motorPoly[2]);
 
-
-
-	// > Could this formula compute a result "cmd_16bit" that is
-	//   greater than ((2^16)-1)?
-	// > What might happen when such a number is case as a 16-bit
-	//   integer? In other words, what is uint16(cmd_sixteen_bit)?
-
-
+	// Saturate the signal to be 0 or in the range [1000,65000]
+	if (cmd_16bit < yaml_command_sixteenbit_min)
+	{
+		cmd_16bit = 0;
+	}
+	else if (cmd_16bit > yaml_command_sixteenbit_max)
+	{
+		cmd_16bit = yaml_command_sixteenbit_max;
+	}
 
 	// Return the result
 	return cmd_16bit;
@@ -541,15 +506,62 @@ float computeMotorPolyBackward(float thrust)
 //     GGGG   UUU   III        CCCC  A   A  LLLLL  LLLLL  BBBB   A   A   CCCC  K   K
 //    ----------------------------------------------------------------------------------
 
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-void setpointCallback(const Setpoint& newSetpoint)
+
+void requestSetpointChangeCallback(const SetpointWithHeader& newSetpoint)
 {
-	m_setpoint[0] = newSetpoint.x;
-	m_setpoint[1] = newSetpoint.y;
-	m_setpoint[2] = newSetpoint.z;
-	m_setpoint[3] = newSetpoint.yaw;
+	// Check whether the message is relevant
+	bool isRevelant = checkMessageHeader( m_agentID , newSetpoint.shouldCheckForAgentID , newSetpoint.agentIDs );
+
+	// Continue if the message is relevant
+	if (isRevelant)
+	{
+		// Check if the request if for the default setpoint
+		if (newSetpoint.buttonID == REQUEST_DEFAULT_SETPOINT_BUTTON_ID)
+		{
+			setNewSetpoint(
+					yaml_default_setpoint[0],
+					yaml_default_setpoint[1],
+					yaml_default_setpoint[2],
+					yaml_default_setpoint[3]
+				);
+		}
+		else
+		{
+			// Call the function for actually setting the setpoint
+			setNewSetpoint(
+					newSetpoint.x,
+					newSetpoint.y,
+					newSetpoint.z,
+					newSetpoint.yaw
+				);
+		}
+	}
 }
 
+
+
+void setNewSetpoint(float x, float y, float z, float yaw)
+{
+	// Put the new setpoint into the class variable
+	m_setpoint[0] = x;
+	m_setpoint[1] = y;
+	m_setpoint[2] = z;
+	m_setpoint[3] = yaw;
+
+	// Publish the change so that the netwrok is updated
+	// (mainly the "flying agent GUI" is interested in
+	// displaying this change to the user)
+
+	// Instantiate a local variable of type "SetpointWithHeader"
+	SetpointWithHeader msg;
+	// Fill in the setpoint
+	msg.x   = x;
+	msg.y   = y;
+	msg.z   = z;
+	msg.yaw = yaw;
+	// Publish the message
+	m_setpointChangedPublisher.publish(msg);
+}
 
 
 
@@ -584,7 +596,7 @@ void customCommandReceivedCallback(const CustomButton& commandReceived)
 		case 1:
 		{
 			// Let the user know that this part of the code was triggered
-			ROS_INFO("[STUDENT CONTROLLER] Button 1 received in controller.");
+			ROS_INFO("[DEFAULT CONTROLLER] Button 1 received in controller.");
 			// Code here to respond to custom button 1
 			
 			break;
@@ -594,7 +606,7 @@ void customCommandReceivedCallback(const CustomButton& commandReceived)
 		case 2:
 		{
 			// Let the user know that this part of the code was triggered
-			ROS_INFO("[STUDENT CONTROLLER] Button 2 received in controller.");
+			ROS_INFO("[DEFAULT CONTROLLER] Button 2 received in controller.");
 			// Code here to respond to custom button 2
 
 			break;
@@ -604,7 +616,7 @@ void customCommandReceivedCallback(const CustomButton& commandReceived)
 		case 3:
 		{
 			// Let the user know that this part of the code was triggered
-			ROS_INFO_STREAM("[STUDENT CONTROLLER] Button 3 received in controller, with command code:" << custom_command_code );
+			ROS_INFO_STREAM("[DEFAULT CONTROLLER] Button 3 received in controller, with command code:" << custom_command_code );
 			// Code here to respond to custom button 3
 
 			break;
@@ -639,7 +651,7 @@ void customCommandReceivedCallback(const CustomButton& commandReceived)
 
 // This function DOES NOT NEED TO BE edited for successful completion
 // ofthe exercise
-void isReadyStudentControllerYamlCallback(const IntWithHeader & msg)
+void isReadyDefaultControllerYamlCallback(const IntWithHeader & msg)
 {
 	// Check whether the message is relevant
 	bool isRevelant = checkMessageHeader( m_agentID , msg.shouldCheckForID , msg.agentIDs );
@@ -657,21 +669,21 @@ void isReadyStudentControllerYamlCallback(const IntWithHeader & msg)
 			// > FOR FETCHING FROM THE AGENT'S OWN PARAMETER SERVICE
 			case LOAD_YAML_FROM_AGENT:
 			{
-				ROS_INFO("[STUDENT CONTROLLER] Now fetching the StudentController YAML parameter values from this agent.");
+				ROS_INFO("[DEFAULT CONTROLLER] Now fetching the DefaultController YAML parameter values from this agent.");
 				namespace_to_use = m_namespace_to_own_agent_parameter_service;
 				break;
 			}
 			// > FOR FETCHING FROM THE COORDINATOR'S PARAMETER SERVICE
 			case LOAD_YAML_FROM_COORDINATOR:
 			{
-				ROS_INFO("[STUDENT CONTROLLER] Now fetching the StudentController YAML parameter values from this agent's coordinator.");
+				ROS_INFO("[DEFAULT CONTROLLER] Now fetching the DefaultController YAML parameter values from this agent's coordinator.");
 				namespace_to_use = m_namespace_to_coordinator_parameter_service;
 				break;
 			}
 
 			default:
 			{
-				ROS_ERROR("[STUDENT CONTROLLER] Paramter service to load from was NOT recognised.");
+				ROS_ERROR("[DEFAULT CONTROLLER] Paramter service to load from was NOT recognised.");
 				namespace_to_use = m_namespace_to_own_agent_parameter_service;
 				break;
 			}
@@ -679,7 +691,7 @@ void isReadyStudentControllerYamlCallback(const IntWithHeader & msg)
 		// Create a node handle to the selected parameter service
 		ros::NodeHandle nodeHandle_to_use(namespace_to_use);
 		// Call the function that fetches the parameters
-		fetchStudentControllerYamlParameters(nodeHandle_to_use);
+		fetchDefaultControllerYamlParameters(nodeHandle_to_use);
 	}
 }
 
@@ -688,37 +700,44 @@ void isReadyStudentControllerYamlCallback(const IntWithHeader & msg)
 // exercise, and the use of parameters fetched from the YAML file
 // is highly recommended to make tuning of your controller easier
 // and quicker.
-void fetchStudentControllerYamlParameters(ros::NodeHandle& nodeHandle)
+void fetchDefaultControllerYamlParameters(ros::NodeHandle& nodeHandle)
 {
 	// Here we load the parameters that are specified in the file:
-	// StudentController.yaml
+	// DefaultController.yaml
 
-	// Add the "StudentController" namespace to the "nodeHandle"
-	ros::NodeHandle nodeHandle_for_paramaters(nodeHandle, "StudentController");
+	// Add the "DefaultController" namespace to the "nodeHandle"
+	ros::NodeHandle nodeHandle_for_paramaters(nodeHandle, "DefaultController");
 
 
 
 	// GET THE PARAMETERS:
 
-	// > The mass of the crazyflie
+	// The mass of the crazyflie, in [grams]
 	yaml_cf_mass_in_grams = getParameterFloat(nodeHandle_for_paramaters , "mass");
 
-	// Display one of the YAML parameters to debug if it is working correctly
-	//ROS_INFO_STREAM("DEBUGGING: mass leaded from loacl file = " << yaml_cf_mass_in_grams );
-
-	// > The frequency at which the "computeControlOutput" is being called, as determined
-	//   by the frequency at which the Vicon system provides position and attitude data
+	// > The frequency at which the "computeControlOutput" function
+	//   is being called, as determined by the frequency at which
+	//   the Motion Caption (Vicon) system provides pose data, i.e.,
+	//   measurement of (x,y,z) position and (roll,pitch,yaw) attitude.
 	yaml_control_frequency = getParameterFloat(nodeHandle_for_paramaters, "control_frequency");
 
-	// > The co-efficients of the quadratic conversation from 16-bit motor command to
-	//   thrust force in Newtons
+	// > The co-efficients of the quadratic conversation from 16-bit
+	//   motor command to thrust force in Newtons
 	getParameterFloatVector(nodeHandle_for_paramaters, "motorPoly", yaml_motorPoly, 3);
+
+	// The min and max for saturating 16 bit thrust commands
+	yaml_command_sixteenbit_min = getParameterFloat(nodeHandle_for_paramaters, "command_sixteenbit_min");
+	yaml_command_sixteenbit_max = getParameterFloat(nodeHandle_for_paramaters, "command_sixteenbit_max");
+
+	// The default setpoint, the ordering is (x,y,z,yaw),
+	// with unit [meters,meters,meters,radians]
+	getParameterFloatVector(nodeHandle_for_paramaters, "default_setpoint", yaml_default_setpoint, 4);
 
 
 
 	// > DEBUGGING: Print out one of the parameters that was loaded to
 	//   debug if the fetching of parameters worked correctly
-	ROS_INFO_STREAM("[STUDENT CONTROLLER] DEBUGGING: the fetched StudentController/mass = " << yaml_cf_mass_in_grams);
+	ROS_INFO_STREAM("[DEFAULT CONTROLLER] DEBUGGING: the fetched DefaultController/mass = " << yaml_cf_mass_in_grams);
 
 
 
@@ -729,7 +748,7 @@ void fetchStudentControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	m_cf_weight_in_newtons = yaml_cf_mass_in_grams * 9.81/1000.0;
 
 	// DEBUGGING: Print out one of the computed quantities
-	ROS_INFO_STREAM("[STUDENT CONTROLLER] DEBUGGING: thus the weight of this agent in [Newtons] = " << m_cf_weight_in_newtons);
+	ROS_INFO_STREAM("[DEFAULT CONTROLLER] DEBUGGING: thus the weight of this agent in [Newtons] = " << m_cf_weight_in_newtons);
 }
 
 
@@ -748,16 +767,16 @@ void fetchStudentControllerYamlParameters(ros::NodeHandle& nodeHandle)
 int main(int argc, char* argv[]) {
 
 	// Starting the ROS-node
-	ros::init(argc, argv, "StudentControllerService");
+	ros::init(argc, argv, "DefaultControllerService");
 
 	// Create a "ros::NodeHandle" type local variable "nodeHandle"
 	// as the current node, the "~" indcates that "self" is the
 	// node handle assigned to this variable.
 	ros::NodeHandle nodeHandle("~");
 
-	// Get the namespace of this "StudentControllerService" node
+	// Get the namespace of this "DefaultControllerService" node
 	std::string m_namespace = ros::this_node::getNamespace();
-	ROS_INFO_STREAM("[STUDENT CONTROLLER] ros::this_node::getNamespace() =  " << m_namespace);
+	ROS_INFO_STREAM("[DEFAULT CONTROLLER] ros::this_node::getNamespace() =  " << m_namespace);
 
 
 
@@ -769,7 +788,7 @@ int main(int argc, char* argv[]) {
 	//   <param name="agentID" value="$(optenv ROS_NAMESPACE)" />
 	//   This line of code adds a parameter named "agentID" to the
 	//   "PPSClient" node.
-	// > Thus, to get access to this "studentID" paremeter, we first
+	// > Thus, to get access to this "agentID" paremeter, we first
 	//   need to get a handle to the "PPSClient" node within which this
 	//   controller service is nested.
 
@@ -780,12 +799,12 @@ int main(int argc, char* argv[]) {
 	// Stall the node IDs are not valid
 	if ( !isValid_IDs )
 	{
-		ROS_ERROR("[STUDENT CONTROLLER] Node NOT FUNCTIONING :-)");
+		ROS_ERROR("[DEFAULT CONTROLLER] Node NOT FUNCTIONING :-)");
 		ros::spin();
 	}
 	else
 	{
-		ROS_INFO_STREAM("[STUDENT CONTROLLER] loaded agentID = " << m_agentID << ", and coordID = " << m_coordID);
+		ROS_INFO_STREAM("[DEFAULT CONTROLLER] loaded agentID = " << m_agentID << ", and coordID = " << m_coordID);
 	}
 
 
@@ -814,8 +833,8 @@ int main(int argc, char* argv[]) {
 	constructNamespaceForCoordinatorParameterService( m_coordID, m_namespace_to_coordinator_parameter_service );
 
 	// Inform the user of what namespaces are being used
-	ROS_INFO_STREAM("[STUDENT CONTROLLER] m_namespace_to_own_agent_parameter_service    =  " << m_namespace_to_own_agent_parameter_service);
-	ROS_INFO_STREAM("[STUDENT CONTROLLER] m_namespace_to_coordinator_parameter_service  =  " << m_namespace_to_coordinator_parameter_service);
+	ROS_INFO_STREAM("[DEFAULT CONTROLLER] m_namespace_to_own_agent_parameter_service    =  " << m_namespace_to_own_agent_parameter_service);
+	ROS_INFO_STREAM("[DEFAULT CONTROLLER] m_namespace_to_coordinator_parameter_service  =  " << m_namespace_to_coordinator_parameter_service);
 
 	// Create, as local variables, node handles to the parameters services
 	ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
@@ -827,20 +846,15 @@ int main(int argc, char* argv[]) {
 
 	// The parameter service publishes messages with names of the form:
 	// /dfall/.../ParameterService/<filename with .yaml extension>
-	ros::Subscriber safeContoller_yamlReady_fromAgent = nodeHandle_to_own_agent_parameter_service.subscribe(  "StudentController", 1, isReadyStudentControllerYamlCallback);
-	ros::Subscriber safeContoller_yamlReady_fromCoord = nodeHandle_to_coordinator_parameter_service.subscribe("StudentController", 1, isReadyStudentControllerYamlCallback);
+	ros::Subscriber safeContoller_yamlReady_fromAgent = nodeHandle_to_own_agent_parameter_service.subscribe(  "DefaultController", 1, isReadyDefaultControllerYamlCallback);
+	ros::Subscriber safeContoller_yamlReady_fromCoord = nodeHandle_to_coordinator_parameter_service.subscribe("DefaultController", 1, isReadyDefaultControllerYamlCallback);
 
 
 
 	// GIVE YAML VARIABLES AN INITIAL VALUE
 
-	// This can be done either here or as part of declaring the variable
-	// in the header file
-	yaml_cf_mass_in_grams = 25.0;
-	yaml_motorPoly[0] = 5.484560e-4;
-	yaml_motorPoly[1] = 1.032633e-6;
-	yaml_motorPoly[2] = 2.130295e-11;
-	yaml_control_frequency = 200.0;
+	// This can be done either here or as part of declaring the
+	// variables in the header file
 
 
 
@@ -861,7 +875,7 @@ int main(int argc, char* argv[]) {
 	// Create the service call as a local variable
 	LoadYamlFromFilename loadYamlFromFilenameCall;
 	// Specify the Yaml filename as a string
-	loadYamlFromFilenameCall.request.stringWithHeader.data = "StudentController";
+	loadYamlFromFilenameCall.request.stringWithHeader.data = "DefaultController";
 	// Set for whom this applies to
 	loadYamlFromFilenameCall.request.stringWithHeader.shouldCheckForID = false;
 	// Wait until the serivce exists
@@ -870,60 +884,79 @@ int main(int argc, char* argv[]) {
 	if(requestLoadYamlFilenameServiceClient.call(loadYamlFromFilenameCall))
 	{
 		// Nothing to do in this case.
-		// The "isReadyStudentControllerYamlCallback" function
+		// The "isReadyDefaultControllerYamlCallback" function
 		// will be called once the YAML file is loaded
 	}
 	else
 	{
 	// Inform the user
-		ROS_ERROR("[STUDENT CONTROLLER] The request load yaml file service call failed.");
+		ROS_ERROR("[DEFAULT CONTROLLER] The request load yaml file service call failed.");
 	}
 
 
 
+	// PUBLISHERS AND SUBSCRIBERS
 
-    // PUBLISHERS AND SUBSCRIBERS
+	// Instantiate the class variable "m_debugPublisher" to be a
+	// "ros::Publisher". This variable advertises under the name
+	// "DebugTopic" and is a message with the structure defined
+	//  in the file "DebugMsg.msg" (located in the "msg" folder).
+	m_debugPublisher = nodeHandle.advertise<DebugMsg>("DebugTopic", 1);
 
-    // Instantiate the class variable "m_debugPublisher" to be a
-    // "ros::Publisher". This variable advertises under the name
-    // "DebugTopic" and is a message with the structure defined
-    //  in the file "DebugMsg.msg" (located in the "msg" folder).
-    m_debugPublisher = nodeHandle.advertise<DebugMsg>("DebugTopic", 1);
+	// Instantiate the local variable "newSetpointRequestSubscriber" to
+	// be a "ros::Subscriber" type variable that subscribes to the
+	// "NewSetpointRequest" topic and calls the class function
+	// "newSetpointRequestCallback" each time a messaged is received on
+	// this topic and the message is passed as an input argument to the
+	// callback function. This subscriber will mainly receive messages
+	// from the "flying agent GUI" when the setpoint is changed by
+	// the user.
+	ros::Subscriber requestSetpointChangeSubscriber = nodeHandle.subscribe("RequestSetpointChange", 1, requestSetpointChangeCallback);
 
-    // Instantiate the local variable "setpointSubscriber" to be a "ros::Subscriber"
-    // type variable that subscribes to the "Setpoint" topic and calls the class function
-    // "setpointCallback" each time a messaged is received on this topic and the message
-    // is passed as an input argument to the "setpointCallback" class function.
-    ros::Subscriber setpointSubscriber = nodeHandle.subscribe("Setpoint", 1, setpointCallback);
+	// Same again but instead for changes requested by the coordinator.
+	// For this we need to first create a node handle to the coordinator:
+    std::string namespace_to_coordinator;
+    constructNamespaceForCoordinator( m_coordID, namespace_to_coordinator );
+    ros::NodeHandle nodeHandle_to_coordinator(namespace_to_coordinator);
+    // And now we can instantiate the subscriber:
+	ros::Subscriber requestSetpointChangeSubscriber_from_coord = nodeHandle_to_coordinator.subscribe("DefaultControllerService/RequestSetpointChange", 1, requestSetpointChangeCallback);
 
-    // Instantiate the local variable "service" to be a "ros::ServiceServer" type
-    // variable that advertises the service called "StudentController". This service has
-    // the input-output behaviour defined in the "Controller.srv" file (located in the
-    // "srv" folder). This service, when called, is provided with the most recent
-    // measurement of the Crazyflie and is expected to respond with the control action
-    // that should be sent via the Crazyradio and requested from the Crazyflie, i.e.,
-    // this is where the "outer loop" controller function starts. When a request is made
-    // of this service the "calculateControlOutput" function is called.
-    ros::ServiceServer service = nodeHandle.advertiseService("StudentController", calculateControlOutput);
+	// Instantiate the class variable "m_setpointChangedPublisher" to
+	// be a "ros::Publisher". This variable advertises under the name
+	// "SetpointChanged" and is a message with the structure defined
+	// in the file "SetpointWithHeader.msg" (located in the "msg" folder).
+	// This publisher is used by the "flying agent GUI" to update the
+	// field that displays the current setpoint for this controller.
+	m_setpointChangedPublisher = nodeHandle.advertise<SetpointWithHeader>("SetpointChanged", 1);
 
-    // Instantiate the local variable "customCommandSubscriber" to be a "ros::Subscriber"
-    // type variable that subscribes to the "GUIButton" topic and calls the class
-    // function "customCommandReceivedCallback" each time a messaged is received on this topic
-    // and the message received is passed as an input argument to the callback function.
-    ros::Subscriber customCommandReceivedSubscriber = nodeHandle.subscribe("GUIButton", 1, customCommandReceivedCallback);
+	// Instantiate the local variable "service" to be a "ros::ServiceServer" type
+	// variable that advertises the service called "DefaultController". This service has
+	// the input-output behaviour defined in the "Controller.srv" file (located in the
+	// "srv" folder). This service, when called, is provided with the most recent
+	// measurement of the Crazyflie and is expected to respond with the control action
+	// that should be sent via the Crazyradio and requested from the Crazyflie, i.e.,
+	// this is where the "outer loop" controller function starts. When a request is made
+	// of this service the "calculateControlOutput" function is called.
+	ros::ServiceServer service = nodeHandle.advertiseService("DefaultController", calculateControlOutput);
 
-    // Create a "ros::NodeHandle" type local variable "namespace_nodeHandle" that points
-    // to the name space of this node, i.e., "d_fall_pps" as specified by the line:
-    //     "using namespace d_fall_pps;"
-    // in the "DEFINES" section at the top of this file.
-    ros::NodeHandle namespace_nodeHandle(ros::this_node::getNamespace());
+	// Instantiate the local variable "customCommandSubscriber" to be a "ros::Subscriber"
+	// type variable that subscribes to the "GUIButton" topic and calls the class
+	// function "customCommandReceivedCallback" each time a messaged is received on this topic
+	// and the message received is passed as an input argument to the callback function.
+	ros::Subscriber customCommandReceivedSubscriber = nodeHandle.subscribe("GUIButton", 1, customCommandReceivedCallback);
 
-    // Print out some information to the user.
-    ROS_INFO("[STUDENT CONTROLLER] Service ready :-)");
+	// Create a "ros::NodeHandle" type local variable "namespace_nodeHandle" that points
+	// to the name space of this node, i.e., "d_fall_pps" as specified by the line:
+	//     "using namespace d_fall_pps;"
+	// in the "DEFINES" section at the top of this file.
+	ros::NodeHandle namespace_nodeHandle(ros::this_node::getNamespace());
 
-    // Enter an endless while loop to keep the node alive.
-    ros::spin();
+	// Print out some information to the user.
+	ROS_INFO("[DEFAULT CONTROLLER] Service ready :-)");
 
-    // Return zero if the "ross::spin" is cancelled.
-    return 0;
+	// Enter an endless while loop to keep the node alive.
+	ros::spin();
+
+	// Return zero if the "ross::spin" is cancelled.
+	return 0;
 }

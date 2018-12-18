@@ -52,6 +52,7 @@ public slots:
 
 
 signals:
+    void agentIDsToCoordinateChanged(QVector<int> agentIDs , bool shouldCoordinateAll);
     void measuredPoseValueChanged(float x , float y , float z , float roll , float pitch , float yaw , bool occluded);
     void poseDataUnavailableSignal();
 

@@ -47,6 +47,15 @@
 			>
 		</node>
 
+		<!-- DEFAULT CONTROLLER -->
+		<node
+			pkg    = "d_fall_pps"
+			name   = "DefaultControllerService"
+			output = "screen"
+			type   = "DefaultControllerService"
+			>
+		</node>
+
 		<!-- SAFE CONTROLLER -->
 		<node
 			pkg    = "d_fall_pps"

@@ -36,15 +36,16 @@ DefaultControllerTab::DefaultControllerTab(QWidget *parent) :
     // CREATE A NODE HANDLE TO THIS GUI
     ros::NodeHandle nodeHandle_for_this_gui(this_namespace);
 
-    // CREATE THE COMMAND PUBLISHER
+    // CREATE THE REQUEST SETPOINT CHANGE PUBLISHER
     requestSetpointChangePublisher = nodeHandle_for_this_gui.advertise<d_fall_pps::SetpointWithHeader>("DefaultControllerService/RequestSetpointChange", 1);
 
+    // SUBSCRIBE TO SETPOINT CHANGES
+    // Only if this is an agent GUI
+    if (m_type == TYPE_AGENT)
+    {
+        setpointChangedSubscriber = nodeHandle_for_this_gui.subscribe("DefaultControllerService/SetpointChanged", 1, &DefaultControllerTab::setpointChangedCallback, this);
+    }
 
-    // Set the default setpoint
-    m_defaultSetpoint.x   = 0.0f;
-    m_defaultSetpoint.y   = 0.0f;
-    m_defaultSetpoint.z   = 0.5f;
-    m_defaultSetpoint.yaw = 0.0f;
 #endif
 
 }
@@ -130,6 +131,83 @@ void DefaultControllerTab::poseDataUnavailableSlot()
 
 
 
+
+
+
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//     SSSS  EEEEE  TTTTT  PPPP    OOO   III  N   N  TTTTT
+//    S      E        T    P   P  O   O   I   NN  N    T
+//     SSS   EEE      T    PPPP   O   O   I   N N N    T
+//        S  E        T    P      O   O   I   N  NN    T
+//    SSSS   EEEEE    T    P       OOO   III  N   N    T
+//
+//     CCCC  H   H    A    N   N   GGGG  EEEEE  DDDD
+//    C      H   H   A A   NN  N  G      E      D   D
+//    C      HHHHH  A   A  N N N  G      EEE    D   D
+//    C      H   H  AAAAA  N  NN  G   G  E      D   D
+//     CCCC  H   H  A   A  N   N   GGGG  EEEEE  DDDD
+//
+//     CCCC    A    L      L      BBBB     A     CCCC  K   K
+//    C       A A   L      L      B   B   A A   C      K  K
+//    C      A   A  L      L      BBBB   A   A  C      KKK
+//    C      AAAAA  L      L      B   B  AAAAA  C      K  K
+//     CCCC  A   A  LLLLL  LLLLL  BBBB   A   A   CCCC  K   K
+//    ----------------------------------------------------------------------------------
+
+
+#ifdef CATKIN_MAKE
+void DefaultControllerTab::setpointChangedCallback(const d_fall_pps::SetpointWithHeader& newSetpoint)
+{
+    // INITIALISE A STRING VARIABLE FOR ADDING THE "+"
+    QString qstr = "";
+
+    // EXTRACT THE SETPOINT
+    float x = newSetpoint.x;
+    float y = newSetpoint.y;
+    float z = newSetpoint.z;
+    float yaw = newSetpoint.yaw;
+
+    // UPDATE THE SETPOINT COLUMN
+    if (x < 0.0f) qstr = ""; else qstr = "+";
+    ui->lineEdit_setpoint_current_x->setText(qstr + QString::number( x, 'f', 3));
+    if (y < 0.0f) qstr = ""; else qstr = "+";
+    ui->lineEdit_setpoint_current_y->setText(qstr + QString::number( y, 'f', 3));
+    if (z < 0.0f) qstr = ""; else qstr = "+";
+    ui->lineEdit_setpoint_current_z->setText(qstr + QString::number( z, 'f', 3));
+
+    if (yaw < 0.0f) qstr = ""; else qstr = "+";
+    ui->lineEdit_setpoint_current_yaw->setText(qstr + QString::number( yaw * RAD2DEG, 'f', 3));
+}
+#endif
+
+
+
+
+
+
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//    RRRR   EEEEE   QQQ   U   U  EEEEE   SSSS  TTTTT     N   N  EEEEE  W     W
+//    R   R  E      Q   Q  U   U  E      S        T       NN  N  E      W     W
+//    RRRR   EEE    Q   Q  U   U  EEE     SSS     T       N N N  EEE    W     W 
+//    R   R  E      Q  Q   U   U  E          S    T       N  NN  E       W W W
+//    R   R  EEEEE   QQ Q   UUU   EEEEE  SSSS     T       N   N  EEEEE    W W
+//
+//     SSSS  EEEEE  TTTTT  PPPP    OOO   III  N   N  TTTTT
+//    S      E        T    P   P  O   O   I   NN  N    T
+//     SSS   EEE      T    PPPP   O   O   I   N N N    T
+//        S  E        T    P      O   O   I   N  NN    T
+//    SSSS   EEEEE    T    P       OOO   III  N   N    T
+//    ----------------------------------------------------------------------------------
+
+
 void DefaultControllerTab::publishSetpoint(float x, float y, float z, float yaw)
 {
 #ifdef CATKIN_MAKE
@@ -143,7 +221,7 @@ void DefaultControllerTab::publishSetpoint(float x, float y, float z, float yaw)
     msg.x   = x;
     msg.y   = y;
     msg.z   = z;
-    msg.yaw = yaw;
+    msg.yaw = yaw * DEG2RAD;
 
     // Publish the setpoint
     this->requestSetpointChangePublisher.publish(msg);
@@ -224,8 +302,23 @@ void DefaultControllerTab::on_set_setpoint_button_clicked()
 void DefaultControllerTab::on_default_setpoint_button_clicked()
 {
 #ifdef CATKIN_MAKE
-    // Call the function to publish the setpoint
-    publishSetpoint(m_defaultSetpoint.x, m_defaultSetpoint.y, m_defaultSetpoint.z, m_defaultSetpoint.yaw );
+    // Publish this as a blank setpoint with the 
+    // "buttonID" field set appropriately
+
+    // Initialise the message as a local variable
+    d_fall_pps::SetpointWithHeader msg;
+
+    // Fill the header of the message
+    fillSetpointMessageHeader( msg );
+
+    // Fill in the (x,y,z,yaw) values
+    msg.buttonID = REQUEST_DEFAULT_SETPOINT_BUTTON_ID;
+
+    // Publish the default setpoint button press
+    this->requestSetpointChangePublisher.publish(msg);
+
+    // Inform the user about the change
+    ROS_INFO_STREAM("[DEFAULT CONTROLLER GUI] Published request for setpoint change to the default");
 #endif
 }
 
@@ -411,6 +504,99 @@ void DefaultControllerTab::on_yaw_increment_minus_button_clicked()
     }
 #endif
 }
+
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//      A     GGGG  EEEEE  N   N  TTTTT     III  DDDD    SSSS
+//     A A   G      E      NN  N    T        I   D   D  S
+//    A   A  G      EEE    N N N    T        I   D   D   SSS
+//    AAAAA  G   G  E      N  NN    T        I   D   D      S
+//    A   A   GGGG  EEEEE  N   N    T       III  DDDD   SSSS
+//    ----------------------------------------------------------------------------------
+
+
+void DefaultControllerTab::setAgentIDsToCoordinate(QVector<int> agentIDs , bool shouldCoordinateAll)
+{
+
+    // Lock the mutex
+    m_agentIDs_toCoordinate_mutex.lock();
+    // Add the "coordinate all" flag
+    m_shouldCoordinateAll = shouldCoordinateAll;
+    // Clear the previous list of agent IDs
+    m_vector_of_agentIDs_toCoordinate.clear();
+    // Copy across the agent IDs, if necessary
+    if (!shouldCoordinateAll)
+    {
+        for ( int irow = 0 ; irow < agentIDs.length() ; irow++ )
+        {
+            m_vector_of_agentIDs_toCoordinate.push_back( agentIDs[irow] );
+        }
+    }
+    // Unlock the mutex
+    m_agentIDs_toCoordinate_mutex.unlock();
+
+
+#ifdef CATKIN_MAKE
+    // If there is only one agent to coordinate,
+    // then subscribe to the relevant data
+    if (agentIDs.length() == 1)
+    {
+
+        // // > Create the appropriate node handle
+        QString agent_base_namespace = "/dfall/agent" + QString::number(agentIDs[0]).rightJustified(3, '0');
+        ros::NodeHandle agent_base_nodeHandle(agent_base_namespace.toStdString());
+
+        // // > Request the current flying state
+        // ros::ServiceClient getCurrentFlyingStateService = agent_base_nodeHandle.serviceClient<d_fall_pps::IntIntService>("PPSClient/getCurrentFlyingState", false);
+        // d_fall_pps::IntIntService getFlyingStateCall;
+        // getFlyingStateCall.request.data = 0;
+        // getCurrentFlyingStateService.waitForExistence(ros::Duration(2.0));
+        // if(getCurrentFlyingStateService.call(getFlyingStateCall))
+        // {
+        //     setFlyingState(getFlyingStateCall.response.data);
+        // }
+        // else
+        // {
+        //     setFlyingState(STATE_UNAVAILABLE);
+        // }
+
+        // // > Request the current status of the crazy radio
+        // ros::ServiceClient getCurrentCrazyRadioStateService = agent_base_nodeHandle.serviceClient<d_fall_pps::IntIntService>("CrazyRadio/getCurrentCrazyRadioStatus", false);
+        // d_fall_pps::IntIntService getCrazyRadioCall;
+        // getCrazyRadioCall.request.data = 0;
+        // getCurrentCrazyRadioStateService.waitForExistence(ros::Duration(2.0));
+        // if(getCurrentCrazyRadioStateService.call(getCrazyRadioCall))
+        // {
+        //     setCrazyRadioStatus(getCrazyRadioCall.response.data);
+        // }
+        // else
+        // {
+        //     setCrazyRadioStatus(CRAZY_RADIO_STATE_DISCONNECTED);
+        // }
+
+
+        // SUBSCRIBERS
+        // > For receiving message that the setpoint was changed
+        setpointChangedSubscriber = agent_base_nodeHandle.subscribe("DefaultControllerService/SetpointChanged", 1, &DefaultControllerTab::setpointChangedCallback, this);
+    }
+    else
+    {
+        // Unsubscribe
+        setpointChangedSubscriber.shutdown();
+
+        // Set information back to the default
+        ui->lineEdit_setpoint_current_x->setText("xx.xx");
+        ui->lineEdit_setpoint_current_y->setText("xx.xx");
+        ui->lineEdit_setpoint_current_z->setText("xx.xx");
+        ui->lineEdit_setpoint_current_yaw->setText("xx.xx");
+
+    }
+#endif
+}
+
 
 
 

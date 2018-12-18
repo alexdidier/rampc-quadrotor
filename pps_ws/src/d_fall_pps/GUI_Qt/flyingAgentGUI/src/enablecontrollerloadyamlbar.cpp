@@ -137,7 +137,18 @@ void EnableControllerLoadYamlBar::on_load_yaml_student_button_clicked()
 
 void EnableControllerLoadYamlBar::on_load_yaml_default_button_clicked()
 {
-
+    #ifdef CATKIN_MAKE
+    // Create a local variable for the message
+    d_fall_pps::StringWithHeader yaml_filename_msg;
+    // Set for whom this applies to
+    fillStringMessageHeader(yaml_filename_msg);
+    // Specify the data
+    yaml_filename_msg.data = "DefaultController";
+    // Send the message
+    m_requestLoadYamlFilenamePublisher.publish(yaml_filename_msg);
+    // Inform the user that the menu item was selected
+    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Load Default Controller YAML was clicked.");
+#endif
 }
 
 

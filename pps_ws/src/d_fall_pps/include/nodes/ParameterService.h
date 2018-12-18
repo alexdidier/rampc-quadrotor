@@ -58,6 +58,9 @@
 //#include "d_fall_pps/FloatWithHeader.h"
 #include "d_fall_pps/StringWithHeader.h"
 
+// Include the DFALL service types
+#include "d_fall_pps/LoadYamlFromFilename.h"
+
 // Include the shared definitions
 #include "nodes/Constants.h"
 
@@ -101,6 +104,10 @@ int m_ID = 0;
 // The namespace into which this parameter service loads yaml parameters
 std::string m_base_namespace;
 
+// Publisher for passing a service request onto the
+// loadinging function
+ros::Publisher requestLoadYamlFilenamePublisher;
+
 
 
 
@@ -119,7 +126,7 @@ std::string m_base_namespace;
 //    P      R   R   OOO     T     OOO     T      Y    P      EEEEE  SSSS
 //    ----------------------------------------------------------------------------------
 
-void requestLoadControllerYamlCallback(const std_msgs::Int32& msg);
+bool requestLoadYamlFilenameCallbackServiceCallback(LoadYamlFromFilename::Request &request, LoadYamlFromFilename::Response &response);
 
 void requestLoadYamlFilenameCallback(const StringWithHeader& yamlFilenameToLoad);
 

@@ -95,8 +95,17 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
 
     // CONNECT TO THE COORDINATOR SIGNAL TO BE ALWAYS UPDATED
     // WITH THE LIST OF AGENT IDs TO COORDINATE
-    // Connect the "should coordinate value changed" signal to
-    // the respective slot
+    // This is passed from the "coordinator" to the elements
+    // in the main part of the GUI, namely to the:
+    // > "top banner",
+    // > "connect,start,stop bar",
+    // > "enable controller, load yaml bar", and
+    // > "controller tabs widget".
+    QObject::connect(
+            ui->customWidget_coordinator , &Coordinator::agentIDsToCoordinateChanged ,
+            ui->customWidget_topBanner , &TopBanner::setAgentIDsToCoordinate
+            );
+
     QObject::connect(
             ui->customWidget_coordinator , &Coordinator::agentIDsToCoordinateChanged ,
             ui->customWidget_connectStartStopBar , &ConnectStartStopBar::setAgentIDsToCoordinate
@@ -105,11 +114,6 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     QObject::connect(
             ui->customWidget_coordinator , &Coordinator::agentIDsToCoordinateChanged ,
             ui->customWidget_enableControllerLoadYamlBar , &EnableControllerLoadYamlBar::setAgentIDsToCoordinate
-            );
-
-    QObject::connect(
-            ui->customWidget_coordinator , &Coordinator::agentIDsToCoordinateChanged ,
-            ui->customWidget_topBanner , &TopBanner::setAgentIDsToCoordinate
             );
 
     QObject::connect(

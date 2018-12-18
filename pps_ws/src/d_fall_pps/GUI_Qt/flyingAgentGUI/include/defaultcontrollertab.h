@@ -46,6 +46,7 @@ public:
 
 
 public slots:
+    void setAgentIDsToCoordinate(QVector<int> agentIDs , bool shouldCoordinateAll);
     void setMeasuredPose(float x , float y , float z , float roll , float pitch , float yaw , bool occluded);
     void poseDataUnavailableSlot();
 
@@ -90,12 +91,13 @@ private:
 
 
 #ifdef CATKIN_MAKE
-    // Variable for storing the default setpoint
-    d_fall_pps::SetpointWithHeader m_defaultSetpoint;
-
     // PUBLISHER
     // > For requesting the setpoint to be changed
     ros::Publisher requestSetpointChangePublisher;
+
+    // SUBSCRIBER
+    // > For being notified when the setpoint is changed
+    ros::Subscriber setpointChangedSubscriber;
 #endif
 
 
@@ -104,6 +106,9 @@ private:
 
 
 #ifdef CATKIN_MAKE
+    // For receiving message that the setpoint was changed
+    void setpointChangedCallback(const d_fall_pps::SetpointWithHeader& newSetpoint);
+
     // Fill the header for a message
     void fillSetpointMessageHeader( d_fall_pps::SetpointWithHeader & msg );
 

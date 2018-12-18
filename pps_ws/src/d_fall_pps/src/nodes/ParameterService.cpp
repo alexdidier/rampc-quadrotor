@@ -74,170 +74,17 @@
 
 
 
-/*
-void requestLoadControllerYamlCallback(const std_msgs::Int32& msg)
+bool requestLoadYamlFilenameCallbackServiceCallback(LoadYamlFromFilename::Request &request, LoadYamlFromFilename::Response &response)
 {
-    // Extract from the "msg" for which controller the YAML
-    // parameters should be loaded
-    int controller_to_load_yaml = msg.data;
+    // Put the flying state into the response variable
+    requestLoadYamlFilenamePublisher.publish(request.stringWithHeader);
 
-    ROS_INFO_STREAM("[PARAMETER SERVICE] Received the message to load YAML parameters from file into cache");
+    // Put success into the response
+    response.data = 1;
 
-
-    // Instantiate a local varaible to confirm that something can actually be loaded
-    // from a YAML file
-    bool isValidToAttemptLoad = true;
-
-    // Instantiate a local variable for the string that will be passed to the "system"
-    std::string cmd;
-
-    // Get the abolute path to "d_fall_pps"
-    std::string d_fall_pps_path = ros::package::getPath("d_fall_pps");
-
-    // Switch between loading for the different controllers
-    //    ----------------------------------------
-    // FOR THE SAFE CONTROLLER
-    if (
-        ((controller_to_load_yaml==LOAD_YAML_SAFE_CONTROLLER_COORDINATOR) && (m_type==TYPE_COORDINATOR))
-        ||
-        ((controller_to_load_yaml==LOAD_YAML_SAFE_CONTROLLER_AGENT)       && (m_type==TYPE_AGENT))
-    )
-    {
-        // Re-load the parameters of the safe controller:
-        cmd = "rosparam load " + d_fall_pps_path + "/param/SafeController.yaml " + m_base_namespace + "/SafeController";
-    }
-    //    ----------------------------------------
-    // FOR THE DEMO CONTROLLER
-    else if (
-        ((controller_to_load_yaml==LOAD_YAML_DEMO_CONTROLLER_COORDINATOR) && (m_type==TYPE_COORDINATOR))
-        ||
-        ((controller_to_load_yaml==LOAD_YAML_DEMO_CONTROLLER_AGENT)       && (m_type==TYPE_AGENT))
-    )
-    {
-        // Re-load the parameters of the demo controller:
-        cmd = "rosparam load " + d_fall_pps_path + "/param/DemoController.yaml " + m_base_namespace + "/DemoController";
-    }
-    //    ----------------------------------------
-    // FOR THE STUDENT CONTROLLER
-    else if (
-        ((controller_to_load_yaml==LOAD_YAML_STUDENT_CONTROLLER_COORDINATOR) && (m_type==TYPE_COORDINATOR))
-        ||
-        ((controller_to_load_yaml==LOAD_YAML_STUDENT_CONTROLLER_AGENT)       && (m_type==TYPE_AGENT))
-    )
-    {
-        // Re-load the parameters of the demo controller:
-        cmd = "rosparam load " + d_fall_pps_path + "/param/StudentController.yaml " + m_base_namespace + "/StudentController";
-    }
-    //    ----------------------------------------
-    // FOR THE MPC CONTROLLER
-    else if (
-        ((controller_to_load_yaml==LOAD_YAML_MPC_CONTROLLER_COORDINATOR) && (m_type==TYPE_COORDINATOR))
-        ||
-        ((controller_to_load_yaml==LOAD_YAML_MPC_CONTROLLER_AGENT)       && (m_type==TYPE_AGENT))
-    )
-    {
-        // Re-load the parameters of the demo controller:
-        cmd = "rosparam load " + d_fall_pps_path + "/param/MpcController.yaml " + m_base_namespace + "/MpcController";
-    }
-    //    ----------------------------------------
-    // FOR THE REMOTE CONTROLLER
-    else if (
-        ((controller_to_load_yaml==LOAD_YAML_REMOTE_CONTROLLER_COORDINATOR) && (m_type==TYPE_COORDINATOR))
-        ||
-        ((controller_to_load_yaml==LOAD_YAML_REMOTE_CONTROLLER_AGENT)       && (m_type==TYPE_AGENT))
-    )
-    {
-        // Re-load the parameters of the demo controller:
-        cmd = "rosparam load " + d_fall_pps_path + "/param/RemoteController.yaml " + m_base_namespace + "/RemoteController";
-    }
-    //    ----------------------------------------
-    // FOR THE TUNING CONTROLLER
-    else if (
-        ((controller_to_load_yaml==LOAD_YAML_TUNING_CONTROLLER_COORDINATOR) && (m_type==TYPE_COORDINATOR))
-        ||
-        ((controller_to_load_yaml==LOAD_YAML_TUNING_CONTROLLER_AGENT)       && (m_type==TYPE_AGENT))
-    )
-    {
-        // Re-load the parameters of the demo controller:
-        cmd = "rosparam load " + d_fall_pps_path + "/param/TuningController.yaml " + m_base_namespace + "/TuningController";
-    }
-    //    ----------------------------------------
-    // FOR THE PICKER CONTROLLER
-    else if (
-        ((controller_to_load_yaml==LOAD_YAML_PICKER_CONTROLLER_COORDINATOR) && (m_type==TYPE_COORDINATOR))
-        ||
-        ((controller_to_load_yaml==LOAD_YAML_PICKER_CONTROLLER_AGENT)       && (m_type==TYPE_AGENT))
-    )
-    {
-        // Re-load the parameters of the demo controller:
-        cmd = "rosparam load " + d_fall_pps_path + "/param/PickerController.yaml " + m_base_namespace + "/PickerController";
-    }
-    else
-    {
-        // Let the user know that the command was not recognised
-        ROS_INFO_STREAM("[PARAMETER SERVICE] > Nothing to load for this parameter service with.");
-        ROS_INFO_STREAM("[PARAMETER SERVICE] > The message received has 'controller_to_load_yaml'   =  " << controller_to_load_yaml);
-        ROS_INFO_STREAM("[PARAMETER SERVICE] > And the type of this Parameter Service is 'm_type'  =  " << m_type);
-        // Set the boolean that prevents the fetch message from being sent
-        isValidToAttemptLoad = false;
-    }
-
-
-    // Only bother with ttempting to loaded the .yaml file, and subseuently send the "ready for fetch"
-    // message if something can actually be loaded from a YAML file
-    if (isValidToAttemptLoad)
-    {
-        // Let the user know what is about to happen
-        ROS_INFO_STREAM("[PARAMETER SERVICE] > The following path will be used for locating the .yaml file: " << d_fall_pps_path  << " The comand line string sent to the 'system' is: " << cmd );
-
-        // Re-load the parameters by pass the command line string via a "system" call
-        // > i.e., this replicates pasting this string in a new terminal window and pressing enter
-        system(cmd.c_str());
-
-        // Pause breifly to ensure that the yaml file is fully loaded
-        ros::Duration(0.5).sleep();
-
-        // Instantiate a local varaible to confirm that something was actually loaded from
-        // a YAML file
-        bool isReadyForFetch = true;
-    
-        // Instantiate a local variable for the fetch message
-        std_msgs::Int32 fetch_msg;
-        // Fill in the data of the fetch message
-        fetch_msg.data = controller_to_load_yaml;
-        // Fill in the data of the fetch message
-        // switch(controller_to_load_yaml)
-        // {
-        //     case (LOAD_YAML_SAFE_CONTROLLER_COORDINATOR):
-        //         fetch_msg.data = FETCH_YAML_SAFE_CONTROLLER_FROM_COORDINATOR;
-        //         break;
-        //     case (LOAD_YAML_DEMO_CONTROLLER_COORDINATOR):
-        //         fetch_msg.data = FETCH_YAML_DEMO_CONTROLLER_FROM_COORDINATOR;
-        //         break;
-        //     case (LOAD_YAML_SAFE_CONTROLLER_AGENT):
-        //         fetch_msg.data = FETCH_YAML_SAFE_CONTROLLER_FROM_OWN_AGENT;
-        //         break;
-        //     case (LOAD_YAML_DEMO_CONTROLLER_AGENT):
-        //         fetch_msg.data = FETCH_YAML_DEMO_CONTROLLER_FROM_OWN_AGENT;
-        //         break;
-        //     default:
-        //         // Let the user know that the command was not recognised
-        //         ROS_INFO("Unknown 'controller to load yaml' command, thus a 'ready to fetch' message will NOT be published.");
-        //         // Set the boolean that prevents the fetch message from being sent
-        //         isReadyForFetch = false;
-        //         break;
-        // }
-        // Send a message that the YAML parameter have been loaded and hence are
-        // ready to be fetched (i.e., using getparam())
-        if (isReadyForFetch)
-        {
-            controllerYamlReadyForFetchPublisher.publish(fetch_msg);
-        }
-    }
+    // Return
+    return true;
 }
-*/
-
-
 
 void requestLoadYamlFilenameCallback(const StringWithHeader& yaml_filename_to_load_with_header)
 {
@@ -486,6 +333,12 @@ int main(int argc, char* argv[])
 
     // Subscribe to the messages that request loading a yaml file
     ros::Subscriber requestLoadYamlFilenameSubscriber = nodeHandle.subscribe("requestLoadYamlFilename", 1, requestLoadYamlFilenameCallback);
+
+    // Publisher for publishing "internally" to the subscriber above
+    requestLoadYamlFilenamePublisher = nodeHandle.advertise <StringWithHeader>("requestLoadYamlFilename", 1);
+
+    // Advertise the service for requests to load a yaml file
+    ros::ServiceServer getCurrentFlyingStateService = nodeHandle.advertiseService("requestLoadYamlFilename", requestLoadYamlFilenameCallbackServiceCallback);
 
     // Inform the user the this node is ready
     ROS_INFO("[PARAMETER SERVICE] Service ready :-)");

@@ -63,6 +63,25 @@
 
 
 
+// The types, i.e., agent or coordinator
+#define TYPE_INVALID      -1
+#define TYPE_COORDINATOR   1
+#define TYPE_AGENT         2
+
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//    
+//    
+//    
+//    
+//    
+//    ----------------------------------------------------------------------------------
+
+
+
 // These constants define the modes that can be used for controller this is
 // running on-board the Crazyflie 2.0.
 // Therefore, the constants defined here need to be in agreement with those
@@ -192,11 +211,16 @@
 
 
 
-// The types, i.e., agent or coordinator
-#define TYPE_INVALID      -1
-#define TYPE_COORDINATOR   1
-#define TYPE_AGENT         2
+//    ----------------------------------------------------------------------------------
+//    
+//    
+//    
+//    
+//    
+//    ----------------------------------------------------------------------------------
 
+// For standard buttons in the GUI
+#define REQUEST_DEFAULT_SETPOINT_BUTTON_ID    100
 
 
 

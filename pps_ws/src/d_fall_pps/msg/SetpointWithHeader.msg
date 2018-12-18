@@ -5,4 +5,4 @@ float64 yaw
 bool isChecked
 uint32 buttonID
 bool shouldCheckForAgentID
-uint8[] agentIDs
+uint32[] agentIDs

@@ -230,6 +230,7 @@ add_service_files(
   CMQuery.srv
   CMUpdate.srv
   CMCommand.srv
+  LoadYamlFromFilename.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -326,6 +327,8 @@ add_executable(PPSClient                 src/nodes/PPSClient.cpp
                                          src/classes/GetParamtersAndNamespaces.cpp)
 add_executable(BatteryMonitor            src/nodes/BatteryMonitor.cpp
                                          src/classes/GetParamtersAndNamespaces.cpp)
+add_executable(DefaultControllerService  src/nodes/DefaultControllerService.cpp
+                                         src/classes/GetParamtersAndNamespaces.cpp)
 add_executable(SafeControllerService     src/nodes/SafeControllerService.cpp)
 add_executable(DemoControllerService     src/nodes/DemoControllerService.cpp
                                          src/classes/GetParamtersAndNamespaces.cpp)
@@ -412,6 +415,7 @@ endif()
 
 add_dependencies(PPSClient                 d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(BatteryMonitor            d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(DefaultControllerService  d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(SafeControllerService     d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(DemoControllerService     d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(StudentControllerService  d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
@@ -463,6 +467,7 @@ endif()
 
 target_link_libraries(PPSClient                 ${catkin_LIBRARIES})
 target_link_libraries(BatteryMonitor            ${catkin_LIBRARIES})
+target_link_libraries(DefaultControllerService  ${catkin_LIBRARIES})
 target_link_libraries(SafeControllerService     ${catkin_LIBRARIES})
 target_link_libraries(DemoControllerService     ${catkin_LIBRARIES})
 target_link_libraries(StudentControllerService  ${catkin_LIBRARIES})

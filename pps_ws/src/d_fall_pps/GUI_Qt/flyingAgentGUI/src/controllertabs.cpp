@@ -34,6 +34,17 @@ ControllerTabs::ControllerTabs(QWidget *parent) :
             ui->default_controller_tab_widget , &DefaultControllerTab::poseDataUnavailableSlot
         );
 
+
+    // CONNECT TO THE COORDINATOR SIGNAL TO BE ALWAYS UPDATED
+    // WITH THE LIST OF AGENT IDs TO COORDINATE
+    // This is passed from this "controller tabs widget" to
+    // each of the controller tabs. The signal is simply
+    // "passed through"
+    QObject::connect(
+            this , &ControllerTabs::agentIDsToCoordinateChanged ,
+            ui->default_controller_tab_widget , &DefaultControllerTab::setAgentIDsToCoordinate
+        );
+
     
 
 
@@ -148,23 +159,8 @@ void ControllerTabs::poseDataReceivedCallback(const d_fall_pps::ViconData& vicon
 
 void ControllerTabs::setAgentIDsToCoordinate(QVector<int> agentIDs , bool shouldCoordinateAll)
 {
-
-    // Lock the mutex
-    m_agentIDs_toCoordinate_mutex.lock();
-    // Add the "coordinate all" flag
-    m_shouldCoordinateAll = shouldCoordinateAll;
-    // Clear the previous list of agent IDs
-    m_vector_of_agentIDs_toCoordinate.clear();
-    // Copy across the agent IDs, if necessary
-    if (!shouldCoordinateAll)
-    {
-        for ( int irow = 0 ; irow < agentIDs.length() ; irow++ )
-        {
-            m_vector_of_agentIDs_toCoordinate.push_back( agentIDs[irow] );
-        }
-    }
-    // Unlock the mutex
-    m_agentIDs_toCoordinate_mutex.unlock();
+    // Simply pass on the signal to the tabs
+    emit agentIDsToCoordinateChanged( agentIDs , shouldCoordinateAll );
 }
 
 
