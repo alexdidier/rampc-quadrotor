@@ -199,6 +199,38 @@ void MainWindow::on_action_LoadYAML_ClientConfig_triggered()
 
 
 
+void MainWindow::on_action_showHideController_default_changed()
+{
+    // Notify the UI elements of this change
+    ui->customWidget_enableControllerLoadYamlBar->showHideController_default_changed();
+    ui->customWidget_controller_tabs->showHideController_default_changed();
+}
+
+
+void MainWindow::on_action_showHideController_student_changed()
+{
+    // Notify the UI elements of this change
+    ui->customWidget_enableControllerLoadYamlBar->showHideController_student_changed();
+    ui->customWidget_controller_tabs->showHideController_student_changed();
+}
+
+
+void MainWindow::on_action_showHideController_picker_changed()
+{
+    // Notify the UI elements of this change
+    ui->customWidget_enableControllerLoadYamlBar->showHideController_picker_changed();
+    ui->customWidget_controller_tabs->showHideController_picker_changed();
+}
+
+void MainWindow::on_action_showHideController_safe_changed()
+{
+    // Notify the UI elements of this change
+    ui->customWidget_enableControllerLoadYamlBar->showHideController_safe_changed();
+    ui->customWidget_controller_tabs->showHideController_safe_changed();
+}
+
+
+
 //    ----------------------------------------------------------------------------------
 //    III  DDDD       &&&      TTTTT  Y   Y  PPPP   EEEEE
 //     I   D   D     &           T     Y Y   P   P  E

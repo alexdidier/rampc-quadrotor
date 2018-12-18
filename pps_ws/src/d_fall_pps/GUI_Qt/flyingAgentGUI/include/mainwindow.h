@@ -35,6 +35,9 @@
 
 #include <QMainWindow>
 #include <QShortcut>
+#include <QMutex>
+
+#include <QTextStream>
 
 #ifdef CATKIN_MAKE
 #include <ros/ros.h>
@@ -119,6 +122,12 @@ private slots:
     void on_actionShowHide_Coordinator_triggered();
     void on_action_LoadYAML_BatteryMonitor_triggered();
     void on_action_LoadYAML_ClientConfig_triggered();
+
+    // FOR THE CONTROLLERS MENU
+    void on_action_showHideController_default_changed();
+    void on_action_showHideController_student_changed();
+    void on_action_showHideController_picker_changed();
+    void on_action_showHideController_safe_changed();
 
 };
 

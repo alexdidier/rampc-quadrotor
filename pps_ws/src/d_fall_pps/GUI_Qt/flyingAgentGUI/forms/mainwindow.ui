@@ -206,8 +206,18 @@
     <addaction name="action_LoadYAML_BatteryMonitor"/>
     <addaction name="action_LoadYAML_ClientConfig"/>
    </widget>
+   <widget class="QMenu" name="menuControllers">
+    <property name="title">
+     <string>Controllers</string>
+    </property>
+    <addaction name="action_showHideController_default"/>
+    <addaction name="action_showHideController_student"/>
+    <addaction name="action_showHideController_picker"/>
+    <addaction name="action_showHideController_safe"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuLoad_YAML"/>
+   <addaction name="menuControllers"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">
@@ -231,6 +241,53 @@
   <action name="action_LoadYAML_ClientConfig">
    <property name="text">
     <string>ClientConfig</string>
+   </property>
+  </action>
+  <action name="action_showHideController_default">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Default</string>
+   </property>
+  </action>
+  <action name="action_showHideController_student">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Student</string>
+   </property>
+  </action>
+  <action name="action_showHideController_picker">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Picker</string>
+   </property>
+  </action>
+  <action name="action_showHideController_safe">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Safe</string>
    </property>
   </action>
  </widget>

@@ -644,6 +644,7 @@ void CoordinatorRow::loadCrazyflieContext()
 
 void CoordinatorRow::getCurrentFlyingState()
 {
+#ifdef CATKIN_MAKE
     d_fall_pps::IntIntService getFlyingStateCall;
     getFlyingStateCall.request.data = 0;
     getCurrentFlyingStateService.waitForExistence(ros::Duration(2.0));
@@ -655,6 +656,7 @@ void CoordinatorRow::getCurrentFlyingState()
     {
         setFlyingState(STATE_UNAVAILABLE);
     }
+#endif
 }
 
 
@@ -662,6 +664,7 @@ void CoordinatorRow::getCurrentFlyingState()
 
 void CoordinatorRow::getCurrentCrazyRadioState()
 {
+#ifdef CATKIN_MAKE
     d_fall_pps::IntIntService getCrazyRadioCall;
     getCrazyRadioCall.request.data = 0;
     getCurrentCrazyRadioStateService.waitForExistence(ros::Duration(2.0));
@@ -673,6 +676,7 @@ void CoordinatorRow::getCurrentCrazyRadioState()
     {
         setCrazyRadioStatus(CRAZY_RADIO_STATE_DISCONNECTED);
     }
+#endif
 }
 
 

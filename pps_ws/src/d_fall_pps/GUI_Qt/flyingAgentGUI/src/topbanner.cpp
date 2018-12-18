@@ -154,7 +154,9 @@ void TopBanner::databaseChangedCallback(const std_msgs::Int32& msg)
 void TopBanner::emitObjectNameForDisplayingPoseDataValueChanged()
 {
     emit objectNameForDisplayingPoseDataValueChanged( m_object_name_for_emitting_pose_data );
+#ifdef CATKIN_MAKE
     ROS_INFO_STREAM("[TOP BANNER GUI] Object name \"" << m_object_name_for_emitting_pose_data.toStdString() << "\" emitted for the controller tabs.");
+#endif
 }
 
 

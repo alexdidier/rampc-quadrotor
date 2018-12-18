@@ -47,6 +47,35 @@ EnableControllerLoadYamlBar::~EnableControllerLoadYamlBar()
 
 
 
+void EnableControllerLoadYamlBar::showHideController_default_changed()
+{
+    ui->enable_default_button   ->setHidden( !(ui->enable_default_button->isHidden()) );
+    ui->load_yaml_default_button->setHidden( !(ui->load_yaml_default_button->isHidden()) );
+}
+
+void EnableControllerLoadYamlBar::showHideController_student_changed()
+{
+    ui->enable_student_button   ->setHidden( !(ui->enable_student_button->isHidden()) );
+    ui->load_yaml_student_button->setHidden( !(ui->load_yaml_student_button->isHidden()) );
+}
+
+void EnableControllerLoadYamlBar::showHideController_picker_changed()
+{
+    ui->enable_demo_button   ->setHidden(    !(ui->enable_demo_button->isHidden()) );
+    ui->load_yaml_demo_button->setHidden( !(ui->load_yaml_demo_button->isHidden()) );
+}
+
+void EnableControllerLoadYamlBar::showHideController_safe_changed()
+{
+    ui->enable_safe_button   ->setHidden( !(ui->enable_safe_button->isHidden()) );
+    ui->load_yaml_safe_button->setHidden( !(ui->load_yaml_safe_button->isHidden()) );
+}
+
+
+
+
+
+
 // ENABLE CONTROLLER BUTTONS ON-CLICK CALLBACK
 
 void EnableControllerLoadYamlBar::on_enable_safe_button_clicked()

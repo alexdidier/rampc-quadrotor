@@ -45,6 +45,12 @@ public:
     explicit ControllerTabs(QWidget *parent = 0);
     ~ControllerTabs();
 
+    // PUBLIC METHODS FOR TOGGLING THE VISISBLE CONTROLLERS
+    void showHideController_default_changed();
+    void showHideController_student_changed();
+    void showHideController_picker_changed();
+    void showHideController_safe_changed();
+
 
 public slots:
     void setAgentIDsToCoordinate(QVector<int> agentIDs , bool shouldCoordinateAll);
