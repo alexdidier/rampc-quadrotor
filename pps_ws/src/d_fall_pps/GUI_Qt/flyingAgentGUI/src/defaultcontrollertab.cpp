@@ -556,7 +556,7 @@ void DefaultControllerTab::setAgentIDsToCoordinate(QVector<int> agentIDs , bool 
         ros::NodeHandle agent_base_nodeHandle(agent_base_namespace.toStdString());
 
         // // > Request the current setpoint
-        ros::ServiceClient getCurrentSetpointServiceClient = agent_base_nodeHandle.serviceClient<d_fall_pps::IntIntService>("DefaultControllerService/GetCurrentSetpoint", false);
+        ros::ServiceClient getCurrentSetpointServiceClient = agent_base_nodeHandle.serviceClient<d_fall_pps::GetSetpointService>("DefaultControllerService/GetCurrentSetpoint", false);
         d_fall_pps::GetSetpointService getSetpointCall;
         getSetpointCall.request.data = 0;
         getCurrentSetpointServiceClient.waitForExistence(ros::Duration(2.0));

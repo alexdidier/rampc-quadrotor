@@ -644,8 +644,9 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 	if (isRevelant)
 	{
 		// Extract the data from the message
-		int custom_button_index   = commandReceived.button_index;
-		float custom_command_code = commandReceived.command_code;
+		int custom_button_index = commandReceived.button_index;
+		float float_data        = commandReceived.float_data;
+		//std::string string_data = commandReceived.string_data;
 
 		// Switch between the button pressed
 		switch(custom_button_index)
@@ -675,7 +676,7 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 			case 3:
 			{
 				// Let the user know that this part of the code was triggered
-				ROS_INFO_STREAM("[STUDENT CONTROLLER] Button 3 received in controller, with command code:" << custom_command_code );
+				ROS_INFO_STREAM("[STUDENT CONTROLLER] Button 3 received in controller, with message.float_data = " << float_data );
 				// Code here to respond to custom button 3
 
 				break;
@@ -684,7 +685,7 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 			default:
 			{
 				// Let the user know that the command was not recognised
-				ROS_INFO_STREAM("[DEMO CONTROLLER] A button clicked command was received in the controller but not recognised, message.button_index = " << custom_button_index << ", and message.command_code = " << custom_command_code );
+				ROS_INFO_STREAM("[DEMO CONTROLLER] A button clicked command was received in the controller but not recognised, message.button_index = " << custom_button_index << ", and message.float_data = " << float_data );
 				break;
 			}
 		}

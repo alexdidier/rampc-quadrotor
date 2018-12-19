@@ -47,7 +47,7 @@ StudentControllerTab::StudentControllerTab(QWidget *parent) :
     }
 
     // CREATE THE CUSTOM BUTTON PRESSED PUBLISHED
-    customButtonPublisher = nodeHandle_for_this_gui.advertise<CustomButton>("StudentControllerService/CustomButtonPressed", 1);
+    customButtonPublisher = nodeHandle_for_this_gui.advertise<d_fall_pps::CustomButtonWithHeader>("StudentControllerService/CustomButtonPressed", 1);
 
 #endif
 
@@ -87,10 +87,10 @@ void StudentControllerTab::publish_custom_button_command(int button_index , QLin
     // Fill in the button index
     msg.button_index = button_index;
     // Get the line edit data, as a float if possible
-    bool isFloat = false;
-    float lineEdit_as_float = (lineEdit_pointer->text()).toFloat(isFloat);
+    bool isValidFloat = false;
+    float lineEdit_as_float = (lineEdit_pointer->text()).toFloat(&isValidFloat);
     // Fill in the data
-    if (isFloat)
+    if (isValidFloat)
         msg.float_data = lineEdit_as_float;
     else
         msg.string_data = (lineEdit_pointer->text()).toStdString();
@@ -105,24 +105,25 @@ void StudentControllerTab::publish_custom_button_command(int button_index , QLin
 void StudentControllerTab::on_custom_button_1_clicked()
 {
 #ifdef CATKIN_MAKE
-    // Initialise the message as a local variable
-    d_fall_pps::CustomButtonWithHeader msg;
-    // Fill the header of the message
-    fillCustomButtonMessageHeader( msg );
-    // Fill in the button index
-    msg.button_index = 1;
-    // Get the line edit data, as a float if possible
-    bool isFloat = false;
-    float lineEdit_as_float = (ui->lineEdit_custom_1->text()).toFloat(isFloat);
-    // Fill in the data
-    if (isFloat)
-        msg.float_data = lineEdit_as_float;
-    else
-        msg.string_data = (ui->lineEdit_custom_1->text()).toStdString();
-    // Publish the setpoint
-    this->customButtonPublisher.publish(msg);
-    // Inform the user about the change
-    ROS_INFO("[STUDENT CONTROLLER TAB GUI] button 1 clicked.");
+    publish_custom_button_command(1,ui->lineEdit_custom_1);
+    // // Initialise the message as a local variable
+    // d_fall_pps::CustomButtonWithHeader msg;
+    // // Fill the header of the message
+    // fillCustomButtonMessageHeader( msg );
+    // // Fill in the button index
+    // msg.button_index = 1;
+    // // Get the line edit data, as a float if possible
+    // bool isFloat = false;
+    // float lineEdit_as_float = (ui->lineEdit_custom_1->text()).toFloat(isFloat);
+    // // Fill in the data
+    // if (isFloat)
+    //     msg.float_data = lineEdit_as_float;
+    // else
+    //     msg.string_data = (ui->lineEdit_custom_1->text()).toStdString();
+    // // Publish the setpoint
+    // this->customButtonPublisher.publish(msg);
+    // // Inform the user about the change
+    // ROS_INFO("[STUDENT CONTROLLER TAB GUI] button 1 clicked.");
 #endif
 }
 
@@ -655,7 +656,7 @@ void StudentControllerTab::setAgentIDsToCoordinate(QVector<int> agentIDs , bool 
         ros::NodeHandle agent_base_nodeHandle(agent_base_namespace.toStdString());
 
         // // > Request the current setpoint
-        ros::ServiceClient getCurrentSetpointServiceClient = agent_base_nodeHandle.serviceClient<d_fall_pps::IntIntService>("StudentControllerService/GetCurrentSetpoint", false);
+        ros::ServiceClient getCurrentSetpointServiceClient = agent_base_nodeHandle.serviceClient<d_fall_pps::GetSetpointService>("StudentControllerService/GetCurrentSetpoint", false);
         d_fall_pps::GetSetpointService getSetpointCall;
         getSetpointCall.request.data = 0;
         getCurrentSetpointServiceClient.waitForExistence(ros::Duration(2.0));
@@ -747,7 +748,7 @@ void StudentControllerTab::fillSetpointMessageHeader( d_fall_pps::SetpointWithHe
 
 #ifdef CATKIN_MAKE
 // Fill the header for a message
-void fillCustomButtonMessageHeader( d_fall_pps::CustomButtonWithHeader & msg )
+void StudentControllerTab::fillCustomButtonMessageHeader( d_fall_pps::CustomButtonWithHeader & msg )
 {
     switch (m_type)
     {

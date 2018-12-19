@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QMutex>
 #include <QVector>
+#include <QLineEdit>
 #include <QTextStream>
 
 #ifdef CATKIN_MAKE
@@ -19,7 +20,7 @@
 // Include the DFALL message types
 //#include "d_fall_pps/IntWithHeader.h"
 #include "d_fall_pps/SetpointWithHeader.h"
-#include "d_fall_pps/CustomButtonWithHeader"
+#include "d_fall_pps/CustomButtonWithHeader.h"
 
 // Include the DFALL service types
 #include "d_fall_pps/GetSetpointService.h"
