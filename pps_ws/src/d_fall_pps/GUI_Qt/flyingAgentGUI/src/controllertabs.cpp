@@ -88,82 +88,45 @@ ControllerTabs::~ControllerTabs()
 
 
 
+void ControllerTabs::showHideController_toggle(QString qstr_label, QWidget * tab_widget_to_toggle)
+{
+    // Get the current index of the tab
+    // > Note the this returns -1 if the tab is not found
+    int current_index_of_tab = ui->controller_tabs_widget->indexOf(tab_widget_to_toggle);
+
+    // Switch depending on whether the tab was found
+    if (current_index_of_tab < 0)
+    {
+        // Insert the tab
+        ui->controller_tabs_widget->addTab(tab_widget_to_toggle,qstr_label);
+    }
+    else
+    {
+        // Remove the tab
+        ui->controller_tabs_widget->removeTab(current_index_of_tab);
+    }
+}
+
 
 
 void ControllerTabs::showHideController_default_changed()
 {
-    // Get the current index of the tab
-    // > Note the this returns -1 if the tab is not found
-    int current_index_of_tab = ui->controller_tabs_widget->indexOf(ui->default_tab);
-
-    // Switch depending on whether the tab was found
-    if (current_index_of_tab < 0)
-    {
-        // Insert the tab
-        ui->controller_tabs_widget->addTab(ui->default_tab,"Default");
-    }
-    else
-    {
-        // Remove the tab
-        ui->controller_tabs_widget->removeTab(current_index_of_tab);
-    }
+    showHideController_toggle("Default",ui->default_tab);
 }
 
 void ControllerTabs::showHideController_student_changed()
 {
-    // Get the current index of the tab
-    // > Note the this returns -1 if the tab is not found
-    int current_index_of_tab = ui->controller_tabs_widget->indexOf(ui->student_tab);
-
-    // Switch depending on whether the tab was found
-    if (current_index_of_tab < 0)
-    {
-        // Insert the tab
-        ui->controller_tabs_widget->addTab(ui->student_tab,"Student");
-    }
-    else
-    {
-        // Remove the tab
-        ui->controller_tabs_widget->removeTab(current_index_of_tab);
-    }
+    showHideController_toggle("Student",ui->student_tab);
 }
 
 void ControllerTabs::showHideController_picker_changed()
 {
-    // Get the current index of the tab
-    // > Note the this returns -1 if the tab is not found
-    int current_index_of_tab = ui->controller_tabs_widget->indexOf(ui->picker_tab);
-
-    // Switch depending on whether the tab was found
-    if (current_index_of_tab < 0)
-    {
-        // Insert the tab
-        ui->controller_tabs_widget->addTab(ui->picker_tab,"Picker");
-    }
-    else
-    {
-        // Remove the tab
-        ui->controller_tabs_widget->removeTab(current_index_of_tab);
-    }
+    showHideController_toggle("Picker",ui->picker_tab);
 }
 
 void ControllerTabs::showHideController_safe_changed()
 {
-    // Get the current index of the tab
-    // > Note the this returns -1 if the tab is not found
-    int current_index_of_tab = ui->controller_tabs_widget->indexOf(ui->safe_tab);
-
-    // Switch depending on whether the tab was found
-    if (current_index_of_tab < 0)
-    {
-        // Insert the tab
-        ui->controller_tabs_widget->addTab(ui->safe_tab,"Safe");
-    }
-    else
-    {
-        // Remove the tab
-        ui->controller_tabs_widget->removeTab(current_index_of_tab);
-    }
+    showHideController_toggle("Safe",ui->safe_tab);
 }
 
 

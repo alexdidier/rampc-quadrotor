@@ -46,6 +46,7 @@ public:
     ~ControllerTabs();
 
     // PUBLIC METHODS FOR TOGGLING THE VISISBLE CONTROLLERS
+    void showHideController_toggle(QString qstr_label, QWidget * tab_widget_to_toggle);
     void showHideController_default_changed();
     void showHideController_student_changed();
     void showHideController_picker_changed();

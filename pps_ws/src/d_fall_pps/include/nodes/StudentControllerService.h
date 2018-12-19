@@ -57,16 +57,18 @@
 
 // Include the DFALL message types
 #include "d_fall_pps/IntWithHeader.h"
-#include "d_fall_pps/StringWithHeader.h"
+//#include "d_fall_pps/StringWithHeader.h"
+#include "d_fall_pps/SetpointWithHeader.h"
+#include "d_fall_pps/CustomButtonWithHeader.h"
 #include "d_fall_pps/ViconData.h"
 #include "d_fall_pps/Setpoint.h"
 #include "d_fall_pps/ControlCommand.h"
 #include "d_fall_pps/Controller.h"
 #include "d_fall_pps/DebugMsg.h"
-#include "d_fall_pps/CustomButton.h"
 
 // Include the DFALL service types
 #include "d_fall_pps/LoadYamlFromFilename.h"
+#include "d_fall_pps/GetSetpointService.h"
 
 // Include the shared definitions
 #include "nodes/Constants.h"
@@ -158,16 +160,32 @@ std::string m_namespace_to_coordinator_parameter_service;
 
 
 
+// VARAIBLES FOR VALUES LOADED FROM THE YAML FILE
+// > the mass of the crazyflie, in [grams]
+float yaml_cf_mass_in_grams = 25.0;
 
-// Variables for controller
-float yaml_cf_mass_in_grams = 25.0;         // Crazyflie mass in grams
-std::vector<float> yaml_motorPoly(3);       // Coefficients of the 16-bit command to thrust conversion
-float yaml_control_frequency = 200.0;       // Frequency at which the controller is running
-float m_cf_weight_in_newtons = 0.0;      // The weight of the Crazyflie in Newtons, i.e., mg
+// > the coefficients of the 16-bit command to thrust conversion
+//std::vector<float> yaml_motorPoly(3);
+std::vector<float> yaml_motorPoly = {5.484560e-4, 1.032633e-6, 2.130295e-11};
 
-float m_previous_stateErrorInertial[9];  // The location error of the Crazyflie at the "previous" time step
+// > the frequency at which the controller is running
+float yaml_control_frequency = 200.0;
 
-std::vector<float>  m_setpoint{0.0,0.0,0.4,0.0};     // The setpoints for (x,y,z) position and yaw angle, in that order
+// > the default setpoint, the ordering is (x,y,z,yaw),
+//   with units [meters,meters,meters,radians]
+std::vector<float> yaml_default_setpoint = {0.0,0.0,0.4,0.0};
+
+
+
+// The weight of the Crazyflie in Newtons, i.e., mg
+float m_cf_weight_in_newtons = 0.0;
+
+// The location error of the Crazyflie at the "previous" time step
+float m_previous_stateErrorInertial[9];
+
+// The setpoint to be tracked, the ordering is (x,y,z,yaw),
+// with units [meters,meters,meters,radians]
+std::vector<float>  m_setpoint{0.0,0.0,0.4,0.0};
 
 
 // The LQR Controller parameters for "LQR_RATE_MODE"
@@ -180,21 +198,9 @@ std::vector<float> m_gainMatrixThrust      =  { 0.00, 0.00, 0.19, 0.00, 0.00, 0.
 // ROS Publisher for debugging variables
 ros::Publisher m_debugPublisher;
 
-
-
-// RELEVANT NOTES ABOUT THE VARIABLES DECLARE HERE:
-// The "CrazyflieData" type used for the "request" variable is a
-// structure as defined in the file "CrazyflieData.msg" which has the following
-// properties:
-//     string crazyflieName              The name given to the Crazyflie in the Vicon software
-//     float64 x                         The x position of the Crazyflie [metres]
-//     float64 y                         The y position of the Crazyflie [metres]
-//     float64 z                         The z position of the Crazyflie [metres]
-//     float64 roll                      The roll component of the intrinsic Euler angles [radians]
-//     float64 pitch                     The pitch component of the intrinsic Euler angles [radians]
-//     float64 yaw                       The yaw component of the intrinsic Euler angles [radians]
-//     float64 acquiringTime #delta t    The time elapsed since the previous "CrazyflieData" was received [seconds]
-//     bool occluded                     A boolean indicted whether the Crazyflie for visible at the time of this measurement
+// ROS Publisher for inform the network about
+// changes to the setpoin
+ros::Publisher m_setpointChangedPublisher;
 
 
 
@@ -224,33 +230,25 @@ ros::Publisher m_debugPublisher;
 // CONTROLLER COMPUTATIONS
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response);
 
-// TRANSFORMATION OF THE (x,y) INERTIAL FRAME ERROR INTO AN (x,y) BODY FRAME ERROR
+// TRANSFORMATION OF THE (x,y) INERTIAL FRAME ERROR
+// INTO AN (x,y) BODY FRAME ERROR
 void convertIntoBodyFrame(float stateInertial[9], float (&stateBody)[9], float yaw_measured);
 
 // CONVERSION FROM THRUST IN NEWTONS TO 16-BIT COMMAND
 float computeMotorPolyBackward(float thrust);
 
-// SETPOINT CHANGE CALLBACK
-void setpointCallback(const Setpoint& newSetpoint);
+// REQUEST SETPOINT CHANGE CALLBACK
+void requestSetpointChangeCallback(const SetpointWithHeader& newSetpoint);
+
+// CHANGE SETPOINT FUNCTION
+void setNewSetpoint(float x, float y, float z, float yaw);
+
+// GET CURRENT SETPOINT SERVICE CALLBACK
+bool getCurrentSetpointCallback(GetSetpointService::Request &request, GetSetpointService::Response &response);
 
 // CUSTOM COMMAND RECEIVED CALLBACK
-void customCommandReceivedCallback(const CustomButton& commandReceived);
-
+void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived);
 
 // > For the LOADING of YAML PARAMETERS
 void isReadyStudentControllerYamlCallback(const IntWithHeader & msg);
 void fetchStudentControllerYamlParameters(ros::NodeHandle& nodeHandle);
-
-
-// LOAD PARAMETERS
-//float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name);
-//void getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length);
-//int getParameterInt(ros::NodeHandle& nodeHandle, std::string name);
-//void getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val, int length);
-//int getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val);
-//bool getParameterBool(ros::NodeHandle& nodeHandle, std::string name);
-
-//void yamlReadyForFetchCallback(const std_msgs::Int32& msg);
-//void fetchYamlParameters(ros::NodeHandle& nodeHandle);
-//void processFetchedParameters();
-//void customYAMLasMessageCallback(const CustomControllerYAML& newCustomControllerParameters);

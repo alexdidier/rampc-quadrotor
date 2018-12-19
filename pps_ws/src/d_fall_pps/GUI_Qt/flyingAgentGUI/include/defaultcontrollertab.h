@@ -20,6 +20,9 @@
 //#include "d_fall_pps/IntWithHeader.h"
 #include "d_fall_pps/SetpointWithHeader.h"
 
+// Include the DFALL service types
+#include "d_fall_pps/GetSetpointService.h"
+
 // Include the shared definitions
 #include "nodes/Constants.h"
 
@@ -31,6 +34,8 @@
 #include "include/Constants_for_Qt_compile.h"
 
 #endif
+
+
 
 namespace Ui {
 class DefaultControllerTab;
@@ -45,10 +50,12 @@ public:
     ~DefaultControllerTab();
 
 
+
 public slots:
     void setAgentIDsToCoordinate(QVector<int> agentIDs , bool shouldCoordinateAll);
     void setMeasuredPose(float x , float y , float z , float roll , float pitch , float yaw , bool occluded);
     void poseDataUnavailableSlot();
+
 
 
 private slots:
@@ -69,6 +76,8 @@ private slots:
     void on_z_increment_minus_button_clicked();
     void on_yaw_increment_plus_button_clicked();
     void on_yaw_increment_minus_button_clicked();
+
+
 
 private:
     Ui::DefaultControllerTab *ui;
@@ -99,6 +108,7 @@ private:
     // > For being notified when the setpoint is changed
     ros::Subscriber setpointChangedSubscriber;
 #endif
+
 
 
     // --------------------------------------------------- //

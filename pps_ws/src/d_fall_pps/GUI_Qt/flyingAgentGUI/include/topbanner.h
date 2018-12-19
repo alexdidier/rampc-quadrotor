@@ -131,6 +131,9 @@ private:
 
     // PUBLISHERS AND SUBSRIBERS
 
+    // > For the emergency stop button
+    ros::Publisher emergencyStopPublisher;
+
     // > For changes in the database that defines {agentID,cfID,flying zone} links
     ros::Subscriber databaseChangedSubscriber;
     ros::ServiceClient centralManagerDatabaseService;

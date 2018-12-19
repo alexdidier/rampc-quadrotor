@@ -57,17 +57,18 @@
 
 // Include the DFALL message types
 #include "d_fall_pps/IntWithHeader.h"
-#include "d_fall_pps/StringWithHeader.h"
+//#include "d_fall_pps/StringWithHeader.h"
 #include "d_fall_pps/SetpointWithHeader.h"
+#include "d_fall_pps/CustomButtonWithHeader.h"
 #include "d_fall_pps/ViconData.h"
 #include "d_fall_pps/Setpoint.h"
 #include "d_fall_pps/ControlCommand.h"
 #include "d_fall_pps/Controller.h"
 #include "d_fall_pps/DebugMsg.h"
-#include "d_fall_pps/CustomButton.h"
 
 // Include the DFALL service types
 #include "d_fall_pps/LoadYamlFromFilename.h"
+#include "d_fall_pps/GetSetpointService.h"
 
 // Include the shared definitions
 #include "nodes/Constants.h"
@@ -129,22 +130,23 @@ std::string m_namespace_to_coordinator_parameter_service;
 
 
 
-// The mass of the crazyflie, in [grams]
+// VARAIBLES FOR VALUES LOADED FROM THE YAML FILE
+// > the mass of the crazyflie, in [grams]
 float yaml_cf_mass_in_grams = 25.0;
 
-// Coefficients of the 16-bit command to thrust conversion
+// > the coefficients of the 16-bit command to thrust conversion
 //std::vector<float> yaml_motorPoly(3);
 std::vector<float> yaml_motorPoly = {5.484560e-4, 1.032633e-6, 2.130295e-11};
 
-// Frequency at which the controller is running
+// > the frequency at which the controller is running
 float yaml_control_frequency = 200.0;
 
-// The min and max for saturating 16 bit thrust commands
+// > the min and max for saturating 16 bit thrust commands
 float yaml_command_sixteenbit_min = 1000;
 float yaml_command_sixteenbit_max = 65000;
 
-// The default setpoint, the ordering is (x,y,z,yaw),
-// with unit [meters,meters,meters,radians]
+// > the default setpoint, the ordering is (x,y,z,yaw),
+//   with units [meters,meters,meters,radians]
 std::vector<float> yaml_default_setpoint = {0.0,0.0,0.4,0.0};
 
 
@@ -155,7 +157,9 @@ float m_cf_weight_in_newtons = 0.0;
 // The location error of the Crazyflie at the "previous" time step
 float m_previous_stateErrorInertial[9];
 
-std::vector<float>  m_setpoint{0.0,0.0,0.4,0.0};     // The setpoints for (x,y,z) position and yaw angle, in that order
+// The setpoint to be tracked, the ordering is (x,y,z,yaw),
+// with units [meters,meters,meters,radians]
+std::vector<float>  m_setpoint{0.0,0.0,0.4,0.0};
 
 
 // The LQR Controller parameters for "LQR_RATE_MODE"
@@ -171,22 +175,6 @@ ros::Publisher m_debugPublisher;
 // ROS Publisher for inform the network about
 // changes to the setpoin
 ros::Publisher m_setpointChangedPublisher;
-
-
-
-// RELEVANT NOTES ABOUT THE VARIABLES DECLARE HERE:
-// The "CrazyflieData" type used for the "request" variable is a
-// structure as defined in the file "CrazyflieData.msg" which has the following
-// properties:
-//     string crazyflieName              The name given to the Crazyflie in the Vicon software
-//     float64 x                         The x position of the Crazyflie [metres]
-//     float64 y                         The y position of the Crazyflie [metres]
-//     float64 z                         The z position of the Crazyflie [metres]
-//     float64 roll                      The roll component of the intrinsic Euler angles [radians]
-//     float64 pitch                     The pitch component of the intrinsic Euler angles [radians]
-//     float64 yaw                       The yaw component of the intrinsic Euler angles [radians]
-//     float64 acquiringTime #delta t    The time elapsed since the previous "CrazyflieData" was received [seconds]
-//     bool occluded                     A boolean indicted whether the Crazyflie for visible at the time of this measurement
 
 
 
@@ -206,17 +194,18 @@ ros::Publisher m_setpointChangedPublisher;
 //    P      R   R   OOO     T     OOO     T      Y    P      EEEEE  SSSS
 //    ----------------------------------------------------------------------------------
 
-// These function prototypes are not strictly required for this code to
-// complile, but adding the function prototypes here means the the functions
-// can be written below in any order. If the function prototypes are not
-// included then the function need to written below in an order that ensure
-// each function is implemented before it is called from another function,
-// hence why the "main" function is at the bottom.
+// These function prototypes are not strictly required for this code
+// to complile, but adding the function prototypes here means the
+// functions can be written in any order in the ".cpp" file.
+// (If the function prototypes are not included then the functions
+// need to written below in an order that ensure each function is
+// implemented before it is called from another function)
 
 // CONTROLLER COMPUTATIONS
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response);
 
-// TRANSFORMATION OF THE (x,y) INERTIAL FRAME ERROR INTO AN (x,y) BODY FRAME ERROR
+// TRANSFORMATION OF THE (x,y) INERTIAL FRAME ERROR
+// INTO AN (x,y) BODY FRAME ERROR
 void convertIntoBodyFrame(float stateInertial[9], float (&stateBody)[9], float yaw_measured);
 
 // CONVERSION FROM THRUST IN NEWTONS TO 16-BIT COMMAND
@@ -228,10 +217,12 @@ void requestSetpointChangeCallback(const SetpointWithHeader& newSetpoint);
 // CHANGE SETPOINT FUNCTION
 void setNewSetpoint(float x, float y, float z, float yaw);
 
+// GET CURRENT SETPOINT SERVICE CALLBACK
+bool getCurrentSetpointCallback(GetSetpointService::Request &request, GetSetpointService::Response &response);
+
 // CUSTOM COMMAND RECEIVED CALLBACK
-void customCommandReceivedCallback(const CustomButton& commandReceived);
+void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived);
 
-
-// > For the LOADING of YAML PARAMETERS
+// LOADING OF YAML PARAMETERS
 void isReadyDefaultControllerYamlCallback(const IntWithHeader & msg);
 void fetchDefaultControllerYamlParameters(ros::NodeHandle& nodeHandle);

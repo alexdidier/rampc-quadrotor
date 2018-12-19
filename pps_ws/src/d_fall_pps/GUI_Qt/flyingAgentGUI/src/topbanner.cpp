@@ -92,6 +92,9 @@ TopBanner::TopBanner(QWidget *parent) :
     // CREATE A NODE HANDLE TO THE ROOT OF THE D-FaLL SYSTEM
     ros::NodeHandle dfall_root_nodeHandle("/dfall");
 
+    // > Publisher for the emergency stop button
+    emergencyStopPublisher = dfall_root_nodeHandle.advertise<d_fall_pps::IntWithHeader>("emergencyStop", 1);
+
 	// > For changes in the database that defines {agentID,cfID,flying zone} links
 	databaseChangedSubscriber = dfall_root_nodeHandle.subscribe("CentralManagerService/DBChanged", 1, &TopBanner::databaseChangedCallback, this);;
 	centralManagerDatabaseService = dfall_root_nodeHandle.serviceClient<d_fall_pps::CMQuery>("CentralManagerService/Query", false);
@@ -245,10 +248,10 @@ void TopBanner::loadCrazyflieContext(int ID_to_request_from_database , int emit_
 void TopBanner::on_emergency_stop_button_clicked()
 {
 #ifdef CATKIN_MAKE
-    // d_fall_pps::IntWithHeader msg;
-    // fillIntMessageHeader(msg);
-    // msg.data = CMD_RECONNECT;
-    // this->crazyRadioCommandPublisher.publish(msg);
+    d_fall_pps::IntWithHeader msg;
+    msg.shouldCheckIDs = false;
+    msg.data = CMD_CRAZYFLY_MOTORS_OFF;
+    this->emergencyStopPublisher.publish(msg);
     ROS_INFO("[TOP BANNER GUI] EMERGENCY STOP button clicked");
 #endif
 }

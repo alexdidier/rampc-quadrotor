@@ -56,6 +56,18 @@ DefaultControllerTab::~DefaultControllerTab()
 }
 
 
+
+
+
+//    ----------------------------------------------------------------------------------
+//    PPPP    OOO    SSSS  EEEEE     DDDD     A    TTTTT    A
+//    P   P  O   O  S      E         D   D   A A     T     A A
+//    PPPP   O   O   SSS   EEE       D   D  A   A    T    A   A
+//    P      O   O      S  E         D   D  AAAAA    T    AAAAA
+//    P       OOO   SSSS   EEEEE     DDDD   A   A    T    A   A
+//    ----------------------------------------------------------------------------------
+
+
 void DefaultControllerTab::setMeasuredPose(float x , float y , float z , float roll , float pitch , float yaw , bool occluded)
 {
     if (!occluded)
@@ -264,7 +276,7 @@ void DefaultControllerTab::on_lineEdit_setpoint_new_yaw_returnPressed()
 
 void DefaultControllerTab::on_set_setpoint_button_clicked()
 {
-#ifdef CATKIN_MAKE
+
     // Initialise local variable for each of (x,y,z,yaw)
     float x = 0.0f, y = 0.0f, z = 0.0f, yaw = 0.0f;
 
@@ -290,9 +302,9 @@ void DefaultControllerTab::on_set_setpoint_button_clicked()
     else
         yaw = (ui->lineEdit_setpoint_current_yaw->text()).toFloat();
 
+#ifdef CATKIN_MAKE
     // Call the function to publish the setpoint
     publishSetpoint(x,y,z,yaw);
-
 #else
     // TO ASSIST WITH DEBUGGING WHEN COMPILED AND RUN IN "QtCreator"
     QTextStream(stdout) << "[DEFAULT CONTROLLER TAB] set setpoint button clicked";
@@ -324,7 +336,6 @@ void DefaultControllerTab::on_default_setpoint_button_clicked()
 
 void DefaultControllerTab::on_x_increment_plus_button_clicked()
 {
-#ifdef CATKIN_MAKE
     // Only need to do something if the field is not empty
     if(!ui->lineEdit_setpoint_increment_x->text().isEmpty())
     {
@@ -338,16 +349,17 @@ void DefaultControllerTab::on_x_increment_plus_button_clicked()
     }
     else
     {
+        #ifdef CATKIN_MAKE
         // Inform the user that nothing can be done
         ROS_INFO_STREAM("[DEFAULT CONTROLLER GUI] Increment x setpoint clicked but field is empty");
+        #endif
 
     }
-#endif
 }
 
 void DefaultControllerTab::on_x_increment_minus_button_clicked()
 {
-#ifdef CATKIN_MAKE
+
     // Only need to do something if the field is not empty
     if(!ui->lineEdit_setpoint_increment_x->text().isEmpty())
     {
@@ -361,16 +373,15 @@ void DefaultControllerTab::on_x_increment_minus_button_clicked()
     }
     else
     {
+        #ifdef CATKIN_MAKE
         // Inform the user that nothing can be done
         ROS_INFO_STREAM("[DEFAULT CONTROLLER GUI] Increment x setpoint clicked but field is empty");
-
+        #endif
     }
-#endif
 }
 
 void DefaultControllerTab::on_y_increment_plus_button_clicked()
 {
-#ifdef CATKIN_MAKE
     // Only need to do something if the field is not empty
     if(!ui->lineEdit_setpoint_increment_y->text().isEmpty())
     {
@@ -384,16 +395,15 @@ void DefaultControllerTab::on_y_increment_plus_button_clicked()
     }
     else
     {
+        #ifdef CATKIN_MAKE
         // Inform the user that nothing can be done
         ROS_INFO_STREAM("[DEFAULT CONTROLLER GUI] Increment x setpoint clicked but field is empty");
-
+        #endif
     }
-#endif
 }
 
 void DefaultControllerTab::on_y_increment_minus_button_clicked()
 {
-#ifdef CATKIN_MAKE
     // Only need to do something if the field is not empty
     if(!ui->lineEdit_setpoint_increment_y->text().isEmpty())
     {
@@ -407,16 +417,15 @@ void DefaultControllerTab::on_y_increment_minus_button_clicked()
     }
     else
     {
+        #ifdef CATKIN_MAKE
         // Inform the user that nothing can be done
         ROS_INFO_STREAM("[DEFAULT CONTROLLER GUI] Increment x setpoint clicked but field is empty");
-
+        #endif
     }
-#endif
 }
 
 void DefaultControllerTab::on_z_increment_plus_button_clicked()
 {
-#ifdef CATKIN_MAKE
     // Only need to do something if the field is not empty
     if(!ui->lineEdit_setpoint_increment_z->text().isEmpty())
     {
@@ -430,16 +439,15 @@ void DefaultControllerTab::on_z_increment_plus_button_clicked()
     }
     else
     {
+        #ifdef CATKIN_MAKE
         // Inform the user that nothing can be done
         ROS_INFO_STREAM("[DEFAULT CONTROLLER GUI] Increment x setpoint clicked but field is empty");
-
+        #endif
     }
-#endif
 }
 
 void DefaultControllerTab::on_z_increment_minus_button_clicked()
 {
-#ifdef CATKIN_MAKE
     // Only need to do something if the field is not empty
     if(!ui->lineEdit_setpoint_increment_z->text().isEmpty())
     {
@@ -453,16 +461,15 @@ void DefaultControllerTab::on_z_increment_minus_button_clicked()
     }
     else
     {
+        #ifdef CATKIN_MAKE
         // Inform the user that nothing can be done
         ROS_INFO_STREAM("[DEFAULT CONTROLLER GUI] Increment x setpoint clicked but field is empty");
-
+        #endif
     }
-#endif
 }
 
 void DefaultControllerTab::on_yaw_increment_plus_button_clicked()
 {
-#ifdef CATKIN_MAKE
     // Only need to do something if the field is not empty
     if(!ui->lineEdit_setpoint_increment_yaw->text().isEmpty())
     {
@@ -476,15 +483,14 @@ void DefaultControllerTab::on_yaw_increment_plus_button_clicked()
     }
     else
     {
+        #ifdef CATKIN_MAKE
         // Inform the user that nothing can be done
         ROS_INFO_STREAM("[DEFAULT CONTROLLER GUI] Increment x setpoint clicked but field is empty");
-
+        #endif
     }
-#endif
 }
 void DefaultControllerTab::on_yaw_increment_minus_button_clicked()
 {
-#ifdef CATKIN_MAKE
     // Only need to do something if the field is not empty
     if(!ui->lineEdit_setpoint_increment_yaw->text().isEmpty())
     {
@@ -498,11 +504,11 @@ void DefaultControllerTab::on_yaw_increment_minus_button_clicked()
     }
     else
     {
+        #ifdef CATKIN_MAKE
         // Inform the user that nothing can be done
         ROS_INFO_STREAM("[DEFAULT CONTROLLER GUI] Increment x setpoint clicked but field is empty");
-
+        #endif
     }
-#endif
 }
 
 
@@ -549,34 +555,20 @@ void DefaultControllerTab::setAgentIDsToCoordinate(QVector<int> agentIDs , bool 
         QString agent_base_namespace = "/dfall/agent" + QString::number(agentIDs[0]).rightJustified(3, '0');
         ros::NodeHandle agent_base_nodeHandle(agent_base_namespace.toStdString());
 
-        // // > Request the current flying state
-        // ros::ServiceClient getCurrentFlyingStateService = agent_base_nodeHandle.serviceClient<d_fall_pps::IntIntService>("PPSClient/getCurrentFlyingState", false);
-        // d_fall_pps::IntIntService getFlyingStateCall;
-        // getFlyingStateCall.request.data = 0;
-        // getCurrentFlyingStateService.waitForExistence(ros::Duration(2.0));
-        // if(getCurrentFlyingStateService.call(getFlyingStateCall))
-        // {
-        //     setFlyingState(getFlyingStateCall.response.data);
-        // }
-        // else
-        // {
-        //     setFlyingState(STATE_UNAVAILABLE);
-        // }
-
-        // // > Request the current status of the crazy radio
-        // ros::ServiceClient getCurrentCrazyRadioStateService = agent_base_nodeHandle.serviceClient<d_fall_pps::IntIntService>("CrazyRadio/getCurrentCrazyRadioStatus", false);
-        // d_fall_pps::IntIntService getCrazyRadioCall;
-        // getCrazyRadioCall.request.data = 0;
-        // getCurrentCrazyRadioStateService.waitForExistence(ros::Duration(2.0));
-        // if(getCurrentCrazyRadioStateService.call(getCrazyRadioCall))
-        // {
-        //     setCrazyRadioStatus(getCrazyRadioCall.response.data);
-        // }
-        // else
-        // {
-        //     setCrazyRadioStatus(CRAZY_RADIO_STATE_DISCONNECTED);
-        // }
-
+        // // > Request the current setpoint
+        ros::ServiceClient getCurrentSetpointServiceClient = agent_base_nodeHandle.serviceClient<d_fall_pps::IntIntService>("DefaultControllerService/GetCurrentSetpoint", false);
+        d_fall_pps::GetSetpointService getSetpointCall;
+        getSetpointCall.request.data = 0;
+        getCurrentSetpointServiceClient.waitForExistence(ros::Duration(2.0));
+        if(getCurrentSetpointServiceClient.call(getSetpointCall))
+        {
+            setpointChangedCallback(getSetpointCall.response.setpointWithHeader);
+        }
+        else
+        {
+            // Inform the user
+            ROS_INFO("[DEFAULT CONTROLLER GUI] Failed to get setpoint from controller using the \"GetCurrentSetpoint\" service");
+        }
 
         // SUBSCRIBERS
         // > For receiving message that the setpoint was changed

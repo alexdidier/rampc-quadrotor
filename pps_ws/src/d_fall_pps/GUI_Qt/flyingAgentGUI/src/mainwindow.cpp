@@ -132,6 +132,18 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
             ui->customWidget_controller_tabs , &ControllerTabs::setObjectNameForDisplayingPoseData
             );
 
+
+    // TOGGLE THE CONTROLLERS THAT ARE VISIBLE
+    // By default all controller buttons and tabs are visible
+    // and the menu item is checked. Hence, to hide a controller
+    // the menu item simply needs to be "triggered"
+
+    // > For the picker controller
+    ui->action_showHideController_picker->trigger();
+    // > For the safe controller
+    ui->action_showHideController_safe->trigger();
+
+
 }
 
 MainWindow::~MainWindow()

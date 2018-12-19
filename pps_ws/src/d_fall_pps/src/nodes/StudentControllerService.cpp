@@ -534,22 +534,86 @@ float computeMotorPolyBackward(float thrust)
 //    N  NN  E       W W W            S  E        T    P      O   O   I   N  NN    T
 //    N   N  EEEEE    W W         SSSS   EEEEE    T    P       OOO   III  N   N    T
 //
-//     GGG   U   U  III        CCCC    A    L      L      BBBB     A     CCCC  K   K
-//    G   G  U   U   I        C       A A   L      L      B   B   A A   C      K  K
-//    G      U   U   I        C      A   A  L      L      BBBB   A   A  C      KKK
-//    G   G  U   U   I        C      AAAAA  L      L      B   B  AAAAA  C      K  K
-//     GGGG   UUU   III        CCCC  A   A  LLLLL  LLLLL  BBBB   A   A   CCCC  K   K
+//     CCCC    A    L      L      BBBB     A     CCCC  K   K
+//    C       A A   L      L      B   B   A A   C      K  K
+//    C      A   A  L      L      BBBB   A   A  C      KKK
+//    C      AAAAA  L      L      B   B  AAAAA  C      K  K
+//     CCCC  A   A  LLLLL  LLLLL  BBBB   A   A   CCCC  K   K
 //    ----------------------------------------------------------------------------------
 
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-void setpointCallback(const Setpoint& newSetpoint)
+
+// REQUEST SETPOINT CHANGE CALLBACK
+// This function does NOT need to be edited 
+void requestSetpointChangeCallback(const SetpointWithHeader& newSetpoint)
 {
-	m_setpoint[0] = newSetpoint.x;
-	m_setpoint[1] = newSetpoint.y;
-	m_setpoint[2] = newSetpoint.z;
-	m_setpoint[3] = newSetpoint.yaw;
+	// Check whether the message is relevant
+	bool isRevelant = checkMessageHeader( m_agentID , newSetpoint.shouldCheckForAgentID , newSetpoint.agentIDs );
+
+	// Continue if the message is relevant
+	if (isRevelant)
+	{
+		// Check if the request if for the default setpoint
+		if (newSetpoint.buttonID == REQUEST_DEFAULT_SETPOINT_BUTTON_ID)
+		{
+			setNewSetpoint(
+					yaml_default_setpoint[0],
+					yaml_default_setpoint[1],
+					yaml_default_setpoint[2],
+					yaml_default_setpoint[3]
+				);
+		}
+		else
+		{
+			// Call the function for actually setting the setpoint
+			setNewSetpoint(
+					newSetpoint.x,
+					newSetpoint.y,
+					newSetpoint.z,
+					newSetpoint.yaw
+				);
+		}
+	}
 }
 
+
+// CHANGE SETPOINT FUNCTION
+// This function does NOT need to be edited 
+void setNewSetpoint(float x, float y, float z, float yaw)
+{
+	// Put the new setpoint into the class variable
+	m_setpoint[0] = x;
+	m_setpoint[1] = y;
+	m_setpoint[2] = z;
+	m_setpoint[3] = yaw;
+
+	// Publish the change so that the network is updated
+	// (mainly the "flying agent GUI" is interested in
+	// displaying this change to the user)
+
+	// Instantiate a local variable of type "SetpointWithHeader"
+	SetpointWithHeader msg;
+	// Fill in the setpoint
+	msg.x   = x;
+	msg.y   = y;
+	msg.z   = z;
+	msg.yaw = yaw;
+	// Publish the message
+	m_setpointChangedPublisher.publish(msg);
+}
+
+
+// GET CURRENT SETPOINT SERVICE CALLBACK
+// This function does NOT need to be edited 
+bool getCurrentSetpointCallback(GetSetpointService::Request &request, GetSetpointService::Response &response)
+{
+	// Directly put the current setpoint into the response
+	response.setpointWithHeader.x   = m_setpoint[0];
+	response.setpointWithHeader.y   = m_setpoint[1];
+	response.setpointWithHeader.z   = m_setpoint[2];
+	response.setpointWithHeader.yaw = m_setpoint[3];
+	// Return
+	return true;
+}
 
 
 
@@ -570,54 +634,63 @@ void setpointCallback(const Setpoint& newSetpoint)
 //    ----------------------------------------------------------------------------------
 
 // CUSTOM COMMAND RECEIVED CALLBACK
-void customCommandReceivedCallback(const CustomButton& commandReceived)
+// This function CAN be edited to respond when the buttons
+// in the GUI are pressed
+void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived)
 {
-	// Extract the data from the message
-	int custom_button_index   = commandReceived.button_index;
-	float custom_command_code = commandReceived.command_code;
+	// Check whether the message is relevant
+	bool isRevelant = checkMessageHeader( m_agentID , commandReceived.shouldCheckForAgentID , commandReceived.agentIDs );
 
-	// Switch between the button pressed
-	switch(custom_button_index)
+	if (isRevelant)
 	{
+		// Extract the data from the message
+		int custom_button_index   = commandReceived.button_index;
+		float custom_command_code = commandReceived.command_code;
 
-		// > FOR CUSTOM BUTTON 1
-		case 1:
+		// Switch between the button pressed
+		switch(custom_button_index)
 		{
-			// Let the user know that this part of the code was triggered
-			ROS_INFO("[STUDENT CONTROLLER] Button 1 received in controller.");
-			// Code here to respond to custom button 1
-			
-			break;
-		}
 
-		// > FOR CUSTOM BUTTON 2
-		case 2:
-		{
-			// Let the user know that this part of the code was triggered
-			ROS_INFO("[STUDENT CONTROLLER] Button 2 received in controller.");
-			// Code here to respond to custom button 2
+			// > FOR CUSTOM BUTTON 1
+			case 1:
+			{
+				// Let the user know that this part of the code was triggered
+				ROS_INFO("[STUDENT CONTROLLER] Button 1 received in controller.");
+				// Code here to respond to custom button 1
+				
+				break;
+			}
 
-			break;
-		}
+			// > FOR CUSTOM BUTTON 2
+			case 2:
+			{
+				// Let the user know that this part of the code was triggered
+				ROS_INFO("[STUDENT CONTROLLER] Button 2 received in controller.");
+				// Code here to respond to custom button 2
 
-		// > FOR CUSTOM BUTTON 3
-		case 3:
-		{
-			// Let the user know that this part of the code was triggered
-			ROS_INFO_STREAM("[STUDENT CONTROLLER] Button 3 received in controller, with command code:" << custom_command_code );
-			// Code here to respond to custom button 3
+				break;
+			}
 
-			break;
-		}
+			// > FOR CUSTOM BUTTON 3
+			case 3:
+			{
+				// Let the user know that this part of the code was triggered
+				ROS_INFO_STREAM("[STUDENT CONTROLLER] Button 3 received in controller, with command code:" << custom_command_code );
+				// Code here to respond to custom button 3
 
-		default:
-		{
-			// Let the user know that the command was not recognised
-			ROS_INFO_STREAM("[DEMO CONTROLLER] A button clicked command was received in the controller but not recognised, message.button_index = " << custom_button_index << ", and message.command_code = " << custom_command_code );
-			break;
+				break;
+			}
+
+			default:
+			{
+				// Let the user know that the command was not recognised
+				ROS_INFO_STREAM("[DEMO CONTROLLER] A button clicked command was received in the controller but not recognised, message.button_index = " << custom_button_index << ", and message.command_code = " << custom_command_code );
+				break;
+			}
 		}
 	}
 }
+
 
 
 
@@ -637,8 +710,8 @@ void customCommandReceivedCallback(const CustomButton& commandReceived)
 //    ----------------------------------------------------------------------------------
 
 
-// This function DOES NOT NEED TO BE edited for successful completion
-// ofthe exercise
+// LOADING OF YAML PARAMETERS
+// This function does NOT need to be edited 
 void isReadyStudentControllerYamlCallback(const IntWithHeader & msg)
 {
 	// Check whether the message is relevant
@@ -714,6 +787,10 @@ void fetchStudentControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	//   thrust force in Newtons
 	getParameterFloatVector(nodeHandle_for_paramaters, "motorPoly", yaml_motorPoly, 3);
 
+	// The default setpoint, the ordering is (x,y,z,yaw),
+	// with unit [meters,meters,meters,radians]
+	getParameterFloatVector(nodeHandle_for_paramaters, "default_setpoint", yaml_default_setpoint, 4);
+
 
 
 	// > DEBUGGING: Print out one of the parameters that was loaded to
@@ -744,7 +821,8 @@ void fetchStudentControllerYamlParameters(ros::NodeHandle& nodeHandle)
 //    M   M  A   A  III  N   N
 //    ----------------------------------------------------------------------------------
 
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+
+// This function does NOT need to be edited 
 int main(int argc, char* argv[]) {
 
 	// Starting the ROS-node
@@ -833,15 +911,23 @@ int main(int argc, char* argv[]) {
 
 
 	// GIVE YAML VARIABLES AN INITIAL VALUE
+	// This can be done either here or as part of declaring the
+	// variables in the header file
 
-	// This can be done either here or as part of declaring the variable
-	// in the header file
+	// > the mass of the crazyflie, in [grams]
 	yaml_cf_mass_in_grams = 25.0;
+	// > the coefficients of the 16-bit command to thrust conversion
 	yaml_motorPoly[0] = 5.484560e-4;
 	yaml_motorPoly[1] = 1.032633e-6;
 	yaml_motorPoly[2] = 2.130295e-11;
+	// > the frequency at which the controller is running
 	yaml_control_frequency = 200.0;
-
+	// > the default setpoint, the ordering is (x,y,z,yaw),
+	//   with units [meters,meters,meters,radians]
+	yaml_default_setpoint[0] = 0.0;
+	yaml_default_setpoint[1] = 0.0;
+	yaml_default_setpoint[2] = 0.4;
+	yaml_default_setpoint[3] = 0.0;
 
 
 	// FETCH ANY PARAMETERS REQUIRED FROM THE "PARAMETER SERVICES"
@@ -890,11 +976,35 @@ int main(int argc, char* argv[]) {
     //  in the file "DebugMsg.msg" (located in the "msg" folder).
     m_debugPublisher = nodeHandle.advertise<DebugMsg>("DebugTopic", 1);
 
-    // Instantiate the local variable "setpointSubscriber" to be a "ros::Subscriber"
-    // type variable that subscribes to the "Setpoint" topic and calls the class function
-    // "setpointCallback" each time a messaged is received on this topic and the message
-    // is passed as an input argument to the "setpointCallback" class function.
-    ros::Subscriber setpointSubscriber = nodeHandle.subscribe("Setpoint", 1, setpointCallback);
+	// Instantiate the local variable "requestSetpointChangeSubscriber"
+	// to be a "ros::Subscriber" type variable that subscribes to the
+	// "RequestSetpointChange" topic and calls the class function
+	// "requestSetpointChangeCallback" each time a messaged is received
+	// on this topic and the message is passed as an input argument to
+	// the callback function. This subscriber will mainly receive
+	// messages from the "flying agent GUI" when the setpoint is changed
+	// by the user.
+	ros::Subscriber requestSetpointChangeSubscriber = nodeHandle.subscribe("RequestSetpointChange", 1, requestSetpointChangeCallback);
+
+	// Instantiate the class variable "m_setpointChangedPublisher" to
+	// be a "ros::Publisher". This variable advertises under the name
+	// "SetpointChanged" and is a message with the structure defined
+	// in the file "SetpointWithHeader.msg" (located in the "msg" folder).
+	// This publisher is used by the "flying agent GUI" to update the
+	// field that displays the current setpoint for this controller.
+	m_setpointChangedPublisher = nodeHandle.advertise<SetpointWithHeader>("SetpointChanged", 1);
+
+	// Instantiate the local variable "getCurrentSetpointService" to be
+	// a "ros::ServiceServer" type variable that advertises the service
+	// called "GetCurrentSetpoint". This service has the input-output
+	// behaviour defined in the "GetSetpointService.srv" file (located
+	// in the "srv" folder). This service, when called, is provided with
+	// an integer (that is essentially ignored), and is expected to respond
+	// with the current setpoint of the controller. When a request is made
+	// of this service the "getCurrentSetpointCallback" function is called.
+	ros::ServiceServer getCurrentSetpointService = nodeHandle.advertiseService("GetCurrentSetpoint", getCurrentSetpointCallback);	
+
+
 
     // Instantiate the local variable "service" to be a "ros::ServiceServer" type
     // variable that advertises the service called "StudentController". This service has
@@ -910,7 +1020,7 @@ int main(int argc, char* argv[]) {
     // type variable that subscribes to the "GUIButton" topic and calls the class
     // function "customCommandReceivedCallback" each time a messaged is received on this topic
     // and the message received is passed as an input argument to the callback function.
-    ros::Subscriber customCommandReceivedSubscriber = nodeHandle.subscribe("GUIButton", 1, customCommandReceivedCallback);
+    ros::Subscriber customCommandReceivedSubscriber = nodeHandle.subscribe("CustomButtonPressed", 1, customCommandReceivedCallback);
 
     // Create a "ros::NodeHandle" type local variable "namespace_nodeHandle" that points
     // to the name space of this node, i.e., "d_fall_pps" as specified by the line:

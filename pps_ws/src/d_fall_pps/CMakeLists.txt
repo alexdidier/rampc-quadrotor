@@ -231,6 +231,7 @@ add_service_files(
   CMUpdate.srv
   CMCommand.srv
   LoadYamlFromFilename.srv
+  GetSetpointService.srv
 )
 
 ## Generate actions in the 'action' folder

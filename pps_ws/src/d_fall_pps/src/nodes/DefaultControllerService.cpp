@@ -499,14 +499,15 @@ float computeMotorPolyBackward(float thrust)
 //    N  NN  E       W W W            S  E        T    P      O   O   I   N  NN    T
 //    N   N  EEEEE    W W         SSSS   EEEEE    T    P       OOO   III  N   N    T
 //
-//     GGG   U   U  III        CCCC    A    L      L      BBBB     A     CCCC  K   K
-//    G   G  U   U   I        C       A A   L      L      B   B   A A   C      K  K
-//    G      U   U   I        C      A   A  L      L      BBBB   A   A  C      KKK
-//    G   G  U   U   I        C      AAAAA  L      L      B   B  AAAAA  C      K  K
-//     GGGG   UUU   III        CCCC  A   A  LLLLL  LLLLL  BBBB   A   A   CCCC  K   K
+//     CCCC    A    L      L      BBBB     A     CCCC  K   K
+//    C       A A   L      L      B   B   A A   C      K  K
+//    C      A   A  L      L      BBBB   A   A  C      KKK
+//    C      AAAAA  L      L      B   B  AAAAA  C      K  K
+//     CCCC  A   A  LLLLL  LLLLL  BBBB   A   A   CCCC  K   K
 //    ----------------------------------------------------------------------------------
 
 
+// REQUEST SETPOINT CHANGE CALLBACK
 void requestSetpointChangeCallback(const SetpointWithHeader& newSetpoint)
 {
 	// Check whether the message is relevant
@@ -540,6 +541,7 @@ void requestSetpointChangeCallback(const SetpointWithHeader& newSetpoint)
 
 
 
+// CHANGE SETPOINT FUNCTION
 void setNewSetpoint(float x, float y, float z, float yaw)
 {
 	// Put the new setpoint into the class variable
@@ -548,7 +550,7 @@ void setNewSetpoint(float x, float y, float z, float yaw)
 	m_setpoint[2] = z;
 	m_setpoint[3] = yaw;
 
-	// Publish the change so that the netwrok is updated
+	// Publish the change so that the network is updated
 	// (mainly the "flying agent GUI" is interested in
 	// displaying this change to the user)
 
@@ -561,6 +563,19 @@ void setNewSetpoint(float x, float y, float z, float yaw)
 	msg.yaw = yaw;
 	// Publish the message
 	m_setpointChangedPublisher.publish(msg);
+}
+
+
+// GET CURRENT SETPOINT SERVICE CALLBACK
+bool getCurrentSetpointCallback(GetSetpointService::Request &request, GetSetpointService::Response &response)
+{
+	// Directly put the current setpoint into the response
+	response.setpointWithHeader.x   = m_setpoint[0];
+	response.setpointWithHeader.y   = m_setpoint[1];
+	response.setpointWithHeader.z   = m_setpoint[2];
+	response.setpointWithHeader.yaw = m_setpoint[3];
+	// Return
+	return true;
 }
 
 
@@ -582,54 +597,61 @@ void setNewSetpoint(float x, float y, float z, float yaw)
 //    ----------------------------------------------------------------------------------
 
 // CUSTOM COMMAND RECEIVED CALLBACK
-void customCommandReceivedCallback(const CustomButton& commandReceived)
+void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived)
 {
-	// Extract the data from the message
-	int custom_button_index   = commandReceived.button_index;
-	float custom_command_code = commandReceived.command_code;
+	// Check whether the message is relevant
+	bool isRevelant = checkMessageHeader( m_agentID , commandReceived.shouldCheckForAgentID , commandReceived.agentIDs );
 
-	// Switch between the button pressed
-	switch(custom_button_index)
+	if (isRevelant)
 	{
+		// Extract the data from the message
+		int custom_button_index   = commandReceived.button_index;
+		float custom_command_code = commandReceived.float_data;
 
-		// > FOR CUSTOM BUTTON 1
-		case 1:
+		// Switch between the button pressed
+		switch(custom_button_index)
 		{
-			// Let the user know that this part of the code was triggered
-			ROS_INFO("[DEFAULT CONTROLLER] Button 1 received in controller.");
-			// Code here to respond to custom button 1
-			
-			break;
-		}
 
-		// > FOR CUSTOM BUTTON 2
-		case 2:
-		{
-			// Let the user know that this part of the code was triggered
-			ROS_INFO("[DEFAULT CONTROLLER] Button 2 received in controller.");
-			// Code here to respond to custom button 2
+			// > FOR CUSTOM BUTTON 1
+			case 1:
+			{
+				// Let the user know that this part of the code was triggered
+				ROS_INFO("[DEFAULT CONTROLLER] Button 1 received in controller.");
+				// Code here to respond to custom button 1
+				
+				break;
+			}
 
-			break;
-		}
+			// > FOR CUSTOM BUTTON 2
+			case 2:
+			{
+				// Let the user know that this part of the code was triggered
+				ROS_INFO("[DEFAULT CONTROLLER] Button 2 received in controller.");
+				// Code here to respond to custom button 2
 
-		// > FOR CUSTOM BUTTON 3
-		case 3:
-		{
-			// Let the user know that this part of the code was triggered
-			ROS_INFO_STREAM("[DEFAULT CONTROLLER] Button 3 received in controller, with command code:" << custom_command_code );
-			// Code here to respond to custom button 3
+				break;
+			}
 
-			break;
-		}
+			// > FOR CUSTOM BUTTON 3
+			case 3:
+			{
+				// Let the user know that this part of the code was triggered
+				ROS_INFO_STREAM("[DEFAULT CONTROLLER] Button 3 received in controller, with command code:" << custom_command_code );
+				// Code here to respond to custom button 3
 
-		default:
-		{
-			// Let the user know that the command was not recognised
-			ROS_INFO_STREAM("[DEMO CONTROLLER] A button clicked command was received in the controller but not recognised, message.button_index = " << custom_button_index << ", and message.command_code = " << custom_command_code );
-			break;
+				break;
+			}
+
+			default:
+			{
+				// Let the user know that the command was not recognised
+				ROS_INFO_STREAM("[DEMO CONTROLLER] A button clicked command was received in the controller but not recognised, message.button_index = " << custom_button_index << ", and message.command_code = " << custom_command_code );
+				break;
+			}
 		}
 	}
 }
+
 
 
 
@@ -649,8 +671,7 @@ void customCommandReceivedCallback(const CustomButton& commandReceived)
 //    ----------------------------------------------------------------------------------
 
 
-// This function DOES NOT NEED TO BE edited for successful completion
-// ofthe exercise
+// LOADING OF YAML PARAMETERS
 void isReadyDefaultControllerYamlCallback(const IntWithHeader & msg)
 {
 	// Check whether the message is relevant
@@ -696,10 +717,7 @@ void isReadyDefaultControllerYamlCallback(const IntWithHeader & msg)
 }
 
 
-// This function CAN BE edited for successful completion of the
-// exercise, and the use of parameters fetched from the YAML file
-// is highly recommended to make tuning of your controller easier
-// and quicker.
+// LOADING OF YAML PARAMETERS
 void fetchDefaultControllerYamlParameters(ros::NodeHandle& nodeHandle)
 {
 	// Here we load the parameters that are specified in the file:
@@ -763,7 +781,7 @@ void fetchDefaultControllerYamlParameters(ros::NodeHandle& nodeHandle)
 //    M   M  A   A  III  N   N
 //    ----------------------------------------------------------------------------------
 
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+
 int main(int argc, char* argv[]) {
 
 	// Starting the ROS-node
@@ -903,14 +921,14 @@ int main(int argc, char* argv[]) {
 	//  in the file "DebugMsg.msg" (located in the "msg" folder).
 	m_debugPublisher = nodeHandle.advertise<DebugMsg>("DebugTopic", 1);
 
-	// Instantiate the local variable "newSetpointRequestSubscriber" to
-	// be a "ros::Subscriber" type variable that subscribes to the
-	// "NewSetpointRequest" topic and calls the class function
-	// "newSetpointRequestCallback" each time a messaged is received on
-	// this topic and the message is passed as an input argument to the
-	// callback function. This subscriber will mainly receive messages
-	// from the "flying agent GUI" when the setpoint is changed by
-	// the user.
+	// Instantiate the local variable "requestSetpointChangeSubscriber"
+	// to be a "ros::Subscriber" type variable that subscribes to the
+	// "RequestSetpointChange" topic and calls the class function
+	// "requestSetpointChangeCallback" each time a messaged is received
+	// on this topic and the message is passed as an input argument to
+	// the callback function. This subscriber will mainly receive
+	// messages from the "flying agent GUI" when the setpoint is changed
+	// by the user.
 	ros::Subscriber requestSetpointChangeSubscriber = nodeHandle.subscribe("RequestSetpointChange", 1, requestSetpointChangeCallback);
 
 	// Same again but instead for changes requested by the coordinator.
@@ -929,6 +947,18 @@ int main(int argc, char* argv[]) {
 	// field that displays the current setpoint for this controller.
 	m_setpointChangedPublisher = nodeHandle.advertise<SetpointWithHeader>("SetpointChanged", 1);
 
+	// Instantiate the local variable "getCurrentSetpointService" to be
+	// a "ros::ServiceServer" type variable that advertises the service
+	// called "GetCurrentSetpoint". This service has the input-output
+	// behaviour defined in the "GetSetpointService.srv" file (located
+	// in the "srv" folder). This service, when called, is provided with
+	// an integer (that is essentially ignored), and is expected to respond
+	// with the current setpoint of the controller. When a request is made
+	// of this service the "getCurrentSetpointCallback" function is called.
+	ros::ServiceServer getCurrentSetpointService = nodeHandle.advertiseService("GetCurrentSetpoint", getCurrentSetpointCallback);	
+
+
+
 	// Instantiate the local variable "service" to be a "ros::ServiceServer" type
 	// variable that advertises the service called "DefaultController". This service has
 	// the input-output behaviour defined in the "Controller.srv" file (located in the
@@ -943,7 +973,7 @@ int main(int argc, char* argv[]) {
 	// type variable that subscribes to the "GUIButton" topic and calls the class
 	// function "customCommandReceivedCallback" each time a messaged is received on this topic
 	// and the message received is passed as an input argument to the callback function.
-	ros::Subscriber customCommandReceivedSubscriber = nodeHandle.subscribe("GUIButton", 1, customCommandReceivedCallback);
+	ros::Subscriber customCommandReceivedSubscriber = nodeHandle.subscribe("CustomButtonPressed", 1, customCommandReceivedCallback);
 
 	// Create a "ros::NodeHandle" type local variable "namespace_nodeHandle" that points
 	// to the name space of this node, i.e., "d_fall_pps" as specified by the line:
