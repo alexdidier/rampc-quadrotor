@@ -8,6 +8,11 @@ ControllerTabs::ControllerTabs(QWidget *parent) :
     ui->setupUi(this);
 
 
+    // Specify the color for normal and highlighted tabs
+    m_tab_text_colour_normal = Qt::black;
+    m_tab_text_colour_highlight = QColor(0,200,0);
+
+
     // Initialise the object name as blank
     m_object_name_for_emitting_pose_data = "";
 
@@ -34,6 +39,11 @@ ControllerTabs::ControllerTabs(QWidget *parent) :
             ui->default_controller_tab_widget , &DefaultControllerTab::poseDataUnavailableSlot
         );
 
+    QObject::connect(
+            this , &ControllerTabs::poseDataUnavailableSignal ,
+            ui->student_controller_tab_widget , &StudentControllerTab::poseDataUnavailableSlot
+        );
+
 
     // CONNECT TO THE COORDINATOR SIGNAL TO BE ALWAYS UPDATED
     // WITH THE LIST OF AGENT IDs TO COORDINATE
@@ -43,6 +53,11 @@ ControllerTabs::ControllerTabs(QWidget *parent) :
     QObject::connect(
             this , &ControllerTabs::agentIDsToCoordinateChanged ,
             ui->default_controller_tab_widget , &DefaultControllerTab::setAgentIDsToCoordinate
+        );
+
+    QObject::connect(
+            this , &ControllerTabs::agentIDsToCoordinateChanged ,
+            ui->student_controller_tab_widget , &StudentControllerTab::setAgentIDsToCoordinate
         );
 
     
@@ -68,6 +83,7 @@ ControllerTabs::ControllerTabs(QWidget *parent) :
     }
 
 
+
     // CREATE A NODE HANDLE TO THIS GUI
     ros::NodeHandle nodeHandle_for_this_gui(this_namespace);
 
@@ -76,6 +92,14 @@ ControllerTabs::ControllerTabs(QWidget *parent) :
 
     // CREATE THE SUBSCRIBER TO THE MOTION CAPTURE DATA
     m_poseDataSubscriber = nodeHandle_dfall_root.subscribe("ViconDataPublisher/ViconData", 100, &ControllerTabs::poseDataReceivedCallback, this);
+
+    // CREATE THE SUBSCRIBER TO THE CONTROLLER THAT IS CURRENTLY OPERATING
+    // Only if this is an agent GUI
+    if (m_type == TYPE_AGENT)
+    {
+        controllerUsedSubscriber = nodeHandle_for_this_gui.subscribe("PPSClient/controllerUsed", 1, &ControllerTabs::controllerUsedChangedCallback, this);
+    }
+
 
 #endif
 
@@ -136,6 +160,7 @@ void ControllerTabs::showHideController_safe_changed()
 
 void ControllerTabs::setObjectNameForDisplayingPoseData( QString object_name )
 {
+    m_should_search_pose_data_for_object_name_mutex.lock();
     if (object_name.isEmpty())
     {
         // Set the class variable accordingly
@@ -160,6 +185,7 @@ void ControllerTabs::setObjectNameForDisplayingPoseData( QString object_name )
             ROS_INFO_STREAM("[CONTROLLER TABS GUI] now emitting data for object named: " << m_object_name_for_emitting_pose_data );
         #endif
     }
+    m_should_search_pose_data_for_object_name_mutex.unlock();
 }
 
 
@@ -168,6 +194,7 @@ void ControllerTabs::setObjectNameForDisplayingPoseData( QString object_name )
 //   "controllerUsedSubscriber"
 void ControllerTabs::poseDataReceivedCallback(const d_fall_pps::ViconData& viconData)
 {
+    m_should_search_pose_data_for_object_name_mutex.lock();
     if (m_should_search_pose_data_for_object_name)
     {
         for(std::vector<d_fall_pps::CrazyflieData>::const_iterator it = viconData.crazyflies.begin(); it != viconData.crazyflies.end(); ++it)
@@ -188,10 +215,107 @@ void ControllerTabs::poseDataReceivedCallback(const d_fall_pps::ViconData& vicon
             }
         }
     }
+    m_should_search_pose_data_for_object_name_mutex.unlock();
 }
 #endif
 
 
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//     CCCC   OOO   N   N  TTTTT  RRRR    OOO   L      L      EEEEE  RRRR
+//    C      O   O  NN  N    T    R   R  O   O  L      L      E      R   R
+//    C      O   O  N N N    T    RRRR   O   O  L      L      EEE    RRRR
+//    C      O   O  N  NN    T    R   R  O   O  L      L      E      R   R
+//     CCCC   OOO   N   N    T    R   R   OOO   LLLLL  LLLLL  EEEEE  R   R
+//
+//    EEEEE  N   N    A    BBBB   L      EEEEE  DDDD
+//    E      NN  N   A A   B   B  L      E      D   D
+//    EEE    N N N  A   A  BBBB   L      EEE    D   D
+//    E      N  NN  AAAAA  B   B  L      E      D   D
+//    EEEEE  N   N  A   A  BBBB   LLLLL  EEEEE  DDDD
+//    ----------------------------------------------------------------------------------
+
+
+
+#ifdef CATKIN_MAKE
+// > For the controller currently operating, received on "controllerUsedSubscriber"
+void ControllerTabs::controllerUsedChangedCallback(const std_msgs::Int32& msg)
+{
+    //ROS_INFO_STEAM("[COORDINATOR ROW GUI] Controller Used Changed Callback called for agentID = " << m_agentID);
+    setControllerEnabled(msg.data);
+}
+#endif
+
+
+void ControllerTabs::setControllerEnabled(int new_controller)
+{
+    // First set everything back to normal colouring
+    setAllTabLabelsToNormalColouring();
+
+    // Now switch to highlight the tab corresponding to
+    // the enable controller
+    switch(new_controller)
+    {
+        case SAFE_CONTROLLER:
+        {
+            //ui->controller_enabled_label->setText("Safe");
+            break;
+        }
+        case DEMO_CONTROLLER:
+        {
+            //ui->controller_enabled_label->setText("Demo");
+            break;
+        }
+        case STUDENT_CONTROLLER:
+        {
+            setTextColourOfTabLabel( m_tab_text_colour_highlight , ui->student_tab );
+            break;
+        }
+        case MPC_CONTROLLER:
+        {
+            //ui->controller_enabled_label->setText("MPC");
+            break;
+        }
+        case REMOTE_CONTROLLER:
+        {
+            //ui->controller_enabled_label->setText("Remote");
+            break;
+        }
+        case TUNING_CONTROLLER:
+        {
+            //ui->controller_enabled_label->setText("Tuning");
+            break;
+        }
+        default:
+        {
+            //ui->controller_enabled_label->setText("Unknown");
+            break;
+        }
+    }
+}
+
+
+void ControllerTabs::setAllTabLabelsToNormalColouring()
+{
+    setTextColourOfTabLabel( m_tab_text_colour_normal , ui->default_tab );
+    setTextColourOfTabLabel( m_tab_text_colour_normal , ui->student_tab );
+    setTextColourOfTabLabel( m_tab_text_colour_normal , ui->picker_tab );
+    setTextColourOfTabLabel( m_tab_text_colour_normal , ui->safe_tab );
+}
+
+void ControllerTabs::setTextColourOfTabLabel(QColor color , QWidget * tab_widget)
+{
+    // Get the current index of the tab
+    int current_index_of_tab = ui->controller_tabs_widget->indexOf(tab_widget);
+    // Onlz apply the colour is the tab is found
+    if (current_index_of_tab >= 0)
+    {
+        ui->controller_tabs_widget->tabBar()->setTabTextColor(current_index_of_tab, color);
+    }
+}
 
 
 
@@ -206,8 +330,53 @@ void ControllerTabs::poseDataReceivedCallback(const d_fall_pps::ViconData& vicon
 
 void ControllerTabs::setAgentIDsToCoordinate(QVector<int> agentIDs , bool shouldCoordinateAll)
 {
-    // Simply pass on the signal to the tabs
+    // Pass on the signal to the tabs
     emit agentIDsToCoordinateChanged( agentIDs , shouldCoordinateAll );
+
+
+    // Lock the mutex
+    m_agentIDs_toCoordinate_mutex.lock();
+    // Add the "coordinate all" flag
+    m_shouldCoordinateAll = shouldCoordinateAll;
+    // Clear the previous list of agent IDs
+    m_vector_of_agentIDs_toCoordinate.clear();
+    // Copy across the agent IDs, if necessary
+    if (!shouldCoordinateAll)
+    {
+        for ( int irow = 0 ; irow < agentIDs.length() ; irow++ )
+        {
+            m_vector_of_agentIDs_toCoordinate.push_back( agentIDs[irow] );
+        }
+    }
+    // Unlock the mutex
+    m_agentIDs_toCoordinate_mutex.unlock();
+
+
+#ifdef CATKIN_MAKE
+    // If there is only one agent to coordinate,
+    // then subscribe to the relevant data
+    if (agentIDs.length() == 1)
+    {
+
+        // // > Create the appropriate node handle
+        QString agent_base_namespace = "/dfall/agent" + QString::number(agentIDs[0]).rightJustified(3, '0');
+        ros::NodeHandle agent_base_nodeHandle(agent_base_namespace.toStdString());
+
+        // SUBSCRIBERS
+        // > For receiving message that the setpoint was changed
+        controllerUsedSubscriber = agent_base_nodeHandle.subscribe("PPSClient/controllerUsed", 1, &ControllerTabs::controllerUsedChangedCallback, this);
+    }
+    else
+    {
+        // Unsubscribe
+        controllerUsedSubscriber.shutdown();
+
+        // Set all tabs to be normal colours
+        setAllTabLabelsToNormalColouring();
+
+    }
+#endif
+
 }
 
 

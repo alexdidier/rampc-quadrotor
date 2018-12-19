@@ -46,6 +46,26 @@ DefaultControllerTab::DefaultControllerTab(QWidget *parent) :
         setpointChangedSubscriber = nodeHandle_for_this_gui.subscribe("DefaultControllerService/SetpointChanged", 1, &DefaultControllerTab::setpointChangedCallback, this);
     }
 
+    // GET THE CURRENT SETPOINT
+    // Only if this is an agent GUI
+    if (m_type == TYPE_AGENT)
+    {
+        // > Request the current setpoint
+        ros::ServiceClient getCurrentSetpointServiceClient = nodeHandle_for_this_gui.serviceClient<d_fall_pps::GetSetpointService>("DefaultControllerService/GetCurrentSetpoint", false);
+        d_fall_pps::GetSetpointService getSetpointCall;
+        getSetpointCall.request.data = 0;
+        getCurrentSetpointServiceClient.waitForExistence(ros::Duration(2.0));
+        if(getCurrentSetpointServiceClient.call(getSetpointCall))
+        {
+            setpointChangedCallback(getSetpointCall.response.setpointWithHeader);
+        }
+        else
+        {
+            // Inform the user
+            ROS_INFO("[DEFAULT CONTROLLER GUI] Failed to get setpoint from controller using the \"GetCurrentSetpoint\" service");
+        }
+    }
+
 #endif
 
 }
@@ -555,7 +575,7 @@ void DefaultControllerTab::setAgentIDsToCoordinate(QVector<int> agentIDs , bool 
         QString agent_base_namespace = "/dfall/agent" + QString::number(agentIDs[0]).rightJustified(3, '0');
         ros::NodeHandle agent_base_nodeHandle(agent_base_namespace.toStdString());
 
-        // // > Request the current setpoint
+        // > Request the current setpoint
         ros::ServiceClient getCurrentSetpointServiceClient = agent_base_nodeHandle.serviceClient<d_fall_pps::GetSetpointService>("DefaultControllerService/GetCurrentSetpoint", false);
         d_fall_pps::GetSetpointService getSetpointCall;
         getSetpointCall.request.data = 0;

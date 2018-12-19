@@ -11,7 +11,7 @@
 #include <ros/package.h>
 
 // Include the standard message types
-//#include "std_msgs/Int32.h"
+#include "std_msgs/Int32.h"
 //#include "std_msgs/Float32.h"
 //#include <std_msgs/String.h>
 
@@ -90,6 +90,11 @@ private:
     // Flag for whether pose data should be emitted, this is
     // to save looking through the data when it is unnecessary
     bool m_should_search_pose_data_for_object_name = false;
+    QMutex m_should_search_pose_data_for_object_name_mutex;
+
+    // The color for normal and highlighted tabs
+    QColor m_tab_text_colour_normal;
+    QColor m_tab_text_colour_highlight;
 
 
 #ifdef CATKIN_MAKE
@@ -99,6 +104,8 @@ private:
     // SUBSRIBER
     // > For the pose data from a motion capture system
     ros::Subscriber m_poseDataSubscriber;
+    // > For the controller that is currently operating
+    ros::Subscriber controllerUsedSubscriber;
 #endif
 
 
@@ -109,6 +116,14 @@ private:
     // > For the controller currently operating, received on
     //   "controllerUsedSubscriber"
     void poseDataReceivedCallback(const d_fall_pps::ViconData& viconData);
+
+    void controllerUsedChangedCallback(const std_msgs::Int32& msg);
+
+    void setControllerEnabled(int new_controller);
+
+    void setAllTabLabelsToNormalColouring();
+
+    void setTextColourOfTabLabel(QColor color , QWidget * tab_widget);
 
     // Get the paramters that specify the type and ID
     bool getTypeAndIDParameters();

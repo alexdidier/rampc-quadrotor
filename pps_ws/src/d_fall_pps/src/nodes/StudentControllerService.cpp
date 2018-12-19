@@ -656,7 +656,7 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 			case 1:
 			{
 				// Let the user know that this part of the code was triggered
-				ROS_INFO("[STUDENT CONTROLLER] Button 1 received in controller.");
+				ROS_INFO_STREAM("[STUDENT CONTROLLER] Button 1 received in controller, with message.float_data = " << float_data );
 				// Code here to respond to custom button 1
 				
 				break;
@@ -666,7 +666,7 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 			case 2:
 			{
 				// Let the user know that this part of the code was triggered
-				ROS_INFO("[STUDENT CONTROLLER] Button 2 received in controller.");
+				ROS_INFO_STREAM("[STUDENT CONTROLLER] Button 2 received in controller, with message.float_data = " << float_data );
 				// Code here to respond to custom button 2
 
 				break;
@@ -987,6 +987,14 @@ int main(int argc, char* argv[]) {
 	// by the user.
 	ros::Subscriber requestSetpointChangeSubscriber = nodeHandle.subscribe("RequestSetpointChange", 1, requestSetpointChangeCallback);
 
+	// Same again but instead for changes requested by the coordinator.
+	// For this we need to first create a node handle to the coordinator:
+	std::string namespace_to_coordinator;
+	constructNamespaceForCoordinator( m_coordID, namespace_to_coordinator );
+	ros::NodeHandle nodeHandle_to_coordinator(namespace_to_coordinator);
+	// And now we can instantiate the subscriber:
+	ros::Subscriber requestSetpointChangeSubscriber_from_coord = nodeHandle_to_coordinator.subscribe("StudentControllerService/RequestSetpointChange", 1, requestSetpointChangeCallback);
+
 	// Instantiate the class variable "m_setpointChangedPublisher" to
 	// be a "ros::Publisher". This variable advertises under the name
 	// "SetpointChanged" and is a message with the structure defined
@@ -1023,11 +1031,19 @@ int main(int argc, char* argv[]) {
     // and the message received is passed as an input argument to the callback function.
     ros::Subscriber customCommandReceivedSubscriber = nodeHandle.subscribe("CustomButtonPressed", 1, customCommandReceivedCallback);
 
+    // Same again but instead for changes requested by the coordinator.
+	// For this we need to first create a node handle to the coordinator:
+	//std::string namespace_to_coordinator;
+	//constructNamespaceForCoordinator( m_coordID, namespace_to_coordinator );
+	//ros::NodeHandle nodeHandle_to_coordinator(namespace_to_coordinator);
+	// And now we can instantiate the subscriber:
+	ros::Subscriber customCommandReceivedSubscriber_from_coord = nodeHandle_to_coordinator.subscribe("StudentControllerService/CustomButtonPressed", 1, customCommandReceivedCallback);
+
     // Create a "ros::NodeHandle" type local variable "namespace_nodeHandle" that points
     // to the name space of this node, i.e., "d_fall_pps" as specified by the line:
     //     "using namespace d_fall_pps;"
     // in the "DEFINES" section at the top of this file.
-    ros::NodeHandle namespace_nodeHandle(ros::this_node::getNamespace());
+    //ros::NodeHandle namespace_nodeHandle(ros::this_node::getNamespace());
 
     // Print out some information to the user.
     ROS_INFO("[STUDENT CONTROLLER] Service ready :-)");

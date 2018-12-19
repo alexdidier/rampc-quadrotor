@@ -933,10 +933,10 @@ int main(int argc, char* argv[]) {
 
 	// Same again but instead for changes requested by the coordinator.
 	// For this we need to first create a node handle to the coordinator:
-    std::string namespace_to_coordinator;
-    constructNamespaceForCoordinator( m_coordID, namespace_to_coordinator );
-    ros::NodeHandle nodeHandle_to_coordinator(namespace_to_coordinator);
-    // And now we can instantiate the subscriber:
+	std::string namespace_to_coordinator;
+	constructNamespaceForCoordinator( m_coordID, namespace_to_coordinator );
+	ros::NodeHandle nodeHandle_to_coordinator(namespace_to_coordinator);
+	// And now we can instantiate the subscriber:
 	ros::Subscriber requestSetpointChangeSubscriber_from_coord = nodeHandle_to_coordinator.subscribe("DefaultControllerService/RequestSetpointChange", 1, requestSetpointChangeCallback);
 
 	// Instantiate the class variable "m_setpointChangedPublisher" to
@@ -979,7 +979,7 @@ int main(int argc, char* argv[]) {
 	// to the name space of this node, i.e., "d_fall_pps" as specified by the line:
 	//     "using namespace d_fall_pps;"
 	// in the "DEFINES" section at the top of this file.
-	ros::NodeHandle namespace_nodeHandle(ros::this_node::getNamespace());
+	//ros::NodeHandle namespace_nodeHandle(ros::this_node::getNamespace());
 
 	// Print out some information to the user.
 	ROS_INFO("[DEFAULT CONTROLLER] Service ready :-)");
