@@ -119,16 +119,16 @@ private:
 
     void controllerUsedChangedCallback(const std_msgs::Int32& msg);
 
+    // Get the paramters that specify the type and ID
+    bool getTypeAndIDParameters();
+#endif
+
+
     void setControllerEnabled(int new_controller);
 
     void setAllTabLabelsToNormalColouring();
 
     void setTextColourOfTabLabel(QColor color , QWidget * tab_widget);
-
-    // Get the paramters that specify the type and ID
-    bool getTypeAndIDParameters();
-#endif
-
 
 };
 
