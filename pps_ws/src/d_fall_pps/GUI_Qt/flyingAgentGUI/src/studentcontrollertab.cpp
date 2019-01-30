@@ -441,13 +441,7 @@ void StudentControllerTab::on_x_increment_plus_button_clicked()
     // Only need to do something if the field is not empty
     if(!ui->lineEdit_setpoint_increment_x->text().isEmpty())
     {
-        // Call the function to publish the setpoint
-        publishSetpoint(
-                (ui->lineEdit_setpoint_current_x->text()  ).toFloat() + (ui->lineEdit_setpoint_increment_x->text()).toFloat(),
-                (ui->lineEdit_setpoint_current_y->text()  ).toFloat(),
-                (ui->lineEdit_setpoint_current_z->text()  ).toFloat(),
-                (ui->lineEdit_setpoint_current_yaw->text()).toFloat()
-            );
+        increment_setpoint_by( (ui->lineEdit_setpoint_increment_x->text()).toFloat() ,0.0,0.0,0.0);
     }
     else
     {
@@ -465,13 +459,7 @@ void StudentControllerTab::on_x_increment_minus_button_clicked()
     // Only need to do something if the field is not empty
     if(!ui->lineEdit_setpoint_increment_x->text().isEmpty())
     {
-        // Call the function to publish the setpoint
-        publishSetpoint(
-                (ui->lineEdit_setpoint_current_x->text()  ).toFloat() - (ui->lineEdit_setpoint_increment_x->text()).toFloat(),
-                (ui->lineEdit_setpoint_current_y->text()  ).toFloat(),
-                (ui->lineEdit_setpoint_current_z->text()  ).toFloat(),
-                (ui->lineEdit_setpoint_current_yaw->text()).toFloat()
-            );
+        increment_setpoint_by( -(ui->lineEdit_setpoint_increment_x->text()).toFloat() ,0.0,0.0,0.0);
     }
     else
     {
@@ -487,13 +475,7 @@ void StudentControllerTab::on_y_increment_plus_button_clicked()
     // Only need to do something if the field is not empty
     if(!ui->lineEdit_setpoint_increment_y->text().isEmpty())
     {
-        // Call the function to publish the setpoint
-        publishSetpoint(
-                (ui->lineEdit_setpoint_current_x->text()  ).toFloat(),
-                (ui->lineEdit_setpoint_current_y->text()  ).toFloat() + (ui->lineEdit_setpoint_increment_y->text()).toFloat(),
-                (ui->lineEdit_setpoint_current_z->text()  ).toFloat(),
-                (ui->lineEdit_setpoint_current_yaw->text()).toFloat()
-            );
+        increment_setpoint_by(0.0, (ui->lineEdit_setpoint_increment_y->text()).toFloat() ,0.0,0.0);
     }
     else
     {
@@ -509,19 +491,13 @@ void StudentControllerTab::on_y_increment_minus_button_clicked()
     // Only need to do something if the field is not empty
     if(!ui->lineEdit_setpoint_increment_y->text().isEmpty())
     {
-        // Call the function to publish the setpoint
-        publishSetpoint(
-                (ui->lineEdit_setpoint_current_x->text()  ).toFloat(),
-                (ui->lineEdit_setpoint_current_y->text()  ).toFloat() - (ui->lineEdit_setpoint_increment_y->text()).toFloat(),
-                (ui->lineEdit_setpoint_current_z->text()  ).toFloat(),
-                (ui->lineEdit_setpoint_current_yaw->text()).toFloat()
-            );
+        increment_setpoint_by(0.0, -(ui->lineEdit_setpoint_increment_y->text()).toFloat() ,0.0,0.0);
     }
     else
     {
         #ifdef CATKIN_MAKE
         // Inform the user that nothing can be done
-        ROS_INFO_STREAM("[STUDENT CONTROLLER GUI] Increment x setpoint clicked but field is empty");
+        ROS_INFO_STREAM("[STUDENT CONTROLLER GUI] Increment y setpoint clicked but field is empty");
         #endif
     }
 }
@@ -531,19 +507,13 @@ void StudentControllerTab::on_z_increment_plus_button_clicked()
     // Only need to do something if the field is not empty
     if(!ui->lineEdit_setpoint_increment_z->text().isEmpty())
     {
-        // Call the function to publish the setpoint
-        publishSetpoint(
-                (ui->lineEdit_setpoint_current_x->text()  ).toFloat(),
-                (ui->lineEdit_setpoint_current_y->text()  ).toFloat(),
-                (ui->lineEdit_setpoint_current_z->text()  ).toFloat() + (ui->lineEdit_setpoint_increment_z->text()).toFloat(),
-                (ui->lineEdit_setpoint_current_yaw->text()).toFloat()
-            );
+        increment_setpoint_by(0.0,0.0, (ui->lineEdit_setpoint_increment_z->text()).toFloat() ,0.0);
     }
     else
     {
         #ifdef CATKIN_MAKE
         // Inform the user that nothing can be done
-        ROS_INFO_STREAM("[STUDENT CONTROLLER GUI] Increment x setpoint clicked but field is empty");
+        ROS_INFO_STREAM("[STUDENT CONTROLLER GUI] Increment z setpoint clicked but field is empty");
         #endif
     }
 }
@@ -553,19 +523,14 @@ void StudentControllerTab::on_z_increment_minus_button_clicked()
     // Only need to do something if the field is not empty
     if(!ui->lineEdit_setpoint_increment_z->text().isEmpty())
     {
-        // Call the function to publish the setpoint
-        publishSetpoint(
-                (ui->lineEdit_setpoint_current_x->text()  ).toFloat(),
-                (ui->lineEdit_setpoint_current_y->text()  ).toFloat(),
-                (ui->lineEdit_setpoint_current_z->text()  ).toFloat() - (ui->lineEdit_setpoint_increment_z->text()).toFloat(),
-                (ui->lineEdit_setpoint_current_yaw->text()).toFloat()
-            );
+        // Call the function to increment the setpoint
+        increment_setpoint_by(0.0,0.0, -(ui->lineEdit_setpoint_increment_z->text()).toFloat() ,0.0);
     }
     else
     {
         #ifdef CATKIN_MAKE
         // Inform the user that nothing can be done
-        ROS_INFO_STREAM("[STUDENT CONTROLLER GUI] Increment x setpoint clicked but field is empty");
+        ROS_INFO_STREAM("[STUDENT CONTROLLER GUI] Increment z setpoint clicked but field is empty");
         #endif
     }
 }
@@ -575,19 +540,14 @@ void StudentControllerTab::on_yaw_increment_plus_button_clicked()
     // Only need to do something if the field is not empty
     if(!ui->lineEdit_setpoint_increment_yaw->text().isEmpty())
     {
-        // Call the function to publish the setpoint
-        publishSetpoint(
-                (ui->lineEdit_setpoint_current_x->text()  ).toFloat(),
-                (ui->lineEdit_setpoint_current_y->text()  ).toFloat(),
-                (ui->lineEdit_setpoint_current_z->text()  ).toFloat(),
-                (ui->lineEdit_setpoint_current_yaw->text()).toFloat() + (ui->lineEdit_setpoint_increment_yaw->text()).toFloat()
-            );
+        // Call the function to increment the setpoint
+        increment_setpoint_by(0.0,0.0,0.0, (ui->lineEdit_setpoint_increment_yaw->text()).toFloat() );
     }
     else
     {
         #ifdef CATKIN_MAKE
         // Inform the user that nothing can be done
-        ROS_INFO_STREAM("[STUDENT CONTROLLER GUI] Increment x setpoint clicked but field is empty");
+        ROS_INFO_STREAM("[STUDENT CONTROLLER GUI] Increment yaw setpoint clicked but field is empty");
         #endif
     }
 }
@@ -596,22 +556,89 @@ void StudentControllerTab::on_yaw_increment_minus_button_clicked()
     // Only need to do something if the field is not empty
     if(!ui->lineEdit_setpoint_increment_yaw->text().isEmpty())
     {
-        // Call the function to publish the setpoint
-        publishSetpoint(
-                (ui->lineEdit_setpoint_current_x->text()  ).toFloat(),
-                (ui->lineEdit_setpoint_current_y->text()  ).toFloat(),
-                (ui->lineEdit_setpoint_current_z->text()  ).toFloat(),
-                (ui->lineEdit_setpoint_current_yaw->text()).toFloat() - (ui->lineEdit_setpoint_increment_yaw->text()).toFloat()
-            );
+        // Call the function to increment the setpoint
+        increment_setpoint_by(0.0,0.0,0.0, -(ui->lineEdit_setpoint_increment_yaw->text()).toFloat() );
     }
     else
     {
         #ifdef CATKIN_MAKE
         // Inform the user that nothing can be done
-        ROS_INFO_STREAM("[STUDENT CONTROLLER GUI] Increment x setpoint clicked but field is empty");
+        ROS_INFO_STREAM("[STUDENT CONTROLLER GUI] Increment yaw setpoint clicked but field is empty");
         #endif
     }
 }
+
+
+void StudentControllerTab::increment_setpoint_by(float x_inc, float y_inc, float z_inc, float yaw_inc)
+{
+	
+    if (m_type == TYPE_AGENT)
+    {
+    	// WHEN GUI IS IN AGENT TYPE MODE:
+    	// APPLY THE INCREMENT FROM THE CURRENT SETPOINT
+		// Call the function to publish the setpoint
+        publishSetpoint(
+                (ui->lineEdit_setpoint_current_x->text()  ).toFloat() + x_inc,
+                (ui->lineEdit_setpoint_current_y->text()  ).toFloat() + y_inc,
+                (ui->lineEdit_setpoint_current_z->text()  ).toFloat() + z_inc,
+                (ui->lineEdit_setpoint_current_yaw->text()).toFloat() + yaw_inc
+            );
+    }
+    else if (m_type == TYPE_COORDINATOR)
+    {
+    	// WHEN GUI IS IN COORDINATOR TYPE MODE:
+    	// APPLY THE INCREMENT FROM THE CURRENT SETPOINT
+
+		// Initialise local variable for each of (x,y,z,yaw)
+    	float x = 0.0f, y = 0.0f, z = 0.4f, yaw = 0.0f;
+
+	    // Take the new value if available, otherwise use the old value
+	    // > For x
+	    if(!ui->lineEdit_setpoint_new_x->text().isEmpty())
+	        x = (ui->lineEdit_setpoint_new_x->text()).toFloat();
+	    // > For x
+	    if(!ui->lineEdit_setpoint_new_y->text().isEmpty())
+	        y = (ui->lineEdit_setpoint_new_y->text()).toFloat();
+	    // > For x
+	    if(!ui->lineEdit_setpoint_new_z->text().isEmpty())
+	        z = (ui->lineEdit_setpoint_new_z->text()).toFloat();
+	    // > For x
+	    if(!ui->lineEdit_setpoint_new_yaw->text().isEmpty())
+	        yaw = (ui->lineEdit_setpoint_new_yaw->text()).toFloat();
+
+	    // Add the increment to this
+	    float x_new   = x   + x_inc;
+	    float y_new   = y   + y_inc;
+	    float z_new   = z   + z_inc;
+	    float yaw_new = yaw + yaw_inc;
+
+        // INITIALISE A STRING VARIABLE FOR ADDING THE "+"
+    	QString qstr = "";
+
+	    // Put this back into the new fields
+	    if (x_new < 0.0f) qstr = ""; else qstr = "+";
+    		ui->lineEdit_setpoint_new_x->setText(qstr + QString::number( x_new, 'f', 3));
+		if (y_new < 0.0f) qstr = ""; else qstr = "+";
+    		ui->lineEdit_setpoint_new_y->setText(qstr + QString::number( y_new, 'f', 3));
+	    if (z_new < 0.0f) qstr = ""; else qstr = "+";
+    		ui->lineEdit_setpoint_new_z->setText(qstr + QString::number( z_new, 'f', 3));
+
+    	if (yaw_new < 0.0f) qstr = ""; else qstr = "+";
+    		ui->lineEdit_setpoint_new_yaw->setText(qstr + QString::number( yaw_new, 'f', 3));
+
+		// Call the function to publish the setpoint
+        publishSetpoint(x_new,y_new,z_new,yaw_new);
+
+    }
+    else
+    {
+        #ifdef CATKIN_MAKE
+        // Inform the user that nothing can be done
+        ROS_INFO_STREAM("[STUDENT CONTROLLER GUI] Increment setpoint not possible because m_type is not recognised.");
+        #endif
+    }
+}
+
 
 
 

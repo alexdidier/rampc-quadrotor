@@ -144,6 +144,8 @@ private:
 
     void publishSetpoint(float x, float y, float z, float yaw);
 
+    void increment_setpoint_by(float x_inc, float y_inc, float z_inc, float yaw_inc);
+
 };
 
 #endif // STUDENTCONTROLLERTAB_H
