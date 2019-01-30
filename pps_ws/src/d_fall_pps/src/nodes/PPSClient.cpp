@@ -913,7 +913,19 @@ void CFBatteryCallback(const std_msgs::Float32& msg)
 
 
 
-
+//    ----------------------------------------------------------------------------------
+//     GGGG  EEEEE  TTTTT      SSSS  TTTTT    A    TTTTT  U   U   SSSS
+//    G      E        T       S        T     A A     T    U   U  S
+//    G      EEE      T        SSS     T    A   A    T    U   U   SSS
+//    G   G  E        T           S    T    AAAAA    T    U   U      S
+//     GGGG  EEEEE    T       SSSS     T    A   A    T     UUU   SSSS
+//
+//     CCCC    A    L      L      BBBB     A     CCCC  K   K   SSSS
+//    C       A A   L      L      B   B   A A   C      K  K   S
+//    C      A   A  L      L      BBBB   A   A  C      KKK     SSS
+//    C      AAAAA  L      L      B   B  AAAAA  C      K  K       S
+//     CCCC  A   A  LLLLL  LLLLL  BBBB   A   A   CCCC  K   K  SSSS
+//    ----------------------------------------------------------------------------------
 
 bool getCurrentFlyingStateServiceCallback(IntIntService::Request &request, IntIntService::Response &response)
 {
@@ -1213,15 +1225,56 @@ int main(int argc, char* argv[])
 
 
 
-    // FETCH ANY PARAMETERS REQUIRED FROM THE "PARAMETER SERVICES"
+    // GIVE YAML VARIABLES AN INITIAL VALUE
+
+	// This can be done either here or as part of declaring the
+	// variables in the header file
+
+
+
+	// FETCH ANY PARAMETERS REQUIRED FROM THE "PARAMETER SERVICES"
 
     // Call the class function that loads the parameters for this class.
     fetchClientConfigYamlParameters(nodeHandle_to_own_agent_parameter_service);
     fetchSafeControllerYamlParameters(nodeHandle_to_own_agent_parameter_service);
 
 
+    // THIS IS THE "NEW" WAY TO DO IT
+    // BUT NEED TO CHECK ALL VARIABLES HAVE INITIAL VALUE
+ //    // FETCH ANY PARAMETERS REQUIRED FROM THE "PARAMETER SERVICES"
 
+	// // The yaml files for the controllers are not added to
+	// // "Parameter Service" as part of launching.
+	// // The process for loading the yaml parameters is to send a
+	// // service call containing the filename of the *.yaml file,
+	// // and then a message will be received on the above subscribers
+	// // when the paramters are ready.
+	// // > NOTE IMPORTANTLY that by using a serice client
+	// //   we stall the availability of this node until the
+	// //   paramter service is ready
 
+	// // Create the service client as a local variable
+	// ros::ServiceClient requestLoadYamlFilenameServiceClient = nodeHandle_to_own_agent_parameter_service.serviceClient<LoadYamlFromFilename>("requestLoadYamlFilename", false);
+	// // Create the service call as a local variable
+	// LoadYamlFromFilename loadYamlFromFilenameCall;
+	// // Specify the Yaml filename as a string
+	// loadYamlFromFilenameCall.request.stringWithHeader.data = "DefaultController";
+	// // Set for whom this applies to
+	// loadYamlFromFilenameCall.request.stringWithHeader.shouldCheckForID = false;
+	// // Wait until the serivce exists
+	// requestLoadYamlFilenameServiceClient.waitForExistence(ros::Duration(-1));
+	// // Make the service call
+	// if(requestLoadYamlFilenameServiceClient.call(loadYamlFromFilenameCall))
+	// {
+	// 	// Nothing to do in this case.
+	// 	// The "isReadyDefaultControllerYamlCallback" function
+	// 	// will be called once the YAML file is loaded
+	// }
+	// else
+	// {
+	// // Inform the user
+	// 	ROS_ERROR("[DEFAULT CONTROLLER] The request load yaml file service call failed.");
+	// }
 
 
 
@@ -1234,17 +1287,23 @@ int main(int argc, char* argv[])
 
 
 
-
+    // PUBLISHERS, SUBSCRIBERS, AND SERVICE CLIENTS
 
 	
+
     // CREATE A NODE HANDLE TO THE ROOT OF THE D-FaLL SYSTEM
     ros::NodeHandle nodeHandle_dfall_root("/dfall");
 
+    // CREATE A NODE HANDLE TO THE COORDINATOR
+    std::string namespace_to_coordinator;
+    constructNamespaceForCoordinator( m_coordID, namespace_to_coordinator );
+    ros::NodeHandle nodeHandle_to_coordinator(namespace_to_coordinator);
 
 
 
 
-    // SERVICE CLIENT FOR THE ALLOWED FLYING ZONE AND OTHER CONTEXT DETAILS
+    // SERVICE CLIENT FOR LOADING THE ALLOCATED FLYING ZONE
+    // AND OTHER CONTEXT DETAILS
 
     //ros::service::waitForService("/CentralManagerService/CentralManager");
 	centralManager = nodeHandle_dfall_root.serviceClient<CMQuery>("CentralManagerService/Query", false);
@@ -1253,22 +1312,12 @@ int main(int argc, char* argv[])
     // Subscriber for when the Flying Zone Database changed
     ros::Subscriber databaseChangedSubscriber = nodeHandle_dfall_root.subscribe("CentralManagerService/DBChanged", 1, crazyflieContextDatabaseChangedCallback);
 
-
-
-
-
     // EMERGENCY STOP OF THE WHOLE "D-FaLL-System"
     ros::Subscriber emergencyStopSubscriber = nodeHandle_dfall_root.subscribe("emergencyStop", 1, emergencyStopCallback);
 
-
-
-
-
     // LOCALISATION DATA FROM MOTION CAPTURE SYSTEM
-
 	//keeps 100 messages because otherwise ViconDataPublisher would override the data immediately
 	ros::Subscriber viconSubscriber = nodeHandle_dfall_root.subscribe("ViconDataPublisher/ViconData", 100, viconCallback);
-
 
 
 
@@ -1282,18 +1331,8 @@ int main(int argc, char* argv[])
 
 
 
-
-
-    // CREATE A NODE HANDLE TO THE COORDINATOR
-    std::string namespace_to_coordinator;
-    constructNamespaceForCoordinator( m_coordID, namespace_to_coordinator );
-    ros::NodeHandle nodeHandle_to_coordinator(namespace_to_coordinator);
-
-
-
-
-
-    // SUBSCRIBER FOR {TAKE-OFF,LAND,MOTORS-OFF} AND CONTROLLER SELECTION
+    // SUBSCRIBER FOR THE CHANGE STATE COMMANDS
+    // i.e., {TAKE-OFF,LAND,MOTORS-OFF,CONTROLLER SELECTION}
     // > for the agent GUI
     ros::Subscriber commandSubscriber_to_agent = nodeHandle.subscribe("Command", 1, commandCallback);
     // > for the coord GUI
@@ -1302,14 +1341,22 @@ int main(int argc, char* argv[])
 
 
 
-
-    //this topic lets us use the terminal to communicate with crazyRadio node.
+    // PUBLISHER FOR THE CRAZYRADIO COMMANDS
+    // i.e., {CONNECT,DISCONNECT}
+    // This topic lets us use the terminal to communicate with
+    // the crazyRadio node even when the GUI is not launched
     crazyRadioCommandPublisher = nodeHandle.advertise<IntWithHeader>("crazyRadioCommand", 1);
 
-    // this topic will publish flying state whenever it changes.
+
+
+    // PUBLISHER FOR THE FLYING STATE
+    // Possible states: {MOTORS-OFF,TAKE-OFF,FLYING,LAND}
+    // This topic will publish flying state whenever it changes.
     flyingStatePublisher = nodeHandle.advertise<std_msgs::Int32>("flyingState", 1);
 
     
+
+    // PUBLISHER FOR THE 
     controllerUsedPublisher = nodeHandle.advertise<std_msgs::Int32>("controllerUsed", 1);
 
 

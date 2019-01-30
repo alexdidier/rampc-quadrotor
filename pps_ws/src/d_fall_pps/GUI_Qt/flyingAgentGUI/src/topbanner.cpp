@@ -51,7 +51,7 @@ TopBanner::TopBanner(QWidget *parent) :
 {
     ui->setupUi(this);
     (":/images/rf_connected.png");
-    QPixmap pixmap(":/images/rf_connected.png");
+    QPixmap pixmap(":/images/emergency_stop.png");
     QIcon ButtonIcon(pixmap);
     ui->emergency_stop_button->setText("");
     ui->emergency_stop_button->setIcon(ButtonIcon);
