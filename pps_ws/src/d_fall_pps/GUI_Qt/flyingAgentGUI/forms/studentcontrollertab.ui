@@ -1131,6 +1131,11 @@
            <height>60</height>
           </size>
          </property>
+         <property name="font">
+          <font>
+           <family>Courier</family>
+          </font>
+         </property>
         </widget>
        </item>
        <item>
@@ -1189,6 +1194,11 @@
            <height>60</height>
           </size>
          </property>
+         <property name="font">
+          <font>
+           <family>Courier</family>
+          </font>
+         </property>
         </widget>
        </item>
        <item>
@@ -1246,6 +1256,11 @@
            <width>140</width>
            <height>60</height>
           </size>
+         </property>
+         <property name="font">
+          <font>
+           <family>Courier</family>
+          </font>
          </property>
         </widget>
        </item>
