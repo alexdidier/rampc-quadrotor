@@ -110,14 +110,14 @@ TopBanner::TopBanner(QWidget *parent) :
     else if (m_type == TYPE_COORDINATOR)
     {
 		// Set the label appropriate for a cooridnator
-		QString qstr_title = "Flying Device GUI: for COORDINATOR ID ";
+		QString qstr_title = "Flying Agent GUI: for COORDINATOR ID ";
 		qstr_title.append( QString::number(m_ID) );
 		ui->top_banner_label->setText(qstr_title);
 	}
 	else
 	{
 		// Set the label to inform the user of the error
-		QString qstr_title = "Flying Device GUI: for UNKNOWN NODE TYPE";
+		QString qstr_title = "Flying Agent GUI: for UNKNOWN NODE TYPE";
 		ui->top_banner_label->setText(qstr_title);
     }
 
@@ -225,7 +225,7 @@ void TopBanner::loadCrazyflieContext(int ID_to_request_from_database , int emit_
 #endif
 
 	// Construct and set the string for the checkbox label
-	QString qstr_title = "Flying Device GUI: for AGENT ID ";
+	QString qstr_title = "Flying Agent GUI: for AGENT ID ";
 	qstr_title.append( QString::number(m_ID) );
 	qstr_title.append(", connected to ");
 	qstr_title.append(qstr_crazyflie_name);
@@ -298,7 +298,7 @@ void TopBanner::setAgentIDsToCoordinate(QVector<int> agentIDs , bool shouldCoord
     else
     {
         // Set the label appropriate for a cooridnator
-        QString qstr_title = "Flying Device GUI: for COORDINATOR ID ";
+        QString qstr_title = "Flying Agent GUI: for COORDINATOR ID ";
         qstr_title.append( QString::number(m_ID) );
         ui->top_banner_label->setText(qstr_title);
 

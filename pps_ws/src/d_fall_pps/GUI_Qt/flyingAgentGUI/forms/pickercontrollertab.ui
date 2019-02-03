@@ -2132,7 +2132,7 @@
         </widget>
        </item>
        <item row="18" column="9">
-        <widget class="QLineEdit" name="lineEdit">
+        <widget class="QLineEdit" name="lineEdit_current_mass">
          <property name="sizePolicy">
           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
            <horstretch>0</horstretch>
