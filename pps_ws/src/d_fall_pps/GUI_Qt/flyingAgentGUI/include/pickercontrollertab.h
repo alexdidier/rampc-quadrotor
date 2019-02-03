@@ -2,7 +2,9 @@
 #define PICKERCONTROLLERTAB_H
 
 #include <QWidget>
+#include <QMutex>
 #include <QVector>
+#include <QTextStream>
 
 #define DECIMAL_PLACES_POSITION         2
 #define DECIMAL_PLACES_ANGLE_DEGREES    1
@@ -11,13 +13,13 @@
 #define DEFAULT_INCREMENT_POSITION_XY      0.01
 #define DEFAULT_INCREMENT_POSITION_Z       0.01
 #define DEFAULT_INCREMENT_ANGLE_DEGREES    5
-#define DEFAULT_INCREMENT_MASS_GRAMS       1
+#define DEFAULT_INCREMENT_MASS_GRAMS       0.5
 
 #define PICKER_STATE_UNKNOWN      -1
 #define PICKER_STATE_STANDBY       0
 #define PICKER_STATE_GOTO_START    1
 #define PICKER_STATE_ATTACH        2
-#define PICKER_STATE_LIFT          3
+#define PICKER_STATE_LIFT_UP       3
 #define PICKER_STATE_GOTO_END      4
 #define PICKER_STATE_PUT_DOWN      5
 #define PICKER_STATE_SQUAT         6
@@ -28,6 +30,36 @@
 #define PICKER_DEFAULT_Z               0.4
 #define PICKER_DEFAULT_YAW_DEGREES     0
 #define PICKER_DEFAULT_MASS_GRAMS     30
+
+#ifdef CATKIN_MAKE
+#include <ros/ros.h>
+#include <ros/network.h>
+#include <ros/package.h>
+
+// Include the standard message types
+//#include "std_msgs/Int32.h"
+//#include "std_msgs/Float32.h"
+//#include <std_msgs/String.h>
+
+// Include the DFALL message types
+//#include "d_fall_pps/IntWithHeader.h"
+#include "d_fall_pps/SetpointWithHeader.h"
+//#include "d_fall_pps/CustomButtonWithHeader.h"
+
+// Include the DFALL service types
+#include "d_fall_pps/GetSetpointService.h"
+
+// Include the shared definitions
+#include "nodes/Constants.h"
+
+// SPECIFY THE PACKAGE NAMESPACE
+//using namespace d_fall_pps;
+
+#else
+// Include the shared definitions
+#include "include/Constants_for_Qt_compile.h"
+
+#endif
 
 
 
@@ -43,12 +75,14 @@ public:
     explicit PickerControllerTab(QWidget *parent = 0);
     ~PickerControllerTab();
 
-private:
-    int current_picker_state = PICKER_STATE_STANDBY;
 
-    void publish_setpoint_if_current_state_matches(QVector<int> state_to_match);
 
-    void publish_request_setpoint_change_for_state(int state_to_publish);
+public slots:
+    void setAgentIDsToCoordinate(QVector<int> agentIDs , bool shouldCoordinateAll);
+    void setMeasuredPose(float x , float y , float z , float roll , float pitch , float yaw , bool occluded);
+    void poseDataUnavailableSlot();
+
+
 
 private slots:
     void on_button_goto_start_clicked();
@@ -201,8 +235,58 @@ private slots:
 
     void on_lineEdit_increment_mass_editingFinished();
 
+
+
 private:
     Ui::PickerControllerTab *ui;
+
+    // --------------------------------------------------- //
+    // PRIVATE VARIABLES
+
+    // The type of this node, i.e., agent or a coordinator,
+    // specified as a parameter in the "*.launch" file
+    int m_type = 0;
+
+    // The ID  of this node
+    int m_ID;
+
+    // For coordinating multiple agents
+    std::vector<int> m_vector_of_agentIDs_toCoordinate;
+    bool m_shouldCoordinateAll = true;
+    QMutex m_agentIDs_toCoordinate_mutex;
+
+    // THE CURRENT STATE OF THE PICKER
+    int current_picker_state = PICKER_STATE_STANDBY;
+
+#ifdef CATKIN_MAKE
+    // PUBLISHER
+    // > For requesting the setpoint to be changed
+    ros::Publisher requestSetpointChangePublisher;
+
+    // SUBSCRIBER
+    // > For being notified when the setpoint is changed
+    ros::Subscriber setpointChangedSubscriber;
+#endif
+
+
+
+    // --------------------------------------------------- //
+    // PRIVATE FUNCTIONS
+
+#ifdef CATKIN_MAKE
+    // For receiving message that the setpoint was changed
+    void setpointChangedCallback(const d_fall_pps::SetpointWithHeader& newSetpoint);
+
+    // Fill the header for a message
+    void fillSetpointMessageHeader( d_fall_pps::SetpointWithHeader & msg );
+
+    // Get the paramters that specify the type and ID
+    bool getTypeAndIDParameters();
+#endif
+
+    void publish_setpoint_if_current_state_matches(QVector<int> state_to_match);
+
+    void publish_request_setpoint_change_for_state(int state_to_publish);
 };
 
 #endif // PICKERCONTROLLERTAB_H
