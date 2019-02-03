@@ -267,7 +267,7 @@
       </widget>
      </item>
      <item row="0" column="3">
-      <widget class="QPushButton" name="enable_demo_button">
+      <widget class="QPushButton" name="enable_picker_button">
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -293,12 +293,12 @@
         </font>
        </property>
        <property name="text">
-        <string>Demo</string>
+        <string>Picker</string>
        </property>
       </widget>
      </item>
      <item row="1" column="3">
-      <widget class="QPushButton" name="load_yaml_demo_button">
+      <widget class="QPushButton" name="load_yaml_picker_button">
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -318,7 +318,7 @@
         </size>
        </property>
        <property name="text">
-        <string>Demo</string>
+        <string>Picker</string>
        </property>
       </widget>
      </item>

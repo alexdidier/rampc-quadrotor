@@ -61,8 +61,8 @@ void EnableControllerLoadYamlBar::showHideController_student_changed()
 
 void EnableControllerLoadYamlBar::showHideController_picker_changed()
 {
-    ui->enable_demo_button   ->setHidden(    !(ui->enable_demo_button->isHidden()) );
-    ui->load_yaml_demo_button->setHidden( !(ui->load_yaml_demo_button->isHidden()) );
+    ui->enable_picker_button   ->setHidden(    !(ui->enable_picker_button->isHidden()) );
+    ui->load_yaml_picker_button->setHidden( !(ui->load_yaml_picker_button->isHidden()) );
 }
 
 void EnableControllerLoadYamlBar::showHideController_safe_changed()
@@ -89,14 +89,14 @@ void EnableControllerLoadYamlBar::on_enable_safe_button_clicked()
 #endif
 }
 
-void EnableControllerLoadYamlBar::on_enable_demo_button_clicked()
+void EnableControllerLoadYamlBar::on_enable_picker_button_clicked()
 {
 #ifdef CATKIN_MAKE
     d_fall_pps::IntWithHeader msg;
     fillIntMessageHeader(msg);
-    msg.data = CMD_USE_DEMO_CONTROLLER;
+    msg.data = CMD_USE_PICKER_CONTROLLER;
     this->commandPublisher.publish(msg);
-    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Enable Demo Controller");
+    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Enable Picker Controller");
 #endif
 }
 
@@ -132,7 +132,7 @@ void EnableControllerLoadYamlBar::on_load_yaml_safe_button_clicked()
 #endif
 }
 
-void EnableControllerLoadYamlBar::on_load_yaml_demo_button_clicked()
+void EnableControllerLoadYamlBar::on_load_yaml_picker_button_clicked()
 {
 #ifdef CATKIN_MAKE
     // Create a local variable for the message
@@ -140,11 +140,11 @@ void EnableControllerLoadYamlBar::on_load_yaml_demo_button_clicked()
     // Set for whom this applies to
     fillStringMessageHeader(yaml_filename_msg);
     // Specify the data
-    yaml_filename_msg.data = "DemoController";
+    yaml_filename_msg.data = "PickerController";
     // Send the message
     m_requestLoadYamlFilenamePublisher.publish(yaml_filename_msg);
     // Inform the user that the menu item was selected
-    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Load Demo Controller YAML was clicked.");
+    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Load Picker Controller YAML was clicked.");
 #endif
 }
 

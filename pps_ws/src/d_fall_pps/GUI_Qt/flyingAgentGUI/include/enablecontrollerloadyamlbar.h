@@ -40,12 +40,12 @@
 // operation state of this agent. These "commands"
 // are sent from this GUI node to the "PPSClient"
 // node where the command is enacted
-#define CMD_USE_SAFE_CONTROLLER      1
-#define CMD_USE_DEMO_CONTROLLER      2
-#define CMD_USE_STUDENT_CONTROLLER   3
-#define CMD_USE_MPC_CONTROLLER       4
-#define CMD_USE_REMOTE_CONTROLLER    5
-#define CMD_USE_TUNING_CONTROLLER    6
+// #define CMD_USE_SAFE_CONTROLLER      1
+// #define CMD_USE_DEMO_CONTROLLER      2
+// #define CMD_USE_STUDENT_CONTROLLER   3
+// #define CMD_USE_MPC_CONTROLLER       4
+// #define CMD_USE_REMOTE_CONTROLLER    5
+// #define CMD_USE_TUNING_CONTROLLER    6
 
 
 namespace Ui {
@@ -75,13 +75,13 @@ private slots:
 
     // ENABLE CONTROLLER BUTTONS ON-CLICK CALLBACK
     void on_enable_safe_button_clicked();
-    void on_enable_demo_button_clicked();
+    void on_enable_picker_button_clicked();
     void on_enable_student_button_clicked();
     void on_enable_default_button_clicked();
 
     // LOAD YAML BUTTONS ON-CLICK CALLBACK
     void on_load_yaml_safe_button_clicked();
-    void on_load_yaml_demo_button_clicked();
+    void on_load_yaml_picker_button_clicked();
     void on_load_yaml_student_button_clicked();
     void on_load_yaml_default_button_clicked();
 

@@ -59,7 +59,7 @@
       </attribute>
       <layout class="QGridLayout" name="gridLayout_5">
        <item row="0" column="0">
-        <widget class="PickerControllerTab" name="widget_4" native="true"/>
+        <widget class="PickerControllerTab" name="picker_controller_tab_widget" native="true"/>
        </item>
       </layout>
      </widget>

@@ -31,6 +31,12 @@ ControllerTabs::ControllerTabs(QWidget *parent) :
             ui->student_controller_tab_widget , &StudentControllerTab::setMeasuredPose
         );
 
+    QObject::connect(
+            this , &ControllerTabs::measuredPoseValueChanged ,
+            ui->picker_controller_tab_widget , &PickerControllerTab::setMeasuredPose
+        );
+
+
 
     // CONNECT THE "MEASUREMENTS UNAVAILABLE" SIGNAL TO
     // EACH OF THE TABS
@@ -42,6 +48,11 @@ ControllerTabs::ControllerTabs(QWidget *parent) :
     QObject::connect(
             this , &ControllerTabs::poseDataUnavailableSignal ,
             ui->student_controller_tab_widget , &StudentControllerTab::poseDataUnavailableSlot
+        );
+
+    QObject::connect(
+            this , &ControllerTabs::poseDataUnavailableSignal ,
+            ui->picker_controller_tab_widget , &PickerControllerTab::poseDataUnavailableSlot
         );
 
 
@@ -58,6 +69,11 @@ ControllerTabs::ControllerTabs(QWidget *parent) :
     QObject::connect(
             this , &ControllerTabs::agentIDsToCoordinateChanged ,
             ui->student_controller_tab_widget , &StudentControllerTab::setAgentIDsToCoordinate
+        );
+
+    QObject::connect(
+            this , &ControllerTabs::agentIDsToCoordinateChanged ,
+            ui->picker_controller_tab_widget , &PickerControllerTab::setAgentIDsToCoordinate
         );
 
     
@@ -287,6 +303,11 @@ void ControllerTabs::setControllerEnabled(int new_controller)
         case TUNING_CONTROLLER:
         {
             //ui->controller_enabled_label->setText("Tuning");
+            break;
+        }
+        case PICKER_CONTROLLER:
+        {
+            setTextColourOfTabLabel( m_tab_text_colour_highlight , ui->picker_tab );
             break;
         }
         default:

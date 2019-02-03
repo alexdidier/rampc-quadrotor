@@ -120,12 +120,12 @@
           <widget class="QCheckBox" name="checkbox_goto_end">
            <property name="maximumSize">
             <size>
-             <width>40</width>
+             <width>30</width>
              <height>16777215</height>
             </size>
            </property>
            <property name="styleSheet">
-            <string notr="true">QCheckBox::indicator{ width:40px ; height:40px }</string>
+            <string notr="true">QCheckBox::indicator{ width:30px ; height:30px }</string>
            </property>
            <property name="text">
             <string/>
@@ -1027,12 +1027,12 @@
           <widget class="QCheckBox" name="checkbox_attach">
            <property name="maximumSize">
             <size>
-             <width>40</width>
+             <width>30</width>
              <height>16777215</height>
             </size>
            </property>
            <property name="styleSheet">
-            <string notr="true">QCheckBox::indicator{ width:40px ; height:40px }</string>
+            <string notr="true">QCheckBox::indicator{ width:30px ; height:30px }</string>
            </property>
            <property name="text">
             <string/>
@@ -1832,12 +1832,12 @@
           <widget class="QCheckBox" name="checkbox_goto_start">
            <property name="maximumSize">
             <size>
-             <width>40</width>
+             <width>30</width>
              <height>16777215</height>
             </size>
            </property>
            <property name="styleSheet">
-            <string notr="true">QCheckBox::indicator{ width:40px ; height:40px }</string>
+            <string notr="true">QCheckBox::indicator{ width:30px ; height:30px }</string>
            </property>
            <property name="text">
             <string/>
@@ -1852,12 +1852,12 @@
           <widget class="QCheckBox" name="checkbox_jump">
            <property name="maximumSize">
             <size>
-             <width>40</width>
+             <width>30</width>
              <height>16777215</height>
             </size>
            </property>
            <property name="styleSheet">
-            <string notr="true">QCheckBox::indicator{ width:40px ; height:40px }</string>
+            <string notr="true">QCheckBox::indicator{ width:30px ; height:30px }</string>
            </property>
            <property name="text">
             <string/>
@@ -1879,12 +1879,12 @@
           <widget class="QCheckBox" name="checkbox_put_down">
            <property name="maximumSize">
             <size>
-             <width>40</width>
+             <width>30</width>
              <height>16777215</height>
             </size>
            </property>
            <property name="styleSheet">
-            <string notr="true">QCheckBox::indicator{ width:40px ; height:40px }</string>
+            <string notr="true">QCheckBox::indicator{ width:30px ; height:30px }</string>
            </property>
            <property name="text">
             <string/>
@@ -1899,12 +1899,12 @@
           <widget class="QCheckBox" name="checkbox_lift_up">
            <property name="maximumSize">
             <size>
-             <width>40</width>
+             <width>30</width>
              <height>16777215</height>
             </size>
            </property>
            <property name="styleSheet">
-            <string notr="true">QCheckBox::indicator{ width:40px ; height:40px }</string>
+            <string notr="true">QCheckBox::indicator{ width:30px ; height:30px }</string>
            </property>
            <property name="text">
             <string/>
@@ -1922,12 +1922,12 @@
            </property>
            <property name="maximumSize">
             <size>
-             <width>40</width>
+             <width>30</width>
              <height>16777215</height>
             </size>
            </property>
            <property name="styleSheet">
-            <string notr="true">QCheckBox::indicator{ width:40px ; height:40px }</string>
+            <string notr="true">QCheckBox::indicator{ width:30px ; height:30px }</string>
            </property>
            <property name="text">
             <string/>
@@ -1948,12 +1948,12 @@
           <widget class="QCheckBox" name="checkbox_squat">
            <property name="maximumSize">
             <size>
-             <width>40</width>
+             <width>30</width>
              <height>16777215</height>
             </size>
            </property>
            <property name="styleSheet">
-            <string notr="true">QCheckBox::indicator{ width:40px ; height:40px }</string>
+            <string notr="true">QCheckBox::indicator{ width:30px ; height:30px }</string>
            </property>
            <property name="text">
             <string/>
@@ -2254,12 +2254,12 @@
            </property>
            <property name="maximumSize">
             <size>
-             <width>40</width>
+             <width>30</width>
              <height>16777215</height>
             </size>
            </property>
            <property name="styleSheet">
-            <string notr="true">QCheckBox::indicator{ width:40px ; height:40px }</string>
+            <string notr="true">QCheckBox::indicator{ width:30px ; height:30px }</string>
            </property>
            <property name="text">
             <string/>
@@ -2702,12 +2702,12 @@
         <widget class="QCheckBox" name="checkbox_should_publish_value_changed">
          <property name="maximumSize">
           <size>
-           <width>40</width>
+           <width>30</width>
            <height>16777215</height>
           </size>
          </property>
          <property name="styleSheet">
-          <string notr="true">QCheckBox::indicator{ width:40px ; height:40px }</string>
+          <string notr="true">QCheckBox::indicator{ width:30px ; height:30px }</string>
          </property>
          <property name="text">
           <string/>
