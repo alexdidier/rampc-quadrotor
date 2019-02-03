@@ -50,20 +50,47 @@
 #include "ros/ros.h"
 #include <ros/package.h>
 
-//the generated structs from the msg-files have to be included
+// Include the standard message types
+#include "std_msgs/Int32.h"
+#include "std_msgs/Float32.h"
+#include <std_msgs/String.h>
+
+// Include the DFALL message types
+#include "d_fall_pps/IntWithHeader.h"
+//#include "d_fall_pps/StringWithHeader.h"
+#include "d_fall_pps/SetpointWithHeader.h"
+//#include "d_fall_pps/CustomButtonWithHeader.h"
 #include "d_fall_pps/ViconData.h"
-#include "d_fall_pps/Setpoint.h"
-#include "d_fall_pps/SetpointV2.h"
-#include "d_fall_pps/ControlCommand.h"
+//#include "d_fall_pps/ControlCommand.h"
 #include "d_fall_pps/Controller.h"
 #include "d_fall_pps/DebugMsg.h"
-#include "d_fall_pps/CustomButton.h"
 
-// Include the Parameter Service shared definitions
+//the generated structs from the msg-files have to be included
+// #include "d_fall_pps/Setpoint.h"
+// #include "d_fall_pps/SetpointV2.h"
+// #include "d_fall_pps/ControlCommand.h"
+// #include "d_fall_pps/CustomButton.h"
+
+// Include the DFALL service types
+#include "d_fall_pps/LoadYamlFromFilename.h"
+#include "d_fall_pps/GetSetpointService.h"
+
+// Include the shared definitions
 #include "nodes/Constants.h"
+#include "nodes/PickerContorllerConstants.h"
 
-#include <std_msgs/Int32.h>
-#include <std_msgs/Float32.h>
+// Include other classes
+#include "classes/GetParamtersAndNamespaces.h"
+
+// Needed for having a ROS "bag" to store data for post-analysis
+//#include <rosbag/bag.h>
+
+
+
+
+
+// Namespacing the package
+using namespace d_fall_pps;
 
 
 
@@ -80,18 +107,18 @@
 // These constants are defined to make the code more readable and adaptable.
 
 // FOR WHICH BUTTON WAS PRESSED IN THE PICKER CONTOLLER
-#define PICKER_BUTTON_GOTOSTART     1
-#define PICKER_BUTTON_ATTACH        2
-#define PICKER_BUTTON_PICKUP        3
-#define PICKER_BUTTON_GOTOEND       4
-#define PICKER_BUTTON_PUTDOWN       5
-#define PICKER_BUTTON_SQUAT         6
-#define PICKER_BUTTON_JUMP          7
+// #define PICKER_BUTTON_GOTOSTART     1
+// #define PICKER_BUTTON_ATTACH        2
+// #define PICKER_BUTTON_PICKUP        3
+// #define PICKER_BUTTON_GOTOEND       4
+// #define PICKER_BUTTON_PUTDOWN       5
+// #define PICKER_BUTTON_SQUAT         6
+// #define PICKER_BUTTON_JUMP          7
 
-#define PICKER_BUTTON_1             11
-#define PICKER_BUTTON_2             12
-#define PICKER_BUTTON_3             13
-#define PICKER_BUTTON_4             14
+// #define PICKER_BUTTON_1             11
+// #define PICKER_BUTTON_2             12
+// #define PICKER_BUTTON_3             13
+// #define PICKER_BUTTON_4             14
 
 
 // These constants define the modes that can be used for controller the Crazyflie 2.0,
@@ -108,9 +135,9 @@
 //               command directly to each of the motors, and additionally request the
 //               body frame roll, pitch, and yaw angles from the PID attitude
 //               controllers implemented in the Crazyflie 2.0 firmware.
-#define CF_COMMAND_TYPE_MOTOR   6
-#define CF_COMMAND_TYPE_RATE    7
-#define CF_COMMAND_TYPE_ANGLE   8
+// #define CF_COMMAND_TYPE_MOTOR   6
+// #define CF_COMMAND_TYPE_RATE    7
+// #define CF_COMMAND_TYPE_ANGLE   8
 
 // These constants define the method used for estimating the Inertial
 // frame state.
@@ -130,13 +157,9 @@
 // ESTIMATOR_METHOD_QUADROTOR_MODEL_BASED
 //       Uses the model of the quad-rotor and the previous inputs
 //
-#define ESTIMATOR_METHOD_FINITE_DIFFERENCE          1
-#define ESTIMATOR_METHOD_POINT_MASS_PER_DIMENSION   2   // (DEFAULT)
-#define ESTIMATOR_METHOD_QUADROTOR_MODEL_BASED      3
-
-
-// Namespacing the package
-using namespace d_fall_pps;
+// #define ESTIMATOR_METHOD_FINITE_DIFFERENCE          1
+// #define ESTIMATOR_METHOD_POINT_MASS_PER_DIMENSION   2   // (DEFAULT)
+// #define ESTIMATOR_METHOD_QUADROTOR_MODEL_BASED      3
 
 
 
@@ -150,132 +173,127 @@ using namespace d_fall_pps;
 //      V    A   A  R   R  III  A   A  BBBB   LLLLL  EEEEE  SSSS
 //    ----------------------------------------------------------------------------------
 
+
+
+// ----------------------------------------
+// VARIABLES SPECIFIC TO THE PICKER SERVICE
+
 // Current time
 int m_time_ticks = 0;
 float m_time_seconds;
 
-// > Mass of the Crazyflie quad-rotor, in [grams]
-float m_mass_CF_grams;
-
-// > Mass of the letters to be lifted, in [grams]
-float m_mass_E_grams;
-float m_mass_T_grams;
-float m_mass_H_grams;
-
 // > Total mass of the Crazyflie plus whatever it is carrying, in [grams]
 float m_mass_total_grams;
 
-// Thickness of the object at pick-up and put-down, in [meters]
-// > This should also account for extra height due to 
-//   the surface where the object is
-float m_thickness_of_object_at_pickup;
-float m_thickness_of_object_at_putdown;
+// The setpoint to be tracked, the ordering is (x,y,z,yaw),
+// with units [meters,meters,meters,radians]
+std::vector<float>  m_setpoint{0.0,0.0,0.4,0.0};
 
-// (x,y) coordinates of the pickup location
-std::vector<float> m_pickup_coordinates_xy(2);
-
-// (x,y) coordinates of the drop off location
-std::vector<float> m_dropoff_coordinates_xy_for_E(2);
-std::vector<float> m_dropoff_coordinates_xy_for_T(2);
-std::vector<float> m_dropoff_coordinates_xy_for_H(2);
-
-// Length of the string from the Crazyflie
-// to the end of the Picker, in [meters]
-float m_picker_string_length;
-
-// > The setpoints for (x,y,z) position and yaw angle, in that order
-float m_setpoint[4] = {0.0,0.0,0.4,0.0};
-float m_setpoint_for_controller[4] = {0.0,0.0,0.4,0.0};
-
-// > Small adjustments to the x-y setpoint
-float m_xAdjustment = 0.0f;
-float m_yAdjustment = 0.0f;
+// The setpoint that is actually used by the controller, this
+// differs from the setpoint when smoothing is turned on
+std::vector<float> m_setpoint_for_controller[4] = {0.0,0.0,0.4,0.0};
 
 // Boolean for whether to limit rate of change of the setpoint
 bool m_shouldSmoothSetpointChanges = true;
 
 // Max setpoint change per second
-float m_max_setpoint_change_per_second_horizontal;
-float m_max_setpoint_change_per_second_vertical;
-float m_max_setpoint_change_per_second_yaw_degrees;
+float yaml_max_setpoint_change_per_second_horizontal;
+float yaml_max_setpoint_change_per_second_vertical;
+float yaml_max_setpoint_change_per_second_yaw_degrees;
 float m_max_setpoint_change_per_second_yaw_radians;
 
 
-// Frequency at which the controller is running
-float m_vicon_frequency;
 
 
 
+// ------------------------------------------------------
+// VARIABLES THAT ARE STANDARD FOR A "CONTROLLER SERVICE"
+
+// The ID of the agent that this node is monitoring
+int m_agentID;
+
+// The ID of the agent that can coordinate this node
+int m_coordID;
+
+// NAMESPACES FOR THE PARAMETER SERVICES
+// > For the paramter service of this agent
+std::string m_namespace_to_own_agent_parameter_service;
+// > For the parameter service of the coordinator
+std::string m_namespace_to_coordinator_parameter_service;
 
 
-// THE FOLLOWING PARAMETERS ARE USED
-// FOR THE LOW-LEVEL CONTROLLER
 
-// Frequency at which the controller is running
-float control_frequency;
+// VARIABLES FOR THE CONTOLLER
 
-// > Coefficients of the 16-bit command to thrust conversion
-std::vector<float> motorPoly(3);
+// > the mass of the crazyflie, in [grams]
+float yaml_cf_mass_in_grams = 25.0;
+
+// > the coefficients of the 16-bit command to thrust conversion
+//std::vector<float> yaml_motorPoly(3);
+std::vector<float> yaml_motorPoly = {5.484560e-4, 1.032633e-6, 2.130295e-11};
+
+// > the frequency at which the controller is running
+float yaml_control_frequency = 200.0;
+
+// > the default setpoint, the ordering is (x,y,z,yaw),
+//   with units [meters,meters,meters,radians]
+std::vector<float> yaml_default_setpoint = {0.0,0.0,0.4,0.0};
+
+// The weight of the Crazyflie in Newtons, i.e., mg
+float m_cf_weight_in_newtons = 0.0;
+
+// The location error of the Crazyflie at the "previous" time step
+float m_previous_stateErrorInertial[9];
 
 // The LQR Controller parameters for "CONTROLLER_MODE_LQR_RATE"
-std::vector<float> gainMatrixThrust_NineStateVector (9,0.0);
-std::vector<float> gainMatrixRollRate               (9,0.0);
-std::vector<float> gainMatrixPitchRate              (9,0.0);
-std::vector<float> gainMatrixYawRate                (9,0.0);
+std::vector<float> yaml_gainMatrixThrust_NineStateVector (9,0.0);
+std::vector<float> yaml_gainMatrixRollRate               (9,0.0);
+std::vector<float> yaml_gainMatrixPitchRate              (9,0.0);
+std::vector<float> yaml_gainMatrixYawRate                (9,0.0);
 
 // The 16-bit command limits
-float cmd_sixteenbit_min;
-float cmd_sixteenbit_max;
+float yaml_cmd_sixteenbit_min;
+float yaml_cmd_sixteenbit_max;
+
 
 
 // VARIABLES FOR THE ESTIMATOR
 
 // Frequency at which the controller is running
-float estimator_frequency;
+float yaml_estimator_frequency;
 
 // > A flag for which estimator to use:
-int estimator_method = ESTIMATOR_METHOD_FINITE_DIFFERENCE;
+int yaml_estimator_method = ESTIMATOR_METHOD_FINITE_DIFFERENCE;
 // > The current state interial estimate,
 //   for use by the controller
-float current_stateInertialEstimate[12];
+float m_current_stateInertialEstimate[12];
 
 // > The measurement of the Crazyflie at the "current" time step,
 //   to avoid confusion
-float current_xzy_rpy_measurement[6];
+float m_current_xzy_rpy_measurement[6];
 
 // > The measurement of the Crazyflie at the "previous" time step,
 //   used for computing finite difference velocities
-float previous_xzy_rpy_measurement[6];
+float m_previous_xzy_rpy_measurement[6];
 
 // > The full 12 state estimate maintained by the finite
 //   difference state estimator
-float stateInterialEstimate_viaFiniteDifference[12];
+float m_stateInterialEstimate_viaFiniteDifference[12];
 
 // > The full 12 state estimate maintained by the point mass
 //   kalman filter state estimator
-float stateInterialEstimate_viaPointMassKalmanFilter[12];
+float m_stateInterialEstimate_viaPointMassKalmanFilter[12];
 
 // THE POINT MASS KALMAN FILTER (PMKF) GAINS AND ERROR EVOLUATION
 // > For the (x,y,z) position
-std::vector<float> PMKF_Ahat_row1_for_positions (2,0.0);
-std::vector<float> PMKF_Ahat_row2_for_positions (2,0.0);
-std::vector<float> PMKF_Kinf_for_positions      (2,0.0);
+std::vector<float> yaml_PMKF_Ahat_row1_for_positions (2,0.0);
+std::vector<float> yaml_PMKF_Ahat_row2_for_positions (2,0.0);
+std::vector<float> yaml_PMKF_Kinf_for_positions      (2,0.0);
 // > For the (roll,pitch,yaw) angles
-std::vector<float> PMKF_Ahat_row1_for_angles    (2,0.0);
-std::vector<float> PMKF_Ahat_row2_for_angles    (2,0.0);
-std::vector<float> PMKF_Kinf_for_angles         (2,0.0);
+std::vector<float> yaml_PMKF_Ahat_row1_for_angles    (2,0.0);
+std::vector<float> yaml_PMKF_Ahat_row2_for_angles    (2,0.0);
+std::vector<float> yaml_PMKF_Kinf_for_angles         (2,0.0);
 
-
-
-// VARIABLES FOR THE NAMESPACES FOR THE PARAMETER SERVICES
-// > For the paramter service of this agent
-std::string namespace_to_own_agent_parameter_service;
-// > For the parameter service of the coordinator
-std::string namespace_to_coordinator_parameter_service;
-
-
-// ROS PUBLISHER FOR SENDING OUT THE DEBUG MESSAGES
-ros::Publisher debugPublisher;
 
 
 // VARIABLES RELATING TO PERFORMING THE CONVERSION INTO BODY FRAME
@@ -292,24 +310,181 @@ bool shouldPublishDebugMessage = false;
 // Boolean indiciating whether the debugging ROS_INFO_STREAM should be displayed or not
 bool shouldDisplayDebugInfo = false;
 
-
-// VARIABLES RELATING TO PUBLISHING CURRENT POSITION AND FOLLOWING ANOTHER AGENT'S
-// POSITION
-
-// The ID of this agent, i.e., the ID of this compute
-int my_agentID = 0;
-
-// Boolean indicating whether the (x,y,z,yaw) of this agent should be published or not
-// > The default behaviour is: do not publish,
-// > This varaible is changed based on parameters loaded from the YAML file
-bool shouldPublishCurrent_xyz_yaw = false;
+// ROS Publisher for debugging variables
+ros::Publisher m_debugPublisher;
 
 
-// ROS Publisher for my current (x,y,z,yaw) position
-ros::Publisher my_current_xyz_yaw_publisher;
+// VARIABLES RELATING TO COMMUNICATING THE SETPOINT
 
-// ROS Publisher for the current setpoint
-ros::Publisher pickerSetpointToGUIPublisher;
+// ROS Publisher for inform the network about
+// changes to the setpoin
+ros::Publisher m_setpointChangedPublisher;
+
+
+
+
+
+
+// // Current time
+// int m_time_ticks = 0;
+// float m_time_seconds;
+
+// // > Mass of the Crazyflie quad-rotor, in [grams]
+// float m_mass_CF_grams;
+
+// // > Mass of the letters to be lifted, in [grams]
+// float m_mass_E_grams;
+// float m_mass_T_grams;
+// float m_mass_H_grams;
+
+// // > Total mass of the Crazyflie plus whatever it is carrying, in [grams]
+// float m_mass_total_grams;
+
+// // Thickness of the object at pick-up and put-down, in [meters]
+// // > This should also account for extra height due to 
+// //   the surface where the object is
+// float m_thickness_of_object_at_pickup;
+// float m_thickness_of_object_at_putdown;
+
+// // (x,y) coordinates of the pickup location
+// std::vector<float> m_pickup_coordinates_xy(2);
+
+// // (x,y) coordinates of the drop off location
+// std::vector<float> m_dropoff_coordinates_xy_for_E(2);
+// std::vector<float> m_dropoff_coordinates_xy_for_T(2);
+// std::vector<float> m_dropoff_coordinates_xy_for_H(2);
+
+// // Length of the string from the Crazyflie
+// // to the end of the Picker, in [meters]
+// float m_picker_string_length;
+
+// // > The setpoints for (x,y,z) position and yaw angle, in that order
+// float m_setpoint[4] = {0.0,0.0,0.4,0.0};
+// float m_setpoint_for_controller[4] = {0.0,0.0,0.4,0.0};
+
+// // > Small adjustments to the x-y setpoint
+// float m_xAdjustment = 0.0f;
+// float m_yAdjustment = 0.0f;
+
+// // Boolean for whether to limit rate of change of the setpoint
+// bool m_shouldSmoothSetpointChanges = true;
+
+// // Max setpoint change per second
+// float m_max_setpoint_change_per_second_horizontal;
+// float m_max_setpoint_change_per_second_vertical;
+// float m_max_setpoint_change_per_second_yaw_degrees;
+// float m_max_setpoint_change_per_second_yaw_radians;
+
+
+// // Frequency at which the controller is running
+// float m_vicon_frequency;
+
+
+
+
+
+// THE FOLLOWING PARAMETERS ARE USED
+// FOR THE LOW-LEVEL CONTROLLER
+
+// // Frequency at which the controller is running
+// float control_frequency;
+
+// // > Coefficients of the 16-bit command to thrust conversion
+// std::vector<float> motorPoly(3);
+
+// // The LQR Controller parameters for "CONTROLLER_MODE_LQR_RATE"
+// std::vector<float> gainMatrixThrust_NineStateVector (9,0.0);
+// std::vector<float> gainMatrixRollRate               (9,0.0);
+// std::vector<float> gainMatrixPitchRate              (9,0.0);
+// std::vector<float> gainMatrixYawRate                (9,0.0);
+
+// // The 16-bit command limits
+// float cmd_sixteenbit_min;
+// float cmd_sixteenbit_max;
+
+
+// // VARIABLES FOR THE ESTIMATOR
+
+// // Frequency at which the controller is running
+// float estimator_frequency;
+
+// // > A flag for which estimator to use:
+// int estimator_method = ESTIMATOR_METHOD_FINITE_DIFFERENCE;
+// // > The current state interial estimate,
+// //   for use by the controller
+// float current_stateInertialEstimate[12];
+
+// // > The measurement of the Crazyflie at the "current" time step,
+// //   to avoid confusion
+// float current_xzy_rpy_measurement[6];
+
+// // > The measurement of the Crazyflie at the "previous" time step,
+// //   used for computing finite difference velocities
+// float previous_xzy_rpy_measurement[6];
+
+// // > The full 12 state estimate maintained by the finite
+// //   difference state estimator
+// float stateInterialEstimate_viaFiniteDifference[12];
+
+// // > The full 12 state estimate maintained by the point mass
+// //   kalman filter state estimator
+// float stateInterialEstimate_viaPointMassKalmanFilter[12];
+
+// // THE POINT MASS KALMAN FILTER (PMKF) GAINS AND ERROR EVOLUATION
+// // > For the (x,y,z) position
+// std::vector<float> PMKF_Ahat_row1_for_positions (2,0.0);
+// std::vector<float> PMKF_Ahat_row2_for_positions (2,0.0);
+// std::vector<float> PMKF_Kinf_for_positions      (2,0.0);
+// // > For the (roll,pitch,yaw) angles
+// std::vector<float> PMKF_Ahat_row1_for_angles    (2,0.0);
+// std::vector<float> PMKF_Ahat_row2_for_angles    (2,0.0);
+// std::vector<float> PMKF_Kinf_for_angles         (2,0.0);
+
+
+
+// // VARIABLES FOR THE NAMESPACES FOR THE PARAMETER SERVICES
+// // > For the paramter service of this agent
+// std::string namespace_to_own_agent_parameter_service;
+// // > For the parameter service of the coordinator
+// std::string namespace_to_coordinator_parameter_service;
+
+
+// // ROS PUBLISHER FOR SENDING OUT THE DEBUG MESSAGES
+// ros::Publisher debugPublisher;
+
+
+// // VARIABLES RELATING TO PERFORMING THE CONVERSION INTO BODY FRAME
+
+// // Boolean whether to execute the convert into body frame function
+// bool shouldPerformConvertIntoBodyFrame = false;
+
+
+// // VARIABLES RELATING TO THE PUBLISHING OF A DEBUG MESSAGE
+
+// // Boolean indiciating whether the "Debug Message" of this agent should be published or not
+// bool shouldPublishDebugMessage = false;
+
+// // Boolean indiciating whether the debugging ROS_INFO_STREAM should be displayed or not
+// bool shouldDisplayDebugInfo = false;
+
+
+// // VARIABLES RELATING TO PUBLISHING CURRENT POSITION AND FOLLOWING ANOTHER AGENT'S
+// // POSITION
+
+// // The ID of this agent, i.e., the ID of this compute
+// int my_agentID = 0;
+
+// // Boolean indicating whether the (x,y,z,yaw) of this agent should be published or not
+// // > The default behaviour is: do not publish,
+// // > This varaible is changed based on parameters loaded from the YAML file
+// bool shouldPublishCurrent_xyz_yaw = false;
+
+
+// // ROS Publisher for my current (x,y,z,yaw) position
+// ros::Publisher my_current_xyz_yaw_publisher;
+
+// // ROS Publisher for the current setpoint
+// ros::Publisher pickerSetpointToGUIPublisher;
 
 
 // RELEVANT NOTES ABOUT THE VARIABLES DECLARE HERE:

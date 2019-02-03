@@ -15,21 +15,21 @@
 #define DEFAULT_INCREMENT_ANGLE_DEGREES    5
 #define DEFAULT_INCREMENT_MASS_GRAMS       0.5
 
-#define PICKER_STATE_UNKNOWN      -1
-#define PICKER_STATE_STANDBY       0
-#define PICKER_STATE_GOTO_START    1
-#define PICKER_STATE_ATTACH        2
-#define PICKER_STATE_LIFT_UP       3
-#define PICKER_STATE_GOTO_END      4
-#define PICKER_STATE_PUT_DOWN      5
-#define PICKER_STATE_SQUAT         6
-#define PICKER_STATE_JUMP          7
+// #define PICKER_STATE_UNKNOWN      -1
+// #define PICKER_STATE_STANDBY       0
+// #define PICKER_STATE_GOTO_START    1
+// #define PICKER_STATE_ATTACH        2
+// #define PICKER_STATE_LIFT_UP       3
+// #define PICKER_STATE_GOTO_END      4
+// #define PICKER_STATE_PUT_DOWN      5
+// #define PICKER_STATE_SQUAT         6
+// #define PICKER_STATE_JUMP          7
 
-#define PICKER_DEFAULT_X               0
-#define PICKER_DEFAULT_Y               0
-#define PICKER_DEFAULT_Z               0.4
-#define PICKER_DEFAULT_YAW_DEGREES     0
-#define PICKER_DEFAULT_MASS_GRAMS     30
+// #define PICKER_DEFAULT_X               0
+// #define PICKER_DEFAULT_Y               0
+// #define PICKER_DEFAULT_Z               0.4
+// #define PICKER_DEFAULT_YAW_DEGREES     0
+// #define PICKER_DEFAULT_MASS_GRAMS     30
 
 #ifdef CATKIN_MAKE
 #include <ros/ros.h>
@@ -51,6 +51,7 @@
 
 // Include the shared definitions
 #include "nodes/Constants.h"
+#include "nodes/PickerControllerConstants.h"
 
 // SPECIFY THE PACKAGE NAMESPACE
 //using namespace d_fall_pps;
@@ -58,6 +59,7 @@
 #else
 // Include the shared definitions
 #include "include/Constants_for_Qt_compile.h"
+#include "include/PickerControllerConstants_for_Qt_compile.h"
 
 #endif
 
