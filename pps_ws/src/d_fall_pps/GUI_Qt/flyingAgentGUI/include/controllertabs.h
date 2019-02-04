@@ -50,6 +50,7 @@ public:
     void showHideController_default_changed();
     void showHideController_student_changed();
     void showHideController_picker_changed();
+    void showHideController_tuning_changed();
     void showHideController_safe_changed();
 
 

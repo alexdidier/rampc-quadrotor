@@ -28,7 +28,7 @@
    <item row="0" column="0">
     <widget class="QTabWidget" name="controller_tabs_widget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>3</number>
      </property>
      <property name="movable">
       <bool>true</bool>
@@ -63,13 +63,23 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="tuning_tab">
+      <attribute name="title">
+       <string>Tuning</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_6">
+       <item row="0" column="0">
+        <widget class="TuningControllerTab" name="tuning_controller_tab_widget" native="true"/>
+       </item>
+      </layout>
+     </widget>
      <widget class="QWidget" name="safe_tab">
       <attribute name="title">
        <string>Safe</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_3">
        <item row="0" column="0">
-        <widget class="SafeControllerTab" name="widget_2" native="true"/>
+        <widget class="SafeControllerTab" name="safe_controller_tab_widget" native="true"/>
        </item>
       </layout>
      </widget>
@@ -100,6 +110,12 @@
    <class>PickerControllerTab</class>
    <extends>QWidget</extends>
    <header>pickercontrollertab.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>TuningControllerTab</class>
+   <extends>QWidget</extends>
+   <header>tuningcontrollertab.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

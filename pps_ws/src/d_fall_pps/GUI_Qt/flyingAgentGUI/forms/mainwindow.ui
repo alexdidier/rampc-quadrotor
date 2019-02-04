@@ -213,6 +213,7 @@
     <addaction name="action_showHideController_default"/>
     <addaction name="action_showHideController_student"/>
     <addaction name="action_showHideController_picker"/>
+    <addaction name="action_showHideController_tuning"/>
     <addaction name="action_showHideController_safe"/>
    </widget>
    <addaction name="menuFile"/>
@@ -288,6 +289,17 @@
    </property>
    <property name="text">
     <string>Safe</string>
+   </property>
+  </action>
+  <action name="action_showHideController_tuning">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Tuning</string>
    </property>
   </action>
  </widget>

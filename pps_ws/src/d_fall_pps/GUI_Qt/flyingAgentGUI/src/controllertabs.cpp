@@ -164,6 +164,11 @@ void ControllerTabs::showHideController_picker_changed()
     showHideController_toggle("Picker",ui->picker_tab);
 }
 
+void ControllerTabs::showHideController_tuning_changed()
+{
+    showHideController_toggle("Tuning",ui->tuning_tab);
+}
+
 void ControllerTabs::showHideController_safe_changed()
 {
     showHideController_toggle("Safe",ui->safe_tab);
@@ -302,7 +307,7 @@ void ControllerTabs::setControllerEnabled(int new_controller)
         }
         case TUNING_CONTROLLER:
         {
-            //ui->controller_enabled_label->setText("Tuning");
+            setTextColourOfTabLabel( m_tab_text_colour_highlight , ui->tuning_tab );
             break;
         }
         case PICKER_CONTROLLER:
@@ -324,6 +329,7 @@ void ControllerTabs::setAllTabLabelsToNormalColouring()
     setTextColourOfTabLabel( m_tab_text_colour_normal , ui->default_tab );
     setTextColourOfTabLabel( m_tab_text_colour_normal , ui->student_tab );
     setTextColourOfTabLabel( m_tab_text_colour_normal , ui->picker_tab );
+    setTextColourOfTabLabel( m_tab_text_colour_normal , ui->tuning_tab );
     setTextColourOfTabLabel( m_tab_text_colour_normal , ui->safe_tab );
 }
 

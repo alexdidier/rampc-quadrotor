@@ -127,6 +127,7 @@ private slots:
     void on_action_showHideController_default_changed();
     void on_action_showHideController_student_changed();
     void on_action_showHideController_picker_changed();
+    void on_action_showHideController_tuning_changed();
     void on_action_showHideController_safe_changed();
 
 };
