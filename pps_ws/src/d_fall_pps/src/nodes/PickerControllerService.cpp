@@ -638,6 +638,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	// CALL THE FUNCTION FOR PER CYLCE OPERATIONS
 	perControlCycleOperations();
 
+
 	// THIS IS THE START OF THE "OUTER" CONTROL LOOP
 	// > i.e., this is the control loop run on this laptop
 	// > this function is called at the frequency specified
@@ -654,7 +655,8 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	// SMOOTH ANY CHANGES THAT MAY HAVE OCCURRED IN THE
 	// SETPOINT
 	smoothSetpointChanges();
-	
+
+
 	// CONVERT THE CURRENT INERTIAL FRAME STATE ESTIMATE, INTO
 	// THE BODY FRAME ERROR REQUIRED BY THE CONTROLLER
 	// > Define a local array to fill in with the body frame error
@@ -662,12 +664,10 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	// > Call the function to perform the conversion
 	convert_stateInertial_to_bodyFrameError(m_current_stateInertialEstimate,m_setpoint_for_controller,current_bodyFrameError);
 
-	
 
 	// CARRY OUT THE CONTROLLER COMPUTATIONS
 	// Call the function that performs the control computations for this mode
 	calculateControlOutput_viaLQRforRates(current_bodyFrameError,request,response);
-
 
 
 	// // PUBLISH THE CURRENT X,Y,Z, AND YAW (if required)
@@ -1825,7 +1825,7 @@ int main(int argc, char* argv[]) {
 	// Create the service call as a local variable
 	LoadYamlFromFilename loadYamlFromFilenameCall;
 	// Specify the Yaml filename as a string
-	loadYamlFromFilenameCall.request.stringWithHeader.data = "StudentController";
+	loadYamlFromFilenameCall.request.stringWithHeader.data = "PickerController";
 	// Set for whom this applies to
 	loadYamlFromFilenameCall.request.stringWithHeader.shouldCheckForID = false;
 	// Wait until the serivce exists

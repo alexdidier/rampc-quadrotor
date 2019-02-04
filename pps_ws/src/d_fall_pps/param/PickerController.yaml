@@ -58,7 +58,7 @@ shouldPerformConvertIntoBodyFrame : true
 #shouldPublishCurrent_xyz_yaw : true
 
 # Boolean indiciating whether the "Debug Message" of this agent should be published or not
-shouldPublishDebugMessage : true
+shouldPublishDebugMessage : false
 
 # Boolean indiciating whether the debugging ROS_INFO_STREAM should be displayed or not
 shouldDisplayDebugInfo : false

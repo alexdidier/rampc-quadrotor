@@ -232,7 +232,7 @@ std::string m_namespace_to_coordinator_parameter_service;
 // VARIABLES FOR THE CONTOLLER
 
 // > the mass of the crazyflie, in [grams]
-float yaml_mass_cf_in_grams = 25.0;
+float yaml_mass_cf_in_grams = 30.0;
 
 // > the coefficients of the 16-bit command to thrust conversion
 //std::vector<float> yaml_motorPoly(3);
