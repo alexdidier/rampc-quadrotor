@@ -249,6 +249,6 @@ bool getCurrentSetpointCallback(GetSetpointService::Request &request, GetSetpoin
 // CUSTOM COMMAND RECEIVED CALLBACK
 void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived);
 
-// > For the LOADING of YAML PARAMETERS
+// FOR LOADING THE YAML PARAMETERS
 void isReadyStudentControllerYamlCallback(const IntWithHeader & msg);
 void fetchStudentControllerYamlParameters(ros::NodeHandle& nodeHandle);

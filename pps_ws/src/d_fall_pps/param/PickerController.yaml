@@ -1,35 +1,33 @@
-# Mass of the crazyflie
-mass_CF : 32
-# Mass of the letters
-mass_E : 3.2
-mass_T : 2.9
-mass_H : 3.3
-
-# Thickness of the object at pick-up and put-down, in [meters]
-# > This should also account for extra height due to 
-#   the surface where the object is
-thickness_of_object_at_pickup  : 0.02
-thickness_of_object_at_putdown : 0.03
-
-# (x,y) coordinates of the pickup location
-pickup_coordinates_xy : [-0.26, 0.12]
-
-# (x,y) coordinates of the drop off location
-dropoff_coordinates_xy_for_E : [ 0.33, -0.03]
-dropoff_coordinates_xy_for_T : [ 0.24, 0.00]
-dropoff_coordinates_xy_for_H : [ 0.28, 0.00]
-
-# Length of the string from the Crazyflie
-# to the end of the Picker, in [meters]
-picker_string_length : 0.30
 
 # Max setpoint change per second
 max_setpoint_change_per_second_horizontal  :  0.20 # [meters]
 max_setpoint_change_per_second_vertical    :  0.10 # [meters]
 max_setpoint_change_per_second_yaw_degrees : 90.00 # [degrees]
 
-# Frequency of the controller, in hertz
-vicon_frequency : 200
+
+
+# Mass of the letters
+#mass_E : 3.2
+#mass_T : 2.9
+#mass_H : 3.3
+
+# Thickness of the object at pick-up and put-down, in [meters]
+# > This should also account for extra height due to 
+#   the surface where the object is
+#thickness_of_object_at_pickup  : 0.02
+#thickness_of_object_at_putdown : 0.03
+
+# (x,y) coordinates of the pickup location
+#pickup_coordinates_xy : [-0.26, 0.12]
+
+# (x,y) coordinates of the drop off location
+#dropoff_coordinates_xy_for_E : [ 0.33, -0.03]
+#dropoff_coordinates_xy_for_T : [ 0.24, 0.00]
+#dropoff_coordinates_xy_for_H : [ 0.28, 0.00]
+
+# Length of the string from the Crazyflie
+# to the end of the Picker, in [meters]
+#picker_string_length : 0.30
 
 
 
@@ -41,9 +39,11 @@ vicon_frequency : 200
 
 
 
+# ------------------------------------------------------
+# PARAMTERS THAT ARE STANDARD FOR A "CONTROLLER SERVICE"
 
-# THE FOLLOWING PARAMETERS ARE USED
-# FOR THE LOW-LEVEL CONTROLLER
+# Mass of the crazyflie
+mass_cf_in_grams : 32
 
 # Frequency of the controller, in hertz
 control_frequency : 200
@@ -55,7 +55,7 @@ motorPoly : [5.484560e-4, 1.032633e-6, 2.130295e-11]
 shouldPerformConvertIntoBodyFrame : true
 
 # Boolean indiciating whether the (x,y,z,yaw) of this agent should be published or not
-shouldPublishCurrent_xyz_yaw : true
+#shouldPublishCurrent_xyz_yaw : true
 
 # Boolean indiciating whether the "Debug Message" of this agent should be published or not
 shouldPublishDebugMessage : true

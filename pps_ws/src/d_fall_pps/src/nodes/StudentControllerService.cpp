@@ -962,7 +962,7 @@ int main(int argc, char* argv[]) {
 	}
 	else
 	{
-	// Inform the user
+		// Inform the user
 		ROS_ERROR("[STUDENT CONTROLLER] The request load yaml file service call failed.");
 	}
 
@@ -1011,7 +1011,7 @@ int main(int argc, char* argv[]) {
 	// an integer (that is essentially ignored), and is expected to respond
 	// with the current setpoint of the controller. When a request is made
 	// of this service the "getCurrentSetpointCallback" function is called.
-	ros::ServiceServer getCurrentSetpointService = nodeHandle.advertiseService("GetCurrentSetpoint", getCurrentSetpointCallback);	
+	ros::ServiceServer getCurrentSetpointService = nodeHandle.advertiseService("GetCurrentSetpoint", getCurrentSetpointCallback);
 
 
 

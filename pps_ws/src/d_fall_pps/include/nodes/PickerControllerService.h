@@ -178,12 +178,18 @@ using namespace d_fall_pps;
 // ----------------------------------------
 // VARIABLES SPECIFIC TO THE PICKER SERVICE
 
+// The current state of the picker, i.e.,
+// {goto start, attach, lift up, goto end, put down,
+//  squat, jump, standby}
+int m_picker_current_state = PICKER_STATE_STANDBY;
+
 // Current time
-int m_time_ticks = 0;
-float m_time_seconds;
+//int m_time_ticks = 0;
+//float m_time_seconds;
 
 // > Total mass of the Crazyflie plus whatever it is carrying, in [grams]
-float m_mass_total_grams;
+float m_mass_total_in_grams;
+float m_weight_total_in_newtons;
 
 // The setpoint to be tracked, the ordering is (x,y,z,yaw),
 // with units [meters,meters,meters,radians]
@@ -226,7 +232,7 @@ std::string m_namespace_to_coordinator_parameter_service;
 // VARIABLES FOR THE CONTOLLER
 
 // > the mass of the crazyflie, in [grams]
-float yaml_cf_mass_in_grams = 25.0;
+float yaml_mass_cf_in_grams = 25.0;
 
 // > the coefficients of the 16-bit command to thrust conversion
 //std::vector<float> yaml_motorPoly(3);
@@ -240,10 +246,10 @@ float yaml_control_frequency = 200.0;
 std::vector<float> yaml_default_setpoint = {0.0,0.0,0.4,0.0};
 
 // The weight of the Crazyflie in Newtons, i.e., mg
-float m_cf_weight_in_newtons = 0.0;
+float m_weight_cf_in_newtons = 0.0;
 
 // The location error of the Crazyflie at the "previous" time step
-float m_previous_stateErrorInertial[9];
+std::vector<float> m_previous_stateErrorInertial = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
 
 // The LQR Controller parameters for "CONTROLLER_MODE_LQR_RATE"
 std::vector<float> yaml_gainMatrixThrust_NineStateVector (9,0.0);
@@ -252,15 +258,15 @@ std::vector<float> yaml_gainMatrixPitchRate              (9,0.0);
 std::vector<float> yaml_gainMatrixYawRate                (9,0.0);
 
 // The 16-bit command limits
-float yaml_cmd_sixteenbit_min;
-float yaml_cmd_sixteenbit_max;
+float yaml_cmd_sixteenbit_min = 1000;
+float yaml_cmd_sixteenbit_max = 60000;
 
 
 
 // VARIABLES FOR THE ESTIMATOR
 
 // Frequency at which the controller is running
-float yaml_estimator_frequency;
+float yaml_estimator_frequency = 200.0;
 
 // > A flag for which estimator to use:
 int yaml_estimator_method = ESTIMATOR_METHOD_FINITE_DIFFERENCE;
@@ -299,16 +305,16 @@ std::vector<float> yaml_PMKF_Kinf_for_angles         (2,0.0);
 // VARIABLES RELATING TO PERFORMING THE CONVERSION INTO BODY FRAME
 
 // Boolean whether to execute the convert into body frame function
-bool shouldPerformConvertIntoBodyFrame = false;
+bool yaml_shouldPerformConvertIntoBodyFrame = false;
 
 
 // VARIABLES RELATING TO THE PUBLISHING OF A DEBUG MESSAGE
 
 // Boolean indiciating whether the "Debug Message" of this agent should be published or not
-bool shouldPublishDebugMessage = false;
+bool yaml_shouldPublishDebugMessage = false;
 
 // Boolean indiciating whether the debugging ROS_INFO_STREAM should be displayed or not
-bool shouldDisplayDebugInfo = false;
+bool yaml_shouldDisplayDebugInfo = false;
 
 // ROS Publisher for debugging variables
 ros::Publisher m_debugPublisher;
@@ -530,45 +536,46 @@ ros::Publisher m_setpointChangedPublisher;
 void perControlCycleOperations();
 
 // CALLBACK FROM ROS MESSAGES RECEIVED
-void buttonPressedCallback(const std_msgs::Int32& msg);
-void zSetpointCallback(const std_msgs::Float32& msg);
-void yawSetpointCallback(const std_msgs::Float32& msg);
-void massCallback(const std_msgs::Float32& msg);
-void xAdjustmentCallback(const std_msgs::Float32& msg);
-void yAdjustmentCallback(const std_msgs::Float32& msg);
+//void buttonPressedCallback(const std_msgs::Int32& msg);
+// void zSetpointCallback(const std_msgs::Float32& msg);
+// void yawSetpointCallback(const std_msgs::Float32& msg);
+// void massCallback(const std_msgs::Float32& msg);
+// void xAdjustmentCallback(const std_msgs::Float32& msg);
+// void yAdjustmentCallback(const std_msgs::Float32& msg);
 
 void buttonPressedWithSetpointCallback(const SetpointV2& newSetpointV2);
 
 
 // SEPARATE CALLBACK FUNCTIONS FOR EACH BUTTON
-void buttonPressed_gotoStart();
+void buttonPressed_goto_start();
 void buttonPressed_attach();
-void buttonPressed_pickup();
-void buttonPressed_gotoEnd();
-void buttonPressed_putdown();
+void buttonPressed_lift_up();
+void buttonPressed_goto_end();
+void buttonPressed_put_down();
 void buttonPressed_squat();
 void buttonPressed_jump();
+void buttonPressed_standby();
 
-void buttonPressed_1();
-void buttonPressed_2();
-void buttonPressed_3();
-void buttonPressed_4();
+// void buttonPressed_1();
+// void buttonPressed_2();
+// void buttonPressed_3();
+// void buttonPressed_4();
 
 
 // SEPARATE CALLBACK FUNCTIONS FOR EACH BUTTON
 // > WITH A SETPOINT IN THE MESSAGE
-void buttonPressedWithSetpoint_gotoStart(const SetpointV2& newSetpointV2);
-void buttonPressedWithSetpoint_attach(const SetpointV2& newSetpointV2);
-void buttonPressedWithSetpoint_pickup(const SetpointV2& newSetpointV2);
-void buttonPressedWithSetpoint_gotoEnd(const SetpointV2& newSetpointV2);
-void buttonPressedWithSetpoint_putdown(const SetpointV2& newSetpointV2);
-void buttonPressedWithSetpoint_squat(const SetpointV2& newSetpointV2);
-void buttonPressedWithSetpoint_jump(const SetpointV2& newSetpointV2);
+// void buttonPressedWithSetpoint_gotoStart(const SetpointV2& newSetpointV2);
+// void buttonPressedWithSetpoint_attach(const SetpointV2& newSetpointV2);
+// void buttonPressedWithSetpoint_pickup(const SetpointV2& newSetpointV2);
+// void buttonPressedWithSetpoint_gotoEnd(const SetpointV2& newSetpointV2);
+// void buttonPressedWithSetpoint_putdown(const SetpointV2& newSetpointV2);
+// void buttonPressedWithSetpoint_squat(const SetpointV2& newSetpointV2);
+// void buttonPressedWithSetpoint_jump(const SetpointV2& newSetpointV2);
 
-void buttonPressedWithSetpoint_1(const SetpointV2& newSetpointV2);
-void buttonPressedWithSetpoint_2(const SetpointV2& newSetpointV2);
-void buttonPressedWithSetpoint_3(const SetpointV2& newSetpointV2);
-void buttonPressedWithSetpoint_4(const SetpointV2& newSetpointV2);
+// void buttonPressedWithSetpoint_1(const SetpointV2& newSetpointV2);
+// void buttonPressedWithSetpoint_2(const SetpointV2& newSetpointV2);
+// void buttonPressedWithSetpoint_3(const SetpointV2& newSetpointV2);
+// void buttonPressedWithSetpoint_4(const SetpointV2& newSetpointV2);
 
 
 
@@ -580,39 +587,39 @@ void buttonPressedWithSetpoint_4(const SetpointV2& newSetpointV2);
 // > The function that is called to "start" all estimation and control computations
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response);
 
+// > The function that smooth changes in the setpoin
+void smoothSetpointChanges();
+
 // > The various functions that implement an LQR controller
-void calculateControlOutput_viaLQR(                     float stateErrorBody[12], Controller::Request &request, Controller::Response &response);
-void calculateControlOutput_viaLQRforMotors(            float stateErrorBody[12], Controller::Request &request, Controller::Response &response);
-void calculateControlOutput_viaLQRforActuators(         float stateErrorBody[12], Controller::Request &request, Controller::Response &response);
-void calculateControlOutput_viaLQRforRates(             float stateErrorBody[12], Controller::Request &request, Controller::Response &response);
-void calculateControlOutput_viaLQRforAngles(            float stateErrorBody[12], Controller::Request &request, Controller::Response &response);
-void calculateControlOutput_viaLQRforAnglesRatesNested( float stateErrorBody[12], Controller::Request &request, Controller::Response &response);
-void calculateControlOutput_viaAngleResponseTest(       float stateErrorBody[12], Controller::Request &request, Controller::Response &response);
+void calculateControlOutput_viaLQRforRates(float stateErrorBody[12], Controller::Request &request, Controller::Response &response);
 
 // ESTIMATOR COMPUTATIONS
 void performEstimatorUpdate_forStateInterial(Controller::Request &request);
 void performEstimatorUpdate_forStateInterial_viaFiniteDifference();
 void performEstimatorUpdate_forStateInterial_viaPointMassKalmanFilter();
 
-
 // PUBLISHING OF THE DEBUG MESSAGE
 void construct_and_publish_debug_message(Controller::Request &request, Controller::Response &response);
 
-
-// TRANSFORMATION FROM INTERIAL ESTIMATE TO BODY FRAME ERROR
+// TRANSFORMATION FROM INTERIAL ESTIMATE TO
+// BODY FRAME ERROR
 void convert_stateInertial_to_bodyFrameError(float stateInertial[12], float setpoint[4], float (&bodyFrameError)[12]);
 
-// TRANSFORMATION OF THE (x,y) INERTIAL FRAME ERROR INTO AN (x,y) BODY FRAME ERROR
+// TRANSFORMATION OF THE (x,y) INERTIAL FRAME ERROR
+// INTO AN (x,y) BODY FRAME ERROR
 void convertIntoBodyFrame(float stateInertial[12], float (&stateBody)[12], float yaw_measured);
 
 // CONVERSION FROM THRUST IN NEWTONS TO 16-BIT COMMAND
 float computeMotorPolyBackward(float thrust);
 
-// SETPOINT CHANGE CALLBACK
-void setpointCallback(const Setpoint& newSetpoint);
-void xyz_yaw_to_follow_callback(const Setpoint& newSetpoint);
+// REQUEST SETPOINT CHANGE CALLBACK
+void requestSetpointChangeCallback(const SetpointWithHeader& newSetpoint);
 
-void publishCurrentSetpoint();
+// CHANGE SETPOINT FUNCTION
+void setNewSetpoint(float x, float y, float z, float yaw);
+
+// GET CURRENT SETPOINT SERVICE CALLBACK
+bool getCurrentSetpointCallback(GetSetpointService::Request &request, GetSetpointService::Response &response);
 
 // CUSTOM COMMAND RECEIVED CALLBACK
 //void customCommandReceivedCallback(const CustomButton& commandReceived);
@@ -620,15 +627,18 @@ void publishCurrentSetpoint();
 // PUBLISH THE CURRENT X,Y,Z, AND YAW
 void publish_current_xyz_yaw(float x, float y, float z, float yaw);
 
-// LOAD PARAMETERS
-float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name);
-void  getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length);
-int   getParameterInt(ros::NodeHandle& nodeHandle, std::string name);
-void  getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val, int length);
-int   getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val);
-bool  getParameterBool(ros::NodeHandle& nodeHandle, std::string name);
+// FOR LOADING THE YAML PARAMETERS
+// float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name);
+// void  getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length);
+// int   getParameterInt(ros::NodeHandle& nodeHandle, std::string name);
+// void  getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val, int length);
+// int   getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val);
+// bool  getParameterBool(ros::NodeHandle& nodeHandle, std::string name);
 
-void yamlReadyForFetchCallback(const std_msgs::Int32& msg);
-void fetchYamlParameters(ros::NodeHandle& nodeHandle);
-void processFetchedParameters();
+void isReadyPickerControllerYamlCallback(const IntWithHeader & msg);
+void fetchPickerControllerYamlParameters(ros::NodeHandle& nodeHandle);
+
+//void yamlReadyForFetchCallback(const std_msgs::Int32& msg);
+//void fetchYamlParameters(ros::NodeHandle& nodeHandle);
+//void processFetchedParameters();
 
