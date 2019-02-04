@@ -339,7 +339,8 @@ add_executable(StudentControllerService  src/nodes/StudentControllerService.cpp
 add_executable(MpcControllerService      src/nodes/MpcControllerService.cpp)
 add_executable(RemoteControllerService   src/nodes/RemoteControllerService.cpp)
 add_executable(TuningControllerService   src/nodes/TuningControllerService.cpp)
-add_executable(PickerControllerService   src/nodes/PickerControllerService.cpp)
+add_executable(PickerControllerService   src/nodes/PickerControllerService.cpp
+                                         src/classes/GetParamtersAndNamespaces.cpp)
 add_executable(CentralManagerService     src/nodes/CentralManagerService.cpp src/CrazyflieIO.cpp)
 add_executable(ParameterService          src/nodes/ParameterService.cpp)
 

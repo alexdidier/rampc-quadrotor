@@ -94,7 +94,7 @@
 // float yaml_max_setpoint_change_per_second_yaw_degrees;
 // float m_max_setpoint_change_per_second_yaw_radians;
 // // Frequency at which the controller is running
-// float m_control_frequency;
+// float yaml_control_frequency;
 
 
 // A FEW EXTRA COMMENTS ABOUT THE MOST IMPORTANT VARIABLES
@@ -142,7 +142,7 @@ void perControlCycleOperations()
 // CALLBACK FUNCTION THAT RUN WHEN THE RESPECTIVE BUTTON IS PRESSED
 
 // These functions are called from:
-// >> "buttonPressedWithSetpointCallback"
+// >> "requestSetpointChangeCallback"
 // And in that function the following variable are already
 // updated appropriately:
 // >> "m_picker_current_state"
@@ -467,16 +467,16 @@ void smoothSetpointChanges()
 			switch (i)
 			{
 				case 0:
-					max_for_this_coordinate = yaml_max_setpoint_change_per_second_horizontal / m_control_frequency;
+					max_for_this_coordinate = yaml_max_setpoint_change_per_second_horizontal / yaml_control_frequency;
 					break;
 				case 1:
-					max_for_this_coordinate = yaml_max_setpoint_change_per_second_horizontal / m_control_frequency;
+					max_for_this_coordinate = yaml_max_setpoint_change_per_second_horizontal / yaml_control_frequency;
 					break;
 				case 2:
-					max_for_this_coordinate = yaml_max_setpoint_change_per_second_vertical / m_control_frequency;
+					max_for_this_coordinate = yaml_max_setpoint_change_per_second_vertical / yaml_control_frequency;
 					break;
 				case 3:
-					max_for_this_coordinate = m_max_setpoint_change_per_second_yaw_radians / m_control_frequency;
+					max_for_this_coordinate = m_max_setpoint_change_per_second_yaw_radians / yaml_control_frequency;
 					break;
 				// Handle the exception
 				default:
@@ -632,7 +632,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 
 	// Keep track of time
 	//m_time_ticks++;
-	//m_time_seconds = float(m_time_ticks) / m_control_frequency;
+	//m_time_seconds = float(m_time_ticks) / yaml_control_frequency;
 
 
 	// CALL THE FUNCTION FOR PER CYLCE OPERATIONS
@@ -1450,15 +1450,15 @@ bool getCurrentSetpointCallback(GetSetpointService::Request &request, GetSetpoin
 // PUBLISH THE CURRENT X,Y,Z, AND YAW (if required)
 void publish_current_xyz_yaw(float x, float y, float z, float yaw)
 {
-	// publish setpoint for FollowController of another student group
-	Setpoint temp_current_xyz_yaw;
-	// Fill in the x,y,z, and yaw info directly from the data provided to this
-	// function
-	temp_current_xyz_yaw.x   = x;
-	temp_current_xyz_yaw.y   = y;
-	temp_current_xyz_yaw.z   = z;
-	temp_current_xyz_yaw.yaw = yaw;
-	my_current_xyz_yaw_publisher.publish(temp_current_xyz_yaw);
+	// // publish setpoint for FollowController of another student group
+	// SetpointWithHeader temp_current_xyz_yaw;
+	// // Fill in the x,y,z, and yaw info directly from the data provided to this
+	// // function
+	// temp_current_xyz_yaw.x   = x;
+	// temp_current_xyz_yaw.y   = y;
+	// temp_current_xyz_yaw.z   = z;
+	// temp_current_xyz_yaw.yaw = yaw;
+	// m_current_xyz_yaw_publisher.publish(temp_current_xyz_yaw);
 }
 
 
@@ -1539,30 +1539,30 @@ void fetchPickerControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	// GET THE PARAMETERS:
 
 	// // // > The mass of the letters
-	// m_mass_E_grams = getParameterFloat(nodeHandle_for_pickerController , "mass_E");
-	// m_mass_T_grams = getParameterFloat(nodeHandle_for_pickerController , "mass_T");
-	// m_mass_H_grams = getParameterFloat(nodeHandle_for_pickerController , "mass_H");
+	// m_mass_E_grams = getParameterFloat(nodeHandle_for_paramaters , "mass_E");
+	// m_mass_T_grams = getParameterFloat(nodeHandle_for_paramaters , "mass_T");
+	// m_mass_H_grams = getParameterFloat(nodeHandle_for_paramaters , "mass_H");
 
 	// // Thickness of the object at pick-up and put-down, in [meters]
 	// // > This should also account for extra height due to the surface where the object is
-	// m_thickness_of_object_at_pickup  = getParameterFloat(nodeHandle_for_pickerController , "thickness_of_object_at_pickup");
-	// m_thickness_of_object_at_putdown = getParameterFloat(nodeHandle_for_pickerController , "thickness_of_object_at_putdown");
+	// m_thickness_of_object_at_pickup  = getParameterFloat(nodeHandle_for_paramaters , "thickness_of_object_at_pickup");
+	// m_thickness_of_object_at_putdown = getParameterFloat(nodeHandle_for_paramaters , "thickness_of_object_at_putdown");
 
 	// // (x,y) coordinates of the pickup location
-	// getParameterFloatVector(nodeHandle_for_pickerController, "pickup_coordinates_xy", m_pickup_coordinates_xy, 2);
+	// getParameterFloatVector(nodeHandle_for_paramaters, "pickup_coordinates_xy", m_pickup_coordinates_xy, 2);
 
 	// // (x,y) coordinates of the drop off location
-	// getParameterFloatVector(nodeHandle_for_pickerController, "dropoff_coordinates_xy_for_E", m_dropoff_coordinates_xy_for_E, 2);
-	// getParameterFloatVector(nodeHandle_for_pickerController, "dropoff_coordinates_xy_for_T", m_dropoff_coordinates_xy_for_T, 2);
-	// getParameterFloatVector(nodeHandle_for_pickerController, "dropoff_coordinates_xy_for_H", m_dropoff_coordinates_xy_for_H, 2);
+	// getParameterFloatVector(nodeHandle_for_paramaters, "dropoff_coordinates_xy_for_E", m_dropoff_coordinates_xy_for_E, 2);
+	// getParameterFloatVector(nodeHandle_for_paramaters, "dropoff_coordinates_xy_for_T", m_dropoff_coordinates_xy_for_T, 2);
+	// getParameterFloatVector(nodeHandle_for_paramaters, "dropoff_coordinates_xy_for_H", m_dropoff_coordinates_xy_for_H, 2);
 
 	// // Length of the string from the Crazyflie to the end of the Picker, in [meters]
-	// m_picker_string_length = getParameterFloat(nodeHandle_for_pickerController , "picker_string_length");
+	// m_picker_string_length = getParameterFloat(nodeHandle_for_paramaters , "picker_string_length");
 
 	// Max setpoint change per second
-	yaml_max_setpoint_change_per_second_horizontal = getParameterFloat(nodeHandle_for_pickerController , "max_setpoint_change_per_second_horizontal");
-	yaml_max_setpoint_change_per_second_vertical = getParameterFloat(nodeHandle_for_pickerController , "max_setpoint_change_per_second_vertical");
-	yaml_max_setpoint_change_per_second_yaw_degrees = getParameterFloat(nodeHandle_for_pickerController , "max_setpoint_change_per_second_yaw_degrees");
+	yaml_max_setpoint_change_per_second_horizontal = getParameterFloat(nodeHandle_for_paramaters , "max_setpoint_change_per_second_horizontal");
+	yaml_max_setpoint_change_per_second_vertical = getParameterFloat(nodeHandle_for_paramaters , "max_setpoint_change_per_second_vertical");
+	yaml_max_setpoint_change_per_second_yaw_degrees = getParameterFloat(nodeHandle_for_paramaters , "max_setpoint_change_per_second_yaw_degrees");
 
 	
 
@@ -1570,51 +1570,51 @@ void fetchPickerControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	// PARAMTERS THAT ARE STANDARD FOR A "CONTROLLER SERVICE"
 
 	// > The mass of the crazyflie
-	yaml_mass_cf_in_grams = getParameterFloat(nodeHandle_for_pickerController , "mass_cf_in_grams");
+	yaml_mass_cf_in_grams = getParameterFloat(nodeHandle_for_paramaters , "mass_cf_in_grams");
 
 	// > The frequency at which the "computeControlOutput" is being called, as determined
 	//   by the frequency at which the Vicon system provides position and attitude data
-	yaml_control_frequency = getParameterFloat(nodeHandle_for_pickerController, "control_frequency");
+	yaml_control_frequency = getParameterFloat(nodeHandle_for_paramaters, "control_frequency");
 
 	// > The co-efficients of the quadratic conversation from 16-bit motor command to
 	//   thrust force in Newtons
-	getParameterFloatVector(nodeHandle_for_pickerController, "motorPoly", yaml_motorPoly, 3);
+	getParameterFloatVector(nodeHandle_for_paramaters, "motorPoly", yaml_motorPoly, 3);
 
 	// > The boolean for whether to execute the convert into body frame function
-	yaml_shouldPerformConvertIntoBodyFrame = getParameterBool(nodeHandle_for_pickerController, "shouldPerformConvertIntoBodyFrame");
+	yaml_shouldPerformConvertIntoBodyFrame = getParameterBool(nodeHandle_for_paramaters, "shouldPerformConvertIntoBodyFrame");
 
 	// // > The boolean indicating whether the (x,y,z,yaw) of this agent should be published
 	// //   or not
-	// shouldPublishCurrent_xyz_yaw = getParameterBool(nodeHandle_for_pickerController, "shouldPublishCurrent_xyz_yaw");
+	// shouldPublishCurrent_xyz_yaw = getParameterBool(nodeHandle_for_paramaters, "shouldPublishCurrent_xyz_yaw");
 
 	// Boolean indiciating whether the "Debug Message" of this agent should be published or not
-	yaml_shouldPublishDebugMessage = getParameterBool(nodeHandle_for_pickerController, "shouldPublishDebugMessage");
+	yaml_shouldPublishDebugMessage = getParameterBool(nodeHandle_for_paramaters, "shouldPublishDebugMessage");
 
 	// Boolean indiciating whether the debugging ROS_INFO_STREAM should be displayed or not
-	yaml_shouldDisplayDebugInfo = getParameterBool(nodeHandle_for_pickerController, "shouldDisplayDebugInfo");
+	yaml_shouldDisplayDebugInfo = getParameterBool(nodeHandle_for_paramaters, "shouldDisplayDebugInfo");
 
 	// A flag for which estimator to use:
-	yaml_estimator_method = getParameterInt( nodeHandle_for_pickerController , "estimator_method" );
+	yaml_estimator_method = getParameterInt( nodeHandle_for_paramaters , "estimator_method" );
 
 	// The LQR Controller parameters for "LQR_MODE_RATE"
-	getParameterFloatVector(nodeHandle_for_pickerController, "gainMatrixThrust_NineStateVector", yaml_gainMatrixThrust_NineStateVector, 9);
-	getParameterFloatVector(nodeHandle_for_pickerController, "gainMatrixRollRate",               yaml_gainMatrixRollRate,               9);
-	getParameterFloatVector(nodeHandle_for_pickerController, "gainMatrixPitchRate",              yaml_gainMatrixPitchRate,              9);
-	getParameterFloatVector(nodeHandle_for_pickerController, "gainMatrixYawRate",                yaml_gainMatrixYawRate,                9);
+	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixThrust_NineStateVector", yaml_gainMatrixThrust_NineStateVector, 9);
+	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixRollRate",               yaml_gainMatrixRollRate,               9);
+	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixPitchRate",              yaml_gainMatrixPitchRate,              9);
+	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixYawRate",                yaml_gainMatrixYawRate,                9);
 		
 	// 16-BIT COMMAND LIMITS
-	yaml_cmd_sixteenbit_min = getParameterFloat(nodeHandle_for_pickerController, "command_sixteenbit_min");
-	yaml_cmd_sixteenbit_max = getParameterFloat(nodeHandle_for_pickerController, "command_sixteenbit_max");
+	yaml_cmd_sixteenbit_min = getParameterFloat(nodeHandle_for_paramaters, "command_sixteenbit_min");
+	yaml_cmd_sixteenbit_max = getParameterFloat(nodeHandle_for_paramaters, "command_sixteenbit_max");
 
 	// THE POINT MASS KALMAN FILTER (PMKF) GAINS AND ERROR EVOLUATION
 	// > For the (x,y,z) position
-	getParameterFloatVector(nodeHandle_for_pickerController, "PMKF_Ahat_row1_for_positions",  yaml_PMKF_Ahat_row1_for_positions,  2);
-	getParameterFloatVector(nodeHandle_for_pickerController, "PMKF_Ahat_row2_for_positions",  yaml_PMKF_Ahat_row2_for_positions,  2);
-	getParameterFloatVector(nodeHandle_for_pickerController, "PMKF_Kinf_for_positions"     ,  yaml_PMKF_Kinf_for_positions     ,  2);
+	getParameterFloatVector(nodeHandle_for_paramaters, "PMKF_Ahat_row1_for_positions",  yaml_PMKF_Ahat_row1_for_positions,  2);
+	getParameterFloatVector(nodeHandle_for_paramaters, "PMKF_Ahat_row2_for_positions",  yaml_PMKF_Ahat_row2_for_positions,  2);
+	getParameterFloatVector(nodeHandle_for_paramaters, "PMKF_Kinf_for_positions"     ,  yaml_PMKF_Kinf_for_positions     ,  2);
 	// > For the (roll,pitch,yaw) angles
-	getParameterFloatVector(nodeHandle_for_pickerController, "PMKF_Ahat_row1_for_angles",  yaml_PMKF_Ahat_row1_for_angles,  2);
-	getParameterFloatVector(nodeHandle_for_pickerController, "PMKF_Ahat_row2_for_angles",  yaml_PMKF_Ahat_row2_for_angles,  2);
-	getParameterFloatVector(nodeHandle_for_pickerController, "PMKF_Kinf_for_angles"     ,  yaml_PMKF_Kinf_for_angles     ,  2);
+	getParameterFloatVector(nodeHandle_for_paramaters, "PMKF_Ahat_row1_for_angles",  yaml_PMKF_Ahat_row1_for_angles,  2);
+	getParameterFloatVector(nodeHandle_for_paramaters, "PMKF_Ahat_row2_for_angles",  yaml_PMKF_Ahat_row2_for_angles,  2);
+	getParameterFloatVector(nodeHandle_for_paramaters, "PMKF_Kinf_for_angles"     ,  yaml_PMKF_Kinf_for_angles     ,  2);
 
 
 	// DEBUGGING: Print out one of the parameters that was loaded
@@ -1797,8 +1797,8 @@ int main(int argc, char* argv[]) {
 
 	// The parameter service publishes messages with names of the form:
 	// /dfall/.../ParameterService/<filename with .yaml extension>
-	ros::Subscriber pickerContoller_yamlReady_fromAgent = nodeHandle_to_own_agent_parameter_service.subscribe(  "PickerController", 1, isReadyStudentControllerYamlCallback);
-	ros::Subscriber pickerContoller_yamlReady_fromCoord = nodeHandle_to_coordinator_parameter_service.subscribe("PickerController", 1, isReadyStudentControllerYamlCallback);
+	ros::Subscriber pickerContoller_yamlReady_fromAgent = nodeHandle_to_own_agent_parameter_service.subscribe(  "PickerController", 1, isReadyPickerControllerYamlCallback);
+	ros::Subscriber pickerContoller_yamlReady_fromCoord = nodeHandle_to_coordinator_parameter_service.subscribe("PickerController", 1, isReadyPickerControllerYamlCallback);
 
 
 

@@ -77,7 +77,7 @@
 
 // Include the shared definitions
 #include "nodes/Constants.h"
-#include "nodes/PickerContorllerConstants.h"
+#include "nodes/PickerControllerConstants.h"
 
 // Include other classes
 #include "classes/GetParamtersAndNamespaces.h"
@@ -157,9 +157,9 @@ using namespace d_fall_pps;
 // ESTIMATOR_METHOD_QUADROTOR_MODEL_BASED
 //       Uses the model of the quad-rotor and the previous inputs
 //
-// #define ESTIMATOR_METHOD_FINITE_DIFFERENCE          1
-// #define ESTIMATOR_METHOD_POINT_MASS_PER_DIMENSION   2   // (DEFAULT)
-// #define ESTIMATOR_METHOD_QUADROTOR_MODEL_BASED      3
+#define ESTIMATOR_METHOD_FINITE_DIFFERENCE          1
+#define ESTIMATOR_METHOD_POINT_MASS_PER_DIMENSION   2   // (DEFAULT)
+#define ESTIMATOR_METHOD_QUADROTOR_MODEL_BASED      3
 
 
 
@@ -193,11 +193,11 @@ float m_weight_total_in_newtons;
 
 // The setpoint to be tracked, the ordering is (x,y,z,yaw),
 // with units [meters,meters,meters,radians]
-std::vector<float>  m_setpoint{0.0,0.0,0.4,0.0};
+float  m_setpoint[4] = {0.0,0.0,0.4,0.0};
 
 // The setpoint that is actually used by the controller, this
 // differs from the setpoint when smoothing is turned on
-std::vector<float> m_setpoint_for_controller[4] = {0.0,0.0,0.4,0.0};
+float m_setpoint_for_controller[4] = {0.0,0.0,0.4,0.0};
 
 // Boolean for whether to limit rate of change of the setpoint
 bool m_shouldSmoothSetpointChanges = true;
@@ -266,7 +266,7 @@ float yaml_cmd_sixteenbit_max = 60000;
 // VARIABLES FOR THE ESTIMATOR
 
 // Frequency at which the controller is running
-float yaml_estimator_frequency = 200.0;
+float m_estimator_frequency = 200.0;
 
 // > A flag for which estimator to use:
 int yaml_estimator_method = ESTIMATOR_METHOD_FINITE_DIFFERENCE;
@@ -543,7 +543,7 @@ void perControlCycleOperations();
 // void xAdjustmentCallback(const std_msgs::Float32& msg);
 // void yAdjustmentCallback(const std_msgs::Float32& msg);
 
-void buttonPressedWithSetpointCallback(const SetpointV2& newSetpointV2);
+//void buttonPressedWithSetpointCallback(const SetpointV2& newSetpointV2);
 
 
 // SEPARATE CALLBACK FUNCTIONS FOR EACH BUTTON
@@ -616,7 +616,8 @@ float computeMotorPolyBackward(float thrust);
 void requestSetpointChangeCallback(const SetpointWithHeader& newSetpoint);
 
 // CHANGE SETPOINT FUNCTION
-void setNewSetpoint(float x, float y, float z, float yaw);
+//void setNewSetpoint(float x, float y, float z, float yaw);
+void setNewSetpoint(int state, bool should_smooth, float x, float y, float z, float yaw, float mass);
 
 // GET CURRENT SETPOINT SERVICE CALLBACK
 bool getCurrentSetpointCallback(GetSetpointService::Request &request, GetSetpointService::Response &response);
