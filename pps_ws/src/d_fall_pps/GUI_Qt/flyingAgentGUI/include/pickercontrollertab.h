@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QMutex>
+#include <QTimer>
 #include <QVector>
 #include <QTextStream>
 
@@ -87,6 +88,9 @@ public slots:
 
 
 private slots:
+
+    // FOR ALL THE GUI BUTTONS AND FIELDS
+
     void on_button_goto_start_clicked();
 
     void on_button_attach_clicked();
@@ -258,7 +262,8 @@ private:
     QMutex m_agentIDs_toCoordinate_mutex;
 
     // THE CURRENT STATE OF THE PICKER
-    int current_picker_state = PICKER_STATE_STANDBY;
+    int m_current_picker_state = PICKER_STATE_UNKNOWN;
+    QMutex m_current_picker_state_mutex;
 
 #ifdef CATKIN_MAKE
     // PUBLISHER

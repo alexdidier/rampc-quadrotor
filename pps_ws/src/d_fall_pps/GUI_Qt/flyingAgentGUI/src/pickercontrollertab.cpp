@@ -10,14 +10,24 @@ PickerControllerTab::PickerControllerTab(QWidget *parent) :
 
     // HIDE ALL THE "GREEN FRAMES"
     // > These indicate which state is currently active
-    ui->frame_goto_start_active->setVisible(false);
-    ui->frame_attach_active    ->setVisible(false);
-    ui->frame_lift_up_active   ->setVisible(false);
-    ui->frame_goto_end_active  ->setVisible(false);
-    ui->frame_put_down_active  ->setVisible(false);
-    ui->frame_squat_active     ->setVisible(false);
-    ui->frame_jump_active      ->setVisible(false);
-    ui->frame_standby_active   ->setVisible(false);
+    ui->frame_goto_start_active->setVisible(true);
+    ui->frame_attach_active    ->setVisible(true);
+    ui->frame_lift_up_active   ->setVisible(true);
+    ui->frame_goto_end_active  ->setVisible(true);
+    ui->frame_put_down_active  ->setVisible(true);
+    ui->frame_squat_active     ->setVisible(true);
+    ui->frame_jump_active      ->setVisible(true);
+    ui->frame_standby_active   ->setVisible(true);
+    // > Make them all white
+    ui->frame_goto_start_active->setStyleSheet("background-color:white;");
+    ui->frame_attach_active    ->setStyleSheet("background-color:white;");
+    ui->frame_lift_up_active   ->setStyleSheet("background-color:white;");
+    ui->frame_goto_end_active  ->setStyleSheet("background-color:white;");
+    ui->frame_put_down_active  ->setStyleSheet("background-color:white;");
+    ui->frame_squat_active     ->setStyleSheet("background-color:white;");
+    ui->frame_jump_active      ->setStyleSheet("background-color:white;");
+    ui->frame_standby_active   ->setStyleSheet("background-color:white;");
+    
 
     // SET DEFAULTS FOR THE INCREMENT
     ui->lineEdit_increment_x   ->setText(QString::number( DEFAULT_INCREMENT_POSITION_XY,   'f', DECIMAL_PLACES_POSITION));
@@ -152,10 +162,12 @@ PickerControllerTab::~PickerControllerTab()
 
 void PickerControllerTab::publish_setpoint_if_current_state_matches(QVector<int> state_to_match)
 {
-    if ( state_to_match.contains(current_picker_state) )
+    m_current_picker_state_mutex.lock();
+    if ( state_to_match.contains(m_current_picker_state) )
     {
-        publish_request_setpoint_change_for_state(current_picker_state);
+        publish_request_setpoint_change_for_state(m_current_picker_state);
     }
+    m_current_picker_state_mutex.unlock();
 }
 
 void PickerControllerTab::publish_request_setpoint_change_for_state(int state_to_publish)
@@ -354,69 +366,129 @@ void PickerControllerTab::setpointChangedCallback(const d_fall_pps::SetpointWith
     ui->checkbox_current->setChecked(smooth);
 
 
+
     // MAKE THE "GREEN FRAME" VISIBLE ONLY FOR THE CURRENT STATE
+    // Lock the mutex that we will access "m_current_picker_state"
+    m_current_picker_state_mutex.lock();
 
-    // First make all of them NOT visible
-    ui->frame_goto_start_active->setVisible(false);
-    ui->frame_attach_active    ->setVisible(false);
-    ui->frame_lift_up_active   ->setVisible(false);
-    ui->frame_goto_end_active  ->setVisible(false);
-    ui->frame_put_down_active  ->setVisible(false);
-    ui->frame_squat_active     ->setVisible(false);
-    ui->frame_jump_active      ->setVisible(false);
-    ui->frame_standby_active   ->setVisible(false);
+    // Put things into more readable variables
+    int new_state = state;
+    int previous_state = m_current_picker_state;
 
-    // Switch between the possible states
-    switch (state)
-    {
-    case PICKER_STATE_STANDBY:
-    {
-        ui->frame_standby_active->setVisible(true);
-        break;
-    }
-    case PICKER_STATE_GOTO_START:
-    {
-        ui->frame_goto_start_active->setVisible(true);
-        break;
-    }
-    case PICKER_STATE_ATTACH:
-    {
-        ui->frame_attach_active->setVisible(true);
-        break;
-    }
-    case PICKER_STATE_LIFT_UP:
-    {
-        ui->frame_lift_up_active->setVisible(true);
-        break;
-    }
-    case PICKER_STATE_GOTO_END:
-    {
-        ui->frame_goto_end_active->setVisible(true);
-        break;
-    }
-    case PICKER_STATE_PUT_DOWN:
-    {
-        ui->frame_put_down_active->setVisible(true);
-        break;
-    }
-    case PICKER_STATE_SQUAT:
-    {
-        ui->frame_squat_active->setVisible(true);
-        break;
-    }
-    case PICKER_STATE_JUMP:
-    {
-        ui->frame_standby_active->setVisible(true);
-        break;
-    }
-    default:
-    {
-        break;
-    }
-    }
+    // Update the class variable for tracking the state
+    if ( new_state != previous_state )
+        m_current_picker_state = new_state;
 
+    // Change the "GREEN FRAME" if the state changed
+    if ( new_state != previous_state )
+    {
+        // Make the new one green
+        switch (new_state)
+        {
+        case PICKER_STATE_STANDBY:
+        {
+            ui->frame_standby_active->setStyleSheet("background-color:green;");
+            break;
+        }
+        case PICKER_STATE_GOTO_START:
+        {
+            ui->frame_goto_start_active->setStyleSheet("background-color:green;");
+            break;
+        }
+        case PICKER_STATE_ATTACH:
+        {
+            ui->frame_attach_active->setStyleSheet("background-color:green;");
+            break;
+        }
+        case PICKER_STATE_LIFT_UP:
+        {
+            ui->frame_lift_up_active->setStyleSheet("background-color:green;");
+            break;
+        }
+        case PICKER_STATE_GOTO_END:
+        {
+            ui->frame_goto_end_active->setStyleSheet("background-color:green;");
+            break;
+        }
+        case PICKER_STATE_PUT_DOWN:
+        {
+            ui->frame_put_down_active->setStyleSheet("background-color:green;");
+            break;
+        }
+        case PICKER_STATE_SQUAT:
+        {
+            ui->frame_squat_active->setStyleSheet("background-color:green;");
+            break;
+        }
+        case PICKER_STATE_JUMP:
+        {
+            ui->frame_jump_active->setStyleSheet("background-color:green;");
+            break;
+        }
+        default:
+        {
+            break;
+        }
+        }
+
+        // And the old one not white
+        switch (previous_state)
+        {
+        case PICKER_STATE_STANDBY:
+        {
+            ui->frame_standby_active->setStyleSheet("background-color:white;");
+            break;
+        }
+        case PICKER_STATE_GOTO_START:
+        {
+            ui->frame_goto_start_active->setStyleSheet("background-color:white;");
+            break;
+        }
+        case PICKER_STATE_ATTACH:
+        {
+            ui->frame_attach_active->setStyleSheet("background-color:white;");
+            break;
+        }
+        case PICKER_STATE_LIFT_UP:
+        {
+            ui->frame_lift_up_active->setStyleSheet("background-color:white;");
+            break;
+        }
+        case PICKER_STATE_GOTO_END:
+        {
+            ui->frame_goto_end_active->setStyleSheet("background-color:white;");
+            break;
+        }
+        case PICKER_STATE_PUT_DOWN:
+        {
+            ui->frame_put_down_active->setStyleSheet("background-color:white;");
+            break;
+        }
+        case PICKER_STATE_SQUAT:
+        {
+            ui->frame_squat_active->setStyleSheet("background-color:white;");
+            break;
+        }
+        case PICKER_STATE_JUMP:
+        {
+            ui->frame_jump_active->setStyleSheet("background-color:white;");
+            break;
+        }
+        default:
+        {
+            break;
+        }
+        }
+    }
+    else
+    {
+        // NOTHING TO CHANGE
+    }
+    // Unlock the mutex for accessing "m_current_picker_state"
+    m_current_picker_state_mutex.unlock();
 }
 #endif
+
 
 
 
