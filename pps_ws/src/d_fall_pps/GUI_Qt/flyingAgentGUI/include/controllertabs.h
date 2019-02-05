@@ -20,6 +20,9 @@
 //#include "d_fall_pps/SetpointWithHeader.h"
 #include "d_fall_pps/CrazyflieData.h"
 #include "d_fall_pps/ViconData.h"
+#include "d_fall_pps/AreaBounds.h"
+#include "d_fall_pps/CrazyflieContext.h"
+#include "d_fall_pps/CMQuery.h"
 
 // Include the shared definitions
 //#include "nodes/Constants.h"
@@ -102,11 +105,19 @@ private:
     // --------------------------------------------------- //
     // PRIVATE VARIABLES FOR ROS
 
+    // > For the "context" of this agent
+    d_fall_pps::CrazyflieContext m_context;
+    d_fall_pps::AreaBounds m_area;
+
     // SUBSRIBER
     // > For the pose data from a motion capture system
     ros::Subscriber m_poseDataSubscriber;
     // > For the controller that is currently operating
     ros::Subscriber controllerUsedSubscriber;
+
+    // > For changes in the database that defines {agentID,cfID,flying zone} links
+    //ros::Subscriber databaseChangedSubscriber;
+    ros::ServiceClient centralManagerDatabaseService;
 #endif
 
 

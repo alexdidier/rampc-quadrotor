@@ -132,6 +132,18 @@ ControllerTabs::ControllerTabs(QWidget *parent) :
     }
 
 
+
+    // CREATE A NODE HANDLE TO THE ROOT OF THE D-FaLL SYSTEM
+    ros::NodeHandle dfall_root_nodeHandle("/dfall");
+
+    // > Publisher for the emergency stop button
+    //emergencyStopPublisher = dfall_root_nodeHandle.advertise<d_fall_pps::IntWithHeader>("emergencyStop", 1);
+
+    // > For changes in the database that defines {agentID,cfID,flying zone} links
+    //databaseChangedSubscriber = dfall_root_nodeHandle.subscribe("CentralManagerService/DBChanged", 1, &TopBanner::databaseChangedCallback, this);;
+    centralManagerDatabaseService = dfall_root_nodeHandle.serviceClient<d_fall_pps::CMQuery>("CentralManagerService/Query", false);
+
+
 #endif
 
 }
@@ -218,8 +230,34 @@ void ControllerTabs::setObjectNameForDisplayingPoseData( QString object_name )
         m_should_search_pose_data_for_object_name = true;
         // Inform the user
         #ifdef CATKIN_MAKE
-            ROS_INFO_STREAM("[CONTROLLER TABS GUI] now emitting data for object named: " << m_object_name_for_emitting_pose_data );
+            ROS_INFO_STREAM("[CONTROLLER TABS GUI] now emitting data for object named: " << m_object_name_for_emitting_pose_data << ", with ID = " << m_ID );
         #endif
+
+
+        #ifdef CATKIN_MAKE
+        // Get also the context
+        d_fall_pps::CMQuery contextCall;
+        contextCall.request.studentID = m_ID;
+
+        centralManagerDatabaseService.waitForExistence(ros::Duration(-1));
+
+        if(centralManagerDatabaseService.call(contextCall))
+        {
+            m_context = contextCall.response.crazyflieContext;
+            m_area = m_context.localArea;
+            ROS_INFO_STREAM("[CONTROLLER TABS GUI] AreaBounds:\n" << m_area);
+
+            //qstr_crazyflie_name.append(QString::fromStdString(m_context.crazyflieName));
+
+            //m_object_name_for_emitting_pose_data = QString::fromStdString(my_context.crazyflieName);
+
+        }
+        else
+        {
+            ROS_ERROR_STREAM("[CONTROLLER TABS GUI] Failed to load context for agentID = " << m_ID);
+        }
+        #endif
+
     }
     m_should_search_pose_data_for_object_name_mutex.unlock();
 }
@@ -239,6 +277,19 @@ void ControllerTabs::poseDataReceivedCallback(const d_fall_pps::ViconData& vicon
 
             if(pose_in_global_frame.crazyflieName == m_object_name_for_emitting_pose_data)
             {
+
+                // Convert it into the local frame
+                float originX = (m_area.xmin + m_area.xmax) / 2.0;
+                float originY = (m_area.ymin + m_area.ymax) / 2.0;
+                
+                pose_in_global_frame.x -= originX;
+                pose_in_global_frame.y -= originY;
+
+                // change Z origin to zero, i.e., to the table height, zero of global coordinates, instead of middle of the box
+                //float originZ = 0.0;
+                // float originZ = (area.zmin + area.zmax) / 2.0;
+                //pose_in_global_frame.z -= originZ;
+
                 emit measuredPoseValueChanged(
                         pose_in_global_frame.x,
                         pose_in_global_frame.y,
