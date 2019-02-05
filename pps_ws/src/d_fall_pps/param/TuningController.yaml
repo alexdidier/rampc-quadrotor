@@ -76,7 +76,7 @@ shouldDisplayDebugInfo : false
 #    -  Swaps between pitch set-points to test angle set-point response time
 #       i.e., this controller test the assumption that "the inner loop is infinitely fast"
 #
-controller_mode : 3
+controller_mode : 5
 
 
 # A flag for which estimator to use, defined as:

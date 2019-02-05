@@ -55,19 +55,49 @@
 #include "ros/ros.h"
 #include <ros/package.h>
 
-//the generated structs from the msg-files have to be included
+// Include the standard message types
+#include "std_msgs/Int32.h"
+#include "std_msgs/Float32.h"
+#include <std_msgs/String.h>
+
+// Include the DFALL message types
+#include "d_fall_pps/IntWithHeader.h"
+#include "d_fall_pps/FloatWithHeader.h"
+//#include "d_fall_pps/StringWithHeader.h"
+#include "d_fall_pps/SetpointWithHeader.h"
+//#include "d_fall_pps/CustomButtonWithHeader.h"
 #include "d_fall_pps/ViconData.h"
-#include "d_fall_pps/Setpoint.h"
+//#include "d_fall_pps/Setpoint.h"
 #include "d_fall_pps/ControlCommand.h"
 #include "d_fall_pps/Controller.h"
 #include "d_fall_pps/DebugMsg.h"
-#include "d_fall_pps/CustomButton.h"
-#include "d_fall_pps/ViconSubscribeObjectName.h"
 
-// Include the Parameter Service shared definitions
+// Include the DFALL service types
+#include "d_fall_pps/LoadYamlFromFilename.h"
+#include "d_fall_pps/GetSetpointService.h"
+
+// Include the shared definitions
 #include "nodes/Constants.h"
 
-#include <std_msgs/Int32.h>
+// Include other classes
+#include "classes/GetParamtersAndNamespaces.h"
+
+
+
+
+// //the generated structs from the msg-files have to be included
+// #include "d_fall_pps/ViconData.h"
+// #include "d_fall_pps/Setpoint.h"
+// #include "d_fall_pps/ControlCommand.h"
+// #include "d_fall_pps/Controller.h"
+// #include "d_fall_pps/DebugMsg.h"
+// #include "d_fall_pps/CustomButton.h"
+// #include "d_fall_pps/ViconSubscribeObjectName.h"
+
+// // Include the Parameter Service shared definitions
+// #include "nodes/Constants.h"
+
+// #include <std_msgs/Int32.h>
 
 
 
@@ -175,6 +205,16 @@ using namespace d_fall_pps;
 //    ----------------------------------------------------------------------------------
 
 
+
+
+float m_gain_P = 0.31;
+float m_gain_P_to_D_ratio = 0.6;
+
+
+
+
+
+
 // ******************************************************************************* //
 // VARIABLES SPECIFIC TO THE TUNING CONTROL FEATURE
 
@@ -259,7 +299,7 @@ float setpoint[4] = {0.0,0.0,0.4,0.0};
 
 
 // The controller type to run in the "calculateControlOutput" function
-int controller_mode = CONTROLLER_MODE_LQR_RATE;
+int controller_mode = CONTROLLER_MODE_LQR_ANGLE_RATE_NESTED;
 
 // The LQR Controller parameters for "CONTROLLER_MODE_LQR_RATE"
 std::vector<float> gainMatrixThrust_NineStateVector (9,0.0);
@@ -461,24 +501,45 @@ void convertIntoBodyFrame(float stateInertial[12], float (&stateBody)[12], float
 // CONVERSION FROM THRUST IN NEWTONS TO 16-BIT COMMAND
 float computeMotorPolyBackward(float thrust);
 
+
+
+
 // SETPOINT CHANGE CALLBACK
-void setpointCallback(const Setpoint& newSetpoint);
+//void setpointCallback(const Setpoint& newSetpoint);
+
+// REQUEST SETPOINT CHANGE CALLBACK
+void requestSetpointChangeCallback(const SetpointWithHeader& newSetpoint);
+
+// CHANGE SETPOINT FUNCTION
+void setNewSetpoint(float x, float y, float z, float yaw);
+
+// GET CURRENT SETPOINT SERVICE CALLBACK
+//bool getCurrentSetpointCallback(GetSetpointService::Request &request, GetSetpointService::Response &response);
+
+
+// REQUEST SETPOINT CHANGE CALLBACK
+void requestGainChangeCallback(const FloatWithHeader& newGain);
 
 
 
 // LOAD PARAMETERS
-float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name);
-void getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length);
-int getParameterInt(ros::NodeHandle& nodeHandle, std::string name);
-void getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val, int length);
-int getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val);
-bool getParameterBool(ros::NodeHandle& nodeHandle, std::string name);
-std::string getParameterString(ros::NodeHandle& nodeHandle, std::string name);
+// float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name);
+// void getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length);
+// int getParameterInt(ros::NodeHandle& nodeHandle, std::string name);
+// void getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val, int length);
+// int getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val);
+// bool getParameterBool(ros::NodeHandle& nodeHandle, std::string name);
+// std::string getParameterString(ros::NodeHandle& nodeHandle, std::string name);
 
-void yamlReadyForFetchCallback(const std_msgs::Int32& msg);
-void fetchYamlParameters(ros::NodeHandle& nodeHandle);
-void processFetchedParameters();
 
+
+//void yamlReadyForFetchCallback(const std_msgs::Int32& msg);
+//void fetchYamlParameters(ros::NodeHandle& nodeHandle);
+//void processFetchedParameters();
+
+
+void isReadyTuningControllerYamlCallback(const IntWithHeader & msg);
+void fetchTuningControllerYamlParameters(ros::NodeHandle& nodeHandle);
 
 
 // ******************************************************************************* //

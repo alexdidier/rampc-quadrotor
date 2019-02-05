@@ -848,7 +848,7 @@ int main(int argc, char* argv[]) {
 	//   <param name="agentID" value="$(optenv ROS_NAMESPACE)" />
 	//   This line of code adds a parameter named "agentID" to the
 	//   "PPSClient" node.
-	// > Thus, to get access to this "studentID" paremeter, we first
+	// > Thus, to get access to this "agentID" paremeter, we first
 	//   need to get a handle to the "PPSClient" node within which this
 	//   controller service is nested.
 

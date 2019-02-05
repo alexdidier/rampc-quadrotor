@@ -25,7 +25,7 @@
 //
 //
 //    DESCRIPTION:
-//    Place for students to implement their controller
+//    Allows for simple tuning of a P(I)D controller
 //
 //    ----------------------------------------------------------------------------------
 
@@ -914,12 +914,15 @@ void calculateControlOutput_viaLQRforAnglesRatesNested( float stateErrorBody[12]
 		for(int i = 0; i < 6; ++i)
 		{
 			// BODY FRAME Y CONTROLLER
-			lqr_angleRateNested_prev_rollAngle        -= gainMatrixRollAngle_50Hz[i] * stateErrorBody[i] * multiplier_horizontal;
+			//lqr_angleRateNested_prev_rollAngle        -= gainMatrixRollAngle_50Hz[i] * stateErrorBody[i] * multiplier_horizontal;
 			// BODY FRAME X CONTROLLER
-			lqr_angleRateNested_prev_pitchAngle       -= gainMatrixPitchAngle_50Hz[i] * stateErrorBody[i] * multiplier_horizontal;
+			//lqr_angleRateNested_prev_pitchAngle       -= gainMatrixPitchAngle_50Hz[i] * stateErrorBody[i] * multiplier_horizontal;
 			// > ALITUDE CONTROLLER (i.e., z-controller):
 			lqr_angleRateNested_prev_thrustAdjustment -= gainMatrixThrust_SixStateVector_50Hz[i] * stateErrorBody[i] * multiplier_vertical;
 		}
+
+		lqr_angleRateNested_prev_rollAngle  -= ( -1 * m_gain_P[i] * stateErrorBody[1] - m_gain_P * m_gain_P_to_D_ratio * stateErrorBody[4] );
+		lqr_angleRateNested_prev_pitchAngle -= (      m_gain_P[i] * stateErrorBody[0] + m_gain_P * m_gain_P_to_D_ratio * stateErrorBody[3] );
 
 		// BODY FRAME Z CONTROLLER
 		//lqr_angleRateNested_prev_yawAngle = setpoint[3];
@@ -1237,45 +1240,79 @@ float computeMotorPolyBackward(float thrust)
 //    ----------------------------------------------------------------------------------
 
 // This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-void setpointCallback(const Setpoint& newSetpoint)
+// void setpointCallback(const Setpoint& newSetpoint)
+// {
+//     setpoint[0] = newSetpoint.x;
+//     setpoint[1] = newSetpoint.y;
+//     setpoint[2] = newSetpoint.z;
+//     setpoint[3] = newSetpoint.yaw;
+// }
+
+
+
+
+// REQUEST SETPOINT CHANGE CALLBACK
+// This function does NOT need to be edited 
+void requestSetpointChangeCallback(const SetpointWithHeader& newSetpoint)
 {
-    setpoint[0] = newSetpoint.x;
-    setpoint[1] = newSetpoint.y;
-    setpoint[2] = newSetpoint.z;
-    setpoint[3] = newSetpoint.yaw;
+	// Check whether the message is relevant
+	bool isRevelant = checkMessageHeader( m_agentID , newSetpoint.shouldCheckForAgentID , newSetpoint.agentIDs );
+
+	// Continue if the message is relevant
+	if (isRevelant)
+	{
+		// Call the function for actually setting the setpoint
+		setNewSetpoint(
+				newSetpoint.x,
+				newSetpoint.y,
+				newSetpoint.z,
+				newSetpoint.yaw
+			);
+	}
+}
+
+
+// CHANGE SETPOINT FUNCTION
+// This function does NOT need to be edited 
+void setNewSetpoint(float x, float y, float z, float yaw)
+{
+	// Put the new setpoint into the class variable
+	setpoint[0] = x;
+	setpoint[1] = y;
+	setpoint[2] = z;
+	setpoint[3] = yaw;
+
+	// Publish the change so that the network is updated
+	// (mainly the "flying agent GUI" is interested in
+	// displaying this change to the user)
+
+	// // Instantiate a local variable of type "SetpointWithHeader"
+	// SetpointWithHeader msg;
+	// // Fill in the setpoint
+	// msg.x   = x;
+	// msg.y   = y;
+	// msg.z   = z;
+	// msg.yaw = yaw;
+	// // Publish the message
+	// m_setpointChangedPublisher.publish(msg);
 }
 
 
 
 
+// REQUEST SETPOINT CHANGE CALLBACK
+// This function does NOT need to be edited 
+void requestGainChangeCallback(const FloatWithHeader& newGain)
+{
+	// Check whether the message is relevant
+	bool isRevelant = checkMessageHeader( m_agentID , newGain.shouldCheckForAgentID , newGain.agentIDs );
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	// Continue if the message is relevant
+	if (isRevelant)
+	{
+		m_gain_P = newGain.data;
+	}
+}
 
 
 
@@ -1301,48 +1338,49 @@ void setpointCallback(const Setpoint& newSetpoint)
 //    ----------------------------------------------------------------------------------
 
 
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
+// LOADING OF YAML PARAMETERS
+// This function does NOT need to be edited 
+void isReadyTuningControllerYamlCallback(const IntWithHeader & msg)
 {
-	// Extract from the "msg" for which controller the and from where to fetch the YAML
-	// parameters
-	int controller_to_fetch_yaml = msg.data;
+	// Check whether the message is relevant
+	bool isRevelant = checkMessageHeader( m_agentID , msg.shouldCheckForID , msg.agentIDs );
 
-	// Switch between fetching for the different controllers and from different locations
-	switch(controller_to_fetch_yaml)
+	// Continue if the message is relevant
+	if (isRevelant)
 	{
-
-		// > FOR FETCHING FROM THE AGENT'S OWN PARAMETER SERVICE
-		case FETCH_YAML_TUNING_CONTROLLER_FROM_OWN_AGENT:
+		// Extract the data
+		int parameter_service_to_load_from = msg.data;
+		// Initialise a local variable for the namespace
+		std::string namespace_to_use;
+		// Load from the respective parameter service
+		switch(parameter_service_to_load_from)
 		{
-			// Let the user know that this message was received
-			ROS_INFO("[TUNING CONTROLLER] Received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from this agent.");
-			// Create a node handle to the parameter service running on this agent's machine
-			ros::NodeHandle nodeHandle_to_own_agent_parameter_service(namespace_to_own_agent_parameter_service);
-			// Call the function that fetches the parameters
-			fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
-			break;
-		}
+			// > FOR FETCHING FROM THE AGENT'S OWN PARAMETER SERVICE
+			case LOAD_YAML_FROM_AGENT:
+			{
+				ROS_INFO("[TUNING CONTROLLER] Now fetching the TuningController YAML parameter values from this agent.");
+				namespace_to_use = m_namespace_to_own_agent_parameter_service;
+				break;
+			}
+			// > FOR FETCHING FROM THE COORDINATOR'S PARAMETER SERVICE
+			case LOAD_YAML_FROM_COORDINATOR:
+			{
+				ROS_INFO("[TUNING CONTROLLER] Now fetching the TuningController YAML parameter values from this agent's coordinator.");
+				namespace_to_use = m_namespace_to_coordinator_parameter_service;
+				break;
+			}
 
-		// > FOR FETCHING FROM THE COORDINATOR'S PARAMETER SERVICE
-		case FETCH_YAML_TUNING_CONTROLLER_FROM_COORDINATOR:
-		{
-			// Let the user know that this message was received
-			ROS_INFO("[TUNING CONTROLLER] Received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from the coordinator.");
-			// Create a node handle to the parameter service running on the coordinator machine
-			ros::NodeHandle nodeHandle_to_coordinator_parameter_service(namespace_to_coordinator_parameter_service);
-			// Call the function that fetches the parameters
-			fetchYamlParameters(nodeHandle_to_coordinator_parameter_service);
-			break;
+			default:
+			{
+				ROS_ERROR("[TUNING CONTROLLER] Paramter service to load from was NOT recognised.");
+				namespace_to_use = m_namespace_to_own_agent_parameter_service;
+				break;
+			}
 		}
-
-		default:
-		{
-			// Let the user know that the command was not relevant
-			//ROS_INFO("The CustomControllerService received the message that YAML parameters were (re-)loaded");
-			//ROS_INFO("> However the parameters do not relate to this controller, hence nothing will be fetched.");
-			break;
-		}
+		// Create a node handle to the selected parameter service
+		ros::NodeHandle nodeHandle_to_use(namespace_to_use);
+		// Call the function that fetches the parameters
+		fetchTuningControllerYamlParameters(nodeHandle_to_use);
 	}
 }
 
@@ -1350,49 +1388,49 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
 // This function CAN BE edited for successful completion of the PPS exercise, and the
 // use of parameters fetched from the YAML file is highly recommended to make tuning of
 // your controller easier and quicker.
-void fetchYamlParameters(ros::NodeHandle& nodeHandle)
+void fetchTuningControllerYamlParameters(ros::NodeHandle& nodeHandle)
 {
 	// Here we load the parameters that are specified in the CustomController.yaml file
 
-	// Add the "CustomController" namespace to the "nodeHandle"
-	ros::NodeHandle nodeHandle_for_TuningController(nodeHandle, "TuningController");
+	// Add the "TuningController" namespace to the "nodeHandle"
+	ros::NodeHandle nodeHandle_for_paramaters(nodeHandle, "TuningController");
 
 
 	// ******************************************************************************* //
 	// PARAMETERS SPECIFIC TO THE TUNING CONTROL FEATURE
 
 	/// Setpoint for the HORIZONTAL test
-	getParameterFloatVector(nodeHandle_for_TuningController, "test_horizontal_setpoint1", test_horizontal_setpoint1, 4);
-	getParameterFloatVector(nodeHandle_for_TuningController, "test_horizontal_setpoint2", test_horizontal_setpoint2, 4);
+	getParameterFloatVector(nodeHandle_for_paramaters, "test_horizontal_setpoint1", test_horizontal_setpoint1, 4);
+	getParameterFloatVector(nodeHandle_for_paramaters, "test_horizontal_setpoint2", test_horizontal_setpoint2, 4);
 
 	// Setpoint for the VERTICAL test
-	getParameterFloatVector(nodeHandle_for_TuningController, "test_vertical_setpoint1", test_vertical_setpoint1, 4);
-	getParameterFloatVector(nodeHandle_for_TuningController, "test_vertical_setpoint2", test_vertical_setpoint2, 4);
+	getParameterFloatVector(nodeHandle_for_paramaters, "test_vertical_setpoint1", test_vertical_setpoint1, 4);
+	getParameterFloatVector(nodeHandle_for_paramaters, "test_vertical_setpoint2", test_vertical_setpoint2, 4);
 
 	// Setpoint for the HEADING test
-	getParameterFloatVector(nodeHandle_for_TuningController, "test_heading_setpoint1", test_heading_setpoint1, 4);
-	getParameterFloatVector(nodeHandle_for_TuningController, "test_heading_setpoint2", test_heading_setpoint2, 4);
+	getParameterFloatVector(nodeHandle_for_paramaters, "test_heading_setpoint1", test_heading_setpoint1, 4);
+	getParameterFloatVector(nodeHandle_for_paramaters, "test_heading_setpoint2", test_heading_setpoint2, 4);
 
 	// Setpoint for the ALL test
-	getParameterFloatVector(nodeHandle_for_TuningController, "test_all_setpoint1", test_all_setpoint1, 4);
-	getParameterFloatVector(nodeHandle_for_TuningController, "test_all_setpoint2", test_all_setpoint2, 4);
+	getParameterFloatVector(nodeHandle_for_paramaters, "test_all_setpoint1", test_all_setpoint1, 4);
+	getParameterFloatVector(nodeHandle_for_paramaters, "test_all_setpoint2", test_all_setpoint2, 4);
 
 	// Parameters for flying in a circle
-	test_circle_radius = getParameterFloat(nodeHandle_for_TuningController, "test_circle_radius");
-	test_circle_seconds_per_rev = getParameterFloat(nodeHandle_for_TuningController, "test_circle_seconds_per_rev");
-	test_circle_height = getParameterFloat(nodeHandle_for_TuningController, "test_circle_height");
-	test_circle_time_to_reach_start = getParameterFloat(nodeHandle_for_TuningController, "test_circle_time_to_reach_start");
-	test_circle_pirouette_per_rev = getParameterFloat(nodeHandle_for_TuningController, "test_circle_pirouette_per_rev");
+	test_circle_radius = getParameterFloat(nodeHandle_for_paramaters, "test_circle_radius");
+	test_circle_seconds_per_rev = getParameterFloat(nodeHandle_for_paramaters, "test_circle_seconds_per_rev");
+	test_circle_height = getParameterFloat(nodeHandle_for_paramaters, "test_circle_height");
+	test_circle_time_to_reach_start = getParameterFloat(nodeHandle_for_paramaters, "test_circle_time_to_reach_start");
+	test_circle_pirouette_per_rev = getParameterFloat(nodeHandle_for_paramaters, "test_circle_pirouette_per_rev");
 
 	// Multipliers for the HORIZONTAL contorller
-	multiplier_horizontal_min = getParameterFloat(nodeHandle_for_TuningController, "multiplier_horizontal_min");
-	multiplier_horizontal_max = getParameterFloat(nodeHandle_for_TuningController, "multiplier_horizontal_max");
+	multiplier_horizontal_min = getParameterFloat(nodeHandle_for_paramaters, "multiplier_horizontal_min");
+	multiplier_horizontal_max = getParameterFloat(nodeHandle_for_paramaters, "multiplier_horizontal_max");
 	// Multipliers for the VERTICAL contorller
-	multiplier_vertical_min = getParameterFloat(nodeHandle_for_TuningController, "multiplier_vertical_min");
-	multiplier_vertical_max = getParameterFloat(nodeHandle_for_TuningController, "multiplier_vertical_max");
+	multiplier_vertical_min = getParameterFloat(nodeHandle_for_paramaters, "multiplier_vertical_min");
+	multiplier_vertical_max = getParameterFloat(nodeHandle_for_paramaters, "multiplier_vertical_max");
 	// Multipliers for the HEADING contorller
-	multiplier_heading_min = getParameterFloat(nodeHandle_for_TuningController, "multiplier_heading_min");
-	multiplier_heading_max = getParameterFloat(nodeHandle_for_TuningController, "multiplier_heading_max");
+	multiplier_heading_min = getParameterFloat(nodeHandle_for_paramaters, "multiplier_heading_min");
+	multiplier_heading_max = getParameterFloat(nodeHandle_for_paramaters, "multiplier_heading_max");
 
 	// // DEBUGGING: Print out one of the parameters that was loaded
 	ROS_INFO_STREAM("[TUNING CONTROLLER] DEBUGGING: the fetched TuningController/multiplier_horizontal_min = " << multiplier_horizontal_min);
@@ -1402,76 +1440,76 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 
 
 	// > The mass of the crazyflie
-	cf_mass = getParameterFloat(nodeHandle_for_TuningController , "mass");
+	cf_mass = getParameterFloat(nodeHandle_for_paramaters , "mass");
 
 	// Display one of the YAML parameters to debug if it is working correctly
 	//ROS_INFO_STREAM("DEBUGGING: mass leaded from loacl file = " << cf_mass );
 
 	// > The frequency at which the "computeControlOutput" is being called, as determined
 	//   by the frequency at which the Vicon system provides position and attitude data
-	vicon_frequency = getParameterFloat(nodeHandle_for_TuningController, "vicon_frequency");
+	vicon_frequency = getParameterFloat(nodeHandle_for_paramaters, "vicon_frequency");
 
 	// > The frequency at which the "computeControlOutput" is being called, as determined
 	//   by the frequency at which the Vicon system provides position and attitude data
-	control_frequency = getParameterFloat(nodeHandle_for_TuningController, "control_frequency");
+	control_frequency = getParameterFloat(nodeHandle_for_paramaters, "control_frequency");
 
 	// > The co-efficients of the quadratic conversation from 16-bit motor command to
 	//   thrust force in Newtons
-	getParameterFloatVector(nodeHandle_for_TuningController, "motorPoly", motorPoly, 3);
+	getParameterFloatVector(nodeHandle_for_paramaters, "motorPoly", motorPoly, 3);
 
 	// > The boolean for whether to execute the convert into body frame function
-	shouldPerformConvertIntoBodyFrame = getParameterBool(nodeHandle_for_TuningController, "shouldPerformConvertIntoBodyFrame");
+	shouldPerformConvertIntoBodyFrame = getParameterBool(nodeHandle_for_paramaters, "shouldPerformConvertIntoBodyFrame");
 
 	// Boolean indiciating whether the "Debug Message" of this agent should be published or not
-	shouldPublishDebugMessage = getParameterBool(nodeHandle_for_TuningController, "shouldPublishDebugMessage");
+	shouldPublishDebugMessage = getParameterBool(nodeHandle_for_paramaters, "shouldPublishDebugMessage");
 
 	// Boolean indiciating whether the debugging ROS_INFO_STREAM should be displayed or not
-	shouldDisplayDebugInfo = getParameterBool(nodeHandle_for_TuningController, "shouldDisplayDebugInfo");
+	shouldDisplayDebugInfo = getParameterBool(nodeHandle_for_paramaters, "shouldDisplayDebugInfo");
 
 
 	// THE CONTROLLER GAINS:
 
 	// A flag for which controller to use:
-	controller_mode = getParameterInt( nodeHandle_for_TuningController , "controller_mode" );
+	controller_mode = getParameterInt( nodeHandle_for_paramaters , "controller_mode" );
 
 	// A flag for which estimator to use:
-	estimator_method = getParameterInt( nodeHandle_for_TuningController , "estimator_method" );
+	estimator_method = getParameterInt( nodeHandle_for_paramaters , "estimator_method" );
 
 	// The LQR Controller parameters for "LQR_MODE_RATE"
-	getParameterFloatVector(nodeHandle_for_TuningController, "gainMatrixThrust_NineStateVector", gainMatrixThrust_NineStateVector, 9);
-	getParameterFloatVector(nodeHandle_for_TuningController, "gainMatrixRollRate",               gainMatrixRollRate,               9);
-	getParameterFloatVector(nodeHandle_for_TuningController, "gainMatrixPitchRate",              gainMatrixPitchRate,              9);
-	getParameterFloatVector(nodeHandle_for_TuningController, "gainMatrixYawRate",                gainMatrixYawRate,                9);
+	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixThrust_NineStateVector", gainMatrixThrust_NineStateVector, 9);
+	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixRollRate",               gainMatrixRollRate,               9);
+	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixPitchRate",              gainMatrixPitchRate,              9);
+	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixYawRate",                gainMatrixYawRate,                9);
 	
 	// The LQR Controller parameters for "LQR_MODE_ANGLE"
-	getParameterFloatVector(nodeHandle_for_TuningController, "gainMatrixThrust_SixStateVector",  gainMatrixThrust_SixStateVector,  6);
-	getParameterFloatVector(nodeHandle_for_TuningController, "gainMatrixRollAngle",              gainMatrixRollAngle,              6);
-	getParameterFloatVector(nodeHandle_for_TuningController, "gainMatrixPitchAngle",             gainMatrixPitchAngle,             6);
+	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixThrust_SixStateVector",  gainMatrixThrust_SixStateVector,  6);
+	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixRollAngle",              gainMatrixRollAngle,              6);
+	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixPitchAngle",             gainMatrixPitchAngle,             6);
 	
 	// The LQR Controller parameters for "LQR_MODE_ANGLE_RATE_NESTED"
-	getParameterFloatVector(nodeHandle_for_TuningController, "gainMatrixThrust_SixStateVector_50Hz",  gainMatrixThrust_SixStateVector_50Hz,  6);
-	getParameterFloatVector(nodeHandle_for_TuningController, "gainMatrixRollAngle_50Hz",              gainMatrixRollAngle_50Hz,              6);
-	getParameterFloatVector(nodeHandle_for_TuningController, "gainMatrixPitchAngle_50Hz",             gainMatrixPitchAngle_50Hz,             6);
+	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixThrust_SixStateVector_50Hz",  gainMatrixThrust_SixStateVector_50Hz,  6);
+	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixRollAngle_50Hz",              gainMatrixRollAngle_50Hz,              6);
+	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixPitchAngle_50Hz",             gainMatrixPitchAngle_50Hz,             6);
 
-	getParameterFloatVector(nodeHandle_for_TuningController, "gainMatrixRollRate_Nested",             gainMatrixRollRate_Nested,             3);
-	getParameterFloatVector(nodeHandle_for_TuningController, "gainMatrixPitchRate_Nested",            gainMatrixPitchRate_Nested,            3);
-	getParameterFloatVector(nodeHandle_for_TuningController, "gainMatrixYawRate_Nested",              gainMatrixYawRate_Nested,              3);
+	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixRollRate_Nested",             gainMatrixRollRate_Nested,             3);
+	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixPitchRate_Nested",            gainMatrixPitchRate_Nested,            3);
+	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixYawRate_Nested",              gainMatrixYawRate_Nested,              3);
 
 	
 	// 16-BIT COMMAND LIMITS
-	cmd_sixteenbit_min = getParameterFloat(nodeHandle_for_TuningController, "command_sixteenbit_min");
-	cmd_sixteenbit_max = getParameterFloat(nodeHandle_for_TuningController, "command_sixteenbit_max");
+	cmd_sixteenbit_min = getParameterFloat(nodeHandle_for_paramaters, "command_sixteenbit_min");
+	cmd_sixteenbit_max = getParameterFloat(nodeHandle_for_paramaters, "command_sixteenbit_max");
 
 
 	// THE POINT MASS KALMAN FILTER (PMKF) GAINS AND ERROR EVOLUATION
 	// > For the (x,y,z) position
-	getParameterFloatVector(nodeHandle_for_TuningController, "PMKF_Ahat_row1_for_positions",  PMKF_Ahat_row1_for_positions,  2);
-	getParameterFloatVector(nodeHandle_for_TuningController, "PMKF_Ahat_row2_for_positions",  PMKF_Ahat_row2_for_positions,  2);
-	getParameterFloatVector(nodeHandle_for_TuningController, "PMKF_Kinf_for_positions"     ,  PMKF_Kinf_for_positions     ,  2);
+	getParameterFloatVector(nodeHandle_for_paramaters, "PMKF_Ahat_row1_for_positions",  PMKF_Ahat_row1_for_positions,  2);
+	getParameterFloatVector(nodeHandle_for_paramaters, "PMKF_Ahat_row2_for_positions",  PMKF_Ahat_row2_for_positions,  2);
+	getParameterFloatVector(nodeHandle_for_paramaters, "PMKF_Kinf_for_positions"     ,  PMKF_Kinf_for_positions     ,  2);
 	// > For the (roll,pitch,yaw) angles
-	getParameterFloatVector(nodeHandle_for_TuningController, "PMKF_Ahat_row1_for_angles",  PMKF_Ahat_row1_for_angles,  2);
-	getParameterFloatVector(nodeHandle_for_TuningController, "PMKF_Ahat_row2_for_angles",  PMKF_Ahat_row2_for_angles,  2);
-	getParameterFloatVector(nodeHandle_for_TuningController, "PMKF_Kinf_for_angles"     ,  PMKF_Kinf_for_angles     ,  2);
+	getParameterFloatVector(nodeHandle_for_paramaters, "PMKF_Ahat_row1_for_angles",  PMKF_Ahat_row1_for_angles,  2);
+	getParameterFloatVector(nodeHandle_for_paramaters, "PMKF_Ahat_row2_for_angles",  PMKF_Ahat_row2_for_angles,  2);
+	getParameterFloatVector(nodeHandle_for_paramaters, "PMKF_Kinf_for_angles"     ,  PMKF_Kinf_for_angles     ,  2);
 
 
 	// DEBUGGING: Print out one of the parameters that was loaded
@@ -1480,15 +1518,8 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 
 	// Call the function that computes details an values that are needed from these
 	// parameters loaded above
-	processFetchedParameters();
-}
+	//processFetchedParameters();
 
-
-// This function CAN BE edited for successful completion of the PPS exercise, and the
-// use of parameters loaded from the YAML file is highly recommended to make tuning of
-// your controller easier and quicker.
-void processFetchedParameters()
-{
 	// Compute the feed-forward force that we need to counteract gravity (i.e., mg)
 	// > in units of [Newtons]
 	gravity_force         = cf_mass * 9.81/(1000);
@@ -1503,82 +1534,6 @@ void processFetchedParameters()
 
 
 
-//    ----------------------------------------------------------------------------------
-//     GGGG  EEEEE  TTTTT  PPPP     A    RRRR     A    M   M   ( )
-//    G      E        T    P   P   A A   R   R   A A   MM MM  (   )
-//    G      EEE      T    PPPP   A   A  RRRR   A   A  M M M  (   )
-//    G   G  E        T    P      AAAAA  R  R   AAAAA  M   M  (   )
-//     GGGG  EEEEE    T    P      A   A  R   R  A   A  M   M   ( )
-//    ----------------------------------------------------------------------------------
-
-
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name)
-{
-    float val;
-    if(!nodeHandle.getParam(name, val))
-    {
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    return val;
-}
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-void getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length)
-{
-    if(!nodeHandle.getParam(name, val)){
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    if(val.size() != length) {
-        ROS_ERROR_STREAM("parameter '" << name << "' has wrong array length, " << length << " needed");
-    }
-}
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-int getParameterInt(ros::NodeHandle& nodeHandle, std::string name)
-{
-    int val;
-    if(!nodeHandle.getParam(name, val))
-    {
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    return val;
-}
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-void getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val, int length)
-{
-    if(!nodeHandle.getParam(name, val)){
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    if(val.size() != length) {
-        ROS_ERROR_STREAM("parameter '" << name << "' has wrong array length, " << length << " needed");
-    }
-}
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-int getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val)
-{
-    if(!nodeHandle.getParam(name, val)){
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    return val.size();
-}
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-bool getParameterBool(ros::NodeHandle& nodeHandle, std::string name)
-{
-    bool val;
-    if(!nodeHandle.getParam(name, val))
-    {
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    return val;
-}
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
-std::string getParameterString(ros::NodeHandle& nodeHandle, std::string name)
-{
-	std::string val;
-	if(!nodeHandle.getParam(name, val)){
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    return val;
-}    
 
 
 
@@ -1598,117 +1553,188 @@ int main(int argc, char* argv[]) {
     // Starting the ROS-node
     ros::init(argc, argv, "TuningControllerService");
 
-    // Create a "ros::NodeHandle" type local variable "nodeHandle" as the current node,
-    // the "~" indcates that "self" is the node handle assigned to this variable.
-    ros::NodeHandle nodeHandle("~");
+    // Create a "ros::NodeHandle" type local variable "nodeHandle"
+	// as the current node, the "~" indcates that "self" is the
+	// node handle assigned to this variable.
+	ros::NodeHandle nodeHandle("~");
 
-    // Get the namespace of this "StudentControllerService" node
-    // > This should be something like: "/dfall/agentXXX"
-    std::string m_namespace = ros::this_node::getNamespace();
-    ROS_INFO_STREAM("[TUNING CONTROLLER] ros::this_node::getNamespace() =  " << m_namespace);
+    // AGENT ID AND COORDINATOR ID
 
-    // Get the agent ID as the "ROS_NAMESPACE" this computer.
-    // NOTES:
-    // > If you look at the "Student.launch" file in the "launch" folder, you will see
-    //   the following line of code:
-    //   <param name="studentID" value="$(optenv ROS_NAMESPACE)" />
-    //   This line of code adds a parameter named "studentID" to the "PPSClient"
-    // > Thus, to get access to this "studentID" paremeter, we first need to get a handle
-    //   to the "PPSClient" node within which this controller service is nested.
-    // Get the handle to the "PPSClient" node
-    ros::NodeHandle PPSClient_nodeHandle(m_namespace + "/PPSClient");
-    // Get the value of the "studentID" parameter into the instance variable "my_agentID"
-    if(!PPSClient_nodeHandle.getParam("agentID", my_agentID))
-    {
-    	// Throw an error if the student ID parameter could not be obtained
-		ROS_ERROR("[TUNING CONTROLLER] Failed to get agentID from PPSClient");
+	// NOTES:
+	// > If you look at the "Agent.launch" file in the "launch" folder,
+	//   you will see the following line of code:
+	//   <param name="agentID" value="$(optenv ROS_NAMESPACE)" />
+	//   This line of code adds a parameter named "agentID" to the
+	//   "PPSClient" node.
+	// > Thus, to get access to this "agentID" paremeter, we first
+	//   need to get a handle to the "PPSClient" node within which this
+	//   controller service is nested.
+
+
+	// Get the ID of the agent and its coordinator
+	bool isValid_IDs = getAgentIDandCoordIDfromClientNode( m_namespace + "/PPSClient" , &m_agentID , &m_coordID);
+
+	// Stall the node IDs are not valid
+	if ( !isValid_IDs )
+	{
+		ROS_ERROR("[TUNING CONTROLLER] Node NOT FUNCTIONING :-)");
+		ros::spin();
+	}
+	else
+	{
+		ROS_INFO_STREAM("[TUNING CONTROLLER] loaded agentID = " << m_agentID << ", and coordID = " << m_coordID);
 	}
 
 
-	// *********************************************************************************
-	// EVERYTHING THAT RELATES TO FETCHING PARAMETERS FROM A YAML FILE
+	
 
+	// PARAMETER SERVICE NAMESPACE AND NODEHANDLES:
 
-	// EVERYTHING FOR THE CONNECTION TO THIS AGENT's OWN PARAMETER SERVICE:
+	// NOTES:
+	// > The parameters that are specified thorugh the *.yaml files
+	//   are managed by a separate node called the "Parameter Service"
+	// > A separate node is used for reasons of speed and generality
+	// > To allow for a distirbuted architecture, there are two
+	//   "ParamterService" nodes that are relevant:
+	//   1) the one that is nested under the "m_agentID" namespace
+	//   2) the one that is nested under the "m_coordID" namespace
+	// > The following lines of code create the namespace (as strings)
+	//   to there two relevant "ParameterService" nodes.
+	// > The node handles are also created because they are needed
+	//   for the ROS Subscriptions that follow.
 
-	// Set the class variable "namespace_to_own_agent_parameter_service" to be a the
-    // namespace string for the parameter service that is running on the machine of this
-    // agent
-    namespace_to_own_agent_parameter_service = m_namespace + "/ParameterService";
+	// Set the class variable "m_namespace_to_own_agent_parameter_service",
+	// i.e., the namespace of parameter service for this agent
+	m_namespace_to_own_agent_parameter_service = m_namespace + "/ParameterService";
 
-    // Create a node handle to the parameter service running on this agent's machine
-    ros::NodeHandle nodeHandle_to_own_agent_parameter_service(namespace_to_own_agent_parameter_service);
+	// Set the class variable "m_namespace_to_coordinator_parameter_service",
+	// i.e., the namespace of parameter service for this agent's coordinator
+	constructNamespaceForCoordinatorParameterService( m_coordID, m_namespace_to_coordinator_parameter_service );
 
-    // Instantiate the local variable "controllerYamlReadyForFetchSubscriber" to be a
-    // "ros::Subscriber" type variable that subscribes to the "controllerYamlReadyForFetch" topic
-    // and calls the class function "yamlReadyForFetchCallback" each time a message is
-    // received on this topic and the message is passed as an input argument to the
-    // "yamlReadyForFetchCallback" class function.
-    ros::Subscriber controllerYamlReadyForFetchSubscriber_to_agent = nodeHandle_to_own_agent_parameter_service.subscribe("controllerYamlReadyForFetch", 1, yamlReadyForFetchCallback);
+	// Inform the user of what namespaces are being used
+	ROS_INFO_STREAM("[TUNING CONTROLLER] m_namespace_to_own_agent_parameter_service    =  " << m_namespace_to_own_agent_parameter_service);
+	ROS_INFO_STREAM("[TUNING CONTROLLER] m_namespace_to_coordinator_parameter_service  =  " << m_namespace_to_coordinator_parameter_service);
 
-
-    // EVERYTHING FOR THE CONNECTION THE COORDINATOR'S PARAMETER SERVICE:
-
-    // Set the class variable "nodeHandle_to_coordinator_parameter_service" to be a node handle
-    // for the parameter service that is running on the coordinate machine
-    // NOTE: the backslash here (i.e., "/") before the name of the node ("ParameterService")
-    //       is very important because it specifies that the name is global
-    namespace_to_coordinator_parameter_service = "/ParameterService";
-
-    // Create a node handle to the parameter service running on the coordinator machine
-    ros::NodeHandle nodeHandle_to_coordinator = ros::NodeHandle();
-    //ros::NodeHandle nodeHandle_to_coordinator_parameter_service = ros::NodeHandle(namespace_to_own_agent_parameter_service);
-    
-
-    // Instantiate the local variable "controllerYamlReadyForFetchSubscriber" to be a
-    // "ros::Subscriber" type variable that subscribes to the "controllerYamlReadyForFetch" topic
-    // and calls the class function "yamlReadyForFetchCallback" each time a message is
-    // received on this topic and the message is passed as an input argument to the
-    // "yamlReadyForFetchCallback" class function.
-    ros::Subscriber controllerYamlReadyForFetchSubscriber_to_coordinator = nodeHandle_to_coordinator.subscribe("/ParameterService/controllerYamlReadyForFetch", 1, yamlReadyForFetchCallback);
-    //ros::Subscriber controllerYamlReadyForFetchSubscriber_to_coordinator = nodeHandle_to_coordinator_parameter_service.subscribe("controllerYamlReadyForFetch", 1, yamlReadyForFetchCallback);
-
-
-    // PRINT OUT SOME INFORMATION
-
-    // Let the user know what namespaces are being used for linking to the parameter service
-    ROS_INFO_STREAM("[TUNING CONTROLLER] The namespace string for accessing the Paramter Services are:");
-    ROS_INFO_STREAM("[TUNING CONTROLLER] namespace_to_own_agent_parameter_service    =  " << namespace_to_own_agent_parameter_service);
-    ROS_INFO_STREAM("[TUNING CONTROLLER] namespace_to_coordinator_parameter_service  =  " << namespace_to_coordinator_parameter_service);
-
-
-    // FINALLY, FETCH ANY PARAMETERS REQUIRED FROM THESE "PARAMETER SERVICES"
-
-	// Call the class function that loads the parameters for this class.
-    fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
-
-    // *********************************************************************************
+	// Create, as local variables, node handles to the parameters services
+	ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
+	ros::NodeHandle nodeHandle_to_coordinator_parameter_service(m_namespace_to_coordinator_parameter_service);
 
 
 
-    // Subscribe to the message that activates the tests
-	ros::Subscriber tuningActivateTestSubscriber = nodeHandle.subscribe("ActivateTest", 1, activateTestCallback);
+	// SUBSCRIBE TO "YAML PARAMTERS READY" MESSAGES
 
-	// Subscribe to the message that changes the gains
-	ros::Subscriber tuningHorizontalGainSubscriber = nodeHandle.subscribe("HorizontalGain", 1, horizontalGainCallback);
-	ros::Subscriber tuningVerticalGainSubscriber   = nodeHandle.subscribe("VerticalGain",   1, verticalGainCallback);
-	ros::Subscriber tuningHeadingGainSubscriber    = nodeHandle.subscribe("HeadingGain",    1, headingGainCallback);
-
+	// The parameter service publishes messages with names of the form:
+	// /dfall/.../ParameterService/<filename with .yaml extension>
+	ros::Subscriber safeContoller_yamlReady_fromAgent = nodeHandle_to_own_agent_parameter_service.subscribe(  "TuningController", 1, isReadyTuningControllerYamlCallback);
+	ros::Subscriber safeContoller_yamlReady_fromCoord = nodeHandle_to_coordinator_parameter_service.subscribe("TuningController", 1, isReadyTuningControllerYamlCallback);
 
 
-    // Instantiate the instance variable "debugPublisher" to be a "ros::Publisher" that
-    // advertises under the name "DebugTopic" and is a message with the structure
-    // defined in the file "DebugMsg.msg" (located in the "msg" folder).
-    debugPublisher = nodeHandle.advertise<DebugMsg>("DebugTopic", 1);
 
-    // Instantiate the local variable "setpointSubscriber" to be a "ros::Subscriber"
-    // type variable that subscribes to the "Setpoint" topic and calls the class function
-    // "setpointCallback" each time a messaged is received on this topic and the message
-    // is passed as an input argument to the "setpointCallback" class function.
-    //ros::Subscriber setpointSubscriber = nodeHandle.subscribe("Setpoint", 1, setpointCallback);
+	// GIVE YAML VARIABLES AN INITIAL VALUE
+	// This can be done either here or as part of declaring the
+	// variables in the header file
+
+	// // > the mass of the crazyflie, in [grams]
+	// yaml_cf_mass_in_grams = 25.0;
+	// // > the coefficients of the 16-bit command to thrust conversion
+	// yaml_motorPoly[0] = 5.484560e-4;
+	// yaml_motorPoly[1] = 1.032633e-6;
+	// yaml_motorPoly[2] = 2.130295e-11;
+	// // > the frequency at which the controller is running
+	// yaml_control_frequency = 200.0;
+	// // > the default setpoint, the ordering is (x,y,z,yaw),
+	// //   with units [meters,meters,meters,radians]
+	// yaml_default_setpoint[0] = 0.0;
+	// yaml_default_setpoint[1] = 0.0;
+	// yaml_default_setpoint[2] = 0.4;
+	// yaml_default_setpoint[3] = 0.0;
+
+
+	// FETCH ANY PARAMETERS REQUIRED FROM THE "PARAMETER SERVICES"
+
+	// The yaml files for the controllers are not added to
+	// "Parameter Service" as part of launching.
+	// The process for loading the yaml parameters is to send a
+	// service call containing the filename of the *.yaml file,
+	// and then a message will be received on the above subscribers
+	// when the paramters are ready.
+	// > NOTE IMPORTANTLY that by using a serice client
+	//   we stall the availability of this node until the
+	//   paramter service is ready
+
+	// Create the service client as a local variable
+	ros::ServiceClient requestLoadYamlFilenameServiceClient = nodeHandle_to_own_agent_parameter_service.serviceClient<LoadYamlFromFilename>("requestLoadYamlFilename", false);
+	// Create the service call as a local variable
+	LoadYamlFromFilename loadYamlFromFilenameCall;
+	// Specify the Yaml filename as a string
+	loadYamlFromFilenameCall.request.stringWithHeader.data = "TuningController";
+	// Set for whom this applies to
+	loadYamlFromFilenameCall.request.stringWithHeader.shouldCheckForID = false;
+	// Wait until the serivce exists
+	requestLoadYamlFilenameServiceClient.waitForExistence(ros::Duration(-1));
+	// Make the service call
+	if(requestLoadYamlFilenameServiceClient.call(loadYamlFromFilenameCall))
+	{
+		// Nothing to do in this case.
+		// The "isReadyTuningControllerYamlCallback" function
+		// will be called once the YAML file is loaded
+	}
+	else
+	{
+		// Inform the user
+		ROS_ERROR("[TUNING CONTROLLER] The request load yaml file service call failed.");
+	}
+
+
+
+
+
+
+
+
+	// // Subscribe to the message that activates the tests
+	// ros::Subscriber tuningActivateTestSubscriber = nodeHandle.subscribe("ActivateTest", 1, activateTestCallback);
+
+	// // Subscribe to the message that changes the gains
+	// ros::Subscriber tuningHorizontalGainSubscriber = nodeHandle.subscribe("HorizontalGain", 1, horizontalGainCallback);
+	// ros::Subscriber tuningVerticalGainSubscriber   = nodeHandle.subscribe("VerticalGain",   1, verticalGainCallback);
+	// ros::Subscriber tuningHeadingGainSubscriber    = nodeHandle.subscribe("HeadingGain",    1, headingGainCallback);
+
+
+
+
+
+
+    // Instantiate the class variable "m_debugPublisher" to be a
+    // "ros::Publisher". This variable advertises under the name
+    // "DebugTopic" and is a message with the structure defined
+    //  in the file "DebugMsg.msg" (located in the "msg" folder).
+    m_debugPublisher = nodeHandle.advertise<DebugMsg>("DebugTopic", 1);
+
+    // Instantiate the local variable "requestSetpointChangeSubscriber"
+	// to be a "ros::Subscriber" type variable that subscribes to the
+	// "RequestSetpointChange" topic and calls the class function
+	// "requestSetpointChangeCallback" each time a messaged is received
+	// on this topic and the message is passed as an input argument to
+	// the callback function. This subscriber will mainly receive
+	// messages from the "flying agent GUI" when the setpoint is changed
+	// by the user.
+	ros::Subscriber requestSetpointChangeSubscriber = nodeHandle.subscribe("RequestSetpointChange", 1, requestSetpointChangeCallback);
+
+	// Same again but instead for changes requested by the coordinator.
+	// For this we need to first create a node handle to the coordinator:
+	std::string namespace_to_coordinator;
+	constructNamespaceForCoordinator( m_coordID, namespace_to_coordinator );
+	ros::NodeHandle nodeHandle_to_coordinator(namespace_to_coordinator);
+	// And now we can instantiate the subscriber:
+	ros::Subscriber requestSetpointChangeSubscriber_from_coord = nodeHandle_to_coordinator.subscribe("TuningControllerService/RequestSetpointChange", 1, requestSetpointChangeCallback);
+
+
+
+
 
     // Instantiate the local variable "service" to be a "ros::ServiceServer" type
-    // variable that advertises the service called "CustomController". This service has
+    // variable that advertises the service called "TuningController". This service has
     // the input-output behaviour defined in the "Controller.srv" file (located in the
     // "srv" folder). This service, when called, is provided with the most recent
     // measurement of the Crazyflie and is expected to respond with the control action
@@ -1717,11 +1743,15 @@ int main(int argc, char* argv[]) {
     // of this service the "calculateControlOutput" function is called.
     ros::ServiceServer service = nodeHandle.advertiseService("TuningController", calculateControlOutput);
 
+
+
     // Create a "ros::NodeHandle" type local variable "namespace_nodeHandle" that points
     // to the name space of this node, i.e., "d_fall_pps" as specified by the line:
     //     "using namespace d_fall_pps;"
     // in the "DEFINES" section at the top of this file.
-    ros::NodeHandle namespace_nodeHandle(ros::this_node::getNamespace());
+    //ros::NodeHandle namespace_nodeHandle(ros::this_node::getNamespace());
+
+
 
     // Print out some information to the user.
     ROS_INFO("[TUNING CONTROLLER] Service ready :-)");
