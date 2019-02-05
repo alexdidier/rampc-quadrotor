@@ -136,6 +136,7 @@ set(SRC_HDRS_QOBJECT_FLYING_AGENT_GUI
   ${FLYING_AGENT_GUI_LIB_PATH_INC}/safecontrollertab.h
   ${FLYING_AGENT_GUI_LIB_PATH_INC}/studentcontrollertab.h
   ${FLYING_AGENT_GUI_LIB_PATH_INC}/topbanner.h
+  ${FLYING_AGENT_GUI_LIB_PATH_INC}/tuningcontrollertab.h
   )
 # Flying Agent GUI -- wrap UI file and QOBJECT files
 qt5_wrap_ui(UIS_HDRS_FLYING_AGENT_GUI
@@ -150,6 +151,7 @@ qt5_wrap_ui(UIS_HDRS_FLYING_AGENT_GUI
   ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/safecontrollertab.ui
   ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/studentcontrollertab.ui
   ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/topbanner.ui
+  ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/tuningcontrollertab.ui
   )
 qt5_wrap_cpp(SRC_MOC_HDRS_FLYING_AGENT_GUI ${SRC_HDRS_QOBJECT_FLYING_AGENT_GUI})
 # Flying Agent GUI -- wrap resource file qrc->rcc
@@ -392,6 +394,7 @@ set(MY_CPP_SOURCES_FLYING_AGENT_GUI         # compilation of sources
     ${FLYING_AGENT_GUI_LIB_PATH_SRC}/safecontrollertab.cpp
     ${FLYING_AGENT_GUI_LIB_PATH_SRC}/studentcontrollertab.cpp
     ${FLYING_AGENT_GUI_LIB_PATH_SRC}/topbanner.cpp
+    ${FLYING_AGENT_GUI_LIB_PATH_SRC}/tuningcontrollertab.cpp
     )
 
 

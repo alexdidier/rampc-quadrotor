@@ -914,15 +914,15 @@ void calculateControlOutput_viaLQRforAnglesRatesNested( float stateErrorBody[12]
 		for(int i = 0; i < 6; ++i)
 		{
 			// BODY FRAME Y CONTROLLER
-			//lqr_angleRateNested_prev_rollAngle        -= gainMatrixRollAngle_50Hz[i] * stateErrorBody[i] * multiplier_horizontal;
+			lqr_angleRateNested_prev_rollAngle        -= gainMatrixRollAngle_50Hz[i] * stateErrorBody[i] * multiplier_horizontal;
 			// BODY FRAME X CONTROLLER
 			//lqr_angleRateNested_prev_pitchAngle       -= gainMatrixPitchAngle_50Hz[i] * stateErrorBody[i] * multiplier_horizontal;
 			// > ALITUDE CONTROLLER (i.e., z-controller):
 			lqr_angleRateNested_prev_thrustAdjustment -= gainMatrixThrust_SixStateVector_50Hz[i] * stateErrorBody[i] * multiplier_vertical;
 		}
 
-		lqr_angleRateNested_prev_rollAngle  -= ( -1 * m_gain_P[i] * stateErrorBody[1] - m_gain_P * m_gain_P_to_D_ratio * stateErrorBody[4] );
-		lqr_angleRateNested_prev_pitchAngle -= (      m_gain_P[i] * stateErrorBody[0] + m_gain_P * m_gain_P_to_D_ratio * stateErrorBody[3] );
+		//lqr_angleRateNested_prev_rollAngle  -= ( -1 * m_gain_P * stateErrorBody[1] - m_gain_P * m_gain_P_to_D_ratio * stateErrorBody[4] );
+		lqr_angleRateNested_prev_pitchAngle -= (      m_gain_P * stateErrorBody[0] + m_gain_P * m_gain_P_to_D_ratio * stateErrorBody[3] );
 
 		// BODY FRAME Z CONTROLLER
 		//lqr_angleRateNested_prev_yawAngle = setpoint[3];
@@ -962,6 +962,17 @@ void calculateControlOutput_viaLQRforAnglesRatesNested( float stateErrorBody[12]
 	}
 
 
+
+	float thrustAdjustment_200Hz = 0.0;
+	// Perform the "-Kx" LQR computation for the rates and thrust:
+	for(int i = 0; i < 9; ++i)
+	{
+		// > ALITUDE CONTROLLER (i.e., z-controller):
+		thrustAdjustment_200Hz  -= gainMatrixThrust_NineStateVector[i] * stateErrorBody[i] * multiplier_vertical;
+	}
+
+
+
 	// UPDATE THE "RETURN" THE VARIABLE NAMED "response"
 
 	// Put the computed rates and thrust into the "response" variable
@@ -973,7 +984,7 @@ void calculateControlOutput_viaLQRforAnglesRatesNested( float stateErrorBody[12]
 	// > NOTE: remember that the thrust is commanded per motor, so you sohuld
 	//         consider whether the "thrustAdjustment" computed by your
 	//         controller needed to be divided by 4 or not.
-	float thrustAdjustment = lqr_angleRateNested_prev_thrustAdjustment / 4.0;
+	float thrustAdjustment = thrustAdjustment_200Hz / 4.0;
 	// > NOTE: the "gravity_force_quarter" value was already divided by 4 when
 	//         it was loaded/processes from the .yaml file.
 	response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrustAdjustment + gravity_force_quarter);
@@ -1049,7 +1060,7 @@ void construct_and_publish_debug_message(Controller::Request &request, Controlle
 	// debugMsg.value_10 = your_variable_name;
 
 	// Publish the "debugMsg"
-	debugPublisher.publish(debugMsg);
+	m_debugPublisher.publish(debugMsg);
 }
 
 
@@ -1305,12 +1316,14 @@ void setNewSetpoint(float x, float y, float z, float yaw)
 void requestGainChangeCallback(const FloatWithHeader& newGain)
 {
 	// Check whether the message is relevant
-	bool isRevelant = checkMessageHeader( m_agentID , newGain.shouldCheckForAgentID , newGain.agentIDs );
+	bool isRevelant = checkMessageHeader( m_agentID , newGain.shouldCheckForID , newGain.agentIDs );
 
 	// Continue if the message is relevant
 	if (isRevelant)
 	{
 		m_gain_P = newGain.data;
+
+		ROS_INFO_STREAM("[TUNING CONTROLLER] proportional gain changed to " << m_gain_P );
 	}
 }
 
@@ -1558,6 +1571,10 @@ int main(int argc, char* argv[]) {
 	// node handle assigned to this variable.
 	ros::NodeHandle nodeHandle("~");
 
+	// Get the namespace of this "TuningControllerService" node
+	std::string m_namespace = ros::this_node::getNamespace();
+	ROS_INFO_STREAM("[TUNING CONTROLLER] ros::this_node::getNamespace() =  " << m_namespace);
+
     // AGENT ID AND COORDINATOR ID
 
 	// NOTES:
@@ -1729,7 +1746,15 @@ int main(int argc, char* argv[]) {
 	// And now we can instantiate the subscriber:
 	ros::Subscriber requestSetpointChangeSubscriber_from_coord = nodeHandle_to_coordinator.subscribe("TuningControllerService/RequestSetpointChange", 1, requestSetpointChangeCallback);
 
-
+	// Instantiate the local variable "requestGainChangeSubscriber"
+	// to be a "ros::Subscriber" type variable that subscribes to the
+	// "RequestGainChange" topic and calls the class function
+	// "requestGainChangeCallback" each time a messaged is received
+	// on this topic and the message is passed as an input argument to
+	// the callback function. This subscriber will mainly receive
+	// messages from the "flying agent GUI" when the gain is changed
+	// by the user.
+	ros::Subscriber requestGainChangeSubscriber = nodeHandle.subscribe("RequestGainChange", 1, requestGainChangeCallback);
 
 
 

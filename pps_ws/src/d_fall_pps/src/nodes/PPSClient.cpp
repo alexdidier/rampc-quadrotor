@@ -739,6 +739,7 @@ void setInstantController(int controller) //for right now, temporal use
             break;
         case TUNING_CONTROLLER:
             loadTuningController();
+            break;
         case PICKER_CONTROLLER:
             loadPickerController();
             break;

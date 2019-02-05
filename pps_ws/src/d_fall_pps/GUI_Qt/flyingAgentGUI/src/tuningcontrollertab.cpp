@@ -350,7 +350,7 @@ void TuningControllerTab::publishGain(float new_gain)
     d_fall_pps::FloatWithHeader msg;
 
     // Fill the header of the message
-    fillSetpointMessageHeader( msg );
+    fillFloatMessageHeader( msg );
 
     // Fill in the gain value
     msg.data = new_gain;
@@ -463,10 +463,10 @@ void TuningControllerTab::setAgentIDsToCoordinate(QVector<int> agentIDs , bool s
         setpointChangedSubscriber.shutdown();
 
         // Set information back to the default
-        ui->lineEdit_setpoint_current_x->setText("xx.xx");
-        ui->lineEdit_setpoint_current_y->setText("xx.xx");
-        ui->lineEdit_setpoint_current_z->setText("xx.xx");
-        ui->lineEdit_setpoint_current_yaw->setText("xx.xx");
+        ui->lineEdit_setpoint->setText("xx.xx");
+        //ui->lineEdit_setpoint_current_y->setText("xx.xx");
+        //ui->lineEdit_setpoint_current_z->setText("xx.xx");
+        //ui->lineEdit_setpoint_current_yaw->setText("xx.xx");
 
     }
 #endif
@@ -537,7 +537,7 @@ void TuningControllerTab::fillFloatMessageHeader( d_fall_pps::FloatWithHeader & 
     {
         case TYPE_AGENT:
         {
-            msg.shouldCheckForAgentID = false;
+            msg.shouldCheckForID = false;
             break;
         }
         case TYPE_COORDINATOR:
@@ -545,7 +545,7 @@ void TuningControllerTab::fillFloatMessageHeader( d_fall_pps::FloatWithHeader & 
             // Lock the mutex
             m_agentIDs_toCoordinate_mutex.lock();
             // Add the "coordinate all" flag
-            msg.shouldCheckForAgentID = !(m_shouldCoordinateAll);
+            msg.shouldCheckForID = !(m_shouldCoordinateAll);
             // Add the agent IDs if necessary
             if (!m_shouldCoordinateAll)
             {
@@ -561,7 +561,7 @@ void TuningControllerTab::fillFloatMessageHeader( d_fall_pps::FloatWithHeader & 
 
         default:
         {
-            msg.shouldCheckForAgentID = true;
+            msg.shouldCheckForID = true;
             ROS_ERROR("[TUNING CONTROLLER TAB GUI] The 'm_type' variable was not recognised.");
             break;
         }

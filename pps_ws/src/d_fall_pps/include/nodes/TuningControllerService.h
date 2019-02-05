@@ -215,6 +215,8 @@ float m_gain_P_to_D_ratio = 0.6;
 
 
 
+
+
 // ******************************************************************************* //
 // VARIABLES SPECIFIC TO THE TUNING CONTROL FEATURE
 
@@ -398,13 +400,13 @@ std::vector<float> PMKF_Kinf_for_angles         (2,0.0);
 
 // VARIABLES FOR THE NAMESPACES FOR THE PARAMETER SERVICES
 // > For the paramter service of this agent
-std::string namespace_to_own_agent_parameter_service;
+std::string m_namespace_to_own_agent_parameter_service;
 // > For the parameter service of the coordinator
-std::string namespace_to_coordinator_parameter_service;
+std::string m_namespace_to_coordinator_parameter_service;
 
 
 // ROS PUBLISHER FOR SENDING OUT THE DEBUG MESSAGES
-ros::Publisher debugPublisher;
+ros::Publisher m_debugPublisher;
 
 
 // VARIABLES RELATING TO PERFORMING THE CONVERSION INTO BODY FRAME
@@ -425,8 +427,11 @@ bool shouldDisplayDebugInfo = false;
 // VARIABLES RELATING TO PUBLISHING CURRENT POSITION AND FOLLOWING ANOTHER AGENT'S
 // POSITION
 
-// The ID of this agent, i.e., the ID of this compute
-int my_agentID = 0;
+// The ID of the agent that this node is monitoring
+int m_agentID;
+
+// The ID of the agent that can coordinate this node
+int m_coordID;
 
 
 

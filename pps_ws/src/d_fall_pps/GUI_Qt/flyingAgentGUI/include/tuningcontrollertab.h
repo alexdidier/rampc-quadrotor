@@ -39,8 +39,8 @@
 #endif
 
 
-#define P_GAIN_MIN_GUI  0.10
-#define P_GAIN_MAX_GUI  1.00
+#define P_GAIN_MIN_GUI  0.05
+#define P_GAIN_MAX_GUI  1.60
 #define P_TO_D_GAIN_RATIO_GUI 0.6
 
 #define DECIMAL_PLACES_POSITION_MEASURED 3
