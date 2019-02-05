@@ -15,6 +15,13 @@ public:
     explicit TuningControllerTab(QWidget *parent = 0);
     ~TuningControllerTab();
 
+private slots:
+    void on_button_setpoint_toggle_clicked();
+
+    void on_lineEdit_setpoint_editingFinished();
+
+    void on_slider_gain_P_valueChanged(int value);
+
 private:
     Ui::TuningControllerTab *ui;
 };
