@@ -914,7 +914,7 @@ void calculateControlOutput_viaLQRforAnglesRatesNested( float stateErrorBody[12]
 		for(int i = 0; i < 6; ++i)
 		{
 			// BODY FRAME Y CONTROLLER
-			lqr_angleRateNested_prev_rollAngle        -= gainMatrixRollAngle_50Hz[i] * stateErrorBody[i] * multiplier_horizontal;
+			//lqr_angleRateNested_prev_rollAngle        -= gainMatrixRollAngle_50Hz[i] * stateErrorBody[i] * multiplier_horizontal;
 			// BODY FRAME X CONTROLLER
 			//lqr_angleRateNested_prev_pitchAngle       -= gainMatrixPitchAngle_50Hz[i] * stateErrorBody[i] * multiplier_horizontal;
 			// > ALITUDE CONTROLLER (i.e., z-controller):
@@ -926,7 +926,7 @@ void calculateControlOutput_viaLQRforAnglesRatesNested( float stateErrorBody[12]
 
 		// BODY FRAME Z CONTROLLER
 		//lqr_angleRateNested_prev_yawAngle = setpoint[3];
-		lqr_angleRateNested_prev_yawAngle = stateErrorBody[8];
+		//lqr_angleRateNested_prev_yawAngle = stateErrorBody[8];
 
 
 	}
@@ -954,11 +954,11 @@ void calculateControlOutput_viaLQRforAnglesRatesNested( float stateErrorBody[12]
 	for(int i = 0; i < 4; ++i)
 	{
 		// BODY FRAME Y CONTROLLER
-		rollRate_forResponse  -= gainMatrixRollRate_Nested[i]  * temp_stateAngleError[i];
+		//rollRate_forResponse  -= gainMatrixRollRate_Nested[i]  * temp_stateAngleError[i];
 		// BODY FRAME X CONTROLLER
 		pitchRate_forResponse -= gainMatrixPitchRate_Nested[i] * temp_stateAngleError[i];
 		// BODY FRAME Z CONTROLLER
-		yawRate_forResponse   -= gainMatrixYawRate_Nested[i]   * temp_stateAngleError[i] * multiplier_heading;
+		//yawRate_forResponse   -= gainMatrixYawRate_Nested[i]   * temp_stateAngleError[i] * multiplier_heading;
 	}
 
 
@@ -967,8 +967,12 @@ void calculateControlOutput_viaLQRforAnglesRatesNested( float stateErrorBody[12]
 	// Perform the "-Kx" LQR computation for the rates and thrust:
 	for(int i = 0; i < 9; ++i)
 	{
+		// BODY FRAME Y CONTROLLER
+		rollRate_forResponse    -= gainMatrixRollRate[i] * stateErrorBody[i];
 		// > ALITUDE CONTROLLER (i.e., z-controller):
-		thrustAdjustment_200Hz  -= gainMatrixThrust_NineStateVector[i] * stateErrorBody[i] * multiplier_vertical;
+		thrustAdjustment_200Hz  -= gainMatrixThrust_NineStateVector[i] * stateErrorBody[i];
+		// BODY FRAME YAW CONTROLLER
+		yawRate_forResponse   -= gainMatrixYawRate[i] * stateErrorBody[i];
 	}
 
 
