@@ -33,14 +33,14 @@
 #include <string.h>
 #include "DataStreamClient.h"
 #include "ros/ros.h"
-#include "d_fall_pps/ViconData.h"
-#include "d_fall_pps/UnlabeledMarker.h"
+#include "dfall_pkg/ViconData.h"
+#include "dfall_pkg/UnlabeledMarker.h"
 
 // #define TESTING_FAKE_DATA
 
 // notice that unit here are in milimeters
 using namespace ViconDataStreamSDK::CPP;
-using namespace d_fall_pps;
+using namespace dfall_pkg;
 
 int main(int argc, char* argv[]) {
 

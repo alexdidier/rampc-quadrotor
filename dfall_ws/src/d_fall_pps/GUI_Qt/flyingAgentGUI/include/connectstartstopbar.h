@@ -50,17 +50,17 @@
 //#include <std_msgs/String.h>
 
 // Include the DFALL message types
-#include "d_fall_pps/IntWithHeader.h"
-#include "d_fall_pps/AreaBounds.h"
-#include "d_fall_pps/CrazyflieContext.h"
-#include "d_fall_pps/IntIntService.h"
-#include "d_fall_pps/CMQuery.h"
+#include "dfall_pkg/IntWithHeader.h"
+#include "dfall_pkg/AreaBounds.h"
+#include "dfall_pkg/CrazyflieContext.h"
+#include "dfall_pkg/IntIntService.h"
+#include "dfall_pkg/CMQuery.h"
 
 // Include the shared definitions
 #include "nodes/Constants.h"
 
 // SPECIFY THE PACKAGE NAMESPACE
-//using namespace d_fall_pps;
+//using namespace dfall_pkg;
 
 #else
 // Include the shared definitions
@@ -187,7 +187,7 @@ private:
     // Get the type and ID of this node
     bool getTypeAndIDParameters();
 	// Fill the head for a message
-    void fillIntMessageHeader( d_fall_pps::IntWithHeader & msg );
+    void fillIntMessageHeader( dfall_pkg::IntWithHeader & msg );
 
     // > For the CrazyRadio status, received on the
     //   "crazyRadioStatusSubscriber"

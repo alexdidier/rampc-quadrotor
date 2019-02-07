@@ -93,11 +93,11 @@ TopBanner::TopBanner(QWidget *parent) :
     ros::NodeHandle dfall_root_nodeHandle("/dfall");
 
     // > Publisher for the emergency stop button
-    emergencyStopPublisher = dfall_root_nodeHandle.advertise<d_fall_pps::IntWithHeader>("emergencyStop", 1);
+    emergencyStopPublisher = dfall_root_nodeHandle.advertise<dfall_pkg::IntWithHeader>("emergencyStop", 1);
 
 	// > For changes in the database that defines {agentID,cfID,flying zone} links
 	databaseChangedSubscriber = dfall_root_nodeHandle.subscribe("CentralManagerService/DBChanged", 1, &TopBanner::databaseChangedCallback, this);;
-	centralManagerDatabaseService = dfall_root_nodeHandle.serviceClient<d_fall_pps::CMQuery>("CentralManagerService/Query", false);
+	centralManagerDatabaseService = dfall_root_nodeHandle.serviceClient<dfall_pkg::CMQuery>("CentralManagerService/Query", false);
 #endif
 
 
@@ -170,7 +170,7 @@ void TopBanner::loadCrazyflieContext(int ID_to_request_from_database , int emit_
     QString qstr_crazyflie_name = "";
 
 #ifdef CATKIN_MAKE
-	d_fall_pps::CMQuery contextCall;
+	dfall_pkg::CMQuery contextCall;
 	contextCall.request.studentID = ID_to_request_from_database;
 	//ROS_INFO_STREAM("StudentID:" << m_agentID);
 
@@ -248,7 +248,7 @@ void TopBanner::loadCrazyflieContext(int ID_to_request_from_database , int emit_
 void TopBanner::on_emergency_stop_button_clicked()
 {
 #ifdef CATKIN_MAKE
-    d_fall_pps::IntWithHeader msg;
+    dfall_pkg::IntWithHeader msg;
     msg.shouldCheckForID = false;
     msg.data = CMD_CRAZYFLY_MOTORS_OFF;
     this->emergencyStopPublisher.publish(msg);

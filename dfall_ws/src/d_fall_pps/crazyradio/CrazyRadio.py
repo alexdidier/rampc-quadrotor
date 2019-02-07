@@ -33,12 +33,12 @@
 #    ----------------------------------------------------------------------------------
 
 
-import roslib; roslib.load_manifest('d_fall_pps')
+import roslib; roslib.load_manifest('dfall_pkg')
 import rospy
 from std_msgs.msg import Int32
-from d_fall_pps.msg import ControlCommand
-from d_fall_pps.msg import IntWithHeader
-from d_fall_pps.srv import IntIntService
+from dfall_pkg.msg import ControlCommand
+from dfall_pkg.msg import IntWithHeader
+from dfall_pkg.srv import IntIntService
 
 
 # General import
@@ -101,7 +101,7 @@ CMD_CRAZYFLY_LAND =         12
 CMD_CRAZYFLY_MOTORS_OFF =   13
 
 rp = RosPack()
-record_file = rp.get_path('d_fall_pps') + '/LoggingOnboard.bag'
+record_file = rp.get_path('dfall_pkg') + '/LoggingOnboard.bag'
 rospy.loginfo('afdsasdfasdfsadfasdfasdfasdfasdfasdfasdf')
 rospy.loginfo(record_file)
 bag = rosbag.Bag(record_file, 'w')

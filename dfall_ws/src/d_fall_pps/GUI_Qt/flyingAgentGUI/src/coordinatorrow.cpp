@@ -107,7 +107,7 @@ CoordinatorRow::CoordinatorRow(QWidget *parent, int agentID) :
     // SUBSCRIBERS AND PUBLISHERS:
 
     // > For Crazyradio commands based on button clicks
-    crazyRadioCommandPublisher = base_nodeHandle.advertise<d_fall_pps::IntWithHeader>("PPSClient/crazyRadioCommand", 1);
+    crazyRadioCommandPublisher = base_nodeHandle.advertise<dfall_pkg::IntWithHeader>("PPSClient/crazyRadioCommand", 1);
     // > For updating the "rf_status_label" picture
     crazyRadioStatusSubscriber = base_nodeHandle.subscribe("CrazyRadio/CrazyRadioStatus", 1, &CoordinatorRow::crazyRadioStatusCallback, this);
 
@@ -119,24 +119,24 @@ CoordinatorRow::CoordinatorRow(QWidget *parent, int agentID) :
     batteryLevelSubscriber = base_nodeHandle.subscribe("BatteryMonitor/Level", 1, &CoordinatorRow::batteryLevelCallback, this);
 
     // > For Flying state commands based on button clicks
-    flyingStateCommandPublisher = base_nodeHandle.advertise<d_fall_pps::IntWithHeader>("PPSClient/Command", 1);
+    flyingStateCommandPublisher = base_nodeHandle.advertise<dfall_pkg::IntWithHeader>("PPSClient/Command", 1);
     // > For updating the "flying_state_label" picture
     flyingStateSubscriber = base_nodeHandle.subscribe("PPSClient/flyingState", 1, &CoordinatorRow::flyingStateChangedCallback, this);
 
     // > For changes in the database that defines {agentID,cfID,flying zone} links
     databaseChangedSubscriber = dfall_root_nodeHandle.subscribe("CentralManagerService/DBChanged", 1, &CoordinatorRow::databaseChangedCallback, this);;
-    centralManagerDatabaseService = dfall_root_nodeHandle.serviceClient<d_fall_pps::CMQuery>("CentralManagerService/Query", false);
+    centralManagerDatabaseService = dfall_root_nodeHandle.serviceClient<dfall_pkg::CMQuery>("CentralManagerService/Query", false);
 
     // > For updating the controller that is currently operating
     controllerUsedSubscriber = base_nodeHandle.subscribe("PPSClient/controllerUsed", 1, &CoordinatorRow::controllerUsedChangedCallback, this);
 
     // > For requesting the current flying state,
     //   this is used only for initialising the icon
-    getCurrentFlyingStateService = base_nodeHandle.serviceClient<d_fall_pps::IntIntService>("PPSClient/getCurrentFlyingState", false);
+    getCurrentFlyingStateService = base_nodeHandle.serviceClient<dfall_pkg::IntIntService>("PPSClient/getCurrentFlyingState", false);
 
     // > For requesting the current state of the Crazy Radio,
     //   this is used only for initialising the icon
-    getCurrentCrazyRadioStateService = base_nodeHandle.serviceClient<d_fall_pps::IntIntService>("CrazyRadio/getCurrentCrazyRadioStatus", false);
+    getCurrentCrazyRadioStateService = base_nodeHandle.serviceClient<dfall_pkg::IntIntService>("CrazyRadio/getCurrentCrazyRadioStatus", false);
 
 #endif
 
@@ -604,7 +604,7 @@ void CoordinatorRow::loadCrazyflieContext()
 {
     QString qstr_crazyflie_name = "";
 #ifdef CATKIN_MAKE
-    d_fall_pps::CMQuery contextCall;
+    dfall_pkg::CMQuery contextCall;
     contextCall.request.studentID = m_agentID;
     //ROS_INFO_STREAM("StudentID:" << m_agentID);
 
@@ -645,7 +645,7 @@ void CoordinatorRow::loadCrazyflieContext()
 void CoordinatorRow::getCurrentFlyingState()
 {
 #ifdef CATKIN_MAKE
-    d_fall_pps::IntIntService getFlyingStateCall;
+    dfall_pkg::IntIntService getFlyingStateCall;
     getFlyingStateCall.request.data = 0;
     getCurrentFlyingStateService.waitForExistence(ros::Duration(2.0));
     if(getCurrentFlyingStateService.call(getFlyingStateCall))
@@ -665,7 +665,7 @@ void CoordinatorRow::getCurrentFlyingState()
 void CoordinatorRow::getCurrentCrazyRadioState()
 {
 #ifdef CATKIN_MAKE
-    d_fall_pps::IntIntService getCrazyRadioCall;
+    dfall_pkg::IntIntService getCrazyRadioCall;
     getCrazyRadioCall.request.data = 0;
     getCurrentCrazyRadioStateService.waitForExistence(ros::Duration(2.0));
     if(getCurrentCrazyRadioStateService.call(getCrazyRadioCall))
@@ -761,7 +761,7 @@ void CoordinatorRow::setControllerEnabled(int new_controller)
 void CoordinatorRow::on_rf_connect_button_clicked()
 {
 #ifdef CATKIN_MAKE
-    d_fall_pps::IntWithHeader msg;
+    dfall_pkg::IntWithHeader msg;
     msg.shouldCheckForID = false;
     msg.data = CMD_RECONNECT;
     this->crazyRadioCommandPublisher.publish(msg);
@@ -772,7 +772,7 @@ void CoordinatorRow::on_rf_connect_button_clicked()
 void CoordinatorRow::on_rf_disconnect_button_clicked()
 {
 #ifdef CATKIN_MAKE
-    d_fall_pps::IntWithHeader msg;
+    dfall_pkg::IntWithHeader msg;
     msg.shouldCheckForID = false;
     msg.data = CMD_DISCONNECT;
     this->crazyRadioCommandPublisher.publish(msg);
@@ -783,7 +783,7 @@ void CoordinatorRow::on_rf_disconnect_button_clicked()
 void CoordinatorRow::on_enable_flying_button_clicked()
 {
 #ifdef CATKIN_MAKE
-    d_fall_pps::IntWithHeader msg;
+    dfall_pkg::IntWithHeader msg;
     msg.shouldCheckForID = false;
     msg.data = CMD_CRAZYFLY_TAKE_OFF;
     this->flyingStateCommandPublisher.publish(msg);
@@ -794,7 +794,7 @@ void CoordinatorRow::on_enable_flying_button_clicked()
 void CoordinatorRow::on_disable_flying_button_clicked()
 {
 #ifdef CATKIN_MAKE
-    d_fall_pps::IntWithHeader msg;
+    dfall_pkg::IntWithHeader msg;
     msg.shouldCheckForID = false;
     msg.data = CMD_CRAZYFLY_LAND;
     this->flyingStateCommandPublisher.publish(msg);
@@ -805,7 +805,7 @@ void CoordinatorRow::on_disable_flying_button_clicked()
 void CoordinatorRow::on_motors_off_button_clicked()
 {
 #ifdef CATKIN_MAKE
-    d_fall_pps::IntWithHeader msg;
+    dfall_pkg::IntWithHeader msg;
     msg.shouldCheckForID = false;
     msg.data = CMD_CRAZYFLY_MOTORS_OFF;
     this->flyingStateCommandPublisher.publish(msg);

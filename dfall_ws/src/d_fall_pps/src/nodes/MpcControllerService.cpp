@@ -51,11 +51,11 @@
 #include <ros/package.h>
 
 //the generated structs from the msg-files have to be included
-#include "d_fall_pps/ViconData.h"
-#include "d_fall_pps/Setpoint.h"
-#include "d_fall_pps/ControlCommand.h"
-#include "d_fall_pps/Controller.h"
-#include "d_fall_pps/DebugMsg.h"
+#include "dfall_pkg/ViconData.h"
+#include "dfall_pkg/Setpoint.h"
+#include "dfall_pkg/ControlCommand.h"
+#include "dfall_pkg/Controller.h"
+#include "dfall_pkg/DebugMsg.h"
 
 // Include the Parameter Service shared definitions
 #include "nodes/Constants.h"
@@ -119,7 +119,7 @@ float estimator_frequency = 200;
 #define LQR_ANGLE_MODE  2
 
 // Namespacing the package
-using namespace d_fall_pps;
+using namespace dfall_pkg;
 
 
 //    ----------------------------------------------------------------------------------
@@ -956,8 +956,8 @@ int main(int argc, char* argv[]) {
     ros::ServiceServer service = nodeHandle.advertiseService("MpcController", calculateControlOutput);
 
     // Create a "ros::NodeHandle" type local variable "namespace_nodeHandle" that points
-    // to the name space of this node, i.e., "d_fall_pps" as specified by the line:
-    //     "using namespace d_fall_pps;"
+    // to the name space of this node, i.e., "dfall_pkg" as specified by the line:
+    //     "using namespace dfall_pkg;"
     // in the "DEFINES" section at the top of this file.
     ros::NodeHandle namespace_nodeHandle(ros::this_node::getNamespace());
 

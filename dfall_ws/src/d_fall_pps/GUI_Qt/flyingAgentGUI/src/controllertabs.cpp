@@ -137,11 +137,11 @@ ControllerTabs::ControllerTabs(QWidget *parent) :
     ros::NodeHandle dfall_root_nodeHandle("/dfall");
 
     // > Publisher for the emergency stop button
-    //emergencyStopPublisher = dfall_root_nodeHandle.advertise<d_fall_pps::IntWithHeader>("emergencyStop", 1);
+    //emergencyStopPublisher = dfall_root_nodeHandle.advertise<dfall_pkg::IntWithHeader>("emergencyStop", 1);
 
     // > For changes in the database that defines {agentID,cfID,flying zone} links
     //databaseChangedSubscriber = dfall_root_nodeHandle.subscribe("CentralManagerService/DBChanged", 1, &TopBanner::databaseChangedCallback, this);;
-    centralManagerDatabaseService = dfall_root_nodeHandle.serviceClient<d_fall_pps::CMQuery>("CentralManagerService/Query", false);
+    centralManagerDatabaseService = dfall_root_nodeHandle.serviceClient<dfall_pkg::CMQuery>("CentralManagerService/Query", false);
 
 
 #endif
@@ -236,7 +236,7 @@ void ControllerTabs::setObjectNameForDisplayingPoseData( QString object_name )
 
         #ifdef CATKIN_MAKE
         // Get also the context
-        d_fall_pps::CMQuery contextCall;
+        dfall_pkg::CMQuery contextCall;
         contextCall.request.studentID = m_ID;
 
         centralManagerDatabaseService.waitForExistence(ros::Duration(-1));
@@ -266,14 +266,14 @@ void ControllerTabs::setObjectNameForDisplayingPoseData( QString object_name )
 #ifdef CATKIN_MAKE
 // > For the controller currently operating, received on
 //   "controllerUsedSubscriber"
-void ControllerTabs::poseDataReceivedCallback(const d_fall_pps::ViconData& viconData)
+void ControllerTabs::poseDataReceivedCallback(const dfall_pkg::ViconData& viconData)
 {
     m_should_search_pose_data_for_object_name_mutex.lock();
     if (m_should_search_pose_data_for_object_name)
     {
-        for(std::vector<d_fall_pps::CrazyflieData>::const_iterator it = viconData.crazyflies.begin(); it != viconData.crazyflies.end(); ++it)
+        for(std::vector<dfall_pkg::CrazyflieData>::const_iterator it = viconData.crazyflies.begin(); it != viconData.crazyflies.end(); ++it)
         {
-            d_fall_pps::CrazyflieData pose_in_global_frame = *it;
+            dfall_pkg::CrazyflieData pose_in_global_frame = *it;
 
             if(pose_in_global_frame.crazyflieName == m_object_name_for_emitting_pose_data)
             {

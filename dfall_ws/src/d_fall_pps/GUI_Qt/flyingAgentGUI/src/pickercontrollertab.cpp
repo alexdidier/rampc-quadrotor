@@ -112,7 +112,7 @@ PickerControllerTab::PickerControllerTab(QWidget *parent) :
     ros::NodeHandle nodeHandle_for_this_gui(this_namespace);
 
     // CREATE THE REQUEST SETPOINT CHANGE PUBLISHER
-    requestSetpointChangePublisher = nodeHandle_for_this_gui.advertise<d_fall_pps::SetpointWithHeader>("PickerControllerService/RequestSetpointChange", 1);
+    requestSetpointChangePublisher = nodeHandle_for_this_gui.advertise<dfall_pkg::SetpointWithHeader>("PickerControllerService/RequestSetpointChange", 1);
 
     // SUBSCRIBE TO SETPOINT CHANGES
     // Only if this is an agent GUI
@@ -126,8 +126,8 @@ PickerControllerTab::PickerControllerTab(QWidget *parent) :
     if (m_type == TYPE_AGENT)
     {
         // > Request the current setpoint
-        ros::ServiceClient getCurrentSetpointServiceClient = nodeHandle_for_this_gui.serviceClient<d_fall_pps::GetSetpointService>("PickerControllerService/GetCurrentSetpoint", false);
-        d_fall_pps::GetSetpointService getSetpointCall;
+        ros::ServiceClient getCurrentSetpointServiceClient = nodeHandle_for_this_gui.serviceClient<dfall_pkg::GetSetpointService>("PickerControllerService/GetCurrentSetpoint", false);
+        dfall_pkg::GetSetpointService getSetpointCall;
         getSetpointCall.request.data = 0;
         getCurrentSetpointServiceClient.waitForExistence(ros::Duration(2.0));
         if(getCurrentSetpointServiceClient.call(getSetpointCall))
@@ -280,7 +280,7 @@ void PickerControllerTab::publish_request_setpoint_change_for_state(int state_to
     // Publish a ROS message with the setpoint to be requested
 #ifdef CATKIN_MAKE
     // Initialise the message as a local variable
-    d_fall_pps::SetpointWithHeader msg;
+    dfall_pkg::SetpointWithHeader msg;
 
     // Fill the header of the message
     fillSetpointMessageHeader( msg );
@@ -335,7 +335,7 @@ void PickerControllerTab::publish_request_setpoint_change_for_state(int state_to
 
 
 #ifdef CATKIN_MAKE
-void PickerControllerTab::setpointChangedCallback(const d_fall_pps::SetpointWithHeader& newSetpoint)
+void PickerControllerTab::setpointChangedCallback(const dfall_pkg::SetpointWithHeader& newSetpoint)
 {
     // INITIALISE A STRING VARIABLE FOR ADDING THE "+"
     QString qstr = "";
@@ -1790,8 +1790,8 @@ void PickerControllerTab::setAgentIDsToCoordinate(QVector<int> agentIDs , bool s
         ros::NodeHandle agent_base_nodeHandle(agent_base_namespace.toStdString());
 
         // // > Request the current setpoint
-        ros::ServiceClient getCurrentSetpointServiceClient = agent_base_nodeHandle.serviceClient<d_fall_pps::GetSetpointService>("PickerControllerService/GetCurrentSetpoint", false);
-        d_fall_pps::GetSetpointService getSetpointCall;
+        ros::ServiceClient getCurrentSetpointServiceClient = agent_base_nodeHandle.serviceClient<dfall_pkg::GetSetpointService>("PickerControllerService/GetCurrentSetpoint", false);
+        dfall_pkg::GetSetpointService getSetpointCall;
         getSetpointCall.request.data = 0;
         getCurrentSetpointServiceClient.waitForExistence(ros::Duration(2.0));
         if(getCurrentSetpointServiceClient.call(getSetpointCall))
@@ -1841,7 +1841,7 @@ void PickerControllerTab::setAgentIDsToCoordinate(QVector<int> agentIDs , bool s
 
 #ifdef CATKIN_MAKE
 // Fill the header for a message
-void PickerControllerTab::fillSetpointMessageHeader( d_fall_pps::SetpointWithHeader & msg )
+void PickerControllerTab::fillSetpointMessageHeader( dfall_pkg::SetpointWithHeader & msg )
 {
     switch (m_type)
     {

@@ -44,13 +44,13 @@
 #include <fstream>
 #include <string>
 
-#include "d_fall_pps/CrazyflieContext.h"
-#include "d_fall_pps/CrazyflieEntry.h"
-#include "d_fall_pps/CrazyflieDB.h"
+#include "dfall_pkg/CrazyflieContext.h"
+#include "dfall_pkg/CrazyflieEntry.h"
+#include "dfall_pkg/CrazyflieDB.h"
 
 using namespace std;
 
-namespace d_fall_pps {
+namespace dfall_pkg {
 
 string escape(string input) {
     string escaped;
@@ -116,7 +116,7 @@ vector<string> nextLine(istream& str) {
 }
 
 string getCrazyflieDBPath() {
-    string packagePath = ros::package::getPath("d_fall_pps") + "/";
+    string packagePath = ros::package::getPath("dfall_pkg") + "/";
     string dbFile = packagePath + "param/Crazyflie.db";
     return dbFile;
 }

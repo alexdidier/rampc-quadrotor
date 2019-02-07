@@ -1373,7 +1373,7 @@ int main(int argc, char* argv[])
 
     // SafeControllerServicePublisher:
     ros::NodeHandle namespaceNodeHandle = ros::NodeHandle();
-    safeControllerServiceSetpointPublisher = namespaceNodeHandle.advertise<d_fall_pps::Setpoint>("SafeControllerService/Setpoint", 1);
+    safeControllerServiceSetpointPublisher = namespaceNodeHandle.advertise<dfall_pkg::Setpoint>("SafeControllerService/Setpoint", 1);
     ros::Subscriber controllerSetpointSubscriber = namespaceNodeHandle.subscribe("student_GUI/ControllerSetpoint", 1, controllerSetPointCallback);
     ros::Subscriber safeSetpointSubscriber = namespaceNodeHandle.subscribe("SafeControllerService/Setpoint", 1, safeSetPointCallback);
 
@@ -1421,7 +1421,7 @@ int main(int argc, char* argv[])
 
     // Open a ROS "bag" to store data for post-analysis
 	// std::string package_path;
-	// package_path = ros::package::getPath("d_fall_pps") + "/";
+	// package_path = ros::package::getPath("dfall_pkg") + "/";
 	// ROS_INFO_STREAM(package_path);
 	// std::string record_file = package_path + "LoggingPPSClient.bag";
 	// bag.open(record_file, rosbag::bagmode::Write);

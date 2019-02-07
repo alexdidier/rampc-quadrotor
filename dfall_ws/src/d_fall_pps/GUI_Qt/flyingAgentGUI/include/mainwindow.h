@@ -51,12 +51,12 @@
 //#include <std_msgs/String.h>
 
 // Include the DFALL message types
-#include "d_fall_pps/StringWithHeader.h"
+#include "dfall_pkg/StringWithHeader.h"
 
 #include "nodes/Constants.h"
 
 // Namespacing the package
-using namespace d_fall_pps;
+using namespace dfall_pkg;
 //using namespace std;
 
 #else

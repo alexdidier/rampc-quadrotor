@@ -41,11 +41,11 @@
 
 #include "rosNodeThread_for_studentGUI.h"
 
-#include "d_fall_pps/CrazyflieContext.h"
-#include "d_fall_pps/CrazyflieData.h"
-#include "d_fall_pps/Setpoint.h"
-#include "d_fall_pps/SetpointV2.h"
-#include "d_fall_pps/ViconSubscribeObjectName.h"
+#include "dfall_pkg/CrazyflieContext.h"
+#include "dfall_pkg/CrazyflieData.h"
+#include "dfall_pkg/Setpoint.h"
+#include "dfall_pkg/SetpointV2.h"
+#include "dfall_pkg/ViconSubscribeObjectName.h"
 
 
 // Types of controllers being used:

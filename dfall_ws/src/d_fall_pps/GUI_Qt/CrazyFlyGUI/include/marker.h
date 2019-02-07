@@ -38,12 +38,12 @@
 #include <QGraphicsEllipseItem>
 
 #ifdef CATKIN_MAKE
-#include "d_fall_pps/UnlabeledMarker.h"
+#include "dfall_pkg/UnlabeledMarker.h"
 #endif
 
 
 #ifdef CATKIN_MAKE
-using namespace d_fall_pps;
+using namespace dfall_pkg;
 #endif
 
 #define MARKER_DIAMETER        20 * FROM_MILIMETERS_TO_UNITS

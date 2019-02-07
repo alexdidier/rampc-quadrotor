@@ -30,11 +30,11 @@ EnableControllerLoadYamlBar::EnableControllerLoadYamlBar(QWidget *parent) :
     ros::NodeHandle nodeHandle_for_this_gui(this_namespace);
 
     // CREATE THE COMMAND PUBLISHER
-    commandPublisher = nodeHandle_for_this_gui.advertise<d_fall_pps::IntWithHeader>("PPSClient/Command", 1);
+    commandPublisher = nodeHandle_for_this_gui.advertise<dfall_pkg::IntWithHeader>("PPSClient/Command", 1);
 
     // CREATE THE REQUEST LOAD YAML FILE PUBLISHER
     // Get the node handle to this parameter service
-    m_requestLoadYamlFilenamePublisher = nodeHandle_for_this_gui.advertise<d_fall_pps::StringWithHeader>("ParameterService/requestLoadYamlFilename", 1);
+    m_requestLoadYamlFilenamePublisher = nodeHandle_for_this_gui.advertise<dfall_pkg::StringWithHeader>("ParameterService/requestLoadYamlFilename", 1);
 #endif
 
 }
@@ -87,7 +87,7 @@ void EnableControllerLoadYamlBar::showHideController_safe_changed()
 void EnableControllerLoadYamlBar::on_enable_safe_button_clicked()
 {
 #ifdef CATKIN_MAKE
-    d_fall_pps::IntWithHeader msg;
+    dfall_pkg::IntWithHeader msg;
     fillIntMessageHeader(msg);
     msg.data = CMD_USE_SAFE_CONTROLLER;
     this->commandPublisher.publish(msg);
@@ -98,7 +98,7 @@ void EnableControllerLoadYamlBar::on_enable_safe_button_clicked()
 void EnableControllerLoadYamlBar::on_enable_tuning_button_clicked()
 {
 #ifdef CATKIN_MAKE
-    d_fall_pps::IntWithHeader msg;
+    dfall_pkg::IntWithHeader msg;
     fillIntMessageHeader(msg);
     msg.data = CMD_USE_TUNING_CONTROLLER;
     this->commandPublisher.publish(msg);
@@ -109,7 +109,7 @@ void EnableControllerLoadYamlBar::on_enable_tuning_button_clicked()
 void EnableControllerLoadYamlBar::on_enable_picker_button_clicked()
 {
 #ifdef CATKIN_MAKE
-    d_fall_pps::IntWithHeader msg;
+    dfall_pkg::IntWithHeader msg;
     fillIntMessageHeader(msg);
     msg.data = CMD_USE_PICKER_CONTROLLER;
     this->commandPublisher.publish(msg);
@@ -120,7 +120,7 @@ void EnableControllerLoadYamlBar::on_enable_picker_button_clicked()
 void EnableControllerLoadYamlBar::on_enable_student_button_clicked()
 {
 #ifdef CATKIN_MAKE
-    d_fall_pps::IntWithHeader msg;
+    dfall_pkg::IntWithHeader msg;
     fillIntMessageHeader(msg);
     msg.data = CMD_USE_STUDENT_CONTROLLER;
     this->commandPublisher.publish(msg);
@@ -131,7 +131,7 @@ void EnableControllerLoadYamlBar::on_enable_student_button_clicked()
 void EnableControllerLoadYamlBar::on_enable_default_button_clicked()
 {
 #ifdef CATKIN_MAKE
-    d_fall_pps::IntWithHeader msg;
+    dfall_pkg::IntWithHeader msg;
     fillIntMessageHeader(msg);
     msg.data = CMD_USE_SAFE_CONTROLLER;
     this->commandPublisher.publish(msg);
@@ -153,7 +153,7 @@ void EnableControllerLoadYamlBar::on_load_yaml_tuning_button_clicked()
 {
 #ifdef CATKIN_MAKE
     // Create a local variable for the message
-    d_fall_pps::StringWithHeader yaml_filename_msg;
+    dfall_pkg::StringWithHeader yaml_filename_msg;
     // Set for whom this applies to
     fillStringMessageHeader(yaml_filename_msg);
     // Specify the data
@@ -169,7 +169,7 @@ void EnableControllerLoadYamlBar::on_load_yaml_picker_button_clicked()
 {
 #ifdef CATKIN_MAKE
     // Create a local variable for the message
-    d_fall_pps::StringWithHeader yaml_filename_msg;
+    dfall_pkg::StringWithHeader yaml_filename_msg;
     // Set for whom this applies to
     fillStringMessageHeader(yaml_filename_msg);
     // Specify the data
@@ -185,7 +185,7 @@ void EnableControllerLoadYamlBar::on_load_yaml_student_button_clicked()
 {
 #ifdef CATKIN_MAKE
     // Create a local variable for the message
-    d_fall_pps::StringWithHeader yaml_filename_msg;
+    dfall_pkg::StringWithHeader yaml_filename_msg;
     // Set for whom this applies to
     fillStringMessageHeader(yaml_filename_msg);
     // Specify the data
@@ -201,7 +201,7 @@ void EnableControllerLoadYamlBar::on_load_yaml_default_button_clicked()
 {
     #ifdef CATKIN_MAKE
     // Create a local variable for the message
-    d_fall_pps::StringWithHeader yaml_filename_msg;
+    dfall_pkg::StringWithHeader yaml_filename_msg;
     // Set for whom this applies to
     fillStringMessageHeader(yaml_filename_msg);
     // Specify the data
@@ -263,7 +263,7 @@ void EnableControllerLoadYamlBar::setAgentIDsToCoordinate(QVector<int> agentIDs 
 
 #ifdef CATKIN_MAKE
 // Fill the head for a message
-void EnableControllerLoadYamlBar::fillIntMessageHeader( d_fall_pps::IntWithHeader & msg )
+void EnableControllerLoadYamlBar::fillIntMessageHeader( dfall_pkg::IntWithHeader & msg )
 {
     switch (m_type)
     {
@@ -307,7 +307,7 @@ void EnableControllerLoadYamlBar::fillIntMessageHeader( d_fall_pps::IntWithHeade
 
 #ifdef CATKIN_MAKE
 // Fill the head for a message
-void EnableControllerLoadYamlBar::fillStringMessageHeader( d_fall_pps::StringWithHeader & msg )
+void EnableControllerLoadYamlBar::fillStringMessageHeader( dfall_pkg::StringWithHeader & msg )
 {
     switch (m_type)
     {

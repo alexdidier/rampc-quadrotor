@@ -43,7 +43,7 @@ TuningControllerTab::TuningControllerTab(QWidget *parent) :
     ros::NodeHandle nodeHandle_for_this_gui(this_namespace);
 
     // CREATE THE REQUEST SETPOINT CHANGE PUBLISHER
-    requestSetpointChangePublisher = nodeHandle_for_this_gui.advertise<d_fall_pps::SetpointWithHeader>("TuningControllerService/RequestSetpointChange", 1);
+    requestSetpointChangePublisher = nodeHandle_for_this_gui.advertise<dfall_pkg::SetpointWithHeader>("TuningControllerService/RequestSetpointChange", 1);
 
     // SUBSCRIBE TO SETPOINT CHANGES
     // Only if this is an agent GUI
@@ -54,18 +54,18 @@ TuningControllerTab::TuningControllerTab(QWidget *parent) :
 
 
     // CREATE THE NEW GAIN PUBLISHER
-    requestNewGainChangePublisher = nodeHandle_for_this_gui.advertise<d_fall_pps::FloatWithHeader>("TuningControllerService/RequestGainChange", 1);
+    requestNewGainChangePublisher = nodeHandle_for_this_gui.advertise<dfall_pkg::FloatWithHeader>("TuningControllerService/RequestGainChange", 1);
 
     // CREATE THE CUSTOM BUTTON PRESSED PUBLISHER
-    //customButtonPublisher = nodeHandle_for_this_gui.advertise<d_fall_pps::CustomButtonWithHeader>("TuningControllerService/CustomButtonPressed", 1);
+    //customButtonPublisher = nodeHandle_for_this_gui.advertise<dfall_pkg::CustomButtonWithHeader>("TuningControllerService/CustomButtonPressed", 1);
 
     // GET THE CURRENT SETPOINT
     // Only if this is an agent GUI
     if (m_type == TYPE_AGENT)
     {
 //        // > Request the current setpoint
-//        ros::ServiceClient getCurrentSetpointServiceClient = nodeHandle_for_this_gui.serviceClient<d_fall_pps::GetSetpointService>("TuningControllerService/GetCurrentSetpoint", false);
-//        d_fall_pps::GetSetpointService getSetpointCall;
+//        ros::ServiceClient getCurrentSetpointServiceClient = nodeHandle_for_this_gui.serviceClient<dfall_pkg::GetSetpointService>("TuningControllerService/GetCurrentSetpoint", false);
+//        dfall_pkg::GetSetpointService getSetpointCall;
 //        getSetpointCall.request.data = 0;
 //        getCurrentSetpointServiceClient.waitForExistence(ros::Duration(2.0));
 //        if(getCurrentSetpointServiceClient.call(getSetpointCall))
@@ -202,7 +202,7 @@ void TuningControllerTab::poseDataUnavailableSlot()
 
 
 #ifdef CATKIN_MAKE
-void TuningControllerTab::setpointChangedCallback(const d_fall_pps::SetpointWithHeader& newSetpoint)
+void TuningControllerTab::setpointChangedCallback(const dfall_pkg::SetpointWithHeader& newSetpoint)
 {
 //    // INITIALISE A STRING VARIABLE FOR ADDING THE "+"
 //    QString qstr = "";
@@ -254,7 +254,7 @@ void TuningControllerTab::publishSetpoint(float x, float y, float z, float yaw)
 {
 #ifdef CATKIN_MAKE
     // Initialise the message as a local variable
-    d_fall_pps::SetpointWithHeader msg;
+    dfall_pkg::SetpointWithHeader msg;
 
     // Fill the header of the message
     fillSetpointMessageHeader( msg );
@@ -347,7 +347,7 @@ void TuningControllerTab::publishGain(float new_gain)
 {
 #ifdef CATKIN_MAKE
     // Initialise the message as a local variable
-    d_fall_pps::FloatWithHeader msg;
+    dfall_pkg::FloatWithHeader msg;
 
     // Fill the header of the message
     fillFloatMessageHeader( msg );
@@ -439,8 +439,8 @@ void TuningControllerTab::setAgentIDsToCoordinate(QVector<int> agentIDs , bool s
 //        ros::NodeHandle agent_base_nodeHandle(agent_base_namespace.toStdString());
 
 //        // // > Request the current setpoint
-//        ros::ServiceClient getCurrentSetpointServiceClient = agent_base_nodeHandle.serviceClient<d_fall_pps::GetSetpointService>("TuningControllerService/GetCurrentSetpoint", false);
-//        d_fall_pps::GetSetpointService getSetpointCall;
+//        ros::ServiceClient getCurrentSetpointServiceClient = agent_base_nodeHandle.serviceClient<dfall_pkg::GetSetpointService>("TuningControllerService/GetCurrentSetpoint", false);
+//        dfall_pkg::GetSetpointService getSetpointCall;
 //        getSetpointCall.request.data = 0;
 //        getCurrentSetpointServiceClient.waitForExistence(ros::Duration(2.0));
 //        if(getCurrentSetpointServiceClient.call(getSetpointCall))
@@ -489,7 +489,7 @@ void TuningControllerTab::setAgentIDsToCoordinate(QVector<int> agentIDs , bool s
 
 #ifdef CATKIN_MAKE
 // Fill the header for a message
-void TuningControllerTab::fillSetpointMessageHeader( d_fall_pps::SetpointWithHeader & msg )
+void TuningControllerTab::fillSetpointMessageHeader( dfall_pkg::SetpointWithHeader & msg )
 {
     switch (m_type)
     {
@@ -531,7 +531,7 @@ void TuningControllerTab::fillSetpointMessageHeader( d_fall_pps::SetpointWithHea
 
 #ifdef CATKIN_MAKE
 // Fill the header for a message
-void TuningControllerTab::fillFloatMessageHeader( d_fall_pps::FloatWithHeader & msg )
+void TuningControllerTab::fillFloatMessageHeader( dfall_pkg::FloatWithHeader & msg )
 {
     switch (m_type)
     {

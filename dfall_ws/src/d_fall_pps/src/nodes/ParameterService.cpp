@@ -96,12 +96,12 @@ void requestLoadYamlFilenameCallback(const StringWithHeader& yaml_filename_to_lo
     ros::NodeHandle nodeHandle("~");
     // Instantiate a local variable for the command string that will be passed to the "system":
     std::string cmd;
-    // Get the abolute path to "d_fall_pps":
-    std::string d_fall_pps_path = ros::package::getPath("d_fall_pps");
+    // Get the abolute path to "dfall_pkg":
+    std::string dfall_pkg_path = ros::package::getPath("dfall_pkg");
     // Construct the system command string for (re-)loading the parameters:
-    cmd = "rosparam load " + d_fall_pps_path + "/param" + "/" + yaml_filename_to_load + ".yaml " + m_base_namespace + "/" + yaml_filename_to_load;
+    cmd = "rosparam load " + dfall_pkg_path + "/param" + "/" + yaml_filename_to_load + ".yaml " + m_base_namespace + "/" + yaml_filename_to_load;
     // Let the user know what is about to happen
-    ROS_INFO_STREAM("[PARAMETER SERVICE] The following path will be used for locating the .yaml file: " << d_fall_pps_path  << " The comand line string sent to the 'system' is: " << cmd );
+    ROS_INFO_STREAM("[PARAMETER SERVICE] The following path will be used for locating the .yaml file: " << dfall_pkg_path  << " The comand line string sent to the 'system' is: " << cmd );
     // Send the "load yaml" command to the system
     system(cmd.c_str());
 

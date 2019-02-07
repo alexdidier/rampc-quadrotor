@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# import roslib; roslib.load_manifest('d_fall_pps')
+# import roslib; roslib.load_manifest('dfall_pkg')
 # import rospy
-# from d_fall_pps.msg import ControlCommand
+# from dfall_pkg.msg import ControlCommand
 # from std_msgs.msg import Int32
 
 
@@ -62,7 +62,7 @@ CMD_CRAZYFLY_LAND =         4
 CMD_CRAZYFLY_MOTORS_OFF =   5
 
 # rp = RosPack()
-# record_file = rp.get_path('d_fall_pps') + '/LoggingOnboard.bag'
+# record_file = rp.get_path('dfall_pkg') + '/LoggingOnboard.bag'
 # rospy.loginfo('afdsasdfasdfsadfasdfasdfasdfasdfasdfasdf')
 # rospy.loginfo(record_file)
 # bag = rosbag.Bag(record_file, 'w')

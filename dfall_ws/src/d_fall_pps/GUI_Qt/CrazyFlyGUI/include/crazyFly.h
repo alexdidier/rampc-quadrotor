@@ -39,11 +39,11 @@
 #include <QSvgRenderer>
 
 #ifdef CATKIN_MAKE
-#include "d_fall_pps/CrazyflieData.h"
+#include "dfall_pkg/CrazyflieData.h"
 #endif
 
 #ifdef CATKIN_MAKE
-using namespace d_fall_pps;
+using namespace dfall_pkg;
 #endif
 
 #define DRONE_HEIGHT         100 * FROM_MILIMETERS_TO_UNITS * 1.2

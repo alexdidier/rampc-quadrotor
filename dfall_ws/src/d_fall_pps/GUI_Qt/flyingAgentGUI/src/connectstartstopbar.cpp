@@ -106,10 +106,10 @@ ConnectStartStopBar::ConnectStartStopBar(QWidget *parent) :
     // SUBSCRIBERS AND PUBLISHERS:
 
     // > For Crazyradio commands based on button clicks
-    crazyRadioCommandPublisher = base_nodeHandle.advertise<d_fall_pps::IntWithHeader>("PPSClient/crazyRadioCommand", 1);
+    crazyRadioCommandPublisher = base_nodeHandle.advertise<dfall_pkg::IntWithHeader>("PPSClient/crazyRadioCommand", 1);
 
     // > For Flying state commands based on button clicks
-    flyingStateCommandPublisher = base_nodeHandle.advertise<d_fall_pps::IntWithHeader>("PPSClient/Command", 1);
+    flyingStateCommandPublisher = base_nodeHandle.advertise<dfall_pkg::IntWithHeader>("PPSClient/Command", 1);
 
     if (m_type == TYPE_AGENT)
     {
@@ -518,7 +518,7 @@ void ConnectStartStopBar::setFlyingState(int new_flying_state)
 void ConnectStartStopBar::on_rf_connect_button_clicked()
 {
 #ifdef CATKIN_MAKE
-    d_fall_pps::IntWithHeader msg;
+    dfall_pkg::IntWithHeader msg;
     fillIntMessageHeader(msg);
     msg.data = CMD_RECONNECT;
     this->crazyRadioCommandPublisher.publish(msg);
@@ -529,7 +529,7 @@ void ConnectStartStopBar::on_rf_connect_button_clicked()
 void ConnectStartStopBar::on_rf_disconnect_button_clicked()
 {
 #ifdef CATKIN_MAKE
-    d_fall_pps::IntWithHeader msg;
+    dfall_pkg::IntWithHeader msg;
     fillIntMessageHeader(msg);
     msg.data = CMD_DISCONNECT;
     this->crazyRadioCommandPublisher.publish(msg);
@@ -540,7 +540,7 @@ void ConnectStartStopBar::on_rf_disconnect_button_clicked()
 void ConnectStartStopBar::on_enable_flying_button_clicked()
 {
 #ifdef CATKIN_MAKE
-    d_fall_pps::IntWithHeader msg;
+    dfall_pkg::IntWithHeader msg;
     fillIntMessageHeader(msg);
     msg.data = CMD_CRAZYFLY_TAKE_OFF;
     this->flyingStateCommandPublisher.publish(msg);
@@ -551,7 +551,7 @@ void ConnectStartStopBar::on_enable_flying_button_clicked()
 void ConnectStartStopBar::on_disable_flying_button_clicked()
 {
 #ifdef CATKIN_MAKE
-    d_fall_pps::IntWithHeader msg;
+    dfall_pkg::IntWithHeader msg;
     fillIntMessageHeader(msg);
     msg.data = CMD_CRAZYFLY_LAND;
     this->flyingStateCommandPublisher.publish(msg);
@@ -562,7 +562,7 @@ void ConnectStartStopBar::on_disable_flying_button_clicked()
 void ConnectStartStopBar::on_motors_off_button_clicked()
 {
 #ifdef CATKIN_MAKE
-    d_fall_pps::IntWithHeader msg;
+    dfall_pkg::IntWithHeader msg;
     fillIntMessageHeader(msg);
     msg.data = CMD_CRAZYFLY_MOTORS_OFF;
     this->flyingStateCommandPublisher.publish(msg);
@@ -614,8 +614,8 @@ void ConnectStartStopBar::setAgentIDsToCoordinate(QVector<int> agentIDs , bool s
         ros::NodeHandle agent_base_nodeHandle(agent_base_namespace.toStdString());
 
         // > Request the current flying state
-        ros::ServiceClient getCurrentFlyingStateService = agent_base_nodeHandle.serviceClient<d_fall_pps::IntIntService>("PPSClient/getCurrentFlyingState", false);
-        d_fall_pps::IntIntService getFlyingStateCall;
+        ros::ServiceClient getCurrentFlyingStateService = agent_base_nodeHandle.serviceClient<dfall_pkg::IntIntService>("PPSClient/getCurrentFlyingState", false);
+        dfall_pkg::IntIntService getFlyingStateCall;
         getFlyingStateCall.request.data = 0;
         getCurrentFlyingStateService.waitForExistence(ros::Duration(2.0));
         if(getCurrentFlyingStateService.call(getFlyingStateCall))
@@ -628,8 +628,8 @@ void ConnectStartStopBar::setAgentIDsToCoordinate(QVector<int> agentIDs , bool s
         }
 
         // > Request the current status of the crazy radio
-        ros::ServiceClient getCurrentCrazyRadioStateService = agent_base_nodeHandle.serviceClient<d_fall_pps::IntIntService>("CrazyRadio/getCurrentCrazyRadioStatus", false);
-        d_fall_pps::IntIntService getCrazyRadioCall;
+        ros::ServiceClient getCurrentCrazyRadioStateService = agent_base_nodeHandle.serviceClient<dfall_pkg::IntIntService>("CrazyRadio/getCurrentCrazyRadioStatus", false);
+        dfall_pkg::IntIntService getCrazyRadioCall;
         getCrazyRadioCall.request.data = 0;
         getCurrentCrazyRadioStateService.waitForExistence(ros::Duration(2.0));
         if(getCurrentCrazyRadioStateService.call(getCrazyRadioCall))
@@ -703,7 +703,7 @@ void ConnectStartStopBar::setAgentIDsToCoordinate(QVector<int> agentIDs , bool s
 
 #ifdef CATKIN_MAKE
 // Fill the head for a message
-void ConnectStartStopBar::fillIntMessageHeader( d_fall_pps::IntWithHeader & msg )
+void ConnectStartStopBar::fillIntMessageHeader( dfall_pkg::IntWithHeader & msg )
 {
     switch (m_type)
     {

@@ -51,16 +51,16 @@
 //#include <std_msgs/String.h>
 
 // Include the DFALL message types
-#include "d_fall_pps/IntWithHeader.h"
-#include "d_fall_pps/AreaBounds.h"
-#include "d_fall_pps/CrazyflieContext.h"
-#include "d_fall_pps/CMQuery.h"
+#include "dfall_pkg/IntWithHeader.h"
+#include "dfall_pkg/AreaBounds.h"
+#include "dfall_pkg/CrazyflieContext.h"
+#include "dfall_pkg/CMQuery.h"
 
 // Include the shared definitions
 #include "nodes/Constants.h"
 
 // SPECIFY THE PACKAGE NAMESPACE
-//using namespace d_fall_pps;
+//using namespace dfall_pkg;
 
 #endif
 
@@ -127,7 +127,7 @@ private:
     // PRIVATE VARIABLES FOR ROS
 
     // > For the "context" of this agent
-    d_fall_pps::CrazyflieContext my_context;
+    dfall_pkg::CrazyflieContext my_context;
 
     // PUBLISHERS AND SUBSRIBERS
 

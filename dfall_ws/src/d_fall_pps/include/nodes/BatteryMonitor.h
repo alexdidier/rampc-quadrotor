@@ -55,14 +55,14 @@
 //#include <std_msgs/String.h>
 
 // Include the DFALL message types
-#include "d_fall_pps/IntWithHeader.h"
+#include "dfall_pkg/IntWithHeader.h"
 
 // Include the shared definitions
 #include "nodes/Constants.h"
 #include "classes/GetParamtersAndNamespaces.h"
 
 // SPECIFY THE PACKAGE NAMESPACE
-using namespace d_fall_pps;
+using namespace dfall_pkg;
 //using namespace std;
 
 

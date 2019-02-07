@@ -49,14 +49,14 @@
 //#include <std_msgs/String.h>
 
 // Include the DFALL message types
-#include "d_fall_pps/IntWithHeader.h"
+#include "dfall_pkg/IntWithHeader.h"
 #include "marker.h"
 #include "crazyFly.h"
 #include "CFLinker.h"
 
 // Include the DFALL service types
-#include "d_fall_pps/CrazyflieDB.h"
-#include "d_fall_pps/CrazyflieEntry.h"
+#include "dfall_pkg/CrazyflieDB.h"
+#include "dfall_pkg/CrazyflieEntry.h"
 
 
 // The constants that are sent to the agents in order to
@@ -79,7 +79,7 @@
 #define LOAD_YAML_CUSTOM_CONTROLLER_COORDINATOR  4
 
 
-using namespace d_fall_pps;
+using namespace dfall_pkg;
 
 #endif
 

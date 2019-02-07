@@ -976,8 +976,8 @@ int main(int argc, char* argv[]) {
 	ros::Subscriber customCommandReceivedSubscriber = nodeHandle.subscribe("CustomButtonPressed", 1, customCommandReceivedCallback);
 
 	// Create a "ros::NodeHandle" type local variable "namespace_nodeHandle" that points
-	// to the name space of this node, i.e., "d_fall_pps" as specified by the line:
-	//     "using namespace d_fall_pps;"
+	// to the name space of this node, i.e., "dfall_pkg" as specified by the line:
+	//     "using namespace dfall_pkg;"
 	// in the "DEFINES" section at the top of this file.
 	//ros::NodeHandle namespace_nodeHandle(ros::this_node::getNamespace());
 

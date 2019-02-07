@@ -32,9 +32,9 @@
 
 #include "rosNodeThread_for_studentGUI.h"
 
-#include "d_fall_pps/CMRead.h"
-#include "d_fall_pps/CMUpdate.h"
-#include "d_fall_pps/CMCommand.h"
+#include "dfall_pkg/CMRead.h"
+#include "dfall_pkg/CMUpdate.h"
+#include "dfall_pkg/CMCommand.h"
 
 
 rosNodeThread::rosNodeThread(int argc, char** pArgv, const char * node_name, QObject* parent)

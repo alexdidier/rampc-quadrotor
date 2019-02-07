@@ -50,14 +50,14 @@
 //#include <std_msgs/String.h>
 
 // Include the DFALL message types
-#include "d_fall_pps/CrazyflieContext.h"
-#include "d_fall_pps/CrazyflieDB.h"
+#include "dfall_pkg/CrazyflieContext.h"
+#include "dfall_pkg/CrazyflieDB.h"
 
 // Include the DFALL service types
-#include "d_fall_pps/CMRead.h"
-#include "d_fall_pps/CMQuery.h"
-#include "d_fall_pps/CMUpdate.h"
-#include "d_fall_pps/CMCommand.h"
+#include "dfall_pkg/CMRead.h"
+#include "dfall_pkg/CMQuery.h"
+#include "dfall_pkg/CMUpdate.h"
+#include "dfall_pkg/CMCommand.h"
 
 // Include other classes
 #include "CrazyflieIO.h"
@@ -95,7 +95,7 @@
 #define FETCH_YAML_DEMO_CONTROLLER_FROM_COORDINATOR    4
 
 
-using namespace d_fall_pps;
+using namespace dfall_pkg;
 using namespace std;
 
 

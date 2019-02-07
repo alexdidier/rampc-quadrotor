@@ -61,20 +61,20 @@
 #include <std_msgs/String.h>
 
 // Include the DFALL message types
-#include "d_fall_pps/IntWithHeader.h"
-#include "d_fall_pps/FloatWithHeader.h"
-//#include "d_fall_pps/StringWithHeader.h"
-#include "d_fall_pps/SetpointWithHeader.h"
-//#include "d_fall_pps/CustomButtonWithHeader.h"
-#include "d_fall_pps/ViconData.h"
-//#include "d_fall_pps/Setpoint.h"
-#include "d_fall_pps/ControlCommand.h"
-#include "d_fall_pps/Controller.h"
-#include "d_fall_pps/DebugMsg.h"
+#include "dfall_pkg/IntWithHeader.h"
+#include "dfall_pkg/FloatWithHeader.h"
+//#include "dfall_pkg/StringWithHeader.h"
+#include "dfall_pkg/SetpointWithHeader.h"
+//#include "dfall_pkg/CustomButtonWithHeader.h"
+#include "dfall_pkg/ViconData.h"
+//#include "dfall_pkg/Setpoint.h"
+#include "dfall_pkg/ControlCommand.h"
+#include "dfall_pkg/Controller.h"
+#include "dfall_pkg/DebugMsg.h"
 
 // Include the DFALL service types
-#include "d_fall_pps/LoadYamlFromFilename.h"
-#include "d_fall_pps/GetSetpointService.h"
+#include "dfall_pkg/LoadYamlFromFilename.h"
+#include "dfall_pkg/GetSetpointService.h"
 
 // Include the shared definitions
 #include "nodes/Constants.h"
@@ -86,13 +86,13 @@
 
 
 // //the generated structs from the msg-files have to be included
-// #include "d_fall_pps/ViconData.h"
-// #include "d_fall_pps/Setpoint.h"
-// #include "d_fall_pps/ControlCommand.h"
-// #include "d_fall_pps/Controller.h"
-// #include "d_fall_pps/DebugMsg.h"
-// #include "d_fall_pps/CustomButton.h"
-// #include "d_fall_pps/ViconSubscribeObjectName.h"
+// #include "dfall_pkg/ViconData.h"
+// #include "dfall_pkg/Setpoint.h"
+// #include "dfall_pkg/ControlCommand.h"
+// #include "dfall_pkg/Controller.h"
+// #include "dfall_pkg/DebugMsg.h"
+// #include "dfall_pkg/CustomButton.h"
+// #include "dfall_pkg/ViconSubscribeObjectName.h"
 
 // // Include the Parameter Service shared definitions
 // #include "nodes/Constants.h"
@@ -193,7 +193,7 @@
 #define LQR_ANGLE_MODE  2
 
 // Namespacing the package
-using namespace d_fall_pps;
+using namespace dfall_pkg;
 
 
 //    ----------------------------------------------------------------------------------

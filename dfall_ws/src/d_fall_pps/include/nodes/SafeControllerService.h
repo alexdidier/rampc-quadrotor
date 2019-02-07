@@ -55,11 +55,11 @@
 //#include <std_msgs/String.h>
 
 // Include the DFALL message types
-#include "d_fall_pps/IntWithHeader.h"
-#include "d_fall_pps/CrazyflieData.h"
-#include "d_fall_pps/Setpoint.h"
-#include "d_fall_pps/ControlCommand.h"
-#include "d_fall_pps/Controller.h"
+#include "dfall_pkg/IntWithHeader.h"
+#include "dfall_pkg/CrazyflieData.h"
+#include "dfall_pkg/Setpoint.h"
+#include "dfall_pkg/ControlCommand.h"
+#include "dfall_pkg/Controller.h"
 
 
 // Include the shared definitions
@@ -73,7 +73,7 @@
 
 
 // Namespacing the package
-using namespace d_fall_pps;
+using namespace dfall_pkg;
 
 
 

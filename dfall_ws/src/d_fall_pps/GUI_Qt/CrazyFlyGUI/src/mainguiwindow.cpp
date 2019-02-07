@@ -47,11 +47,11 @@
 #include <QShortcut>
 
 #ifdef CATKIN_MAKE
-#include "d_fall_pps/UnlabeledMarker.h"
-#include "d_fall_pps/CMRead.h"
-#include "d_fall_pps/CrazyflieEntry.h"
-#include "d_fall_pps/CMUpdate.h"
-#include "d_fall_pps/CMCommand.h"
+#include "dfall_pkg/UnlabeledMarker.h"
+#include "dfall_pkg/CMRead.h"
+#include "dfall_pkg/CrazyflieEntry.h"
+#include "dfall_pkg/CMUpdate.h"
+#include "dfall_pkg/CMCommand.h"
 #include "nodes/CentralManagerService.h"
 
 #include <ros/ros.h>
@@ -65,7 +65,7 @@
 #define N_MAX_CRAZYFLIES           20 // protection number
 
 #ifdef CATKIN_MAKE
-using namespace d_fall_pps;
+using namespace dfall_pkg;
 #endif
 
 MainGUIWindow::MainGUIWindow(int argc, char **argv, QWidget *parent) :
@@ -279,7 +279,7 @@ void MainGUIWindow::_init()
 
     // CREATE A NODE HANDLE TO THE ROOT OF THE D-FaLL SYSTEM
     ros::NodeHandle nodeHandle_dfall_root("/dfall");
-    emergencyStopPublisher = nodeHandle_dfall_root.advertise<d_fall_pps::IntWithHeader>("emergencyStop", 1);
+    emergencyStopPublisher = nodeHandle_dfall_root.advertise<dfall_pkg::IntWithHeader>("emergencyStop", 1);
 
     // Initialise the publisher for sending "commands" from here (the master)
     // to all of the agent nodes
@@ -1108,7 +1108,7 @@ void MainGUIWindow::on_all_land_button_clicked()
 // > MOTORS OFF
 void MainGUIWindow::on_all_motors_off_button_clicked()
 {
-    d_fall_pps::IntWithHeader msg;
+    dfall_pkg::IntWithHeader msg;
     msg.data = CMD_CRAZYFLY_MOTORS_OFF;
     msg.shouldCheckForID = false;
     //commandAllAgentsPublisher.publish(msg);

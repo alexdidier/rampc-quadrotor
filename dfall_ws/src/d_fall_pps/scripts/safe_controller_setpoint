@@ -2,6 +2,6 @@
 
 if [ "$#" -ne 4 ]
 then echo "usage: safe_controller_setpoint <x> <y> <z> <yaw>"
-else rostopic pub -1 /$ROS_NAMESPACE/SafeControllerService/Setpoint d_fall_pps/Setpoint "{x: $1, y: $2, z: $3, yaw: $4}";
+else rostopic pub -1 /$ROS_NAMESPACE/SafeControllerService/Setpoint dfall_pkg/Setpoint "{x: $1, y: $2, z: $3, yaw: $4}";
 fi
 

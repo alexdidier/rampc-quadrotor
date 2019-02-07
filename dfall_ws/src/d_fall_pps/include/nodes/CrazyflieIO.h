@@ -30,9 +30,9 @@
 //    ----------------------------------------------------------------------------------
 
 
-#include "d_fall_pps/CrazyflieDB.h"
+#include "dfall_pkg/CrazyflieDB.h"
 
-namespace d_fall_pps {
+namespace dfall_pkg {
 
 void readCrazyflieDB(CrazyflieDB& cfdb);
 

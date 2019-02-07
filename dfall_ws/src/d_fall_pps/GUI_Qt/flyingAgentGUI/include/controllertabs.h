@@ -16,19 +16,19 @@
 //#include <std_msgs/String.h>
 
 // Include the DFALL message types
-//#include "d_fall_pps/IntWithHeader.h"
-//#include "d_fall_pps/SetpointWithHeader.h"
-#include "d_fall_pps/CrazyflieData.h"
-#include "d_fall_pps/ViconData.h"
-#include "d_fall_pps/AreaBounds.h"
-#include "d_fall_pps/CrazyflieContext.h"
-#include "d_fall_pps/CMQuery.h"
+//#include "dfall_pkg/IntWithHeader.h"
+//#include "dfall_pkg/SetpointWithHeader.h"
+#include "dfall_pkg/CrazyflieData.h"
+#include "dfall_pkg/ViconData.h"
+#include "dfall_pkg/AreaBounds.h"
+#include "dfall_pkg/CrazyflieContext.h"
+#include "dfall_pkg/CMQuery.h"
 
 // Include the shared definitions
 //#include "nodes/Constants.h"
 
 // SPECIFY THE PACKAGE NAMESPACE
-//using namespace d_fall_pps;
+//using namespace dfall_pkg;
 
 #else
 // Include the shared definitions
@@ -106,8 +106,8 @@ private:
     // PRIVATE VARIABLES FOR ROS
 
     // > For the "context" of this agent
-    d_fall_pps::CrazyflieContext m_context;
-    d_fall_pps::AreaBounds m_area;
+    dfall_pkg::CrazyflieContext m_context;
+    dfall_pkg::AreaBounds m_area;
 
     // SUBSRIBER
     // > For the pose data from a motion capture system
@@ -127,7 +127,7 @@ private:
 
     // > For the controller currently operating, received on
     //   "controllerUsedSubscriber"
-    void poseDataReceivedCallback(const d_fall_pps::ViconData& viconData);
+    void poseDataReceivedCallback(const dfall_pkg::ViconData& viconData);
 
     void controllerUsedChangedCallback(const std_msgs::Int32& msg);
 

@@ -38,11 +38,11 @@
 #include <ros/network.h>
 #include <ros/package.h>
 
-#include "d_fall_pps/CMQuery.h"
+#include "dfall_pkg/CMQuery.h"
 
-#include "d_fall_pps/ViconData.h"
+#include "dfall_pkg/ViconData.h"
 
-#include "d_fall_pps/CustomButton.h"
+#include "dfall_pkg/CustomButton.h"
 
 MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     QMainWindow(parent),

@@ -2,7 +2,7 @@
 
 	<!-- CENTRAL MANAGER -->
 	<node
-		pkg="d_fall_pps"
+		pkg="dfall_pkg"
 		name="CentralManagerService"
 		output="screen"
 		type="CentralManagerService"
@@ -11,17 +11,17 @@
 
 	<!-- VICON DATA PUBLISHER -->
 	<node
-		pkg="d_fall_pps"
+		pkg="dfall_pkg"
 		name="ViconDataPublisher"
 		output="screen"
 		type="ViconDataPublisher"
 		>
-		<rosparam command="load" file="$(find d_fall_pps)/param/ViconConfig.yaml" />
+		<rosparam command="load" file="$(find dfall_pkg)/param/ViconConfig.yaml" />
 	</node>
 
 	<!-- TEACHER GUI -->
 	<node
-		pkg="d_fall_pps"
+		pkg="dfall_pkg"
 		name="my_GUI"
 		output="screen"
 		type="my_GUI"

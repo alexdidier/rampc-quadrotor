@@ -52,17 +52,17 @@
 //#include <std_msgs/String.h>
 
 // Include the DFALL message types
-#include "d_fall_pps/IntWithHeader.h"
-#include "d_fall_pps/ViconData.h"
-#include "d_fall_pps/CrazyflieData.h"
-#include "d_fall_pps/ControlCommand.h"
-#include "d_fall_pps/CrazyflieContext.h"
-#include "d_fall_pps/Setpoint.h"
+#include "dfall_pkg/IntWithHeader.h"
+#include "dfall_pkg/ViconData.h"
+#include "dfall_pkg/CrazyflieData.h"
+#include "dfall_pkg/ControlCommand.h"
+#include "dfall_pkg/CrazyflieContext.h"
+#include "dfall_pkg/Setpoint.h"
 
 // Include the DFALL service types
-#include "d_fall_pps/Controller.h"
-#include "d_fall_pps/CMQuery.h"
-#include "d_fall_pps/IntIntService.h"
+#include "dfall_pkg/Controller.h"
+#include "dfall_pkg/CMQuery.h"
+#include "dfall_pkg/IntIntService.h"
 
 // Include the shared definitions
 #include "nodes/Constants.h"
@@ -78,7 +78,7 @@
 
 
 // Namespacing the package
-using namespace d_fall_pps;
+using namespace dfall_pkg;
 
 
 

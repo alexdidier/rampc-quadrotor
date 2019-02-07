@@ -56,14 +56,14 @@
 #include <std_msgs/String.h>
 
 //the generated structs from the msg-files have to be included
-#include "d_fall_pps/IntWithHeader.h"
-#include "d_fall_pps/StringWithHeader.h"
-#include "d_fall_pps/ViconData.h"
-#include "d_fall_pps/Setpoint.h"
-#include "d_fall_pps/ControlCommand.h"
-#include "d_fall_pps/Controller.h"
-#include "d_fall_pps/DebugMsg.h"
-#include "d_fall_pps/CustomButton.h"
+#include "dfall_pkg/IntWithHeader.h"
+#include "dfall_pkg/StringWithHeader.h"
+#include "dfall_pkg/ViconData.h"
+#include "dfall_pkg/Setpoint.h"
+#include "dfall_pkg/ControlCommand.h"
+#include "dfall_pkg/Controller.h"
+#include "dfall_pkg/DebugMsg.h"
+#include "dfall_pkg/CustomButton.h"
 
 // Include the Parameter Service shared definitions
 #include "nodes/Constants.h"
@@ -79,7 +79,7 @@
 
 
 // Namespacing the package
-using namespace d_fall_pps;
+using namespace dfall_pkg;
 
 
 

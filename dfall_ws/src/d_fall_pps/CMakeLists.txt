@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(d_fall_pps)
+project(dfall_pkg)
 
 ## Add support for C++11, supported in ROS Kinetic and newer
 # add_definitions(-std=c++11)
@@ -321,7 +321,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/d_fall_pps_node.cpp)
+# add_executable(${PROJECT_NAME}_node src/dfall_pkg_node.cpp)
 
 if(VICON_LIBRARY)
 	add_executable(ViconDataPublisher       src/nodes/ViconDataPublisher.cpp)
@@ -417,36 +417,36 @@ qt5_use_modules(flyingAgentGUI Widgets)
 
 
 if(VICON_LIBRARY)
-	add_dependencies(ViconDataPublisher       d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+	add_dependencies(ViconDataPublisher       dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 endif()
 
-add_dependencies(PPSClient                 d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(BatteryMonitor            d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(DefaultControllerService  d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(SafeControllerService     d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(DemoControllerService     d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(StudentControllerService  d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(MpcControllerService      d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(RemoteControllerService   d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(TuningControllerService   d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(PickerControllerService   d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(CentralManagerService     d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(ParameterService          d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(PPSClient                 dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(BatteryMonitor            dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(DefaultControllerService  dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(SafeControllerService     dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(DemoControllerService     dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(StudentControllerService  dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(MpcControllerService      dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(RemoteControllerService   dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(TuningControllerService   dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(PickerControllerService   dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(CentralManagerService     dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(ParameterService          dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 
 
 # GUI-- dependencies
-add_dependencies(my_GUI d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(my_GUI dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 
 
 # StudentGUI-- dependencies
-add_dependencies(student_GUI d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(student_GUI dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 
 
 # FLYING AGENT GUI-- dependencies
-add_dependencies(flyingAgentGUI d_fall_pps_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(flyingAgentGUI dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 
 
@@ -553,7 +553,7 @@ target_link_libraries(flyingAgentGUI ${catkin_LIBRARIES})
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_d_fall_pps.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_dfall_pkg.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

@@ -37,7 +37,7 @@ StudentControllerTab::StudentControllerTab(QWidget *parent) :
     ros::NodeHandle nodeHandle_for_this_gui(this_namespace);
 
     // CREATE THE REQUEST SETPOINT CHANGE PUBLISHER
-    requestSetpointChangePublisher = nodeHandle_for_this_gui.advertise<d_fall_pps::SetpointWithHeader>("StudentControllerService/RequestSetpointChange", 1);
+    requestSetpointChangePublisher = nodeHandle_for_this_gui.advertise<dfall_pkg::SetpointWithHeader>("StudentControllerService/RequestSetpointChange", 1);
 
     // SUBSCRIBE TO SETPOINT CHANGES
     // Only if this is an agent GUI
@@ -47,15 +47,15 @@ StudentControllerTab::StudentControllerTab(QWidget *parent) :
     }
 
     // CREATE THE CUSTOM BUTTON PRESSED PUBLISHER
-    customButtonPublisher = nodeHandle_for_this_gui.advertise<d_fall_pps::CustomButtonWithHeader>("StudentControllerService/CustomButtonPressed", 1);
+    customButtonPublisher = nodeHandle_for_this_gui.advertise<dfall_pkg::CustomButtonWithHeader>("StudentControllerService/CustomButtonPressed", 1);
 
     // GET THE CURRENT SETPOINT
     // Only if this is an agent GUI
     if (m_type == TYPE_AGENT)
     {
         // > Request the current setpoint
-        ros::ServiceClient getCurrentSetpointServiceClient = nodeHandle_for_this_gui.serviceClient<d_fall_pps::GetSetpointService>("StudentControllerService/GetCurrentSetpoint", false);
-        d_fall_pps::GetSetpointService getSetpointCall;
+        ros::ServiceClient getCurrentSetpointServiceClient = nodeHandle_for_this_gui.serviceClient<dfall_pkg::GetSetpointService>("StudentControllerService/GetCurrentSetpoint", false);
+        dfall_pkg::GetSetpointService getSetpointCall;
         getSetpointCall.request.data = 0;
         getCurrentSetpointServiceClient.waitForExistence(ros::Duration(2.0));
         if(getCurrentSetpointServiceClient.call(getSetpointCall))
@@ -101,7 +101,7 @@ StudentControllerTab::~StudentControllerTab()
 void StudentControllerTab::publish_custom_button_command(int button_index , QLineEdit * lineEdit_pointer)
 {
     // Initialise the message as a local variable
-    d_fall_pps::CustomButtonWithHeader msg;
+    dfall_pkg::CustomButtonWithHeader msg;
     // Fill the header of the message
     fillCustomButtonMessageHeader( msg );
     // Fill in the button index
@@ -274,7 +274,7 @@ void StudentControllerTab::poseDataUnavailableSlot()
 
 
 #ifdef CATKIN_MAKE
-void StudentControllerTab::setpointChangedCallback(const d_fall_pps::SetpointWithHeader& newSetpoint)
+void StudentControllerTab::setpointChangedCallback(const dfall_pkg::SetpointWithHeader& newSetpoint)
 {
     // INITIALISE A STRING VARIABLE FOR ADDING THE "+"
     QString qstr = "";
@@ -326,7 +326,7 @@ void StudentControllerTab::publishSetpoint(float x, float y, float z, float yaw)
 {
 #ifdef CATKIN_MAKE
     // Initialise the message as a local variable
-    d_fall_pps::SetpointWithHeader msg;
+    dfall_pkg::SetpointWithHeader msg;
 
     // Fill the header of the message
     fillSetpointMessageHeader( msg );
@@ -420,7 +420,7 @@ void StudentControllerTab::on_default_setpoint_button_clicked()
     // "buttonID" field set appropriately
 
     // Initialise the message as a local variable
-    d_fall_pps::SetpointWithHeader msg;
+    dfall_pkg::SetpointWithHeader msg;
 
     // Fill the header of the message
     fillSetpointMessageHeader( msg );
@@ -685,8 +685,8 @@ void StudentControllerTab::setAgentIDsToCoordinate(QVector<int> agentIDs , bool 
         ros::NodeHandle agent_base_nodeHandle(agent_base_namespace.toStdString());
 
         // // > Request the current setpoint
-        ros::ServiceClient getCurrentSetpointServiceClient = agent_base_nodeHandle.serviceClient<d_fall_pps::GetSetpointService>("StudentControllerService/GetCurrentSetpoint", false);
-        d_fall_pps::GetSetpointService getSetpointCall;
+        ros::ServiceClient getCurrentSetpointServiceClient = agent_base_nodeHandle.serviceClient<dfall_pkg::GetSetpointService>("StudentControllerService/GetCurrentSetpoint", false);
+        dfall_pkg::GetSetpointService getSetpointCall;
         getSetpointCall.request.data = 0;
         getCurrentSetpointServiceClient.waitForExistence(ros::Duration(2.0));
         if(getCurrentSetpointServiceClient.call(getSetpointCall))
@@ -735,7 +735,7 @@ void StudentControllerTab::setAgentIDsToCoordinate(QVector<int> agentIDs , bool 
 
 #ifdef CATKIN_MAKE
 // Fill the header for a message
-void StudentControllerTab::fillSetpointMessageHeader( d_fall_pps::SetpointWithHeader & msg )
+void StudentControllerTab::fillSetpointMessageHeader( dfall_pkg::SetpointWithHeader & msg )
 {
     switch (m_type)
     {
@@ -777,7 +777,7 @@ void StudentControllerTab::fillSetpointMessageHeader( d_fall_pps::SetpointWithHe
 
 #ifdef CATKIN_MAKE
 // Fill the header for a message
-void StudentControllerTab::fillCustomButtonMessageHeader( d_fall_pps::CustomButtonWithHeader & msg )
+void StudentControllerTab::fillCustomButtonMessageHeader( dfall_pkg::CustomButtonWithHeader & msg )
 {
     switch (m_type)
     {

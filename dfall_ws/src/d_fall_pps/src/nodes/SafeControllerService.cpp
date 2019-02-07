@@ -541,7 +541,7 @@ int main(int argc, char* argv[]) {
     ROS_INFO("[SAFE CONTROLLER] Service ready :-)");
     
 	// std::string package_path;
-	// package_path = ros::package::getPath("d_fall_pps") + "/";
+	// package_path = ros::package::getPath("dfall_pkg") + "/";
 	// ROS_INFO_STREAM(package_path);
 	// std::string record_file = package_path + "LoggingSafeController.bag";
 	// bag.open(record_file, rosbag::bagmode::Write);

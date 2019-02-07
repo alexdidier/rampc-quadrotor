@@ -32,11 +32,11 @@
 
 #include "rosNodeThread_for_flyingAgentGUI.h"
 
-// #include "d_fall_pps/CMRead.h"
-// #include "d_fall_pps/CMUpdate.h"
-// #include "d_fall_pps/CMCommand.h"
+// #include "dfall_pkg/CMRead.h"
+// #include "dfall_pkg/CMUpdate.h"
+// #include "dfall_pkg/CMCommand.h"
 
-// using namespace d_fall_pps;
+// using namespace dfall_pkg;
 
 
 rosNodeThread::rosNodeThread(int argc, char** pArgv, const char * node_name,  QObject* parent)

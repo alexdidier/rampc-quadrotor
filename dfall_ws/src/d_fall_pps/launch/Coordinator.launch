@@ -10,14 +10,14 @@
 	<!-- <param name="param" value="$(arg coordID)"/> -->
 
 	<!-- Example of how to specify the coordID from command line -->
-	<!-- roslaunch d_fall_pps coordID:=001 -->
+	<!-- roslaunch dfall_pkg coordID:=001 -->
 
 	<group ns="coord$(arg coordID)">
 
 		<!-- COORDINATOR GUI -->
 		<group if="$(arg withGUI)">
 			<node
-				pkg="d_fall_pps"
+				pkg="dfall_pkg"
 				name="flyingAgentGUI"
 				output="screen"
 				type="flyingAgentGUI"
@@ -30,7 +30,7 @@
 
 		<!-- PARAMETER SERVICE -->
 		<node
-			pkg    = "d_fall_pps"
+			pkg    = "dfall_pkg"
 			name   = "ParameterService"
 			output = "screen"
 			type   = "ParameterService"
@@ -39,12 +39,12 @@
 			<param name="coordID"  value="$(arg coordID)" />
 			<rosparam
 				command = "load"
-				file    = "$(find d_fall_pps)/param/BatteryMonitor.yaml"
+				file    = "$(find dfall_pkg)/param/BatteryMonitor.yaml"
 				ns      = "YamlFileNames"
 			/>
 			<rosparam
 				command = "load"
-				file    = "$(find d_fall_pps)/param/ClientConfig.yaml"
+				file    = "$(find dfall_pkg)/param/ClientConfig.yaml"
 				ns      = "SafeController"
 			/>
 		</node>

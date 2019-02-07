@@ -37,7 +37,7 @@ DefaultControllerTab::DefaultControllerTab(QWidget *parent) :
     ros::NodeHandle nodeHandle_for_this_gui(this_namespace);
 
     // CREATE THE REQUEST SETPOINT CHANGE PUBLISHER
-    requestSetpointChangePublisher = nodeHandle_for_this_gui.advertise<d_fall_pps::SetpointWithHeader>("DefaultControllerService/RequestSetpointChange", 1);
+    requestSetpointChangePublisher = nodeHandle_for_this_gui.advertise<dfall_pkg::SetpointWithHeader>("DefaultControllerService/RequestSetpointChange", 1);
 
     // SUBSCRIBE TO SETPOINT CHANGES
     // Only if this is an agent GUI
@@ -51,8 +51,8 @@ DefaultControllerTab::DefaultControllerTab(QWidget *parent) :
     if (m_type == TYPE_AGENT)
     {
         // > Request the current setpoint
-        ros::ServiceClient getCurrentSetpointServiceClient = nodeHandle_for_this_gui.serviceClient<d_fall_pps::GetSetpointService>("DefaultControllerService/GetCurrentSetpoint", false);
-        d_fall_pps::GetSetpointService getSetpointCall;
+        ros::ServiceClient getCurrentSetpointServiceClient = nodeHandle_for_this_gui.serviceClient<dfall_pkg::GetSetpointService>("DefaultControllerService/GetCurrentSetpoint", false);
+        dfall_pkg::GetSetpointService getSetpointCall;
         getSetpointCall.request.data = 0;
         getCurrentSetpointServiceClient.waitForExistence(ros::Duration(2.0));
         if(getCurrentSetpointServiceClient.call(getSetpointCall))
@@ -192,7 +192,7 @@ void DefaultControllerTab::poseDataUnavailableSlot()
 
 
 #ifdef CATKIN_MAKE
-void DefaultControllerTab::setpointChangedCallback(const d_fall_pps::SetpointWithHeader& newSetpoint)
+void DefaultControllerTab::setpointChangedCallback(const dfall_pkg::SetpointWithHeader& newSetpoint)
 {
     // INITIALISE A STRING VARIABLE FOR ADDING THE "+"
     QString qstr = "";
@@ -244,7 +244,7 @@ void DefaultControllerTab::publishSetpoint(float x, float y, float z, float yaw)
 {
 #ifdef CATKIN_MAKE
     // Initialise the message as a local variable
-    d_fall_pps::SetpointWithHeader msg;
+    dfall_pkg::SetpointWithHeader msg;
 
     // Fill the header of the message
     fillSetpointMessageHeader( msg );
@@ -338,7 +338,7 @@ void DefaultControllerTab::on_default_setpoint_button_clicked()
     // "buttonID" field set appropriately
 
     // Initialise the message as a local variable
-    d_fall_pps::SetpointWithHeader msg;
+    dfall_pkg::SetpointWithHeader msg;
 
     // Fill the header of the message
     fillSetpointMessageHeader( msg );
@@ -576,8 +576,8 @@ void DefaultControllerTab::setAgentIDsToCoordinate(QVector<int> agentIDs , bool 
         ros::NodeHandle agent_base_nodeHandle(agent_base_namespace.toStdString());
 
         // > Request the current setpoint
-        ros::ServiceClient getCurrentSetpointServiceClient = agent_base_nodeHandle.serviceClient<d_fall_pps::GetSetpointService>("DefaultControllerService/GetCurrentSetpoint", false);
-        d_fall_pps::GetSetpointService getSetpointCall;
+        ros::ServiceClient getCurrentSetpointServiceClient = agent_base_nodeHandle.serviceClient<dfall_pkg::GetSetpointService>("DefaultControllerService/GetCurrentSetpoint", false);
+        dfall_pkg::GetSetpointService getSetpointCall;
         getSetpointCall.request.data = 0;
         getCurrentSetpointServiceClient.waitForExistence(ros::Duration(2.0));
         if(getCurrentSetpointServiceClient.call(getSetpointCall))
@@ -626,7 +626,7 @@ void DefaultControllerTab::setAgentIDsToCoordinate(QVector<int> agentIDs , bool 
 
 #ifdef CATKIN_MAKE
 // Fill the head for a message
-void DefaultControllerTab::fillSetpointMessageHeader( d_fall_pps::SetpointWithHeader & msg )
+void DefaultControllerTab::fillSetpointMessageHeader( dfall_pkg::SetpointWithHeader & msg )
 {
     switch (m_type)
     {

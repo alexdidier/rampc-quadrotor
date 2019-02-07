@@ -13,23 +13,23 @@
     <!-- <param name="param" value="$(arg agentID)"/> -->
 
     <!-- Example of how to specify the agentID from command line -->
-    <!-- roslaunch d_fall_pps agentID:=1 -->
+    <!-- roslaunch dfall_pkg agentID:=1 -->
 
     <group ns="$(eval 'agent' + str(agentID).zfill(3))">
 
 		<!-- CRAZY RADIO -->
 		<node
-			pkg    = "d_fall_pps"
+			pkg    = "dfall_pkg"
 			name   = "CrazyRadio"
 			output = "screen"
 			type   = "CrazyRadio.py"
 			>
-			<rosparam command="load" file="$(find d_fall_pps)/param/BatteryMonitor.yaml" />
+			<rosparam command="load" file="$(find dfall_pkg)/param/BatteryMonitor.yaml" />
 		</node>
 
 		<!-- PPS CLIENT -->
 		<node
-			pkg    = "d_fall_pps"
+			pkg    = "dfall_pkg"
 			name   = "PPSClient"
 			output = "screen"
 			type   = "PPSClient"
@@ -40,7 +40,7 @@
 
 		<!-- BATTERY MONITOR -->
 		<node
-			pkg    = "d_fall_pps"
+			pkg    = "dfall_pkg"
 			name   = "BatteryMonitor"
 			output = "screen"
 			type   = "BatteryMonitor"
@@ -49,7 +49,7 @@
 
 		<!-- DEFAULT CONTROLLER -->
 		<node
-			pkg    = "d_fall_pps"
+			pkg    = "dfall_pkg"
 			name   = "DefaultControllerService"
 			output = "screen"
 			type   = "DefaultControllerService"
@@ -58,7 +58,7 @@
 
 		<!-- SAFE CONTROLLER -->
 		<node
-			pkg    = "d_fall_pps"
+			pkg    = "dfall_pkg"
 			name   = "SafeControllerService"
 			output = "screen"
 			type   = "SafeControllerService"
@@ -67,7 +67,7 @@
 
 		<!-- DEMO CONTROLLER -->
 		<node
-			pkg    = "d_fall_pps"
+			pkg    = "dfall_pkg"
 			name   = "DemoControllerService"
 			output = "screen"
 			type   = "DemoControllerService"
@@ -76,7 +76,7 @@
 
 		<!-- STUDENT CONTROLLER -->
 		<node
-			pkg    = "d_fall_pps"
+			pkg    = "dfall_pkg"
 			name   = "StudentControllerService"
 			output = "screen"
 			type   = "StudentControllerService"
@@ -85,7 +85,7 @@
 
 		<!-- REMOTE CONTROLLER -->
 		<node
-			pkg    = "d_fall_pps"
+			pkg    = "dfall_pkg"
 			name   = "RemoteControllerService"
 			output = "screen"
 			type   = "RemoteControllerService"
@@ -94,7 +94,7 @@
 
 		<!-- TUNING CONTROLLER -->
 		<node
-			pkg    = "d_fall_pps"
+			pkg    = "dfall_pkg"
 			name   = "TuningControllerService"
 			output = "screen"
 			type   = "TuningControllerService"
@@ -103,7 +103,7 @@
 
 		<!-- PICKER CONTROLLER -->
 		<node
-			pkg    = "d_fall_pps"
+			pkg    = "dfall_pkg"
 			name   = "PickerControllerService"
 			output = "screen"
 			type   = "PickerControllerService"
@@ -112,7 +112,7 @@
 
 		<!-- PARAMETER SERVICE -->
 		<node
-			pkg    = "d_fall_pps"
+			pkg    = "dfall_pkg"
 			name   = "ParameterService"
 			output = "screen"
 			type   = "ParameterService"
@@ -121,32 +121,32 @@
 			<param name="agentID"  value="$(arg agentID)" />
 			<rosparam
 				command = "load"
-				file    = "$(find d_fall_pps)/param/ClientConfig.yaml"
+				file    = "$(find dfall_pkg)/param/ClientConfig.yaml"
 				ns      = "ClientConfig"
 			/>
 			<rosparam
 				command = "load"
-				file    = "$(find d_fall_pps)/param/BatteryMonitor.yaml"
+				file    = "$(find dfall_pkg)/param/BatteryMonitor.yaml"
 				ns      = "BatteryMonitor"
 			/>
 			<rosparam
 				command = "load"
-				file    = "$(find d_fall_pps)/param/SafeController.yaml"
+				file    = "$(find dfall_pkg)/param/SafeController.yaml"
 				ns      = "SafeController"
 			/>
 			<rosparam
 				command = "load"
-				file    = "$(find d_fall_pps)/param/RemoteController.yaml"
+				file    = "$(find dfall_pkg)/param/RemoteController.yaml"
 				ns      = "RemoteController"
 			/>
 			<rosparam
 				command = "load"
-				file    = "$(find d_fall_pps)/param/TuningController.yaml"
+				file    = "$(find dfall_pkg)/param/TuningController.yaml"
 				ns      = "TuningController"
 			/>
 			<rosparam
 				command = "load"
-				file    = "$(find d_fall_pps)/param/PickerController.yaml"
+				file    = "$(find dfall_pkg)/param/PickerController.yaml"
 				ns      = "PickerController"
 			/>
 		</node>
@@ -155,7 +155,7 @@
 		<!-- AGENT GUI (aka. the "student GUI") -->
 		<group if="$(arg withGUI)">
 			<node
-				pkg    = "d_fall_pps"
+				pkg    = "dfall_pkg"
 				name   = "flyingAgentGUI"
 				output = "screen"
 				type   = "flyingAgentGUI"

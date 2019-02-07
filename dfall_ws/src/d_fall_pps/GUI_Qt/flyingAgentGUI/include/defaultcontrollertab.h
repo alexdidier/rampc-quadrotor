@@ -17,17 +17,17 @@
 //#include <std_msgs/String.h>
 
 // Include the DFALL message types
-//#include "d_fall_pps/IntWithHeader.h"
-#include "d_fall_pps/SetpointWithHeader.h"
+//#include "dfall_pkg/IntWithHeader.h"
+#include "dfall_pkg/SetpointWithHeader.h"
 
 // Include the DFALL service types
-#include "d_fall_pps/GetSetpointService.h"
+#include "dfall_pkg/GetSetpointService.h"
 
 // Include the shared definitions
 #include "nodes/Constants.h"
 
 // SPECIFY THE PACKAGE NAMESPACE
-//using namespace d_fall_pps;
+//using namespace dfall_pkg;
 
 #else
 // Include the shared definitions
@@ -117,10 +117,10 @@ private:
 
 #ifdef CATKIN_MAKE
     // For receiving message that the setpoint was changed
-    void setpointChangedCallback(const d_fall_pps::SetpointWithHeader& newSetpoint);
+    void setpointChangedCallback(const dfall_pkg::SetpointWithHeader& newSetpoint);
 
     // Fill the header for a message
-    void fillSetpointMessageHeader( d_fall_pps::SetpointWithHeader & msg );
+    void fillSetpointMessageHeader( dfall_pkg::SetpointWithHeader & msg );
 
     // Get the paramters that specify the type and ID
     bool getTypeAndIDParameters();

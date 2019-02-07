@@ -44,15 +44,15 @@
 #include <ros/ros.h>
 #include <ros/network.h>
 
-#include "d_fall_pps/CMRead.h"
-#include "d_fall_pps/CMUpdate.h"
-#include "d_fall_pps/CMCommand.h"
+#include "dfall_pkg/CMRead.h"
+#include "dfall_pkg/CMUpdate.h"
+#include "dfall_pkg/CMCommand.h"
 
-//#include "d_fall_pps/UnlabeledMarker.h"
-//#include "d_fall_pps/CrazyflieData.h"
-//#include "d_fall_pps/ViconData.h"
+//#include "dfall_pkg/UnlabeledMarker.h"
+//#include "dfall_pkg/CrazyflieData.h"
+//#include "dfall_pkg/ViconData.h"
 
-using namespace d_fall_pps;
+using namespace dfall_pkg;
 
 //typedef ViconData::ConstPtr ptrToMessage;
 
