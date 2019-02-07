@@ -1,13 +1,12 @@
-pps_ws/build/
-pps_ws/devel/
+dfall_ws/build/
+dfall_ws/devel/
 
-pps_ws/src/d_fall_pps/lib/vicon/
-pps_ws/src/d_fall_pps/include/DataStreamClient.h
+dfall_ws/src/d_fall_pps/lib/vicon/
+dfall_ws/src/d_fall_pps/include/DataStreamClient.h
 
-pps_ws/src/d_fall_pps/GUI_Qt/flyingAgentGUI/*.pro.user
-
-pps_ws/src/d_fall_pps/GUI_Qt/studentGUI/*.pro.user
-pps_ws/src/d_fall_pps/GUI_Qt/studentGUI/*.pro.user.*
+# Qt Project files with user preferences
+*.pro.user
+*.pro.user.*
 
 *.pyc
 *.orig
