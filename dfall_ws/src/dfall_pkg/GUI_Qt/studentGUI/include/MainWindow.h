@@ -69,7 +69,7 @@
 
 // The constants that "command" changes in the
 // operation state of this agent. These "commands"
-// are sent from this GUI node to the "PPSClient"
+// are sent from this GUI node to the "FlyingAgentClient"
 // node where the command is enacted
 #define CMD_USE_SAFE_CONTROLLER      1
 #define CMD_USE_DEMO_CONTROLLER      2
@@ -288,7 +288,7 @@ private:
 
     ros::Publisher crazyRadioCommandPublisher;
     ros::Subscriber crazyRadioStatusSubscriber;
-    ros::Publisher PPSClientCommandPublisher;
+    ros::Publisher FlyingAgentClientCommandPublisher;
     ros::Subscriber CFBatterySubscriber;
     ros::Subscriber flyingStateSubscriber;
     ros::Subscriber batteryStateSubscriber;

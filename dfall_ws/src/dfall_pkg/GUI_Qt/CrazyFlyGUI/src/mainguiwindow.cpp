@@ -742,17 +742,17 @@ void MainGUIWindow::on_refresh_student_ids_button_clicked()
     #ifdef CATKIN_MAKE
     ui->list_discovered_student_ids->clear();
 
-    // \/(\d)\/PPSClient
+    // \/(\d)\/FlyingAgentClient
     ros::V_string v_str;
     ros::master::getNodes(v_str);
     for(int i = 0; i < v_str.size(); i++)
     {
         std::string s = v_str[i];
         std::smatch m;
-        //std::regex e ("\\/(\\d)\\/PPSClient");
-        std::regex e ("\\/agent(\\d\\d\\d)\\/PPSClient");
+        //std::regex e ("\\/(\\d)\\/FlyingAgentClient");
+        std::regex e ("\\/agent(\\d\\d\\d)\\/FlyingAgentClient");
 
-        // std::regex e("\\/PPSClien(.)");
+        // std::regex e("\\/FlyingAgentClient(.)");
 
         // while(std::regex_search(s, m, e))
         // {
@@ -1314,7 +1314,6 @@ void MainGUIWindow::customSendYamlAsMessageTimerCallback(const ros::TimerEvent&)
 
 // load parameters from corresponding YAML file
 //
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
 float MainGUIWindow::getParameterFloat(ros::NodeHandle& nodeHandle, std::string name)
 {
     float val;
@@ -1324,7 +1323,7 @@ float MainGUIWindow::getParameterFloat(ros::NodeHandle& nodeHandle, std::string 
     }
     return val;
 }
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+
 void MainGUIWindow::getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length)
 {
     if(!nodeHandle.getParam(name, val)){
@@ -1334,7 +1333,7 @@ void MainGUIWindow::getParameterFloatVector(ros::NodeHandle& nodeHandle, std::st
         ROS_ERROR_STREAM("parameter '" << name << "' has wrong array length, " << length << " needed");
     }
 }
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+
 int MainGUIWindow::getParameterInt(ros::NodeHandle& nodeHandle, std::string name)
 {
     int val;
@@ -1344,7 +1343,7 @@ int MainGUIWindow::getParameterInt(ros::NodeHandle& nodeHandle, std::string name
     }
     return val;
 }
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+
 void MainGUIWindow::getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val, int length)
 {
     if(!nodeHandle.getParam(name, val)){
@@ -1354,7 +1353,7 @@ void MainGUIWindow::getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHa
         ROS_ERROR_STREAM("parameter '" << name << "' has wrong array length, " << length << " needed");
     }
 }
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+
 int MainGUIWindow::getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val)
 {
     if(!nodeHandle.getParam(name, val)){
@@ -1362,7 +1361,7 @@ int MainGUIWindow::getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeH
     }
     return val.size();
 }
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+
 bool MainGUIWindow::getParameterBool(ros::NodeHandle& nodeHandle, std::string name)
 {
     bool val;

@@ -115,7 +115,7 @@
 // IMPORTANT NOTES FOR "onboardControllerType"  AND AXIS CONVENTIONS
 // > The allowed values for "onboardControllerType" are in the "Defines" section at the
 //   top of this file, they are MOTOR_MODE, RATE_MODE, OR ANGLE_MODE.
-// > In the PPS exercise we will only use the RATE_MODE.
+// > In the classroom exercise we will only use the RATE_MODE.
 // > In RATE_MODE the ".roll", ".ptich", and ".yaw" properties of "response.ControlCommand"
 //   specify the angular rate in [radians/second] that will be requested from the
 //   PID controllers running in the Crazyflie 2.0 firmware.
@@ -159,7 +159,7 @@
 //
 //
 //
-// This function WILL NEED TO BE edited for successful completion of the PPS exercise
+// This function WILL NEED TO BE edited for successful completion of the classroom exercise
 
 
 
@@ -1089,7 +1089,7 @@ void convert_stateInertial_to_bodyFrameError(float stateInertial[12], float setp
 	// > Note: the function "convertIntoBodyFrame" is implemented in this file
 	//   and by default does not perform any conversion. The equations to convert
 	//   the state error into the body frame should be implemented in that function
-	//   for successful completion of the PPS exercise
+	//   for successful completion of the classroom exercise
 	convertIntoBodyFrame(stateInertial, bodyFrameError, temp_stateInertial_yaw);
 }
 
@@ -1110,7 +1110,7 @@ void convert_stateInertial_to_bodyFrameError(float stateInertial[12], float setp
 //     CCCC   OOO   N   N    V    EEEEE  R   R  SSSS   III   OOO   N   N
 //    ------------------------------------------------------------------------------
 
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+// This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
 float computeMotorPolyBackward(float thrust)
 {
 	// Compute the 16-bit command signal that generates the "thrust" force
@@ -1146,7 +1146,7 @@ float computeMotorPolyBackward(float thrust)
 //     GGGG   UUU   III        CCCC  A   A  LLLLL  LLLLL  BBBB   A   A   CCCC  K   K
 //    ----------------------------------------------------------------------------------
 
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+// This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
 void setpointCallback(const Setpoint& newSetpoint)
 {
     setpoint[0] = newSetpoint.x;
@@ -1211,7 +1211,7 @@ void setpointCallback(const Setpoint& newSetpoint)
 //    ----------------------------------------------------------------------------------
 
 
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+// This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
 void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
 {
 	// Extract from the "msg" for which controller the and from where to fetch the YAML
@@ -1257,7 +1257,7 @@ void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
 }
 
 
-// This function CAN BE edited for successful completion of the PPS exercise, and the
+// This function CAN BE edited for successful completion of the classroom exercise, and the
 // use of parameters fetched from the YAML file is highly recommended to make tuning of
 // your controller easier and quicker.
 void fetchYamlParameters(ros::NodeHandle& nodeHandle)
@@ -1385,7 +1385,7 @@ void fetchYamlParameters(ros::NodeHandle& nodeHandle)
 }
 
 
-// This function CAN BE edited for successful completion of the PPS exercise, and the
+// This function CAN BE edited for successful completion of the classroom exercise, and the
 // use of parameters loaded from the YAML file is highly recommended to make tuning of
 // your controller easier and quicker.
 void processFetchedParameters()
@@ -1426,7 +1426,7 @@ void processFetchedParameters()
 //    ----------------------------------------------------------------------------------
 
 
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+// This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
 float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name)
 {
     float val;
@@ -1436,7 +1436,7 @@ float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name)
     }
     return val;
 }
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+// This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
 void getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length)
 {
     if(!nodeHandle.getParam(name, val)){
@@ -1446,7 +1446,7 @@ void getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std:
         ROS_ERROR_STREAM("parameter '" << name << "' has wrong array length, " << length << " needed");
     }
 }
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+// This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
 int getParameterInt(ros::NodeHandle& nodeHandle, std::string name)
 {
     int val;
@@ -1456,7 +1456,7 @@ int getParameterInt(ros::NodeHandle& nodeHandle, std::string name)
     }
     return val;
 }
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+// This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
 void getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val, int length)
 {
     if(!nodeHandle.getParam(name, val)){
@@ -1466,7 +1466,7 @@ void getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::stri
         ROS_ERROR_STREAM("parameter '" << name << "' has wrong array length, " << length << " needed");
     }
 }
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+// This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
 int getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val)
 {
     if(!nodeHandle.getParam(name, val)){
@@ -1474,7 +1474,7 @@ int getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::str
     }
     return val.size();
 }
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+// This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
 bool getParameterBool(ros::NodeHandle& nodeHandle, std::string name)
 {
     bool val;
@@ -1484,7 +1484,7 @@ bool getParameterBool(ros::NodeHandle& nodeHandle, std::string name)
     }
     return val;
 }
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+// This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
 std::string getParameterString(ros::NodeHandle& nodeHandle, std::string name)
 {
 	std::string val;
@@ -1506,7 +1506,7 @@ std::string getParameterString(ros::NodeHandle& nodeHandle, std::string name)
 //    M   M  A   A  III  N   N
 //    ----------------------------------------------------------------------------------
 
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+// This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
 int main(int argc, char* argv[]) {
     
     // Starting the ROS-node
@@ -1526,16 +1526,16 @@ int main(int argc, char* argv[]) {
     // > If you look at the "Student.launch" file in the "launch" folder, you will see
     //   the following line of code:
     //   <param name="studentID" value="$(optenv ROS_NAMESPACE)" />
-    //   This line of code adds a parameter named "studentID" to the "PPSClient"
+    //   This line of code adds a parameter named "studentID" to the "FlyingAgentClient"
     // > Thus, to get access to this "studentID" paremeter, we first need to get a handle
-    //   to the "PPSClient" node within which this controller service is nested.
-    // Get the handle to the "PPSClient" node
-    ros::NodeHandle PPSClient_nodeHandle(m_namespace + "/PPSClient");
+    //   to the "FlyingAgentClient" node within which this controller service is nested.
+    // Get the handle to the "FlyingAgentClient" node
+    ros::NodeHandle FlyingAgentClient_nodeHandle(m_namespace + "/FlyingAgentClient");
     // Get the value of the "studentID" parameter into the instance variable "my_agentID"
-    if(!PPSClient_nodeHandle.getParam("agentID", my_agentID))
+    if(!FlyingAgentClient_nodeHandle.getParam("agentID", my_agentID))
     {
     	// Throw an error if the student ID parameter could not be obtained
-		ROS_ERROR("[REMOTE CONTROLLER] Failed to get agentID from PPSClient");
+		ROS_ERROR("[REMOTE CONTROLLER] Failed to get agentID from FlyingAgentClient");
 	}
 
 

@@ -26,7 +26,7 @@ void Coordinator::on_refresh_button_clicked()
 
 #ifdef CATKIN_MAKE
     // USE A REGULAR EXPRESSION TO IDENTIFY NODES THAT EXIST
-    // > The regular expression we use is: \/agent(\d\d\d)\/PPSClient
+    // > The regular expression we use is: \/agent(\d\d\d)\/FlyingAgentClient
     //   with the different that the escaped character is \\ instead of \ only
 
     // GET A "V_string" OF ALL THE NODES CURRENTLY IN EXISTENCE
@@ -39,7 +39,7 @@ void Coordinator::on_refresh_button_clicked()
         // TEST THE NAME OF THIS NODE AGAINST THE REGULAR EXPRESSION
         std::string s = v_str[i];
         std::smatch m;
-        std::regex e ("\\/agent(\\d\\d\\d)\\/PPSClient");
+        std::regex e ("\\/agent(\\d\\d\\d)\\/FlyingAgentClient");
 
         if(std::regex_search(s, m, e))
         {

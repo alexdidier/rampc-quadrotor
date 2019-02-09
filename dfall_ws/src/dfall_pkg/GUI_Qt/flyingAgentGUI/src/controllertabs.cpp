@@ -128,7 +128,7 @@ ControllerTabs::ControllerTabs(QWidget *parent) :
     // Only if this is an agent GUI
     if (m_type == TYPE_AGENT)
     {
-        controllerUsedSubscriber = nodeHandle_for_this_gui.subscribe("PPSClient/controllerUsed", 1, &ControllerTabs::controllerUsedChangedCallback, this);
+        controllerUsedSubscriber = nodeHandle_for_this_gui.subscribe("FlyingAgentClient/controllerUsed", 1, &ControllerTabs::controllerUsedChangedCallback, this);
     }
 
 
@@ -457,7 +457,7 @@ void ControllerTabs::setAgentIDsToCoordinate(QVector<int> agentIDs , bool should
 
         // SUBSCRIBERS
         // > For receiving message that the setpoint was changed
-        controllerUsedSubscriber = agent_base_nodeHandle.subscribe("PPSClient/controllerUsed", 1, &ControllerTabs::controllerUsedChangedCallback, this);
+        controllerUsedSubscriber = agent_base_nodeHandle.subscribe("FlyingAgentClient/controllerUsed", 1, &ControllerTabs::controllerUsedChangedCallback, this);
     }
     else
     {

@@ -106,10 +106,10 @@ ConnectStartStopBar::ConnectStartStopBar(QWidget *parent) :
     // SUBSCRIBERS AND PUBLISHERS:
 
     // > For Crazyradio commands based on button clicks
-    crazyRadioCommandPublisher = base_nodeHandle.advertise<dfall_pkg::IntWithHeader>("PPSClient/crazyRadioCommand", 1);
+    crazyRadioCommandPublisher = base_nodeHandle.advertise<dfall_pkg::IntWithHeader>("FlyingAgentClient/crazyRadioCommand", 1);
 
     // > For Flying state commands based on button clicks
-    flyingStateCommandPublisher = base_nodeHandle.advertise<dfall_pkg::IntWithHeader>("PPSClient/Command", 1);
+    flyingStateCommandPublisher = base_nodeHandle.advertise<dfall_pkg::IntWithHeader>("FlyingAgentClient/Command", 1);
 
     if (m_type == TYPE_AGENT)
     {
@@ -126,7 +126,7 @@ ConnectStartStopBar::ConnectStartStopBar(QWidget *parent) :
         batteryLevelSubscriber = base_nodeHandle.subscribe("BatteryMonitor/Level", 1, &ConnectStartStopBar::batteryLevelCallback, this);
     
         // > For updating the "flying_state_label" picture
-        flyingStateSubscriber = base_nodeHandle.subscribe("PPSClient/flyingState", 1, &ConnectStartStopBar::flyingStateChangedCallback, this);
+        flyingStateSubscriber = base_nodeHandle.subscribe("FlyingAgentClient/flyingState", 1, &ConnectStartStopBar::flyingStateChangedCallback, this);
     }
 #endif
 
@@ -614,7 +614,7 @@ void ConnectStartStopBar::setAgentIDsToCoordinate(QVector<int> agentIDs , bool s
         ros::NodeHandle agent_base_nodeHandle(agent_base_namespace.toStdString());
 
         // > Request the current flying state
-        ros::ServiceClient getCurrentFlyingStateService = agent_base_nodeHandle.serviceClient<dfall_pkg::IntIntService>("PPSClient/getCurrentFlyingState", false);
+        ros::ServiceClient getCurrentFlyingStateService = agent_base_nodeHandle.serviceClient<dfall_pkg::IntIntService>("FlyingAgentClient/getCurrentFlyingState", false);
         dfall_pkg::IntIntService getFlyingStateCall;
         getFlyingStateCall.request.data = 0;
         getCurrentFlyingStateService.waitForExistence(ros::Duration(2.0));
@@ -654,7 +654,7 @@ void ConnectStartStopBar::setAgentIDsToCoordinate(QVector<int> agentIDs , bool s
         batteryLevelSubscriber = agent_base_nodeHandle.subscribe("BatteryMonitor/Level", 1, &ConnectStartStopBar::batteryLevelCallback, this);
 
         // > For updating the "flying_state_label" picture
-        flyingStateSubscriber = agent_base_nodeHandle.subscribe("PPSClient/flyingState", 1, &ConnectStartStopBar::flyingStateChangedCallback, this);
+        flyingStateSubscriber = agent_base_nodeHandle.subscribe("FlyingAgentClient/flyingState", 1, &ConnectStartStopBar::flyingStateChangedCallback, this);
     }
     else
     {

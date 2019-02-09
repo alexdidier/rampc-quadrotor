@@ -27,12 +27,12 @@
 			<rosparam command="load" file="$(find dfall_pkg)/param/BatteryMonitor.yaml" />
 		</node>
 
-		<!-- PPS CLIENT -->
+		<!-- FLYING AGENT CLIENT -->
 		<node
 			pkg    = "dfall_pkg"
-			name   = "PPSClient"
+			name   = "FlyingAgentClient"
 			output = "screen"
-			type   = "PPSClient"
+			type   = "FlyingAgentClient"
 			>
 			<param name="agentID" value="$(arg agentID)" />
 			<param name="coordID" value="$(arg coordID)" />

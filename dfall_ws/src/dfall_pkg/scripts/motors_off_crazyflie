@@ -2,6 +2,6 @@
 
 if [ "$#" -ne 0 ] 
 then echo "usage: motors_off_crazyflie <no arguments>"
-else rostopic pub -1 /$ROS_NAMESPACE/PPSClient/Command std_msgs/Int32 5;
+else rostopic pub -1 /$ROS_NAMESPACE/FlyingAgentClient/Command std_msgs/Int32 5;
 fi
 

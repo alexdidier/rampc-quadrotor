@@ -72,10 +72,9 @@ logging.basicConfig(level=logging.ERROR)
 # CONTROLLER_ANGLE = 1
 # CONTROLLER_RATE = 0
 
-
-TYPE_PPS_MOTORS = 6
-TYPE_PPS_RATE =   7
-TYPE_PPS_ANGLE =  8
+CF_COMMAND_TYPE_MOTORS = 6
+CF_COMMAND_TYPE_RATE =   7
+CF_COMMAND_TYPE_ANGLE =  8
 
 RAD_TO_DEG = 57.296
 
@@ -88,7 +87,7 @@ DISCONNECTED = 2
 CMD_RECONNECT = 0
 CMD_DISCONNECT = 1
 
-# Commands for PPSClient
+# Commands for FlyingAgentClient
 #CMD_USE_SAFE_CONTROLLER =       1
 #CMD_USE_DEMO_CONTROLLER =       2
 #CMD_USE_STUDENT_CONTROLLER =    3
@@ -106,7 +105,7 @@ rospy.loginfo('afdsasdfasdfsadfasdfasdfasdfasdfasdfasdf')
 rospy.loginfo(record_file)
 bag = rosbag.Bag(record_file, 'w')
 
-class PPSRadioClient:
+class CrazyRadioClient:
     """
        CrazyRadio client that recieves the commands from the controller and
        sends them in a CRTP package to the crazyflie with the specified
@@ -126,7 +125,7 @@ class PPSRadioClient:
         self.link_uri = ""
 
         self.status_pub = rospy.Publisher(node_name + '/CrazyRadioStatus', Int32, queue_size=1)
-        self.PPSClient_command_pub = rospy.Publisher('PPSClient/Command', IntWithHeader, queue_size=1)
+        self.FlyingAgentClient_command_pub = rospy.Publisher('FlyingAgentClient/Command', IntWithHeader, queue_size=1)
         time.sleep(1.0)
 
         # Initialize the CrazyFlie and add callbacks
@@ -173,7 +172,7 @@ class PPSRadioClient:
         msg = IntWithHeader()
         msg.shouldCheckForID = False
         msg.data = CMD_CRAZYFLY_MOTORS_OFF
-        self.PPSClient_command_pub.publish(msg)
+        self.FlyingAgentClient_command_pub.publish(msg)
         time.sleep(0.1)
         print "[CRAZY RADIO] Disconnecting from %s" % self.link_uri
         self._cf.close_link()
@@ -233,7 +232,7 @@ class PPSRadioClient:
         msg = IntWithHeader()
         msg.shouldCheckForID = False
         msg.data = CMD_CRAZYFLY_MOTORS_OFF
-        cf_client.PPSClient_command_pub.publish(msg)
+        cf_client.FlyingAgentClient_command_pub.publish(msg)
 
         rospy.loginfo("[CRAZY RADIO] Connection to %s successful: " % link_uri)
         # Config for Logging
@@ -263,7 +262,7 @@ class PPSRadioClient:
         msg = IntWithHeader()
         msg.shouldCheckForID = False
         msg.data = CMD_CRAZYFLY_MOTORS_OFF
-        self.PPSClient_command_pub.publish(msg)
+        self.FlyingAgentClient_command_pub.publish(msg)
 
         self.logconf.stop()
         rospy.loginfo("logconf stopped")
@@ -273,19 +272,19 @@ class PPSRadioClient:
     def _send_to_commander_motor(self, cmd1, cmd2, cmd3, cmd4):
         pk = CRTPPacket()
         pk.port = CRTPPort.COMMANDER_GENERIC
-        pk.data = struct.pack('<BHHHH', TYPE_PPS_MOTORS, cmd1, cmd2, cmd3, cmd4)
+        pk.data = struct.pack('<BHHHH', CF_COMMAND_TYPE_MOTORS, cmd1, cmd2, cmd3, cmd4)
         self._cf.send_packet(pk)
 
     def _send_to_commander_rate(self, cmd1, cmd2, cmd3, cmd4, roll_rate, pitch_rate, yaw_rate):
         pk = CRTPPacket()
         pk.port = CRTPPort.COMMANDER_GENERIC
-        pk.data = struct.pack('<BHHHHfff', TYPE_PPS_RATE, cmd1, cmd2, cmd3, cmd4, roll_rate * RAD_TO_DEG, pitch_rate * RAD_TO_DEG, yaw_rate * RAD_TO_DEG)
+        pk.data = struct.pack('<BHHHHfff', CF_COMMAND_TYPE_RATE, cmd1, cmd2, cmd3, cmd4, roll_rate * RAD_TO_DEG, pitch_rate * RAD_TO_DEG, yaw_rate * RAD_TO_DEG)
         self._cf.send_packet(pk)
 
     def _send_to_commander_angle(self, cmd1, cmd2, cmd3, cmd4, roll, pitch, yaw):
         pk = CRTPPacket()
         pk.port = CRTPPort.COMMANDER_GENERIC
-        pk.data = struct.pack('<BHHHHfff', TYPE_PPS_ANGLE, cmd1, cmd2, cmd3, cmd4, roll * RAD_TO_DEG, pitch * RAD_TO_DEG, yaw * RAD_TO_DEG)
+        pk.data = struct.pack('<BHHHHfff', CF_COMMAND_TYPE_ANGLE, cmd1, cmd2, cmd3, cmd4, roll * RAD_TO_DEG, pitch * RAD_TO_DEG, yaw * RAD_TO_DEG)
         self._cf.send_packet(pk)
 
     # def _send_to_commander(self,roll, pitch, yaw, thrust, cmd1, cmd2, cmd3, cmd4, mode):
@@ -350,13 +349,13 @@ def controlCommandCallback(data):
 
     #cmd1..4 must not be 0, as crazyflie onboard controller resets!
     #pitch and yaw are inverted on crazyflie controller
-    if data.onboardControllerType == TYPE_PPS_MOTORS:
+    if data.onboardControllerType == CF_COMMAND_TYPE_MOTORS:
         cf_client._send_to_commander_motor(data.motorCmd1, data.motorCmd2, data.motorCmd3, data.motorCmd4)
 
-    elif data.onboardControllerType == TYPE_PPS_RATE:
+    elif data.onboardControllerType == CF_COMMAND_TYPE_RATE:
         cf_client._send_to_commander_rate(data.motorCmd1, data.motorCmd2, data.motorCmd3, data.motorCmd4, data.roll, -data.pitch, -data.yaw)
 
-    elif data.onboardControllerType == TYPE_PPS_ANGLE:
+    elif data.onboardControllerType == CF_COMMAND_TYPE_ANGLE:
         cf_client._send_to_commander_angle(data.motorCmd1, data.motorCmd2, data.motorCmd3, data.motorCmd4, data.roll, -data.pitch, -data.yaw)
         # cf_client._send_to_commander(data.roll, -data.pitch, -data.yaw, 0, data.motorCmd1, data.motorCmd2, data.motorCmd3, data.motorCmd4, data.onboardControllerType)
 
@@ -380,7 +379,7 @@ if __name__ == '__main__':
     # Initialize the low-level drivers (don't list the debug drivers)
     cflib.crtp.init_drivers(enable_debug_driver=False)
 
-    #wait until address parameter is set by PPSClient
+    #wait until address parameter is set by FlyingAgentClient
     while not rospy.has_param("~crazyFlieAddress"):
         time.sleep(0.05)
 
@@ -394,8 +393,8 @@ if __name__ == '__main__':
 
     # Fetch the YAML paramter "agentID" and "coordID"
     global m_agentID
-    m_agentID = rospy.get_param(ros_namespace + "/PPSClient/agentID")
-    coordID   = rospy.get_param(ros_namespace + "/PPSClient/coordID")
+    m_agentID = rospy.get_param(ros_namespace + "/FlyingAgentClient/agentID")
+    coordID   = rospy.get_param(ros_namespace + "/FlyingAgentClient/coordID")
     # Convert the coordinator ID to a zero-padded string
     coordID_as_string = format(coordID, '03')
 
@@ -404,19 +403,19 @@ if __name__ == '__main__':
     global cfbattery_pub
     cfbattery_pub = rospy.Publisher(node_name + '/CFBattery', Float32, queue_size=10)
 
-    # Initialise a "PPSRadioClient" type variable that handles
+    # Initialise a "CrazyRadioClient" type variable that handles
     # all communication over the CrazyRadio
     global cf_client
-    cf_client = PPSRadioClient()
+    cf_client = CrazyRadioClient()
 
     print "[CRAZY RADIO] DEBUG 2"
 
     # Subscribe to the commands for when to (dis-)connect the
     # CrazyRadio connection with the Crazyflie
-    # > For the radio commands from the PPSClient of this agent
-    rospy.Subscriber("PPSClient/crazyRadioCommand", IntWithHeader, cf_client.crazyRadioCommandCallback)
+    # > For the radio commands from the FlyingAgentClient of this agent
+    rospy.Subscriber("FlyingAgentClient/crazyRadioCommand", IntWithHeader, cf_client.crazyRadioCommandCallback)
     # > For the radio command from the coordinator
-    rospy.Subscriber("/dfall/coord" + coordID_as_string + "/PPSClient/crazyRadioCommand", IntWithHeader, cf_client.crazyRadioCommandCallback)
+    rospy.Subscriber("/dfall/coord" + coordID_as_string + "/FlyingAgentClient/crazyRadioCommand", IntWithHeader, cf_client.crazyRadioCommandCallback)
 
 
     # Advertise a Serice for the current status
@@ -427,7 +426,7 @@ if __name__ == '__main__':
 
     time.sleep(1.0)
 
-    rospy.Subscriber("PPSClient/ControlCommand", ControlCommand, controlCommandCallback)
+    rospy.Subscriber("FlyingAgentClient/ControlCommand", ControlCommand, controlCommandCallback)
 
     print "[CRAZY RADIO] Node READY :-)"
     rospy.spin()
@@ -438,7 +437,7 @@ if __name__ == '__main__':
     msg = IntWithHeader()
     msg.shouldCheckForID = False
     msg.data = CMD_CRAZYFLY_MOTORS_OFF
-    cf_client.PPSClient_command_pub.publish(msg)
+    cf_client.FlyingAgentClient_command_pub.publish(msg)
     #wait for client to send its commands
     time.sleep(1.0)
 

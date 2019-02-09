@@ -626,7 +626,7 @@ void smoothSetpointChanges()
 //
 //
 //
-// This function WILL NEED TO BE edited for successful completion of the PPS exercise
+// This function WILL NEED TO BE edited for successful completion of the classroom exercise
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response)
 {
 
@@ -1086,7 +1086,7 @@ void convert_stateInertial_to_bodyFrameError(float stateInertial[12], float setp
 	// > Note: the function "convertIntoBodyFrame" is implemented in this file
 	//   and by default does not perform any conversion. The equations to convert
 	//   the state error into the body frame should be implemented in that function
-	//   for successful completion of the PPS exercise
+	//   for successful completion of the classroom exercise
 	convertIntoBodyFrame(stateInertial, bodyFrameError, temp_stateInertial_yaw);
 }
 
@@ -1107,7 +1107,7 @@ void convert_stateInertial_to_bodyFrameError(float stateInertial[12], float setp
 //     CCCC   OOO   N   N    V    EEEEE  R   R  SSSS   III   OOO   N   N
 //    ------------------------------------------------------------------------------
 
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+// This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
 float computeMotorPolyBackward(float thrust)
 {
 	// Compute the 16-bit command signal that generates the "thrust" force
@@ -1296,7 +1296,7 @@ bool getCurrentSetpointCallback(GetSetpointService::Request &request, GetSetpoin
 
 
 
-// // This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+// // This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
 // void setpointCallback(const Setpoint& newSetpoint)
 // {
 //     m_setpoint[0] = newSetpoint.x;
@@ -1642,7 +1642,7 @@ void fetchPickerControllerYamlParameters(ros::NodeHandle& nodeHandle)
 //    ----------------------------------------------------------------------------------
 
 
-// // This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+// // This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
 // float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name)
 // {
 //     float val;
@@ -1652,7 +1652,7 @@ void fetchPickerControllerYamlParameters(ros::NodeHandle& nodeHandle)
 //     }
 //     return val;
 // }
-// // This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+// // This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
 // void getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length)
 // {
 //     if(!nodeHandle.getParam(name, val)){
@@ -1662,7 +1662,7 @@ void fetchPickerControllerYamlParameters(ros::NodeHandle& nodeHandle)
 //         ROS_ERROR_STREAM("parameter '" << name << "' has wrong array length, " << length << " needed");
 //     }
 // }
-// // This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+// // This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
 // int getParameterInt(ros::NodeHandle& nodeHandle, std::string name)
 // {
 //     int val;
@@ -1672,7 +1672,7 @@ void fetchPickerControllerYamlParameters(ros::NodeHandle& nodeHandle)
 //     }
 //     return val;
 // }
-// // This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+// // This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
 // void getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val, int length)
 // {
 //     if(!nodeHandle.getParam(name, val)){
@@ -1682,7 +1682,7 @@ void fetchPickerControllerYamlParameters(ros::NodeHandle& nodeHandle)
 //         ROS_ERROR_STREAM("parameter '" << name << "' has wrong array length, " << length << " needed");
 //     }
 // }
-// // This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+// // This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
 // int getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val)
 // {
 //     if(!nodeHandle.getParam(name, val)){
@@ -1690,7 +1690,7 @@ void fetchPickerControllerYamlParameters(ros::NodeHandle& nodeHandle)
 //     }
 //     return val.size();
 // }
-// // This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+// // This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
 // bool getParameterBool(ros::NodeHandle& nodeHandle, std::string name)
 // {
 //     bool val;
@@ -1714,7 +1714,7 @@ void fetchPickerControllerYamlParameters(ros::NodeHandle& nodeHandle)
 //    M   M  A   A  III  N   N
 //    ----------------------------------------------------------------------------------
 
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+// This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
 int main(int argc, char* argv[]) {
     
     // Starting the ROS-node
@@ -1738,14 +1738,14 @@ int main(int argc, char* argv[]) {
 	//   you will see the following line of code:
 	//   <param name="agentID" value="$(optenv ROS_NAMESPACE)" />
 	//   This line of code adds a parameter named "agentID" to the
-	//   "PPSClient" node.
+	//   "FlyingAgentClient" node.
 	// > Thus, to get access to this "studentID" paremeter, we first
-	//   need to get a handle to the "PPSClient" node within which this
+	//   need to get a handle to the "FlyingAgentClient" node within which this
 	//   controller service is nested.
 
 
     // Get the ID of the agent and its coordinator
-	bool isValid_IDs = getAgentIDandCoordIDfromClientNode( m_namespace + "/PPSClient" , &m_agentID , &m_coordID);
+	bool isValid_IDs = getAgentIDandCoordIDfromClientNode( m_namespace + "/FlyingAgentClient" , &m_agentID , &m_coordID);
 
 	// Stall the node IDs are not valid
 	if ( !isValid_IDs )

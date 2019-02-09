@@ -107,7 +107,7 @@ CoordinatorRow::CoordinatorRow(QWidget *parent, int agentID) :
     // SUBSCRIBERS AND PUBLISHERS:
 
     // > For Crazyradio commands based on button clicks
-    crazyRadioCommandPublisher = base_nodeHandle.advertise<dfall_pkg::IntWithHeader>("PPSClient/crazyRadioCommand", 1);
+    crazyRadioCommandPublisher = base_nodeHandle.advertise<dfall_pkg::IntWithHeader>("FlyingAgentClient/crazyRadioCommand", 1);
     // > For updating the "rf_status_label" picture
     crazyRadioStatusSubscriber = base_nodeHandle.subscribe("CrazyRadio/CrazyRadioStatus", 1, &CoordinatorRow::crazyRadioStatusCallback, this);
 
@@ -119,20 +119,20 @@ CoordinatorRow::CoordinatorRow(QWidget *parent, int agentID) :
     batteryLevelSubscriber = base_nodeHandle.subscribe("BatteryMonitor/Level", 1, &CoordinatorRow::batteryLevelCallback, this);
 
     // > For Flying state commands based on button clicks
-    flyingStateCommandPublisher = base_nodeHandle.advertise<dfall_pkg::IntWithHeader>("PPSClient/Command", 1);
+    flyingStateCommandPublisher = base_nodeHandle.advertise<dfall_pkg::IntWithHeader>("FlyingAgentClient/Command", 1);
     // > For updating the "flying_state_label" picture
-    flyingStateSubscriber = base_nodeHandle.subscribe("PPSClient/flyingState", 1, &CoordinatorRow::flyingStateChangedCallback, this);
+    flyingStateSubscriber = base_nodeHandle.subscribe("FlyingAgentClient/flyingState", 1, &CoordinatorRow::flyingStateChangedCallback, this);
 
     // > For changes in the database that defines {agentID,cfID,flying zone} links
     databaseChangedSubscriber = dfall_root_nodeHandle.subscribe("CentralManagerService/DBChanged", 1, &CoordinatorRow::databaseChangedCallback, this);;
     centralManagerDatabaseService = dfall_root_nodeHandle.serviceClient<dfall_pkg::CMQuery>("CentralManagerService/Query", false);
 
     // > For updating the controller that is currently operating
-    controllerUsedSubscriber = base_nodeHandle.subscribe("PPSClient/controllerUsed", 1, &CoordinatorRow::controllerUsedChangedCallback, this);
+    controllerUsedSubscriber = base_nodeHandle.subscribe("FlyingAgentClient/controllerUsed", 1, &CoordinatorRow::controllerUsedChangedCallback, this);
 
     // > For requesting the current flying state,
     //   this is used only for initialising the icon
-    getCurrentFlyingStateService = base_nodeHandle.serviceClient<dfall_pkg::IntIntService>("PPSClient/getCurrentFlyingState", false);
+    getCurrentFlyingStateService = base_nodeHandle.serviceClient<dfall_pkg::IntIntService>("FlyingAgentClient/getCurrentFlyingState", false);
 
     // > For requesting the current state of the Crazy Radio,
     //   this is used only for initialising the icon

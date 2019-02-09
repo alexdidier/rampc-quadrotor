@@ -170,7 +170,7 @@
 //
 //
 //
-// This function WILL NEED TO BE edited for successful completion of the PPS exercise
+// This function WILL NEED TO BE edited for successful completion of the classroom exercise
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response)
 {
 
@@ -214,7 +214,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	// > Note: the function "convertIntoBodyFrame" is implemented in this file
 	//   and by default does not perform any conversion. The equations to convert
 	//   the state error into the body frame should be implemented in that function
-	//   for successful completion of the PPS exercise
+	//   for successful completion of the classroom exercise
 	float stateErrorBody[9];
 	convertIntoBodyFrame(stateErrorInertial, stateErrorBody, request.ownCrazyflie.yaw);
 
@@ -464,7 +464,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 // This is the yaw component of the intrinsic Euler angles in [radians] as measured by
 // the Vicon motion capture system
 //
-// This function WILL NEED TO BE edited for successful completion of the PPS exercise
+// This function WILL NEED TO BE edited for successful completion of the classroom exercise
 void convertIntoBodyFrame(float stateInertial[9], float (&stateBody)[9], float yaw_measured)
 {
 	// Fill in the (x,y,z) position estimates to be returned
@@ -847,14 +847,14 @@ int main(int argc, char* argv[]) {
 	//   you will see the following line of code:
 	//   <param name="agentID" value="$(optenv ROS_NAMESPACE)" />
 	//   This line of code adds a parameter named "agentID" to the
-	//   "PPSClient" node.
+	//   "FlyingAgentClient" node.
 	// > Thus, to get access to this "agentID" paremeter, we first
-	//   need to get a handle to the "PPSClient" node within which this
+	//   need to get a handle to the "FlyingAgentClient" node within which this
 	//   controller service is nested.
 
 
 	// Get the ID of the agent and its coordinator
-	bool isValid_IDs = getAgentIDandCoordIDfromClientNode( m_namespace + "/PPSClient" , &m_agentID , &m_coordID);
+	bool isValid_IDs = getAgentIDandCoordIDfromClientNode( m_namespace + "/FlyingAgentClient" , &m_agentID , &m_coordID);
 
 	// Stall the node IDs are not valid
 	if ( !isValid_IDs )

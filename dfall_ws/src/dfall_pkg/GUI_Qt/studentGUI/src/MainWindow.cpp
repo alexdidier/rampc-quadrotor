@@ -153,11 +153,11 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
 
     CFBatterySubscriber = nodeHandle.subscribe("CrazyRadio/CFBattery", 1, &MainWindow::CFBatteryCallback, this);
 
-    flyingStateSubscriber = nodeHandle.subscribe("PPSClient/flyingState", 1, &MainWindow::flyingStateChangedCallback, this);
+    flyingStateSubscriber = nodeHandle.subscribe("FlyingAgentClient/flyingState", 1, &MainWindow::flyingStateChangedCallback, this);
 
-    batteryStateSubscriber = nodeHandle.subscribe("PPSClient/batteryState", 1, &MainWindow::batteryStateChangedCallback, this);
+    batteryStateSubscriber = nodeHandle.subscribe("FlyingAgentClient/batteryState", 1, &MainWindow::batteryStateChangedCallback, this);
 
-    controllerUsedSubscriber = nodeHandle.subscribe("PPSClient/controllerUsed", 1, &MainWindow::controllerUsedChangedCallback, this);
+    controllerUsedSubscriber = nodeHandle.subscribe("FlyingAgentClient/controllerUsed", 1, &MainWindow::controllerUsedChangedCallback, this);
 
 
     safeSetpointSubscriber = nodeHandle.subscribe("SafeControllerService/Setpoint", 1, &MainWindow::safeSetpointCallback, this);
@@ -167,18 +167,18 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     controllerSetpointPublisher = my_nodeHandle.advertise<Setpoint>("ControllerSetpoint", 1);
 
 
-    // communication with PPS Client, just to make it possible to communicate through terminal also we use PPSClient's name
-    //ros::NodeHandle nh_PPSClient(m_ros_namespace + "/PPSClient");
-    ros::NodeHandle nh_PPSClient("PPSClient");
-    crazyRadioCommandPublisher = nh_PPSClient.advertise<std_msgs::Int32>("crazyRadioCommand", 1);
-    PPSClientCommandPublisher = nh_PPSClient.advertise<std_msgs::Int32>("Command", 1);    
+    // communication with Flying Agent Client, just to make it possible to communicate through terminal also we use FlyingAgentClient's name
+    //ros::NodeHandle nh_FlyingAgentClient(m_ros_namespace + "/FlyingAgentClient");
+    ros::NodeHandle nh_FlyingAgentClient("FlyingAgentClient");
+    crazyRadioCommandPublisher = nh_FlyingAgentClient.advertise<std_msgs::Int32>("crazyRadioCommand", 1);
+    FlyingAgentClientCommandPublisher = nh_FlyingAgentClient.advertise<std_msgs::Int32>("Command", 1);    
 
 
     // > For publishing a message that requests the
     //   YAML parameters to be re-loaded from file
     // > The message contents specify which controller
     //   the parameters should be re-loaded for
-    requestLoadControllerYamlPublisher = nh_PPSClient.advertise<std_msgs::Int32>("requestLoadControllerYaml", 1);
+    requestLoadControllerYamlPublisher = nh_FlyingAgentClient.advertise<std_msgs::Int32>("requestLoadControllerYaml", 1);
 
 
     // Subscriber for locking the load the controller YAML
@@ -186,7 +186,7 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     requestLoadControllerYaml_from_my_GUI_Subscriber = nodeHandle.subscribe("/my_GUI/requestLoadControllerYaml", 1, &MainWindow::requestLoadControllerYaml_from_my_GUI_Callback, this);
 
     // First get student ID
-    if(!nh_PPSClient.getParam("agentID", m_student_id))
+    if(!nh_FlyingAgentClient.getParam("agentID", m_student_id))
     {
 		ROS_ERROR("Failed to get agentID");
 	}
@@ -966,21 +966,21 @@ void MainWindow::on_take_off_button_clicked()
 {
     std_msgs::Int32 msg;
     msg.data = CMD_CRAZYFLY_TAKE_OFF;
-    this->PPSClientCommandPublisher.publish(msg);
+    this->FlyingAgentClientCommandPublisher.publish(msg);
 }
 
 void MainWindow::on_land_button_clicked()
 {
     std_msgs::Int32 msg;
     msg.data = CMD_CRAZYFLY_LAND;
-    this->PPSClientCommandPublisher.publish(msg);
+    this->FlyingAgentClientCommandPublisher.publish(msg);
 }
 
 void MainWindow::on_motors_OFF_button_clicked()
 {
     std_msgs::Int32 msg;
     msg.data = CMD_CRAZYFLY_MOTORS_OFF;
-    this->PPSClientCommandPublisher.publish(msg);
+    this->FlyingAgentClientCommandPublisher.publish(msg);
 }
 
 
@@ -1487,49 +1487,49 @@ void MainWindow::on_enable_safe_controller_clicked()
 {
     std_msgs::Int32 msg;
     msg.data = CMD_USE_SAFE_CONTROLLER;
-    this->PPSClientCommandPublisher.publish(msg);
+    this->FlyingAgentClientCommandPublisher.publish(msg);
 }
 
 void MainWindow::on_enable_demo_controller_clicked()
 {
     std_msgs::Int32 msg;
     msg.data = CMD_USE_DEMO_CONTROLLER;
-    this->PPSClientCommandPublisher.publish(msg);
+    this->FlyingAgentClientCommandPublisher.publish(msg);
 }
 
 void MainWindow::on_enable_student_controller_clicked()
 {
     std_msgs::Int32 msg;
     msg.data = CMD_USE_STUDENT_CONTROLLER;
-    this->PPSClientCommandPublisher.publish(msg);
+    this->FlyingAgentClientCommandPublisher.publish(msg);
 }
 
 void MainWindow::on_enable_mpc_controller_clicked()
 {
     std_msgs::Int32 msg;
     msg.data = CMD_USE_MPC_CONTROLLER;
-    this->PPSClientCommandPublisher.publish(msg);
+    this->FlyingAgentClientCommandPublisher.publish(msg);
 }
 
 void MainWindow::on_enable_remote_controller_clicked()
 {
     std_msgs::Int32 msg;
     msg.data = CMD_USE_REMOTE_CONTROLLER;
-    this->PPSClientCommandPublisher.publish(msg);
+    this->FlyingAgentClientCommandPublisher.publish(msg);
 }
 
 void MainWindow::on_enable_tuning_controller_clicked()
 {
     std_msgs::Int32 msg;
     msg.data = CMD_USE_TUNING_CONTROLLER;
-    this->PPSClientCommandPublisher.publish(msg);
+    this->FlyingAgentClientCommandPublisher.publish(msg);
 }
 
 void MainWindow::on_enable_picker_controller_clicked()
 {
     std_msgs::Int32 msg;
     msg.data = CMD_USE_PICKER_CONTROLLER;
-    this->PPSClientCommandPublisher.publish(msg);
+    this->FlyingAgentClientCommandPublisher.publish(msg);
 }
 
 

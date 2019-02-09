@@ -405,11 +405,12 @@ int main(int argc, char* argv[])
 	// Starting the ROS-node
 	ros::init(argc, argv, "BatteryMonitor");
 
-	// Create a "ros::NodeHandle" type local variable named "nodeHandle",
-	// the "~" indcates that "self" is the node handle assigned.
+	// Create a "ros::NodeHandle" type local variable "nodeHandle"
+	// as the current node, the "~" indcates that "self" is the
+	// node handle assigned to this variable.
 	ros::NodeHandle nodeHandle("~");
 
-	// Get the namespace of this node
+	// Get the namespace of this "BatteryMonitor" node
 	std::string m_namespace = ros::this_node::getNamespace();
 	ROS_INFO_STREAM("[BATTERY MONITOR] ros::this_node::getNamespace() =  " << m_namespace);
 
@@ -417,8 +418,19 @@ int main(int argc, char* argv[])
 
 	// AGENT ID AND COORDINATOR ID
 
+	// NOTES:
+	// > If you look at the "Agent.launch" file in the "launch" folder,
+	//   you will see the following line of code:
+	//   <param name="agentID" value="$(optenv ROS_NAMESPACE)" />
+	//   This line of code adds a parameter named "agentID" to the
+	//   "FlyingAgentClient" node.
+	// > Thus, to get access to this "agentID" paremeter, we first
+	//   need to get a handle to the "FlyingAgentClient" node within which this
+	//   controller service is nested.
+
+
 	// Get the ID of the agent and its coordinator
-	bool isValid_IDs = getAgentIDandCoordIDfromClientNode( m_namespace + "/PPSClient" , &m_agentID , &m_coordID);
+	bool isValid_IDs = getAgentIDandCoordIDfromClientNode( m_namespace + "/FlyingAgentClient" , &m_agentID , &m_coordID);
 
 	// Stall the node IDs are not valid
 	if ( !isValid_IDs )
@@ -434,6 +446,19 @@ int main(int argc, char* argv[])
 
 
 	// PARAMETER SERVICE NAMESPACE AND NODEHANDLES:
+
+	// NOTES:
+	// > The parameters that are specified thorugh the *.yaml files
+	//   are managed by a separate node called the "Parameter Service"
+	// > A separate node is used for reasons of speed and generality
+	// > To allow for a distirbuted architecture, there are two
+	//   "ParamterService" nodes that are relevant:
+	//   1) the one that is nested under the "m_agentID" namespace
+	//   2) the one that is nested under the "m_coordID" namespace
+	// > The following lines of code create the namespace (as strings)
+	//   to there two relevant "ParameterService" nodes.
+	// > The node handles are also created because they are needed
+	//   for the ROS Subscriptions that follow.
 
 	// Set the class variable "m_namespace_to_own_agent_parameter_service",
 	// i.e., the namespace of parameter service for this agent
@@ -455,7 +480,7 @@ int main(int argc, char* argv[])
 
 	// SUBSCRIBE TO "YAML PARAMTERS READY" MESSAGES
 
-	// The parameters service publish messages with names of the form:
+	// The parameter service publishes messages with names of the form:
 	// /dfall/.../ParameterService/<filename with .yaml extension>
 	ros::Subscriber batteryMonitor_yamlReady_fromAgent = nodeHandle_to_own_agent_parameter_service.subscribe(  "BatteryMonitor", 1, isReadyBatteryMonitorYamlCallback);
 	ros::Subscriber batteryMonitor_yamlReady_fromCoord = nodeHandle_to_coordinator_parameter_service.subscribe("BatteryMonitor", 1, isReadyBatteryMonitorYamlCallback);
@@ -487,9 +512,9 @@ int main(int argc, char* argv[])
 	std::string namespace_to_crazyradio = m_namespace + "/CrazyRadio";
     ros::NodeHandle nodeHandle_to_crazyradio(namespace_to_crazyradio);
 
-    // Get a node handle to the PPS Client
-	std::string namespace_to_ppsclient = m_namespace + "/PPSClient";
-    ros::NodeHandle nodeHandle_to_ppsclient(namespace_to_ppsclient);
+    // Get a node handle to the Flying Agent Client
+	std::string namespace_to_FlyingAgentClient = m_namespace + "/FlyingAgentClient";
+    ros::NodeHandle nodeHandle_to_FlyingAgentClient(namespace_to_FlyingAgentClient);
 
 	// Subscribe to the voltage of the battery
 	ros::Subscriber newBatteryVoltageSubscriber = nodeHandle_to_crazyradio.subscribe("CFBattery", 1, newBatteryVoltageCallback);
@@ -498,7 +523,7 @@ int main(int argc, char* argv[])
 	ros::Subscriber crazyRadioStatusSubscriber = nodeHandle_to_crazyradio.subscribe("CrazyRadioStatus", 1, crazyRadioStatusCallback);
 
 	// Subscribe to the flying state of the agent
-	ros::Subscriber agentOperatingStateSubscriber = nodeHandle_to_ppsclient.subscribe("flyingState", 1, agentOperatingStateCallback);
+	ros::Subscriber agentOperatingStateSubscriber = nodeHandle_to_FlyingAgentClient.subscribe("flyingState", 1, agentOperatingStateCallback);
 
 	// Initialise the operating state
 	m_agent_operating_state = AGENT_OPERATING_STATE_MOTORS_OFF;

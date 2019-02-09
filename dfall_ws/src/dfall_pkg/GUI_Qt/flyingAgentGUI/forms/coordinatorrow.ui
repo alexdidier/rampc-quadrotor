@@ -81,7 +81,7 @@
       <string notr="true">QCheckBox::indicator{ width:30px ; height:30px }</string>
      </property>
      <property name="text">
-      <string>IDYYY , PPS_CFXX</string>
+      <string>IDYYY , CFXX</string>
      </property>
      <property name="checkable">
       <bool>true</bool>

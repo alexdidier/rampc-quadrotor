@@ -191,7 +191,7 @@
               "keys": {
                 "publishers": {
                   "type": "repr", 
-                  "repr": "u\"[{'type_name': 'std_msgs/Int32', 'topic_name': '/PPSClient/Command', 'enabled': False, 'rate': 1.0, 'expressions': {u'/PPSClient/Command/data': '3'}, 'publisher_id': 0, 'counter': 0}]\""
+                  "repr": "u\"[{'type_name': 'std_msgs/Int32', 'topic_name': '/FlyingAgentClient/Command', 'enabled': False, 'rate': 1.0, 'expressions': {u'/FlyingAgentClient/Command/data': '3'}, 'publisher_id': 0, 'counter': 0}]\""
                 }
               }, 
               "groups": {}

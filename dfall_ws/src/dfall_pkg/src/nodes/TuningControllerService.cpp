@@ -115,7 +115,7 @@
 // IMPORTANT NOTES FOR "onboardControllerType"  AND AXIS CONVENTIONS
 // > The allowed values for "onboardControllerType" are in the "Defines" section at the
 //   top of this file, they are MOTOR_MODE, RATE_MODE, OR ANGLE_MODE.
-// > In the PPS exercise we will only use the RATE_MODE.
+// > In the classroom exercise we will only use the RATE_MODE.
 // > In RATE_MODE the ".roll", ".ptich", and ".yaw" properties of "response.ControlCommand"
 //   specify the angular rate in [radians/second] that will be requested from the
 //   PID controllers running in the Crazyflie 2.0 firmware.
@@ -159,7 +159,7 @@
 //
 //
 //
-// This function WILL NEED TO BE edited for successful completion of the PPS exercise
+// This function WILL NEED TO BE edited for successful completion of the classroom exercise
 
 
 
@@ -1197,7 +1197,7 @@ void convert_stateInertial_to_bodyFrameError(float stateInertial[12], float setp
 	// > Note: the function "convertIntoBodyFrame" is implemented in this file
 	//   and by default does not perform any conversion. The equations to convert
 	//   the state error into the body frame should be implemented in that function
-	//   for successful completion of the PPS exercise
+	//   for successful completion of the classroom exercise
 	convertIntoBodyFrame(stateInertial, bodyFrameError, temp_stateInertial_yaw);
 }
 
@@ -1218,7 +1218,7 @@ void convert_stateInertial_to_bodyFrameError(float stateInertial[12], float setp
 //     CCCC   OOO   N   N    V    EEEEE  R   R  SSSS   III   OOO   N   N
 //    ------------------------------------------------------------------------------
 
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+// This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
 float computeMotorPolyBackward(float thrust)
 {
 	// Compute the 16-bit command signal that generates the "thrust" force
@@ -1254,7 +1254,7 @@ float computeMotorPolyBackward(float thrust)
 //     GGGG   UUU   III        CCCC  A   A  LLLLL  LLLLL  BBBB   A   A   CCCC  K   K
 //    ----------------------------------------------------------------------------------
 
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+// This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
 // void setpointCallback(const Setpoint& newSetpoint)
 // {
 //     setpoint[0] = newSetpoint.x;
@@ -1402,7 +1402,7 @@ void isReadyTuningControllerYamlCallback(const IntWithHeader & msg)
 }
 
 
-// This function CAN BE edited for successful completion of the PPS exercise, and the
+// This function CAN BE edited for successful completion of the classroom exercise, and the
 // use of parameters fetched from the YAML file is highly recommended to make tuning of
 // your controller easier and quicker.
 void fetchTuningControllerYamlParameters(ros::NodeHandle& nodeHandle)
@@ -1564,7 +1564,7 @@ void fetchTuningControllerYamlParameters(ros::NodeHandle& nodeHandle)
 //    M   M  A   A  III  N   N
 //    ----------------------------------------------------------------------------------
 
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+// This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
 int main(int argc, char* argv[]) {
     
     // Starting the ROS-node
@@ -1586,14 +1586,14 @@ int main(int argc, char* argv[]) {
 	//   you will see the following line of code:
 	//   <param name="agentID" value="$(optenv ROS_NAMESPACE)" />
 	//   This line of code adds a parameter named "agentID" to the
-	//   "PPSClient" node.
+	//   "FlyingAgentClient" node.
 	// > Thus, to get access to this "agentID" paremeter, we first
-	//   need to get a handle to the "PPSClient" node within which this
+	//   need to get a handle to the "FlyingAgentClient" node within which this
 	//   controller service is nested.
 
 
 	// Get the ID of the agent and its coordinator
-	bool isValid_IDs = getAgentIDandCoordIDfromClientNode( m_namespace + "/PPSClient" , &m_agentID , &m_coordID);
+	bool isValid_IDs = getAgentIDandCoordIDfromClientNode( m_namespace + "/FlyingAgentClient" , &m_agentID , &m_coordID);
 
 	// Stall the node IDs are not valid
 	if ( !isValid_IDs )

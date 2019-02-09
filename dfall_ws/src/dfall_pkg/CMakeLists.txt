@@ -327,7 +327,7 @@ if(VICON_LIBRARY)
 	add_executable(ViconDataPublisher       src/nodes/ViconDataPublisher.cpp)
 endif()
 
-add_executable(PPSClient                 src/nodes/PPSClient.cpp
+add_executable(FlyingAgentClient         src/nodes/FlyingAgentClient.cpp
                                          src/classes/GetParamtersAndNamespaces.cpp)
 add_executable(BatteryMonitor            src/nodes/BatteryMonitor.cpp
                                          src/classes/GetParamtersAndNamespaces.cpp)
@@ -420,7 +420,7 @@ if(VICON_LIBRARY)
 	add_dependencies(ViconDataPublisher       dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 endif()
 
-add_dependencies(PPSClient                 dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(FlyingAgentClient         dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(BatteryMonitor            dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(DefaultControllerService  dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(SafeControllerService     dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
@@ -472,7 +472,7 @@ if(VICON_LIBRARY)
 	target_link_libraries(ViconDataPublisher ${VICON_LIBRARY})
 endif()
 
-target_link_libraries(PPSClient                 ${catkin_LIBRARIES})
+target_link_libraries(FlyingAgentClient         ${catkin_LIBRARIES})
 target_link_libraries(BatteryMonitor            ${catkin_LIBRARIES})
 target_link_libraries(DefaultControllerService  ${catkin_LIBRARIES})
 target_link_libraries(SafeControllerService     ${catkin_LIBRARIES})

@@ -30,7 +30,7 @@ EnableControllerLoadYamlBar::EnableControllerLoadYamlBar(QWidget *parent) :
     ros::NodeHandle nodeHandle_for_this_gui(this_namespace);
 
     // CREATE THE COMMAND PUBLISHER
-    commandPublisher = nodeHandle_for_this_gui.advertise<dfall_pkg::IntWithHeader>("PPSClient/Command", 1);
+    commandPublisher = nodeHandle_for_this_gui.advertise<dfall_pkg::IntWithHeader>("FlyingAgentClient/Command", 1);
 
     // CREATE THE REQUEST LOAD YAML FILE PUBLISHER
     // Get the node handle to this parameter service

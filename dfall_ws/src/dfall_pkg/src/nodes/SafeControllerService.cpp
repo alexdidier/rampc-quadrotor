@@ -232,7 +232,7 @@ void estimateState(Controller::Request &request, float (&est)[9])
 //    ----------------------------------------------------------------------------------
 
 
-// This function DOES NOT NEED TO BE edited for successful completion of the PPS exercise
+// This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
 void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
 {
     // Extract from the "msg" for which controller the and from where to fetch the YAML

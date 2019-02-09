@@ -157,11 +157,11 @@ private:
     void loadCrazyflieContext();
 
     // > For requesting the current flying state
-    //   i.e., using the service advertised by the PPS client
+    //   i.e., using the service advertised by the Flying Agent Client
     void getCurrentFlyingState();
 
     // > For requesting the current state of the Crazy Radio
-    //   i.e., using the service advertised by the PPS client
+    //   i.e., using the service advertised by the Flying Agent Client
     void getCurrentCrazyRadioState();
 
     // > For updating the text in the UI element of
