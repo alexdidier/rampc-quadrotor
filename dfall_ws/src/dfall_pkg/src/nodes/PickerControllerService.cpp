@@ -152,303 +152,50 @@ void perControlCycleOperations()
 void buttonPressed_goto_start()
 {
 	ROS_INFO("[PICKER CONTROLLER] Goto Start button pressed");
-
-	// // The drone should move smoothly to the start point:
-	// m_shouldSmoothSetpointChanges = true;
-	// // Set the (x,y) coordinates for the start point:
-	// m_setpoint[0] = m_pickup_coordinates_xy[0];
-	// m_setpoint[1] = m_pickup_coordinates_xy[1];
-	// // Set the z coordinate to be a little more than the
-	// // length of the "picker string"
-	// m_setpoint[2] = m_picker_string_length + 0.10;
-	// // Publish the setpoint so that the GUI updates
-	// publishCurrentSetpoint();
 }
 
 void buttonPressed_attach()
 {
 	ROS_INFO("[PICKER CONTROLLER] Attach button pressed");
-
-	// m_shouldSmoothSetpointChanges = true;
-	// m_setpoint[2] = m_picker_string_length + m_thickness_of_object_at_pickup;
-	// publishCurrentSetpoint();
 }
 
 void buttonPressed_lift_up()
 {
 	ROS_INFO("[PICKER CONTROLLER] Pick up button pressed");
-
-	// m_shouldSmoothSetpointChanges = true;
-	// m_mass_total_grams = m_mass_CF_grams + m_mass_E_grams;
-	// m_setpoint[2] = m_picker_string_length + 0.25;
-	// publishCurrentSetpoint();
 }
 
 void buttonPressed_goto_end()
 {
 	ROS_INFO("[PICKER CONTROLLER] Goto End button pressed");
 
-	// m_shouldSmoothSetpointChanges = true;
-	// m_setpoint[0] = m_dropoff_coordinates_xy_for_E[0];
-	// m_setpoint[1] = m_dropoff_coordinates_xy_for_E[1];
-	// publishCurrentSetpoint();
 }	
 
 void buttonPressed_put_down()
 {
 	ROS_INFO("[PICKER CONTROLLER] Put down button pressed");
-
-	// m_shouldSmoothSetpointChanges = true;
-	// m_setpoint[2] = m_picker_string_length + m_thickness_of_object_at_putdown;
-	// m_mass_total_grams = m_mass_CF_grams;
-	// publishCurrentSetpoint();
 }
 
 void buttonPressed_squat()
 {
 	ROS_INFO("[PICKER CONTROLLER] Squat button pressed");
-
-	// m_shouldSmoothSetpointChanges = true;
-	// m_setpoint[2] = m_picker_string_length - 0.10;
-	// m_mass_total_grams = m_mass_CF_grams;
-	// publishCurrentSetpoint();
 }
 
 void buttonPressed_jump()
 {
 	ROS_INFO("[PICKER CONTROLLER] Jump button pressed");
-
-	// m_shouldSmoothSetpointChanges = false;
-	// m_setpoint[2] = m_picker_string_length + 0.10;
-	// m_mass_total_grams = m_mass_CF_grams;
-	// publishCurrentSetpoint();
 }
 
 void buttonPressed_standby()
 {
 	ROS_INFO("[PICKER CONTROLLER] Standby button pressed");
-
-	// m_shouldSmoothSetpointChanges = false;
-	// m_setpoint[2] = m_picker_string_length + 0.10;
-	// m_mass_total_grams = m_mass_CF_grams;
-	// publishCurrentSetpoint();
 }
 
 
 
-// THESE CALLBACK FUNCTIONS ALLOW YOU TO IMPLEMENT SOME
-// CUSTOM ACTION IN RESPONSE TO THE RESPECTIVE BUTTON PRESSES
-
-// void buttonPressed_1()
-// {
-// 	ROS_INFO("[PICKER CONTROLLER] Button 1 pressed");
-// }
-// void buttonPressed_2()
-// {
-// 	ROS_INFO("[PICKER CONTROLLER] Button 2 pressed");
-// }
-
-// void buttonPressed_3()
-// {
-// 	ROS_INFO("[PICKER CONTROLLER] Button 3 pressed");
-// }
-
-// void buttonPressed_4()
-// {
-// 	ROS_INFO("[PICKER CONTROLLER] Button 4 pressed");
-// }
 
 
 
 
-
-
-
-
-
-
-// void zSetpointCallback(const std_msgs::Float32& msg)
-// {
-// 	// The "data" in the message is z-height in [meters]
-// 	float z_height = msg.data;
-// 	// Display the data
-// 	ROS_INFO_STREAM("[PICKER CONTROLLER] Z Slider changed to " << z_height << " [m]" );
-// 	// Update the z-component of the setpoint class variable
-// 	m_setpoint[2] = z_height;
-// }
-
-
-// void yawSetpointCallback(const std_msgs::Float32& msg)
-// {
-// 	// The "data" in the message is yaw-angle in [radians]
-// 	float yaw_angle = msg.data;
-// 	// Display the data
-// 	ROS_INFO_STREAM("[PICKER CONTROLLER] Yaw Dial changed to " << (yaw_angle*RAD2DEG) << " [deg]" );
-// 	// Update the yaw-component of the setpoint class variable
-// 	m_setpoint[3] = yaw_angle;
-// }
-
-// void massCallback(const std_msgs::Float32& msg)
-// {
-// 	// The "data" in the message is mass in [grams]
-// 	float mass = msg.data;
-// 	// Display the data
-// 	ROS_INFO_STREAM("[PICKER CONTROLLER] Mass slider changed to " << mass << " [grams]" );
-// 	// Update the total mass class variable
-// 	m_mass_total_grams = mass;
-// }
-
-// void xAdjustmentCallback(const std_msgs::Float32& msg)
-// {
-// 	// The "data" in the message is adjustment in [meters]
-// 	float x_adjustment = msg.data;
-// 	// Display the data
-// 	ROS_INFO_STREAM("[PICKER CONTROLLER] X adjustment slider changed to " << x_adjustment << " [m]" );
-// 	// Update the x-adjustment class variable
-// 	m_xAdjustment = x_adjustment;
-// }
-
-// void yAdjustmentCallback(const std_msgs::Float32& msg)
-// {
-// 	// The "data" in the message is adjustment in [meters]
-// 	float y_adjustment = msg.data;
-// 	// Display the data
-// 	ROS_INFO_STREAM("[PICKER CONTROLLER] Y adjustment slider changed to " << y_adjustment << " [m]" );
-// 	// Update the y-adjustment class variable
-// 	m_yAdjustment = y_adjustment;
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// CALLBACK FUNCTION THAT RUN WHEN THE RESPECTIVE BUTTON IS PRESSED
-// > AND A SETPOINT IS PROVIDED
-
-// void buttonPressedWithSetpoint_gotoStart(const SetpointV2& newSetpointV2)
-// {
-// 	ROS_INFO_STREAM("[PICKER CONTROLLER] Goto Start button pressed: (x,y,z)=(" << newSetpointV2.x << "," << newSetpointV2.y << "," << newSetpointV2.z << "), smooth=" << int(newSetpointV2.isChecked) );
-
-// 	// Use the boolean for the smoothing flag
-// 	m_shouldSmoothSetpointChanges = newSetpointV2.isChecked;
-// 	// Set the (x,y,z) coordinates:
-// 	m_setpoint[0] = newSetpointV2.x;
-// 	m_setpoint[1] = newSetpointV2.y;
-// 	m_setpoint[2] = newSetpointV2.z;
-// 	// Publish the setpoint so that the GUI updates
-// 	//publishCurrentSetpoint();
-// }
-
-// void buttonPressedWithSetpoint_attach(const SetpointV2& newSetpointV2)
-// {
-// 	ROS_INFO_STREAM("[PICKER CONTROLLER] Attach button pressed: z=" << newSetpointV2.z << ", smooth=" << int(newSetpointV2.isChecked) );
-
-// 	// Use the boolean for the smoothing flag
-// 	m_shouldSmoothSetpointChanges = newSetpointV2.isChecked;
-// 	// Set the z coordinate:
-// 	m_setpoint[2] = newSetpointV2.z;
-// 	// Publish the setpoint so that the GUI updates
-// 	//publishCurrentSetpoint();
-// }
-
-// void buttonPressedWithSetpoint_pickup(const SetpointV2& newSetpointV2)
-// {
-// 	ROS_INFO_STREAM("[PICKER CONTROLLER] Pick up button pressed: z=" << newSetpointV2.z << ", smooth=" << int(newSetpointV2.isChecked) );
-
-// 	// Use the boolean for the smoothing flag
-// 	m_shouldSmoothSetpointChanges = newSetpointV2.isChecked;
-// 	// Set the z coordinate:
-// 	m_setpoint[2] = newSetpointV2.z;
-// 	// Update the mass of the Crazyflie
-// 	m_mass_total_grams = m_mass_CF_grams + m_mass_E_grams;
-// 	// Publish the setpoint so that the GUI updates
-// 	//publishCurrentSetpoint();
-// }
-
-// void buttonPressedWithSetpoint_gotoEnd(const SetpointV2& newSetpointV2)
-// {
-// 	ROS_INFO_STREAM("[PICKER CONTROLLER] Goto End button pressed: (x,y)=(" << newSetpointV2.x << "," << newSetpointV2.y << "), smooth=" << int(newSetpointV2.isChecked) );
-
-// 	// Use the boolean for the smoothing flag
-// 	m_shouldSmoothSetpointChanges = newSetpointV2.isChecked;
-// 	// Set the (x,y) coordinates:
-// 	m_setpoint[0] = newSetpointV2.x;
-// 	m_setpoint[1] = newSetpointV2.y;
-// 	// Publish the setpoint so that the GUI updates
-// 	//publishCurrentSetpoint();
-// }
-
-// void buttonPressedWithSetpoint_putdown(const SetpointV2& newSetpointV2)
-// {
-// 	ROS_INFO_STREAM("[PICKER CONTROLLER] Put down button pressed: z=" << newSetpointV2.z << ", smooth=" << int(newSetpointV2.isChecked) );
-
-// 	// Use the boolean for the smoothing flag
-// 	m_shouldSmoothSetpointChanges = newSetpointV2.isChecked;
-// 	// Set the z coordinate:
-// 	m_setpoint[2] = newSetpointV2.z;
-// 	// Update the mass of the Crazyflie
-// 	m_mass_total_grams = m_mass_CF_grams;
-// 	// Publish the setpoint so that the GUI updates
-// 	//publishCurrentSetpoint();
-// }
-
-// void buttonPressedWithSetpoint_squat(const SetpointV2& newSetpointV2)
-// {
-// 	ROS_INFO_STREAM("[PICKER CONTROLLER] Squat button pressed: z=" << newSetpointV2.z << ", smooth=" << int(newSetpointV2.isChecked) );
-
-// 	// Use the boolean for the smoothing flag
-// 	m_shouldSmoothSetpointChanges = newSetpointV2.isChecked;
-// 	// Set the z coordinate:
-// 	m_setpoint[2] = newSetpointV2.z;
-// 	// Update the mass of the Crazyflie
-// 	m_mass_total_grams = m_mass_CF_grams;
-// 	// Publish the setpoint so that the GUI updates
-// 	//publishCurrentSetpoint();
-// }
-
-// void buttonPressedWithSetpoint_jump(const SetpointV2& newSetpointV2)
-// {
-// 	ROS_INFO_STREAM("[PICKER CONTROLLER] Jump button pressed: z=" << newSetpointV2.z << ", smooth=" << int(newSetpointV2.isChecked) );
-
-// 	// Use the boolean for the smoothing flag
-// 	m_shouldSmoothSetpointChanges = newSetpointV2.isChecked;
-// 	// Set the z coordinate:
-// 	m_setpoint[2] = newSetpointV2.z;
-// 	// Update the mass of the Crazyflie
-// 	m_mass_total_grams = m_mass_CF_grams;
-// 	// Publish the setpoint so that the GUI updates
-// 	//publishCurrentSetpoint();
-// }
-
-
-// void buttonPressedWithSetpoint_1(const SetpointV2& newSetpointV2)
-// {
-// 	ROS_INFO("[PICKER CONTROLLER] Button 1 pressed with a setpoint provided");
-// }
-
-// void buttonPressedWithSetpoint_2(const SetpointV2& newSetpointV2)
-// {
-// 	ROS_INFO("[PICKER CONTROLLER] Button 2 pressed with a setpoint provided");
-// }
-
-// void buttonPressedWithSetpoint_3(const SetpointV2& newSetpointV2)
-// {
-// 	ROS_INFO("[PICKER CONTROLLER] Button 3 pressed with a setpoint provided");
-// }
-
-// void buttonPressedWithSetpoint_4(const SetpointV2& newSetpointV2)
-// {
-// 	ROS_INFO("[PICKER CONTROLLER] Button 4 pressed with a setpoint provided with a setpoint provided");
-// }
 
 
 
@@ -1296,147 +1043,6 @@ bool getCurrentSetpointCallback(GetSetpointService::Request &request, GetSetpoin
 
 
 
-// // This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
-// void setpointCallback(const Setpoint& newSetpoint)
-// {
-//     m_setpoint[0] = newSetpoint.x;
-//     m_setpoint[1] = newSetpoint.y;
-//     m_setpoint[2] = newSetpoint.z;
-//     m_setpoint[3] = newSetpoint.yaw;
-// }
-
-
-// void publishCurrentSetpoint()
-// {
-// 	Setpoint msg_setpoint;
-//     msg_setpoint.x   = m_setpoint[0];
-//     msg_setpoint.y   = m_setpoint[1];
-//     msg_setpoint.z   = m_setpoint[2];
-//     msg_setpoint.yaw = m_setpoint[3];
-
-//     pickerSetpointToGUIPublisher.publish(msg_setpoint);
-// }
-
-
-
-
-
-//    ----------------------------------------------------------------------------------
-//     CCCC  U   U   SSSS  TTTTT   OOO   M   M
-//    C      U   U  S        T    O   O  MM MM
-//    C      U   U   SSS     T    O   O  M M M
-//    C      U   U      S    T    O   O  M   M
-//     CCCC   UUU   SSSS     T     OOO   M   M
-//
-//     CCCC   OOO   M   M  M   M    A    N   N  DDDD
-//    C      O   O  MM MM  MM MM   A A   NN  N  D   D
-//    C      O   O  M M M  M M M  A   A  N N N  D   D
-//    C      O   O  M   M  M   M  AAAAA  N  NN  D   D
-//     CCCC   OOO   M   M  M   M  A   A  N   N  DDDD
-//    ----------------------------------------------------------------------------------
-
-// CUSTOM COMMAND RECEIVED CALLBACK
-// void buttonPressedCallback(const std_msgs::Int32& msg)
-// {
-// 	// Extract the data from the message
-// 	int button_index = msg.data;
-
-// 	// Switch between the button pressed
-// 	switch(button_index)
-// 	{
-// 		case PICKER_BUTTON_GOTOSTART:
-// 			buttonPressed_gotoStart();
-// 			break;
-// 		case PICKER_BUTTON_ATTACH:
-// 			buttonPressed_attach();
-// 			break;
-// 		case PICKER_BUTTON_PICKUP:
-// 			buttonPressed_pickup();
-// 			break;
-// 		case PICKER_BUTTON_GOTOEND:
-// 			buttonPressed_gotoEnd();
-// 			break;
-// 		case PICKER_BUTTON_PUTDOWN:
-// 			buttonPressed_putdown();
-// 			break;
-// 		case PICKER_BUTTON_SQUAT:
-// 			buttonPressed_squat();
-// 			break;
-// 		case PICKER_BUTTON_JUMP:
-// 			buttonPressed_jump();
-// 			break;
-// 		case PICKER_BUTTON_1:
-// 			buttonPressed_1();
-// 			break;
-// 		case PICKER_BUTTON_2:
-// 			buttonPressed_2();
-// 			break;
-// 		case PICKER_BUTTON_3:
-// 			buttonPressed_3();
-// 			break;
-// 		case PICKER_BUTTON_4:
-// 			buttonPressed_4();
-// 			break;
-// 		default:
-// 		{
-// 			// Let the user know that the command was not recognised
-// 			ROS_INFO_STREAM("[PICKER CONTROLLER] A button pressed message was received in the controller but not recognised, message.data = " << button_index );
-// 			break;
-// 		}
-// 	}
-// }
-
-
-
-// void buttonPressedWithSetpointCallback(const SetpointV2& newSetpointV2)
-// {
-// 	// Extract the "buttonID" from the message
-// 	int button_index = newSetpointV2.buttonID;
-
-// 	// Switch between the button pressed
-// 	switch(button_index)
-// 	{
-// 		case PICKER_BUTTON_GOTOSTART:
-// 			buttonPressedWithSetpoint_gotoStart(newSetpointV2);
-// 			break;
-// 		case PICKER_BUTTON_ATTACH:
-// 			buttonPressedWithSetpoint_attach(newSetpointV2);
-// 			break;
-// 		case PICKER_BUTTON_PICKUP:
-// 			buttonPressedWithSetpoint_pickup(newSetpointV2);
-// 			break;
-// 		case PICKER_BUTTON_GOTOEND:
-// 			buttonPressedWithSetpoint_gotoEnd(newSetpointV2);
-// 			break;
-// 		case PICKER_BUTTON_PUTDOWN:
-// 			buttonPressedWithSetpoint_putdown(newSetpointV2);
-// 			break;
-// 		case PICKER_BUTTON_SQUAT:
-// 			buttonPressedWithSetpoint_squat(newSetpointV2);
-// 			break;
-// 		case PICKER_BUTTON_JUMP:
-// 			buttonPressedWithSetpoint_jump(newSetpointV2);
-// 			break;
-// 		case PICKER_BUTTON_1:
-// 			buttonPressedWithSetpoint_1(newSetpointV2);
-// 			break;
-// 		case PICKER_BUTTON_2:
-// 			buttonPressedWithSetpoint_2(newSetpointV2);
-// 			break;
-// 		case PICKER_BUTTON_3:
-// 			buttonPressedWithSetpoint_3(newSetpointV2);
-// 			break;
-// 		case PICKER_BUTTON_4:
-// 			buttonPressedWithSetpoint_4(newSetpointV2);
-// 			break;
-// 		default:
-// 		{
-// 			// Let the user know that the command was not recognised
-// 			ROS_INFO_STREAM("[PICKER CONTROLLER] A button pressed message was received in the controller but not recognised, message.data = " << button_index );
-// 			break;
-// 		}
-// 	}
-// }
 
 
 
@@ -1538,27 +1144,6 @@ void fetchPickerControllerYamlParameters(ros::NodeHandle& nodeHandle)
 
 	// GET THE PARAMETERS:
 
-	// // // > The mass of the letters
-	// m_mass_E_grams = getParameterFloat(nodeHandle_for_paramaters , "mass_E");
-	// m_mass_T_grams = getParameterFloat(nodeHandle_for_paramaters , "mass_T");
-	// m_mass_H_grams = getParameterFloat(nodeHandle_for_paramaters , "mass_H");
-
-	// // Thickness of the object at pick-up and put-down, in [meters]
-	// // > This should also account for extra height due to the surface where the object is
-	// m_thickness_of_object_at_pickup  = getParameterFloat(nodeHandle_for_paramaters , "thickness_of_object_at_pickup");
-	// m_thickness_of_object_at_putdown = getParameterFloat(nodeHandle_for_paramaters , "thickness_of_object_at_putdown");
-
-	// // (x,y) coordinates of the pickup location
-	// getParameterFloatVector(nodeHandle_for_paramaters, "pickup_coordinates_xy", m_pickup_coordinates_xy, 2);
-
-	// // (x,y) coordinates of the drop off location
-	// getParameterFloatVector(nodeHandle_for_paramaters, "dropoff_coordinates_xy_for_E", m_dropoff_coordinates_xy_for_E, 2);
-	// getParameterFloatVector(nodeHandle_for_paramaters, "dropoff_coordinates_xy_for_T", m_dropoff_coordinates_xy_for_T, 2);
-	// getParameterFloatVector(nodeHandle_for_paramaters, "dropoff_coordinates_xy_for_H", m_dropoff_coordinates_xy_for_H, 2);
-
-	// // Length of the string from the Crazyflie to the end of the Picker, in [meters]
-	// m_picker_string_length = getParameterFloat(nodeHandle_for_paramaters , "picker_string_length");
-
 	// Max setpoint change per second
 	yaml_max_setpoint_change_per_second_horizontal = getParameterFloat(nodeHandle_for_paramaters , "max_setpoint_change_per_second_horizontal");
 	yaml_max_setpoint_change_per_second_vertical = getParameterFloat(nodeHandle_for_paramaters , "max_setpoint_change_per_second_vertical");
@@ -1633,74 +1218,6 @@ void fetchPickerControllerYamlParameters(ros::NodeHandle& nodeHandle)
 
 
 
-//    ----------------------------------------------------------------------------------
-//     GGGG  EEEEE  TTTTT  PPPP     A    RRRR     A    M   M   ( )
-//    G      E        T    P   P   A A   R   R   A A   MM MM  (   )
-//    G      EEE      T    PPPP   A   A  RRRR   A   A  M M M  (   )
-//    G   G  E        T    P      AAAAA  R  R   AAAAA  M   M  (   )
-//     GGGG  EEEEE    T    P      A   A  R   R  A   A  M   M   ( )
-//    ----------------------------------------------------------------------------------
-
-
-// // This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
-// float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name)
-// {
-//     float val;
-//     if(!nodeHandle.getParam(name, val))
-//     {
-//         ROS_ERROR_STREAM("missing parameter '" << name << "'");
-//     }
-//     return val;
-// }
-// // This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
-// void getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length)
-// {
-//     if(!nodeHandle.getParam(name, val)){
-//         ROS_ERROR_STREAM("missing parameter '" << name << "'");
-//     }
-//     if(val.size() != length) {
-//         ROS_ERROR_STREAM("parameter '" << name << "' has wrong array length, " << length << " needed");
-//     }
-// }
-// // This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
-// int getParameterInt(ros::NodeHandle& nodeHandle, std::string name)
-// {
-//     int val;
-//     if(!nodeHandle.getParam(name, val))
-//     {
-//         ROS_ERROR_STREAM("missing parameter '" << name << "'");
-//     }
-//     return val;
-// }
-// // This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
-// void getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val, int length)
-// {
-//     if(!nodeHandle.getParam(name, val)){
-//         ROS_ERROR_STREAM("missing parameter '" << name << "'");
-//     }
-//     if(val.size() != length) {
-//         ROS_ERROR_STREAM("parameter '" << name << "' has wrong array length, " << length << " needed");
-//     }
-// }
-// // This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
-// int getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val)
-// {
-//     if(!nodeHandle.getParam(name, val)){
-//         ROS_ERROR_STREAM("missing parameter '" << name << "'");
-//     }
-//     return val.size();
-// }
-// // This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
-// bool getParameterBool(ros::NodeHandle& nodeHandle, std::string name)
-// {
-//     bool val;
-//     if(!nodeHandle.getParam(name, val))
-//     {
-//         ROS_ERROR_STREAM("missing parameter '" << name << "'");
-//     }
-//     return val;
-// }
-    
 
 
 
@@ -1911,38 +1428,11 @@ int main(int argc, char* argv[]) {
     // of this service the "calculateControlOutput" function is called.
     ros::ServiceServer service = nodeHandle.advertiseService("PickerController", calculateControlOutput);
 
-    // Create a "ros::NodeHandle" type local variable "namespace_nodeHandle" that points
-    // to the name space of this node, i.e., "dfall_pkg" as specified by the line:
-    //     "using namespace dfall_pkg;"
-    // in the "DEFINES" section at the top of this file.
-    //ros::NodeHandle namespace_nodeHandle(ros::this_node::getNamespace());
-
     // Instantiate the instance variable "my_current_xyz_yaw_publisher" to be a "ros::Publisher"
     // that advertises under the name "<my_agentID>/my_current_xyz_yaw_topic" where <my_agentID>
     // is filled in with the student ID number of this computer. The messages published will
     // have the structure defined in the file "Setpoint.msg" (located in the "msg" folder).
     //my_current_xyz_yaw_publisher = nodeHandle.advertise<Setpoint>("my_current_xyz_yaw_topic", 1);
-
-    // Instantiate the local variable "customCommandSubscriber" to be a "ros::Subscriber"
-    // type variable that subscribes to the "StudentCustomButton" topic and calls the class
-    // function "customCommandReceivedCallback" each time a messaged is received on this topic
-    // and the message received is passed as an input argument to the callback function.
-    //ros::Subscriber buttonPressedCallbackSubscriber = nodeHandle.subscribe("GUIButton", 1, customCommandReceivedCallback);
-
-
-
-    // // ADDED FOR THE PICKER
-    // ros::Subscriber pickerButtonPressedSubscriber  =  nodeHandle.subscribe("ButtonPressed", 1, buttonPressedCallback);
-    // ros::Subscriber pickerZSetpointSubscriber      =  nodeHandle.subscribe("ZSetpoint", 1, zSetpointCallback);
-    // ros::Subscriber pickerYawSetpointSubscriber    =  nodeHandle.subscribe("YawSetpoint", 1, yawSetpointCallback);
-    // ros::Subscriber pickerMassSubscriber           =  nodeHandle.subscribe("Mass", 1, massCallback);
-    // ros::Subscriber pickerXAdjustmentSubscriber    =  nodeHandle.subscribe("XAdjustment", 1, xAdjustmentCallback);
-    // ros::Subscriber pickerYAdjustmentSubscriber    =  nodeHandle.subscribe("YAdjustment", 1, yAdjustmentCallback);
-
-    // pickerSetpointToGUIPublisher = nodeHandle.advertise<Setpoint>("SetpointToGUI", 1);
-
-    // ros::Subscriber pickerButtonPressedWithSetpointSubscriber  =  nodeHandle.subscribe("ButtonPressedWithSetpoint", 1, buttonPressedWithSetpointCallback);
-
 
 
     // Print out some information to the user.
