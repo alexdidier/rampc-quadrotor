@@ -102,7 +102,7 @@ public:
     void showHideController_student_changed();
     void showHideController_picker_changed();
     void showHideController_tuning_changed();
-    void showHideController_safe_changed();
+    void showHideController_template_changed();
 
 
 public slots:
@@ -112,18 +112,19 @@ public slots:
 private slots:
 
     // ENABLE CONTROLLER BUTTONS ON-CLICK CALLBACK
-    void on_enable_safe_button_clicked();
-    void on_enable_tuning_button_clicked();
-    void on_enable_picker_button_clicked();
-    void on_enable_student_button_clicked();
     void on_enable_default_button_clicked();
+    void on_enable_student_button_clicked();
+    void on_enable_picker_button_clicked();
+    void on_enable_tuning_button_clicked();
+    void on_enable_template_button_clicked();
 
     // LOAD YAML BUTTONS ON-CLICK CALLBACK
-    void on_load_yaml_safe_button_clicked();
-    void on_load_yaml_tuning_button_clicked();
-    void on_load_yaml_picker_button_clicked();
-    void on_load_yaml_student_button_clicked();
     void on_load_yaml_default_button_clicked();
+    void on_load_yaml_student_button_clicked();
+    void on_load_yaml_picker_button_clicked();
+    void on_load_yaml_tuning_button_clicked();
+    void on_load_yaml_template_button_clicked();
+
 
 private:
     Ui::EnableControllerLoadYamlBar *ui;

@@ -232,9 +232,9 @@ void ControllerTabs::showHideController_tuning_changed()
     showHideController_toggle("Tuning",ui->tuning_tab);
 }
 
-void ControllerTabs::showHideController_safe_changed()
+void ControllerTabs::showHideController_template_changed()
 {
-    showHideController_toggle("Safe",ui->safe_tab);
+    showHideController_toggle("Template",ui->template_tab);
 }
 
 
@@ -384,9 +384,14 @@ void ControllerTabs::setControllerEnabled(int new_controller)
     {
         case SAFE_CONTROLLER:
         {
-            //ui->controller_enabled_label->setText("Safe");
+            setTextColourOfTabLabel( m_tab_text_colour_highlight , ui->default_tab );
             break;
         }
+//        case DEFAULT_CONTROLLER:
+//        {
+//            setTextColourOfTabLabel( m_tab_text_colour_highlight , ui->default_tab );
+//            break;
+//        }
         case DEMO_CONTROLLER:
         {
             //ui->controller_enabled_label->setText("Demo");
@@ -417,6 +422,11 @@ void ControllerTabs::setControllerEnabled(int new_controller)
             setTextColourOfTabLabel( m_tab_text_colour_highlight , ui->picker_tab );
             break;
         }
+        case TEMPLATE_CONTROLLER:
+        {
+            setTextColourOfTabLabel( m_tab_text_colour_highlight , ui->template_tab );
+            break;
+        }
         default:
         {
             //ui->controller_enabled_label->setText("Unknown");
@@ -432,7 +442,7 @@ void ControllerTabs::setAllTabLabelsToNormalColouring()
     setTextColourOfTabLabel( m_tab_text_colour_normal , ui->student_tab );
     setTextColourOfTabLabel( m_tab_text_colour_normal , ui->picker_tab );
     setTextColourOfTabLabel( m_tab_text_colour_normal , ui->tuning_tab );
-    setTextColourOfTabLabel( m_tab_text_colour_normal , ui->safe_tab );
+    setTextColourOfTabLabel( m_tab_text_colour_normal , ui->template_tab );
 }
 
 void ControllerTabs::setTextColourOfTabLabel(QColor color , QWidget * tab_widget)

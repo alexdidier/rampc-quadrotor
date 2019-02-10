@@ -145,9 +145,8 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     ui->action_showHideController_picker->trigger();
     // > For the tuning controller
     ui->action_showHideController_tuning->trigger();
-    // > For the safe controller
-    ui->action_showHideController_safe->trigger();
-
+    // > For the template controller
+    ui->action_showHideController_template->trigger();
 
 }
 
@@ -246,11 +245,11 @@ void MainWindow::on_action_showHideController_tuning_changed()
     ui->customWidget_controller_tabs->showHideController_tuning_changed();
 }
 
-void MainWindow::on_action_showHideController_safe_changed()
+void MainWindow::on_action_showHideController_template_changed()
 {
     // Notify the UI elements of this change
-    ui->customWidget_enableControllerLoadYamlBar->showHideController_safe_changed();
-    ui->customWidget_controller_tabs->showHideController_safe_changed();
+    ui->customWidget_enableControllerLoadYamlBar->showHideController_template_changed();
+    ui->customWidget_controller_tabs->showHideController_template_changed();
 }
 
 

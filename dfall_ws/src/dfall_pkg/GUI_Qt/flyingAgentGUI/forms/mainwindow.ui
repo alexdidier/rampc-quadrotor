@@ -214,7 +214,7 @@
     <addaction name="action_showHideController_student"/>
     <addaction name="action_showHideController_picker"/>
     <addaction name="action_showHideController_tuning"/>
-    <addaction name="action_showHideController_safe"/>
+    <addaction name="action_showHideController_template"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuLoad_YAML"/>
@@ -300,6 +300,17 @@
    </property>
    <property name="text">
     <string>Tuning</string>
+   </property>
+  </action>
+  <action name="action_showHideController_template">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Template</string>
    </property>
   </action>
  </widget>

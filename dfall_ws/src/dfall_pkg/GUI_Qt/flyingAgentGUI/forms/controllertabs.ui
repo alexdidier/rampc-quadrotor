@@ -28,7 +28,7 @@
    <item row="0" column="0">
     <widget class="QTabWidget" name="controller_tabs_widget">
      <property name="currentIndex">
-      <number>3</number>
+      <number>4</number>
      </property>
      <property name="movable">
       <bool>true</bool>
@@ -73,13 +73,13 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="safe_tab">
+     <widget class="QWidget" name="template_tab">
       <attribute name="title">
-       <string>Safe</string>
+       <string>Template</string>
       </attribute>
-      <layout class="QGridLayout" name="gridLayout_3">
+      <layout class="QGridLayout" name="gridLayout_7">
        <item row="0" column="0">
-        <widget class="SafeControllerTab" name="safe_controller_tab_widget" native="true"/>
+        <widget class="TemplateControllerTab" name="template_controller_tab_widget" native="true"/>
        </item>
       </layout>
      </widget>
@@ -88,12 +88,6 @@
   </layout>
  </widget>
  <customwidgets>
-  <customwidget>
-   <class>SafeControllerTab</class>
-   <extends>QWidget</extends>
-   <header>safecontrollertab.h</header>
-   <container>1</container>
-  </customwidget>
   <customwidget>
    <class>StudentControllerTab</class>
    <extends>QWidget</extends>
@@ -116,6 +110,12 @@
    <class>TuningControllerTab</class>
    <extends>QWidget</extends>
    <header>tuningcontrollertab.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>TemplateControllerTab</class>
+   <extends>QWidget</extends>
+   <header>templatecontrollertab.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

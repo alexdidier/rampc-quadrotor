@@ -109,7 +109,7 @@
       </spacer>
      </item>
      <item row="0" column="5">
-      <widget class="QPushButton" name="enable_safe_button">
+      <widget class="QPushButton" name="enable_template_button">
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -135,7 +135,7 @@
         </font>
        </property>
        <property name="text">
-        <string>Safe</string>
+        <string>Template</string>
        </property>
       </widget>
      </item>
@@ -255,7 +255,7 @@
       </widget>
      </item>
      <item row="1" column="5">
-      <widget class="QPushButton" name="load_yaml_safe_button">
+      <widget class="QPushButton" name="load_yaml_template_button">
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -275,7 +275,7 @@
         </size>
        </property>
        <property name="text">
-        <string>Safe</string>
+        <string>Template</string>
        </property>
       </widget>
      </item>

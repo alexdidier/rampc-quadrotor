@@ -28,7 +28,9 @@ SOURCES += src/main.cpp\
     src/studentcontrollertab.cpp \
     src/defaultcontrollertab.cpp \
     src/pickercontrollertab.cpp \
-    src/tuningcontrollertab.cpp
+    src/templatecontrollertab.cpp \
+    src/tuningcontrollertab.cpp \
+
 
 HEADERS  += include/mainwindow.h \
     include/topbanner.h \
@@ -41,8 +43,10 @@ HEADERS  += include/mainwindow.h \
     include/studentcontrollertab.h \
     include/defaultcontrollertab.h \
     include/pickercontrollertab.h \
+    include/templatecontrollertab.h \
     include/tuningcontrollertab.h \
-    include/Constants_for_Qt_compile.h
+    include/Constants_for_Qt_compile.h \
+
 
 
 FORMS    += forms/mainwindow.ui \
@@ -56,7 +60,9 @@ FORMS    += forms/mainwindow.ui \
     forms/studentcontrollertab.ui \
     forms/defaultcontrollertab.ui \
     forms/pickercontrollertab.ui \
-    forms/tuningcontrollertab.ui
+    forms/templatecontrollertab.ui \
+    forms/tuningcontrollertab.ui \
+
 
 RESOURCES += \
     flyingagentgui.qrc

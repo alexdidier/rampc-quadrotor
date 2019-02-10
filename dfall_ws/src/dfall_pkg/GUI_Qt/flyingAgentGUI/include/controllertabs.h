@@ -90,7 +90,7 @@ public:
     void showHideController_student_changed();
     void showHideController_picker_changed();
     void showHideController_tuning_changed();
-    void showHideController_safe_changed();
+    void showHideController_template_changed();
 
 
 public slots:

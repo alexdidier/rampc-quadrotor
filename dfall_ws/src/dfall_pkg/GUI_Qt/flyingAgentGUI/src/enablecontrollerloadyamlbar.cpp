@@ -108,12 +108,11 @@ void EnableControllerLoadYamlBar::showHideController_tuning_changed()
     ui->load_yaml_tuning_button->setHidden( !(ui->load_yaml_tuning_button->isHidden()) );
 }
 
-void EnableControllerLoadYamlBar::showHideController_safe_changed()
+void EnableControllerLoadYamlBar::showHideController_template_changed()
 {
-    ui->enable_safe_button   ->setHidden( !(ui->enable_safe_button->isHidden()) );
-    ui->load_yaml_safe_button->setHidden( !(ui->load_yaml_safe_button->isHidden()) );
+    ui->enable_template_button   ->setHidden( !(ui->enable_template_button->isHidden()) );
+    ui->load_yaml_template_button->setHidden( !(ui->load_yaml_template_button->isHidden()) );
 }
-
 
 
 
@@ -121,7 +120,7 @@ void EnableControllerLoadYamlBar::showHideController_safe_changed()
 
 // ENABLE CONTROLLER BUTTONS ON-CLICK CALLBACK
 
-void EnableControllerLoadYamlBar::on_enable_safe_button_clicked()
+void EnableControllerLoadYamlBar::on_enable_default_button_clicked()
 {
 #ifdef CATKIN_MAKE
     dfall_pkg::IntWithHeader msg;
@@ -129,28 +128,6 @@ void EnableControllerLoadYamlBar::on_enable_safe_button_clicked()
     msg.data = CMD_USE_SAFE_CONTROLLER;
     this->commandPublisher.publish(msg);
     ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Enable Safe Controller");
-#endif
-}
-
-void EnableControllerLoadYamlBar::on_enable_tuning_button_clicked()
-{
-#ifdef CATKIN_MAKE
-    dfall_pkg::IntWithHeader msg;
-    fillIntMessageHeader(msg);
-    msg.data = CMD_USE_TUNING_CONTROLLER;
-    this->commandPublisher.publish(msg);
-    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Enable Tuning Controller");
-#endif
-}
-
-void EnableControllerLoadYamlBar::on_enable_picker_button_clicked()
-{
-#ifdef CATKIN_MAKE
-    dfall_pkg::IntWithHeader msg;
-    fillIntMessageHeader(msg);
-    msg.data = CMD_USE_PICKER_CONTROLLER;
-    this->commandPublisher.publish(msg);
-    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Enable Picker Controller");
 #endif
 }
 
@@ -165,56 +142,60 @@ void EnableControllerLoadYamlBar::on_enable_student_button_clicked()
 #endif
 }
 
-void EnableControllerLoadYamlBar::on_enable_default_button_clicked()
+void EnableControllerLoadYamlBar::on_enable_picker_button_clicked()
 {
 #ifdef CATKIN_MAKE
     dfall_pkg::IntWithHeader msg;
     fillIntMessageHeader(msg);
-    msg.data = CMD_USE_SAFE_CONTROLLER;
+    msg.data = CMD_USE_PICKER_CONTROLLER;
     this->commandPublisher.publish(msg);
-    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Enable Safe Controller");
+    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Enable Picker Controller");
 #endif
 }
+
+void EnableControllerLoadYamlBar::on_enable_tuning_button_clicked()
+{
+#ifdef CATKIN_MAKE
+    dfall_pkg::IntWithHeader msg;
+    fillIntMessageHeader(msg);
+    msg.data = CMD_USE_TUNING_CONTROLLER;
+    this->commandPublisher.publish(msg);
+    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Enable Tuning Controller");
+#endif
+}
+
+void EnableControllerLoadYamlBar::on_enable_template_button_clicked()
+{
+#ifdef CATKIN_MAKE
+    dfall_pkg::IntWithHeader msg;
+    fillIntMessageHeader(msg);
+    msg.data = CMD_USE_TEMPLATE_CONTROLLER;
+    this->commandPublisher.publish(msg);
+    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Enable Template Controller");
+#endif
+}
+
+
+
+
+
 
 
 // LOAD YAML BUTTONS ON-CLICK CALLBACK
 
-void EnableControllerLoadYamlBar::on_load_yaml_safe_button_clicked()
+void EnableControllerLoadYamlBar::on_load_yaml_default_button_clicked()
 {
-#ifdef CATKIN_MAKE
-
-#endif
-}
-
-void EnableControllerLoadYamlBar::on_load_yaml_tuning_button_clicked()
-{
-#ifdef CATKIN_MAKE
+    #ifdef CATKIN_MAKE
     // Create a local variable for the message
     dfall_pkg::StringWithHeader yaml_filename_msg;
     // Set for whom this applies to
     fillStringMessageHeader(yaml_filename_msg);
     // Specify the data
-    yaml_filename_msg.data = "TuningController";
+    yaml_filename_msg.data = "DefaultController";
     // Send the message
     m_requestLoadYamlFilenamePublisher.publish(yaml_filename_msg);
     // Inform the user that the menu item was selected
-    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Load Tuning Controller YAML was clicked.");
-#endif
-}
-
-void EnableControllerLoadYamlBar::on_load_yaml_picker_button_clicked()
-{
-#ifdef CATKIN_MAKE
-    // Create a local variable for the message
-    dfall_pkg::StringWithHeader yaml_filename_msg;
-    // Set for whom this applies to
-    fillStringMessageHeader(yaml_filename_msg);
-    // Specify the data
-    yaml_filename_msg.data = "PickerController";
-    // Send the message
-    m_requestLoadYamlFilenamePublisher.publish(yaml_filename_msg);
-    // Inform the user that the menu item was selected
-    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Load Picker Controller YAML was clicked.");
+    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Load Default Controller YAML was clicked.");
 #endif
 }
 
@@ -234,21 +215,54 @@ void EnableControllerLoadYamlBar::on_load_yaml_student_button_clicked()
 #endif
 }
 
-void EnableControllerLoadYamlBar::on_load_yaml_default_button_clicked()
+void EnableControllerLoadYamlBar::on_load_yaml_picker_button_clicked()
 {
-    #ifdef CATKIN_MAKE
+#ifdef CATKIN_MAKE
     // Create a local variable for the message
     dfall_pkg::StringWithHeader yaml_filename_msg;
     // Set for whom this applies to
     fillStringMessageHeader(yaml_filename_msg);
     // Specify the data
-    yaml_filename_msg.data = "DefaultController";
+    yaml_filename_msg.data = "PickerController";
     // Send the message
     m_requestLoadYamlFilenamePublisher.publish(yaml_filename_msg);
     // Inform the user that the menu item was selected
-    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Load Default Controller YAML was clicked.");
+    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Load Picker Controller YAML was clicked.");
 #endif
 }
+
+void EnableControllerLoadYamlBar::on_load_yaml_tuning_button_clicked()
+{
+#ifdef CATKIN_MAKE
+    // Create a local variable for the message
+    dfall_pkg::StringWithHeader yaml_filename_msg;
+    // Set for whom this applies to
+    fillStringMessageHeader(yaml_filename_msg);
+    // Specify the data
+    yaml_filename_msg.data = "TuningController";
+    // Send the message
+    m_requestLoadYamlFilenamePublisher.publish(yaml_filename_msg);
+    // Inform the user that the menu item was selected
+    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Load Tuning Controller YAML was clicked.");
+#endif
+}
+
+void EnableControllerLoadYamlBar::on_load_yaml_template_button_clicked()
+{
+#ifdef CATKIN_MAKE
+    // Create a local variable for the message
+    dfall_pkg::StringWithHeader yaml_filename_msg;
+    // Set for whom this applies to
+    fillStringMessageHeader(yaml_filename_msg);
+    // Specify the data
+    yaml_filename_msg.data = "TemplateController";
+    // Send the message
+    m_requestLoadYamlFilenamePublisher.publish(yaml_filename_msg);
+    // Inform the user that the menu item was selected
+    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Load Template Controller YAML was clicked.");
+#endif
+}
+
 
 
 
