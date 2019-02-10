@@ -156,9 +156,9 @@
 		<group if="$(arg withGUI)">
 			<node
 				pkg    = "dfall_pkg"
-				name   = "flyingAgentGUI"
+				name   = "FlyingAgentGUI"
 				output = "screen"
-				type   = "flyingAgentGUI"
+				type   = "FlyingAgentGUI"
 				>
 				<param name="type"     type="str"  value="agent" />
 				<param name="agentID"  value="$(arg agentID)" />

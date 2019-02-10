@@ -18,9 +18,9 @@
 		<group if="$(arg withGUI)">
 			<node
 				pkg="dfall_pkg"
-				name="flyingAgentGUI"
+				name="FlyingAgentGUI"
 				output="screen"
-				type="flyingAgentGUI"
+				type="FlyingAgentGUI"
 				>
 				<param name="type"     type="str"  value="coordinator" />
 				<param name="coordID"  value="$(arg coordID)" />

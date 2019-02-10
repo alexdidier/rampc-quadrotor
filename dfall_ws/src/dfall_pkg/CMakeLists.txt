@@ -57,10 +57,10 @@ find_package(Qt5Svg REQUIRED)
 
 
 # GUI -- Add src, includes, and resources
-set(MY_GUI_LIB_PATH_SRC   ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/src)
-set(MY_GUI_LIB_PATH_INC   ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/include)
-set(MY_GUI_LIB_PATH_FORMS ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/forms)
-set(MY_RESOURCE_FILE_QRC  ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/CrazyFlyGUI.qrc)
+set(SYSTEM_CONFIG_GUI_LIB_PATH_SRC   ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/src)
+set(SYSTEM_CONFIG_GUI_LIB_PATH_INC   ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/include)
+set(SYSTEM_CONFIG_GUI_LIB_PATH_FORMS ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/forms)
+set(SYSTEM_CONFIG_GUI_RESOURCE_FILE_QRC  ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/CrazyFlyGUI.qrc)
 
 
 
@@ -92,18 +92,18 @@ add_definitions(-std=c++11)
 # GUI -- Special Qt sources that need to be wrapped before being compiled
 # they have the Qt macro QOBJECT inside, the MOC cpp file needs to be done manually
 set(SRC_HDRS_QOBJECT_GUI
-  ${MY_GUI_LIB_PATH_INC}/crazyFlyZoneTab.h
-  ${MY_GUI_LIB_PATH_INC}/myGraphicsScene.h
-  ${MY_GUI_LIB_PATH_INC}/myGraphicsView.h
-  ${MY_GUI_LIB_PATH_INC}/mainguiwindow.h
-  ${MY_GUI_LIB_PATH_INC}/rosNodeThread_for_managerGUI.h
-  ${MY_GUI_LIB_PATH_INC}/CFLinker.h
+  ${SYSTEM_CONFIG_GUI_LIB_PATH_INC}/crazyFlyZoneTab.h
+  ${SYSTEM_CONFIG_GUI_LIB_PATH_INC}/myGraphicsScene.h
+  ${SYSTEM_CONFIG_GUI_LIB_PATH_INC}/myGraphicsView.h
+  ${SYSTEM_CONFIG_GUI_LIB_PATH_INC}/mainguiwindow.h
+  ${SYSTEM_CONFIG_GUI_LIB_PATH_INC}/rosNodeThread_for_systemConfigGUI.h
+  ${SYSTEM_CONFIG_GUI_LIB_PATH_INC}/CFLinker.h
   )
 # GUI -- wrap UI file and QOBJECT files
-qt5_wrap_ui(UIS_HDRS_GUI ${MY_GUI_LIB_PATH_FORMS}/mainguiwindow.ui)
+qt5_wrap_ui(UIS_HDRS_GUI ${SYSTEM_CONFIG_GUI_LIB_PATH_FORMS}/mainguiwindow.ui)
 qt5_wrap_cpp(SRC_MOC_HDRS_GUI ${SRC_HDRS_QOBJECT_GUI})
 # GUI -- wrap resource file qrc->rcc
-qt5_add_resources(MY_RESOURCE_FILE_RCC ${MY_RESOURCE_FILE_QRC})
+qt5_add_resources(SYSTEM_CONFIG_GUI_RESOURCE_FILE_RRC ${SYSTEM_CONFIG_GUI_RESOURCE_FILE_QRC})
 
 
 
@@ -285,7 +285,7 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include ${MY_GUI_LIB_PATH_INC}            # GUI -- include headers from GUI in package
+  INCLUDE_DIRS include ${SYSTEM_CONFIG_GUI_LIB_PATH_INC}            # GUI -- include headers from GUI in package
   INCLUDE_DIRS include ${STUDENT_GUI_LIB_PATH_INC}       # StudentGUI -- include headers from GUI in package
   INCLUDE_DIRS include ${FLYING_AGENT_GUI_LIB_PATH_INC}  # FlyingAgentGUI -- include headers from GUI in package
   LIBRARIES
@@ -301,7 +301,7 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
-  ${MY_GUI_LIB_PATH_INC}            # GUI -- include directory inside GUI folder
+  ${SYSTEM_CONFIG_GUI_LIB_PATH_INC}            # GUI -- include directory inside GUI folder
   ${STUDENT_GUI_LIB_PATH_INC}       # StudentGUI -- include directory inside GUI folder
   ${FLYING_AGENT_GUI_LIB_PATH_INC}  # FlyingAgentGUI -- include directory inside GUI folder
   ${catkin_INCLUDE_DIRS}
@@ -351,28 +351,28 @@ add_executable(ParameterService          src/nodes/ParameterService.cpp)
 
 
 # GUI -- Add sources here
-set(MY_CPP_SOURCES_GUI              # compilation of sources
-    ${MY_GUI_LIB_PATH_SRC}/mainguiwindow.cpp
-    ${MY_GUI_LIB_PATH_SRC}/main.cpp
-    ${MY_GUI_LIB_PATH_SRC}/cornergrabber.cpp
-    ${MY_GUI_LIB_PATH_SRC}/crazyFlyZone.cpp
-    ${MY_GUI_LIB_PATH_SRC}/crazyFlyZoneTab.cpp
-    ${MY_GUI_LIB_PATH_SRC}/myGraphicsRectItem.cpp
-    ${MY_GUI_LIB_PATH_SRC}/myGraphicsScene.cpp
-    ${MY_GUI_LIB_PATH_SRC}/myGraphicsView.cpp
-    ${MY_GUI_LIB_PATH_SRC}/tablePiece.cpp
-    ${MY_GUI_LIB_PATH_SRC}/marker.cpp
-    ${MY_GUI_LIB_PATH_SRC}/rosNodeThread_for_managerGUI.cpp
-    ${MY_GUI_LIB_PATH_SRC}/crazyFly.cpp
-    ${MY_GUI_LIB_PATH_SRC}/CFLinker.cpp
-    ${MY_GUI_LIB_PATH_SRC}/channelLUT.cpp
-    ${MY_GUI_LIB_PATH_SRC}/centerMarker.cpp
+set(SYSTEM_CONFIG_GUI_CPP_SOURCES              # compilation of sources
+    ${SYSTEM_CONFIG_GUI_LIB_PATH_SRC}/mainguiwindow.cpp
+    ${SYSTEM_CONFIG_GUI_LIB_PATH_SRC}/main.cpp
+    ${SYSTEM_CONFIG_GUI_LIB_PATH_SRC}/cornergrabber.cpp
+    ${SYSTEM_CONFIG_GUI_LIB_PATH_SRC}/crazyFlyZone.cpp
+    ${SYSTEM_CONFIG_GUI_LIB_PATH_SRC}/crazyFlyZoneTab.cpp
+    ${SYSTEM_CONFIG_GUI_LIB_PATH_SRC}/myGraphicsRectItem.cpp
+    ${SYSTEM_CONFIG_GUI_LIB_PATH_SRC}/myGraphicsScene.cpp
+    ${SYSTEM_CONFIG_GUI_LIB_PATH_SRC}/myGraphicsView.cpp
+    ${SYSTEM_CONFIG_GUI_LIB_PATH_SRC}/tablePiece.cpp
+    ${SYSTEM_CONFIG_GUI_LIB_PATH_SRC}/marker.cpp
+    ${SYSTEM_CONFIG_GUI_LIB_PATH_SRC}/rosNodeThread_for_systemConfigGUI.cpp
+    ${SYSTEM_CONFIG_GUI_LIB_PATH_SRC}/crazyFly.cpp
+    ${SYSTEM_CONFIG_GUI_LIB_PATH_SRC}/CFLinker.cpp
+    ${SYSTEM_CONFIG_GUI_LIB_PATH_SRC}/channelLUT.cpp
+    ${SYSTEM_CONFIG_GUI_LIB_PATH_SRC}/centerMarker.cpp
     )
 
 
 
 # StudentGUI -- Add sources here
-set(MY_CPP_SOURCES_STUDENT_GUI              # compilation of sources
+set(STUDENT_GUI_CPP_SOURCES              # compilation of sources
     ${STUDENT_GUI_LIB_PATH_SRC}/MainWindow.cpp
     ${STUDENT_GUI_LIB_PATH_SRC}/main.cpp
     ${STUDENT_GUI_LIB_PATH_SRC}/rosNodeThread_for_studentGUI.cpp
@@ -381,7 +381,7 @@ set(MY_CPP_SOURCES_STUDENT_GUI              # compilation of sources
 
 
 # FLYING AGENT GUI -- Add sources here
-set(MY_CPP_SOURCES_FLYING_AGENT_GUI         # compilation of sources
+set(FLYING_AGENT_GUI_CPP_SOURCES         # compilation of sources
     ${FLYING_AGENT_GUI_LIB_PATH_SRC}/mainwindow.cpp
     ${FLYING_AGENT_GUI_LIB_PATH_SRC}/main.cpp
     ${FLYING_AGENT_GUI_LIB_PATH_SRC}/rosNodeThread_for_flyingAgentGUI.cpp
@@ -401,18 +401,18 @@ set(MY_CPP_SOURCES_FLYING_AGENT_GUI         # compilation of sources
 
 
 # GUI -- Add executables here
-add_executable(my_GUI ${MY_CPP_SOURCES_GUI} ${UIS_HDRS_GUI} ${SRC_MOC_HDRS_GUI} ${MY_RESOURCE_FILE_RCC})
-qt5_use_modules(my_GUI Widgets)
+add_executable(systemConfigGUI ${SYSTEM_CONFIG_GUI_CPP_SOURCES} ${UIS_HDRS_GUI} ${SRC_MOC_HDRS_GUI} ${SYSTEM_CONFIG_GUI_RESOURCE_FILE_RRC})
+qt5_use_modules(systemConfigGUI Widgets)
 
 
 
 # StudentGUI -- Add executables here
-add_executable(student_GUI ${MY_CPP_SOURCES_STUDENT_GUI} ${UIS_HDRS_STUDENT_GUI} ${SRC_MOC_HDRS_STUDENT_GUI} ${STUDENT_RESOURCE_FILE_RCC})
+add_executable(student_GUI ${STUDENT_GUI_CPP_SOURCES} ${UIS_HDRS_STUDENT_GUI} ${SRC_MOC_HDRS_STUDENT_GUI} ${STUDENT_RESOURCE_FILE_RCC})
 qt5_use_modules(student_GUI Widgets)
 
 
 # FLYING AGENT GUI -- Add executables here
-add_executable(flyingAgentGUI ${MY_CPP_SOURCES_FLYING_AGENT_GUI} ${UIS_HDRS_FLYING_AGENT_GUI} ${SRC_MOC_HDRS_FLYING_AGENT_GUI} ${FLYING_AGENT_GUI_RESOURCE_FILE_RCC})
+add_executable(flyingAgentGUI ${FLYING_AGENT_GUI_CPP_SOURCES} ${UIS_HDRS_FLYING_AGENT_GUI} ${SRC_MOC_HDRS_FLYING_AGENT_GUI} ${FLYING_AGENT_GUI_RESOURCE_FILE_RCC})
 qt5_use_modules(flyingAgentGUI Widgets)
 
 
@@ -437,7 +437,7 @@ add_dependencies(ParameterService          dfall_pkg_generate_messages_cpp ${cat
 
 
 # GUI-- dependencies
-add_dependencies(my_GUI dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(systemConfigGUI dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 
 
@@ -493,12 +493,9 @@ target_link_libraries(ParameterService          ${catkin_LIBRARIES})
 
 
 # GUI -- link libraries
-target_link_libraries(my_GUI Qt5::Widgets) # GUI -- let my_GUI have acesss to Qt stuff
-target_link_libraries(my_GUI Qt5::Svg)
-
-# target_link_libraries(my_library Qt5::Widgets) # GUI -- let my_library have access to Qt stuff
-# target_link_libraries(my_GUI my_library)
-target_link_libraries(my_GUI ${catkin_LIBRARIES})
+target_link_libraries(systemConfigGUI Qt5::Widgets) # GUI -- let systemConfigGUI have acesss to Qt stuff
+target_link_libraries(systemConfigGUI Qt5::Svg)
+target_link_libraries(systemConfigGUI ${catkin_LIBRARIES})
 
 
 

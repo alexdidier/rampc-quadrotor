@@ -8,13 +8,13 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-TARGET = CrazyFlyGUI
+TARGET = SystemConfigGUI
 TEMPLATE = app
 
 INCLUDEPATH += $$PWD/include
 CONFIG += c++11
 
-RESOURCES = CrazyFlyGUI.qrc
+RESOURCES = SystemConfigGUI.qrc
 
 QT+= svg
 

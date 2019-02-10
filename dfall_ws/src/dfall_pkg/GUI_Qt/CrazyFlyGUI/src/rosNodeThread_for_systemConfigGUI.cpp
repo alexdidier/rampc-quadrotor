@@ -30,7 +30,7 @@
 //    ----------------------------------------------------------------------------------
 
 
-#include "rosNodeThread_for_managerGUI.h"
+#include "rosNodeThread_for_systemConfigGUI.h"
 
 #include "dfall_pkg/CMRead.h"
 #include "dfall_pkg/CMUpdate.h"
@@ -63,7 +63,9 @@ bool rosNodeThread::init()
     this->moveToThread(m_pThread); // QObject method
 
     connect(m_pThread, SIGNAL(started()), this, SLOT(run()));
-    ros::init(m_Init_argc, m_pInit_argv, m_node_name); // my_GUI is the name of this node
+    ros::init(m_Init_argc, m_pInit_argv, m_node_name);
+    // Note that the variable "m_node_name" should be the
+    // string "SystemConfigGUI" in this case
 
     if (!ros::master::check())
     {

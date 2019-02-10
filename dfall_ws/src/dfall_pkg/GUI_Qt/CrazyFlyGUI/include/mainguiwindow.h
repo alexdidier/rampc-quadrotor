@@ -41,7 +41,7 @@
 
 
 #ifdef CATKIN_MAKE
-#include "rosNodeThread_for_managerGUI.h"
+#include "rosNodeThread_for_systemConfigGUI.h"
 
 // Include the standard message types
 #include "std_msgs/Int32.h"

@@ -30,8 +30,8 @@
 //    ----------------------------------------------------------------------------------
 
 
-#ifndef ___ROSNODETHREAD_FOR_MANAGERGUI_H___
-#define ___ROSNODETHREAD_FOR_MANAGERGUI_H___
+#ifndef ___ROSNODETHREAD_FOR_SYSTEMCONFIGGUI_H___
+#define ___ROSNODETHREAD_FOR_SYSTEMCONFIGGUI_H___
 
 #include <QtCore>
 #include <QThread>

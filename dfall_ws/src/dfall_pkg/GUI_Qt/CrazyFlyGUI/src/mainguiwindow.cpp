@@ -73,7 +73,7 @@ MainGUIWindow::MainGUIWindow(int argc, char **argv, QWidget *parent) :
     ui(new Ui::MainGUIWindow)
 {
     #ifdef CATKIN_MAKE
-    _rosNodeThread = new rosNodeThread(argc, argv, "my_GUI");
+    _rosNodeThread = new rosNodeThread(argc, argv, "SystemConfigGUI");
     #endif
     ui->setupUi(this);
     _init();
@@ -274,7 +274,7 @@ void MainGUIWindow::_init()
 
     ros_namespace = ros::this_node::getNamespace();
 
-    ros::NodeHandle nodeHandle("~");
+    //ros::NodeHandle nodeHandle("~");
     //DBChangedPublisher = nodeHandle.advertise<std_msgs::Int32>("DBChanged", 1);
 
     // CREATE A NODE HANDLE TO THE ROOT OF THE D-FaLL SYSTEM
