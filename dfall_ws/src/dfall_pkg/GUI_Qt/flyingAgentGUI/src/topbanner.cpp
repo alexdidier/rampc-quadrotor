@@ -105,6 +105,10 @@ TopBanner::TopBanner(QWidget *parent) :
     // INITIALISATIONS ARE COMPLETE
     if (m_type == TYPE_AGENT)
     {
+        // Hide the "emergency stop"
+        ui->emergency_stop_button->hide();
+
+        // Load the context for this agent
     	loadCrazyflieContext(m_ID,1000);
     }
     else if (m_type == TYPE_COORDINATOR)
@@ -113,12 +117,18 @@ TopBanner::TopBanner(QWidget *parent) :
 		QString qstr_title = "Flying Agent GUI: for COORDINATOR ID ";
 		qstr_title.append( QString::number(m_ID) );
 		ui->top_banner_label->setText(qstr_title);
+
+        // show the "emergency stop"
+        ui->emergency_stop_button->show();
 	}
 	else
 	{
 		// Set the label to inform the user of the error
 		QString qstr_title = "Flying Agent GUI: for UNKNOWN NODE TYPE";
 		ui->top_banner_label->setText(qstr_title);
+
+        // Hide the "emergency stop"
+        ui->emergency_stop_button->hide();
     }
 
 }
@@ -174,7 +184,7 @@ void TopBanner::loadCrazyflieContext(int ID_to_request_from_database , int emit_
 	contextCall.request.studentID = ID_to_request_from_database;
 	//ROS_INFO_STREAM("StudentID:" << m_agentID);
 
-	centralManagerDatabaseService.waitForExistence(ros::Duration(-1));
+	centralManagerDatabaseService.waitForExistence(ros::Duration(2));
 
 	if(centralManagerDatabaseService.call(contextCall))
 	{
@@ -202,6 +212,9 @@ void TopBanner::loadCrazyflieContext(int ID_to_request_from_database , int emit_
 	else
 	{
 		ROS_ERROR_STREAM("[TOP BANNER GUI] Failed to load context for agentID = " << m_ID);
+
+        // Set the Crazyflie Name String to be a question mark
+        qstr_crazyflie_name.append("?");
 
         m_object_name_for_emitting_pose_data = "";
 
