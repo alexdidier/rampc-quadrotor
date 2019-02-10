@@ -710,7 +710,8 @@ void loadPickerController()
 
 void sendMessageUsingController(int controller)
 {
-    // send a message in topic for the studentGUI to read it
+    // Send a message on the topic for informing the Flying
+    // Agent GUI about this update
     std_msgs::Int32 controller_used_msg;
     controller_used_msg.data = controller;
     controllerUsedPublisher.publish(controller_used_msg);

@@ -64,13 +64,6 @@ set(SYSTEM_CONFIG_GUI_RESOURCE_FILE_QRC  ${PROJECT_SOURCE_DIR}/GUI_Qt/systemConf
 
 
 
-# StudentGUI -- Add src, includes, and resources
-set(STUDENT_GUI_LIB_PATH_SRC ${PROJECT_SOURCE_DIR}/GUI_Qt/studentGUI/src)
-set(STUDENT_GUI_LIB_PATH_INC ${PROJECT_SOURCE_DIR}/GUI_Qt/studentGUI/include)
-set(STUDENT_RESOURCE_FILE_QRC ${PROJECT_SOURCE_DIR}/GUI_Qt/studentGUI/studentgui.qrc)
-
-
-
 # Flying Agent GUI -- Add src, includes, forms, and resources
 set(FLYING_AGENT_GUI_LIB_PATH_SRC      ${PROJECT_SOURCE_DIR}/GUI_Qt/flyingAgentGUI/src)
 set(FLYING_AGENT_GUI_LIB_PATH_INC      ${PROJECT_SOURCE_DIR}/GUI_Qt/flyingAgentGUI/include)
@@ -105,18 +98,6 @@ qt5_wrap_cpp(SRC_MOC_HDRS_GUI ${SRC_HDRS_QOBJECT_GUI})
 # GUI -- wrap resource file qrc->rcc
 qt5_add_resources(SYSTEM_CONFIG_GUI_RESOURCE_FILE_RRC ${SYSTEM_CONFIG_GUI_RESOURCE_FILE_QRC})
 
-
-
-# StudentGUI -- Special Qt sources that need to be wrapped before being compiled
-set(SRC_HDRS_QOBJECT_STUDENT_GUI
-  ${STUDENT_GUI_LIB_PATH_INC}/MainWindow.h
-  ${STUDENT_GUI_LIB_PATH_INC}/rosNodeThread_for_studentGUI.h
-  )
-# StudentGUI -- wrap UI file and QOBJECT files
-qt5_wrap_ui(UIS_HDRS_STUDENT_GUI ${STUDENT_GUI_LIB_PATH_SRC}/MainWindow.ui)
-qt5_wrap_cpp(SRC_MOC_HDRS_STUDENT_GUI ${SRC_HDRS_QOBJECT_STUDENT_GUI})
-# GUI -- wrap resource file qrc->rcc
-qt5_add_resources(STUDENT_RESOURCE_FILE_RCC ${STUDENT_RESOURCE_FILE_QRC})
 
 
 
@@ -286,7 +267,6 @@ generate_messages(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include ${SYSTEM_CONFIG_GUI_LIB_PATH_INC}            # GUI -- include headers from GUI in package
-  INCLUDE_DIRS include ${STUDENT_GUI_LIB_PATH_INC}       # StudentGUI -- include headers from GUI in package
   INCLUDE_DIRS include ${FLYING_AGENT_GUI_LIB_PATH_INC}  # FlyingAgentGUI -- include headers from GUI in package
   LIBRARIES
   CATKIN_DEPENDS roscpp rospy std_msgs rosbag roslib
@@ -301,9 +281,8 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
-  ${SYSTEM_CONFIG_GUI_LIB_PATH_INC}            # GUI -- include directory inside GUI folder
-  ${STUDENT_GUI_LIB_PATH_INC}       # StudentGUI -- include directory inside GUI folder
-  ${FLYING_AGENT_GUI_LIB_PATH_INC}  # FlyingAgentGUI -- include directory inside GUI folder
+  ${SYSTEM_CONFIG_GUI_LIB_PATH_INC}    # SystemConfigGUI -- include directory inside GUI folder
+  ${FLYING_AGENT_GUI_LIB_PATH_INC}     # FlyingAgentGUI  -- include directory inside GUI folder
   ${catkin_INCLUDE_DIRS}
   include
   include/nodes
@@ -371,14 +350,6 @@ set(SYSTEM_CONFIG_GUI_CPP_SOURCES              # compilation of sources
 
 
 
-# StudentGUI -- Add sources here
-set(STUDENT_GUI_CPP_SOURCES              # compilation of sources
-    ${STUDENT_GUI_LIB_PATH_SRC}/MainWindow.cpp
-    ${STUDENT_GUI_LIB_PATH_SRC}/main.cpp
-    ${STUDENT_GUI_LIB_PATH_SRC}/rosNodeThread_for_studentGUI.cpp
-    )
-
-
 
 # FLYING AGENT GUI -- Add sources here
 set(FLYING_AGENT_GUI_CPP_SOURCES         # compilation of sources
@@ -404,11 +375,6 @@ set(FLYING_AGENT_GUI_CPP_SOURCES         # compilation of sources
 add_executable(systemConfigGUI ${SYSTEM_CONFIG_GUI_CPP_SOURCES} ${UIS_HDRS_GUI} ${SRC_MOC_HDRS_GUI} ${SYSTEM_CONFIG_GUI_RESOURCE_FILE_RRC})
 qt5_use_modules(systemConfigGUI Widgets)
 
-
-
-# StudentGUI -- Add executables here
-add_executable(student_GUI ${STUDENT_GUI_CPP_SOURCES} ${UIS_HDRS_STUDENT_GUI} ${SRC_MOC_HDRS_STUDENT_GUI} ${STUDENT_RESOURCE_FILE_RCC})
-qt5_use_modules(student_GUI Widgets)
 
 
 # FLYING AGENT GUI -- Add executables here
@@ -438,11 +404,6 @@ add_dependencies(ParameterService          dfall_pkg_generate_messages_cpp ${cat
 
 # GUI-- dependencies
 add_dependencies(systemConfigGUI dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-
-
-
-# StudentGUI-- dependencies
-add_dependencies(student_GUI dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 
 
@@ -496,12 +457,6 @@ target_link_libraries(ParameterService          ${catkin_LIBRARIES})
 target_link_libraries(systemConfigGUI Qt5::Widgets) # GUI -- let systemConfigGUI have acesss to Qt stuff
 target_link_libraries(systemConfigGUI Qt5::Svg)
 target_link_libraries(systemConfigGUI ${catkin_LIBRARIES})
-
-
-
-# StudentGUI -- link libraries
-target_link_libraries(student_GUI Qt5::Widgets) # GUI -- let student_GUI have acesss to Qt stuff
-target_link_libraries(student_GUI ${catkin_LIBRARIES})
 
 
 
