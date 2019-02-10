@@ -82,19 +82,6 @@
 #define ENTRY_INSERT_OR_UPDATE  1
 #define ENTRY_REMOVE            2
 
-// For which controller parameters to load
-#define LOAD_YAML_SAFE_CONTROLLER_AGENT          1
-#define LOAD_YAML_DEMO_CONTROLLER_AGENT        2
-#define LOAD_YAML_SAFE_CONTROLLER_COORDINATOR    3
-#define LOAD_YAML_DEMO_CONTROLLER_COORDINATOR  4
-
-// For which controller parameters and from where to fetch
-#define FETCH_YAML_SAFE_CONTROLLER_FROM_OWN_AGENT        1
-#define FETCH_YAML_DEMO_CONTROLLER_FROM_OWN_AGENT      2
-#define FETCH_YAML_SAFE_CONTROLLER_FROM_COORDINATOR      3
-#define FETCH_YAML_DEMO_CONTROLLER_FROM_COORDINATOR    4
-
-
 using namespace dfall_pkg;
 using namespace std;
 
