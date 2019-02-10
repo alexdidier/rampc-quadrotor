@@ -38,16 +38,27 @@
 #include <QGraphicsSvgItem>
 #include <QSvgRenderer>
 
+
 #ifdef CATKIN_MAKE
+// Include the Crazyflie Data Struct
 #include "dfall_pkg/CrazyflieData.h"
+// Include other classes
+#include "classes/GetParamtersAndNamespaces.h"
+#else
+// Include the shared definitions
+#include "include/constants_for_qt_compile.h"
 #endif
+
+
 
 #ifdef CATKIN_MAKE
 using namespace dfall_pkg;
 #endif
 
+
 #define DRONE_HEIGHT         100 * FROM_MILIMETERS_TO_UNITS * 1.2
 #define DRONE_WIDTH          100 * FROM_MILIMETERS_TO_UNITS * 1.2
+
 
 class crazyFly : public QGraphicsSvgItem
 {
