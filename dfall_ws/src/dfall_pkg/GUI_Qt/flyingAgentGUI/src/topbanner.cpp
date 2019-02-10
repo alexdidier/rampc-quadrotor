@@ -1,4 +1,4 @@
-//    Copyright (C) 2017, ETH Zurich, D-ITET, Paul Beuchat
+//    Copyright (C) 2019, ETH Zurich, D-ITET, Paul Beuchat
 //
 //    This file is part of D-FaLL-System.
 //    
@@ -25,7 +25,7 @@
 //
 //
 //    DESCRIPTION:
-//    The title displayed at the top of the GUI
+//    The title displayed at the top of the Flying Agent GUI
 //
 //    ----------------------------------------------------------------------------------
 

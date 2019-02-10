@@ -1,4 +1,4 @@
-//    Copyright (C) 2017, ETH Zurich, D-ITET, Paul Beuchat
+//    Copyright (C) 2019, ETH Zurich, D-ITET, Paul Beuchat
 //
 //    This file is part of D-FaLL-System.
 //    
@@ -28,6 +28,9 @@
 //    Creates a thread that runs the ros node.
 //
 //    ----------------------------------------------------------------------------------
+
+
+
 
 
 #include "rosNodeThread_for_flyingAgentGUI.h"

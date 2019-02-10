@@ -1,4 +1,4 @@
-//    Copyright (C) 2017, ETH Zurich, D-ITET, Paul Beuchat
+//    Copyright (C) 2019, ETH Zurich, D-ITET, Paul Beuchat
 //
 //    This file is part of D-FaLL-System.
 //
@@ -25,7 +25,7 @@
 //
 //
 //    DESCRIPTION:
-//    Main file of the Qt project for the Coordinator GUI.
+//    Main file of the Qt project for the Flying Agent GUI.
 //
 //    ----------------------------------------------------------------------------------
 

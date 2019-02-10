@@ -1,4 +1,4 @@
-//    Copyright (C) 2018, ETH Zurich, D-ITET, Paul Beuchat
+//    Copyright (C) 2019, ETH Zurich, D-ITET, Paul Beuchat
 //
 //    This file is part of D-FaLL-System.
 //
@@ -27,7 +27,11 @@
 //    DESCRIPTION:
 //    The bar of the GUI for (dis-)connecting (from)to the Crazyradio
 //    and for sending the {take-off,land,motors-off} commands//
+//
 //    ----------------------------------------------------------------------------------
+
+
+
 
 
 #ifndef CONNECTSTARTSTOPBAR_H

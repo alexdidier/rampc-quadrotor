@@ -1,4 +1,4 @@
-//    Copyright (C) 2017, ETH Zurich, D-ITET, Paul Beuchat
+//    Copyright (C) 2019, ETH Zurich, D-ITET, Paul Beuchat
 //
 //    This file is part of D-FaLL-System.
 //
@@ -25,9 +25,14 @@
 //
 //
 //    DESCRIPTION:
-//    Coordinator Row GUI heder.
+//    An individual row in the coordinator part of the Flying Agent
+//    GUI. This is essentially a condensed version of the
+//    "Connect Start Stop Bar"
 //
 //    ----------------------------------------------------------------------------------
+
+
+
 
 
 #ifndef COORDINATORROW_H

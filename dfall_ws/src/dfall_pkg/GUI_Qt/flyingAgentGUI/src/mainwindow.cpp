@@ -1,4 +1,4 @@
-//    Copyright (C) 2017, ETH Zurich, D-ITET, Paul Beuchat
+//    Copyright (C) 2019, ETH Zurich, D-ITET, Paul Beuchat
 //
 //    This file is part of D-FaLL-System.
 //
@@ -25,9 +25,13 @@
 //
 //
 //    DESCRIPTION:
-//    Coordinator GUI main window.
+//    The Flying Agent GUI main window.
 //
 //    ----------------------------------------------------------------------------------
+
+
+
+
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
