@@ -20,6 +20,8 @@ QT+= svg
 
 
 SOURCES += \
+    src/centerMarker.cpp \
+    src/channelLUT.cpp \
     src/cornergrabber.cpp \
     src/crazyFlyZone.cpp \
     src/crazyFlyZoneTab.cpp \
@@ -31,6 +33,8 @@ SOURCES += \
     src/tablePiece.cpp
 
 HEADERS  += \
+    include/centerMarker.h \
+    include/channelLUT.h \
     include/cornergrabber.h \
     include/crazyFlyZone.h \
     include/crazyFlyZoneTab.h \
@@ -44,4 +48,4 @@ HEADERS  += \
     include/crazyFly.h
 
 FORMS    += \
-    src/mainguiwindow.ui
+    forms/mainguiwindow.ui

@@ -57,9 +57,10 @@ find_package(Qt5Svg REQUIRED)
 
 
 # GUI -- Add src, includes, and resources
-set(MY_GUI_LIB_PATH_SRC ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/src)
-set(MY_GUI_LIB_PATH_INC ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/include)
-set(MY_RESOURCE_FILE_QRC ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/CrazyFlyGUI.qrc)
+set(MY_GUI_LIB_PATH_SRC   ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/src)
+set(MY_GUI_LIB_PATH_INC   ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/include)
+set(MY_GUI_LIB_PATH_FORMS ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/forms)
+set(MY_RESOURCE_FILE_QRC  ${PROJECT_SOURCE_DIR}/GUI_Qt/CrazyFlyGUI/CrazyFlyGUI.qrc)
 
 
 
@@ -99,7 +100,7 @@ set(SRC_HDRS_QOBJECT_GUI
   ${MY_GUI_LIB_PATH_INC}/CFLinker.h
   )
 # GUI -- wrap UI file and QOBJECT files
-qt5_wrap_ui(UIS_HDRS_GUI ${MY_GUI_LIB_PATH_SRC}/mainguiwindow.ui)
+qt5_wrap_ui(UIS_HDRS_GUI ${MY_GUI_LIB_PATH_FORMS}/mainguiwindow.ui)
 qt5_wrap_cpp(SRC_MOC_HDRS_GUI ${SRC_HDRS_QOBJECT_GUI})
 # GUI -- wrap resource file qrc->rcc
 qt5_add_resources(MY_RESOURCE_FILE_RCC ${MY_RESOURCE_FILE_QRC})

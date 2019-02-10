@@ -216,10 +216,11 @@ private:
     Ui::MainGUIWindow *ui;
     myGraphicsScene* scene;
 
+    void _init();
+
+#ifdef CATKIN_MAKE
     ros::Timer m_timer_yaml_file_for_safe_controller;
     ros::Timer m_timer_yaml_file_for_custom_controller;
-
-    void _init();
 
     void safeYamlFileTimerCallback(const ros::TimerEvent&);
     void customYamlFileTimerCallback(const ros::TimerEvent&);
@@ -232,6 +233,7 @@ private:
     void getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val, int length);
     int getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val);
     bool getParameterBool(ros::NodeHandle& nodeHandle, std::string name);
+#endif
 
 
     #ifdef CATKIN_MAKE
@@ -271,6 +273,8 @@ private:
 
     int getTabIndexFromName(QString name);
 
+
+#ifdef CATKIN_MAKE
     CrazyflieDB m_data_base;
 
     void clear_database_file();
@@ -282,6 +286,7 @@ private:
     void save_database_file();
 
     void insert_or_update_entry_database(CrazyflieEntry entry);
+#endif
 
 };
 
