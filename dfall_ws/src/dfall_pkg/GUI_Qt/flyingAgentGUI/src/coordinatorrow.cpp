@@ -762,7 +762,7 @@ void CoordinatorRow::on_rf_connect_button_clicked()
 {
 #ifdef CATKIN_MAKE
     dfall_pkg::IntWithHeader msg;
-    msg.shouldCheckForID = false;
+    msg.shouldCheckForAgentID = false;
     msg.data = CMD_RECONNECT;
     this->crazyRadioCommandPublisher.publish(msg);
     ROS_INFO_STREAM("[COORDINATOR ROW agentID:" << m_agentID << " GUI] Connect button clicked");
@@ -773,7 +773,7 @@ void CoordinatorRow::on_rf_disconnect_button_clicked()
 {
 #ifdef CATKIN_MAKE
     dfall_pkg::IntWithHeader msg;
-    msg.shouldCheckForID = false;
+    msg.shouldCheckForAgentID = false;
     msg.data = CMD_DISCONNECT;
     this->crazyRadioCommandPublisher.publish(msg);
     ROS_INFO_STREAM("[COORDINATOR ROW agentID:" << m_agentID << " GUI] Disconnect button clicked");
@@ -784,7 +784,7 @@ void CoordinatorRow::on_enable_flying_button_clicked()
 {
 #ifdef CATKIN_MAKE
     dfall_pkg::IntWithHeader msg;
-    msg.shouldCheckForID = false;
+    msg.shouldCheckForAgentID = false;
     msg.data = CMD_CRAZYFLY_TAKE_OFF;
     this->flyingStateCommandPublisher.publish(msg);
     ROS_INFO_STREAM("[COORDINATOR ROW agentID:" << m_agentID << " GUI] Enable flying button clicked");
@@ -795,7 +795,7 @@ void CoordinatorRow::on_disable_flying_button_clicked()
 {
 #ifdef CATKIN_MAKE
     dfall_pkg::IntWithHeader msg;
-    msg.shouldCheckForID = false;
+    msg.shouldCheckForAgentID = false;
     msg.data = CMD_CRAZYFLY_LAND;
     this->flyingStateCommandPublisher.publish(msg);
     ROS_INFO_STREAM("[COORDINATOR ROW agentID:" << m_agentID << " GUI] Disable flying button clicked");
@@ -806,7 +806,7 @@ void CoordinatorRow::on_motors_off_button_clicked()
 {
 #ifdef CATKIN_MAKE
     dfall_pkg::IntWithHeader msg;
-    msg.shouldCheckForID = false;
+    msg.shouldCheckForAgentID = false;
     msg.data = CMD_CRAZYFLY_MOTORS_OFF;
     this->flyingStateCommandPublisher.publish(msg);
     ROS_INFO_STREAM("[COORDINATOR ROW agentID:" << m_agentID << " GUI] Motors-off button clicked");

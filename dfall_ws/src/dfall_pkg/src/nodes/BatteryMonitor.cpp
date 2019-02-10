@@ -310,7 +310,7 @@ void updateBatteryStateBasedOnLevel(int level)
 void isReadyBatteryMonitorYamlCallback(const IntWithHeader & msg)
 {
 	// Check whether the message is relevant
-	bool isRevelant = checkMessageHeader( m_agentID , msg.shouldCheckForID , msg.agentIDs );
+	bool isRevelant = checkMessageHeader( m_agentID , msg.shouldCheckForAgentID , msg.agentIDs );
 
 	// Continue if the message is relevant
 	if (isRevelant)

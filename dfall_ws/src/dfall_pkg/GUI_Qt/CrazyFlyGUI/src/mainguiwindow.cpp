@@ -1110,7 +1110,7 @@ void MainGUIWindow::on_all_motors_off_button_clicked()
 {
     dfall_pkg::IntWithHeader msg;
     msg.data = CMD_CRAZYFLY_MOTORS_OFF;
-    msg.shouldCheckForID = false;
+    msg.shouldCheckForAgentID = false;
     //commandAllAgentsPublisher.publish(msg);
     emergencyStopPublisher.publish(msg);
 }

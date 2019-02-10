@@ -129,4 +129,4 @@ void constructNamespaceForCoordinator( int coordID, std::string & coord_namespac
 void constructNamespaceForCoordinatorParameterService( int coordID, std::string & coord_param_service_namespace );
 
 // Check the header of a message for whether it is relevant
-bool checkMessageHeader( int agentID , bool shouldCheckForID , const std::vector<uint> & agentIDs );
+bool checkMessageHeader( int agentID , bool shouldCheckForAgentID , const std::vector<uint> & agentIDs );

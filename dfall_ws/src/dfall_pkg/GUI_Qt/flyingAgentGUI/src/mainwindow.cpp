@@ -185,7 +185,7 @@ void MainWindow::on_action_LoadYAML_BatteryMonitor_triggered()
     // Specify the data
     yaml_filename_msg.data = "BatteryMonitor";
     // Set for whom this applies to
-    yaml_filename_msg.shouldCheckForID = false;
+    yaml_filename_msg.shouldCheckForAgentID = false;
     // Send the message
     m_requestLoadYamlFilenamePublisher.publish(yaml_filename_msg);
 #endif
@@ -203,7 +203,7 @@ void MainWindow::on_action_LoadYAML_ClientConfig_triggered()
     // Specify the data
     yaml_filename_msg.data = "ClientConfig";
     // Set for whom this applies to
-    yaml_filename_msg.shouldCheckForID = false;
+    yaml_filename_msg.shouldCheckForAgentID = false;
     // Send the message
     m_requestLoadYamlFilenamePublisher.publish(yaml_filename_msg);
 #endif

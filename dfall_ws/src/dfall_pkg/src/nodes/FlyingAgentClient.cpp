@@ -417,7 +417,7 @@ void loadCrazyflieContext() {
             ROS_INFO("[FLYING AGENT CLIENT] CF is now different for this student. Disconnect and turn it off");
 
             IntWithHeader msg;
-            msg.shouldCheckForID = false;
+            msg.shouldCheckForAgentID = false;
             msg.data = CMD_DISCONNECT;
             crazyRadioCommandPublisher.publish(msg);
         }
@@ -438,7 +438,7 @@ void loadCrazyflieContext() {
 void commandCallback(const IntWithHeader & msg) {
 
     // Check whether the message is relevant
-    bool isRevelant = checkMessageHeader( m_agentID , msg.shouldCheckForID , msg.agentIDs );
+    bool isRevelant = checkMessageHeader( m_agentID , msg.shouldCheckForAgentID , msg.agentIDs );
 
     // Continue if the message is relevant
     if (isRevelant)
@@ -962,7 +962,7 @@ bool getCurrentFlyingStateServiceCallback(IntIntService::Request &request, IntIn
 void isReadySafeControllerYamlCallback(const IntWithHeader & msg)
 {
     // Check whether the message is relevant
-    bool isRevelant = checkMessageHeader( m_agentID , msg.shouldCheckForID , msg.agentIDs );
+    bool isRevelant = checkMessageHeader( m_agentID , msg.shouldCheckForAgentID , msg.agentIDs );
 
     // Continue if the message is relevant
     if (isRevelant)
@@ -1065,7 +1065,7 @@ void fetchSafeControllerYamlParameters(ros::NodeHandle& nodeHandle)
 void isReadyClientConfigYamlCallback(const IntWithHeader & msg)
 {
     // Check whether the message is relevant
-    bool isRevelant = checkMessageHeader( m_agentID , msg.shouldCheckForID , msg.agentIDs );
+    bool isRevelant = checkMessageHeader( m_agentID , msg.shouldCheckForAgentID , msg.agentIDs );
 
     // Continue if the message is relevant
     if (isRevelant)
@@ -1261,7 +1261,7 @@ int main(int argc, char* argv[])
 	// // Specify the Yaml filename as a string
 	// loadYamlFromFilenameCall.request.stringWithHeader.data = "DefaultController";
 	// // Set for whom this applies to
-	// loadYamlFromFilenameCall.request.stringWithHeader.shouldCheckForID = false;
+	// loadYamlFromFilenameCall.request.stringWithHeader.shouldCheckForAgentID = false;
 	// // Wait until the serivce exists
 	// requestLoadYamlFilenameServiceClient.waitForExistence(ros::Duration(-1));
 	// // Make the service call

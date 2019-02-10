@@ -170,7 +170,7 @@ class CrazyRadioClient:
         self._send_to_commander_motor(0, 0, 0, 0)
         # change state to motors OFF
         msg = IntWithHeader()
-        msg.shouldCheckForID = False
+        msg.shouldCheckForAgentID = False
         msg.data = CMD_CRAZYFLY_MOTORS_OFF
         self.FlyingAgentClient_command_pub.publish(msg)
         time.sleep(0.1)
@@ -230,7 +230,7 @@ class CrazyRadioClient:
         self.change_status_to(CONNECTED)
         # change state to motors OFF
         msg = IntWithHeader()
-        msg.shouldCheckForID = False
+        msg.shouldCheckForAgentID = False
         msg.data = CMD_CRAZYFLY_MOTORS_OFF
         cf_client.FlyingAgentClient_command_pub.publish(msg)
 
@@ -260,7 +260,7 @@ class CrazyRadioClient:
 
         # change state to motors OFF
         msg = IntWithHeader()
-        msg.shouldCheckForID = False
+        msg.shouldCheckForAgentID = False
         msg.data = CMD_CRAZYFLY_MOTORS_OFF
         self.FlyingAgentClient_command_pub.publish(msg)
 
@@ -300,7 +300,7 @@ class CrazyRadioClient:
         command_is_relevant = False
 
         # Check the header details of the message for it relevance
-        if (msg.shouldCheckForID == False):
+        if (msg.shouldCheckForAgentID == False):
             command_is_relevant = True
         else:
             for this_ID in msg.agentIDs:
@@ -435,7 +435,7 @@ if __name__ == '__main__':
     cf_client._send_to_commander_motor(0, 0, 0, 0)
     # change state to motors OFF
     msg = IntWithHeader()
-    msg.shouldCheckForID = False
+    msg.shouldCheckForAgentID = False
     msg.data = CMD_CRAZYFLY_MOTORS_OFF
     cf_client.FlyingAgentClient_command_pub.publish(msg)
     #wait for client to send its commands

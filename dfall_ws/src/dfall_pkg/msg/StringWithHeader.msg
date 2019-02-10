@@ -1,3 +1,3 @@
 string data
-bool shouldCheckForID
+bool shouldCheckForAgentID
 uint32[] agentIDs

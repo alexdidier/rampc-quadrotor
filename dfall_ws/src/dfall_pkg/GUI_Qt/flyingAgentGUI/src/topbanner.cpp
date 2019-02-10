@@ -262,7 +262,7 @@ void TopBanner::on_emergency_stop_button_clicked()
 {
 #ifdef CATKIN_MAKE
     dfall_pkg::IntWithHeader msg;
-    msg.shouldCheckForID = false;
+    msg.shouldCheckForAgentID = false;
     msg.data = CMD_CRAZYFLY_MOTORS_OFF;
     this->emergencyStopPublisher.publish(msg);
     ROS_INFO("[TOP BANNER GUI] EMERGENCY STOP button clicked");

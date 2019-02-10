@@ -537,7 +537,7 @@ void TuningControllerTab::fillFloatMessageHeader( dfall_pkg::FloatWithHeader & m
     {
         case TYPE_AGENT:
         {
-            msg.shouldCheckForID = false;
+            msg.shouldCheckForAgentID = false;
             break;
         }
         case TYPE_COORDINATOR:
@@ -545,7 +545,7 @@ void TuningControllerTab::fillFloatMessageHeader( dfall_pkg::FloatWithHeader & m
             // Lock the mutex
             m_agentIDs_toCoordinate_mutex.lock();
             // Add the "coordinate all" flag
-            msg.shouldCheckForID = !(m_shouldCoordinateAll);
+            msg.shouldCheckForAgentID = !(m_shouldCoordinateAll);
             // Add the agent IDs if necessary
             if (!m_shouldCoordinateAll)
             {
@@ -561,7 +561,7 @@ void TuningControllerTab::fillFloatMessageHeader( dfall_pkg::FloatWithHeader & m
 
         default:
         {
-            msg.shouldCheckForID = true;
+            msg.shouldCheckForAgentID = true;
             ROS_ERROR("[TUNING CONTROLLER TAB GUI] The 'm_type' variable was not recognised.");
             break;
         }

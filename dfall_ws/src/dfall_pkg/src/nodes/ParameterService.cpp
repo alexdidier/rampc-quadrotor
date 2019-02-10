@@ -138,9 +138,9 @@ void requestLoadYamlFilenameCallback(const StringWithHeader& yaml_filename_to_lo
         }
     }
     // Copy across the boolean field
-    yaml_ready_msg.shouldCheckForID = yaml_filename_to_load_with_header.shouldCheckForID;
+    yaml_ready_msg.shouldCheckForAgentID = yaml_filename_to_load_with_header.shouldCheckForAgentID;
     // Copy across the vector of IDs
-    if (yaml_filename_to_load_with_header.shouldCheckForID)
+    if (yaml_filename_to_load_with_header.shouldCheckForAgentID)
     {
         for ( int i_ID=0 ; i_ID<yaml_filename_to_load_with_header.agentIDs.size() ; i_ID++ )
         {

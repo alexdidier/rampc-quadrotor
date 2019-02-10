@@ -209,11 +209,11 @@ void constructNamespaceForCoordinatorParameterService( int coordID, std::string 
 
 
 // Check the header of a message for whether it is relevant
-bool checkMessageHeader( int agentID , bool shouldCheckForID , const std::vector<uint> & agentIDs )
+bool checkMessageHeader( int agentID , bool shouldCheckForAgentID , const std::vector<uint> & agentIDs )
 {
-	// The messag is by default relevant if the "shouldCheckForID"
+	// The messag is by default relevant if the "shouldCheckForAgentID"
 	// flag is false
-	if (!shouldCheckForID)
+	if (!shouldCheckForAgentID)
 	{
 		return true;
 	}

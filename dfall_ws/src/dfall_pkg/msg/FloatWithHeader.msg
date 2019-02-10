@@ -1,3 +1,3 @@
 float32 data
-bool shouldCheckForID
+bool shouldCheckForAgentID
 uint32[] agentIDs

@@ -675,7 +675,7 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 void isReadyDefaultControllerYamlCallback(const IntWithHeader & msg)
 {
 	// Check whether the message is relevant
-	bool isRevelant = checkMessageHeader( m_agentID , msg.shouldCheckForID , msg.agentIDs );
+	bool isRevelant = checkMessageHeader( m_agentID , msg.shouldCheckForAgentID , msg.agentIDs );
 
 	// Continue if the message is relevant
 	if (isRevelant)
@@ -895,7 +895,7 @@ int main(int argc, char* argv[])
 	// Specify the Yaml filename as a string
 	loadYamlFromFilenameCall.request.stringWithHeader.data = "DefaultController";
 	// Set for whom this applies to
-	loadYamlFromFilenameCall.request.stringWithHeader.shouldCheckForID = false;
+	loadYamlFromFilenameCall.request.stringWithHeader.shouldCheckForAgentID = false;
 	// Wait until the serivce exists
 	requestLoadYamlFilenameServiceClient.waitForExistence(ros::Duration(-1));
 	// Make the service call

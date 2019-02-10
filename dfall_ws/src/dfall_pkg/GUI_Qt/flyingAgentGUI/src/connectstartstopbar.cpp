@@ -709,7 +709,7 @@ void ConnectStartStopBar::fillIntMessageHeader( dfall_pkg::IntWithHeader & msg )
     {
         case TYPE_AGENT:
         {
-            msg.shouldCheckForID = false;
+            msg.shouldCheckForAgentID = false;
             break;
         }
         case TYPE_COORDINATOR:
@@ -717,7 +717,7 @@ void ConnectStartStopBar::fillIntMessageHeader( dfall_pkg::IntWithHeader & msg )
             // Lock the mutex
             m_agentIDs_toCoordinate_mutex.lock();
             // Add the "coordinate all" flag
-            msg.shouldCheckForID = !(m_shouldCoordinateAll);
+            msg.shouldCheckForAgentID = !(m_shouldCoordinateAll);
             // Add the agent IDs if necessary
             if (!m_shouldCoordinateAll)
             {
@@ -733,7 +733,7 @@ void ConnectStartStopBar::fillIntMessageHeader( dfall_pkg::IntWithHeader & msg )
 
         default:
         {
-            msg.shouldCheckForID = true;
+            msg.shouldCheckForAgentID = true;
             ROS_ERROR("[ENABLE CONTROLLER LOAD YAML GUI BAR] The 'm_type' variable was not recognised.");
             break;
         }

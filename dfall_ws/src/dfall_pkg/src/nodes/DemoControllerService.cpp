@@ -1456,7 +1456,7 @@ void publish_current_xyz_yaw(float x, float y, float z, float yaw)
 void isReadyDemoControllerYamlCallback(const IntWithHeader & msg)
 {
 	// Check whether the message is relevant
-	bool isRevelant = checkMessageHeader( m_agentID , msg.shouldCheckForID , msg.agentIDs );
+	bool isRevelant = checkMessageHeader( m_agentID , msg.shouldCheckForAgentID , msg.agentIDs );
 
 	// Continue if the message is relevant
 	if (isRevelant)
@@ -1849,7 +1849,7 @@ int main(int argc, char* argv[]) {
 	// Specify the data
 	yaml_filename_msg.data = "DemoController";
 	// Set for whom this applies to
-	yaml_filename_msg.shouldCheckForID = false;
+	yaml_filename_msg.shouldCheckForAgentID = false;
 	// Sleep to make the publisher known to ROS (in seconds)
 	//ros::Duration(1.0).sleep();
 	// Send the message
