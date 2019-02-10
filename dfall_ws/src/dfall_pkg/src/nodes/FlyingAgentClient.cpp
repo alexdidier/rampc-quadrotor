@@ -1380,9 +1380,6 @@ int main(int argc, char* argv[])
     
 
     
-    // Subscriber for "commandAllAgents" commands that are sent from the coordinator node
-    //ros::Subscriber commandAllAgentsSubscriber = namespaceNodeHandle.subscribe("/my_GUI/commandAllAgents", 1, commandAllAgentsCallback);
-
     // crazyradio status. Connected, connecting or disconnected
     ros::Subscriber crazyRadioStatusSubscriber = namespaceNodeHandle.subscribe("CrazyRadio/CrazyRadioStatus", 1, crazyRadioStatusCallback);
 

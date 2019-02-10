@@ -22,9 +22,9 @@
 	<!-- TEACHER GUI -->
 	<node
 		pkg="dfall_pkg"
-		name="my_GUI"
+		name="SystemConfigGUI"
 		output="screen"
-		type="my_GUI"
+		type="SystemConfigGUI"
 		>
 	</node>
 

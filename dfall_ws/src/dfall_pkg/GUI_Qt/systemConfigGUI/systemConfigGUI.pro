@@ -8,13 +8,13 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-TARGET = SystemConfigGUI
+TARGET = systemConfigGUI
 TEMPLATE = app
 
 INCLUDEPATH += $$PWD/include
 CONFIG += c++11
 
-RESOURCES = SystemConfigGUI.qrc
+RESOURCES = systemconfiggui.qrc
 
 QT+= svg
 
