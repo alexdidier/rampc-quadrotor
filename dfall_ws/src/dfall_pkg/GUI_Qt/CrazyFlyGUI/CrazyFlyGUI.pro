@@ -45,7 +45,9 @@ HEADERS  += \
     include/tablePiece.h \
     include/globalDefinitions.h \
     include/marker.h \
-    include/crazyFly.h
+    include/crazyFly.h \
+    \
+    include/constants_for_qt_compile.h
 
 FORMS    += \
     forms/mainguiwindow.ui

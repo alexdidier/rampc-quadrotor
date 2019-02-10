@@ -58,28 +58,19 @@
 #include "dfall_pkg/CrazyflieDB.h"
 #include "dfall_pkg/CrazyflieEntry.h"
 
+// Include the shared definitions
+#include "nodes/Constants.h"
 
-// The constants that are sent to the agents in order to
-// "command" changes in their operation state
-#define CMD_USE_SAFE_CONTROLLER   1
-#define CMD_USE_CUSTOM_CONTROLLER 2
-#define CMD_CRAZYFLY_TAKE_OFF     3
-#define CMD_CRAZYFLY_LAND         4
-#define CMD_CRAZYFLY_MOTORS_OFF   5
-
-// The constants that are sent to the agents in order to
-// adjust their radio connection
-#define CMD_RECONNECT  0
-#define CMD_DISCONNECT 1
-
-// For which controller parameters to load
-#define LOAD_YAML_SAFE_CONTROLLER_AGENT          1
-#define LOAD_YAML_CUSTOM_CONTROLLER_AGENT        2
-#define LOAD_YAML_SAFE_CONTROLLER_COORDINATOR    3
-#define LOAD_YAML_CUSTOM_CONTROLLER_COORDINATOR  4
+// Include other classes
+#include "classes/GetParamtersAndNamespaces.h"
 
 
 using namespace dfall_pkg;
+
+
+#else
+// Include the shared definitions
+#include "include/constants_for_qt_compile.h"
 
 #endif
 
@@ -171,12 +162,14 @@ private slots:
 
     void on_load_from_DB_button_clicked();
 
-    #ifdef CATKIN_MAKE
+#ifdef CATKIN_MAKE
     void updateNewViconData(const ptrToMessage& p_msg);
-    #endif
+#endif
+
     void on_checkBox_vicon_crazyflies_toggled(bool checked);
 
     void on_scaleSpinBox_valueChanged(double arg1);
+
     void on_refresh_cfs_button_clicked();
 
     void on_refresh_student_ids_button_clicked();
@@ -188,27 +181,13 @@ private slots:
     void updateComboBoxes();
 
     void setTabIndex(int index);
+
     void doTabClosed(int tab_index);
 
     void on_comboBoxCFs_currentTextChanged(const QString &arg1);
-
     
-    // For the buttons that "command" all of the agent nodes
-    // > For the radio connection
-    void on_all_connect_button_clicked();
-    void on_all_disconnect_button_clicked();
-    // > For changing the operation state
-    void on_all_take_off_button_clicked();
-    void on_all_land_button_clicked();
-    void on_all_motors_off_button_clicked();
-    void on_all_enable_safe_controller_button_clicked();
-    void on_all_enable_custom_controller_button_clicked();
-    // > For loading the parameter
-    void on_all_load_safe_controller_yaml_own_agent_button_clicked();
-    void on_all_load_custom_controller_yaml_own_agent_button_clicked();
-    // > For sending a message with updated parameters
-    void on_all_load_safe_controller_yaml_coordinator_button_clicked();
-    void on_all_load_custom_controller_yaml_coordinator_button_clicked();
+    // For the emergency stop button
+    void on_emergency_stop_button_clicked();
     
 
 private:
@@ -219,14 +198,6 @@ private:
     void _init();
 
 #ifdef CATKIN_MAKE
-    ros::Timer m_timer_yaml_file_for_safe_controller;
-    ros::Timer m_timer_yaml_file_for_custom_controller;
-
-    void safeYamlFileTimerCallback(const ros::TimerEvent&);
-    void customYamlFileTimerCallback(const ros::TimerEvent&);
-
-    void customSendYamlAsMessageTimerCallback(const ros::TimerEvent&);
-    
     float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name);
     void getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length);
     int getParameterInt(ros::NodeHandle& nodeHandle, std::string name);
@@ -236,7 +207,7 @@ private:
 #endif
 
 
-    #ifdef CATKIN_MAKE
+#ifdef CATKIN_MAKE
     rosNodeThread* _rosNodeThread;
     std::vector<Marker*> markers_vector;
     std::vector<crazyFly*> crazyflies_vector;
@@ -246,26 +217,7 @@ private:
 
     //ros::Publisher DBChangedPublisher;
     ros::Publisher emergencyStopPublisher;
-
-    // Publsher for sending "commands" from here (the master) to all
-    // of the agent nodes (where a "command" is the integer that
-    // gives the directive to "take-off", "land, "motors-off", etc...)
-    ros::Publisher commandAllAgentsPublisher;
-
-    // Publisher for sending a request from here (the master) to all "Parameter Service" nodes
-    // that it should re-load parameters from the YAML file for the controllers.
-    // > This is recieved and acted on by both Coordinate and Agent type "Parameter Services",
-    // > A coordinator type "Parameter Service" will subsequently request the agents to fetch
-    //   the parameters from itself.
-    // > A agent type "Parameter Service" will subsequently request its own agent to fetch
-    //   the parameters from itself.
-    ros::Publisher requestLoadControllerYamlPublisher;
-
-    // Publisher for sending a request from here (the master) to all
-    // of the agents nodes that they should (re/dis)-connect from
-    // the Crazy-Radio
-    ros::Publisher crazyRadioCommandAllAgentsPublisher;
-    #endif
+#endif
 
     void updateComboBoxesCFs();
 

@@ -260,7 +260,7 @@ void MainGUIWindow::_init()
 
     // Add keyboard shortcuts
     // > for "all motors off", press the space bar
-    ui->all_motors_off_button->setShortcut(tr("Space"));
+    ui->emergency_stop_button->setShortcut(tr("Space"));
     // > for "kill GUI node", press "CTRL+C" while the GUI window is the focus
     QShortcut* close_GUI_shortcut = new QShortcut(QKeySequence(tr("CTRL+C")), this, SLOT(close()));
 
@@ -280,24 +280,6 @@ void MainGUIWindow::_init()
     // CREATE A NODE HANDLE TO THE ROOT OF THE D-FaLL SYSTEM
     ros::NodeHandle nodeHandle_dfall_root("/dfall");
     emergencyStopPublisher = nodeHandle_dfall_root.advertise<dfall_pkg::IntWithHeader>("emergencyStop", 1);
-
-    // Initialise the publisher for sending "commands" from here (the master)
-    // to all of the agent nodes
-    commandAllAgentsPublisher = nodeHandle.advertise<std_msgs::Int32>("commandAllAgents", 1);
-
-    // Publisher for sending a request from here (the master) to all "Parameter Service" nodes
-    // that it should re-load parameters from the YAML file for the controllers.
-    // > This is recieved and acted on by both Coordinate and Agent type "Parameter Services",
-    // > A coordinator type "Parameter Service" will subsequently request the agents to fetch
-    //   the parameters from itself.
-    // > A agent type "Parameter Service" will subsequently request its own agent to fetch
-    //   the parameters from itself.
-    requestLoadControllerYamlPublisher = nodeHandle.advertise<std_msgs::Int32>("requestLoadControllerYaml", 1);
-    
-    // Initialise the publisher for sending a request from here (the master)
-    // to all of the agents nodes that they should (re/dis)-connect from
-    // the Crazy-Radio
-    crazyRadioCommandAllAgentsPublisher = nodeHandle.advertise<std_msgs::Int32>("crazyRadioCommandAllAgents", 1);
 #endif
 }
 
@@ -1084,322 +1066,27 @@ void MainGUIWindow::on_comboBoxCFs_currentTextChanged(const QString &arg1)
 
 
 //    ----------------------------------------------------------------------------------
-//     CCCC   OOO   M   M  M   M    A    N   N  DDDD          A    L      L
-//    C      O   O  MM MM  MM MM   A A   NN  N  D   D        A A   L      L
-//    C      O   O  M M M  M M M  A   A  N N N  D   D       A   A  L      L
-//    C      O   O  M   M  M   M  AAAAA  N  NN  D   D       AAAAA  L      L
-//     CCCC   OOO   M   M  M   M  A   A  N   N  DDDD        A   A  LLLLL  LLLLL
+//    EEEEE  M   M  EEEEE  RRRR    GGGG  EEEEE  N   N   CCCC  Y   Y
+//    E      MM MM  E      R   R  G      E      NN  N  C       Y Y
+//    EEE    M M M  EEE    RRRR   G  GG  EEE    N N N  C        Y
+//    E      M   M  E      R   R  G   G  E      N  NN  C        Y
+//    EEEEE  M   M  EEEEE  R   R   GGG   EEEEE  N   N   CCCC    Y
 //
-//    BBBB   U   U  TTTTT  TTTTT   OOO   N   N   SSSS
-//    B   B  U   U    T      T    O   O  NN  N  S
-//    BBBB   U   U    T      T    O   O  N N N   SSS
-//    B   B  U   U    T      T    O   O  N  NN      S
-//    BBBB    UUU     T      T     OOO   N   N  SSSS
+//     SSSS  TTTTT   OOO   PPPP
+//    S        T    O   O  P   P
+//     SSS     T    O   O  PPPP
+//        S    T    O   O  P
+//    SSSS     T     OOO   P
 //    ----------------------------------------------------------------------------------
 
 
-// For the buttons that commands all of the agent nodes to:
-// > (RE)CONNECT THE RADIO
-void MainGUIWindow::on_all_connect_button_clicked()
-{
-//    std_msgs::Int32 msg;
-//    msg.data = CMD_RECONNECT;
-//    crazyRadioCommandAllAgentsPublisher.publish(msg);
-}
-// > DISCONNECT THE RADIO
-void MainGUIWindow::on_all_disconnect_button_clicked()
-{
-//    std_msgs::Int32 msg;
-//    msg.data = CMD_DISCONNECT;
-//    crazyRadioCommandAllAgentsPublisher.publish(msg);
-}
-// > TAKE-OFF
-void MainGUIWindow::on_all_take_off_button_clicked()
-{
-//    std_msgs::Int32 msg;
-//    msg.data = CMD_CRAZYFLY_TAKE_OFF;
-//    commandAllAgentsPublisher.publish(msg);
-}
-// > LAND
-void MainGUIWindow::on_all_land_button_clicked()
-{
-//    std_msgs::Int32 msg;
-//    msg.data = CMD_CRAZYFLY_LAND;
-//    commandAllAgentsPublisher.publish(msg);
-}
-// > MOTORS OFF
-void MainGUIWindow::on_all_motors_off_button_clicked()
+// > EMERGENCY STOP
+void MainGUIWindow::on_emergency_stop_button_clicked()
 {
 #ifdef CATKIN_MAKE
     dfall_pkg::IntWithHeader msg;
     msg.data = CMD_CRAZYFLY_MOTORS_OFF;
     msg.shouldCheckForAgentID = false;
-    //commandAllAgentsPublisher.publish(msg);
     emergencyStopPublisher.publish(msg);
 #endif
 }
-// > ENABLE SAFE CONTROLLER
-void MainGUIWindow::on_all_enable_safe_controller_button_clicked()
-{
-//    std_msgs::Int32 msg;
-//    msg.data = CMD_USE_SAFE_CONTROLLER;
-//    commandAllAgentsPublisher.publish(msg);
-}
-// > ENABLE SAFE CONTROLLER
-void MainGUIWindow::on_all_enable_custom_controller_button_clicked()
-{
-//    std_msgs::Int32 msg;
-//    msg.data = CMD_USE_CUSTOM_CONTROLLER;
-//    commandAllAgentsPublisher.publish(msg);
-}
-// > LOAD THE YAML PARAMETERS FOR THE SAFE CONTROLLER
-void MainGUIWindow::on_all_load_safe_controller_yaml_own_agent_button_clicked()
-{
-//	// Disable the button
-//	ui->all_load_safe_controller_yaml_own_agent_button->setEnabled(false);
-//	ui->all_load_safe_controller_yaml_coordinator_button->setEnabled(false);
-
-//	// Send the message that the YAML paremters should be loaded
-//    std_msgs::Int32 msg;
-//    msg.data = LOAD_YAML_SAFE_CONTROLLER_AGENT;
-//    requestLoadControllerYamlPublisher.publish(msg);
-
-//    // Start a timer which will enable the button in its callback
-//    // > This is required because the agent node waits some time between
-//    //   re-loading the values from the YAML file and then assigning then
-//    //   to the local variable of the agent.
-//    // > Thus we use this timer to prevent the user from clicking the
-//    //   button in the GUI repeatedly.
-//    ros::NodeHandle nodeHandle("~");
-//    m_timer_yaml_file_for_safe_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainGUIWindow::safeYamlFileTimerCallback, this, true);
-}
-// > LOAD THE YAML PARAMETERS FOR THE CUSTOM CONTROLLER
-void MainGUIWindow::on_all_load_custom_controller_yaml_own_agent_button_clicked()
-{
-//	// Disable the button
-//	ui->all_load_custom_controller_yaml_own_agent_button->setEnabled(false);
-//	ui->all_load_custom_controller_yaml_coordinator_button->setEnabled(false);
-
-//	// Send the message that the YAML paremters should be loaded
-//    std_msgs::Int32 msg;
-//    msg.data = LOAD_YAML_CUSTOM_CONTROLLER_AGENT;
-//    requestLoadControllerYamlPublisher.publish(msg);
-
-//    // Start a timer which will enable the button in its callback
-//    // > This is required because the agent node waits some time between
-//    //   re-loading the values from the YAML file and then assigning then
-//    //   to the local variable of the agent.
-//    // > Thus we use this timer to prevent the user from clicking the
-//    //   button in the GUI repeatedly.
-//    ros::NodeHandle nodeHandle("~");
-//    m_timer_yaml_file_for_custom_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainGUIWindow::customYamlFileTimerCallback, this, true);
-
-}
-// > SEND THE YAML PARAMETERS FOR THE SAFE CONTROLLER
-void MainGUIWindow::on_all_load_safe_controller_yaml_coordinator_button_clicked()
-{
-//	// Disable the button
-//	ui->all_load_safe_controller_yaml_own_agent_button->setEnabled(false);
-//	ui->all_load_safe_controller_yaml_coordinator_button->setEnabled(false);
-
-//	// Send the message that the YAML paremters should be loaded
-//    // by the coordinator (and then the agent informed)
-//    std_msgs::Int32 msg;
-//    msg.data = LOAD_YAML_SAFE_CONTROLLER_COORDINATOR;
-//    requestLoadControllerYamlPublisher.publish(msg);
-
-//    // Start a timer which will enable the button in its callback
-//    // > This is required because the agent node waits some time between
-//    //   re-loading the values from the YAML file and then assigning then
-//    //   to the local variable of the agent.
-//    // > Thus we use this timer to prevent the user from clicking the
-//    //   button in the GUI repeatedly.
-//    ros::NodeHandle nodeHandle("~");
-//    m_timer_yaml_file_for_safe_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainGUIWindow::safeYamlFileTimerCallback, this, true);
-}
-// > SEND THE YAML PARAMETERS FOR THE CUSTOM CONTROLLER
-void MainGUIWindow::on_all_load_custom_controller_yaml_coordinator_button_clicked()
-{
-//	// Disable the button
-//	ui->all_load_custom_controller_yaml_own_agent_button->setEnabled(false);
-//	ui->all_load_custom_controller_yaml_coordinator_button->setEnabled(false);
-
-//    // Send the message that the YAML paremters should be loaded
-//    // by the coordinator (and then the agent informed)
-//    std_msgs::Int32 msg;
-//    msg.data = LOAD_YAML_CUSTOM_CONTROLLER_COORDINATOR;
-//    requestLoadControllerYamlPublisher.publish(msg);
-
-//    // Start a timer which will enable the button in its callback
-//    // > This is required because the agent node waits some time between
-//    //   re-loading the values from the YAML file and then assigning then
-//    //   to the local variable of the agent.
-//    // > Thus we use this timer to prevent the user from clicking the
-//    //   button in the GUI repeatedly.
-//    ros::NodeHandle nodeHandle("~");
-//    m_timer_yaml_file_for_custom_controller = nodeHandle.createTimer(ros::Duration(1.5), &MainGUIWindow::customYamlFileTimerCallback, this, true);
-
-}
-
-#ifdef CATKIN_MAKE
-// > CALLBACK TO RE-ENABLE THE SAFE CONTROLLER YAML BUTTONS
-void MainGUIWindow::safeYamlFileTimerCallback(const ros::TimerEvent&)
-{
-//    // Enble the "load" and the "send" safe controller YAML button again
-//    ui->all_load_safe_controller_yaml_own_agent_button->setEnabled(true);
-//	ui->all_load_safe_controller_yaml_coordinator_button->setEnabled(true);
-}
-// > CALLBACK TO RE-ENABLE THE CUSTOM CONTROLLER YAML BUTTONS
-void MainGUIWindow::customYamlFileTimerCallback(const ros::TimerEvent&)
-{
-//    // Enble the "load" and the "send" custom controller YAML button again
-//    ui->all_load_custom_controller_yaml_own_agent_button->setEnabled(true);
-//	ui->all_load_custom_controller_yaml_coordinator_button->setEnabled(true);
-}
-#endif
-
-/*
-// > CALLBACK TO SEND THE CUSTOM CONTROLLER YAML PARAMETERS AS A MESSAGE
-void MainGUIWindow::customSendYamlAsMessageTimerCallback(const ros::TimerEvent&)
-{
-	// Load the CUSTOM controller YAML parameters from file into a message for
-	// sending directly to the "CustonControllerService" node of every agent
-
-	ros::NodeHandle nodeHandle("~");
-
-	// Instaniate a local variable of the message type
-	CustomControllerYAML customControllerYamlMessage;
-
-	// Load the data directly from the YAML file into the message
-
-	// > For the mass
-	customControllerYamlMessage.mass = MainGUIWindow::getParameterFloat(nodeHandle, "mass");
-
-    // Debugging this this works
-    ROS_INFO_STREAM("DEBUGGING: mass loaded from the custom controller YAML = " << customControllerYamlMessage.mass );
-
-	// > For the control_frequency
-	customControllerYamlMessage.control_frequency = MainGUIWindow::getParameterFloat(nodeHandle, "control_frequency");
-
-	// > For the motorPoly coefficients
-    std::vector<float> temp_motorPoly(3);
-	MainGUIWindow::getParameterFloatVector(nodeHandle, "motorPoly", temp_motorPoly, 3);
-    // Copy the loaded data into the message
-    for ( int i=0 ; i<3 ; i++ )
-    {
-        customControllerYamlMessage.motorPoly.push_back( temp_motorPoly[i] );
-    }
-
-    // > For the boolean about whether to execute the convert into body frame function
-    customControllerYamlMessage.shouldPerformConvertIntoBodyFrame = MainGUIWindow::getParameterBool(nodeHandle, "shouldPerformConvertIntoBodyFrame");
-
-    // > For the boolean about publishing the agents current position
-	customControllerYamlMessage.shouldPublishCurrent_xyz_yaw = MainGUIWindow::getParameterBool(nodeHandle, "shouldPublishCurrent_xyz_yaw");
-
-	// > For the boolean about following another agent
-	customControllerYamlMessage.shouldFollowAnotherAgent = MainGUIWindow::getParameterBool(nodeHandle, "shouldFollowAnotherAgent");
-
-	// > For the ordered agent ID's for following eachother in a line
-    std::vector<int> temp_follow_in_a_line_agentIDs(100);
-	int temp_number_of_agents_in_a_line = MainGUIWindow::getParameterIntVectorWithUnknownLength(nodeHandle, "follow_in_a_line_agentIDs", temp_follow_in_a_line_agentIDs);
-	// > Double check that the sizes agree
-    if ( temp_number_of_agents_in_a_line != temp_follow_in_a_line_agentIDs.size() )
-    {
-    	// Update the user if the sizes don't agree
-    	ROS_ERROR_STREAM("parameter 'follow_in_a_line_agentIDs' was loaded with two different lengths, " << temp_number_of_agents_in_a_line << " versus " << temp_follow_in_a_line_agentIDs.size() );
-    }
-    // Copy the loaded data into the message
-    for ( int i=0 ; i<temp_number_of_agents_in_a_line ; i++ )
-    {
-        customControllerYamlMessage.follow_in_a_line_agentIDs.push_back( temp_follow_in_a_line_agentIDs[i] );
-    }    
-
-    // Publish the message containing the loaded YAML parameters
-    customYAMLasMessagePublisher.publish(customControllerYamlMessage);
-
-	// Start a timer which will enable the button in its callback
-    m_timer_yaml_file_for_custom_controller = nodeHandle.createTimer(ros::Duration(0.5), &MainGUIWindow::customYamlFileTimerCallback, this, true);
-}
-*/
-
-
-
-
-//    ----------------------------------------------------------------------------------
-//    L       OOO     A    DDDD        Y   Y    A    M   M  L
-//    L      O   O   A A   D   D        Y Y    A A   MM MM  L
-//    L      O   O  A   A  D   D         Y    A   A  M M M  L
-//    L      O   O  AAAAA  D   D         Y    AAAAA  M   M  L
-//    LLLLL   OOO   A   A  DDDD          Y    A   A  M   M  LLLLL
-//
-//    PPPP     A    RRRR     A    M   M  EEEEE  TTTTT  EEEEE  RRRR    SSSS
-//    P   P   A A   R   R   A A   MM MM  E        T    E      R   R  S
-//    PPPP   A   A  RRRR   A   A  M M M  EEE      T    EEE    RRRR    SSS
-//    P      AAAAA  R  R   AAAAA  M   M  E        T    E      R  R       S
-//    P      A   A  R   R  A   A  M   M  EEEEE    T    EEEEE  R   R  SSSS
-//    ----------------------------------------------------------------------------------
-
-
-#ifdef CATKIN_MAKE
-
-// load parameters from corresponding YAML file
-//
-float MainGUIWindow::getParameterFloat(ros::NodeHandle& nodeHandle, std::string name)
-{
-    float val;
-    if(!nodeHandle.getParam(name, val))
-    {
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    return val;
-}
-
-void MainGUIWindow::getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length)
-{
-    if(!nodeHandle.getParam(name, val)){
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    if(val.size() != length) {
-        ROS_ERROR_STREAM("parameter '" << name << "' has wrong array length, " << length << " needed");
-    }
-}
-
-int MainGUIWindow::getParameterInt(ros::NodeHandle& nodeHandle, std::string name)
-{
-    int val;
-    if(!nodeHandle.getParam(name, val))
-    {
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    return val;
-}
-
-void MainGUIWindow::getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val, int length)
-{
-    if(!nodeHandle.getParam(name, val)){
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    if(val.size() != length) {
-        ROS_ERROR_STREAM("parameter '" << name << "' has wrong array length, " << length << " needed");
-    }
-}
-
-int MainGUIWindow::getParameterIntVectorWithUnknownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val)
-{
-    if(!nodeHandle.getParam(name, val)){
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    return val.size();
-}
-
-bool MainGUIWindow::getParameterBool(ros::NodeHandle& nodeHandle, std::string name)
-{
-    bool val;
-    if(!nodeHandle.getParam(name, val))
-    {
-        ROS_ERROR_STREAM("missing parameter '" << name << "'");
-    }
-    return val;
-}
-
-#endif

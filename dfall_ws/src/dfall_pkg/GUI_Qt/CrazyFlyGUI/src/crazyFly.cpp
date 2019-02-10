@@ -88,7 +88,7 @@ void crazyFly::updateCF(const CrazyflieData* p_crazyfly_msg)
 
 
         this->setPos(m_x * FROM_METERS_TO_UNITS, -m_y * FROM_METERS_TO_UNITS);    // - y because of coordinates
-        this->setRotation(- m_yaw * FROM_RADIANS_TO_DEGREES); //negative beacause anti-clock wise should be positive
+        this->setRotation(- m_yaw * RAD2DEG); //negative beacause anti-clock wise should be positive
     }
 }
 
