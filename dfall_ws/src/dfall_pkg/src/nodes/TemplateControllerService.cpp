@@ -243,7 +243,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	for(int i = 0; i < 9; ++i)
 	{
 		// For the z-controller
-		thrustAdjustment -= yaml_gainMatrixThrust[i] * stateErrorBody[i];
+		thrustAdjustment -= yaml_gainMatrixThrust_NineStateVector[i] * stateErrorBody[i];
 		// For the x-controller
 		pitchRate_forResponse -= yaml_gainMatrixPitchRate[i] * stateErrorBody[i];
 		// For the y-controller
@@ -329,7 +329,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	}
 
 
-	if (yaml_shouldDisplayDebuginfo)
+	if (yaml_shouldDisplayDebugInfo)
 	{
 		//  ***********************************************************
 		//  DDDD   EEEEE  BBBB   U   U   GGGG       M   M   SSSS   GGGG
@@ -460,13 +460,13 @@ float computeMotorPolyBackward(float thrust)
 	float cmd_16bit = (-yaml_motorPoly[1] + sqrt(yaml_motorPoly[1] * yaml_motorPoly[1] - 4 * yaml_motorPoly[2] * (yaml_motorPoly[0] - thrust))) / (2 * yaml_motorPoly[2]);
 
 	// Saturate the signal to be 0 or in the range [1000,65000]
-	if (cmd_16bit < yaml_cmd_sixteenbit_min)
+	if (cmd_16bit < yaml_command_sixteenbit_min)
 	{
 		cmd_16bit = 0;
 	}
-	else if (cmd > yaml_cmd_sixteenbit_max)
+	else if (cmd_16bit > yaml_command_sixteenbit_max)
 	{
-		cmd_16bit = yaml_cmd_sixteenbit_max;
+		cmd_16bit = yaml_command_sixteenbit_max;
 	}
 	// Return the result
 	return cmd_16bit;
