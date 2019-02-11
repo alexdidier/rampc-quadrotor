@@ -342,8 +342,8 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	
 	// PREPARE AND RETURN THE VARIABLE "response"
 
-	/*choosing the Crazyflie onBoard controller type.
-	it can either be Motor, Rate or Angle based */
+	// Choose the controller type use on-board the Crazyflie,
+	// it can be either be Motor, Rate, or Angle based
 	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTORS;
 	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
 	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_ANGLE;
@@ -685,7 +685,7 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 			default:
 			{
 				// Let the user know that the command was not recognised
-				ROS_INFO_STREAM("[DEMO CONTROLLER] A button clicked command was received in the controller but not recognised, message.button_index = " << custom_button_index << ", and message.float_data = " << float_data );
+				ROS_INFO_STREAM("[STUDENT CONTROLLER] A button clicked command was received in the controller but not recognised, message.button_index = " << custom_button_index << ", and message.float_data = " << float_data );
 				break;
 			}
 		}
@@ -1039,11 +1039,7 @@ int main(int argc, char* argv[]) {
 	// And now we can instantiate the subscriber:
 	ros::Subscriber customCommandReceivedSubscriber_from_coord = nodeHandle_to_coordinator.subscribe("StudentControllerService/CustomButtonPressed", 1, customCommandReceivedCallback);
 
-    // Create a "ros::NodeHandle" type local variable "namespace_nodeHandle" that points
-    // to the name space of this node, i.e., "dfall_pkg" as specified by the line:
-    //     "using namespace dfall_pkg;"
-    // in the "DEFINES" section at the top of this file.
-    //ros::NodeHandle namespace_nodeHandle(ros::this_node::getNamespace());
+
 
     // Print out some information to the user.
     ROS_INFO("[STUDENT CONTROLLER] Service ready :-)");

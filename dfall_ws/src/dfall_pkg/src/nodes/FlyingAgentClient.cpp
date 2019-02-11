@@ -307,6 +307,9 @@ void viconCallback(const ViconData& viconData)
                             case PICKER_CONTROLLER:
                                 success = pickerController.call(controllerCall);
                                 break;
+                            case TEMPLATE_CONTROLLER:
+                                success = templateController.call(controllerCall);
+                                break;
                             default:
                                 ROS_ERROR("[FLYING AGENT CLIENT] the current controller was not recognised");
                                 break;
@@ -480,6 +483,11 @@ void commandCallback(const IntWithHeader & msg) {
             case CMD_USE_PICKER_CONTROLLER:
                 ROS_INFO("[FLYING AGENT CLIENT] USE_PICKER_CONTROLLER Command received");
                 setControllerUsed(PICKER_CONTROLLER);
+                break;
+
+            case CMD_USE_TEMPLATE_CONTROLLER:
+                ROS_INFO("[FLYING AGENT CLIENT] USE_TEMPLATE_CONTROLLER Command received");
+                setControllerUsed(TEMPLATE_CONTROLLER);
                 break;
 
         	case CMD_CRAZYFLY_TAKE_OFF:
@@ -708,6 +716,23 @@ void loadPickerController()
     ROS_INFO_STREAM("[FLYING AGENT CLIENT] Loaded picker controller " << pickerController.getService());
 }
 
+void loadTemplateController()
+{
+    //ros::NodeHandle nodeHandle("~");
+    ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
+    ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "ClientConfig");
+
+    std::string templateControllerName;
+    if(!nodeHandle.getParam("templateController", templateControllerName))
+    {
+        ROS_ERROR("[FLYING AGENT CLIENT] Failed to get template controller name");
+        return;
+    }
+
+    templateController = ros::service::createClient<Controller>(templateControllerName, true);
+    ROS_INFO_STREAM("[FLYING AGENT CLIENT] Loaded template controller " << templateController.getService());
+}
+
 void sendMessageUsingController(int controller)
 {
     // Send a message on the topic for informing the Flying
@@ -743,6 +768,9 @@ void setInstantController(int controller) //for right now, temporal use
             break;
         case PICKER_CONTROLLER:
             loadPickerController();
+            break;
+        case TEMPLATE_CONTROLLER:
+            loadTemplateController();
             break;
         default:
             break;

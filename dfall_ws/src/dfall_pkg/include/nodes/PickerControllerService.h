@@ -213,10 +213,11 @@ float m_weight_cf_in_newtons = 0.0;
 std::vector<float> m_previous_stateErrorInertial = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
 
 // The LQR Controller parameters for "CONTROLLER_MODE_LQR_RATE"
-std::vector<float> yaml_gainMatrixThrust_NineStateVector (9,0.0);
-std::vector<float> yaml_gainMatrixRollRate               (9,0.0);
-std::vector<float> yaml_gainMatrixPitchRate              (9,0.0);
-std::vector<float> yaml_gainMatrixYawRate                (9,0.0);
+std::vector<float> yaml_gainMatrixThrust_NineStateVector  =  { 0.00, 0.00, 0.98, 0.00, 0.00, 0.25, 0.00, 0.00, 0.00};
+std::vector<float> yaml_gainMatrixRollRate                =  { 0.00,-6.20, 0.00, 0.00,-3.00, 0.00, 5.20, 0.00, 0.00};
+std::vector<float> yaml_gainMatrixPitchRate               =  { 6.20, 0.00, 0.00, 3.00, 0.00, 0.00, 0.00, 5.20, 0.00};
+std::vector<float> yaml_gainMatrixYawRate                 =  { 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.30};
+
 
 // The 16-bit command limits
 float yaml_cmd_sixteenbit_min = 1000;

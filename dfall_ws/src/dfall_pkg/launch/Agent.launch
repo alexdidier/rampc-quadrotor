@@ -110,6 +110,15 @@
 			>
 		</node>
 
+		<!-- TEMPLATE CONTROLLER -->
+		<node
+			pkg    = "dfall_pkg"
+			name   = "TemplateControllerService"
+			output = "screen"
+			type   = "TemplateControllerService"
+			>
+		</node>
+
 		<!-- PARAMETER SERVICE -->
 		<node
 			pkg    = "dfall_pkg"
@@ -148,6 +157,11 @@
 				command = "load"
 				file    = "$(find dfall_pkg)/param/PickerController.yaml"
 				ns      = "PickerController"
+			/>
+			<rosparam
+				command = "load"
+				file    = "$(find dfall_pkg)/param/TemplateController.yaml"
+				ns      = "TemplateController"
 			/>
 		</node>
 

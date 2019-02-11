@@ -1,10 +1,11 @@
-safeController:    "SafeControllerService/RateController"
-demoController:    "DemoControllerService/DemoController"
-studentController: "StudentControllerService/StudentController"
-mpcController:     "MpcControllerService/MpcController"
-remoteController:  "RemoteControllerService/RemoteController"
-tuningController:  "TuningControllerService/TuningController"
-pickerController:  "PickerControllerService/PickerController"
+safeController:     "SafeControllerService/RateController"
+demoController:     "DemoControllerService/DemoController"
+studentController:  "StudentControllerService/StudentController"
+mpcController:      "MpcControllerService/MpcController"
+remoteController:   "RemoteControllerService/RemoteController"
+tuningController:   "TuningControllerService/TuningController"
+pickerController:   "PickerControllerService/PickerController"
+templateController: "TemplateControllerService/TemplateController"
 
 # Flag for whether to use angle for switching to the Safe Controller
 strictSafety: false
@@ -13,4 +14,3 @@ angleMargin: 0.8
 battery_threshold_while_flying: 2.60       # in V
 battery_threshold_while_motors_off: 3.30   # in V
 battery_polling_period: 200                # in ms
-

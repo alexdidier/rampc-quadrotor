@@ -135,6 +135,8 @@ ros::ServiceClient remoteController;
 ros::ServiceClient tuningController;
 // The Picker controller specified in the ClientConfig.yaml
 ros::ServiceClient pickerController;
+// The Template controller specified in the ClientConfig.yaml
+ros::ServiceClient templateController;
 
 
 //values for safteyCheck
@@ -289,6 +291,7 @@ void loadMpcController();
 void loadRemoteController();
 void loadTuningController();
 void loadPickerController();
+void loadTemplateController();
 
 void sendMessageUsingController(int controller);
 void setInstantController(int controller);

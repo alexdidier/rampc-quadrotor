@@ -1641,11 +1641,7 @@ int main(int argc, char* argv[]) {
     // of this service the "calculateControlOutput" function is called.
     ros::ServiceServer service = nodeHandle.advertiseService("RemoteController", calculateControlOutput);
 
-    // Create a "ros::NodeHandle" type local variable "namespace_nodeHandle" that points
-    // to the name space of this node, i.e., "dfall_pkg" as specified by the line:
-    //     "using namespace dfall_pkg;"
-    // in the "DEFINES" section at the top of this file.
-    ros::NodeHandle namespace_nodeHandle(ros::this_node::getNamespace());
+
 
     // Print out some information to the user.
     ROS_INFO("[REMOTE CONTROLLER] Service ready :-)");
