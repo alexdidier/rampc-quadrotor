@@ -177,9 +177,9 @@ private:
     bool getTypeAndIDParameters();
 #endif
 
-    void publishSetpoint(float x, float y, float z, float yaw);
+    void publishSetpoint(float x, float y, float z, float yaw_degrees);
 
-    void increment_setpoint_by(float x_inc, float y_inc, float z_inc, float yaw_inc);
+    void increment_setpoint_by(float x_inc, float y_inc, float z_inc, float yaw_inc_degrees);
 
 };
 

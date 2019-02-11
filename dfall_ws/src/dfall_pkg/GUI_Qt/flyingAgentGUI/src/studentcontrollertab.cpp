@@ -329,7 +329,7 @@ void StudentControllerTab::setpointChangedCallback(const dfall_pkg::SetpointWith
     ui->lineEdit_setpoint_current_z->setText(qstr + QString::number( z, 'f', 3));
 
     if (yaw < 0.0f) qstr = ""; else qstr = "+";
-    ui->lineEdit_setpoint_current_yaw->setText(qstr + QString::number( yaw * RAD2DEG, 'f', 3));
+    ui->lineEdit_setpoint_current_yaw->setText(qstr + QString::number( yaw * RAD2DEG, 'f', 1));
 }
 #endif
 
@@ -357,7 +357,7 @@ void StudentControllerTab::setpointChangedCallback(const dfall_pkg::SetpointWith
 //    ----------------------------------------------------------------------------------
 
 
-void StudentControllerTab::publishSetpoint(float x, float y, float z, float yaw)
+void StudentControllerTab::publishSetpoint(float x, float y, float z, float yaw_degrees)
 {
 #ifdef CATKIN_MAKE
     // Initialise the message as a local variable
@@ -370,16 +370,16 @@ void StudentControllerTab::publishSetpoint(float x, float y, float z, float yaw)
     msg.x   = x;
     msg.y   = y;
     msg.z   = z;
-    msg.yaw = yaw * DEG2RAD;
+    msg.yaw = yaw_degrees * DEG2RAD;
 
     // Publish the setpoint
     this->requestSetpointChangePublisher.publish(msg);
 
     // Inform the user about the change
-    ROS_INFO_STREAM("[STUDENT CONTROLLER GUI] Published request for setpoint change to: [" << x << ", "<< y << ", "<< z << ", "<< yaw << "]");
+    ROS_INFO_STREAM("[STUDENT CONTROLLER GUI] Published request for setpoint change to: [" << x << ", "<< y << ", "<< z << ", "<< yaw_degrees << "]");
 #else
     // TO ASSIST WITH DEBUGGING WHEN COMPILED AND RUN IN "QtCreator"
-    QTextStream(stdout) << "[STUDENT CONTROLLER GUI] would publish request for: [" << x << ", "<< y << ", "<< z << ", "<< yaw << "]";
+    QTextStream(stdout) << "[STUDENT CONTROLLER GUI] would publish request for: [" << x << ", "<< y << ", "<< z << ", "<< yaw_degrees << "]";
 #endif
 }
 
@@ -388,12 +388,6 @@ void StudentControllerTab::publishSetpoint(float x, float y, float z, float yaw)
 void StudentControllerTab::on_lineEdit_setpoint_new_x_returnPressed()
 {
     ui->set_setpoint_button->animateClick();
-
-#ifdef CATKIN_MAKE
-#else
-    // TO ASSIST WITH DEBUGGING WHEN COMPILED AND RUN IN "QtCreator"
-    QTextStream(stdout) << "[STUDENT CONTROLLER TAB] return pressed for x setpoint";
-#endif
 }
 
 void StudentControllerTab::on_lineEdit_setpoint_new_y_returnPressed()
@@ -423,29 +417,24 @@ void StudentControllerTab::on_set_setpoint_button_clicked()
         x = (ui->lineEdit_setpoint_new_x->text()).toFloat();
     else
         x = (ui->lineEdit_setpoint_current_x->text()).toFloat();
-    // > For x
+    // > For y
     if(!ui->lineEdit_setpoint_new_y->text().isEmpty())
         y = (ui->lineEdit_setpoint_new_y->text()).toFloat();
     else
         y = (ui->lineEdit_setpoint_current_y->text()).toFloat();
-    // > For x
+    // > For z
     if(!ui->lineEdit_setpoint_new_z->text().isEmpty())
         z = (ui->lineEdit_setpoint_new_z->text()).toFloat();
     else
         z = (ui->lineEdit_setpoint_current_z->text()).toFloat();
-    // > For x
+    // > For yaws
     if(!ui->lineEdit_setpoint_new_yaw->text().isEmpty())
         yaw = (ui->lineEdit_setpoint_new_yaw->text()).toFloat();
     else
         yaw = (ui->lineEdit_setpoint_current_yaw->text()).toFloat();
 
-#ifdef CATKIN_MAKE
     // Call the function to publish the setpoint
     publishSetpoint(x,y,z,yaw);
-#else
-    // TO ASSIST WITH DEBUGGING WHEN COMPILED AND RUN IN "QtCreator"
-    QTextStream(stdout) << "[STUDENT CONTROLLER TAB] set setpoint button clicked";
-#endif
 }
 
 void StudentControllerTab::on_default_setpoint_button_clicked()
@@ -604,7 +593,7 @@ void StudentControllerTab::on_yaw_increment_minus_button_clicked()
 }
 
 
-void StudentControllerTab::increment_setpoint_by(float x_inc, float y_inc, float z_inc, float yaw_inc)
+void StudentControllerTab::increment_setpoint_by(float x_inc, float y_inc, float z_inc, float yaw_inc_degrees)
 {
 	
     if (m_type == TYPE_AGENT)
@@ -616,7 +605,7 @@ void StudentControllerTab::increment_setpoint_by(float x_inc, float y_inc, float
                 (ui->lineEdit_setpoint_current_x->text()  ).toFloat() + x_inc,
                 (ui->lineEdit_setpoint_current_y->text()  ).toFloat() + y_inc,
                 (ui->lineEdit_setpoint_current_z->text()  ).toFloat() + z_inc,
-                (ui->lineEdit_setpoint_current_yaw->text()).toFloat() + yaw_inc
+                (ui->lineEdit_setpoint_current_yaw->text()).toFloat() + yaw_inc_degrees
             );
     }
     else if (m_type == TYPE_COORDINATOR)
@@ -645,7 +634,7 @@ void StudentControllerTab::increment_setpoint_by(float x_inc, float y_inc, float
 	    float x_new   = x   + x_inc;
 	    float y_new   = y   + y_inc;
 	    float z_new   = z   + z_inc;
-	    float yaw_new = yaw + yaw_inc;
+        float yaw_new = yaw + yaw_inc_degrees;
 
         // INITIALISE A STRING VARIABLE FOR ADDING THE "+"
     	QString qstr = "";

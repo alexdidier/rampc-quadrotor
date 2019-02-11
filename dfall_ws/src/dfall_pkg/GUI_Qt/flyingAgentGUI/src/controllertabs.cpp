@@ -77,6 +77,11 @@ ControllerTabs::ControllerTabs(QWidget *parent) :
             ui->tuning_controller_tab_widget , &TuningControllerTab::setMeasuredPose
         );
 
+    QObject::connect(
+            this , &ControllerTabs::measuredPoseValueChanged ,
+            ui->template_controller_tab_widget , &TemplateControllerTab::setMeasuredPose
+        );
+
 
 
     // CONNECT THE "MEASUREMENTS UNAVAILABLE" SIGNAL TO
@@ -99,6 +104,11 @@ ControllerTabs::ControllerTabs(QWidget *parent) :
     QObject::connect(
             this , &ControllerTabs::poseDataUnavailableSignal ,
             ui->tuning_controller_tab_widget , &TuningControllerTab::poseDataUnavailableSlot
+        );
+
+    QObject::connect(
+            this , &ControllerTabs::poseDataUnavailableSignal ,
+            ui->template_controller_tab_widget , &TemplateControllerTab::poseDataUnavailableSlot
         );
 
 
@@ -125,6 +135,11 @@ ControllerTabs::ControllerTabs(QWidget *parent) :
     QObject::connect(
             this , &ControllerTabs::agentIDsToCoordinateChanged ,
             ui->tuning_controller_tab_widget , &TuningControllerTab::setAgentIDsToCoordinate
+        );
+
+    QObject::connect(
+            this , &ControllerTabs::agentIDsToCoordinateChanged ,
+            ui->template_controller_tab_widget , &TemplateControllerTab::setAgentIDsToCoordinate
         );
 
     
