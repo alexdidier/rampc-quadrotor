@@ -24,8 +24,8 @@ rosdep update
 
 #untar catkin workspace
 #needs to run after ros installation because of symbolic link to CMakeLists.txt
-mkdir -p ~/pps_ws/src
-tar -xf package.tar.gz -C ~/pps_ws/src
+mkdir -p ~/dfall_ws/src
+tar -xf package.tar.gz -C ~/dfall_ws/src
 
 #environment setup
 echo "source /opt/ros/kinetic/setup.bash" >> ~/.bashrc
@@ -39,10 +39,10 @@ sudo cp ./99-crazyflie.rules /etc/udev/rules.d
 sudo cp ./99-crazyradio.rules /etc/udev/rules.d
 
 #build workspace
-cd ~/pps_ws
+cd ~/dfall_ws
 catkin_make -j4
 
-echo "source ~/pps_ws/devel/setup.bash" >> ~/.bashrc
-source ~/pps_ws/devel/setup.bash
-echo "source ~/pps_ws/src/d_fall_pps/launch/Config.sh" >> ~/.bashrc
-source ~/pps_ws/src/d_fall_pps/launch/Config.sh
+echo "source ~/dfall_ws/devel/setup.bash" >> ~/.bashrc
+source ~/dfall_ws/devel/setup.bash
+echo "source ~/dfall_ws/src/dfall_pkg/launch/Config.sh" >> ~/.bashrc
+source ~/dfall_ws/src/dfall_pkg/launch/Config.sh

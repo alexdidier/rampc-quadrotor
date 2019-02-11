@@ -11,7 +11,7 @@ gyrosensor needs to initialize.
   * In the software side, everything has already been set up for the course, but
     it would be helpful to check if the repository is in the last version, and
     if the source code has been properly compiled. To do this, follow the next steps:
-       1. Go to the next folder: `cd ~/work/D-FaLL-System/pps_ws`
+       1. Go to the next folder: `cd ~/work/D-FaLL-System/dfall_ws`
        2. Checkout master branch of the repository and pull:<br />
          ``git checkout master``<br />
          ``git pull origin master``<br />
@@ -26,7 +26,7 @@ gyrosensor needs to initialize.
 
   * Once all the prerequisites have been fulfilled, we can start the student's
     GUI by going to a terminal and typing:
-    `roslaunch d_fall_pps Student.launch`
+    `roslaunch dfall_pkg Student.launch`
 
     *Note: for this to work, the teacher's computer has to be connected to the
     network and the teacher's GUI has to be started before. Please wait until
@@ -69,7 +69,7 @@ gyrosensor needs to initialize.
     safe controller to get familiar with the system.
 
     *Note: there are different parameters in the file called
-    `SafeController.yaml`, in the folder param (use `roscd d_fall_pps/param` in a
+    `SafeController.yaml`, in the folder param (use `roscd dfall_pkg/param` in a
     terminal to go there).* **These are the safe controller parameters and should NOT be
     changed.** *Take a look at the file and get familiar with the format used,
     since may have to write your own for the student controller.*
@@ -81,12 +81,12 @@ important files that should be taken into account.
 
 #### Files of interest:
 
-* In `d_fall_pps/src`
+* In `dfall_pkg/src`
 
   * _StudentControllerService.cpp_ <br>
   The file where students can implement their own controller. It provides already the ros service with the teacher. It can be used as a template.
 
-* In `d_fall_pps/param`
+* In `dfall_pkg/param`
 
   * _ClientConfig.yaml_ <br><br>
           <img src="./pics/client_config_yaml.png" style="width: 400px;"/> <br><br>
@@ -119,7 +119,7 @@ important files that should be taken into account.
       *Sets the low battery thresholds at which the crazyflie will automatically
       land. **Do not change these values.***
 
-* In `d_fall_pps/`
+* In `dfall_pkg/`
 
   * CMakeLists.txt
 
@@ -131,7 +131,7 @@ important files that should be taken into account.
 
 
 <!-- ##### -- Useful files: -->
-<!-- in `pps_ws/src/d_fall_pps/scripts` -->
+<!-- in `dfall_ws/src/dfall_pkg/scripts` -->
 <!-- -\-> call scripts in terminal by going to the above path and then typing -->
 <!-- ./SCRIPTNAME, e.g.: `./enable_crazyflie` -->
 
@@ -144,11 +144,11 @@ important files that should be taken into account.
 
 
 <!-- ##### -- Files to look at: -->
-<!-- in `pps_ws/src/d_fall_pps/param` -->
+<!-- in `dfall_ws/src/dfall_pkg/param` -->
 <!-- * _SafeController.yaml_ <br> -->
 <!-- This file contains the control parameters that the SafeControllerService uses. The SafeControllerService loads this file when it starts. You might want to use a similar approach and can try to copy some functionality from  SafeControllerService.cpp. -->
 
-<!-- in `pps_ws/scr/d_fall_pps/launch` <br> -->
+<!-- in `dfall_ws/scr/dfall_pkg/launch` <br> -->
 <!-- The launch files contained in this directory are used to launch several nodes and some parameter files to be launched simultaneously. It is best, that you take a look at them yourself, but here is a brief explanation what the different launch files are for.<br> -->
 <!-- To start the whole thing type the following in a terminal whilst being in the launch directory.<br> -->
 <!-- `roslaunch filename.launch` -->
@@ -177,10 +177,10 @@ important files that should be taken into account.
      without having to compile or restart the system. Here, as an example, we
      pass some parameters that can be seen below:<br><br>
         <img src="./pics/custom_controller_yaml.png" style="width: 400px;"/> <br><br>
-2. Go to `cd ~/work/D-FaLL-System/pps_ws` and write `catkin_make`.
+2. Go to `cd ~/work/D-FaLL-System/dfall_ws` and write `catkin_make`.
 
 3. Once everything has compiled without errors, run the next launch file:
-   `roslaunch d_fall_pps Student.launch`. This will run the student's GUI.
+   `roslaunch dfall_pkg Student.launch`. This will run the student's GUI.
 
 4. Make sure that your Crazyflie is turned ON and connect to it. Choose the tab
    called *Student Controller* and click on the button *Enable Student Controller*
@@ -218,7 +218,7 @@ to it*
    vicon\_y,...). Additionally, there are up to 10 general purpose variables
    that can be filled with any data we may be interested in plotting (value\_1,
    value\_2,...., value\_10). <br><br>
-2. Once chosen the variables, save the file and go to `cd ~/work/D-FaLL-System/pps_ws` and write `catkin_make`.<br><br>
+2. Once chosen the variables, save the file and go to `cd ~/work/D-FaLL-System/dfall_ws` and write `catkin_make`.<br><br>
 3. Open another terminal and type `rqt`. Then, in the top bar, go to
    Plugins->Visualization->Plot. A new plot will be added to the screen. If you
    want more than one plot, just add several ones doing the same thing. You will
@@ -231,7 +231,7 @@ to it*
    `/<student_id>/StudentControllerService/DebugTopic/vicon_z`. You can see an
    autocompletion of the
    list of all the topics available when you start typing in the field "Topic". <br><br>
-5. Start the Student node following the steps mentioned before (`roslaunch d_fall_pps Student.launch`) and enable the Student Controller.<br><br>
+5. Start the Student node following the steps mentioned before (`roslaunch dfall_pkg Student.launch`) and enable the Student Controller.<br><br>
 6. Once we are using the Student Controller, we will be seeing how the data
    selected gets plotted in the rqt plots.
 
@@ -242,12 +242,12 @@ to it*
 <!-- **Setup** -->
 <!-- 1.  Teacher must run his part, that publishes ViconData for students and hosts the roscore. -->
 <!-- 2.  Each student/group has a CrazyFlie and a laptop. -->
-<!-- 3.  Use `roscd d_fall_pps/launch` in a terminal as well as `roscd d_fall_pps/scripts` in another terminal -->
+<!-- 3.  Use `roscd dfall_pkg/launch` in a terminal as well as `roscd dfall_pkg/scripts` in another terminal -->
 
 <!-- <br> -->
 <!-- **Working** -->
 <!-- 1.  Adjust your custom controller -->
-<!-- 2.  Use `catkin_make` in the pps_ws directory to compile your controller implementation -->
+<!-- 2.  Use `catkin_make` in the dfall_ws directory to compile your controller implementation -->
 <!-- 3.  Start your crazyflie -->
 <!-- 4.  Launch the correct file in the launch directory as described above. ClientConfig.yaml has to be correct. -->
 <!-- 5. Use the scripts to change from the safe to your custom controller. -->

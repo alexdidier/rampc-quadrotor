@@ -13,7 +13,7 @@ echo $ROS_NAMESPACE
 
 This environment vairable is set in the file:
 ```
-pps_ws/src/d_fall_pps/launch/Config.sh
+dfall_ws/src/dfall_pkg/launch/Config.sh
 ```
 The environemnt variable is set by the following line in that file:
 ```

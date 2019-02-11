@@ -35,9 +35,9 @@ git pull
 
 The ``Student GUI`` can be launched from a terminal window with the following command:
 ```
-roslaunch d_fall_pps Student.launch
+roslaunch dfall_pkg Student.launch
 ```
-This can be run from any directory because ``d_fall_pps`` is defined as an environment variable that points to the absolute foler location ``~/work/D-FaLL-System/pps_ws/src/d_fall_pps/launch/``
+This can be run from any directory because ``dfall_pkg`` is defined as an environment variable that points to the absolute foler location ``~/work/D-FaLL-System/dfall_ws/src/dfall_pkg/launch/``
 
 
 ### How do I make changes to a ``*.cpp`` file take effect?
@@ -45,9 +45,9 @@ In essence you need to re-compile the code and re-launch all ROS nodes.
 
 <b>Step 1)</b> Kill all ROS processes that are running nodes from the ``D-FaLL-System`` repository, i.e., you must kill the ``Student GUI`` node but you do not need to kill an ``rqt`` plotting node. To kill a process press ``Ctrl+c`` from the terminal window that is running the process.
 
-<b>Step 2)</b> In a terminal window, change to the ``pps_ws`` folder of the repository (where ``ws`` stands for workspace. On a machine setup as per the instructions this is:
+<b>Step 2)</b> In a terminal window, change to the ``dfall_ws`` folder of the repository (where ``ws`` stands for workspace. On a machine setup as per the instructions this is:
 ```
-cd ~work/D-FaLL-System/pps_ws/
+cd ~work/D-FaLL-System/dfall_ws/
 ``` 
 <b>Step 3)</b> Compile the repository, which includes your changes, using the command:
 ```
@@ -79,7 +79,7 @@ This can happen for a variety of reasons, and generally relates to the local com
 
 To understand how Step 5) could actually fix the problem, consider that ``~/.bashrc`` is run when a new terminal window is opened, and as part of installing the ``D-FaLL-System`` the following line is added to the  ``.bashrc``:
 ``
-source <catkin workspace>/src/d_fall_pps/launch/Config.sh
+source <catkin workspace>/src/dfall_pkg/launch/Config.sh
 ``
 And if you look at the ``Config.sh`` file in the repository you see that it defines environment variable relating to the ``ROS_MASTER_URI``, ``ROS_IP``, and ``ROS_NAMESPACE``. On occassion these are not properly defined on start up or are changed, hence closing and re-launching Terminal can resolve the problem.
 
@@ -91,9 +91,9 @@ The Vicon motion capture system provides position and attitude information via a
 To check whether the Vicon Datastream software is properly added to the local computer, goto the [Installation](installation.md) wiki page and follow the instructions under the title "Vicon Datastream SDK Installation".
 
 The main requirements are that:
-- The ``DataStreamClient.h`` header file needs to be located in ``~/pps_ws/src/d_fall_pps/lib/vicon/``,
-- The ``libViconDataStreamSDK_CPP.so`` shared object needs to be located in ``~/pps_ws/src/d_fall_pps/lib/vicon/``, and
-- A number of files of the form ``libboost_*`` should also be located in ``~/pps_ws/src/d_fall_pps/lib/vicon/``.
+- The ``DataStreamClient.h`` header file needs to be located in ``~/dfall_ws/src/dfall_pkg/lib/vicon/``,
+- The ``libViconDataStreamSDK_CPP.so`` shared object needs to be located in ``~/dfall_ws/src/dfall_pkg/lib/vicon/``, and
+- A number of files of the form ``libboost_*`` should also be located in ``~/dfall_ws/src/dfall_pkg/lib/vicon/``.
 
 
 
@@ -131,7 +131,7 @@ my_current_xyz_yaw_publisher = nodeHandle.advertise<Setpoint>("/<ID>/my_current_
 ```
 where ``<ID>`` should be replaced by the ID of your computer, for example the number 7, ``my_current_xyz_yaw_topic`` is the name of the message topic that will be published, and ``Setpoint`` specifies the stucture of the message as defined in the file ``/msg/Setpoint.msg`` and included with:
 ```
-#include "d_fall_pps/Setpoint.h"
+#include "dfall_pkg/Setpoint.h"
 ```
 added at the top of  your ``StudentControllerService.cpp`` file.
 
