@@ -107,7 +107,7 @@
 #define CF_COMMAND_TYPE_ANGLE  8
 
 // Types of controllers being used:
-#define SAFE_CONTROLLER      1
+#define DEFAULT_CONTROLLER      1
 #define DEMO_CONTROLLER      2
 #define STUDENT_CONTROLLER   3
 #define MPC_CONTROLLER       4
@@ -117,7 +117,7 @@
 
 // The constants that "command" changes in the
 // operation state of this agent
-#define CMD_USE_SAFE_CONTROLLER      1
+#define CMD_USE_DEFAULT_CONTROLLER      1
 #define CMD_USE_DEMO_CONTROLLER      2
 #define CMD_USE_STUDENT_CONTROLLER   3
 #define CMD_USE_MPC_CONTROLLER       4
@@ -207,80 +207,3 @@
 
 // For standard buttons in the GUI
 #define REQUEST_DEFAULT_SETPOINT_BUTTON_ID    100
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// OLD STUFF FOR LOADING YAML FILES
-// For which controller parameters to load from file
-#define LOAD_YAML_SAFE_CONTROLLER_AGENT             1
-#define LOAD_YAML_DEMO_CONTROLLER_AGENT             2
-#define LOAD_YAML_STUDENT_CONTROLLER_AGENT          3
-#define LOAD_YAML_MPC_CONTROLLER_AGENT              4
-#define LOAD_YAML_REMOTE_CONTROLLER_AGENT           5
-#define LOAD_YAML_TUNING_CONTROLLER_AGENT           6
-#define LOAD_YAML_PICKER_CONTROLLER_AGENT           7
-
-#define LOAD_YAML_SAFE_CONTROLLER_COORDINATOR       11
-#define LOAD_YAML_DEMO_CONTROLLER_COORDINATOR       12
-#define LOAD_YAML_STUDENT_CONTROLLER_COORDINATOR    13
-#define LOAD_YAML_MPC_CONTROLLER_COORDINATOR        14
-#define LOAD_YAML_REMOTE_CONTROLLER_COORDINATOR     15
-#define LOAD_YAML_TUNING_CONTROLLER_COORDINATOR     16
-#define LOAD_YAML_PICKER_CONTROLLER_COORDINATOR     17
-
-
-// For sending commands to the controller node informing
-// which parameters to fetch
-// > NOTE: these are identical to the #defines above, but
-//         used because they have the name distinguishes
-//         between:
-//         - "loading" a yaml file into ram
-//         - "fetching" the values that were loaded into ram
-#define FETCH_YAML_SAFE_CONTROLLER_FROM_OWN_AGENT      1
-#define FETCH_YAML_DEMO_CONTROLLER_FROM_OWN_AGENT      2
-#define FETCH_YAML_STUDENT_CONTROLLER_FROM_OWN_AGENT   3
-#define FETCH_YAML_MPC_CONTROLLER_FROM_OWN_AGENT       4
-#define FETCH_YAML_REMOTE_CONTROLLER_FROM_OWN_AGENT    5
-#define FETCH_YAML_TUNING_CONTROLLER_FROM_OWN_AGENT    6
-#define FETCH_YAML_PICKER_CONTROLLER_FROM_OWN_AGENT    7
-
-#define FETCH_YAML_SAFE_CONTROLLER_FROM_COORDINATOR      11
-#define FETCH_YAML_DEMO_CONTROLLER_FROM_COORDINATOR      12
-#define FETCH_YAML_STUDENT_CONTROLLER_FROM_COORDINATOR   13
-#define FETCH_YAML_MPC_CONTROLLER_FROM_COORDINATOR       14
-#define FETCH_YAML_REMOTE_CONTROLLER_FROM_COORDINATOR    15
-#define FETCH_YAML_TUNING_CONTROLLER_FROM_COORDINATOR    16
-#define FETCH_YAML_PICKER_CONTROLLER_FROM_COORDINATOR    17

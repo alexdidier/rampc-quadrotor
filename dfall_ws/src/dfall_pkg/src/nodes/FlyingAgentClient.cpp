@@ -1,4 +1,4 @@
-//    Copyright (C) 2017, ETH Zurich, D-ITET, Paul Beuchat, Angel Romero, Cyrill Burgener, Marco Mueller, Philipp Friedli
+//    Copyright (C) 2019, ETH Zurich, D-ITET, Paul Beuchat, Angel Romero, Cyrill Burgener, Marco Mueller, Philipp Friedli
 //
 //    This file is part of D-FaLL-System.
 //    
@@ -61,506 +61,444 @@
 
 
 
-//checks if crazyflie is within allowed area and if demo controller returns no data
-bool safetyCheck(CrazyflieData data, ControlCommand controlCommand) {
-	//position check
-	if((data.x < context.localArea.xmin) or (data.x > context.localArea.xmax)) {
-		ROS_INFO_STREAM("[FLYING AGENT CLIENT] x safety failed");
-		return false;
-	}
-	if((data.y < context.localArea.ymin) or (data.y > context.localArea.ymax)) {
-		ROS_INFO_STREAM("[FLYING AGENT CLIENT] y safety failed");
-		return false;
-	}
-	if((data.z < context.localArea.zmin) or (data.z > context.localArea.zmax)) {
-		ROS_INFO_STREAM("[FLYING AGENT CLIENT] z safety failed");
-		return false;
-	}
 
-	//attitude check
-	//if strictSafety is set to true in ClientConfig.yaml the SafeController takes also over if the roll and pitch angles get to large
-	//the angleMargin is a value in the range (0,1). The closer to 1, the closer to 90 deg are the roll and pitch angles allowed to become before the safeController takes over
-	if(yaml_strictSafety){
-		if((data.roll > PI/2*yaml_angleMargin) or (data.roll < -PI/2*yaml_angleMargin)) {
-			ROS_INFO_STREAM("[FLYING AGENT CLIENT] roll too big.");
-			return false;
-		}
-		if((data.pitch > PI/2*yaml_angleMargin) or (data.pitch < -PI/2*yaml_angleMargin)) {
-			ROS_INFO_STREAM("[FLYING AGENT CLIENT] pitch too big.");
-			return false;
-		}
-	}
 
-	return true;
+
+
+
+
+
+// void takeOffCF(CrazyflieData& current_local_coordinates) //local because the setpoint is in local coordinates
+// {
+//     // set the setpoint and call safe controller
+//     Setpoint setpoint_msg;
+//     setpoint_msg.x = current_local_coordinates.x;           // previous one
+//     setpoint_msg.y = current_local_coordinates.y;           //previous one
+//     setpoint_msg.z = current_local_coordinates.z + yaml_take_off_distance;           //previous one plus some offset
+//     // setpoint_msg.yaw = current_local_coordinates.yaw;          //previous one
+//     setpoint_msg.yaw = 0.0;
+//     safeControllerServiceSetpointPublisher.publish(setpoint_msg);
+//     ROS_INFO("[FLYING AGENT CLIENT] Take OFF:");
+//     ROS_INFO("[FLYING AGENT CLIENT] ------Current coordinates:");
+//     ROS_INFO("[FLYING AGENT CLIENT] X: %f, Y: %f, Z: %f", current_local_coordinates.x, current_local_coordinates.y, current_local_coordinates.z);
+//     ROS_INFO("[FLYING AGENT CLIENT] ------New coordinates:");
+//     ROS_INFO("[FLYING AGENT CLIENT] X: %f, Y: %f, Z: %f", setpoint_msg.x, setpoint_msg.y, setpoint_msg.z);
+
+//     // now, use safe controller to go to that setpoint
+//     loadSafeController();
+//     setInstantController(SAFE_CONTROLLER);
+//     // when do we finish? after some time with delay?
+
+//     // update variable that keeps track of current setpoint
+//     setCurrentSafeSetpoint(setpoint_msg);
+// }
+
+// void landCF(CrazyflieData& current_local_coordinates)
+// {
+//     // set the setpoint and call safe controller
+//     Setpoint setpoint_msg;
+//     setpoint_msg.x = current_local_coordinates.x;           // previous one
+//     setpoint_msg.y = current_local_coordinates.y;           //previous one
+//     setpoint_msg.z = yaml_landing_distance;           //previous one plus some offset
+//     setpoint_msg.yaw = current_local_coordinates.yaw;          //previous one
+//     safeControllerServiceSetpointPublisher.publish(setpoint_msg);
+
+//     // now, use safe controller to go to that setpoint
+//     loadSafeController();
+//     setInstantController(SAFE_CONTROLLER);
+//     setCurrentSafeSetpoint(setpoint_msg);
+// }
+
+
+
+
+// void goToControllerSetpoint()
+// {
+//     safeControllerServiceSetpointPublisher.publish(controller_setpoint);
+//     setCurrentSafeSetpoint(controller_setpoint);
+// }
+
+
+//is called when new data from Vicon arrives
+void viconCallback(const ViconData& viconData)
+{
+    // NOTE: THIS FUNCTION IS CALL AT THE FREQUENCY OF THE MOTION
+    //       CAPTURE SYSTEM. HENCE ANY OPTERATIONS PERFORMED IN
+    //       THIS FUNCTION MUST BE NON-BLOCKING.
+
+    // Initilise a variable for the pose data of this agent
+    CrazyflieData poseDataForThisAgent;
+
+    // Extract the pose data from the full motion capture array
+    // NOTE: that if the return index is a negative then this
+    //       indicates that the pose data was not found.
+    m_poseDataIndex = getPoseDataForObjectNameWithExpectedIndex( viconData, m_context.crazyflieName , m_poseDataIndex , poseDataForThisAgent );
+
+
+
+    // switch(m_flying_state) 
+    // {
+    //     case STATE_MOTORS_OFF: // here we will put the code of current disabled button
+    //         if(m_changed_flying_state_flag) // stuff that will be run only once when changing state
+    //         {
+    //             m_changed_flying_state_flag = false;
+    //             ROS_INFO("[FLYING AGENT CLIENT] STATE_MOTORS_OFF");
+    //         }
+    //         break;
+    //     case STATE_TAKE_OFF: //we need to move up from where we are now.
+    //         if(m_changed_flying_state_flag) // stuff that will be run only once when changing state
+    //         {
+    //             m_changed_flying_state_flag = false;
+    //             takeOffCF(local);
+    //             finished_take_off = false;
+    //             ROS_INFO("[FLYING AGENT CLIENT] STATE_TAKE_OFF");
+    //             timer_takeoff = nodeHandle.createTimer(ros::Duration(yaml_duration_take_off), takeOffTimerCallback, true);
+    //         }
+    //         if(finished_take_off)
+    //         {
+    //             finished_take_off = false;
+    //             setInstantController(getControllerNominallySelected());
+    //             changeFlyingStateTo(STATE_FLYING);
+    //         }
+    //         break;
+    //     case STATE_FLYING:
+    //         if(m_changed_flying_state_flag) // stuff that will be run only once when changing state
+    //         {
+    //             m_changed_flying_state_flag = false;
+    //             // need to change setpoint to the controller one
+    //             goToControllerSetpoint();
+    //             ROS_INFO("[FLYING AGENT CLIENT] STATE_FLYING");
+    //         }
+    //         break;
+    //     case STATE_LAND:
+    //         if(m_changed_flying_state_flag) // stuff that will be run only once when changing state
+    //         {
+    //             m_changed_flying_state_flag = false;
+    //             landCF(local);
+    //             finished_land = false;
+    //             ROS_INFO("[FLYING AGENT CLIENT] STATE_LAND");
+    //             timer_takeoff = nodeHandle.createTimer(ros::Duration(yaml_duration_landing), landTimerCallback, true);
+    //         }
+    //         if(finished_land)
+    //         {
+    //             finished_land = false;
+    //             setInstantController(getControllerNominallySelected());
+    //             changeFlyingStateTo(STATE_MOTORS_OFF);
+    //         }
+    //         break;
+    //     default:
+    //         break;
+    // }
+
+    // Only continue if:
+    // (1) the pose for this agent was found, and
+    // (2) the flying state is something other than MOTORS-OFF
+    if (
+        (m_poseDataIndex >= 0)
+        and
+        (m_flying_state != STATE_MOTORS_OFF)
+        and
+        (m_controllers_avialble)
+    )
+    {
+        // Initliase the "Contrller" service call variable
+        Controller controllerCall;
+
+        // Fill in the pose data for this agent
+        controllerCall.request.ownCrazyflie = poseDataForThisAgent;
+
+        // Initialise a node handle, needed for starting timers
+        ros::NodeHandle nodeHandle("~");
+
+        // If the object is NOT occluded,
+        // then proceed to make the "Controller Service Call" that
+        // compute the controller output.
+        if(!poseDataForThisAgent.occluded)
+        {
+            // PERFORM THE SAFTY CHECK (IF NOT THE DEFAULT CONTROLLER)
+            if ( getInstantController() != DEFAULT_CONTROLLER )
+            {
+                if ( !safetyCheck(poseDataForThisAgent) )
+                {
+                    setInstantController(DEFAULT_CONTROLLER);
+                    ROS_INFO_STREAM("[FLYING AGENT CLIENT] safety check failed, switching to DEFAULT CONTROLLER");
+                }
+            }
+
+            // Initialise a local boolean success variable
+            bool isSuccessful_controllerCall = false;
+
+            // switch( getInstantController() )
+            // {
+            //     case DEFAULT_CONTROLLER
+            //         isSuccessful_controllerCall = defaultController.call(controllerCall);
+            //         break;
+            //     case DEMO_CONTROLLER:
+            //         isSuccessful_controllerCall = demoController.call(controllerCall);
+            //         break;
+            //     case STUDENT_CONTROLLER:
+            //         isSuccessful_controllerCall = studentController.call(controllerCall);
+            //         break;
+            //     case MPC_CONTROLLER:
+            //         isSuccessful_controllerCall = mpcController.call(controllerCall);
+            //         break;
+            //     case REMOTE_CONTROLLER:
+            //         isSuccessful_controllerCall = remoteController.call(controllerCall);
+            //         break;
+            //     case TUNING_CONTROLLER:
+            //         isSuccessful_controllerCall = tuningController.call(controllerCall);
+            //         break;
+            //     case PICKER_CONTROLLER:
+            //         isSuccessful_controllerCall = pickerController.call(controllerCall);
+            //         break;
+            //     case TEMPLATE_CONTROLLER:
+            //         isSuccessful_controllerCall = templateController.call(controllerCall);
+            //         break;
+            //     default:
+            //         ROS_ERROR("[FLYING AGENT CLIENT] the current controller was not recognised");
+            //         break;
+            // }
+
+
+            isSuccessful_controllerCall = m_instant_controller_service_client->call(controllerCall);
+
+            // Ensure success and enforce safety
+            if(!isSuccessful_controllerCall)
+            {
+                //ROS_ERROR("[FLYING AGENT CLIENT] Failed to call a 'non-safe' controller, switching to safe controller");
+                //ROS_ERROR_STREAM("[FLYING AGENT CLIENT] 'non-safe' controller status: valid: " << demoController.isValid() << ", exists: " << demoController.exists());
+                //ROS_ERROR_STREAM("[FLYING AGENT CLIENT] 'non-safe' controller name: " << demoController.getService());
+
+                // Let the user know that the controller call failed
+                ROS_ERROR_STREAM("[FLYING AGENT CLIENT] Failed to call controller, valid: " << m_instant_controller_service_client->isValid() << ", exists: " << m_instant_controller_service_client->exists());
+
+                // Switch to the default controller,
+                // if it was not already the active controller
+                if ( getInstantController() != DEFAULT_CONTROLLER )
+                {
+                    // Set the DEFAULT controller to be active
+                    setInstantController(DEFAULT_CONTROLLER);
+                    // Try the controller call
+                    isSuccessful_controllerCall = m_instant_controller_service_client->call(controllerCall);
+                    // Inform the user is not successful
+                    if ( !isSuccessful_controllerCall )
+                    {
+                        ROS_ERROR_STREAM("[FLYING AGENT CLIENT] Also failed to call the DEFAULT controller, valid: " << m_instant_controller_service_client->isValid() << ", exists: " << m_instant_controller_service_client->exists());
+                    }
+                }
+            }
+
+            // Send the command to the CrazyRadio
+            // > IF SUCCESSFUL
+            if (isSuccessful_controllerCall)
+            {
+                commandForSendingToCrazyfliePublisher.publish(controllerCall.response.controlOutput);
+            }
+            // > ELSE SEND ZERO OUTPUT COMMAND
+            else
+            {
+                // Send the command to turn the motors off
+                ControlCommand zeroOutput = ControlCommand(); //everything set to zero
+                zeroOutput.onboardControllerType = CF_COMMAND_TYPE_MOTORS; //set to motor_mode
+                commandForSendingToCrazyfliePublisher.publish(zeroOutput);
+                // And change the state to motor-off
+                changeFlyingStateTo(STATE_MOTORS_OFF);
+            }
+
+
+
+            // else if(!safetyCheck(global, controllerCall.response.controlOutput))
+            // {
+            //     setInstantController(SAFE_CONTROLLER);
+            //     ROS_INFO_STREAM("[FLYING AGENT CLIENT] safety check failed, switching to safe controller");
+            // }
+
+
+
+            // // Ensure success and enforce safety
+            // if(!success)
+            // {
+            //     ROS_ERROR("[FLYING AGENT CLIENT] Failed to call a 'non-safe' controller, switching to safe controller");
+            //     //ROS_ERROR_STREAM("[FLYING AGENT CLIENT] 'non-safe' controller status: valid: " << demoController.isValid() << ", exists: " << demoController.exists());
+            //     //ROS_ERROR_STREAM("[FLYING AGENT CLIENT] 'non-safe' controller name: " << demoController.getService());
+            //     setInstantController(SAFE_CONTROLLER);
+            // }
+            // else if(!safetyCheck(global, controllerCall.response.controlOutput))
+            // {
+            //     setInstantController(SAFE_CONTROLLER);
+            //     ROS_INFO_STREAM("[FLYING AGENT CLIENT] safety check failed, switching to safe controller");
+            // }
+
+                
+            // }
+            // // SAFE_CONTROLLER and state is different from flying
+            // else
+            // {
+            //     calculateDistanceToCurrentSafeSetpoint(local); // update distance, it also updates the unit vector
+            //     // ROS_INFO_STREAM("distance: " << distance);
+            //     // here, detect if euclidean distance between setpoint and current position is higher than a threshold
+            //     if(distance > yaml_distance_threshold)
+            //     {
+            //         // DEBUGGING: display a message that the crazyflie is inside the thresholds
+            //         //ROS_INFO("inside threshold");
+            //         // Declare a local variable for the "setpoint message" to be published
+            //         Setpoint setpoint_msg;
+            //         // here, where we are now, or where we were in the beginning?
+            //         setpoint_msg.x = local.x + yaml_distance_threshold * unit_vector[0];
+            //         setpoint_msg.y = local.y + yaml_distance_threshold * unit_vector[1];
+            //         setpoint_msg.z = local.z + yaml_distance_threshold * unit_vector[2];
+
+            //         // yaw is better divided by the number of steps?
+            //         setpoint_msg.yaw = current_safe_setpoint.yaw;
+            //         safeControllerServiceSetpointPublisher.publish(setpoint_msg);
+            //         was_in_threshold = true;
+            //     }
+            //     else
+            //     {
+            //         if(was_in_threshold)
+            //         {
+            //             was_in_threshold = false;
+            //             safeControllerServiceSetpointPublisher.publish(current_safe_setpoint);
+            //             // goToControllerSetpoint(); //maybe this is a bit repetitive?
+            //         }
+            //     }
+
+            //     bool success = safeController.call(controllerCall);
+            //     if(!success) {
+            //         ROS_ERROR_STREAM("[FLYING AGENT CLIENT] Failed to call safe controller, valid: " << safeController.isValid() << ", exists: " << safeController.exists());
+            //     }
+            // }
+
+            // Send the command to the CrazyRadio
+            //commandForSendingToCrazyfliePublisher.publish(controllerCall.response.controlOutput);
+
+        } // END OF: "if(!global.occluded)"
+
+    }
+    else
+    {
+        // Send the command to turn the motors off
+        ControlCommand zeroOutput = ControlCommand(); //everything set to zero
+        zeroOutput.onboardControllerType = CF_COMMAND_TYPE_MOTORS; //set to motor_mode
+        commandForSendingToCrazyfliePublisher.publish(zeroOutput);
+
+	} // END OF: "if ( (m_poseDataIndex >= 0) and (m_flying_state != STATE_MOTORS_OFF) )"
+
 }
 
-void coordinatesToLocal(CrazyflieData& cf) {
-	AreaBounds area = context.localArea;
-	float originX = (area.xmin + area.xmax) / 2.0;
-	float originY = (area.ymin + area.ymax) / 2.0;
+
+
+
+
+int getPoseDataForObjectNameWithExpectedIndex(const ViconData& viconData, std::string name , int expected_index , CrazyflieData& pose_to_fill_in)
+{
+    // Initialise an integer for the index where the object
+    // "name" is found
+    // > Initialise an negative to indicate not found
+    int object_index = -1;
+
+    // Get the length of the "pose data array"
+    int length_poseData = viconData.crazyflies.size();
+
+    // If the "expected index" is non-negative and less than
+    // the length of the data array, then attempt to check
+    // for a name match
+    if (
+        (0 <= expected_index)
+        and
+        (expected_index < length_poseData)
+    )
+    {
+        // Check if the names match
+        if (viconData.crazyflies[expected_index].crazyflieName == m_context.crazyflieName)
+        {
+            object_index = expected_index;
+        }
+    }
+
+    // If not found, then iterate the data array looking
+    // for a name match
+    if (object_index < 0)
+    {
+        for( int i=0 ; i<length_poseData ; i++ )
+        {    
+            // Check if the names match
+            if(viconData.crazyflies[i].crazyflieName == m_context.crazyflieName)
+            {
+                object_index = i;
+            }
+        }
+    }
+
+    // If not found, then retrun, else fill in the pose data
+    if (object_index < 0)
+    {
+        return object_index;
+    }
+    else
+    {
+        pose_to_fill_in = viconData.crazyflies[object_index];
+        coordinatesToLocal(pose_to_fill_in);
+        return object_index;
+    }
+}
+
+
+void coordinatesToLocal(CrazyflieData& cf)
+{
+    AreaBounds area = m_context.localArea;
+    float originX = (area.xmin + area.xmax) / 2.0;
+    float originY = (area.ymin + area.ymax) / 2.0;
     // change Z origin to zero, i.e., to the table height, zero of global coordinates, instead of middle of the box
     float originZ = 0.0;
-	// float originZ = (area.zmin + area.zmax) / 2.0;
+    // float originZ = (area.zmin + area.zmax) / 2.0;
 
-	cf.x -= originX;
-	cf.y -= originY;
-	cf.z -= originZ;
+    cf.x -= originX;
+    cf.y -= originY;
+    cf.z -= originZ;
 }
 
 
-void setCurrentSafeSetpoint(Setpoint setpoint)
-{
-    current_safe_setpoint = setpoint;
-}
-
-void calculateDistanceToCurrentSafeSetpoint(CrazyflieData& local)
-{
-    double dx = current_safe_setpoint.x - local.x;
-    double dy = current_safe_setpoint.y - local.y;
-    double dz = current_safe_setpoint.z - local.z;
-
-    distance = sqrt(pow(dx,2) + pow(dy,2) + pow(dz,2));
-
-    unit_vector[0] = dx/distance;
-    unit_vector[1] = dy/distance;
-    unit_vector[2] = dz/distance;
-}
 
 
-void takeOffCF(CrazyflieData& current_local_coordinates) //local because the setpoint is in local coordinates
-{
-    // set the setpoint and call safe controller
-    Setpoint setpoint_msg;
-    setpoint_msg.x = current_local_coordinates.x;           // previous one
-    setpoint_msg.y = current_local_coordinates.y;           //previous one
-    setpoint_msg.z = current_local_coordinates.z + yaml_take_off_distance;           //previous one plus some offset
-    // setpoint_msg.yaw = current_local_coordinates.yaw;          //previous one
-    setpoint_msg.yaw = 0.0;
-    safeControllerServiceSetpointPublisher.publish(setpoint_msg);
-    ROS_INFO("[FLYING AGENT CLIENT] Take OFF:");
-    ROS_INFO("[FLYING AGENT CLIENT] ------Current coordinates:");
-    ROS_INFO("[FLYING AGENT CLIENT] X: %f, Y: %f, Z: %f", current_local_coordinates.x, current_local_coordinates.y, current_local_coordinates.z);
-    ROS_INFO("[FLYING AGENT CLIENT] ------New coordinates:");
-    ROS_INFO("[FLYING AGENT CLIENT] X: %f, Y: %f, Z: %f", setpoint_msg.x, setpoint_msg.y, setpoint_msg.z);
 
-    // now, use safe controller to go to that setpoint
-    loadSafeController();
-    setInstantController(SAFE_CONTROLLER);
-    // when do we finish? after some time with delay?
 
-    // update variable that keeps track of current setpoint
-    setCurrentSafeSetpoint(setpoint_msg);
-}
 
-void landCF(CrazyflieData& current_local_coordinates)
-{
-    // set the setpoint and call safe controller
-    Setpoint setpoint_msg;
-    setpoint_msg.x = current_local_coordinates.x;           // previous one
-    setpoint_msg.y = current_local_coordinates.y;           //previous one
-    setpoint_msg.z = yaml_landing_distance;           //previous one plus some offset
-    setpoint_msg.yaw = current_local_coordinates.yaw;          //previous one
-    safeControllerServiceSetpointPublisher.publish(setpoint_msg);
 
-    // now, use safe controller to go to that setpoint
-    loadSafeController();
-    setInstantController(SAFE_CONTROLLER);
-    setCurrentSafeSetpoint(setpoint_msg);
-}
 
 void changeFlyingStateTo(int new_state)
 {
     if(crazyradio_status == CRAZY_RADIO_STATE_CONNECTED)
     {
         ROS_INFO("[FLYING AGENT CLIENT] Change state to: %d", new_state);
-        flying_state = new_state;
+        m_flying_state = new_state;
     }
     else
     {
         ROS_INFO("[FLYING AGENT CLIENT] Disconnected and trying to change state. State goes to MOTORS OFF");
-        flying_state = STATE_MOTORS_OFF;
+        m_flying_state = STATE_MOTORS_OFF;
     }
 
-    changed_state_flag = true;
+    // Set the class variable flag that the
+    // flying state was changed
+    m_changed_flying_state_flag = true;
+
+    // Publish a message with the new flying state
     std_msgs::Int32 flying_state_msg;
-    flying_state_msg.data = flying_state;
+    flying_state_msg.data = m_flying_state;
     flyingStatePublisher.publish(flying_state_msg);
 }
 
 
 void takeOffTimerCallback(const ros::TimerEvent&)
 {
-    finished_take_off = true;
+    //finished_take_off = true;
 }
 
 void landTimerCallback(const ros::TimerEvent&)
 {
-    finished_land = true;
+    //finished_land = true;
 }
-
-void goToControllerSetpoint()
-{
-    safeControllerServiceSetpointPublisher.publish(controller_setpoint);
-    setCurrentSafeSetpoint(controller_setpoint);
-}
-
-
-//is called when new data from Vicon arrives
-void viconCallback(const ViconData& viconData)
-{
-	for(std::vector<CrazyflieData>::const_iterator it = viconData.crazyflies.begin(); it != viconData.crazyflies.end(); ++it) {
-		CrazyflieData global = *it;
-
-        if(global.crazyflieName == context.crazyflieName)
-        {
-            Controller controllerCall;
-            CrazyflieData local = global;
-            coordinatesToLocal(local);
-            controllerCall.request.ownCrazyflie = local;
-
-            ros::NodeHandle nodeHandle("~");
-
-            switch(flying_state) //things here repeat every X ms, non-blocking stuff
-            {
-                case STATE_MOTORS_OFF: // here we will put the code of current disabled button
-                    if(changed_state_flag) // stuff that will be run only once when changing state
-                    {
-                        changed_state_flag = false;
-                        ROS_INFO("[FLYING AGENT CLIENT] STATE_MOTORS_OFF");
-                    }
-                    break;
-                case STATE_TAKE_OFF: //we need to move up from where we are now.
-                    if(changed_state_flag) // stuff that will be run only once when changing state
-                    {
-                        changed_state_flag = false;
-                        takeOffCF(local);
-                        finished_take_off = false;
-                        ROS_INFO("[FLYING AGENT CLIENT] STATE_TAKE_OFF");
-                        timer_takeoff = nodeHandle.createTimer(ros::Duration(yaml_duration_take_off), takeOffTimerCallback, true);
-                    }
-                    if(finished_take_off)
-                    {
-                        finished_take_off = false;
-                        setInstantController(getControllerUsed());
-                        changeFlyingStateTo(STATE_FLYING);
-                    }
-                    break;
-                case STATE_FLYING:
-                    if(changed_state_flag) // stuff that will be run only once when changing state
-                    {
-                        changed_state_flag = false;
-                        // need to change setpoint to the controller one
-                        goToControllerSetpoint();
-                        ROS_INFO("[FLYING AGENT CLIENT] STATE_FLYING");
-                    }
-                    break;
-                case STATE_LAND:
-                    if(changed_state_flag) // stuff that will be run only once when changing state
-                    {
-                        changed_state_flag = false;
-                        landCF(local);
-                        finished_land = false;
-                        ROS_INFO("[FLYING AGENT CLIENT] STATE_LAND");
-                        timer_takeoff = nodeHandle.createTimer(ros::Duration(yaml_duration_landing), landTimerCallback, true);
-                    }
-                    if(finished_land)
-                    {
-                        finished_land = false;
-                        setInstantController(getControllerUsed());
-                        changeFlyingStateTo(STATE_MOTORS_OFF);
-                    }
-                    break;
-                default:
-                    break;
-            }
-
-            // control part that should always be running, calls to controller, computation of control output
-            if(flying_state != STATE_MOTORS_OFF)
-            {
-                if(!global.occluded)    //if it is not occluded, then proceed to compute the controller output.
-                {
-                    // Only call an "non-safe" controller if:
-                    // 1) we are not currently using safe controller, AND
-                    // 2) the flying state is FLYING
-                    if( (getInstantController() != SAFE_CONTROLLER) && (flying_state == STATE_FLYING) )
-                    {
-                        // Initialise a local boolean success variable
-                        bool success = false;
-
-                        switch(getInstantController())
-                        {
-                            case DEMO_CONTROLLER:
-                                success = demoController.call(controllerCall);
-                                break;
-                            case STUDENT_CONTROLLER:
-                                success = studentController.call(controllerCall);
-                                break;
-                            case MPC_CONTROLLER:
-                                success = mpcController.call(controllerCall);
-                                break;
-                            case REMOTE_CONTROLLER:
-                                success = remoteController.call(controllerCall);
-                                break;
-                            case TUNING_CONTROLLER:
-                                success = tuningController.call(controllerCall);
-                                break;
-                            case PICKER_CONTROLLER:
-                                success = pickerController.call(controllerCall);
-                                break;
-                            case TEMPLATE_CONTROLLER:
-                                success = templateController.call(controllerCall);
-                                break;
-                            default:
-                                ROS_ERROR("[FLYING AGENT CLIENT] the current controller was not recognised");
-                                break;
-                        }
-
-                        // Ensure success and enforce safety
-                        if(!success)
-                        {
-                            ROS_ERROR("[FLYING AGENT CLIENT] Failed to call a 'non-safe' controller, switching to safe controller");
-                            //ROS_ERROR_STREAM("[FLYING AGENT CLIENT] 'non-safe' controller status: valid: " << demoController.isValid() << ", exists: " << demoController.exists());
-                            //ROS_ERROR_STREAM("[FLYING AGENT CLIENT] 'non-safe' controller name: " << demoController.getService());
-                            setInstantController(SAFE_CONTROLLER);
-                        }
-                        else if(!safetyCheck(global, controllerCall.response.controlOutput))
-                        {
-                            setInstantController(SAFE_CONTROLLER);
-                            ROS_INFO_STREAM("[FLYING AGENT CLIENT] safety check failed, switching to safe controller");
-                        }
-
-                        
-                    }
-                    // SAFE_CONTROLLER and state is different from flying
-                    else
-                    {
-                        calculateDistanceToCurrentSafeSetpoint(local); // update distance, it also updates the unit vector
-                        // ROS_INFO_STREAM("distance: " << distance);
-                        // here, detect if euclidean distance between setpoint and current position is higher than a threshold
-                        if(distance > yaml_distance_threshold)
-                        {
-                            // DEBUGGING: display a message that the crazyflie is inside the thresholds
-                            //ROS_INFO("inside threshold");
-                            // Declare a local variable for the "setpoint message" to be published
-                            Setpoint setpoint_msg;
-                            // here, where we are now, or where we were in the beginning?
-                            setpoint_msg.x = local.x + yaml_distance_threshold * unit_vector[0];
-                            setpoint_msg.y = local.y + yaml_distance_threshold * unit_vector[1];
-                            setpoint_msg.z = local.z + yaml_distance_threshold * unit_vector[2];
-
-                            // yaw is better divided by the number of steps?
-                            setpoint_msg.yaw = current_safe_setpoint.yaw;
-                            safeControllerServiceSetpointPublisher.publish(setpoint_msg);
-                            was_in_threshold = true;
-                        }
-                        else
-                        {
-                            if(was_in_threshold)
-                            {
-                                was_in_threshold = false;
-                                safeControllerServiceSetpointPublisher.publish(current_safe_setpoint);
-                                // goToControllerSetpoint(); //maybe this is a bit repetitive?
-                            }
-                        }
-
-                        bool success = safeController.call(controllerCall);
-                        if(!success) {
-                            ROS_ERROR_STREAM("[FLYING AGENT CLIENT] Failed to call safe controller, valid: " << safeController.isValid() << ", exists: " << safeController.exists());
-                        }
-                    }
-
-
-                    controlCommandPublisher.publish(controllerCall.response.controlOutput);
-
-                    // Putting data into the ROS "bag" for post-analysis
-                    //bag.write("ViconData", ros::Time::now(), local);
-                    //bag.write("ControlOutput", ros::Time::now(), controllerCall.response.controlOutput);
-                }
-            }
-            else
-            {
-                ControlCommand zeroOutput = ControlCommand(); //everything set to zero
-                zeroOutput.onboardControllerType = CF_COMMAND_TYPE_MOTORS; //set to motor_mode
-                controlCommandPublisher.publish(zeroOutput);
-
-                // Putting data into the ROS "bag" for post-analysis
-                //bag.write("ViconData", ros::Time::now(), local);
-                //bag.write("ControlOutput", ros::Time::now(), zeroOutput);
-            }
-        }
-	}
-}
-
-
-
-
-void loadCrazyflieContext() {
-	CMQuery contextCall;
-	contextCall.request.studentID = m_agentID;
-	ROS_INFO_STREAM("[FLYING AGENT CLIENT] AgentID:" << m_agentID);
-
-    CrazyflieContext new_context;
-
-	centralManager.waitForExistence(ros::Duration(-1));
-
-	if(centralManager.call(contextCall)) {
-		new_context = contextCall.response.crazyflieContext;
-		ROS_INFO_STREAM("[FLYING AGENT CLIENT] CrazyflieContext:\n" << new_context);
-
-        if((context.crazyflieName != "") && (new_context.crazyflieName != context.crazyflieName)) //linked crazyflie name changed and it was not empty before
-        {
-
-            // Motors off is done in python script now everytime we disconnect
-
-            // send motors OFF and disconnect before setting context = new_context
-            // std_msgs::Int32 msg;
-            // msg.data = CMD_CRAZYFLY_MOTORS_OFF;
-            // commandPublisher.publish(msg);
-
-            ROS_INFO("[FLYING AGENT CLIENT] CF is now different for this student. Disconnect and turn it off");
-
-            IntWithHeader msg;
-            msg.shouldCheckForAgentID = false;
-            msg.data = CMD_DISCONNECT;
-            crazyRadioCommandPublisher.publish(msg);
-        }
-
-        context = new_context;
-
-        ros::NodeHandle nh("CrazyRadio");
-        nh.setParam("crazyFlieAddress", context.crazyflieAddress);
-	}
-    else
-    {
-		ROS_ERROR("[FLYING AGENT CLIENT] Failed to load context. Waiting for next Save in DB by teacher");
-	}
-}
-
-
-
-void commandCallback(const IntWithHeader & msg) {
-
-    // Check whether the message is relevant
-    bool isRevelant = checkMessageHeader( m_agentID , msg.shouldCheckForAgentID , msg.agentIDs );
-
-    // Continue if the message is relevant
-    if (isRevelant)
-    {
-        // Extract the data
-    	int cmd = msg.data;
-
-    	switch(cmd) {
-        	case CMD_USE_SAFE_CONTROLLER:
-                ROS_INFO("[FLYING AGENT CLIENT] USE_SAFE_CONTROLLER Command received");
-                setControllerUsed(SAFE_CONTROLLER);
-        		break;
-
-        	case CMD_USE_DEMO_CONTROLLER:
-                ROS_INFO("[FLYING AGENT CLIENT] USE_DEMO_CONTROLLER Command received");
-                setControllerUsed(DEMO_CONTROLLER);
-        		break;
-
-            case CMD_USE_STUDENT_CONTROLLER:
-                ROS_INFO("[FLYING AGENT CLIENT] USE_STUDENT_CONTROLLER Command received");
-                setControllerUsed(STUDENT_CONTROLLER);
-                break;
-
-            case CMD_USE_MPC_CONTROLLER:
-                ROS_INFO("[FLYING AGENT CLIENT] USE_MPC_CONTROLLER Command received");
-                setControllerUsed(MPC_CONTROLLER);
-                break;
-
-            case CMD_USE_REMOTE_CONTROLLER:
-                ROS_INFO("[FLYING AGENT CLIENT] USE_REMOTE_CONTROLLER Command received");
-                setControllerUsed(REMOTE_CONTROLLER);
-                break;
-
-            case CMD_USE_TUNING_CONTROLLER:
-                ROS_INFO("[FLYING AGENT CLIENT] USE_TUNING_CONTROLLER Command received");
-                setControllerUsed(TUNING_CONTROLLER);
-                break;
-
-            case CMD_USE_PICKER_CONTROLLER:
-                ROS_INFO("[FLYING AGENT CLIENT] USE_PICKER_CONTROLLER Command received");
-                setControllerUsed(PICKER_CONTROLLER);
-                break;
-
-            case CMD_USE_TEMPLATE_CONTROLLER:
-                ROS_INFO("[FLYING AGENT CLIENT] USE_TEMPLATE_CONTROLLER Command received");
-                setControllerUsed(TEMPLATE_CONTROLLER);
-                break;
-
-        	case CMD_CRAZYFLY_TAKE_OFF:
-                ROS_INFO("[FLYING AGENT CLIENT] TAKE_OFF Command received");
-                if(flying_state == STATE_MOTORS_OFF)
-                {
-                    changeFlyingStateTo(STATE_TAKE_OFF);
-                }
-        		break;
-
-        	case CMD_CRAZYFLY_LAND:
-                ROS_INFO("[FLYING AGENT CLIENT] LAND Command received");
-                if(flying_state != STATE_MOTORS_OFF)
-                {
-                    changeFlyingStateTo(STATE_LAND);
-                }
-        		break;
-            case CMD_CRAZYFLY_MOTORS_OFF:
-                ROS_INFO("[FLYING AGENT CLIENT] MOTORS_OFF Command received");
-                changeFlyingStateTo(STATE_MOTORS_OFF);
-                break;
-
-        	default:
-        		ROS_ERROR_STREAM("[FLYING AGENT CLIENT] unexpected command number: " << cmd);
-        		break;
-    	}
-    }
-}
-
-void crazyflieContextDatabaseChangedCallback(const std_msgs::Int32& msg)
-{
-    ROS_INFO("[FLYING AGENT CLIENT] Received message that the Context Database Changed");
-    loadCrazyflieContext();
-}
-
-void emergencyStopCallback(const IntWithHeader & msg)
-{
-    ROS_INFO("[FLYING AGENT CLIENT] Received message to EMERGENCY STOP");
-    commandCallback(msg);
-}
-
-//void commandAllAgentsCallback(const std_msgs::Int32& msg)
-//{
-//    commandCallback(msg);
-//}
-
-void crazyRadioStatusCallback(const std_msgs::Int32& msg)
-{
-    ROS_INFO_STREAM("[FLYING AGENT CLIENT] Received message with Crazy Radio Status = " << msg.data );
-    crazyradio_status = msg.data;
-    // RESET THE BATTERY STATE IF DISCONNECTED
-    //if (crazyradio_status == CRAZY_RADIO_STATE_DISCONNECTED)
-    //{
-    //    setBatteryStateTo(BATTERY_STATE_NORMAL);
-    //}
-}
-
-void controllerSetPointCallback(const Setpoint& newSetpoint)
-{
-    // load in variable the setpoint
-    controller_setpoint = newSetpoint;
-
-    // if we are in flying, set it up NOW
-    if(flying_state == STATE_FLYING)
-    {
-        goToControllerSetpoint();
-    }
-}
-
-void safeSetPointCallback(const Setpoint& newSetpoint)
-{
-}
-
 
 
 
@@ -598,140 +536,173 @@ void safeSetPointCallback(const Setpoint& newSetpoint)
 
 
 
-void loadSafeController() {
-    //ros::NodeHandle nodeHandle("~");
-    ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
-    ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "ClientConfig");
+// void loadSafeController() {
+//     //ros::NodeHandle nodeHandle("~");
+//     ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
+//     ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "ClientConfig");
 
-    std::string safeControllerName;
-    if(!nodeHandle.getParam("safeController", safeControllerName)) {
-        ROS_ERROR("[FLYING AGENT CLIENT] Failed to get safe controller name");
-        return;
-    }
+//     std::string safeControllerName;
+//     if(!nodeHandle.getParam("safeController", safeControllerName)) {
+//         ROS_ERROR("[FLYING AGENT CLIENT] Failed to get safe controller name");
+//         return;
+//     }
 
-    ros::service::waitForService(safeControllerName);
-    safeController = ros::service::createClient<Controller>(safeControllerName, true);
-    ROS_INFO_STREAM("[FLYING AGENT CLIENT] loaded safe controller: " << safeController.getService());
-}
+//     ros::service::waitForService(safeControllerName);
+//     safeController = ros::service::createClient<Controller>(safeControllerName, true);
+//     ROS_INFO_STREAM("[FLYING AGENT CLIENT] loaded safe controller: " << safeController.getService());
+// }
 
-void loadDemoController()
+// void loadDemoController()
+// {
+//     //ros::NodeHandle nodeHandle("~");
+//     ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
+//     ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "ClientConfig");
+
+//     std::string demoControllerName;
+//     if(!nodeHandle.getParam("demoController", demoControllerName))
+//     {
+//         ROS_ERROR("[FLYING AGENT CLIENT] Failed to get demo controller name");
+//         return;
+//     }
+
+//     demoController = ros::service::createClient<Controller>(demoControllerName, true);
+//     ROS_INFO_STREAM("[FLYING AGENT CLIENT] Loaded demo controller " << demoController.getService());
+// }
+
+// void loadStudentController()
+// {
+//     //ros::NodeHandle nodeHandle("~");
+//     ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
+//     ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "ClientConfig");
+
+//     std::string studentControllerName;
+//     if(!nodeHandle.getParam("studentController", studentControllerName))
+//     {
+//         ROS_ERROR("[FLYING AGENT CLIENT] Failed to get student controller name");
+//         return;
+//     }
+
+//     studentController = ros::service::createClient<Controller>(studentControllerName, true);
+//     ROS_INFO_STREAM("[FLYING AGENT CLIENT] Loaded student controller " << studentController.getService());
+// }
+
+// void loadMpcController()
+// {
+//     //ros::NodeHandle nodeHandle("~");
+//     ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
+//     ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "ClientConfig");
+
+//     std::string mpcControllerName;
+//     if(!nodeHandle.getParam("mpcController", mpcControllerName))
+//     {
+//         ROS_ERROR("[FLYING AGENT CLIENT] Failed to get mpc controller name");
+//         return;
+//     }
+
+//     mpcController = ros::service::createClient<Controller>(mpcControllerName, true);
+//     ROS_INFO_STREAM("[FLYING AGENT CLIENT] Loaded mpc controller " << mpcController.getService());
+// }
+
+// void loadRemoteController()
+// {
+//     //ros::NodeHandle nodeHandle("~");
+//     ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
+//     ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "ClientConfig");
+
+//     std::string remoteControllerName;
+//     if(!nodeHandle.getParam("remoteController", remoteControllerName))
+//     {
+//         ROS_ERROR("[FLYING AGENT CLIENT] Failed to get remote controller name");
+//         return;
+//     }
+
+//     remoteController = ros::service::createClient<Controller>(remoteControllerName, true);
+//     ROS_INFO_STREAM("[FLYING AGENT CLIENT] Loaded remote controller " << remoteController.getService());
+// }
+
+// void loadTuningController()
+// {
+//     //ros::NodeHandle nodeHandle("~");
+//     ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
+//     ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "ClientConfig");
+
+//     std::string tuningControllerName;
+//     if(!nodeHandle.getParam("tuningController", tuningControllerName))
+//     {
+//         ROS_ERROR("[FLYING AGENT CLIENT] Failed to get tuning controller name");
+//         return;
+//     }
+
+//     tuningController = ros::service::createClient<Controller>(tuningControllerName, true);
+//     ROS_INFO_STREAM("[FLYING AGENT CLIENT] Loaded tuning controller " << tuningController.getService());
+// }
+
+// void loadPickerController()
+// {
+//     //ros::NodeHandle nodeHandle("~");
+//     ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
+//     ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "ClientConfig");
+
+//     std::string pickerControllerName;
+//     if(!nodeHandle.getParam("pickerController", pickerControllerName))
+//     {
+//         ROS_ERROR("[FLYING AGENT CLIENT] Failed to get picker controller name");
+//         return;
+//     }
+
+//     pickerController = ros::service::createClient<Controller>(pickerControllerName, true);
+//     ROS_INFO_STREAM("[FLYING AGENT CLIENT] Loaded picker controller " << pickerController.getService());
+// }
+
+// void loadTemplateController()
+// {
+//     //ros::NodeHandle nodeHandle("~");
+//     ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
+//     ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "ClientConfig");
+
+//     std::string templateControllerName;
+//     if(!nodeHandle.getParam("templateController", templateControllerName))
+//     {
+//         ROS_ERROR("[FLYING AGENT CLIENT] Failed to get template controller name");
+//         return;
+//     }
+
+//     templateController = ros::service::createClient<Controller>(templateControllerName, true);
+//     ROS_INFO_STREAM("[FLYING AGENT CLIENT] Loaded template controller " << templateController.getService());
+// }
+
+
+
+
+
+// CREATE A SERVICE CLIENT
+// NOTE: the second argument is a boolean that specifies whether the 
+//       service is persistent or not. In the ROS documentation a
+//       persistent connection is described as:
+//   "Persistent connections should be used carefully. They greatly
+//    improve performance for repeated requests, but they also make
+//    your client more fragile to service failures. Clients using
+//    persistent connections should implement their own reconnection
+//    logic in the event that the persistent connection fails."
+void loadController( std::string paramter_name , ros::ServiceClient& serviceClient )
 {
-    //ros::NodeHandle nodeHandle("~");
     ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
     ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "ClientConfig");
 
-    std::string demoControllerName;
-    if(!nodeHandle.getParam("demoController", demoControllerName))
+    std::string controllerName;
+    if(!nodeHandle.getParam(paramter_name, controllerName))
     {
-        ROS_ERROR("[FLYING AGENT CLIENT] Failed to get demo controller name");
+        ROS_ERROR_STREAM("[FLYING AGENT CLIENT] Failed to get \"" << paramter_name << "\" paramter");
         return;
     }
 
-    demoController = ros::service::createClient<Controller>(demoControllerName, true);
-    ROS_INFO_STREAM("[FLYING AGENT CLIENT] Loaded demo controller " << demoController.getService());
+    serviceClient = ros::service::createClient<Controller>(controllerName, true);
+    ROS_INFO_STREAM("[FLYING AGENT CLIENT] Loaded service: " << serviceClient.getService() <<  ", valid: " << serviceClient.isValid() << ", exists: " << serviceClient.exists() );
 }
 
-void loadStudentController()
-{
-    //ros::NodeHandle nodeHandle("~");
-    ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
-    ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "ClientConfig");
 
-    std::string studentControllerName;
-    if(!nodeHandle.getParam("studentController", studentControllerName))
-    {
-        ROS_ERROR("[FLYING AGENT CLIENT] Failed to get student controller name");
-        return;
-    }
 
-    studentController = ros::service::createClient<Controller>(studentControllerName, true);
-    ROS_INFO_STREAM("[FLYING AGENT CLIENT] Loaded student controller " << studentController.getService());
-}
 
-void loadMpcController()
-{
-    //ros::NodeHandle nodeHandle("~");
-    ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
-    ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "ClientConfig");
-
-    std::string mpcControllerName;
-    if(!nodeHandle.getParam("mpcController", mpcControllerName))
-    {
-        ROS_ERROR("[FLYING AGENT CLIENT] Failed to get mpc controller name");
-        return;
-    }
-
-    mpcController = ros::service::createClient<Controller>(mpcControllerName, true);
-    ROS_INFO_STREAM("[FLYING AGENT CLIENT] Loaded mpc controller " << mpcController.getService());
-}
-
-void loadRemoteController()
-{
-    //ros::NodeHandle nodeHandle("~");
-    ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
-    ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "ClientConfig");
-
-    std::string remoteControllerName;
-    if(!nodeHandle.getParam("remoteController", remoteControllerName))
-    {
-        ROS_ERROR("[FLYING AGENT CLIENT] Failed to get remote controller name");
-        return;
-    }
-
-    remoteController = ros::service::createClient<Controller>(remoteControllerName, true);
-    ROS_INFO_STREAM("[FLYING AGENT CLIENT] Loaded remote controller " << remoteController.getService());
-}
-
-void loadTuningController()
-{
-    //ros::NodeHandle nodeHandle("~");
-    ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
-    ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "ClientConfig");
-
-    std::string tuningControllerName;
-    if(!nodeHandle.getParam("tuningController", tuningControllerName))
-    {
-        ROS_ERROR("[FLYING AGENT CLIENT] Failed to get tuning controller name");
-        return;
-    }
-
-    tuningController = ros::service::createClient<Controller>(tuningControllerName, true);
-    ROS_INFO_STREAM("[FLYING AGENT CLIENT] Loaded tuning controller " << tuningController.getService());
-}
-
-void loadPickerController()
-{
-    //ros::NodeHandle nodeHandle("~");
-    ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
-    ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "ClientConfig");
-
-    std::string pickerControllerName;
-    if(!nodeHandle.getParam("pickerController", pickerControllerName))
-    {
-        ROS_ERROR("[FLYING AGENT CLIENT] Failed to get picker controller name");
-        return;
-    }
-
-    pickerController = ros::service::createClient<Controller>(pickerControllerName, true);
-    ROS_INFO_STREAM("[FLYING AGENT CLIENT] Loaded picker controller " << pickerController.getService());
-}
-
-void loadTemplateController()
-{
-    //ros::NodeHandle nodeHandle("~");
-    ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
-    ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "ClientConfig");
-
-    std::string templateControllerName;
-    if(!nodeHandle.getParam("templateController", templateControllerName))
-    {
-        ROS_ERROR("[FLYING AGENT CLIENT] Failed to get template controller name");
-        return;
-    }
-
-    templateController = ros::service::createClient<Controller>(templateControllerName, true);
-    ROS_INFO_STREAM("[FLYING AGENT CLIENT] Loaded template controller " << templateController.getService());
-}
 
 void sendMessageUsingController(int controller)
 {
@@ -744,57 +715,86 @@ void sendMessageUsingController(int controller)
 
 void setInstantController(int controller) //for right now, temporal use
 {
-    instant_controller = controller;
-    sendMessageUsingController(controller);
+    // Update the class variable
+    m_instant_controller = controller;
+
+    
+
     switch(controller)
     {
-        case SAFE_CONTROLLER:
-            loadSafeController();
-            break;
-        case DEMO_CONTROLLER:
-            loadDemoController();
+        case DEFAULT_CONTROLLER:
+            m_instant_controller_service_client = &defaultController;
             break;
         case STUDENT_CONTROLLER:
-            loadStudentController();
-            break;
-        case MPC_CONTROLLER:
-            loadMpcController();
-            break;
-        case REMOTE_CONTROLLER:
-            loadRemoteController();
+            m_instant_controller_service_client = &studentController;
             break;
         case TUNING_CONTROLLER:
-            loadTuningController();
+            m_instant_controller_service_client = &tuningController;
             break;
         case PICKER_CONTROLLER:
-            loadPickerController();
+            m_instant_controller_service_client = &pickerController;
             break;
         case TEMPLATE_CONTROLLER:
-            loadTemplateController();
+            m_instant_controller_service_client = &templateController;
             break;
         default:
             break;
     }
+
+    sendMessageUsingController(controller);
+    // switch(controller)
+    // {
+    //     case SAFE_CONTROLLER:
+    //         loadSafeController();
+    //         break;
+    //     case DEMO_CONTROLLER:
+    //         loadDemoController();
+    //         break;
+    //     case STUDENT_CONTROLLER:
+    //         loadStudentController();
+    //         break;
+    //     case MPC_CONTROLLER:
+    //         loadMpcController();
+    //         break;
+    //     case REMOTE_CONTROLLER:
+    //         loadRemoteController();
+    //         break;
+    //     case TUNING_CONTROLLER:
+    //         loadTuningController();
+    //         break;
+    //     case PICKER_CONTROLLER:
+    //         loadPickerController();
+    //         break;
+    //     case TEMPLATE_CONTROLLER:
+    //         loadTemplateController();
+    //         break;
+    //     default:
+    //         break;
+    // }
 }
 
 int getInstantController()
 {
-    return instant_controller;
+    return m_instant_controller;
 }
 
-void setControllerUsed(int controller) //for permanent configs
+void setControllerNominallySelected(int controller)
 {
-    controller_used = controller;
+    // Update the class variable
+    m_controller_nominally_selected = controller;
 
-    if(flying_state == STATE_MOTORS_OFF || flying_state == STATE_FLYING)
+    // If in state "MOTORS-OFF" or "FLYING",
+    // then the change is instant.
+    if(m_flying_state == STATE_MOTORS_OFF || m_flying_state == STATE_FLYING)
     {
-        setInstantController(controller); //if motors OFF or STATE FLYING, transparent, change is instant
+
+        setInstantController(controller); 
     }
 }
 
-int getControllerUsed()
+int getControllerNominallySelected()
 {
-    return controller_used;
+    return m_controller_nominally_selected;
 }
 
 
@@ -802,141 +802,112 @@ int getControllerUsed()
 
 
 
-//    ----------------------------------------------------------------------------------
-//    BBBB     A    TTTTT  TTTTT  EEEEE  RRRR   Y   Y
-//    B   B   A A     T      T    E      R   R   Y Y
-//    BBBB   A   A    T      T    EEE    RRRR     Y
-//    B   B  AAAAA    T      T    E      R   R    Y
-//    BBBB   A   A    T      T    EEEEE  R   R    Y
-//    ----------------------------------------------------------------------------------
 
 
 
-void batteryMonitorStateChangedCallback(std_msgs::Int32 msg)
-{
-    // Extract the data
-    int new_battery_state = msg.data;
 
-    // Take action if changed to low battery state
-    if (new_battery_state == BATTERY_STATE_LOW)
+void flyingStateRequestCallback(const IntWithHeader & msg) {
+
+    // Check whether the message is relevant
+    bool isRevelant = checkMessageHeader( m_agentID , msg.shouldCheckForAgentID , msg.agentIDs );
+
+    // Continue if the message is relevant
+    if (isRevelant)
     {
-        if (flying_state != STATE_MOTORS_OFF)
-        {
-            ROS_INFO("[FLYING AGENT CLIENT] low level battery triggered, now landing.");
-            changeFlyingStateTo(STATE_LAND);
+        // Extract the data
+        int cmd = msg.data;
+
+        switch(cmd) {
+            case CMD_USE_DEFAULT_CONTROLLER:
+                ROS_INFO("[FLYING AGENT CLIENT] USE_DEFAULT_CONTROLLER Command received");
+                setControllerNominallySelected(DEFAULT_CONTROLLER);
+                break;
+
+            case CMD_USE_DEMO_CONTROLLER:
+                ROS_INFO("[FLYING AGENT CLIENT] USE_DEMO_CONTROLLER Command received");
+                setControllerNominallySelected(DEMO_CONTROLLER);
+                break;
+
+            case CMD_USE_STUDENT_CONTROLLER:
+                ROS_INFO("[FLYING AGENT CLIENT] USE_STUDENT_CONTROLLER Command received");
+                setControllerNominallySelected(STUDENT_CONTROLLER);
+                break;
+
+            case CMD_USE_MPC_CONTROLLER:
+                ROS_INFO("[FLYING AGENT CLIENT] USE_MPC_CONTROLLER Command received");
+                setControllerNominallySelected(MPC_CONTROLLER);
+                break;
+
+            case CMD_USE_REMOTE_CONTROLLER:
+                ROS_INFO("[FLYING AGENT CLIENT] USE_REMOTE_CONTROLLER Command received");
+                setControllerNominallySelected(REMOTE_CONTROLLER);
+                break;
+
+            case CMD_USE_TUNING_CONTROLLER:
+                ROS_INFO("[FLYING AGENT CLIENT] USE_TUNING_CONTROLLER Command received");
+                setControllerNominallySelected(TUNING_CONTROLLER);
+                break;
+
+            case CMD_USE_PICKER_CONTROLLER:
+                ROS_INFO("[FLYING AGENT CLIENT] USE_PICKER_CONTROLLER Command received");
+                setControllerNominallySelected(PICKER_CONTROLLER);
+                break;
+
+            case CMD_USE_TEMPLATE_CONTROLLER:
+                ROS_INFO("[FLYING AGENT CLIENT] USE_TEMPLATE_CONTROLLER Command received");
+                setControllerNominallySelected(TEMPLATE_CONTROLLER);
+                break;
+
+            case CMD_CRAZYFLY_TAKE_OFF:
+                ROS_INFO("[FLYING AGENT CLIENT] TAKE_OFF Command received");
+                if(m_flying_state == STATE_MOTORS_OFF)
+                {
+                    changeFlyingStateTo(STATE_TAKE_OFF);
+                }
+                break;
+
+            case CMD_CRAZYFLY_LAND:
+                ROS_INFO("[FLYING AGENT CLIENT] LAND Command received");
+                if(m_flying_state != STATE_MOTORS_OFF)
+                {
+                    changeFlyingStateTo(STATE_LAND);
+                }
+                break;
+            case CMD_CRAZYFLY_MOTORS_OFF:
+                ROS_INFO("[FLYING AGENT CLIENT] MOTORS_OFF Command received");
+                changeFlyingStateTo(STATE_MOTORS_OFF);
+                break;
+
+            default:
+                ROS_ERROR_STREAM("[FLYING AGENT CLIENT] unexpected command number: " << cmd);
+                break;
         }
-        else
-        {
-            ROS_INFO("[FLYING AGENT CLIENT] low level battery triggered, please turn off the Crazyflie.");
-        }
     }
-    else if (new_battery_state == BATTERY_STATE_NORMAL)
-    {
-        ROS_INFO("[FLYING AGENT CLIENT] received message that battery state changed to normal");
-    }
-    else
-    {
-        ROS_INFO("[FLYING AGENT CLIENT] received message that battery state changed to something unknown");
-    }
-    
 }
 
 
 
-/*
-int getBatteryState()
+
+
+
+
+
+void crazyRadioStatusCallback(const std_msgs::Int32& msg)
 {
-    return m_battery_state;
+    ROS_INFO_STREAM("[FLYING AGENT CLIENT] Received message with Crazy Radio Status = " << msg.data );
+    crazyradio_status = msg.data;
 }
 
 
-void setBatteryStateTo(int new_battery_state)
+
+
+
+
+void emergencyStopReceivedCallback(const IntWithHeader & msg)
 {
-    switch(new_battery_state)
-    {
-        case BATTERY_STATE_NORMAL:
-            m_battery_state = BATTERY_STATE_NORMAL;
-            ROS_INFO("[FLYING AGENT CLIENT] changed battery state to normal");
-            break;
-        case BATTERY_STATE_LOW:
-            m_battery_state = BATTERY_STATE_LOW;
-            ROS_INFO("[FLYING AGENT CLIENT] changed battery state to low");
-            if(flying_state != STATE_MOTORS_OFF)
-                changeFlyingStateTo(STATE_LAND);
-            break;
-        default:
-            ROS_INFO("[FLYING AGENT CLIENT] Unknown battery state command, set to normal");
-            m_battery_state = BATTERY_STATE_NORMAL;
-            break;
-    }
-
-    std_msgs::Int32 battery_state_msg;
-    battery_state_msg.data = getBatteryState();
-    batteryStatePublisher.publish(battery_state_msg);
+    ROS_INFO("[FLYING AGENT CLIENT] Received message to EMERGENCY STOP");
+    flyingStateRequestCallback(msg);
 }
-
-float movingAverageBatteryFilter(float new_input)
-{
-    const int N = 7;
-    static float previous_output = 4.2f;
-    static float inputs[N] = {4.2f,4.2f,4.2f,4.2f,4.2f,4.2f,4.2f};
-
-
-    // imagine an array of an even number of samples, we will output the one
-    // in the middle averaged with information from all of them.
-    // For that, we only need to store some past of the signal
-    float output = previous_output + new_input/N - inputs[N-1]/N;
-
-    // update array of inputs
-    for(int i = N - 1; i > 0; i--)
-    {
-        inputs[i] = inputs[i-1];
-    }
-    inputs[0] = new_input;
-
-
-    // update previous output
-    previous_output = output;
-    return output;
-}
-
-
-void CFBatteryCallback(const std_msgs::Float32& msg)
-{
-    m_battery_voltage = msg.data;
-    // filter and check if inside limits, and if, change status
-    // need to do the filtering first
-    float filtered_battery_voltage = movingAverageBatteryFilter(m_battery_voltage); //need to perform filtering here
-
-    // ROS_INFO_STREAM("filtered data: " << filtered_battery_voltage);
-    if(
-        (flying_state != STATE_MOTORS_OFF && (filtered_battery_voltage < m_battery_threshold_while_flying))
-        ||
-        (flying_state == STATE_MOTORS_OFF && (filtered_battery_voltage < m_battery_threshold_while_motors_off))
-    )
-    {
-        if(getBatteryState() != BATTERY_STATE_LOW)
-        {
-            setBatteryStateTo(BATTERY_STATE_LOW);
-            ROS_INFO("[FLYING AGENT CLIENT] low level battery triggered");
-        }
-        
-    }
-    else
-    {
-        // TO AVOID BEING ABLE TO IMMEDIATELY TAKE-OFF AFTER A
-        // "BATTERY LOW" EVENT IS TRIGGERED, WE DO NOT SET THE
-        // BATTERY STATE BACK TO NORMAL
-        // if(getBatteryState() != BATTERY_STATE_NORMAL)
-        // {
-        //     setBatteryStateTo(BATTERY_STATE_NORMAL);
-        // }
-    }
-}
-*/
-
-
-
 
 
 
@@ -960,11 +931,205 @@ void CFBatteryCallback(const std_msgs::Float32& msg)
 bool getCurrentFlyingStateServiceCallback(IntIntService::Request &request, IntIntService::Response &response)
 {
     // Put the flying state into the response variable
-    response.data = flying_state;
+    response.data = m_flying_state;
     // Return
     return true;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//    BBBB     A    TTTTT  TTTTT  EEEEE  RRRR   Y   Y
+//    B   B   A A     T      T    E      R   R   Y Y
+//    BBBB   A   A    T      T    EEE    RRRR     Y
+//    B   B  AAAAA    T      T    E      R   R    Y
+//    BBBB   A   A    T      T    EEEEE  R   R    Y
+//    ----------------------------------------------------------------------------------
+
+void batteryMonitorStateChangedCallback(std_msgs::Int32 msg)
+{
+    // Extract the data
+    int new_battery_state = msg.data;
+
+    // Take action if changed to low battery state
+    if (new_battery_state == BATTERY_STATE_LOW)
+    {
+        if (m_flying_state != STATE_MOTORS_OFF)
+        {
+            ROS_INFO("[FLYING AGENT CLIENT] low level battery triggered, now landing.");
+            changeFlyingStateTo(STATE_LAND);
+        }
+        else
+        {
+            ROS_INFO("[FLYING AGENT CLIENT] low level battery triggered, please turn off the Crazyflie.");
+        }
+    }
+    else if (new_battery_state == BATTERY_STATE_NORMAL)
+    {
+        ROS_INFO("[FLYING AGENT CLIENT] received message that battery state changed to normal");
+    }
+    else
+    {
+        ROS_INFO("[FLYING AGENT CLIENT] received message that battery state changed to something unknown");
+    }
+    
+}
+
+
+
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//     SSSS    A    FFFFF  EEEEE  TTTTT  Y   Y
+//    S       A A   F      E        T     Y Y
+//     SSS   A   A  FFF    EEE      T      Y
+//        S  AAAAA  F      E        T      Y
+//    SSSS   A   A  F      EEEEE    T      Y
+//
+//     CCCC  H   H  EEEEE   CCCC  K   K   SSSS
+//    C      H   H  E      C      K  K   S
+//    C      HHHHH  EEE    C      KKK     SSS
+//    C      H   H  E      C      K  K       S
+//     CCCC  H   H  EEEEE   CCCC  K   K  SSSS
+//    ----------------------------------------------------------------------------------
+
+// Checks if crazyflie is within allowed area
+bool safetyCheck(CrazyflieData data)
+{
+    // Check on the X position
+    if((data.x < m_context.localArea.xmin) or (data.x > m_context.localArea.xmax))
+    {
+        ROS_INFO_STREAM("[FLYING AGENT CLIENT] x safety failed");
+        return false;
+    }
+    // Check on the Y position
+    if((data.y < m_context.localArea.ymin) or (data.y > m_context.localArea.ymax))
+    {
+        ROS_INFO_STREAM("[FLYING AGENT CLIENT] y safety failed");
+        return false;
+    }
+    // Check on the Z position
+    if((data.z < m_context.localArea.zmin) or (data.z > m_context.localArea.zmax))
+    {
+        ROS_INFO_STREAM("[FLYING AGENT CLIENT] z safety failed");
+        return false;
+    }
+
+    // Check the title angle (if required)
+    // > The tilt anlge between the body frame and inertial frame z-axis is
+    //   give by:
+    //   tilt angle  =  1 / ( cos(roll)*cos(pitch) )
+    // > But this would be too sensitve to a divide by zero error, so instead
+    //   we just check if each angle separately exceeds the limit
+    if(yaml_isEnabled_strictSafety)
+    {
+        // Check on the ROLL angle
+        if(
+            (data.roll > m_maxTiltAngle_for_strictSafety_redians)
+            or
+            (data.roll < -m_maxTiltAngle_for_strictSafety_redians)
+        )
+        {
+            ROS_INFO_STREAM("[FLYING AGENT CLIENT] roll too big.");
+            return false;
+        }
+        // Check on the PITCH angle
+        if(
+            (data.pitch > m_maxTiltAngle_for_strictSafety_redians)
+            or
+            (data.pitch < -m_maxTiltAngle_for_strictSafety_redians)
+        )
+        {
+            ROS_INFO_STREAM("[FLYING AGENT CLIENT] pitch too big.");
+            return false;
+        }
+    }
+
+    // If the code makes it to here then all the safety checks passed,
+    // Hence return "true"
+    return true;
+}
+
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//    L       OOO     A    DDDD
+//    L      O   O   A A   D   D
+//    L      O   O  A   A  D   D
+//    L      O   O  AAAAA  D   D
+//    LLLLL   OOO   A   A  DDDD
+//
+//     CCCC   OOO   N   N  TTTTT  EEEEE  X   X  TTTTT
+//    C      O   O  NN  N    T    E       X X     T
+//    C      O   O  N N N    T    EEE      X      T
+//    C      O   O  N  NN    T    E       X X     T
+//     CCCC   OOO   N   N    T    EEEEE  X   X    T
+//    ----------------------------------------------------------------------------------
+
+
+void crazyflieContextDatabaseChangedCallback(const std_msgs::Int32& msg)
+{
+    ROS_INFO("[FLYING AGENT CLIENT] Received message that the Context Database Changed");
+    loadCrazyflieContext();
+}
+
+
+
+void loadCrazyflieContext()
+{
+    CMQuery contextCall;
+    contextCall.request.studentID = m_agentID;
+    ROS_INFO_STREAM("[FLYING AGENT CLIENT] AgentID:" << m_agentID);
+
+    CrazyflieContext new_context;
+
+    centralManager.waitForExistence(ros::Duration(-1));
+
+    if(centralManager.call(contextCall)) {
+        new_context = contextCall.response.crazyflieContext;
+        ROS_INFO_STREAM("[FLYING AGENT CLIENT] CrazyflieContext:\n" << new_context);
+
+        if((m_context.crazyflieName != "") && (new_context.crazyflieName != m_context.crazyflieName)) //linked crazyflie name changed and it was not empty before
+        {
+
+            // Motors off is done in python script now everytime we disconnect
+
+            // send motors OFF and disconnect before setting m_context = new_context
+            // std_msgs::Int32 msg;
+            // msg.data = CMD_CRAZYFLY_MOTORS_OFF;
+            // commandPublisher.publish(msg);
+
+            ROS_INFO("[FLYING AGENT CLIENT] CF is now different for this student. Disconnect and turn it off");
+
+            IntWithHeader msg;
+            msg.shouldCheckForAgentID = false;
+            msg.data = CMD_DISCONNECT;
+            crazyRadioCommandPublisher.publish(msg);
+        }
+
+        m_context = new_context;
+
+        ros::NodeHandle nh("CrazyRadio");
+        nh.setParam("crazyFlieAddress", m_context.crazyflieAddress);
+    }
+    else
+    {
+        ROS_ERROR("[FLYING AGENT CLIENT] Failed to load context. Waiting for next Save in DB by teacher");
+    }
+}
 
 
 
@@ -988,105 +1153,105 @@ bool getCurrentFlyingStateServiceCallback(IntIntService::Request &request, IntIn
 
 
 
-void isReadySafeControllerYamlCallback(const IntWithHeader & msg)
-{
-    // Check whether the message is relevant
-    bool isRevelant = checkMessageHeader( m_agentID , msg.shouldCheckForAgentID , msg.agentIDs );
+// void isReadySafeControllerYamlCallback(const IntWithHeader & msg)
+// {
+//     // Check whether the message is relevant
+//     bool isRevelant = checkMessageHeader( m_agentID , msg.shouldCheckForAgentID , msg.agentIDs );
 
-    // Continue if the message is relevant
-    if (isRevelant)
-    {
-        // Extract the data
-        int parameter_service_to_load_from = msg.data;
-        // Initialise a local variable for the namespace
-        std::string namespace_to_use;
-        // Load from the respective parameter service
-        switch(parameter_service_to_load_from)
-        {
-            // > FOR FETCHING FROM THE AGENT'S OWN PARAMETER SERVICE
-            case LOAD_YAML_FROM_AGENT:
-            {
-                ROS_INFO("[FLYING AGENT CLIENT] Now fetching the SafeController YAML parameter values from this agent.");
-                namespace_to_use = m_namespace_to_own_agent_parameter_service;
-                break;
-            }
-            // > FOR FETCHING FROM THE COORDINATOR'S PARAMETER SERVICE
-            case LOAD_YAML_FROM_COORDINATOR:
-            {
-                ROS_INFO("[FLYING AGENT CLIENT] Now fetching the SafeController YAML parameter values from this agent's coordinator.");
-                namespace_to_use = m_namespace_to_coordinator_parameter_service;
-                break;
-            }
+//     // Continue if the message is relevant
+//     if (isRevelant)
+//     {
+//         // Extract the data
+//         int parameter_service_to_load_from = msg.data;
+//         // Initialise a local variable for the namespace
+//         std::string namespace_to_use;
+//         // Load from the respective parameter service
+//         switch(parameter_service_to_load_from)
+//         {
+//             // > FOR FETCHING FROM THE AGENT'S OWN PARAMETER SERVICE
+//             case LOAD_YAML_FROM_AGENT:
+//             {
+//                 ROS_INFO("[FLYING AGENT CLIENT] Now fetching the SafeController YAML parameter values from this agent.");
+//                 namespace_to_use = m_namespace_to_own_agent_parameter_service;
+//                 break;
+//             }
+//             // > FOR FETCHING FROM THE COORDINATOR'S PARAMETER SERVICE
+//             case LOAD_YAML_FROM_COORDINATOR:
+//             {
+//                 ROS_INFO("[FLYING AGENT CLIENT] Now fetching the SafeController YAML parameter values from this agent's coordinator.");
+//                 namespace_to_use = m_namespace_to_coordinator_parameter_service;
+//                 break;
+//             }
 
-            default:
-            {
-                ROS_ERROR("[FLYING AGENT CLIENT] Paramter service to load from was NOT recognised.");
-                namespace_to_use = m_namespace_to_own_agent_parameter_service;
-                break;
-            }
-        }
-        // Create a node handle to the selected parameter service
-        ros::NodeHandle nodeHandle_to_use(namespace_to_use);
-        // Call the function that fetches the parameters
-        fetchSafeControllerYamlParameters(nodeHandle_to_use);
-    }
-}
+//             default:
+//             {
+//                 ROS_ERROR("[FLYING AGENT CLIENT] Paramter service to load from was NOT recognised.");
+//                 namespace_to_use = m_namespace_to_own_agent_parameter_service;
+//                 break;
+//             }
+//         }
+//         // Create a node handle to the selected parameter service
+//         ros::NodeHandle nodeHandle_to_use(namespace_to_use);
+//         // Call the function that fetches the parameters
+//         fetchSafeControllerYamlParameters(nodeHandle_to_use);
+//     }
+// }
 
 
 
-void fetchSafeControllerYamlParameters(ros::NodeHandle& nodeHandle)
-{
-    // Here we load the parameters that are specified in the file:
-    // SafeController.yaml
+// void fetchSafeControllerYamlParameters(ros::NodeHandle& nodeHandle)
+// {
+//     // Here we load the parameters that are specified in the file:
+//     // SafeController.yaml
 
-    // Add the "SafeController" namespace to the "nodeHandle"
-    ros::NodeHandle nodeHandle_for_paramaters(nodeHandle, "SafeController");
+//     // Add the "SafeController" namespace to the "nodeHandle"
+//     ros::NodeHandle nodeHandle_for_paramaters(nodeHandle, "SafeController");
 
-    // take off and landing parameters (in meters and seconds)
-    yaml_take_off_distance = getParameterFloat(nodeHandle_for_paramaters,"takeOffDistance");
-    yaml_landing_distance = getParameterFloat(nodeHandle_for_paramaters,"landingDistance");
-    yaml_duration_take_off = getParameterFloat(nodeHandle_for_paramaters,"durationTakeOff");
-    yaml_duration_landing = getParameterFloat(nodeHandle_for_paramaters,"durationLanding");
-    yaml_distance_threshold = getParameterFloat(nodeHandle_for_paramaters,"distanceThreshold");
+//     // take off and landing parameters (in meters and seconds)
+//     yaml_take_off_distance = getParameterFloat(nodeHandle_for_paramaters,"takeOffDistance");
+//     yaml_landing_distance = getParameterFloat(nodeHandle_for_paramaters,"landingDistance");
+//     yaml_duration_take_off = getParameterFloat(nodeHandle_for_paramaters,"durationTakeOff");
+//     yaml_duration_landing = getParameterFloat(nodeHandle_for_paramaters,"durationLanding");
+//     yaml_distance_threshold = getParameterFloat(nodeHandle_for_paramaters,"distanceThreshold");
 
-    // setpoint in meters (x, y, z, yaw)
-    getParameterFloatVector(nodeHandle_for_paramaters,"defaultSetpoint",yaml_default_setpoint,4);
+//     // setpoint in meters (x, y, z, yaw)
+//     getParameterFloatVector(nodeHandle_for_paramaters,"defaultSetpoint",yaml_default_setpoint,4);
 
-    // DEBUGGING: Print out one of the parameters that was loaded
-    ROS_INFO_STREAM("[FLYING AGENT CLIENT] DEBUGGING: the fetched SafeController/durationTakeOff = " << yaml_duration_take_off);
+//     // DEBUGGING: Print out one of the parameters that was loaded
+//     ROS_INFO_STREAM("[FLYING AGENT CLIENT] DEBUGGING: the fetched SafeController/durationTakeOff = " << yaml_duration_take_off);
 
-    /*
-    // Here we load the parameters that are specified in the SafeController.yaml file
+//     /*
+//     // Here we load the parameters that are specified in the SafeController.yaml file
 
-    // Add the "SafeController" namespace to the "nodeHandle"
-    ros::NodeHandle nodeHandle_for_safeController(nodeHandle, "SafeController");
+//     // Add the "SafeController" namespace to the "nodeHandle"
+//     ros::NodeHandle nodeHandle_for_safeController(nodeHandle, "SafeController");
 
-    if(!nodeHandle_for_safeController.getParam("takeOffDistance", take_off_distance))
-    {
-        ROS_ERROR("[FLYING AGENT CLIENT] Failed to get takeOffDistance");
-    }
+//     if(!nodeHandle_for_safeController.getParam("takeOffDistance", take_off_distance))
+//     {
+//         ROS_ERROR("[FLYING AGENT CLIENT] Failed to get takeOffDistance");
+//     }
 
-    if(!nodeHandle_for_safeController.getParam("landingDistance", landing_distance))
-    {
-        ROS_ERROR("[FLYING AGENT CLIENT] Failed to get landing_distance");
-    }
+//     if(!nodeHandle_for_safeController.getParam("landingDistance", landing_distance))
+//     {
+//         ROS_ERROR("[FLYING AGENT CLIENT] Failed to get landing_distance");
+//     }
 
-    if(!nodeHandle_for_safeController.getParam("durationTakeOff", duration_take_off))
-    {
-        ROS_ERROR("[FLYING AGENT CLIENT] Failed to get duration_take_off");
-    }
+//     if(!nodeHandle_for_safeController.getParam("durationTakeOff", duration_take_off))
+//     {
+//         ROS_ERROR("[FLYING AGENT CLIENT] Failed to get duration_take_off");
+//     }
 
-    if(!nodeHandle_for_safeController.getParam("durationLanding", duration_landing))
-    {
-        ROS_ERROR("[FLYING AGENT CLIENT] Failed to get duration_landing");
-    }
+//     if(!nodeHandle_for_safeController.getParam("durationLanding", duration_landing))
+//     {
+//         ROS_ERROR("[FLYING AGENT CLIENT] Failed to get duration_landing");
+//     }
 
-    if(!nodeHandle_for_safeController.getParam("distanceThreshold", distance_threshold))
-    {
-        ROS_ERROR("[FLYING AGENT CLIENT] Failed to get distance_threshold");
-    }
-    */
-}
+//     if(!nodeHandle_for_safeController.getParam("distanceThreshold", distance_threshold))
+//     {
+//         ROS_ERROR("[FLYING AGENT CLIENT] Failed to get distance_threshold");
+//     }
+//     */
+// }
 
 
 
@@ -1147,39 +1312,43 @@ void fetchClientConfigYamlParameters(ros::NodeHandle& nodeHandle)
     ros::NodeHandle nodeHandle_for_paramaters(nodeHandle, "ClientConfig");
 
     // Flag for whether to use angle for switching to the Safe Controller
-    yaml_strictSafety = getParameterBool(nodeHandle_for_paramaters,"strictSafety");
-    yaml_angleMargin = getParameterFloat(nodeHandle_for_paramaters,"angleMargin");
+    yaml_isEnabled_strictSafety = getParameterBool(nodeHandle_for_paramaters,"isEnabled_strictSafety");
+    yaml_maxTiltAngle_for_strictSafety_degrees = getParameterFloat(nodeHandle_for_paramaters,"maxTiltAngle_for_strictSafety_degrees");
     
-
-
     // DEBUGGING: Print out one of the parameters that was loaded
-    ROS_INFO_STREAM("[FLYING AGENT CLIENT] DEBUGGING: the fetched ClientConfig/strictSafety = " << yaml_strictSafety);
+    ROS_INFO_STREAM("[FLYING AGENT CLIENT] DEBUGGING: the fetched ClientConfig/isEnabled_strictSafety = " << yaml_isEnabled_strictSafety);
 
 
-    /*
-    if(!nodeHandle.getParam("strictSafety", strictSafety)) {
-        ROS_ERROR("[FLYING AGENT CLIENT] Failed to get strictSafety param");
-        return;
-    }
-    if(!nodeHandle.getParam("angleMargin", angleMargin)) {
-        ROS_ERROR("[FLYING AGENT CLIENT] Failed to get angleMargin param");
-        return;
-    }
 
+    // PROCESS THE PARAMTERS
+    // Convert from degrees to radians
+    m_maxTiltAngle_for_strictSafety_redians = DEG2RAD * yaml_maxTiltAngle_for_strictSafety_degrees;
 
-    if(!nodeHandle.getParam("battery_threshold_while_flying", m_battery_threshold_while_flying)) {
-        ROS_ERROR("[FLYING AGENT CLIENT] Failed to get battery_threshold_while_flying param");
-        return;
-    }
-    if(!nodeHandle.getParam("battery_threshold_while_motors_off", m_battery_threshold_while_motors_off)) {
-        ROS_ERROR("[FLYING AGENT CLIENT] Failed to get battery_threshold_while_motors_off param");
-        return;
-    }
-    */
+    // DEBUGGING: Print out one of the processed values
+    ROS_INFO_STREAM("[PICKER CONTROLLER] DEBUGGING: after processing m_maxTiltAngle_for_strictSafety_redians = " << m_maxTiltAngle_for_strictSafety_redians);
 }
 
 
 
+
+void timerCallback_for_loadAllControllers(const ros::TimerEvent&)
+{
+    // INITIALISE ALL THE CONTROLLER SERVICE CLIENTS
+    loadController( "defaultController"  , defaultController );
+    loadController( "studentController"  , studentController );
+    loadController( "tuningController"   , tuningController );
+    loadController( "pickerController"   , pickerController );
+    loadController( "templateController" , templateController );
+
+    if (defaultController)
+    {
+        m_controllers_avialble = true;
+    }
+    else
+    {
+        m_controllers_avialble = false;
+    }
+}
 
 
 //    ----------------------------------------------------------------------------------
@@ -1250,8 +1419,8 @@ int main(int argc, char* argv[])
     ros::Subscriber clientConfig_yamlReady_fromAgent = nodeHandle_to_own_agent_parameter_service.subscribe(  "ClientConfig", 1, isReadyClientConfigYamlCallback);
     ros::Subscriber clientConfig_yamlReady_fromCoord = nodeHandle_to_coordinator_parameter_service.subscribe("ClientConfig", 1, isReadyClientConfigYamlCallback);
 
-    ros::Subscriber safeController_yamlReady_fromAgent = nodeHandle_to_own_agent_parameter_service.subscribe(  "SafeController", 1, isReadySafeControllerYamlCallback);
-    ros::Subscriber safeController_yamlReady_fromCoord = nodeHandle_to_coordinator_parameter_service.subscribe("SafeController", 1, isReadySafeControllerYamlCallback);
+    //ros::Subscriber safeController_yamlReady_fromAgent = nodeHandle_to_own_agent_parameter_service.subscribe(  "SafeController", 1, isReadySafeControllerYamlCallback);
+    //ros::Subscriber safeController_yamlReady_fromCoord = nodeHandle_to_coordinator_parameter_service.subscribe("SafeController", 1, isReadySafeControllerYamlCallback);
 
 
 
@@ -1266,53 +1435,19 @@ int main(int argc, char* argv[])
 
     // Call the class function that loads the parameters for this class.
     fetchClientConfigYamlParameters(nodeHandle_to_own_agent_parameter_service);
-    fetchSafeControllerYamlParameters(nodeHandle_to_own_agent_parameter_service);
+    //fetchSafeControllerYamlParameters(nodeHandle_to_own_agent_parameter_service);
 
 
-    // THIS IS THE "NEW" WAY TO DO IT
-    // BUT NEED TO CHECK ALL VARIABLES HAVE INITIAL VALUE
- //    // FETCH ANY PARAMETERS REQUIRED FROM THE "PARAMETER SERVICES"
+    // INITIALISE ALL THE CONTROLLER SERVICE CLIENTS
+    // loadController( "defaultController"  , defaultController );
+    // loadController( "studentController"  , studentController );
+    // loadController( "tuningController"   , tuningController );
+    // loadController( "pickerController"   , pickerController );
+    // loadController( "templateController" , templateController );
+    m_controllers_avialble = false;
+    timer_for_loadAllControllers = nodeHandle.createTimer(ros::Duration(3), timerCallback_for_loadAllControllers, true);
+    
 
-	// // The yaml files for the controllers are not added to
-	// // "Parameter Service" as part of launching.
-	// // The process for loading the yaml parameters is to send a
-	// // service call containing the filename of the *.yaml file,
-	// // and then a message will be received on the above subscribers
-	// // when the paramters are ready.
-	// // > NOTE IMPORTANTLY that by using a serice client
-	// //   we stall the availability of this node until the
-	// //   paramter service is ready
-
-	// // Create the service client as a local variable
-	// ros::ServiceClient requestLoadYamlFilenameServiceClient = nodeHandle_to_own_agent_parameter_service.serviceClient<LoadYamlFromFilename>("requestLoadYamlFilename", false);
-	// // Create the service call as a local variable
-	// LoadYamlFromFilename loadYamlFromFilenameCall;
-	// // Specify the Yaml filename as a string
-	// loadYamlFromFilenameCall.request.stringWithHeader.data = "DefaultController";
-	// // Set for whom this applies to
-	// loadYamlFromFilenameCall.request.stringWithHeader.shouldCheckForAgentID = false;
-	// // Wait until the serivce exists
-	// requestLoadYamlFilenameServiceClient.waitForExistence(ros::Duration(-1));
-	// // Make the service call
-	// if(requestLoadYamlFilenameServiceClient.call(loadYamlFromFilenameCall))
-	// {
-	// 	// Nothing to do in this case.
-	// 	// The "isReadyDefaultControllerYamlCallback" function
-	// 	// will be called once the YAML file is loaded
-	// }
-	// else
-	// {
-	// // Inform the user
-	// 	ROS_ERROR("[DEFAULT CONTROLLER] The request load yaml file service call failed.");
-	// }
-
-
-
-    // Copy the default setpoint into the class variable
-    controller_setpoint.x   = yaml_default_setpoint[0];
-    controller_setpoint.y   = yaml_default_setpoint[1];
-    controller_setpoint.z   = yaml_default_setpoint[2];
-    controller_setpoint.yaw = yaml_default_setpoint[3];
 
 
 
@@ -1343,7 +1478,7 @@ int main(int argc, char* argv[])
     ros::Subscriber databaseChangedSubscriber = nodeHandle_dfall_root.subscribe("CentralManagerService/DBChanged", 1, crazyflieContextDatabaseChangedCallback);
 
     // EMERGENCY STOP OF THE WHOLE "D-FaLL-System"
-    ros::Subscriber emergencyStopSubscriber = nodeHandle_dfall_root.subscribe("emergencyStop", 1, emergencyStopCallback);
+    ros::Subscriber emergencyStopSubscriber = nodeHandle_dfall_root.subscribe("emergencyStop", 1, emergencyStopReceivedCallback);
 
     // LOCALISATION DATA FROM MOTION CAPTURE SYSTEM
 	//keeps 100 messages because otherwise ViconDataPublisher would override the data immediately
@@ -1354,7 +1489,7 @@ int main(int argc, char* argv[])
     // PUBLISHER FOR COMMANDING THE CRAZYFLIE
     // i.e., motorCmd{1,2,3,4}, roll, pitch, yaw, and onboardControllerType
 	//ros::Publishers to advertise the control output
-	controlCommandPublisher = nodeHandle.advertise <ControlCommand>("ControlCommand", 1);
+	commandForSendingToCrazyfliePublisher = nodeHandle.advertise <ControlCommand>("ControlCommand", 1);
 
 	//this topic lets the FlyingAgentClient listen to the terminal commands
     //commandPublisher = nodeHandle.advertise<std_msgs::Int32>("Command", 1);
@@ -1364,9 +1499,9 @@ int main(int argc, char* argv[])
     // SUBSCRIBER FOR THE CHANGE STATE COMMANDS
     // i.e., {TAKE-OFF,LAND,MOTORS-OFF,CONTROLLER SELECTION}
     // > for the agent GUI
-    ros::Subscriber commandSubscriber_to_agent = nodeHandle.subscribe("Command", 1, commandCallback);
+    ros::Subscriber commandSubscriber_to_agent = nodeHandle.subscribe("Command", 1, flyingStateRequestCallback);
     // > for the coord GUI
-    ros::Subscriber commandSubscriber_to_coord = nodeHandle_to_coordinator.subscribe("FlyingAgentClient/Command", 1, commandCallback);
+    ros::Subscriber commandSubscriber_to_coord = nodeHandle_to_coordinator.subscribe("FlyingAgentClient/Command", 1, flyingStateRequestCallback);
 
 
 
@@ -1397,14 +1532,14 @@ int main(int argc, char* argv[])
 
     // publish first flying state data
     std_msgs::Int32 flying_state_msg;
-    flying_state_msg.data = flying_state;
+    flying_state_msg.data = m_flying_state;
     flyingStatePublisher.publish(flying_state_msg);
 
     // SafeControllerServicePublisher:
     ros::NodeHandle namespaceNodeHandle = ros::NodeHandle();
-    safeControllerServiceSetpointPublisher = namespaceNodeHandle.advertise<dfall_pkg::Setpoint>("SafeControllerService/Setpoint", 1);
-    ros::Subscriber controllerSetpointSubscriber = namespaceNodeHandle.subscribe("student_GUI/ControllerSetpoint", 1, controllerSetPointCallback);
-    ros::Subscriber safeSetpointSubscriber = namespaceNodeHandle.subscribe("SafeControllerService/Setpoint", 1, safeSetPointCallback);
+    //safeControllerServiceSetpointPublisher = namespaceNodeHandle.advertise<dfall_pkg::Setpoint>("SafeControllerService/Setpoint", 1);
+    //ros::Subscriber controllerSetpointSubscriber = namespaceNodeHandle.subscribe("student_GUI/ControllerSetpoint", 1, controllerSetPointCallback);
+    //ros::Subscriber safeSetpointSubscriber = namespaceNodeHandle.subscribe("SafeControllerService/Setpoint", 1, safeSetPointCallback);
 
     
 
@@ -1435,9 +1570,9 @@ int main(int argc, char* argv[])
 
 
 	//start with safe controller
-    flying_state = STATE_MOTORS_OFF;
-    setControllerUsed(SAFE_CONTROLLER);
-    setInstantController(SAFE_CONTROLLER); //initialize this also, so we notify GUI
+    m_flying_state = STATE_MOTORS_OFF;
+    setControllerNominallySelected(DEFAULT_CONTROLLER);
+    setInstantController(DEFAULT_CONTROLLER); //initialize this also, so we notify GUI
 
 
     // Advertise the service for the current flying state

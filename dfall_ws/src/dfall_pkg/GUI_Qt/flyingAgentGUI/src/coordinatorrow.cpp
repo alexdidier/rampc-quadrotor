@@ -88,7 +88,7 @@ CoordinatorRow::CoordinatorRow(QWidget *parent, int agentID) :
     setFlyingState(STATE_UNAVAILABLE);
     
     // SET THE DEFAULT NAME FOR THE SELECTED CONTROLLER
-    setControllerEnabled(SAFE_CONTROLLER);
+    setControllerEnabled(DEFAULT_CONTROLLER);
 
 
 #ifdef CATKIN_MAKE
@@ -708,9 +708,9 @@ void CoordinatorRow::setControllerEnabled(int new_controller)
 {
     switch(new_controller)
     {
-        case SAFE_CONTROLLER:
+        case DEFAULT_CONTROLLER:
         {
-            ui->controller_enabled_label->setText("Safe");
+            ui->controller_enabled_label->setText("Default");
             break;
         }
         case DEMO_CONTROLLER:

@@ -54,12 +54,6 @@ DISCONNECTED = 2
 CMD_RECONNECT = 0
 CMD_DISCONNECT = 1
 
-# Commands for FlyingAgentClient
-CMD_USE_SAFE_CONTROLLER =   1
-CMD_USE_CUSTOM_CONTROLLER = 2
-CMD_CRAZYFLY_TAKE_OFF =     3
-CMD_CRAZYFLY_LAND =         4
-CMD_CRAZYFLY_MOTORS_OFF =   5
 
 # rp = RosPack()
 # record_file = rp.get_path('dfall_pkg') + '/LoggingOnboard.bag'
@@ -239,8 +233,6 @@ if __name__ == '__main__':
     # rospy.loginfo("Turning off crazyflie")
 
 
-    # change state to motors OFF
-    # cf_client.FlyingAgentClient_command_pub.publish(CMD_CRAZYFLY_MOTORS_OFF)
     #wait for client to send its commands
     # time.sleep(1.0)
 

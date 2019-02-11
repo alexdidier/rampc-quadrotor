@@ -397,16 +397,11 @@ void ControllerTabs::setControllerEnabled(int new_controller)
     // the enable controller
     switch(new_controller)
     {
-        case SAFE_CONTROLLER:
-        {
-            setTextColourOfTabLabel( m_tab_text_colour_highlight , ui->default_tab );
-            break;
-        }
-//        case DEFAULT_CONTROLLER:
-//        {
-//            setTextColourOfTabLabel( m_tab_text_colour_highlight , ui->default_tab );
-//            break;
-//        }
+       case DEFAULT_CONTROLLER:
+       {
+           setTextColourOfTabLabel( m_tab_text_colour_highlight , ui->default_tab );
+           break;
+       }
         case DEMO_CONTROLLER:
         {
             //ui->controller_enabled_label->setText("Demo");

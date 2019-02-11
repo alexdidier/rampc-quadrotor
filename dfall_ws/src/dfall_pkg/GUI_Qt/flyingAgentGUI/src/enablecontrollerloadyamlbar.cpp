@@ -125,9 +125,9 @@ void EnableControllerLoadYamlBar::on_enable_default_button_clicked()
 #ifdef CATKIN_MAKE
     dfall_pkg::IntWithHeader msg;
     fillIntMessageHeader(msg);
-    msg.data = CMD_USE_SAFE_CONTROLLER;
+    msg.data = CMD_USE_DEFAULT_CONTROLLER;
     this->commandPublisher.publish(msg);
-    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Enable Safe Controller");
+    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Enable Default Controller");
 #endif
 }
 

@@ -1,4 +1,5 @@
 safeController:     "SafeControllerService/RateController"
+defaultController:  "DefaultControllerService/DefaultController"
 demoController:     "DemoControllerService/DemoController"
 studentController:  "StudentControllerService/StudentController"
 mpcController:      "MpcControllerService/MpcController"
@@ -7,9 +8,9 @@ tuningController:   "TuningControllerService/TuningController"
 pickerController:   "PickerControllerService/PickerController"
 templateController: "TemplateControllerService/TemplateController"
 
-# Flag for whether to use angle for switching to the Safe Controller
-strictSafety: false
-angleMargin: 0.8
+# Flag for whether to use angle for switching to the Default Controller
+isEnabled_strictSafety: true
+maxTiltAngle_for_strictSafety_degrees: 70
 
 battery_threshold_while_flying: 2.60       # in V
 battery_threshold_while_motors_off: 3.30   # in V

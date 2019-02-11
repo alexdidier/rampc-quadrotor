@@ -235,45 +235,45 @@ void estimateState(Controller::Request &request, float (&est)[9])
 // This function DOES NOT NEED TO BE edited for successful completion of the classroom exercise
 void yamlReadyForFetchCallback(const std_msgs::Int32& msg)
 {
-    // Extract from the "msg" for which controller the and from where to fetch the YAML
-    // parameters
-    int controller_to_fetch_yaml = msg.data;
+    // // Extract from the "msg" for which controller the and from where to fetch the YAML
+    // // parameters
+    // int controller_to_fetch_yaml = msg.data;
 
-    // Switch between fetching for the different controllers and from different locations
-    switch(controller_to_fetch_yaml)
-    {
+    // // Switch between fetching for the different controllers and from different locations
+    // switch(controller_to_fetch_yaml)
+    // {
 
-        // > FOR FETCHING FROM THE AGENT'S OWN PARAMETER SERVICE
-        case FETCH_YAML_SAFE_CONTROLLER_FROM_OWN_AGENT:
-        {
-            // Let the user know that this message was received
-            ROS_INFO("[SAFE CONTROLLER] Received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from this machine.");
-            // Create a node handle to the parameter service running on this agent's machine
-            ros::NodeHandle nodeHandle_to_own_agent_parameter_service(namespace_to_own_agent_parameter_service);
-            // Call the function that fetches the parameters
-            fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
-            break;
-        }
+    //     // > FOR FETCHING FROM THE AGENT'S OWN PARAMETER SERVICE
+    //     case FETCH_YAML_SAFE_CONTROLLER_FROM_OWN_AGENT:
+    //     {
+    //         // Let the user know that this message was received
+    //         ROS_INFO("[SAFE CONTROLLER] Received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from this machine.");
+    //         // Create a node handle to the parameter service running on this agent's machine
+    //         ros::NodeHandle nodeHandle_to_own_agent_parameter_service(namespace_to_own_agent_parameter_service);
+    //         // Call the function that fetches the parameters
+    //         fetchYamlParameters(nodeHandle_to_own_agent_parameter_service);
+    //         break;
+    //     }
 
-        // > FOR FETCHING FROM THE COORDINATOR'S PARAMETER SERVICE
-        case FETCH_YAML_SAFE_CONTROLLER_FROM_COORDINATOR:
-        {
-            // Let the user know that this message was received
-            ROS_INFO("[SAFE CONTROLLER] Received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from the coordinator.");
-            // Create a node handle to the parameter service running on the coordinator machine
-            ros::NodeHandle nodeHandle_to_coordinator_parameter_service(namespace_to_coordinator_parameter_service);
-            // Call the function that fetches the parameters
-            fetchYamlParameters(nodeHandle_to_coordinator_parameter_service);
-            break;
-        }
+    //     // > FOR FETCHING FROM THE COORDINATOR'S PARAMETER SERVICE
+    //     case FETCH_YAML_SAFE_CONTROLLER_FROM_COORDINATOR:
+    //     {
+    //         // Let the user know that this message was received
+    //         ROS_INFO("[SAFE CONTROLLER] Received the message that YAML parameters were (re-)loaded. > Now fetching the parameter values from the coordinator.");
+    //         // Create a node handle to the parameter service running on the coordinator machine
+    //         ros::NodeHandle nodeHandle_to_coordinator_parameter_service(namespace_to_coordinator_parameter_service);
+    //         // Call the function that fetches the parameters
+    //         fetchYamlParameters(nodeHandle_to_coordinator_parameter_service);
+    //         break;
+    //     }
 
-        default:
-        {
-            // Let the user know that the command was not relevant
-            //ROS_INFO("The SafeControllerService received the message that YAML parameters were (re-)loaded.\r> However the parameters do not relate to this controller, hence nothing will be fetched.");
-            break;
-        }
-    }
+    //     default:
+    //     {
+    //         // Let the user know that the command was not relevant
+    //         //ROS_INFO("The SafeControllerService received the message that YAML parameters were (re-)loaded.\r> However the parameters do not relate to this controller, hence nothing will be fetched.");
+    //         break;
+    //     }
+    // }
 }
 
 void fetchYamlParameters(ros::NodeHandle& nodeHandle)

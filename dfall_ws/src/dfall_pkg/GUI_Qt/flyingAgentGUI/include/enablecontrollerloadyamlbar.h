@@ -72,17 +72,7 @@
 #endif
 
 
-// COMMANDS FOR THE FLYING STATE/CONTROLLER USED
-// The constants that "command" changes in the
-// operation state of this agent. These "commands"
-// are sent from this GUI node to the "FlyingAgentClient"
-// node where the command is enacted
-// #define CMD_USE_SAFE_CONTROLLER      1
-// #define CMD_USE_DEMO_CONTROLLER      2
-// #define CMD_USE_STUDENT_CONTROLLER   3
-// #define CMD_USE_MPC_CONTROLLER       4
-// #define CMD_USE_REMOTE_CONTROLLER    5
-// #define CMD_USE_TUNING_CONTROLLER    6
+
 
 
 namespace Ui {
