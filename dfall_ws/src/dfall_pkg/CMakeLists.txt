@@ -268,8 +268,8 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include ${SYSTEM_CONFIG_GUI_LIB_PATH_INC}            # GUI -- include headers from GUI in package
-  INCLUDE_DIRS include ${FLYING_AGENT_GUI_LIB_PATH_INC}  # FlyingAgentGUI -- include headers from GUI in package
+  INCLUDE_DIRS include ${SYSTEM_CONFIG_GUI_LIB_PATH_INC}   # SystemConfigGUI -- include headers from GUI in package
+  INCLUDE_DIRS include ${FLYING_AGENT_GUI_LIB_PATH_INC}    # FlyingAgentGUI  -- include headers from GUI in package
   LIBRARIES
   CATKIN_DEPENDS roscpp rospy std_msgs rosbag roslib
   DEPENDS
@@ -377,14 +377,14 @@ set(FLYING_AGENT_GUI_CPP_SOURCES         # compilation of sources
 
 
 # GUI -- Add executables here
-add_executable(systemConfigGUI ${SYSTEM_CONFIG_GUI_CPP_SOURCES} ${UIS_HDRS_GUI} ${SRC_MOC_HDRS_GUI} ${SYSTEM_CONFIG_GUI_RESOURCE_FILE_RRC})
-qt5_use_modules(systemConfigGUI Widgets)
+add_executable(SystemConfigGUI ${SYSTEM_CONFIG_GUI_CPP_SOURCES} ${UIS_HDRS_GUI} ${SRC_MOC_HDRS_GUI} ${SYSTEM_CONFIG_GUI_RESOURCE_FILE_RRC})
+qt5_use_modules(SystemConfigGUI Widgets)
 
 
 
 # FLYING AGENT GUI -- Add executables here
-add_executable(flyingAgentGUI ${FLYING_AGENT_GUI_CPP_SOURCES} ${UIS_HDRS_FLYING_AGENT_GUI} ${SRC_MOC_HDRS_FLYING_AGENT_GUI} ${FLYING_AGENT_GUI_RESOURCE_FILE_RCC})
-qt5_use_modules(flyingAgentGUI Widgets)
+add_executable(FlyingAgentGUI ${FLYING_AGENT_GUI_CPP_SOURCES} ${UIS_HDRS_FLYING_AGENT_GUI} ${SRC_MOC_HDRS_FLYING_AGENT_GUI} ${FLYING_AGENT_GUI_RESOURCE_FILE_RCC})
+qt5_use_modules(FlyingAgentGUI Widgets)
 
 
 
@@ -409,12 +409,12 @@ add_dependencies(ParameterService          dfall_pkg_generate_messages_cpp ${cat
 
 
 # GUI-- dependencies
-add_dependencies(systemConfigGUI dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(SystemConfigGUI dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 
 
 # FLYING AGENT GUI-- dependencies
-add_dependencies(flyingAgentGUI dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(FlyingAgentGUI dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 
 
@@ -461,15 +461,15 @@ target_link_libraries(ParameterService          ${catkin_LIBRARIES})
 
 
 # GUI -- link libraries
-target_link_libraries(systemConfigGUI Qt5::Widgets) # GUI -- let systemConfigGUI have acesss to Qt stuff
-target_link_libraries(systemConfigGUI Qt5::Svg)
-target_link_libraries(systemConfigGUI ${catkin_LIBRARIES})
+target_link_libraries(SystemConfigGUI Qt5::Widgets) # GUI -- let SystemConfigGUI have acesss to Qt stuff
+target_link_libraries(SystemConfigGUI Qt5::Svg)
+target_link_libraries(SystemConfigGUI ${catkin_LIBRARIES})
 
 
 
 # Flying Agent GUI -- link libraries
-target_link_libraries(flyingAgentGUI Qt5::Widgets) # GUI -- let flyingAgentGUI have acesss to Qt stuff
-target_link_libraries(flyingAgentGUI ${catkin_LIBRARIES})
+target_link_libraries(FlyingAgentGUI Qt5::Widgets) # GUI -- let FlyingAgentGUI have acesss to Qt stuff
+target_link_libraries(FlyingAgentGUI ${catkin_LIBRARIES})
 
 
 
