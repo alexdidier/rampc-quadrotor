@@ -154,7 +154,7 @@ float m_weight_total_in_newtons;
 
 // The setpoint to be tracked, the ordering is (x,y,z,yaw),
 // with units [meters,meters,meters,radians]
-float  m_setpoint[4] = {0.0,0.0,0.4,0.0};
+float m_setpoint[4] = {0.0,0.0,0.4,0.0};
 
 // The setpoint that is actually used by the controller, this
 // differs from the setpoint when smoothing is turned on
@@ -164,10 +164,10 @@ float m_setpoint_for_controller[4] = {0.0,0.0,0.4,0.0};
 bool m_shouldSmoothSetpointChanges = true;
 
 // Max setpoint change per second
-float yaml_max_setpoint_change_per_second_horizontal;
-float yaml_max_setpoint_change_per_second_vertical;
-float yaml_max_setpoint_change_per_second_yaw_degrees;
-float m_max_setpoint_change_per_second_yaw_radians;
+float yaml_max_setpoint_change_per_second_horizontal = 0.1;
+float yaml_max_setpoint_change_per_second_vertical = 0.1;
+float yaml_max_setpoint_change_per_second_yaw_degrees = 90.0;
+float m_max_setpoint_change_per_second_yaw_radians = 90.0 * DEG2RAD;
 
 
 
@@ -267,7 +267,7 @@ std::vector<float> yaml_PMKF_Kinf_for_angles         (2,0.0);
 // VARIABLES RELATING TO PERFORMING THE CONVERSION INTO BODY FRAME
 
 // Boolean whether to execute the convert into body frame function
-bool yaml_shouldPerformConvertIntoBodyFrame = false;
+bool yaml_shouldPerformConvertIntoBodyFrame = true;
 
 
 // VARIABLES RELATING TO THE PUBLISHING OF A DEBUG MESSAGE

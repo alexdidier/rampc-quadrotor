@@ -2,7 +2,7 @@
 # Max setpoint change per second
 max_setpoint_change_per_second_horizontal  :  0.20 # [meters]
 max_setpoint_change_per_second_vertical    :  0.10 # [meters]
-max_setpoint_change_per_second_yaw_degrees : 90.00 # [degrees]
+max_setpoint_change_per_second_yaw_degrees : 180.00 # [degrees]
 
 
 

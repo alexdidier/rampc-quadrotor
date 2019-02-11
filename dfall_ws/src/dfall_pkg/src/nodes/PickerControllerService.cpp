@@ -815,18 +815,20 @@ void convert_stateInertial_to_bodyFrameError(float stateInertial[12], float setp
 	// > Second, "unwrap" the yaw error to the interval ( -pi , pi )
 	while(yawError > PI) {yawError -= 2 * PI;}
 	while(yawError < -PI) {yawError += 2 * PI;}
-	// > Third, put the "yawError" into the "stateError" variable
+	// > Third, clip the error to within some bounds
+		if (yawError>(PI/3))
+	{
+		yawError = (PI/3);
+	}
+	else if (yawError<(-PI/3))
+	{
+		yawError = (-PI/3);
+	}
+	// > Finally, put the "yawError" into the "stateError" variable
 	stateInertial[8] = yawError;
 
 
-	if (yawError>(PI/6))
-	{
-		yawError = (PI/6);
-	}
-	else if (yawError<(-PI/6))
-	{
-		yawError = (-PI/6);
-	}
+
 
 	// CONVERSION INTO BODY FRAME
 	// Conver the state erorr from the Inertial frame into the Body frame
@@ -1056,7 +1058,6 @@ bool getCurrentSetpointCallback(GetSetpointService::Request &request, GetSetpoin
 // PUBLISH THE CURRENT X,Y,Z, AND YAW (if required)
 void publish_current_xyz_yaw(float x, float y, float z, float yaw)
 {
-	// // publish setpoint for FollowController of another student group
 	// SetpointWithHeader temp_current_xyz_yaw;
 	// // Fill in the x,y,z, and yaw info directly from the data provided to this
 	// // function
@@ -1135,7 +1136,7 @@ void isReadyPickerControllerYamlCallback(const IntWithHeader & msg)
 void fetchPickerControllerYamlParameters(ros::NodeHandle& nodeHandle)
 {
 	// Here we load the parameters that are specified in the file:
-	// StudentController.yaml
+	// PickerController.yaml
 
 	// Add the "PickerController" namespace to the "nodeHandle"
 	ros::NodeHandle nodeHandle_for_paramaters(nodeHandle, "PickerController");
@@ -1203,7 +1204,7 @@ void fetchPickerControllerYamlParameters(ros::NodeHandle& nodeHandle)
 
 
 	// DEBUGGING: Print out one of the parameters that was loaded
-	ROS_INFO_STREAM("[PICKER CONTROLLER] DEBUGGING: the fetched PickerController/mass_cf_in_grams = " << yaml_mass_cf_in_grams);
+	ROS_INFO_STREAM("[PICKER CONTROLLER] DEBUGGING: the fetched PickerController/max_setpoint_change_per_second_yaw_degrees = " << yaml_max_setpoint_change_per_second_yaw_degrees);
 
 
 
@@ -1213,6 +1214,10 @@ void fetchPickerControllerYamlParameters(ros::NodeHandle& nodeHandle)
 
     // Set that the estimator frequency is the same as the control frequency
     m_estimator_frequency = yaml_control_frequency;
+
+    // DEBUGGING: Print out one of the processed values
+	ROS_INFO_STREAM("[PICKER CONTROLLER] DEBUGGING: after processing m_max_setpoint_change_per_second_yaw_radians = " << m_max_setpoint_change_per_second_yaw_radians);
+
 
 }
 
@@ -1256,7 +1261,7 @@ int main(int argc, char* argv[]) {
 	//   <param name="agentID" value="$(optenv ROS_NAMESPACE)" />
 	//   This line of code adds a parameter named "agentID" to the
 	//   "FlyingAgentClient" node.
-	// > Thus, to get access to this "studentID" paremeter, we first
+	// > Thus, to get access to this "agentID" paremeter, we first
 	//   need to get a handle to the "FlyingAgentClient" node within which this
 	//   controller service is nested.
 
@@ -1351,13 +1356,13 @@ int main(int argc, char* argv[]) {
 	if(requestLoadYamlFilenameServiceClient.call(loadYamlFromFilenameCall))
 	{
 		// Nothing to do in this case.
-		// The "isReadyStudentControllerYamlCallback" function
+		// The "isReadyPickerControllerYamlCallback" function
 		// will be called once the YAML file is loaded
 	}
 	else
 	{
 		// Inform the user
-		ROS_ERROR("[STUDENT CONTROLLER] The request load yaml file service call failed.");
+		ROS_ERROR("[PICKER CONTROLLER] The request load yaml file service call failed.");
 	}
 
 
@@ -1430,13 +1435,13 @@ int main(int argc, char* argv[]) {
 
     // Instantiate the instance variable "my_current_xyz_yaw_publisher" to be a "ros::Publisher"
     // that advertises under the name "<my_agentID>/my_current_xyz_yaw_topic" where <my_agentID>
-    // is filled in with the student ID number of this computer. The messages published will
+    // is filled in with the agent ID number of this computer. The messages published will
     // have the structure defined in the file "Setpoint.msg" (located in the "msg" folder).
     //my_current_xyz_yaw_publisher = nodeHandle.advertise<Setpoint>("my_current_xyz_yaw_topic", 1);
 
 
     // Print out some information to the user.
-    ROS_INFO("[Picker CONTROLLER] Service ready :-)");
+    ROS_INFO("[PICKER CONTROLLER] Service ready :-)");
 
     // Enter an endless while loop to keep the node alive.
     ros::spin();

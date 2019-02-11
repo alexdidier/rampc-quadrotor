@@ -552,13 +552,14 @@ void PickerControllerTab::setMeasuredPose(float x , float y , float z , float ro
         ui->lineEdit_measured_z->setText(qstr + QString::number( z, 'f', DECIMAL_PLACES_POSITION));
 
         if (yaw < 0.0f) qstr = ""; else qstr = "+";
-        ui->lineEdit_measured_yaw->setText(qstr + QString::number( yaw   * RAD2DEG, 'f', DECIMAL_PLACES_ANGLE_DEGREES));
+        ui->lineEdit_measured_yaw->setText(qstr + QString::number( yaw * RAD2DEG, 'f', DECIMAL_PLACES_ANGLE_DEGREES));
 
-        // GET THE CURRENT SETPOINT
+        // GET THE CURRENT SETPOINT ERROR
         float error_x   = x   - (ui->lineEdit_current_x->text()  ).toFloat();
         float error_y   = y   - (ui->lineEdit_current_y->text()  ).toFloat();
         float error_z   = z   - (ui->lineEdit_current_z->text()  ).toFloat();
-        float error_yaw = yaw - (ui->lineEdit_current_yaw->text()).toFloat();
+
+        float error_yaw_deg = yaw * RAD2DEG - (ui->lineEdit_current_yaw->text()).toFloat();
 
         // UPDATE THE ERROR COLUMN
         if (error_x < 0.0f) qstr = ""; else qstr = "+";
@@ -568,8 +569,8 @@ void PickerControllerTab::setMeasuredPose(float x , float y , float z , float ro
         if (error_z < 0.0f) qstr = ""; else qstr = "+";
         ui->lineEdit_error_z->setText(qstr + QString::number( error_z, 'f', DECIMAL_PLACES_POSITION));
 
-        if (error_yaw < 0.0f) qstr = ""; else qstr = "+";
-        ui->lineEdit_error_yaw->setText(qstr + QString::number( error_yaw * RAD2DEG, 'f', DECIMAL_PLACES_ANGLE_DEGREES));
+        if (error_yaw_deg < 0.0f) qstr = ""; else qstr = "+";
+        ui->lineEdit_error_yaw->setText(qstr + QString::number( error_yaw_deg , 'f', DECIMAL_PLACES_ANGLE_DEGREES));
 
         // Ensure the red frames are not visible
         if ( ui->frame_x_unavailable->isVisible() )
