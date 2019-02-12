@@ -67,6 +67,7 @@
 #include "dfall_pkg/DebugMsg.h"
 
 // Include the DFALL service types
+#include "dfall_pkg/IntIntService.h"
 #include "dfall_pkg/LoadYamlFromFilename.h"
 #include "dfall_pkg/GetSetpointService.h"
 

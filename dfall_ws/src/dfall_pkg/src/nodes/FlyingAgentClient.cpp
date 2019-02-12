@@ -106,81 +106,97 @@ void viconCallback(const ViconData& viconData)
 
 	// Only continue if:
 	// (1) the pose for this agent was found, and
+	// (2) the controllers are actually available
 	// (2) the flying state is something other than MOTORS-OFF
 	if (
 		(m_poseDataIndex >= 0)
 		and
-		(m_flying_state != STATE_MOTORS_OFF)
-		and
 		(m_controllers_avialble)
 	)
 	{
-		// Initliase the "Contrller" service call variable
-		Controller controllerCall;
 
-		// Fill in the pose data for this agent
-		controllerCall.request.ownCrazyflie = poseDataForThisAgent;
-
-		// If the object is NOT occluded,
-		// then proceed to make the "Controller Service Call" that
-		// compute the controller output.
+		// Only continue if:
+		// (1) the agent is NOT occulded
 		if(!poseDataForThisAgent.occluded)
 		{
+			// Update the flag
+			m_isOcculded_mocap_data = false;
 			// Reset the "consecutive occulsions" flag
 			number_of_consecutive_occulsions = 0;
 
-			// PERFORM THE SAFTY CHECK (IF NOT THE DEFAULT CONTROLLER)
-			if ( getInstantController() != DEFAULT_CONTROLLER )
+
+			// Only continue if:
+			// (1) The state is different from MOTORS-OFF
+			if (m_flying_state != STATE_MOTORS_OFF)
 			{
-				if ( !safetyCheck_on_positionAndTilt(poseDataForThisAgent) )
-				{
-					setInstantController(DEFAULT_CONTROLLER);
-					ROS_INFO_STREAM("[FLYING AGENT CLIENT] safety check failed, switching to DEFAULT CONTROLLER");
-				}
-			}
 
-			// Initialise a local boolean success variable
-			bool isSuccessful_controllerCall = false;
+				// Initliase the "Contrller" service call variable
+				Controller controllerCall;
 
-			// Call the controller service client
-			isSuccessful_controllerCall = m_instant_controller_service_client->call(controllerCall);
+				// Fill in the pose data for this agent
+				controllerCall.request.ownCrazyflie = poseDataForThisAgent;
 
-			// Ensure success and enforce safety
-			if(!isSuccessful_controllerCall)
-			{
-				// Let the user know that the controller call failed
-				ROS_ERROR_STREAM("[FLYING AGENT CLIENT] Failed to call controller, valid: " << m_instant_controller_service_client->isValid() << ", exists: " << m_instant_controller_service_client->exists());
+				
+				
 
-				// Switch to the default controller,
-				// if it was not already the active controller
+				// PERFORM THE SAFTY CHECK (IF NOT THE DEFAULT CONTROLLER)
 				if ( getInstantController() != DEFAULT_CONTROLLER )
 				{
-					// Set the DEFAULT controller to be active
-					setInstantController(DEFAULT_CONTROLLER);
-					// Try the controller call
-					isSuccessful_controllerCall = m_instant_controller_service_client->call(controllerCall);
-					// Inform the user is not successful
-					if ( !isSuccessful_controllerCall )
+					if ( !safetyCheck_on_positionAndTilt(poseDataForThisAgent) )
 					{
-						ROS_ERROR_STREAM("[FLYING AGENT CLIENT] Also failed to call the DEFAULT controller, valid: " << m_instant_controller_service_client->isValid() << ", exists: " << m_instant_controller_service_client->exists());
+						setInstantController(DEFAULT_CONTROLLER);
+						ROS_INFO_STREAM("[FLYING AGENT CLIENT] safety check failed, switching to DEFAULT CONTROLLER");
 					}
 				}
-			}
 
-			// Send the command to the CrazyRadio
-			// > IF SUCCESSFUL
-			if (isSuccessful_controllerCall)
-			{
-				m_commaNdfOrsendiNgTocrazyflIepublisher.publish(controllerCall.response.controlOutput);
+				// Initialise a local boolean success variable
+				bool isSuccessful_controllerCall = false;
+
+				// Call the controller service client
+				isSuccessful_controllerCall = m_instant_controller_service_client->call(controllerCall);
+
+				// Ensure success and enforce safety
+				if(!isSuccessful_controllerCall)
+				{
+					// Let the user know that the controller call failed
+					ROS_ERROR_STREAM("[FLYING AGENT CLIENT] Failed to call controller, valid: " << m_instant_controller_service_client->isValid() << ", exists: " << m_instant_controller_service_client->exists());
+
+					// Switch to the default controller,
+					// if it was not already the active controller
+					if ( getInstantController() != DEFAULT_CONTROLLER )
+					{
+						// Set the DEFAULT controller to be active
+						setInstantController(DEFAULT_CONTROLLER);
+						// Try the controller call
+						isSuccessful_controllerCall = m_instant_controller_service_client->call(controllerCall);
+						// Inform the user is not successful
+						if ( !isSuccessful_controllerCall )
+						{
+							ROS_ERROR_STREAM("[FLYING AGENT CLIENT] Also failed to call the DEFAULT controller, valid: " << m_instant_controller_service_client->isValid() << ", exists: " << m_instant_controller_service_client->exists());
+						}
+					}
+				}
+
+				// Send the command to the CrazyRadio
+				// > IF SUCCESSFUL
+				if (isSuccessful_controllerCall)
+				{
+					m_commandForSendingToCrazyfliePublisher.publish(controllerCall.response.controlOutput);
+				}
+				// > ELSE SEND ZERO OUTPUT COMMAND
+				else
+				{
+					// Send the command to turn the motors off
+					sendZeroOutputCommandForMotors();
+					// And change the state to motor-off
+					requestChangeFlyingStateTo(STATE_MOTORS_OFF);
+				}
 			}
-			// > ELSE SEND ZERO OUTPUT COMMAND
 			else
 			{
 				// Send the command to turn the motors off
 				sendZeroOutputCommandForMotors();
-				// And change the state to motor-off
-				requestChangeFlyingStateTo(STATE_MOTORS_OFF);
-			}
+			} // END OF: "if (m_flying_state != STATE_MOTORS_OFF)"
 		}
 		else
 		{
@@ -195,6 +211,8 @@ void viconCallback(const ViconData& viconData)
 			{
 				// Update the flag
 				m_isOcculded_mocap_data = true;
+				// Inform the user
+				ROS_ERROR_STREAM("[FLYING AGENT CLIENT] Agent was occluded for more than " << yaml_consecutive_occulsions_threshold << " consecutive frames." );
 				// Send the command to turn the motors off
 				sendZeroOutputCommandForMotors();
 				// Update the flying state
@@ -208,7 +226,7 @@ void viconCallback(const ViconData& viconData)
 		// Send the command to turn the motors off
 		sendZeroOutputCommandForMotors();
 
-	} // END OF: "if ( (m_poseDataIndex >= 0) and (m_flying_state != STATE_MOTORS_OFF) )"
+	} // END OF: "if ( (m_poseDataIndex >= 0) and (m_controllers_avialble) )"
 
 }
 
@@ -306,7 +324,7 @@ void sendZeroOutputCommandForMotors()
 {
 	ControlCommand zeroOutput = ControlCommand(); //everything set to zero
     zeroOutput.onboardControllerType = CF_COMMAND_TYPE_MOTORS; //set to motor_mode
-    m_commaNdfOrsendiNgTocrazyflIepublisher.publish(zeroOutput);
+    m_commandForSendingToCrazyfliePublisher.publish(zeroOutput);
 }
 
 
@@ -359,9 +377,9 @@ bool safetyCheck_on_positionAndTilt(CrazyflieData data)
     {
         // Check on the ROLL angle
         if(
-            (data.roll > m_maxTiltAngle_for_strictSafety_redians)
+            (data.roll > m_maxTiltAngle_for_strictSafety_radians)
             or
-            (data.roll < -m_maxTiltAngle_for_strictSafety_redians)
+            (data.roll < -m_maxTiltAngle_for_strictSafety_radians)
         )
         {
             ROS_INFO_STREAM("[FLYING AGENT CLIENT] roll too big.");
@@ -369,9 +387,9 @@ bool safetyCheck_on_positionAndTilt(CrazyflieData data)
         }
         // Check on the PITCH angle
         if(
-            (data.pitch > m_maxTiltAngle_for_strictSafety_redians)
+            (data.pitch > m_maxTiltAngle_for_strictSafety_radians)
             or
-            (data.pitch < -m_maxTiltAngle_for_strictSafety_redians)
+            (data.pitch < -m_maxTiltAngle_for_strictSafety_radians)
         )
         {
             ROS_INFO_STREAM("[FLYING AGENT CLIENT] pitch too big.");
@@ -456,7 +474,7 @@ void requestChangeFlyingStateTo(int new_state)
     // Publish a message with the new flying state
     std_msgs::Int32 flying_state_msg;
     flying_state_msg.data = m_flying_state;
-    flyingStatePublisher.publish(flying_state_msg);
+    m_flyingStatePublisher.publish(flying_state_msg);
 }
 
 void requestChangeFlyingStateToTakeOff()
@@ -568,7 +586,7 @@ void requestChangeFlyingStateToLand()
 				// > Stop any previous instance
 				m_timer_land_complete.stop();
 				// > Set the period again (second argument is reset)
-				m_timer_land_complete.setPeriod( ros::Duration(take_off_duration), true);
+				m_timer_land_complete.setPeriod( ros::Duration(land_duration), true);
 				// > Start the timer
 				m_timer_land_complete.start();
 				// Inform the user
@@ -606,6 +624,10 @@ void timerCallback_takeoff_complete(const ros::TimerEvent&)
 		ROS_INFO("[FLYING AGENT CLIENT] Take-off complete, changed state to STATE_FLYING");
 		// Update the class variable
 		m_flying_state = STATE_FLYING;
+		// Publish a message with the new flying state
+		std_msgs::Int32 flying_state_msg;
+		flying_state_msg.data = m_flying_state;
+		m_flyingStatePublisher.publish(flying_state_msg);
 	}
 	else
 	{
@@ -623,6 +645,10 @@ void timerCallback_land_complete(const ros::TimerEvent&)
 		ROS_INFO("[FLYING AGENT CLIENT] Land complete, changed state to STATE_MOTORS_OFF");
 		// Update the class variable
 		m_flying_state = STATE_MOTORS_OFF;
+		// Publish a message with the new flying state
+		std_msgs::Int32 flying_state_msg;
+		flying_state_msg.data = m_flying_state;
+		m_flyingStatePublisher.publish(flying_state_msg);
 	}
 	else
 	{
@@ -1067,6 +1093,23 @@ void createControllerServiceClientFromParameterName( std::string paramter_name ,
 }
 
 
+void createIntIntServiceClientFromParameterName( std::string paramter_name , ros::ServiceClient& serviceClient )
+{
+    ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
+    ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "ClientConfig");
+
+    std::string controllerName;
+    if(!nodeHandle.getParam(paramter_name, controllerName))
+    {
+        ROS_ERROR_STREAM("[FLYING AGENT CLIENT] Failed to get \"" << paramter_name << "\" paramter");
+        return;
+    }
+
+    serviceClient = ros::service::createClient<IntIntService>(controllerName, true);
+    ROS_INFO_STREAM("[FLYING AGENT CLIENT] Loaded service: " << serviceClient.getService() <<  ", valid: " << serviceClient.isValid() << ", exists: " << serviceClient.exists() );
+}
+
+
 
 void timerCallback_for_createAllcontrollerServiceClients(const ros::TimerEvent&)
 {
@@ -1079,11 +1122,11 @@ void timerCallback_for_createAllcontrollerServiceClients(const ros::TimerEvent&)
 
     // INITIALISE THE SERVICE FOR REQUESTING THE DEFAULT
     // CONTROLLER TO PERFORM MANOEUVRES
-    createControllerServiceClientFromParameterName( "defaultController_requestManoeuvre" , m_defaultController_requestManoeuvre );
+    createIntIntServiceClientFromParameterName( "defaultController_requestManoeuvre" , m_defaultController_requestManoeuvre );
 
     // Check that at least the default controller is available
     // > Setting the flag accordingly
-    if (defaultController)
+    if (m_defaultController)
     {
         m_controllers_avialble = true;
     }
@@ -1175,7 +1218,10 @@ void fetchClientConfigYamlParameters(ros::NodeHandle& nodeHandle)
 
     // Number of consecutive occulsions that will deem the
     // object as "long-term" occuled
-	consecutive_occulsions_threshold = getParameterInt(nodeHandle_for_paramaters,"consecutive_occulsions_threshold");
+	yaml_consecutive_occulsions_threshold = getParameterInt(nodeHandle_for_paramaters,"consecutive_occulsions_threshold");
+
+	// Time out duration after which Mocap is considered unavailable
+	yaml_mocap_timeout_duration = getParameterFloat(nodeHandle_for_paramaters,"mocap_timeout_duration");
 
 	// Flag for whether the take-off should be performed
 	//  with the default controller
@@ -1192,10 +1238,10 @@ void fetchClientConfigYamlParameters(ros::NodeHandle& nodeHandle)
 
     // PROCESS THE PARAMTERS
     // Convert from degrees to radians
-    m_maxTiltAngle_for_strictSafety_redians = DEG2RAD * yaml_maxTiltAngle_for_strictSafety_degrees;
+    m_maxTiltAngle_for_strictSafety_radians = DEG2RAD * yaml_maxTiltAngle_for_strictSafety_degrees;
 
     // DEBUGGING: Print out one of the processed values
-    ROS_INFO_STREAM("[FLYING AGENT CLIENT CONTROLLER] DEBUGGING: after processing m_maxTiltAngle_for_strictSafety_redians = " << m_maxTiltAngle_for_strictSafety_redians);
+    ROS_INFO_STREAM("[FLYING AGENT CLIENT CONTROLLER] DEBUGGING: after processing m_maxTiltAngle_for_strictSafety_radians = " << m_maxTiltAngle_for_strictSafety_radians);
 }
 
 
@@ -1312,6 +1358,13 @@ int main(int argc, char* argv[])
     m_timer_mocap_timeout_check.stop();
     
 
+    // INITIALISE THE TAKE-OFF AND LANDING COMPLETE TIMERS
+    // > And stop it immediately
+    m_timer_takeoff_complete = nodeHandle.createTimer(ros::Duration(1.0), timerCallback_takeoff_complete, true);
+    m_timer_takeoff_complete.stop();
+    m_timer_land_complete = nodeHandle.createTimer(ros::Duration(1.0), timerCallback_takeoff_complete, true);
+    m_timer_land_complete.stop();
+
 
 
 
@@ -1353,7 +1406,7 @@ int main(int argc, char* argv[])
     // PUBLISHER FOR COMMANDING THE CRAZYFLIE
     // i.e., motorCmd{1,2,3,4}, roll, pitch, yaw, and onboardControllerType
 	//ros::Publishers to advertise the control output
-	m_commaNdfOrsendiNgTocrazyflIepublisher = nodeHandle.advertise <ControlCommand>("ControlCommand", 1);
+	m_commandForSendingToCrazyfliePublisher = nodeHandle.advertise <ControlCommand>("ControlCommand", 1);
 
 	//this topic lets the FlyingAgentClient listen to the terminal commands
     //commandPublisher = nodeHandle.advertise<std_msgs::Int32>("Command", 1);
@@ -1381,7 +1434,7 @@ int main(int argc, char* argv[])
     // PUBLISHER FOR THE FLYING STATE
     // Possible states: {MOTORS-OFF,TAKE-OFF,FLYING,LAND}
     // This topic will publish flying state whenever it changes.
-    flyingStatePublisher = nodeHandle.advertise<std_msgs::Int32>("flyingState", 1);
+    m_flyingStatePublisher = nodeHandle.advertise<std_msgs::Int32>("flyingState", 1);
 
     
 
@@ -1397,7 +1450,7 @@ int main(int argc, char* argv[])
     // publish first flying state data
     std_msgs::Int32 flying_state_msg;
     flying_state_msg.data = m_flying_state;
-    flyingStatePublisher.publish(flying_state_msg);
+    m_flyingStatePublisher.publish(flying_state_msg);
 
     // SafeControllerServicePublisher:
     ros::NodeHandle namespaceNodeHandle = ros::NodeHandle();

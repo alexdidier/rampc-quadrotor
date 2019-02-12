@@ -138,6 +138,8 @@ int yaml_consecutive_occulsions_threshold = 10;
 // > Timer that when triggered determines that the
 //   "m_isAvailable_mocap_data" variable becomes true
 ros::Timer m_timer_mocap_timeout_check;
+// > Time out duration after which Mocap is considered unavailable
+float yaml_mocap_timeout_duration = 1.0;
 
 
 
@@ -148,7 +150,7 @@ ros::Timer m_timer_mocap_timeout_check;
 bool yaml_isEnabled_strictSafety = true;
 // > The maximum allowed tilt angle, in degrees and radians
 float yaml_maxTiltAngle_for_strictSafety_degrees = 70;
-float m_maxTiltAngle_for_strictSafety_redians = 70 * DEG2RAD;
+float m_maxTiltAngle_for_strictSafety_radians = 70 * DEG2RAD;
 
 
 
@@ -158,7 +160,7 @@ int m_flying_state;
 // > Booleans for whether the {take-off,landing} should
 //   be performed with the default controller
 bool yaml_shouldPerfom_takeOff_with_defaultController = true;
-bool yaml_shouldPerfom_takeOff_with_defaultController = true;
+bool yaml_shouldPerfom_landing_with_defaultController = true;
 // > Service Clients for requesting the Default controller
 //   to perform a {take-off,landing} maneouvre
 ros::ServiceClient m_defaultController_requestManoeuvre;
@@ -180,7 +182,7 @@ ros::ServiceClient* m_instant_controller_service_client;
 bool m_controllers_avialble = false;
 // > Timer for creating the controller service client after
 //   some delay
-ros::Timer timer_for_loadAllControllers;
+ros::Timer m_timer_for_createAllControllerServiceClients;
 // > Integer indicating the controller that has been
 //   requested. This controller is used during the "flying"
 //   state, and the "Default" controller is used during the
@@ -220,10 +222,10 @@ ros::ServiceClient centralManager;
 // to the Crazyflie (the CrazyRadio node listen to this
 // publisher and actually send the commands)
 // {onboardControllerType,roll,pitch,yaw,motorCmd1,motorCmd2,motorCmd3,motorCmd4}
-ros::Publisher commandForSendingToCrazyfliePublisher;
+ros::Publisher m_commandForSendingToCrazyfliePublisher;
 
 // Publisher for the current flying state of this Flying Agent Client
-ros::Publisher flyingStatePublisher;
+ros::Publisher m_flyingStatePublisher;
 
 // Publisher for the commands of:
 // {take-off,land,motors-off, and which controller to use}
@@ -288,10 +290,9 @@ void requestChangeFlyingStateToTakeOff();
 // > For changing to land
 void requestChangeFlyingStateToLand();
 // > Callback that the take off phase is complete
-void takeOffTimerCallback(const ros::TimerEvent&)
+void takeOffTimerCallback(const ros::TimerEvent&);
 // > Callback that the landing phase is complete
-void landTimerCallback(const ros::TimerEvent&)
-
+void landTimerCallback(const ros::TimerEvent&);
 
 
 
@@ -347,6 +348,9 @@ void loadCrazyflieContext();
 // > For creating a service client from the name
 //   of the YAML parameter
 void createControllerServiceClientFromParameterName( std::string paramter_name , ros::ServiceClient& serviceClient );
+// > For creating an IntInt service client from the
+//   name of a YAML paramter
+void createIntIntServiceClientFromParameterName( std::string paramter_name , ros::ServiceClient& serviceClient );
 // > Callback for the timer so that all services servers
 //   exists before we try to create the clients
 void timerCallback_for_createAllcontrollerServiceClients(const ros::TimerEvent&);

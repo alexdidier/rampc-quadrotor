@@ -214,7 +214,11 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	if (m_current_state == DEFAULT_CONTROLLER_STATE_TAKE_OFF_SPIN_MOTORS)
 	{
 		// Compute the "spinning" thrust
-		float thrust_for_spinning = 1000.0 + min(0.4,m_time_in_seconds) * 10000.0;
+		float thrust_for_spinning = 1000.0;
+		if (m_time_in_seconds < 0.8)
+			thrust_for_spinning += m_time_in_seconds * 10000.0;
+		else
+			thrust_for_spinning += 8000.0;
 
 		response.controlOutput.roll  = 0.0;
 		response.controlOutput.pitch = 0.0;
@@ -552,7 +556,7 @@ bool getCurrentSetpointCallback(GetSetpointService::Request &request, GetSetpoin
 	response.setpointWithHeader.z   = m_setpoint[2];
 	response.setpointWithHeader.yaw = m_setpoint[3];
 	// Put the current state into the "buttonID" field
-	response.buttonID = m_current_state;
+	response.setpointWithHeader.buttonID = m_current_state;
 	// Return
 	return true;
 }
@@ -569,7 +573,7 @@ void publishCurrentSetpointAndState()
 	msg.z   = m_setpoint[2];
 	msg.yaw = m_setpoint[3];
 	// Put the current state into the "buttonID" field
-	response.buttonID = m_current_state;
+	msg.buttonID = m_current_state;
 	// Publish the message
 	m_setpointChangedPublisher.publish(msg);
 }
@@ -989,14 +993,6 @@ int main(int argc, char* argv[])
 	ros::ServiceServer requestManoeuvreService = nodeHandle.advertiseService("RequestManoeuvre", requestManoeuvreCallback);
 
 
-
-	// Instantiate the class variable "m_stateChangedPublisher" to
-	// be a "ros::Publisher". This variable advertises under the name
-	// "SetpointChanged" and is a message with the structure defined
-	// in the file "IntWithHeader.msg" (located in the "msg" folder).
-	// This publisher is used by the "flying agent GUI" to update the
-	// field that displays the current state for this controller.
-	m_stateChangedPublisher = nodeHandle.advertise<IntWithHeader>("StateChanged", 1);
 
 
 

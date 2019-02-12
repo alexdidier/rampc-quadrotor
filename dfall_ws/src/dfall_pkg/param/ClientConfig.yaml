@@ -19,6 +19,9 @@ maxTiltAngle_for_strictSafety_degrees: 70
 # object as "long-term" occuled
 consecutive_occulsions_threshold: 10
 
+# Time out duration after which Mocap is considered unavailable
+mocap_timeout_duration: 2.0
+
 # Flag for whether the take-off should be performed
 # with the default controller
 shouldPerfom_takeOff_with_defaultController: true
