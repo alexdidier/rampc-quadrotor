@@ -254,13 +254,13 @@ float m_stateInterialEstimate_viaPointMassKalmanFilter[12];
 
 // THE POINT MASS KALMAN FILTER (PMKF) GAINS AND ERROR EVOLUATION
 // > For the (x,y,z) position
-std::vector<float> yaml_PMKF_Ahat_row1_for_positions (2,0.0);
-std::vector<float> yaml_PMKF_Ahat_row2_for_positions (2,0.0);
-std::vector<float> yaml_PMKF_Kinf_for_positions      (2,0.0);
+std::vector<float> yaml_PMKF_Ahat_row1_for_positions  =  {  0.6723, 0.0034};
+std::vector<float> yaml_PMKF_Ahat_row2_for_positions  =  {-12.9648, 0.9352};
+std::vector<float> yaml_PMKF_Kinf_for_positions       =  {  0.3277,12.9648};
 // > For the (roll,pitch,yaw) angles
-std::vector<float> yaml_PMKF_Ahat_row1_for_angles    (2,0.0);
-std::vector<float> yaml_PMKF_Ahat_row2_for_angles    (2,0.0);
-std::vector<float> yaml_PMKF_Kinf_for_angles         (2,0.0);
+std::vector<float> yaml_PMKF_Ahat_row1_for_angles     =  {  0.6954, 0.0035};
+std::vector<float> yaml_PMKF_Ahat_row2_for_angles     =  {-11.0342, 0.9448};
+std::vector<float> yaml_PMKF_Kinf_for_angles          =  {  0.3046,11.0342};
 
 
 
@@ -285,7 +285,7 @@ ros::Publisher m_debugPublisher;
 // VARIABLES RELATING TO COMMUNICATING THE SETPOINT
 
 // ROS Publisher for inform the network about
-// changes to the setpoin
+// changes to the setpoint
 ros::Publisher m_setpointChangedPublisher;
 
 
