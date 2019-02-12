@@ -66,6 +66,7 @@
 
 // Include the shared definitions
 #include "nodes/Constants.h"
+#include "nodes/DefaultControllerConstants.h"
 
 // Include other classes
 #include "classes/GetParamtersAndNamespaces.h"
@@ -121,74 +122,96 @@ std::string m_namespace_to_own_agent_parameter_service;
 std::string m_namespace_to_coordinator_parameter_service;
 
 
-// variables for the states:
-int m_flying_state;
-bool m_changed_flying_state_flag;
 
-// variable for crazyradio status
-int crazyradio_status;
-
-//describes the area of the crazyflie and other parameters
-CrazyflieContext m_context;
-
-// The index for which element in the "motion captate data"
-// array is expected to match the name in "m_context"
-// > Negative numbers indicate unknown
+// VARIABLES FOR THE MOTION CAPTURE DATA
+// > The index for which element in the "motion capture
+//   data" array is expected to match the name in
+//   "m_context", (negative numbers indicate unknown)
 int m_poseDataIndex = -1;
-
-// wheter to use safe of demo controller
-// variable for the instant controller, e.g., we use
-// safe controller for taking off and landing even
-// if demo controller is enabled. This variable WILL change automatically
-int m_instant_controller;
-ros::ServiceClient* m_instant_controller_service_client;
-bool m_controllers_avialble = false;
-ros::Timer timer_for_loadAllControllers;
-
-// controller used:
-int m_controller_nominally_selected;
+// > Boolen indicating if the Mocap data is availble
+bool m_isAvailable_mocap_data = false;
+// > Boolen indicating if the object is "long term" occuled
+bool m_isOcculded_mocap_data = false;
+// > Number of consecutive occulsions that trigger the
+//   "m_isOcculded_mocap_data" variable to be "true"
+int yaml_consecutive_occulsions_threshold = 10;
+// > Timer that when triggered determines that the
+//   "m_isAvailable_mocap_data" variable becomes true
+ros::Timer m_timer_mocap_timeout_check;
 
 
-// The safe controller specified in the ClientConfig.yaml
-ros::ServiceClient safeController;
-// The default controller specified in the ClientConfig.yaml
-ros::ServiceClient defaultController;
-// The Demo controller specified in the ClientConfig.yaml
-ros::ServiceClient demoController;
-// The Student controller specified in the ClientConfig.yaml
-ros::ServiceClient studentController;
-// The MPC controller specified in the ClientConfig.yaml
-ros::ServiceClient mpcController;
-// The Remote controller specified in the ClientConfig.yaml
-ros::ServiceClient remoteController;
-// The Tuning controller specified in the ClientConfig.yaml
-ros::ServiceClient tuningController;
-// The Picker controller specified in the ClientConfig.yaml
-ros::ServiceClient pickerController;
-// The Template controller specified in the ClientConfig.yaml
-ros::ServiceClient templateController;
 
-
-// The values for the safety check on tilt angle
+// VARIABLES FOR STORING THE PARAMTER OF THE POSITION
+// AND TILT ANGLE SAFTY CHECKS
+// > Boolean indicating whether the tilt angle check
+//   should be performed
 bool yaml_isEnabled_strictSafety = true;
-float yaml_angleMargin;
+// > The maximum allowed tilt angle, in degrees and radians
 float yaml_maxTiltAngle_for_strictSafety_degrees = 70;
 float m_maxTiltAngle_for_strictSafety_redians = 70 * DEG2RAD;
 
 
 
+// VARIABLES FOR MANAGING THE FLYING STATE
+// > Integer that is the current flying state
+int m_flying_state;
+// > Booleans for whether the {take-off,landing} should
+//   be performed with the default controller
+bool yaml_shouldPerfom_takeOff_with_defaultController = true;
+bool yaml_shouldPerfom_takeOff_with_defaultController = true;
+// > Service Clients for requesting the Default controller
+//   to perform a {take-off,landing} maneouvre
+ros::ServiceClient m_defaultController_requestManoeuvre;
+// > Timer that fire when the {take-off,landing} is complete
+ros::Timer m_timer_takeoff_complete;
+ros::Timer m_timer_land_complete;
 
-//Setpoint controller_setpoint;
 
-//std::vector<float> yaml_default_setpoint = {0.0f, 0.0f, 0.0f, 0.0f};
 
-// variables for linear trayectory
-//Setpoint current_safe_setpoint;
-//double distance;
-//double unit_vector[3];
-//bool was_in_threshold = false;
-//double yaml_distance_threshold;      //to be loaded from yaml
+// VARIABLES RELATING TO CONTROLLER SELECTION
+// > Integer indicating the controller that is to be
+//   used in when motion capture data is received
+int m_instant_controller;
+// > Pointer to the controller service client that
+//   agrees with the "m_instant_controller" variable
+ros::ServiceClient* m_instant_controller_service_client;
+// > Boolean indicating that the controller service clients
+//   have been successfully created
+bool m_controllers_avialble = false;
+// > Timer for creating the controller service client after
+//   some delay
+ros::Timer timer_for_loadAllControllers;
+// > Integer indicating the controller that has been
+//   requested. This controller is used during the "flying"
+//   state, and the "Default" controller is used during the
+//   "take-off" and "landing" states.
+int m_controller_nominally_selected;
 
+
+
+// VARIABLES FOR THE CONTROLER SERVIVCE CLIENTS
+// The default controller specified in the ClientConfig.yaml
+ros::ServiceClient m_defaultController;
+// The Student controller specified in the ClientConfig.yaml
+ros::ServiceClient m_studentController;
+// The Tuning controller specified in the ClientConfig.yaml
+ros::ServiceClient m_tuningController;
+// The Picker controller specified in the ClientConfig.yaml
+ros::ServiceClient m_pickerController;
+// The Template controller specified in the ClientConfig.yaml
+ros::ServiceClient m_templateController;
+
+
+
+
+
+
+
+// variable for crazyradio status
+int m_crazyradio_status;
+
+//describes the area of the crazyflie and other parameters
+CrazyflieContext m_context;
 
 // Service Client from which the "CrazyflieContext" is loaded
 ros::ServiceClient centralManager;
@@ -198,9 +221,6 @@ ros::ServiceClient centralManager;
 // publisher and actually send the commands)
 // {onboardControllerType,roll,pitch,yaw,motorCmd1,motorCmd2,motorCmd3,motorCmd4}
 ros::Publisher commandForSendingToCrazyfliePublisher;
-
-// communicate with safeControllerService, setpoint, etc...
-//ros::Publisher safeControllerServiceSetpointPublisher;
 
 // Publisher for the current flying state of this Flying Agent Client
 ros::Publisher flyingStatePublisher;
@@ -212,25 +232,9 @@ ros::Publisher flyingStatePublisher;
 // Publisher Communication with crazyRadio node. Connect and disconnect
 ros::Publisher crazyRadioCommandPublisher;
 
-
 // Publisher for which controller is currently being used
 ros::Publisher controllerUsedPublisher;
 
-
-
-// float yaml_take_off_distance;
-// float yaml_landing_distance;
-// float yaml_duration_take_off;
-// float yaml_duration_landing;
-
-// bool finished_take_off = false;
-// bool finished_land = false;
-
-ros::Timer timer_takeoff;
-ros::Timer timer_land;
-
-// A ROS "bag" to store data for post-analysis
-//rosbag::Bag bag;
 
 
 
@@ -251,74 +255,103 @@ ros::Timer timer_land;
 
 
 
-
-
-
-
-
-
+// FUNCTIONS FOR HANDLING THE MOTION CAPTURE DATA
+// > Callback run every time new motion capture
+//   data is available
 void viconCallback(const ViconData& viconData);
+// > For extracting the pose data of an specific
+//   object by name
 int getPoseDataForObjectNameWithExpectedIndex(const ViconData& viconData, std::string name , int expected_index , CrazyflieData& pose);
+// > For converting the global frame motion capture
+//   data to the local frame of this agent
 void coordinatesToLocal(CrazyflieData& cf);
+// > Callback run when motion capture data has not
+//   been receive for a specified time
+void timerCallback_mocap_timeout_check(const ros::TimerEvent&);
+// > For sending a command, via the CrazyRadio, that
+//   the motors should be set to zero
+void sendZeroOutputCommandForMotors();
 
 
 
-// > For the SAFETY CHECK on area and the angle
-bool safetyCheck(CrazyflieData data, ControlCommand controlCommand);
-
-
-void changeFlyingStateTo(int new_state);
-
-
-void crazyflieContextDatabaseChangedCallback(const std_msgs::Int32& msg);
+// FOR THE SAFETY CHECKS ON POSITION AND TILT ANGLE
+bool safetyCheck_on_positionAndTilt(CrazyflieData data);
 
 
 
+// FUNCTIONS THAT MANAGE THE CHANGES TO THE FLYING STATE
+// > For changing between possible state of:
+//   {take-off,flying,take-off,motors-off}
+void requestChangeFlyingStateTo(int new_state);
+// > For changing to take-off
+void requestChangeFlyingStateToTakeOff();
+// > For changing to land
+void requestChangeFlyingStateToLand();
+// > Callback that the take off phase is complete
+void takeOffTimerCallback(const ros::TimerEvent&)
+// > Callback that the landing phase is complete
+void landTimerCallback(const ros::TimerEvent&)
 
-void flyingStateRequestCallback(const IntWithHeader & commandMsg);
 
 
 
-
-// void loadSafeController();
-// void loadDemoController();
-// void loadStudentController();
-// void loadMpcController();
-// void loadRemoteController();
-// void loadTuningController();
-// void loadPickerController();
-// void loadTemplateController();
-
-void loadController( std::string paramter_name , ros::ServiceClient& serviceClient );
-
-void sendMessageUsingController(int controller);
+// FUNCTIONS FOR SELECTING WHICH CONTROLLER TO USE
+// > For setting the controller that is actually used
 void setInstantController(int controller);
+// > For retrieving the value of the class variable
 int getInstantController();
+// > For setting the controller that it to be used
+//   during the normal "flying" state
 void setControllerNominallySelected(int controller);
+// > For retrieving the value of the class variable
 int getControllerNominallySelected();
+
+
+
+// THE CALLBACK THAT A NEW FLYING STATE WAS REQUESTED
+// > These requests come from the "Flying Agent GUI"
+// > The options are: {take-off,land,motor-off,controller}
+void flyingStateOrControllerRequestCallback(const IntWithHeader & commandMsg);
 
 
 
 // THE CALLBACK THAT THE CRAZY RADIO STATUS CHANGED
 void crazyRadioStatusCallback(const std_msgs::Int32& msg);
 
+
+
 // THE CALLBACK THAT AN EMERGENCY STOP MESSAGE WAS RECEIVED
 void emergencyStopReceivedCallback(const IntWithHeader & msg);
+
+
 
 // THE SERVICE CALLBACK REQUESTING THE CURRENT FLYING STATE
 bool getCurrentFlyingStateServiceCallback(IntIntService::Request &request, IntIntService::Response &response);
 
+
+
 // FOR THE BATTERY STATE CALLBACK
 void batteryMonitorStateChangedCallback(std_msgs::Int32 msg);
 
-// FOR THE SAFETY CHECKS ON POSITION AND TILT ANGLE
-bool safetyCheck(CrazyflieData data);
 
-// THE CALLBACK THAT THE CONTEXT DATABASE CHANGED
+
+// FUNCTIONS FOR THE CONTEXT OF THIS AGENT
+// > Callback that the context database changed
 void crazyflieContextDatabaseChangedCallback(const std_msgs::Int32& msg);
-
-// FOR LOADING THE CONTEXT OF THIS AGENT
+// > For loading the context of this agent
 void loadCrazyflieContext();
+
+
+
+// FUNCTIONS FOR CREATING THE CONTROLLER SERVICE CLIENT
+// > For creating a service client from the name
+//   of the YAML parameter
+void createControllerServiceClientFromParameterName( std::string paramter_name , ros::ServiceClient& serviceClient );
+// > Callback for the timer so that all services servers
+//   exists before we try to create the clients
+void timerCallback_for_createAllcontrollerServiceClients(const ros::TimerEvent&);
+
+
 
 // FOR LOADING THE YAML PARAMETERS
 void isReadyClientConfigYamlCallback(const IntWithHeader & msg);

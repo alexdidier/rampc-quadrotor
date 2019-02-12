@@ -47,6 +47,9 @@ DefaultControllerTab::DefaultControllerTab(QWidget *parent) :
     ui->red_frame_position_left->setVisible(false);
     ui->red_frame_position_right->setVisible(false);
 
+    // Make the current state label blank
+    ui->label_current_state->setText("");
+
 
 
 #ifdef CATKIN_MAKE
@@ -249,6 +252,52 @@ void DefaultControllerTab::setpointChangedCallback(const dfall_pkg::SetpointWith
 
     if (yaw < 0.0f) qstr = ""; else qstr = "+";
     ui->lineEdit_setpoint_current_yaw->setText(qstr + QString::number( yaw * RAD2DEG, 'f', 3));
+
+    // UPDATE THE CURRENT STATE LABEL
+    int current_state = newSetpoint.buttonID;
+    switch (current_state)
+    {
+    case DEFAULT_CONTROLLER_STATE_STANDBY:
+    {
+        ui->label_current_state->setText("standby");
+        break;
+    }
+    case DEFAULT_CONTROLLER_STATE_TAKE_OFF_SPIN_MOTORS:
+    {
+        ui->label_current_state->setText("Take-off, spinning motors");
+        break;
+    }
+    case DEFAULT_CONTROLLER_STATE_TAKE_OFF_MOVE_UP:
+    {
+        ui->label_current_state->setText("Take-off, moving up");
+        break;
+    }
+    case DEFAULT_CONTROLLER_STATE_TAKE_OFF_GOTO_SETPOINT:
+    {
+        ui->label_current_state->setText("Take-off, goto setpoint");
+        break;
+    }
+    case DEFAULT_CONTROLLER_STATE_LANDING_MOVE_DOWN:
+    {
+        ui->label_current_state->setText("Landing, move down");
+        break;
+    }
+    case DEFAULT_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
+    {
+        ui->label_current_state->setText("Landing, spinning motors");
+        break;
+    }
+    case DEFAULT_CONTROLLER_STATE_UNKNOWN:
+    {
+        ui->label_current_state->setText("Unknown");
+        break;
+    }
+    default:
+    {
+        ui->label_current_state->setText("Not recognised");
+        break;
+    }
+    }
 }
 #endif
 

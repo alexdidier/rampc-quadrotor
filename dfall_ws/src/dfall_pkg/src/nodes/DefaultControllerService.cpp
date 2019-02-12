@@ -60,123 +60,106 @@
 
 
 //    ------------------------------------------------------------------------------
+//    RRRR   EEEEE   QQQ   U   U  EEEEE   SSSS  TTTTT
+//    R   R  E      Q   Q  U   U  E      S        T
+//    RRRR   EEE    Q   Q  U   U  EEE     SSS     T
+//    R   R  E      Q  Q   U   U  E          S    T
+//    R   R  EEEEE   QQ Q   UUU   EEEEE  SSSS     T
+//    
+//    M   M    A    N   N   OOO   EEEEE  U   U  V   V  RRRR   EEEEE
+//    MM MM   A A   NN  N  O   O  E      U   U  V   V  R   R  E
+//    M M M  A   A  N N N  O   O  EEE    U   U  V   V  RRRR   EEE
+//    M   M  AAAAA  N  NN  O   O  E      U   U   V V   R   R  E
+//    M   M  A   A  N   N   OOO   EEEEE   UUU     V    R   R  EEEEE
+//    ------------------------------------------------------------------------------
+
+// CALLBACK FOR THE REQUEST MANOEUVRE SERVICE
+bool requestManoeuvreCallback(IntIntService::Request &request, IntIntService::Response &response)
+{
+	// Extract the requested manoeuvre
+	int requestedManoeuvre = request.data;
+
+	// Switch between the possible manoeuvres
+	switch (requestedManoeuvre)
+	{
+		case DEFAULT_CONTROLLER_REQUEST_TAKE_OFF:
+		{
+			// Inform the user
+			ROS_INFO("[DEFAULT CONTROLLER] Received request to perform take-off manoeuvre.");
+			// Reset the time variable
+			m_time_in_seconds = 0.0;
+			// Update the state accordingly
+			m_current_state = DEFAULT_CONTROLLER_STATE_TAKE_OFF_SPIN_MOTORS;
+			// Fill in the response duration in milliseconds
+			response.data = 3000;
+			break;
+		}
+
+		case DEFAULT_CONTROLLER_REQUEST_LANDING:
+		{
+			// Inform the user
+			ROS_INFO("[DEFAULT CONTROLLER] Received request to perform landing manoeuvre.");
+			// Reset the time variable
+			m_time_in_seconds = 0.0;
+			// Update the state accordingly
+			m_current_state = DEFAULT_CONTROLLER_STATE_LANDING_MOVE_DOWN;
+			// Fill in the response duration in milliseconds
+			response.data = 2000;
+			break;
+		}
+
+		default:
+		{
+			// Inform the user
+			ROS_INFO("[DEFAULT CONTROLLER] The requested manoeuvre is not recognised. Hence switching to stand-by state.");
+			// Update the state to standby
+			m_current_state = DEFAULT_CONTROLLER_STATE_STANDBY;
+			// Fill in the response duration in milliseconds
+			response.data = 0;
+			break;
+		}
+	}
+
+	// Publish the change
+	publishCurrentSetpointAndState();
+
+	// Return success
+	return true;
+}
+
+
+//    ------------------------------------------------------------------------------
 //     OOO   U   U  TTTTT  EEEEE  RRRR 
 //    O   O  U   U    T    E      R   R
 //    O   O  U   U    T    EEE    RRRR
 //    O   O  U   U    T    E      R  R
 //     OOO    UUU     T    EEEEE  R   R
 //
-//     CCCC   OOO   N   N  TTTTT  RRRR    OOO   L           L       OOO    OOO   PPPP
-//    C      O   O  NN  N    T    R   R  O   O  L           L      O   O  O   O  P   P
-//    C      O   O  N N N    T    RRRR   O   O  L           L      O   O  O   O  PPPP
-//    C      O   O  N  NN    T    R  R   O   O  L           L      O   O  O   O  P
-//     CCCC   OOO   N   N    T    R   R   OOO   LLLLL       LLLLL   OOO    OOO   P
+//     CCCC   OOO   N   N  TTTTT  RRRR    OOO   L
+//    C      O   O  NN  N    T    R   R  O   O  L
+//    C      O   O  N N N    T    RRRR   O   O  L
+//    C      O   O  N  NN    T    R  R   O   O  L
+//     CCCC   OOO   N   N    T    R   R   OOO   LLLLL
+//
+//    L       OOO    OOO   PPPP
+//    L      O   O  O   O  P   P
+//    L      O   O  O   O  PPPP
+//    L      O   O  O   O  P
+//    LLLLL   OOO    OOO   P
 //    ----------------------------------------------------------------------------------
 
-// This function is the callback that is linked to the "DefaultController" service that
-// is advertised in the main function. This must have arguments that match the
-// "input-output" behaviour defined in the "Controller.srv" file (located in the "srv"
-// folder)
-//
-// The arument "request" is a structure provided to this service with the following two
-// properties:
-// request.ownCrazyflie
-// This property is itself a structure of type "CrazyflieData",  which is defined in the
-// file "CrazyflieData.msg", and has the following properties
-// string crazyflieName
-//     float64 x                         The x position of the Crazyflie [metres]
-//     float64 y                         The y position of the Crazyflie [metres]
-//     float64 z                         The z position of the Crazyflie [metres]
-//     float64 roll                      The roll component of the intrinsic Euler angles [radians]
-//     float64 pitch                     The pitch component of the intrinsic Euler angles [radians]
-//     float64 yaw                       The yaw component of the intrinsic Euler angles [radians]
-//     float64 acquiringTime #delta t    The time elapsed since the previous "CrazyflieData" was received [seconds]
-//     bool occluded                     A boolean indicted whether the Crazyflie for visible at the time of this measurement
-// The values in these properties are directly the measurement taken by the Vicon
-// motion capture system of the Crazyflie that is to be controlled by this service
-//
-// request.otherCrazyflies
-// This property is an array of "CrazyflieData" structures, what allows access to the
-// Vicon measurements of other Crazyflies.
-//
-// The argument "response" is a structure that is expected to be filled in by this
-// service by this function, it has only the following property
-// response.ControlCommand
-// This property is iteself a structure of type "ControlCommand", which is defined in
-// the file "ControlCommand.msg", and has the following properties:
-//     float32 roll                      The command sent to the Crazyflie for the body frame x-axis
-//     float32 pitch                     The command sent to the Crazyflie for the body frame y-axis
-//     float32 yaw                       The command sent to the Crazyflie for the body frame z-axis
-//     uint16 motorCmd1                  The command sent to the Crazyflie for motor 1
-//     uint16 motorCmd2                  The command sent to the Crazyflie for motor 1
-//     uint16 motorCmd3                  The command sent to the Crazyflie for motor 1
-//     uint16 motorCmd4                  The command sent to the Crazyflie for motor 1
-//     uint8 onboardControllerType       The flag sent to the Crazyflie for indicating how to implement the command
-// 
-// IMPORTANT NOTES FOR "onboardControllerType"  AND AXIS CONVENTIONS
-// > The allowed values for "onboardControllerType" are in the "Defines"
-//   section in the header file, they are:
-//   - CF_COMMAND_TYPE_MOTORS
-//   - CF_COMMAND_TYPE_RATE
-//   - CF_COMMAND_TYPE_ANGLE
-//
-// > For completeing the class exercises it is only required to use
-//   the CF_COMMAND_TYPE_RATE option.
-//
-// > For the CF_COMMAND_TYPE_RATE optoin:
-//   1) the ".roll", ".ptich", and ".yaw" properties of
-//      "response.ControlCommand" specify the angular rate in
-//      [radians/second] that will be requested from the PID controllers
-//      running in the Crazyflie 2.0 firmware.
-//   2) the ".motorCmd1" to ".motorCmd4" properties of
-//      "response.ControlCommand" are the baseline motor commands
-//      requested from the Crazyflie, with the adjustment for body rates
-//      being added on top of this in the firmware (i.e., as per the
-//      code of the "distribute_power" found in the firmware).
-//   3) the axis convention for the roll, pitch, and yaw body rates
-//      returned in "response.ControlCommand" should use right-hand
-//      coordinate axes with x-forward and z-upwards (i.e., the positive
-//      z-axis is aligned with the direction of positive thrust). To
-//      assist, the following is an ASCII art of this convention.
-//
-// ASCII ART OF THE CRAZYFLIE 2.0 LAYOUT
-//
-//  > This is a top view,
-//  > M1 to M4 stand for Motor 1 to Motor 4,
-//  > "CW"  indicates that the motor rotates Clockwise,
-//  > "CCW" indicates that the motor rotates Counter-Clockwise,
-//  > By right-hand axis convention, the positive z-direction points our of the screen,
-//  > This being a "top view" means tha the direction of positive thrust produced
-//    by the propellers is also out of the screen.
-//
-//        ____                         ____
-//       /    \                       /    \
-//  (CW) | M4 |           x           | M1 | (CCW)
-//       \____/\          ^          /\____/
-//            \ \         |         / /
-//             \ \        |        / /
-//              \ \______ | ______/ /
-//               \        |        /
-//                |       |       |
-//        y <-------------o       |
-//                |               |
-//               / _______________ \
-//              / /               \ \
-//             / /                 \ \
-//        ____/ /                   \ \____
-//       /    \/                     \/    \
-// (CCW) | M3 |                       | M2 | (CW)
-//       \____/                       \____/
-//
-//
-//
-// This function WILL NEED TO BE edited for successful completion of the classroom exercise
+
+
+// THE MAIN CONTROL FUNCTION CALLED FROM THE FLYING AGENT CLIENT
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response)
 {
 
 	// This is the "start" of the outer loop controller, add all your control
 	// computation here, or you may find it convienient to create functions
 	// to keep you code cleaner
+
+	// Increment time
+	m_time_in_seconds += m_control_deltaT;
 
 
 	// Define a local array to fill in with the state error
@@ -228,86 +211,104 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 
 
 
-	
-	// YAW CONTROLLER
-
-	// Perform the "-Kx" LQR computation for the yaw rate
-	// to respond with
-	float yawRate_forResponse = 0;
-	for(int i = 0; i < 9; ++i)
+	if (m_current_state == DEFAULT_CONTROLLER_STATE_TAKE_OFF_SPIN_MOTORS)
 	{
-		yawRate_forResponse -= m_gainMatrixYawRate[i] * stateErrorBody[i];
+		// Compute the "spinning" thrust
+		float thrust_for_spinning = 1000.0 + min(0.4,m_time_in_seconds) * 10000.0;
+
+		response.controlOutput.roll  = 0.0;
+		response.controlOutput.pitch = 0.0;
+		response.controlOutput.yaw   = 0.0;
+		response.controlOutput.motorCmd1 = thrust_for_spinning;
+		response.controlOutput.motorCmd2 = thrust_for_spinning;
+		response.controlOutput.motorCmd3 = thrust_for_spinning;
+		response.controlOutput.motorCmd4 = thrust_for_spinning;
+		response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTORS;
 	}
-	// Put the computed yaw rate into the "response" variable
-	response.controlOutput.yaw = yawRate_forResponse;
-
-
-
-
-	// ALITUDE CONTROLLER (i.e., z-controller)
-	
-	// Perform the "-Kx" LQR computation for the thrust adjustment
-	// to use for computing the response with
-	float thrustAdjustment = 0;
-	for(int i = 0; i < 9; ++i)
+	else
 	{
-		thrustAdjustment -= m_gainMatrixThrust[i] * stateErrorBody[i];
+
+
+		
+		// YAW CONTROLLER
+
+		// Perform the "-Kx" LQR computation for the yaw rate
+		// to respond with
+		float yawRate_forResponse = 0;
+		for(int i = 0; i < 9; ++i)
+		{
+			yawRate_forResponse -= m_gainMatrixYawRate[i] * stateErrorBody[i];
+		}
+		// Put the computed yaw rate into the "response" variable
+		response.controlOutput.yaw = yawRate_forResponse;
+
+
+
+
+		// ALITUDE CONTROLLER (i.e., z-controller)
+		
+		// Perform the "-Kx" LQR computation for the thrust adjustment
+		// to use for computing the response with
+		float thrustAdjustment = 0;
+		for(int i = 0; i < 9; ++i)
+		{
+			thrustAdjustment -= m_gainMatrixThrust[i] * stateErrorBody[i];
+		}
+
+		// Add the feed-forward thrust before putting in the response
+		float feed_forward_thrust_per_motor = m_cf_weight_in_newtons / 4.0;
+		float thrust_per_motor = thrustAdjustment + feed_forward_thrust_per_motor;
+
+		// > NOTE: the function "computeMotorPolyBackward" converts the
+		//         input argument from Newtons to the 16-bit command
+		//         expected by the Crazyflie.
+		response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrust_per_motor);
+		response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrust_per_motor);
+		response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrust_per_motor);
+		response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrust_per_motor);
+
+		
+		// BODY FRAME X CONTROLLER
+
+		// Perform the "-Kx" LQR computation for the pitch rate
+		// to respoond with
+		float pitchRate_forResponse = 0;
+		for(int i = 0; i < 9; ++i)
+		{
+			pitchRate_forResponse -= m_gainMatrixPitchRate[i] * stateErrorBody[i];
+		}
+		// Put the computed pitch rate into the "response" variable
+		response.controlOutput.pitch = pitchRate_forResponse;
+
+
+
+
+		// BODY FRAME Y CONTROLLER
+
+		// Instantiate the local variable for the roll rate that will be requested
+		// from the Crazyflie's on-baord "inner-loop" controller
+		
+
+		// Perform the "-Kx" LQR computation for the roll rate
+		// to respoond with
+		float rollRate_forResponse = 0;
+		for(int i = 0; i < 9; ++i)
+		{
+			rollRate_forResponse -= m_gainMatrixRollRate[i] * stateErrorBody[i];
+		}
+		// Put the computed roll rate into the "response" variable
+		response.controlOutput.roll = rollRate_forResponse;
+
+		
+		
+		// PREPARE AND RETURN THE VARIABLE "response"
+
+		/*choosing the Crazyflie onBoard controller type.
+		it can either be Motor, Rate or Angle based */
+		// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTORS;
+		response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
+		// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_ANGLE;
 	}
-
-	// Add the feed-forward thrust before putting in the response
-	float feed_forward_thrust_per_motor = m_cf_weight_in_newtons / 4.0;
-	float thrust_per_motor = thrustAdjustment + feed_forward_thrust_per_motor;
-
-	// > NOTE: the function "computeMotorPolyBackward" converts the
-	//         input argument from Newtons to the 16-bit command
-	//         expected by the Crazyflie.
-	response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrust_per_motor);
-	response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrust_per_motor);
-	response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrust_per_motor);
-	response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrust_per_motor);
-
-	
-	// BODY FRAME X CONTROLLER
-
-	// Perform the "-Kx" LQR computation for the pitch rate
-	// to respoond with
-	float pitchRate_forResponse = 0;
-	for(int i = 0; i < 9; ++i)
-	{
-		pitchRate_forResponse -= m_gainMatrixPitchRate[i] * stateErrorBody[i];
-	}
-	// Put the computed pitch rate into the "response" variable
-	response.controlOutput.pitch = pitchRate_forResponse;
-
-
-
-
-	// BODY FRAME Y CONTROLLER
-
-	// Instantiate the local variable for the roll rate that will be requested
-	// from the Crazyflie's on-baord "inner-loop" controller
-	
-
-	// Perform the "-Kx" LQR computation for the roll rate
-	// to respoond with
-	float rollRate_forResponse = 0;
-	for(int i = 0; i < 9; ++i)
-	{
-		rollRate_forResponse -= m_gainMatrixRollRate[i] * stateErrorBody[i];
-	}
-	// Put the computed roll rate into the "response" variable
-	response.controlOutput.roll = rollRate_forResponse;
-
-	
-	
-	// PREPARE AND RETURN THE VARIABLE "response"
-
-	/*choosing the Crazyflie onBoard controller type.
-	it can either be Motor, Rate or Angle based */
-	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTORS;
-	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
-	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_ANGLE;
-
 
 
 
@@ -401,30 +402,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 //    BBBB    OOO   DDDD     Y         F      R   R  A   A  M   M  EEEEE
 //    ----------------------------------------------------------------------------------
 
-// The arguments for this function are as follows:
-// stateInertial
-// This is an array of length 9 with the estimates the error of of the following values
-// relative to the sepcifed setpoint:
-//     stateInertial[0]    x position of the Crazyflie relative to the inertial frame origin [meters]
-//     stateInertial[1]    y position of the Crazyflie relative to the inertial frame origin [meters]
-//     stateInertial[2]    z position of the Crazyflie relative to the inertial frame origin [meters]
-//     stateInertial[3]    x-axis component of the velocity of the Crazyflie in the inertial frame [meters/second]
-//     stateInertial[4]    y-axis component of the velocity of the Crazyflie in the inertial frame [meters/second]
-//     stateInertial[5]    z-axis component of the velocity of the Crazyflie in the inertial frame [meters/second]
-//     stateInertial[6]    The roll  component of the intrinsic Euler angles [radians]
-//     stateInertial[7]    The pitch component of the intrinsic Euler angles [radians]
-//     stateInertial[8]    The yaw   component of the intrinsic Euler angles [radians]
-// 
-// stateBody
-// This is an empty array of length 9, this function should fill in all elements of this
-// array with the same ordering as for the "stateInertial" argument, expect that the (x,y)
-// position and (x,y) velocities are rotated into the body frame.
-//
-// yaw_measured
-// This is the yaw component of the intrinsic Euler angles in [radians] as measured by
-// the Vicon motion capture system
-//
-// This function WILL NEED TO BE edited for successful completion of the classroom exercise
+// ROTATES THE (x,y) COMPONENTS BY THE PROVIDED "yaw" ANGLE
 void convertIntoBodyFrame(float stateInertial[9], float (&stateBody)[9], float yaw_measured)
 {
 
@@ -465,11 +443,10 @@ void convertIntoBodyFrame(float stateInertial[9], float (&stateBody)[9], float y
 //     CCCC   OOO   N   N    V    EEEEE  R   R  SSSS   III   OOO   N   N
 //    ----------------------------------------------------------------------------------
 
-// This function DOES NEED TO BE edited for successful completion of
-// the exercise
+// CONVERTS A THURST IN NEWTONS TO A 16-BIT NUMBER
 float computeMotorPolyBackward(float thrust)
 {
-	// Compute the 16-but command that would produce the requested
+	// Compute the 16-bit command that would produce the requested
 	// "thrust" based on the quadratic mapping that is described
 	// by the coefficients in the "yaml_motorPoly" variable.
 	float cmd_16bit = (-yaml_motorPoly[1] + sqrt(yaml_motorPoly[1] * yaml_motorPoly[1] - 4 * yaml_motorPoly[2] * (yaml_motorPoly[0] - thrust))) / (2 * yaml_motorPoly[2]);
@@ -574,8 +551,27 @@ bool getCurrentSetpointCallback(GetSetpointService::Request &request, GetSetpoin
 	response.setpointWithHeader.y   = m_setpoint[1];
 	response.setpointWithHeader.z   = m_setpoint[2];
 	response.setpointWithHeader.yaw = m_setpoint[3];
+	// Put the current state into the "buttonID" field
+	response.buttonID = m_current_state;
 	// Return
 	return true;
+}
+
+
+// PUBLISH THE CURRENT SETPOINT SO THAT THE NETWORK IS UPDATED
+void publishCurrentSetpointAndState()
+{
+	// Instantiate a local variable of type "SetpointWithHeader"
+	SetpointWithHeader msg;
+	// Fill in the setpoint
+	msg.x   = m_setpoint[0];
+	msg.y   = m_setpoint[1];
+	msg.z   = m_setpoint[2];
+	msg.yaw = m_setpoint[3];
+	// Put the current state into the "buttonID" field
+	response.buttonID = m_current_state;
+	// Publish the message
+	m_setpointChangedPublisher.publish(msg);
 }
 
 
@@ -651,6 +647,8 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 		}
 	}
 }
+
+
 
 
 
@@ -764,6 +762,9 @@ void fetchDefaultControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	// > Compute the feed-forward force that we need to counteract
 	//   gravity (i.e., mg) in units of [Newtons]
 	m_cf_weight_in_newtons = yaml_cf_mass_in_grams * 9.81/1000.0;
+
+	// > Conver the control frequency to a delta T
+	m_control_deltaT = 1.0 / yaml_control_frequency;
 
 	// DEBUGGING: Print out one of the computed quantities
 	ROS_INFO_STREAM("[DEFAULT CONTROLLER] DEBUGGING: thus the weight of this agent in [Newtons] = " << m_cf_weight_in_newtons);
@@ -955,7 +956,7 @@ int main(int argc, char* argv[])
 	// an integer (that is essentially ignored), and is expected to respond
 	// with the current setpoint of the controller. When a request is made
 	// of this service the "getCurrentSetpointCallback" function is called.
-	ros::ServiceServer getCurrentSetpointService = nodeHandle.advertiseService("GetCurrentSetpoint", getCurrentSetpointCallback);	
+	ros::ServiceServer getCurrentSetpointService = nodeHandle.advertiseService("GetCurrentSetpoint", getCurrentSetpointCallback);
 
 
 
@@ -967,13 +968,35 @@ int main(int argc, char* argv[])
 	// that should be sent via the Crazyradio and requested from the Crazyflie, i.e.,
 	// this is where the "outer loop" controller function starts. When a request is made
 	// of this service the "calculateControlOutput" function is called.
-	ros::ServiceServer service = nodeHandle.advertiseService("DefaultController", calculateControlOutput);
+	ros::ServiceServer controllerService = nodeHandle.advertiseService("DefaultController", calculateControlOutput);
 
 	// Instantiate the local variable "customCommandSubscriber" to be a "ros::Subscriber"
 	// type variable that subscribes to the "GUIButton" topic and calls the class
 	// function "customCommandReceivedCallback" each time a messaged is received on this topic
 	// and the message received is passed as an input argument to the callback function.
 	ros::Subscriber customCommandReceivedSubscriber = nodeHandle.subscribe("CustomButtonPressed", 1, customCommandReceivedCallback);
+
+
+
+	// Instantiate the local variable "service" to be a "ros::ServiceServer"
+	// type variable that advertises the service called:
+	// >> "RequestManoeuvre"
+	// This service has the input-output behaviour defined in the
+	// "IntIntService.srv" file (located in the "srv" folder).
+	// This service, when called, is provided with what manoeuvre
+	// is requested and responds with the duration that menoeuvre
+	// will take to perform (in milliseconds)
+	ros::ServiceServer requestManoeuvreService = nodeHandle.advertiseService("RequestManoeuvre", requestManoeuvreCallback);
+
+
+
+	// Instantiate the class variable "m_stateChangedPublisher" to
+	// be a "ros::Publisher". This variable advertises under the name
+	// "SetpointChanged" and is a message with the structure defined
+	// in the file "IntWithHeader.msg" (located in the "msg" folder).
+	// This publisher is used by the "flying agent GUI" to update the
+	// field that displays the current state for this controller.
+	m_stateChangedPublisher = nodeHandle.advertise<IntWithHeader>("StateChanged", 1);
 
 
 

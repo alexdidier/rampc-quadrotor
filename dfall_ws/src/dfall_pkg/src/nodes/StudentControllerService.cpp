@@ -505,7 +505,7 @@ void convertIntoBodyFrame(float stateInertial[9], float (&stateBody)[9], float y
 // the exercise
 float computeMotorPolyBackward(float thrust)
 {
-	// Compute the 16-but command that would produce the requested
+	// Compute the 16-bit command that would produce the requested
 	// "thrust" based on the quadratic mapping that is described
 	// by the coefficients in the "yaml_motorPoly" variable.
 	float cmd_16bit = (-yaml_motorPoly[1] + sqrt(yaml_motorPoly[1] * yaml_motorPoly[1] - 4 * yaml_motorPoly[2] * (yaml_motorPoly[0] - thrust))) / (2 * yaml_motorPoly[2]);

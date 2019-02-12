@@ -60,6 +60,7 @@
 
 // Include the shared definitions
 #include "nodes/Constants.h"
+#include "nodes/DefaultControllerConstants.h"
 
 // SPECIFY THE PACKAGE NAMESPACE
 //using namespace dfall_pkg;

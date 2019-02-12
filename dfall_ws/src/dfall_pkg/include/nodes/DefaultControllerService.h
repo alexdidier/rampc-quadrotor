@@ -72,6 +72,7 @@
 
 // Include the shared definitions
 #include "nodes/Constants.h"
+#include "nodes/DefaultControllerConstants.h"
 
 // Include other classes
 #include "classes/GetParamtersAndNamespaces.h"
@@ -114,6 +115,13 @@ using namespace dfall_pkg;
 //      V    A   A  R   R  III  A   A  BBBB   LLLLL  EEEEE  SSSS
 //    ----------------------------------------------------------------------------------
 
+// The current state of the Default Controller
+int m_current_state = DEFAULT_CONTROLLER_STATE_STANDBY;
+
+// The elapased time, incremented by counting the motion
+// capture callbacks
+float m_time_in_seconds = 0.0;
+
 
 // The ID of the agent that this node is monitoring
 int m_agentID;
@@ -140,6 +148,7 @@ std::vector<float> yaml_motorPoly = {5.484560e-4, 1.032633e-6, 2.130295e-11};
 
 // > the frequency at which the controller is running
 float yaml_control_frequency = 200.0;
+float m_control_deltaT = (1.0/200.0);
 
 // > the min and max for saturating 16 bit thrust commands
 float yaml_command_sixteenbit_min = 1000;
@@ -172,8 +181,8 @@ std::vector<float> m_gainMatrixThrust      =  { 0.00, 0.00, 0.19, 0.00, 0.00, 0.
 // ROS Publisher for debugging variables
 ros::Publisher m_debugPublisher;
 
-// ROS Publisher for inform the network about
-// changes to the setpoin
+// ROS Publisher to inform the network about
+// changes to the setpoint
 ros::Publisher m_setpointChangedPublisher;
 
 
@@ -201,6 +210,9 @@ ros::Publisher m_setpointChangedPublisher;
 // need to written below in an order that ensure each function is
 // implemented before it is called from another function)
 
+// CALLBACK FOR THE REQUEST MANOEUVRE SERVICE
+bool requestManoeuvreCallback(IntIntService::Request &request, IntIntService::Response &response);
+
 // CONTROLLER COMPUTATIONS
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response);
 
@@ -219,6 +231,9 @@ void setNewSetpoint(float x, float y, float z, float yaw);
 
 // GET CURRENT SETPOINT SERVICE CALLBACK
 bool getCurrentSetpointCallback(GetSetpointService::Request &request, GetSetpointService::Response &response);
+
+// PUBLISH THE CURRENT SETPOINT AND STATE
+void publishCurrentSetpointAndState();
 
 // CUSTOM COMMAND RECEIVED CALLBACK
 void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived);

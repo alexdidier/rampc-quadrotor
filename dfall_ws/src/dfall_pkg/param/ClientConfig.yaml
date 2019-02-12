@@ -1,17 +1,33 @@
-safeController:     "SafeControllerService/RateController"
+# The name the controller services advertised by
+# each of the controller nodes.
 defaultController:  "DefaultControllerService/DefaultController"
-demoController:     "DemoControllerService/DemoController"
 studentController:  "StudentControllerService/StudentController"
-mpcController:      "MpcControllerService/MpcController"
-remoteController:   "RemoteControllerService/RemoteController"
 tuningController:   "TuningControllerService/TuningController"
 pickerController:   "PickerControllerService/PickerController"
 templateController: "TemplateControllerService/TemplateController"
 
-# Flag for whether to use angle for switching to the Default Controller
+# The name of the service advertised by the Default
+# Controller for requests manoeuvres to be performed
+defaultController_requestManoeuvre: "DefaultControllerService/RequestManoeuvre"
+
+# Flag for whether to use angle for switching
+# to the Default Controller
 isEnabled_strictSafety: true
 maxTiltAngle_for_strictSafety_degrees: 70
 
-battery_threshold_while_flying: 2.60       # in V
-battery_threshold_while_motors_off: 3.30   # in V
-battery_polling_period: 200                # in ms
+# Number of consecutive occulsions that will deem the
+# object as "long-term" occuled
+consecutive_occulsions_threshold: 10
+
+# Flag for whether the take-off should be performed
+# with the default controller
+shouldPerfom_takeOff_with_defaultController: true
+
+# Flag for whether the landing should be performed
+# with the default controller
+shouldPerfom_landing_with_defaultController: true
+
+
+#battery_threshold_while_flying: 2.60       # in V
+#battery_threshold_while_motors_off: 3.30   # in V
+#battery_polling_period: 200                # in ms
