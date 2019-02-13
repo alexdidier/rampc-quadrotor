@@ -178,7 +178,7 @@ float m_time_in_seconds = 0.0;
 // PARAMETERS FROM THE YAML FILE
 
 // Max setpoint change per second
-float yaml_max_setpoint_change_per_second_horizontal = 0.80;
+float yaml_max_setpoint_change_per_second_horizontal = 0.60;
 float yaml_max_setpoint_change_per_second_vertical   = 0.30;
 
 // Max error for z

@@ -556,46 +556,48 @@ void computeResponse_for_takeoff_integrator_on(Controller::Response &response)
 void computeResponse_for_landing_move_down(Controller::Response &response)
 {
 	// Initialise a static variable for the starting height and yaw
-	static float initial_height = 0.4;
+	static float target_landing_setpoint[4] = {0.0,0.0,0.4,0.0};
 
 	// Check if the state "just recently" changed
 	if (m_current_state_changed)
 	{
 		// PERFORM "ONE-OFF" OPERATIONS HERE
-		// Set the current (x,y,yaw) location as the setpoint
+		// Set the current (x,y,z,yaw) location as the setpoint
 		m_setpoint_for_controller[0] = m_current_stateInertialEstimate[0];
 		m_setpoint_for_controller[1] = m_current_stateInertialEstimate[1];
+		m_setpoint_for_controller[2] = m_current_stateInertialEstimate[2];
 		m_setpoint_for_controller[3] = m_current_stateInertialEstimate[8];
-		// Store the current z
-		initial_height = m_current_stateInertialEstimate[2];
+		// Make the target setpoint the same for (x,y,yaw)
+		target_landing_setpoint[0] = m_setpoint_for_controller[0];
+		target_landing_setpoint[1] = m_setpoint_for_controller[1];
+		target_landing_setpoint[3] = m_setpoint_for_controller[3];
+		// Set the target height
+		target_landing_setpoint[2] = yaml_landing_move_down_end_height_setpoint;
 		// Set the change flag back to false
 		m_current_state_changed = false;
 		// Inform the user
 		ROS_INFO_STREAM("[DEFAULT CONTROLLER] state \"landing move-down\" started with \"m_setpoint_for_controller\" (x,y,z,yaw) =  ( " << m_setpoint_for_controller[0] << ", " << m_setpoint_for_controller[1] << ", " << m_setpoint_for_controller[2] << ", " << m_setpoint_for_controller[3] << ")");
 	}
 
-	// Compute the time elapsed as a proportion
-	float time_elapsed_proportion = m_time_in_seconds / (0.8*yaml_landing_move_down_time_max);
-	if (time_elapsed_proportion > 1.0)
-		time_elapsed_proportion = 1.0;
-
-	// Compute the z-height setpoint
-	m_setpoint_for_controller[2] = initial_height + time_elapsed_proportion * (yaml_landing_move_down_end_height_setpoint-initial_height);
+	// Smooth out any setpoint changes
+	smoothSetpointChanges( target_landing_setpoint , m_setpoint_for_controller );
 
 	// Call the LQR control function
 	calculateControlOutput_viaLQR_givenSetpoint(m_setpoint_for_controller, m_current_stateInertialEstimate, response, INTEGRATOR_FLAG_OFF);
 
-	// // Check if within the threshold of zero
-	// if (m_current_stateInertialEstimate[2] < yaml_landing_move_down_end_height_threshold)
-	// {
-	// 	// Inform the user
-	// 	ROS_INFO("[DEFAULT CONTROLLER] Switch to state: landing spin motors");
-	// 	// Reset the time variable
-	// 	m_time_in_seconds = 0.0;
-	// 	// Update the state accordingly
-	// 	m_current_state = DEFAULT_CONTROLLER_STATE_LANDING_SPIN_MOTORS;
-	// 	m_current_state_changed = true;
-	// }
+	ROS_INFO_STREAM("[DEFAULT CONTROLLER] m_current_stateInertialEstimate[2] = " << m_current_stateInertialEstimate[2] );
+
+	// Check if within the threshold of zero
+	if (m_current_stateInertialEstimate[2] < yaml_landing_move_down_end_height_threshold)
+	{
+		// Inform the user
+		ROS_INFO("[DEFAULT CONTROLLER] Switch to state: landing spin motors");
+		// Reset the time variable
+		m_time_in_seconds = 0.0;
+		// Update the state accordingly
+		m_current_state = DEFAULT_CONTROLLER_STATE_LANDING_SPIN_MOTORS;
+		m_current_state_changed = true;
+	}
 
 	// Change to landing spin motors if the timeout is reached
 	if ( m_time_in_seconds > yaml_landing_move_down_time_max )

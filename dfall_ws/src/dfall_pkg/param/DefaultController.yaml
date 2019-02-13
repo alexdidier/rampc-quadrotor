@@ -2,7 +2,7 @@
 # PARAMTERS FOR THE TAKE-OFF AND LANDING MANOEUVRES
 
 # Max setpoint change per second
-max_setpoint_change_per_second_horizontal  :  0.80 # [meters]
+max_setpoint_change_per_second_horizontal  :  0.60 # [meters]
 max_setpoint_change_per_second_vertical    :  0.30 # [meters]
 
 # Max error for z
@@ -46,7 +46,7 @@ takoff_integrator_on_time: 2.0
 landing_move_down_end_height_setpoint:  0.05
 landing_move_down_end_height_threshold: 0.10
 # The time for: landing move-down
-landing_move_down_time_max: 2.0
+landing_move_down_time_max: 4.0
 
 # The thrust for landing spin motors
 landing_spin_motors_thrust: 10000
