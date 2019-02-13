@@ -290,16 +290,20 @@ int getPoseDataForObjectNameWithExpectedIndex(const ViconData& viconData, std::s
 
 void coordinatesToLocal(CrazyflieData& cf)
 {
+	// Get the area into a local variable
     AreaBounds area = m_context.localArea;
+
+    // Shift the X-Y coordinates
     float originX = (area.xmin + area.xmax) / 2.0;
     float originY = (area.ymin + area.ymax) / 2.0;
-    // change Z origin to zero, i.e., to the table height, zero of global coordinates, instead of middle of the box
-    float originZ = 0.0;
-    // float originZ = (area.zmin + area.zmax) / 2.0;
-
     cf.x -= originX;
     cf.y -= originY;
-    cf.z -= originZ;
+
+    // Shift the Z coordinate
+    // change Z origin to zero, i.e., to the table height, zero of global coordinates, instead of middle of the box
+    //float originZ = 0.0;
+    // float originZ = (area.zmin + area.zmax) / 2.0;
+    //cf.z -= originZ;
 }
 
 
@@ -501,7 +505,7 @@ void requestChangeFlyingStateToTakeOff()
 				// Call the service offered by the default
 				// controller for how long a take-off will take
 				dfall_pkg::IntIntService requestManoeurveCall;
-				requestManoeurveCall.request.data = DEFAULT_CONTROLLER_REQUEST_TAKE_OFF;
+				requestManoeurveCall.request.data = DEFAULT_CONTROLLER_REQUEST_TAKEOFF;
 				if(m_defaultController_requestManoeuvre.call(requestManoeurveCall))
 				{
 					// Extract the duration
@@ -517,6 +521,8 @@ void requestChangeFlyingStateToTakeOff()
 					ROS_INFO_STREAM("[FLYING AGENT CLIENT] Changed state to STATE_TAKE_OFF for a duration of " << take_off_duration << " seconds.");
 					// Update the class variable
 					m_flying_state = STATE_TAKE_OFF;
+					// Set the Default controller as the instant controller
+					setInstantController(DEFAULT_CONTROLLER);
 				}
 				else
 				{
@@ -590,14 +596,16 @@ void requestChangeFlyingStateToLand()
 				// > Start the timer
 				m_timer_land_complete.start();
 				// Inform the user
-				ROS_INFO_STREAM("[FLYING AGENT CLIENT] Changed state to STATE_TAKE_OFF for a duration of " << land_duration << " seconds.");
+				ROS_INFO_STREAM("[FLYING AGENT CLIENT] Changed state to STATE_LAND for a duration of " << land_duration << " seconds.");
 				// Update the class variable
 				m_flying_state = STATE_LAND;
+				// Set the Default controller as the instant controller
+				setInstantController(DEFAULT_CONTROLLER);
 			}
 			else
 			{
 				// Inform the user
-				ROS_INFO("[FLYING AGENT CLIENT] Failed to get take-off duration from Default controller. Switching to MOTORS-OFF.");
+				ROS_INFO("[FLYING AGENT CLIENT] Failed to get land duration from Default controller. Switching to MOTORS-OFF.");
 				// Update the class variable
 				m_flying_state = STATE_MOTORS_OFF;
 			}
@@ -628,6 +636,8 @@ void timerCallback_takeoff_complete(const ros::TimerEvent&)
 		std_msgs::Int32 flying_state_msg;
 		flying_state_msg.data = m_flying_state;
 		m_flyingStatePublisher.publish(flying_state_msg);
+		// Change back to the nominal controller
+		setInstantController( m_controller_nominally_selected );
 	}
 	else
 	{
@@ -649,6 +659,8 @@ void timerCallback_land_complete(const ros::TimerEvent&)
 		std_msgs::Int32 flying_state_msg;
 		flying_state_msg.data = m_flying_state;
 		m_flyingStatePublisher.publish(flying_state_msg);
+		// Change back to the nominal controller
+		setInstantController( m_controller_nominally_selected );
 	}
 	else
 	{
@@ -922,6 +934,14 @@ bool getCurrentFlyingStateServiceCallback(IntIntService::Request &request, IntIn
     return true;
 }
 
+
+bool getInstantControllerServiceCallback(IntIntService::Request &request, IntIntService::Response &response)
+{
+    // Put the flying state into the response variable
+    response.data = getInstantController();
+    // Return
+    return true;
+}
 
 
 
@@ -1385,7 +1405,7 @@ int main(int argc, char* argv[])
 	// > And stop it immediately
 	m_timer_takeoff_complete = nodeHandle.createTimer(ros::Duration(1.0), timerCallback_takeoff_complete, true);
 	m_timer_takeoff_complete.stop();
-	m_timer_land_complete = nodeHandle.createTimer(ros::Duration(1.0), timerCallback_takeoff_complete, true);
+	m_timer_land_complete = nodeHandle.createTimer(ros::Duration(1.0), timerCallback_land_complete, true);
 	m_timer_land_complete.stop();
 
 
@@ -1475,7 +1495,7 @@ int main(int argc, char* argv[])
 	// crazyradio status. Connected, connecting or disconnected
 	std::string namespace_to_crazy_radio = m_namespace + "/CrazyRadio";
 	ros::NodeHandle nodeHandle_to_crazy_radio(namespace_to_crazy_radio);
-	ros::Subscriber crazyRadioStatusSubscriber = nodeHandle_to_crazy_radio.subscribe("CrazyRadio/CrazyRadioStatus", 1, crazyRadioStatusCallback);
+	ros::Subscriber crazyRadioStatusSubscriber = nodeHandle_to_crazy_radio.subscribe("CrazyRadioStatus", 1, crazyRadioStatusCallback);
 
 
 	// SUBSCRIBER FOR BATTERY STATE CHANGES
@@ -1490,6 +1510,12 @@ int main(int argc, char* argv[])
 	// Advertise the service that return the "m_flying_state"
 	// variable when called upon
 	ros::ServiceServer getCurrentFlyingStateService = nodeHandle.advertiseService("getCurrentFlyingState", getCurrentFlyingStateServiceCallback);
+
+
+	// SERVICE SERVER FOR OTHERS TO GET THE INSTANT CONTROLLER
+	// Advertise the service that return the "m_instant_controller"
+	// variable when called upon
+	ros::ServiceServer getInstantControllerService = nodeHandle.advertiseService("getInstantcontroller", getInstantControllerServiceCallback);
 
 
 

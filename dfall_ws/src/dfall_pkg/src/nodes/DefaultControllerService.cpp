@@ -82,22 +82,23 @@ bool requestManoeuvreCallback(IntIntService::Request &request, IntIntService::Re
 	// Switch between the possible manoeuvres
 	switch (requestedManoeuvre)
 	{
-		case DEFAULT_CONTROLLER_REQUEST_TAKE_OFF:
+		case DEFAULT_CONTROLLER_REQUEST_TAKEOFF:
 		{
 			// Inform the user
-			ROS_INFO("[DEFAULT CONTROLLER] Received request to perform take-off manoeuvre.");
+			ROS_INFO("[DEFAULT CONTROLLER] Received request to perform take-off manoeuvre. Switch to state: take-off spin motors");
 			// Reset the time variable
 			m_time_in_seconds = 0.0;
 			// Update the state accordingly
-			m_current_state = DEFAULT_CONTROLLER_STATE_TAKE_OFF_SPIN_MOTORS;
+			m_current_state = DEFAULT_CONTROLLER_STATE_TAKEOFF_SPIN_MOTORS;
 			m_current_state_changed = true;
 			// Fill in the response duration in milliseconds
-			response.data = 1000 *
-				int(
-					+ yaml_takoff_spin_motors_time
-					+ yaml_takoff_move_up_time
-					+ yaml_takoff_goto_setpoint_max_time
-					+ yaml_takoff_integrator_on_time
+			response.data = int(
+					1000.0 * (
+						+ yaml_takoff_spin_motors_time
+						+ yaml_takoff_move_up_time
+						+ yaml_takoff_goto_setpoint_max_time
+						+ yaml_takoff_integrator_on_time
+					)
 				);
 			break;
 		}
@@ -105,17 +106,18 @@ bool requestManoeuvreCallback(IntIntService::Request &request, IntIntService::Re
 		case DEFAULT_CONTROLLER_REQUEST_LANDING:
 		{
 			// Inform the user
-			ROS_INFO("[DEFAULT CONTROLLER] Received request to perform landing manoeuvre.");
+			ROS_INFO("[DEFAULT CONTROLLER] Received request to perform landing manoeuvre. Switch to state: landing move down");
 			// Reset the time variable
 			m_time_in_seconds = 0.0;
 			// Update the state accordingly
 			m_current_state = DEFAULT_CONTROLLER_STATE_LANDING_MOVE_DOWN;
 			m_current_state_changed = true;
 			// Fill in the response duration in milliseconds
-			response.data = 1000 *
-				int(
-					+ yaml_landing_move_down_time_max
-					+ yaml_landing_spin_motors_time
+			response.data = int(
+					1000 * (
+						+ yaml_landing_move_down_time_max
+						+ yaml_landing_spin_motors_time
+					)
 				);
 			break;
 		}
@@ -189,7 +191,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 			computeResponse_for_normal(response);
 			break;
 
-		case DEFAULT_CONTROLLER_STATE_TAKE_OFF_SPIN_MOTORS:
+		case DEFAULT_CONTROLLER_STATE_TAKEOFF_SPIN_MOTORS:
 			computeResponse_for_takeoff_spin_motors(response);
 			break;
 
@@ -303,6 +305,8 @@ void computeResponse_for_normal(Controller::Response &response)
 		m_setpoint_for_controller[3] = m_current_stateInertialEstimate[8];
 		// Set the change flag back to false
 		m_current_state_changed = false;
+		// Inform the user
+		ROS_INFO_STREAM("[DEFAULT CONTROLLER] state \"normal\" started with \"m_setpoint_for_controller\" (x,y,z,yaw) =  ( " << m_setpoint_for_controller[0] << ", " << m_setpoint_for_controller[1] << ", " << m_setpoint_for_controller[2] << ", " << m_setpoint_for_controller[3] << ")");
 	}
 
 	// Smooth out any setpoint changes
@@ -382,12 +386,17 @@ void computeResponse_for_takeoff_move_up(Controller::Response &response)
 		// Store the current (z,yaw)
 		initial_height = m_current_stateInertialEstimate[2];
 		initial_yaw = m_current_stateInertialEstimate[8];
+		// Put these back into the setpoint
+		m_setpoint_for_controller[2] = initial_height + yaml_takeoff_move_up_start_height;
+		m_setpoint_for_controller[3] = initial_yaw;
 		// Compute the yaw "start-to-end-difference" unwrapped
 		yaw_start_to_end_diff = m_setpoint[3] - initial_yaw;
 		while(yaw_start_to_end_diff > PI) {yaw_start_to_end_diff -= 2 * PI;}
 		while(yaw_start_to_end_diff < -PI) {yaw_start_to_end_diff += 2 * PI;}
 		// Set the change flag back to false
 		m_current_state_changed = false;
+		// Inform the user
+		ROS_INFO_STREAM("[DEFAULT CONTROLLER] state \"take-off move-up\" started with \"m_setpoint_for_controller\" (x,y,z,yaw) =  ( " << m_setpoint_for_controller[0] << ", " << m_setpoint_for_controller[1] << ", " << m_setpoint_for_controller[2] << ", " << m_setpoint_for_controller[3] << ")");
 	}
 
 	// Compute the time elapsed as a proportion
@@ -421,13 +430,25 @@ void computeResponse_for_takeoff_move_up(Controller::Response &response)
 
 void computeResponse_for_takeoff_goto_setpoint(Controller::Response &response)
 {
+	// Initialise a static variable for the time
+	// to switch after entering the "box" around
+	// the setpoint
+	static float time_to_switch = 10.0;
+	static bool box_reached = false;
+
 	// Check if the state "just recently" changed
 	if (m_current_state_changed)
 	{
 		// PERFORM "ONE-OFF" OPERATIONS HERE
-		// Nothing to perform for this state
+		// Initialise the time to switch as greater than the 
+		// max time
+		time_to_switch = yaml_takoff_goto_setpoint_max_time + yaml_takoff_goto_setpoint_nearby_time;
+		// Initialise the bool for whether the box was reached
+		box_reached = false;
 		// Set the change flag back to false
 		m_current_state_changed = false;
+		// Inform the user
+		ROS_INFO_STREAM("[DEFAULT CONTROLLER] state \"take-off goto-setpoint\" started with \"m_setpoint\" (x,y,z,yaw) =  ( " << m_setpoint[0] << ", " << m_setpoint[1] << ", " << m_setpoint[2] << ", " << m_setpoint[3] << ")");
 	}
 
 	// Smooth out any setpoint changes
@@ -436,23 +457,33 @@ void computeResponse_for_takeoff_goto_setpoint(Controller::Response &response)
 	// Call the LQR control function
 	calculateControlOutput_viaLQR_givenSetpoint(m_setpoint_for_controller, m_current_stateInertialEstimate, response);
 
-	// If minimum time is passed,
-	// then check if near to the setpoint
-	if (m_time_in_seconds > yaml_takoff_goto_setpoint_min_time)
+	// Check if within the "integrator on" box of the setpoint
+	// > First, compute the current errors
+	float error_x = m_setpoint[0] - m_current_stateInertialEstimate[0];
+	float error_y = m_setpoint[1] - m_current_stateInertialEstimate[1];
+	float error_z = m_setpoint[2] - m_current_stateInertialEstimate[2];
+	// > Then perform the check
+	if (
+		(!box_reached)
+		&&
+		((error_x) < yaml_takoff_integrator_on_box_horizontal)
+		&&
+		((-error_x) < yaml_takoff_integrator_on_box_horizontal)
+		&&
+		(abs(error_y) < yaml_takoff_integrator_on_box_horizontal)
+		&&
+		(abs(error_z) < yaml_takoff_integrator_on_box_vertical)
+	)
 	{
-		// Compute the current errors
-		float error_x = m_setpoint[0] - m_current_stateInertialEstimate[0];
-		float error_y = m_setpoint[1] - m_current_stateInertialEstimate[1];
-		float error_z = m_setpoint[2] - m_current_stateInertialEstimate[2];
-		// Check if within the "integrator on" box
-		// of the setpoint
-		if (
-			(abs(error_x) < yaml_takoff_integrator_on_box_horizontal)
-			and
-			(abs(error_y) < yaml_takoff_integrator_on_box_horizontal)
-			and
-			(abs(error_z) < yaml_takoff_integrator_on_box_vertical)
-		)
+		// Give it another "yaml_takoff_goto_setpoint_nearby_time"
+		// seconds before changing to the integrator
+		time_to_switch = m_time_in_seconds + yaml_takoff_goto_setpoint_nearby_time;
+		// Set the bool that the box was reached
+		box_reached = true;
+	}
+
+	if (m_time_in_seconds > time_to_switch)
+	{
 		// Inform the user
 		ROS_INFO("[DEFAULT CONTROLLER] Switch to state: take-off integrator on");
 		// Reset the time variable
@@ -477,7 +508,7 @@ void computeResponse_for_takeoff_goto_setpoint(Controller::Response &response)
 
 
 
-void computeResponse_for_integrator_on(Controller::Response &response)
+void computeResponse_for_takeoff_integrator_on(Controller::Response &response)
 {
 	// Check if the state "just recently" changed
 	if (m_current_state_changed)
@@ -491,6 +522,8 @@ void computeResponse_for_integrator_on(Controller::Response &response)
 		m_setpoint_for_controller[3] = m_setpoint[3];
 		// Set the change flag back to false
 		m_current_state_changed = false;
+		// Inform the user
+		ROS_INFO_STREAM("[DEFAULT CONTROLLER] state \"take-off integrator-on\" started with \"m_setpoint\" (x,y,z,yaw) =  ( " << m_setpoint[0] << ", " << m_setpoint[1] << ", " << m_setpoint[2] << ", " << m_setpoint[3] << ")");
 	}
 
 	// Call the LQR control function
@@ -530,6 +563,8 @@ void computeResponse_for_landing_move_down(Controller::Response &response)
 		initial_height = m_current_stateInertialEstimate[2];
 		// Set the change flag back to false
 		m_current_state_changed = false;
+		// Inform the user
+		ROS_INFO_STREAM("[DEFAULT CONTROLLER] state \"landing move-down\" started with \"m_setpoint_for_controller\" (x,y,z,yaw) =  ( " << m_setpoint_for_controller[0] << ", " << m_setpoint_for_controller[1] << ", " << m_setpoint_for_controller[2] << ", " << m_setpoint_for_controller[3] << ")");
 	}
 
 	// Compute the time elapsed as a proportion
@@ -543,20 +578,20 @@ void computeResponse_for_landing_move_down(Controller::Response &response)
 	// Call the LQR control function
 	calculateControlOutput_viaLQR_givenSetpoint(m_setpoint_for_controller, m_current_stateInertialEstimate, response);
 
-	// Check if within the threshold of zero
-	if (m_current_stateInertialEstimate[2] < yaml_landing_move_down_end_height_threshold)
-	{
-		// Inform the user
-		ROS_INFO("[DEFAULT CONTROLLER] Switch to state: landing spin motors");
-		// Reset the time variable
-		m_time_in_seconds = 0.0;
-		// Update the state accordingly
-		m_current_state = DEFAULT_CONTROLLER_STATE_LANDING_SPIN_MOTORS;
-		m_current_state_changed = true;
-	}
+	// // Check if within the threshold of zero
+	// if (m_current_stateInertialEstimate[2] < yaml_landing_move_down_end_height_threshold)
+	// {
+	// 	// Inform the user
+	// 	ROS_INFO("[DEFAULT CONTROLLER] Switch to state: landing spin motors");
+	// 	// Reset the time variable
+	// 	m_time_in_seconds = 0.0;
+	// 	// Update the state accordingly
+	// 	m_current_state = DEFAULT_CONTROLLER_STATE_LANDING_SPIN_MOTORS;
+	// 	m_current_state_changed = true;
+	// }
 
 	// Change to landing spin motors if the timeout is reached
-	if (m_time_in_seconds > yaml_landing_move_down_time_max)
+	if ( m_time_in_seconds > yaml_landing_move_down_time_max )
 	{
 		// Inform the user
 		ROS_INFO("[DEFAULT CONTROLLER] Did not reached the setpoint within the \"landing move down\" allowed time. Switch to state: landing spin motors");
@@ -579,6 +614,8 @@ void computeResponse_for_landing_spin_motors(Controller::Response &response)
 		m_setpoint_for_controller[2] = yaml_landing_move_down_end_height_setpoint;
 		// Set the change flag back to false
 		m_current_state_changed = false;
+		// Inform the user
+		ROS_INFO_STREAM("[DEFAULT CONTROLLER] state \"landing spin motors\" started with \"m_setpoint_for_controller\" (x,y,z,yaw) =  ( " << m_setpoint_for_controller[0] << ", " << m_setpoint_for_controller[1] << ", " << m_setpoint_for_controller[2] << ", " << m_setpoint_for_controller[3] << ")");
 	}
 
 	// Compute the time elapsed as a proportion
@@ -619,7 +656,7 @@ void computeResponse_for_landing_spin_motors(Controller::Response &response)
 		response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTORS;
 
 		// Change to next state after specified time
-		if (m_time_in_seconds > yaml_landing_spin_motors_time)
+		if ( m_time_in_seconds > (0.7*yaml_landing_spin_motors_time) )
 		{
 			// Inform the user
 			ROS_INFO("[DEFAULT CONTROLLER] Switch to state: standby");
@@ -652,7 +689,7 @@ void smoothSetpointChanges( float target_setpoint[4] , float (&current_setpoint)
 {
 	// SMOOTH THE Z-COORIDINATE
 	// > Compute the max allowed change
-	float max_for_z = yaml_max_setpoint_change_per_second_vertical  yaml_control_frequency;
+	float max_for_z = yaml_max_setpoint_change_per_second_vertical / yaml_control_frequency;
 	// > Compute the current difference
 	float diff_for_z = target_setpoint[2] - current_setpoint[2];
 	// > Clip the difference to the maximum
@@ -665,11 +702,11 @@ void smoothSetpointChanges( float target_setpoint[4] , float (&current_setpoint)
 
 	// SMOOTH THE X-Y-COORIDINATES
 	// > Compute the max allowed change
-	float max_for_xy = yaml_max_setpoint_change_per_second_horizontal  yaml_control_frequency;
+	float max_for_xy = yaml_max_setpoint_change_per_second_horizontal / yaml_control_frequency;
 	// > Compute the current difference
 	float diff_for_x  = target_setpoint[0] - current_setpoint[0];
 	float diff_for_y  = target_setpoint[1] - current_setpoint[1];
-	float diff_for_xy = sqrt( diff_for_x^2 + diff_for_y^2 );
+	float diff_for_xy = sqrt( diff_for_x*diff_for_x + diff_for_y*diff_for_y );
 	// > Clip the difference to the maximum
 	if (diff_for_xy > max_for_xy)
 	{
@@ -1362,6 +1399,36 @@ void publish_motors_off_to_flying_agent_client()
 //    ----------------------------------------------------------------------------------
 
 
+// TIMER CALLBACK FOR SENDING THE LOAD YAML REQUEST
+void timerCallback_initial_load_yaml(const ros::TimerEvent&)
+{
+	// Create a node handle to the selected parameter service
+	ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
+	// Create the service client as a local variable
+	ros::ServiceClient requestLoadYamlFilenameServiceClient = nodeHandle_to_own_agent_parameter_service.serviceClient<LoadYamlFromFilename>("requestLoadYamlFilename", false);
+	// Create the service call as a local variable
+	LoadYamlFromFilename loadYamlFromFilenameCall;
+	// Specify the Yaml filename as a string
+	loadYamlFromFilenameCall.request.stringWithHeader.data = "DefaultController";
+	// Set for whom this applies to
+	loadYamlFromFilenameCall.request.stringWithHeader.shouldCheckForAgentID = false;
+	// Wait until the serivce exists
+	requestLoadYamlFilenameServiceClient.waitForExistence(ros::Duration(-1));
+	// Make the service call
+	if(requestLoadYamlFilenameServiceClient.call(loadYamlFromFilenameCall))
+	{
+		// Nothing to do in this case.
+		// The "isReadyDefaultControllerYamlCallback" function
+		// will be called once the YAML file is loaded
+	}
+	else
+	{
+	// Inform the user
+		ROS_ERROR("[DEFAULT CONTROLLER] The request load yaml file service call failed.");
+	}
+}
+
+
 // LOADING OF YAML PARAMETERS
 void isReadyDefaultControllerYamlCallback(const IntWithHeader & msg)
 {
@@ -1429,7 +1496,7 @@ void fetchDefaultControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	yaml_max_setpoint_change_per_second_vertical = getParameterFloat(nodeHandle_for_paramaters , "max_setpoint_change_per_second_vertical");
 	
 	// Max error for z
-	yaml_max_setpoint_error_z = = getParameterFloat(nodeHandle_for_paramaters , "max_setpoint_error_z");
+	yaml_max_setpoint_error_z = getParameterFloat(nodeHandle_for_paramaters , "max_setpoint_error_z");
 
 	// Max error for yaw angle
 	yaml_max_setpoint_error_yaw_degrees = getParameterFloat(nodeHandle_for_paramaters , "max_setpoint_error_yaw_degrees");
@@ -1447,13 +1514,14 @@ void fetchDefaultControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	yaml_takoff_spin_motors_time = getParameterFloat(nodeHandle_for_paramaters , "takoff_spin_motors_time");
 
 	// Height change for the take off move-up
-	yaml_takeoff_move_up_height = getParameterFloat(nodeHandle_for_paramaters , "takeoff_move_up_height");
+	yaml_takeoff_move_up_start_height = getParameterFloat(nodeHandle_for_paramaters , "takeoff_move_up_start_height");
+	yaml_takeoff_move_up_end_height = getParameterFloat(nodeHandle_for_paramaters , "takeoff_move_up_end_height");
 	// The time for the take off spin motors
 	yaml_takoff_move_up_time = getParameterFloat(nodeHandle_for_paramaters , "takoff_move_up_time");
 
 	// Minimum and maximum allowed time for: take off goto setpoint
-	yaml_takoff_goto_setpoint_min_time = getParameterFloat(nodeHandle_for_paramaters , "takoff_goto_setpoint_min_time");
-	yaml_takoff_goto_setpoint_max_time = getParameterFloat(nodeHandle_for_paramaters , "takoff_goto_setpoint_max_time");
+	yaml_takoff_goto_setpoint_nearby_time = getParameterFloat(nodeHandle_for_paramaters , "takoff_goto_setpoint_nearby_time");
+	yaml_takoff_goto_setpoint_max_time    = getParameterFloat(nodeHandle_for_paramaters , "takoff_goto_setpoint_max_time");
 
 	// Box within which to keep the integrator on
 	// > Units of [meters]
@@ -1531,11 +1599,6 @@ void fetchDefaultControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	getParameterFloatVector(nodeHandle_for_paramaters, "PMKF_Ahat_row1_for_positions",  yaml_PMKF_Ahat_row1_for_positions,  2);
 	getParameterFloatVector(nodeHandle_for_paramaters, "PMKF_Ahat_row2_for_positions",  yaml_PMKF_Ahat_row2_for_positions,  2);
 	getParameterFloatVector(nodeHandle_for_paramaters, "PMKF_Kinf_for_positions"     ,  yaml_PMKF_Kinf_for_positions     ,  2);
-	// > For the (roll,pitch,yaw) angles
-	getParameterFloatVector(nodeHandle_for_paramaters, "PMKF_Ahat_row1_for_angles",  yaml_PMKF_Ahat_row1_for_angles,  2);
-	getParameterFloatVector(nodeHandle_for_paramaters, "PMKF_Ahat_row2_for_angles",  yaml_PMKF_Ahat_row2_for_angles,  2);
-	getParameterFloatVector(nodeHandle_for_paramaters, "PMKF_Kinf_for_angles"     ,  yaml_PMKF_Kinf_for_angles     ,  2);
-
 
 
 
@@ -1686,29 +1749,14 @@ int main(int argc, char* argv[])
 	// > NOTE IMPORTANTLY that by using a serice client
 	//   we stall the availability of this node until the
 	//   paramter service is ready
+	// > NOTE FURTHER that calling on the service directly from here
+	//   often means the yaml file is not actually loaded. So we
+	//   instead use a timer to delay the loading
 
-	// Create the service client as a local variable
-	ros::ServiceClient requestLoadYamlFilenameServiceClient = nodeHandle_to_own_agent_parameter_service.serviceClient<LoadYamlFromFilename>("requestLoadYamlFilename", false);
-	// Create the service call as a local variable
-	LoadYamlFromFilename loadYamlFromFilenameCall;
-	// Specify the Yaml filename as a string
-	loadYamlFromFilenameCall.request.stringWithHeader.data = "DefaultController";
-	// Set for whom this applies to
-	loadYamlFromFilenameCall.request.stringWithHeader.shouldCheckForAgentID = false;
-	// Wait until the serivce exists
-	requestLoadYamlFilenameServiceClient.waitForExistence(ros::Duration(-1));
-	// Make the service call
-	if(requestLoadYamlFilenameServiceClient.call(loadYamlFromFilenameCall))
-	{
-		// Nothing to do in this case.
-		// The "isReadyDefaultControllerYamlCallback" function
-		// will be called once the YAML file is loaded
-	}
-	else
-	{
-	// Inform the user
-		ROS_ERROR("[DEFAULT CONTROLLER] The request load yaml file service call failed.");
-	}
+	// Create a single-shot timer
+	ros::Timer timer_initial_load_yaml = nodeHandle.createTimer(ros::Duration(1.0), timerCallback_initial_load_yaml, true);
+	timer_initial_load_yaml.start();
+	
 
 
 

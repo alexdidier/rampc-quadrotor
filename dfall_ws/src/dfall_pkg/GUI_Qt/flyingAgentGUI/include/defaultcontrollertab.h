@@ -133,6 +133,9 @@ private:
     bool m_shouldCoordinateAll = true;
     QMutex m_agentIDs_toCoordinate_mutex;
 
+    // Mutex for the current state label
+    QMutex m_label_current_state_mutex;
+
 
 
 #ifdef CATKIN_MAKE

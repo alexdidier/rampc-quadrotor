@@ -255,26 +255,37 @@ void DefaultControllerTab::setpointChangedCallback(const dfall_pkg::SetpointWith
 
     // UPDATE THE CURRENT STATE LABEL
     int current_state = newSetpoint.buttonID;
+    m_label_current_state_mutex.lock();
     switch (current_state)
     {
+    case DEFAULT_CONTROLLER_STATE_NORMAL:
+    {
+        ui->label_current_state->setText("normal");
+        break;
+    }
     case DEFAULT_CONTROLLER_STATE_STANDBY:
     {
         ui->label_current_state->setText("standby");
         break;
     }
-    case DEFAULT_CONTROLLER_STATE_TAKE_OFF_SPIN_MOTORS:
+    case DEFAULT_CONTROLLER_STATE_TAKEOFF_SPIN_MOTORS:
     {
         ui->label_current_state->setText("Take-off, spinning motors");
         break;
     }
-    case DEFAULT_CONTROLLER_STATE_TAKE_OFF_MOVE_UP:
+    case DEFAULT_CONTROLLER_STATE_TAKEOFF_MOVE_UP:
     {
         ui->label_current_state->setText("Take-off, moving up");
         break;
     }
-    case DEFAULT_CONTROLLER_STATE_TAKE_OFF_GOTO_SETPOINT:
+    case DEFAULT_CONTROLLER_STATE_TAKEOFF_GOTO_SETPOINT:
     {
         ui->label_current_state->setText("Take-off, goto setpoint");
+        break;
+    }
+    case DEFAULT_CONTROLLER_STATE_TAKEOFF_INTEGRATOR_ON:
+    {
+        ui->label_current_state->setText("Take-off, integrator on");
         break;
     }
     case DEFAULT_CONTROLLER_STATE_LANDING_MOVE_DOWN:
@@ -298,6 +309,7 @@ void DefaultControllerTab::setpointChangedCallback(const dfall_pkg::SetpointWith
         break;
     }
     }
+    m_label_current_state_mutex.unlock();
 }
 #endif
 

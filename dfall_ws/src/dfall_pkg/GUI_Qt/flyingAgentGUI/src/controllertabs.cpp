@@ -511,8 +511,23 @@ void ControllerTabs::setAgentIDsToCoordinate(QVector<int> agentIDs , bool should
         QString agent_base_namespace = "/dfall/agent" + QString::number(agentIDs[0]).rightJustified(3, '0');
         ros::NodeHandle agent_base_nodeHandle(agent_base_namespace.toStdString());
 
+        
+        // > Request the current instant controller
+        ros::ServiceClient getInstantControllerService = agent_base_nodeHandle.serviceClient<dfall_pkg::IntIntService>("FlyingAgentClient/getInstantController", false);
+        dfall_pkg::IntIntService getInstantControllerCall;
+        getInstantControllerCall.request.data = 0;
+        getInstantControllerService.waitForExistence(ros::Duration(2.0));
+        if(getInstantControllerService.call(getInstantControllerCall))
+        {
+            setControllerEnabled(getInstantControllerCall.response.data);
+        }
+        else
+        {
+            //setControllerEnabled(CONTROLLER_UNKNOWN);
+        }
+
         // SUBSCRIBERS
-        // > For receiving message that the setpoint was changed
+        // > For receiving message that the instant controller was changed
         controllerUsedSubscriber = agent_base_nodeHandle.subscribe("FlyingAgentClient/controllerUsed", 1, &ControllerTabs::controllerUsedChangedCallback, this);
     }
     else

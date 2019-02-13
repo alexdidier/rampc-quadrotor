@@ -60,6 +60,9 @@
 #include "dfall_pkg/CrazyflieContext.h"
 #include "dfall_pkg/CMQuery.h"
 
+// Include the DFALL service types
+#include "dfall_pkg/IntIntService.h"
+
 // Include the shared definitions
 //#include "nodes/Constants.h"
 

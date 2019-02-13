@@ -17,7 +17,7 @@ maxTiltAngle_for_strictSafety_degrees: 70
 
 # Number of consecutive occulsions that will deem the
 # object as "long-term" occuled
-consecutive_occulsions_threshold: 10
+consecutive_occulsions_threshold: 30
 
 # Time out duration after which Mocap is considered unavailable
 mocap_timeout_duration: 2.0

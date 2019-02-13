@@ -134,7 +134,7 @@ bool m_isAvailable_mocap_data = false;
 bool m_isOcculded_mocap_data = false;
 // > Number of consecutive occulsions that trigger the
 //   "m_isOcculded_mocap_data" variable to be "true"
-int yaml_consecutive_occulsions_threshold = 10;
+int yaml_consecutive_occulsions_threshold = 30;
 // > Timer that when triggered determines that the
 //   "m_isAvailable_mocap_data" variable becomes true
 ros::Timer m_timer_mocap_timeout_check;

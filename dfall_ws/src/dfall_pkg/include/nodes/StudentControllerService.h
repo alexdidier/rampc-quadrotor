@@ -164,6 +164,9 @@ std::string m_namespace_to_coordinator_parameter_service;
 // > the mass of the crazyflie, in [grams]
 float yaml_cf_mass_in_grams = 25.0;
 
+// The weight of the Crazyflie in Newtons, i.e., mg
+float m_cf_weight_in_newtons = yaml_cf_mass_in_grams * 9.81 / 1000.0;
+
 // > the coefficients of the 16-bit command to thrust conversion
 //std::vector<float> yaml_motorPoly(3);
 std::vector<float> yaml_motorPoly = {5.484560e-4, 1.032633e-6, 2.130295e-11};
@@ -177,8 +180,7 @@ std::vector<float> yaml_default_setpoint = {0.0,0.0,0.4,0.0};
 
 
 
-// The weight of the Crazyflie in Newtons, i.e., mg
-float m_cf_weight_in_newtons = 0.0;
+
 
 // The location error of the Crazyflie at the "previous" time step
 float m_previous_stateErrorInertial[9];
@@ -250,5 +252,6 @@ bool getCurrentSetpointCallback(GetSetpointService::Request &request, GetSetpoin
 void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived);
 
 // FOR LOADING THE YAML PARAMETERS
+void timerCallback_initial_load_yaml(const ros::TimerEvent&);
 void isReadyStudentControllerYamlCallback(const IntWithHeader & msg);
 void fetchStudentControllerYamlParameters(ros::NodeHandle& nodeHandle);

@@ -175,8 +175,8 @@ float m_time_in_seconds = 0.0;
 // PARAMETERS FROM THE YAML FILE
 
 // Max setpoint change per second
-float yaml_max_setpoint_change_per_second_horizontal = 0.1;
-float yaml_max_setpoint_change_per_second_vertical = 0.1;
+float yaml_max_setpoint_change_per_second_horizontal = 0.80;
+float yaml_max_setpoint_change_per_second_vertical   = 0.30;
 
 // Max error for z
 float yaml_max_setpoint_error_z = 0.4;
@@ -203,11 +203,11 @@ float yaml_takoff_spin_motors_time = 0.8;
 float yaml_takeoff_move_up_start_height = 0.1;
 float yaml_takeoff_move_up_end_height   = 0.4;
 // The time for: take off spin motors
-float yaml_takoff_move_up_time = 1.2;
+float yaml_takoff_move_up_time = 2.0;
 
 // Minimum and maximum allowed time for: take off goto setpoint
-float yaml_takoff_goto_setpoint_min_time = 1.2;
-float yaml_takoff_goto_setpoint_max_time = 2.0;
+float yaml_takoff_goto_setpoint_nearby_time = 1.0;
+float yaml_takoff_goto_setpoint_max_time    = 4.0;
 
 // Box within which to keep the integrator on
 // > Units of [meters]
@@ -215,7 +215,7 @@ float yaml_takoff_goto_setpoint_max_time = 2.0;
 float yaml_takoff_integrator_on_box_horizontal = 0.25;
 float yaml_takoff_integrator_on_box_vertical   = 0.15;
 // The time for: take off integrator-on
-float yaml_takoff_integrator_on_time = 1.5;
+float yaml_takoff_integrator_on_time = 2.0;
 
 
 // Height change for the landing move-down
@@ -227,7 +227,7 @@ float yaml_landing_move_down_time_max = 2.0;
 // The thrust for landing spin motors
 float yaml_landing_spin_motors_thrust = 10000;
 // The time for: landing spin motors
-float yaml_landing_spin_motors_time = 1.0;
+float yaml_landing_spin_motors_time = 1.5;
 
 
 
@@ -270,7 +270,7 @@ std::string m_namespace_to_coordinator_parameter_service;
 // > the mass of the crazyflie, in [grams]
 float yaml_cf_mass_in_grams = 25.0;
 // > the weight of the Crazyflie in Newtons, i.e., mg
-float m_cf_weight_in_newtons = 0.0;
+float m_cf_weight_in_newtons = yaml_cf_mass_in_grams * 9.81 / 1000.0;
 
 // > the frequency at which the controller is running
 float yaml_control_frequency = 200.0;
@@ -300,7 +300,7 @@ bool yaml_shouldDisplayDebugInfo = false;
 // VARIABLES FOR THE CONTROLLER
 
 // > A flag for which controller to use:
-int yaml_controller_method = CONTROLLER_METHOD_RATE_ANGLE_NESTED;
+int yaml_controller_method = CONTROLLER_METHOD_RATES;
 
 // The LQR Controller parameters for z-height
 std::vector<float> yaml_gainMatrixThrust_2StateVector     =  { 0.98, 0.25};
@@ -419,7 +419,7 @@ void smoothSetpointChanges( float target_setpoint[4] , float (&current_setpoint)
 
 // > This function constructs the error in the body frame
 //   before calling the appropriate control function
-void calculateControlOutput_viaLQR_givenSetpoint(float setpoint[4], float stateInertial[12], Controller::Response &response)
+void calculateControlOutput_viaLQR_givenSetpoint(float setpoint[4], float stateInertial[12], Controller::Response &response);
 // > The various functions that implement an LQR controller
 void calculateControlOutput_viaLQR_givenError(float stateErrorBody[12], Controller::Response &response);
 
@@ -457,5 +457,6 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 void publish_motors_off_to_flying_agent_client();
 
 // LOADING OF YAML PARAMETERS
+void timerCallback_initial_load_yaml(const ros::TimerEvent&);
 void isReadyDefaultControllerYamlCallback(const IntWithHeader & msg);
 void fetchDefaultControllerYamlParameters(ros::NodeHandle& nodeHandle);
