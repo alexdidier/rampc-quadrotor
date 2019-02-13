@@ -102,6 +102,10 @@ gainRollRate_fromAngle   :  4.00
 gainPitchRate_fromAngle  :  4.00
 # The LQR Controller parameters for yaw
 gainYawRate_fromAngle    :  2.30
+# Integrator gains
+integratorGain_forThrust  :  0.01
+integratorGain_forTauXY   :  0.01
+integratorGain_forTauYaw  :  0.01
 
 
 

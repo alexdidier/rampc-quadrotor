@@ -144,7 +144,10 @@ using namespace dfall_pkg;
 #define ESTIMATOR_METHOD_POINT_MASS_PER_DIMENSION   2   // (DEFAULT)
 
 
-
+// These constants deine the behaviour of the intergrator
+#define INTEGRATOR_FLAG_ON       1
+#define INTEGRATOR_FLAG_OFF      2
+#define INTEGRATOR_FLAG_RESET    3
 
 
 
@@ -247,7 +250,6 @@ bool m_shouldSmoothSetpointChanges = true;
 
 
 
-
 // ------------------------------------------------------
 // VARIABLES THAT ARE STANDARD FOR A "CONTROLLER SERVICE"
 
@@ -314,6 +316,10 @@ float yaml_gainRollRate_fromAngle   =  4.00;
 float yaml_gainPitchRate_fromAngle  =  4.00;
 // The LQR Controller parameters for yaw
 float yaml_gainYawRate_fromAngle    =  2.30;
+// Integrator gains
+float yaml_integratorGain_forThrust = 0.0;
+float yaml_integratorGain_forTauXY  = 0.0;
+float yaml_integratorGain_forTauYaw = 0.0;
 
 
 // VARIABLES FOR THE ESTIMATOR
@@ -413,15 +419,14 @@ void computeResponse_for_takeoff_integrator_on(Controller::Response &response);
 void computeResponse_for_landing_move_down(Controller::Response &response);
 void computeResponse_for_landing_spin_motors(Controller::Response &response);
 
-
 // SMOOTHING SETPOINT CHANGES
 void smoothSetpointChanges( float target_setpoint[4] , float (&current_setpoint)[4] );
 
 // > This function constructs the error in the body frame
 //   before calling the appropriate control function
-void calculateControlOutput_viaLQR_givenSetpoint(float setpoint[4], float stateInertial[12], Controller::Response &response);
+void calculateControlOutput_viaLQR_givenSetpoint(float setpoint[4], float stateInertial[9], Controller::Response &response, int integrator_flag);
 // > The various functions that implement an LQR controller
-void calculateControlOutput_viaLQR_givenError(float stateErrorBody[12], Controller::Response &response);
+void calculateControlOutput_viaLQR_givenError(float stateErrorBody[9], Controller::Response &response, int integrator_flag);
 
 // ESTIMATOR COMPUTATIONS
 void performEstimatorUpdate_forStateInterial(Controller::Request &request);

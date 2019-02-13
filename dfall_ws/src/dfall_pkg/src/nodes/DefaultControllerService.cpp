@@ -226,9 +226,13 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	// Change to standby state if the {roll,pitch}
 	// angles exceed the threshold
 	if (
-		(abs(m_current_stateInertialEstimate[6]) > yaml_threshold_roll_pitch_for_turn_off_radians)
+		(m_current_stateInertialEstimate[6] >  yaml_threshold_roll_pitch_for_turn_off_radians)
 		or
-		(abs(m_current_stateInertialEstimate[7]) > yaml_threshold_roll_pitch_for_turn_off_radians)
+		(m_current_stateInertialEstimate[6] < -yaml_threshold_roll_pitch_for_turn_off_radians)
+		or
+		(m_current_stateInertialEstimate[7] > yaml_threshold_roll_pitch_for_turn_off_radians)
+		or
+		(m_current_stateInertialEstimate[7] < -yaml_threshold_roll_pitch_for_turn_off_radians)
 	)
 	{
 		// Inform the user
@@ -313,7 +317,7 @@ void computeResponse_for_normal(Controller::Response &response)
 	smoothSetpointChanges( m_setpoint , m_setpoint_for_controller );
 
 	// Call the LQR control function
-	calculateControlOutput_viaLQR_givenSetpoint(m_setpoint_for_controller, m_current_stateInertialEstimate, response);
+	calculateControlOutput_viaLQR_givenSetpoint(m_setpoint_for_controller, m_current_stateInertialEstimate, response, INTEGRATOR_FLAG_OFF);
 
 }
 
@@ -411,7 +415,7 @@ void computeResponse_for_takeoff_move_up(Controller::Response &response)
 	m_setpoint_for_controller[3] = initial_yaw + time_elapsed_proportion * yaw_start_to_end_diff;
 
 	// Call the LQR control function
-	calculateControlOutput_viaLQR_givenSetpoint(m_setpoint_for_controller, m_current_stateInertialEstimate, response);
+	calculateControlOutput_viaLQR_givenSetpoint(m_setpoint_for_controller, m_current_stateInertialEstimate, response, INTEGRATOR_FLAG_OFF);
 
 	// Change to next state after specified time
 	if (m_time_in_seconds > yaml_takoff_move_up_time)
@@ -455,24 +459,25 @@ void computeResponse_for_takeoff_goto_setpoint(Controller::Response &response)
 	smoothSetpointChanges( m_setpoint , m_setpoint_for_controller );
 
 	// Call the LQR control function
-	calculateControlOutput_viaLQR_givenSetpoint(m_setpoint_for_controller, m_current_stateInertialEstimate, response);
+	calculateControlOutput_viaLQR_givenSetpoint(m_setpoint_for_controller, m_current_stateInertialEstimate, response, INTEGRATOR_FLAG_OFF);
 
 	// Check if within the "integrator on" box of the setpoint
 	// > First, compute the current errors
-	float error_x = m_setpoint[0] - m_current_stateInertialEstimate[0];
-	float error_y = m_setpoint[1] - m_current_stateInertialEstimate[1];
-	float error_z = m_setpoint[2] - m_current_stateInertialEstimate[2];
+	float abs_error_x = m_setpoint[0] - m_current_stateInertialEstimate[0];
+	float abs_error_y = m_setpoint[1] - m_current_stateInertialEstimate[1];
+	float abs_error_z = m_setpoint[2] - m_current_stateInertialEstimate[2];
+	if (abs_error_x<0.0){abs_error_x=-abs_error_x;}
+	if (abs_error_y<0.0){abs_error_y=-abs_error_y;}
+	if (abs_error_z<0.0){abs_error_z=-abs_error_z;}
 	// > Then perform the check
 	if (
 		(!box_reached)
-		&&
-		((error_x) < yaml_takoff_integrator_on_box_horizontal)
-		&&
-		((-error_x) < yaml_takoff_integrator_on_box_horizontal)
-		&&
-		(abs(error_y) < yaml_takoff_integrator_on_box_horizontal)
-		&&
-		(abs(error_z) < yaml_takoff_integrator_on_box_vertical)
+		and
+		(abs_error_x < yaml_takoff_integrator_on_box_horizontal)
+		and
+		(abs_error_y < yaml_takoff_integrator_on_box_horizontal)
+		and
+		(abs_error_z < yaml_takoff_integrator_on_box_vertical)
 	)
 	{
 		// Give it another "yaml_takoff_goto_setpoint_nearby_time"
@@ -481,6 +486,8 @@ void computeResponse_for_takeoff_goto_setpoint(Controller::Response &response)
 		// Set the bool that the box was reached
 		box_reached = true;
 	}
+
+	ROS_INFO_STREAM("[DEFAULT CONTROLLER] time = " << m_time_in_seconds << ", switch at = " << time_to_switch << " abs error (x,y,z) = ( " << abs_error_x << ", " << abs_error_y << ", " << abs_error_z << ")" );
 
 	if (m_time_in_seconds > time_to_switch)
 	{
@@ -527,7 +534,7 @@ void computeResponse_for_takeoff_integrator_on(Controller::Response &response)
 	}
 
 	// Call the LQR control function
-	calculateControlOutput_viaLQR_givenSetpoint(m_setpoint_for_controller, m_current_stateInertialEstimate, response);
+	calculateControlOutput_viaLQR_givenSetpoint(m_setpoint_for_controller, m_current_stateInertialEstimate, response , INTEGRATOR_FLAG_ON);
 
 	// Change to next state after specified time
 	if (m_time_in_seconds > yaml_takoff_integrator_on_time)
@@ -576,7 +583,7 @@ void computeResponse_for_landing_move_down(Controller::Response &response)
 	m_setpoint_for_controller[2] = initial_height + time_elapsed_proportion * (yaml_landing_move_down_end_height_setpoint-initial_height);
 
 	// Call the LQR control function
-	calculateControlOutput_viaLQR_givenSetpoint(m_setpoint_for_controller, m_current_stateInertialEstimate, response);
+	calculateControlOutput_viaLQR_givenSetpoint(m_setpoint_for_controller, m_current_stateInertialEstimate, response, INTEGRATOR_FLAG_OFF);
 
 	// // Check if within the threshold of zero
 	// if (m_current_stateInertialEstimate[2] < yaml_landing_move_down_end_height_threshold)
@@ -628,7 +635,7 @@ void computeResponse_for_landing_spin_motors(Controller::Response &response)
 	if (time_elapsed_proportion<0.5)
 	{
 		// Call the LQR control function
-		calculateControlOutput_viaLQR_givenSetpoint(m_setpoint_for_controller, m_current_stateInertialEstimate, response);
+		calculateControlOutput_viaLQR_givenSetpoint(m_setpoint_for_controller, m_current_stateInertialEstimate, response, INTEGRATOR_FLAG_OFF);
 		// Compute the desired "spinning" thrust
 		float thrust_for_spinning =
 			(1.0-time_elapsed_proportion)
@@ -668,6 +675,9 @@ void computeResponse_for_landing_spin_motors(Controller::Response &response)
 		}
 	}	
 }
+
+
+
 
 
 //    ------------------------------------------------------------------------------
@@ -875,7 +885,7 @@ void performEstimatorUpdate_forStateInterial_viaPointMassKalmanFilter()
 
 // > This function constructs the error in the body frame
 //   before calling the appropriate control function
-void calculateControlOutput_viaLQR_givenSetpoint(float setpoint[4], float stateInertial[12], Controller::Response &response)
+void calculateControlOutput_viaLQR_givenSetpoint(float setpoint[4], float stateInertial[9], Controller::Response &response, int integrator_flag )
 {
 	// Store the current YAW in a local variable
 	float temp_stateInertial_yaw = stateInertial[8];
@@ -915,12 +925,19 @@ void calculateControlOutput_viaLQR_givenSetpoint(float setpoint[4], float stateI
 	// the Inertial frame into the Body frame
 	convertIntoBodyFrame(stateInertial, bodyFrameError, temp_stateInertial_yaw);
 
-	calculateControlOutput_viaLQR_givenError(bodyFrameError, response);
+	calculateControlOutput_viaLQR_givenError(bodyFrameError, response, integrator_flag);
 }
 
-void calculateControlOutput_viaLQR_givenError(float stateErrorBody[12], Controller::Response &response)
+void calculateControlOutput_viaLQR_givenError(float stateErrorBody[9], Controller::Response &response, int integrator_flag)
 {
 	// PERFORM THE "u=Kx" LQR CONTROLLER COMPUTATION
+
+	// Initialise static variables for the integral
+	static float newtons_int = 0.0;
+	static float tau_x = 0.0;
+	static float tau_y = 0.0;
+	static float tau_z = 0.0;
+	
 
 	// Compute the Z-CONTROLLER
 	// > provides the total thrust adjustment
@@ -1003,6 +1020,21 @@ void calculateControlOutput_viaLQR_givenError(float stateErrorBody[12], Controll
 	}
 
 
+	// PERFORM THE INTEGRATOR COMPUTATIONS
+	if (integrator_flag == INTEGRATOR_FLAG_ON)
+	{
+		newtons_int -= yaml_integratorGain_forThrust * stateErrorBody[2] / yaml_control_frequency;
+		tau_x       += yaml_integratorGain_forTauXY  * stateErrorBody[1] / yaml_control_frequency;
+		tau_y       -= yaml_integratorGain_forTauXY  * stateErrorBody[0] / yaml_control_frequency;
+		tau_z       -= yaml_integratorGain_forTauYaw * stateErrorBody[8] / yaml_control_frequency;
+	}
+	else if (integrator_flag == INTEGRATOR_FLAG_RESET)
+	{
+		newtons_int = 0.0;
+		tau_x       = 0.0;
+		tau_y       = 0.0;
+		tau_z	    = 0.0;
+	}
 
 	// UPDATE THE "RETURN" THE VARIABLE NAMED "response"
 
@@ -1017,12 +1049,12 @@ void calculateControlOutput_viaLQR_givenError(float stateErrorBody[12], Controll
 	//         controller needed to be divided by 4 or not.
 	thrustAdjustment = thrustAdjustment / 4.0;
 	// > Compute the feed-forward force
-	float feed_forward_thrust_per_motor = m_cf_weight_in_newtons / 4.0;
+	float feed_forward_thrust_per_motor = m_cf_weight_in_newtons / 4.0 + newtons_int;
 	// > Put in the per motor commands
-	response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrustAdjustment + feed_forward_thrust_per_motor);
-	response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrustAdjustment + feed_forward_thrust_per_motor);
-	response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrustAdjustment + feed_forward_thrust_per_motor);
-	response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrustAdjustment + feed_forward_thrust_per_motor);
+	response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrustAdjustment + feed_forward_thrust_per_motor - tau_x - tau_y - tau_z);
+	response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrustAdjustment + feed_forward_thrust_per_motor - tau_x + tau_y + tau_z);
+	response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrustAdjustment + feed_forward_thrust_per_motor + tau_x + tau_y - tau_z);
+	response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrustAdjustment + feed_forward_thrust_per_motor + tau_x - tau_y + tau_z);
 
 	
 	// Specify that this controller is a rate controller
@@ -1325,10 +1357,13 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 			// > FOR CUSTOM BUTTON 1
 			case 1:
 			{
-				// Let the user know that this part of the code was triggered
-				ROS_INFO("[DEFAULT CONTROLLER] Button 1 received in controller.");
-				// Code here to respond to custom button 1
-				
+				// Inform the user
+				ROS_INFO("[DEFAULT CONTROLLER] Received request to run integrator. Switch to state: take-off goto-setpoint");
+				// Reset the time variable
+				m_time_in_seconds = 0.0;
+				// Update the state accordingly
+				m_current_state = DEFAULT_CONTROLLER_STATE_TAKEOFF_GOTO_SETPOINT;
+				m_current_state_changed = true;
 				break;
 			}
 
@@ -1336,8 +1371,11 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 			case 2:
 			{
 				// Let the user know that this part of the code was triggered
-				ROS_INFO("[DEFAULT CONTROLLER] Button 2 received in controller.");
-				// Code here to respond to custom button 2
+				ROS_INFO("[DEFAULT CONTROLLER] Received request to reset the integrator.");
+				// Call the controller function with the reset flag
+				float tempStateBodyError[9];
+				Controller::Response temp_response;
+				calculateControlOutput_viaLQR_givenError(tempStateBodyError, temp_response, INTEGRATOR_FLAG_RESET);
 
 				break;
 			}
@@ -1590,6 +1628,11 @@ void fetchDefaultControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	yaml_gainPitchRate_fromAngle = getParameterFloat(nodeHandle_for_paramaters, "gainPitchRate_fromAngle");
 	// The LQR Controller parameters for yaw
 	yaml_gainYawRate_fromAngle = getParameterFloat(nodeHandle_for_paramaters, "gainYawRate_fromAngle");
+	// Integrator gains
+	yaml_integratorGain_forThrust = getParameterFloat(nodeHandle_for_paramaters, "integratorGain_forThrust");
+	yaml_integratorGain_forTauXY  = getParameterFloat(nodeHandle_for_paramaters, "integratorGain_forTauXY");
+	yaml_integratorGain_forTauYaw = getParameterFloat(nodeHandle_for_paramaters, "integratorGain_forTauYaw");
+
 	
 	// A flag for which estimator to use:
 	yaml_estimator_method = getParameterInt( nodeHandle_for_paramaters , "estimator_method" );
@@ -1757,6 +1800,7 @@ int main(int argc, char* argv[])
 	ros::Timer timer_initial_load_yaml = nodeHandle.createTimer(ros::Duration(1.0), timerCallback_initial_load_yaml, true);
 	timer_initial_load_yaml.start();
 	
+
 
 
 
