@@ -92,7 +92,13 @@ bool requestManoeuvreCallback(IntIntService::Request &request, IntIntService::Re
 			m_current_state = DEFAULT_CONTROLLER_STATE_TAKE_OFF_SPIN_MOTORS;
 			m_current_state_changed = true;
 			// Fill in the response duration in milliseconds
-			response.data = 3000;
+			response.data = 1000 *
+				int(
+					+ yaml_takoff_spin_motors_time
+					+ yaml_takoff_move_up_time
+					+ yaml_takoff_goto_setpoint_max_time
+					+ yaml_takoff_integrator_on_time
+				);
 			break;
 		}
 
@@ -106,7 +112,11 @@ bool requestManoeuvreCallback(IntIntService::Request &request, IntIntService::Re
 			m_current_state = DEFAULT_CONTROLLER_STATE_LANDING_MOVE_DOWN;
 			m_current_state_changed = true;
 			// Fill in the response duration in milliseconds
-			response.data = 2000;
+			response.data = 1000 *
+				int(
+					+ yaml_landing_move_down_time_max
+					+ yaml_landing_spin_motors_time
+				);
 			break;
 		}
 
@@ -175,6 +185,10 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	// Switch between the possible states
 	switch (m_current_state)
 	{
+		case DEFAULT_CONTROLLER_STATE_NORMAL:
+			computeResponse_for_normal(response);
+			break;
+
 		case DEFAULT_CONTROLLER_STATE_TAKE_OFF_SPIN_MOTORS:
 			computeResponse_for_takeoff_spin_motors(response);
 			break;
@@ -183,13 +197,57 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 			computeResponse_for_takeoff_move_up(response);
 			break;
 
+		case DEFAULT_CONTROLLER_STATE_TAKEOFF_GOTO_SETPOINT:
+			computeResponse_for_takeoff_goto_setpoint(response);
+			break;
+
+		case DEFAULT_CONTROLLER_STATE_TAKEOFF_INTEGRATOR_ON:
+			computeResponse_for_takeoff_integrator_on(response);
+			break;
+
+		case DEFAULT_CONTROLLER_STATE_LANDING_MOVE_DOWN:
+			computeResponse_for_landing_move_down(response);
+			break;
+
+		case DEFAULT_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
+			computeResponse_for_landing_spin_motors(response);
+			break;
+
+		case DEFAULT_CONTROLLER_STATE_STANDBY:
+		case DEFAULT_CONTROLLER_STATE_UNKNOWN:
+		default:
+			computeResponse_for_standby(response);
+			break;
 	}
 
-	
 
-	// CARRY OUT THE CONTROLLER COMPUTATIONS
-	// Call the function that performs the control computations for this mode
-	calculateControlOutput_viaLQRforRates(current_bodyFrameError,request,response);
+	// Change to standby state if the {roll,pitch}
+	// angles exceed the threshold
+	if (
+		(abs(m_current_stateInertialEstimate[6]) > yaml_threshold_roll_pitch_for_turn_off_radians)
+		or
+		(abs(m_current_stateInertialEstimate[7]) > yaml_threshold_roll_pitch_for_turn_off_radians)
+	)
+	{
+		// Inform the user
+		ROS_INFO("[DEFAULT CONTROLLER] Angle thereshold exceeded. Switch to state: standby");
+		// Reset the time variable
+		m_time_in_seconds = 0.0;
+		// Update the state accordingly
+		m_current_state = DEFAULT_CONTROLLER_STATE_STANDBY;
+		m_current_state_changed = true;
+		// Publish a command to the "Flying Agent Client"
+		// requesting the "MOTORS-OFF" state
+		publish_motors_off_to_flying_agent_client();
+	}
+
+
+	// If the state changed,
+	// then publish the setpoint so that the GUI is updated
+	if (m_current_state_changed)
+	{
+		publishCurrentSetpointAndState();
+	}
 
 
 	// PUBLISH THE DEBUG MESSAGE (if required)
@@ -198,11 +256,62 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 		construct_and_publish_debug_message(request,response);
 	}
 
+
 	// Return "true" to indicate that the control computation was performed successfully
 	return true;
 }
 
 
+void computeResponse_for_standby(Controller::Response &response)
+{
+	// Check if the state "just recently" changed
+	if (m_current_state_changed)
+	{
+		// PERFORM "ONE-OFF" OPERATIONS HERE
+		// Nothing to perform for this state
+		// Set the change flag back to false
+		m_current_state_changed = false;
+	}
+
+	// Fill in zero for the angle parts
+	response.controlOutput.roll  = 0.0;
+	response.controlOutput.pitch = 0.0;
+	response.controlOutput.yaw   = 0.0;
+
+	// Fill in all motor thrusts as zero
+	response.controlOutput.motorCmd1 = 0.0;
+	response.controlOutput.motorCmd2 = 0.0;
+	response.controlOutput.motorCmd3 = 0.0;
+	response.controlOutput.motorCmd4 = 0.0;
+
+	// Specify that using a "motor type" of command
+	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTORS;
+}
+
+
+void computeResponse_for_normal(Controller::Response &response)
+{
+	// Check if the state "just recently" changed
+	if (m_current_state_changed)
+	{
+		// PERFORM "ONE-OFF" OPERATIONS HERE
+		// Set the "m_setpoint_for_controller" variable
+		// to the current inertial estimate
+		m_setpoint_for_controller[0] = m_current_stateInertialEstimate[0];
+		m_setpoint_for_controller[1] = m_current_stateInertialEstimate[1];
+		m_setpoint_for_controller[2] = m_current_stateInertialEstimate[2];
+		m_setpoint_for_controller[3] = m_current_stateInertialEstimate[8];
+		// Set the change flag back to false
+		m_current_state_changed = false;
+	}
+
+	// Smooth out any setpoint changes
+	smoothSetpointChanges( m_setpoint , m_setpoint_for_controller );
+
+	// Call the LQR control function
+	calculateControlOutput_viaLQR_givenSetpoint(m_setpoint_for_controller, m_current_stateInertialEstimate, response);
+
+}
 
 
 void computeResponse_for_takeoff_spin_motors(Controller::Response &response)
@@ -216,12 +325,15 @@ void computeResponse_for_takeoff_spin_motors(Controller::Response &response)
 		m_current_state_changed = false;
 	}
 
+	// Compute the time elapsed as a proportion
+	float time_elapsed_proportion = m_time_in_seconds / yaml_takoff_spin_motors_time;
+	if (time_elapsed_proportion > 1.0)
+		time_elapsed_proportion = 1.0;
+
 	// Compute the "spinning" thrust
-	float thrust_for_spinning = 1000.0;
-	if (m_time_in_seconds < takoff_spin_motots_time)
-		thrust_for_spinning += yaml_takeoff_spin_motors_thrust * (m_time_in_seconds/takoff_spin_motots_time);
-	else
-		thrust_for_spinning += yaml_takeoff_spin_motors_thrust;
+	float thrust_for_spinning =
+		+ 1000.0
+		+ time_elapsed_proportion * yaml_takeoff_spin_motors_thrust;
 
 	// Fill in zero for the angle parts
 	response.controlOutput.roll  = 0.0;
@@ -238,7 +350,7 @@ void computeResponse_for_takeoff_spin_motors(Controller::Response &response)
 	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTORS;
 
 	// Change to next state after specified time
-	if (m_time_in_seconds > takoff_spin_motots_time)
+	if (m_time_in_seconds > yaml_takoff_spin_motors_time)
 	{
 		// Inform the user
 		ROS_INFO("[DEFAULT CONTROLLER] Switch to state: take-off move up");
@@ -290,14 +402,292 @@ void computeResponse_for_takeoff_move_up(Controller::Response &response)
 	m_setpoint_for_controller[3] = initial_yaw + time_elapsed_proportion * yaw_start_to_end_diff;
 
 	// Call the LQR control function
-	calculateControlOutput_viaLQR_givenSetpoint(m_setpoint_for_controller, m_current_stateInertialEstimate, response)
+	calculateControlOutput_viaLQR_givenSetpoint(m_setpoint_for_controller, m_current_stateInertialEstimate, response);
 
+	// Change to next state after specified time
+	if (m_time_in_seconds > yaml_takoff_move_up_time)
+	{
+		// Inform the user
+		ROS_INFO("[DEFAULT CONTROLLER] Switch to state: take-off goto setpoint");
+		// Reset the time variable
+		m_time_in_seconds = 0.0;
+		// Update the state accordingly
+		m_current_state = DEFAULT_CONTROLLER_STATE_TAKEOFF_GOTO_SETPOINT;
+		m_current_state_changed = true;
+	}
+}
+
+
+
+void computeResponse_for_takeoff_goto_setpoint(Controller::Response &response)
+{
+	// Check if the state "just recently" changed
+	if (m_current_state_changed)
+	{
+		// PERFORM "ONE-OFF" OPERATIONS HERE
+		// Nothing to perform for this state
+		// Set the change flag back to false
+		m_current_state_changed = false;
+	}
+
+	// Smooth out any setpoint changes
+	smoothSetpointChanges( m_setpoint , m_setpoint_for_controller );
+
+	// Call the LQR control function
+	calculateControlOutput_viaLQR_givenSetpoint(m_setpoint_for_controller, m_current_stateInertialEstimate, response);
+
+	// If minimum time is passed,
+	// then check if near to the setpoint
+	if (m_time_in_seconds > yaml_takoff_goto_setpoint_min_time)
+	{
+		// Compute the current errors
+		float error_x = m_setpoint[0] - m_current_stateInertialEstimate[0];
+		float error_y = m_setpoint[1] - m_current_stateInertialEstimate[1];
+		float error_z = m_setpoint[2] - m_current_stateInertialEstimate[2];
+		// Check if within the "integrator on" box
+		// of the setpoint
+		if (
+			(abs(error_x) < yaml_takoff_integrator_on_box_horizontal)
+			and
+			(abs(error_y) < yaml_takoff_integrator_on_box_horizontal)
+			and
+			(abs(error_z) < yaml_takoff_integrator_on_box_vertical)
+		)
+		// Inform the user
+		ROS_INFO("[DEFAULT CONTROLLER] Switch to state: take-off integrator on");
+		// Reset the time variable
+		m_time_in_seconds = 0.0;
+		// Update the state accordingly
+		m_current_state = DEFAULT_CONTROLLER_STATE_TAKEOFF_INTEGRATOR_ON;
+		m_current_state_changed = true;
+	}
+
+	// Change to normal if the timeout is reched
+	if (m_time_in_seconds > yaml_takoff_goto_setpoint_max_time)
+	{
+		// Inform the user
+		ROS_INFO("[DEFAULT CONTROLLER] Did not reached the setpoint within the \"take-off goto setpoint\" allowed time. Switch to state: normal");
+		// Reset the time variable
+		m_time_in_seconds = 0.0;
+		// Update the state accordingly
+		m_current_state = DEFAULT_CONTROLLER_STATE_NORMAL;
+		m_current_state_changed = true;
+	}
+}
+
+
+
+void computeResponse_for_integrator_on(Controller::Response &response)
+{
+	// Check if the state "just recently" changed
+	if (m_current_state_changed)
+	{
+		// PERFORM "ONE-OFF" OPERATIONS HERE
+		// Set the "m_setpoint_for_controller" variable
+		// to the current setpoint
+		m_setpoint_for_controller[0] = m_setpoint[0];
+		m_setpoint_for_controller[1] = m_setpoint[1];
+		m_setpoint_for_controller[2] = m_setpoint[2];
+		m_setpoint_for_controller[3] = m_setpoint[3];
+		// Set the change flag back to false
+		m_current_state_changed = false;
+	}
+
+	// Call the LQR control function
+	calculateControlOutput_viaLQR_givenSetpoint(m_setpoint_for_controller, m_current_stateInertialEstimate, response);
+
+	// Change to next state after specified time
+	if (m_time_in_seconds > yaml_takoff_integrator_on_time)
+	{
+		// Inform the user
+		ROS_INFO("[DEFAULT CONTROLLER] Switch to state: normal");
+		// Reset the time variable
+		m_time_in_seconds = 0.0;
+		// Update the state accordingly
+		m_current_state = DEFAULT_CONTROLLER_STATE_NORMAL;
+		m_current_state_changed = true;
+	}
 }
 
 
 
 
 
+void computeResponse_for_landing_move_down(Controller::Response &response)
+{
+	// Initialise a static variable for the starting height and yaw
+	static float initial_height = 0.4;
+
+	// Check if the state "just recently" changed
+	if (m_current_state_changed)
+	{
+		// PERFORM "ONE-OFF" OPERATIONS HERE
+		// Set the current (x,y,yaw) location as the setpoint
+		m_setpoint_for_controller[0] = m_current_stateInertialEstimate[0];
+		m_setpoint_for_controller[1] = m_current_stateInertialEstimate[1];
+		m_setpoint_for_controller[3] = m_current_stateInertialEstimate[8];
+		// Store the current z
+		initial_height = m_current_stateInertialEstimate[2];
+		// Set the change flag back to false
+		m_current_state_changed = false;
+	}
+
+	// Compute the time elapsed as a proportion
+	float time_elapsed_proportion = m_time_in_seconds / (0.8*yaml_landing_move_down_time_max);
+	if (time_elapsed_proportion > 1.0)
+		time_elapsed_proportion = 1.0;
+
+	// Compute the z-height setpoint
+	m_setpoint_for_controller[2] = initial_height + time_elapsed_proportion * (yaml_landing_move_down_end_height_setpoint-initial_height);
+
+	// Call the LQR control function
+	calculateControlOutput_viaLQR_givenSetpoint(m_setpoint_for_controller, m_current_stateInertialEstimate, response);
+
+	// Check if within the threshold of zero
+	if (m_current_stateInertialEstimate[2] < yaml_landing_move_down_end_height_threshold)
+	{
+		// Inform the user
+		ROS_INFO("[DEFAULT CONTROLLER] Switch to state: landing spin motors");
+		// Reset the time variable
+		m_time_in_seconds = 0.0;
+		// Update the state accordingly
+		m_current_state = DEFAULT_CONTROLLER_STATE_LANDING_SPIN_MOTORS;
+		m_current_state_changed = true;
+	}
+
+	// Change to landing spin motors if the timeout is reached
+	if (m_time_in_seconds > yaml_landing_move_down_time_max)
+	{
+		// Inform the user
+		ROS_INFO("[DEFAULT CONTROLLER] Did not reached the setpoint within the \"landing move down\" allowed time. Switch to state: landing spin motors");
+		// Reset the time variable
+		m_time_in_seconds = 0.0;
+		// Update the state accordingly
+		m_current_state = DEFAULT_CONTROLLER_STATE_LANDING_SPIN_MOTORS;
+		m_current_state_changed = true;
+	}
+}
+
+
+void computeResponse_for_landing_spin_motors(Controller::Response &response)
+{
+	// Check if the state "just recently" changed
+	if (m_current_state_changed)
+	{
+		// PERFORM "ONE-OFF" OPERATIONS HERE
+		// Set the z setpoint
+		m_setpoint_for_controller[2] = yaml_landing_move_down_end_height_setpoint;
+		// Set the change flag back to false
+		m_current_state_changed = false;
+	}
+
+	// Compute the time elapsed as a proportion
+	float time_elapsed_proportion = m_time_in_seconds / yaml_landing_spin_motors_time;
+	if (time_elapsed_proportion > 1.0)
+		time_elapsed_proportion = 1.0;
+
+
+	// Start by using the controller and reducing the thrust
+	if (time_elapsed_proportion<0.5)
+	{
+		// Call the LQR control function
+		calculateControlOutput_viaLQR_givenSetpoint(m_setpoint_for_controller, m_current_stateInertialEstimate, response);
+		// Compute the desired "spinning" thrust
+		float thrust_for_spinning =
+			(1.0-time_elapsed_proportion)
+			*
+			computeMotorPolyBackward(m_cf_weight_in_newtons/4.0);
+		// Adjust the motor commands
+		response.controlOutput.motorCmd1 = thrust_for_spinning;
+		response.controlOutput.motorCmd2 = thrust_for_spinning;
+		response.controlOutput.motorCmd3 = thrust_for_spinning;
+		response.controlOutput.motorCmd4 = thrust_for_spinning;
+	}
+	// Next stop using the controller and just spin the motors
+	else
+	{
+		// Fill in zero for the angle parts
+		response.controlOutput.roll  = 0.0;
+		response.controlOutput.pitch = 0.0;
+		response.controlOutput.yaw   = 0.0;
+		// Fill in all motor thrusts as the same
+		response.controlOutput.motorCmd1 = yaml_landing_spin_motors_thrust;
+		response.controlOutput.motorCmd2 = yaml_landing_spin_motors_thrust;
+		response.controlOutput.motorCmd3 = yaml_landing_spin_motors_thrust;
+		response.controlOutput.motorCmd4 = yaml_landing_spin_motors_thrust;
+		// Specify that using a "motor type" of command
+		response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTORS;
+
+		// Change to next state after specified time
+		if (m_time_in_seconds > yaml_landing_spin_motors_time)
+		{
+			// Inform the user
+			ROS_INFO("[DEFAULT CONTROLLER] Switch to state: standby");
+			// Reset the time variable
+			m_time_in_seconds = 0.0;
+			// Update the state accordingly
+			m_current_state = DEFAULT_CONTROLLER_STATE_STANDBY;
+			m_current_state_changed = true;
+		}
+	}	
+}
+
+
+//    ------------------------------------------------------------------------------
+//     SSSS  M   M   OOO    OOO   TTTTT  H   H
+//    S      MM MM  O   O  O   O    T    H   H
+//     SSS   M M M  O   O  O   O    T    HHHHH
+//        S  M   M  O   O  O   O    T    H   H
+//    SSSS   M   M   OOO    OOO     T    H   H
+//
+//     SSSS  EEEEE  TTTTT  PPPP    OOO   III  N   N  TTTTT
+//    S      E        T    P   P  O   O   I   NN  N    T
+//     SSS   EEE      T    PPPP   O   O   I   N N N    T
+//        S  E        T    P      O   O   I   N  NN    T
+//    SSSS   EEEEE    T    P       OOO   III  N   N    T
+//    ------------------------------------------------------------------------------
+
+
+void smoothSetpointChanges( float target_setpoint[4] , float (&current_setpoint)[4] )
+{
+	// SMOOTH THE Z-COORIDINATE
+	// > Compute the max allowed change
+	float max_for_z = yaml_max_setpoint_change_per_second_vertical  yaml_control_frequency;
+	// > Compute the current difference
+	float diff_for_z = target_setpoint[2] - current_setpoint[2];
+	// > Clip the difference to the maximum
+	if (diff_for_z > max_for_z)
+		diff_for_z = max_for_z;
+	else if (diff_for_z < -max_for_z)
+		diff_for_z = -max_for_z;
+	// > Update the current setpoint
+	current_setpoint[2] += diff_for_z;
+
+	// SMOOTH THE X-Y-COORIDINATES
+	// > Compute the max allowed change
+	float max_for_xy = yaml_max_setpoint_change_per_second_horizontal  yaml_control_frequency;
+	// > Compute the current difference
+	float diff_for_x  = target_setpoint[0] - current_setpoint[0];
+	float diff_for_y  = target_setpoint[1] - current_setpoint[1];
+	float diff_for_xy = sqrt( diff_for_x^2 + diff_for_y^2 );
+	// > Clip the difference to the maximum
+	if (diff_for_xy > max_for_xy)
+	{
+		// > Convert the difference to a proportion
+		float proportion_xy = max_for_xy / diff_for_xy;
+		// > Update the current setpoint
+		current_setpoint[0] += proportion_xy * diff_for_x;
+		current_setpoint[1] += proportion_xy * diff_for_y;
+	}
+	else
+	{
+		// > Update the current setpoint to be the
+		//   the target setpoint because it is within
+		//   reach
+		current_setpoint[0] = target_setpoint[0];
+		current_setpoint[1] = target_setpoint[1];
+	}	
+}
 
 
 
@@ -341,7 +731,7 @@ void performEstimatorUpdate_forStateInterial(Controller::Request &request)
 		case ESTIMATOR_METHOD_FINITE_DIFFERENCE:
 		{
 			// Transfer the estimate
-			for(int i = 0; i < 12; ++i)
+			for(int i = 0; i < 9; ++i)
 			{
 				m_current_stateInertialEstimate[i]  = m_stateInterialEstimate_viaFiniteDifference[i];
 			}
@@ -351,7 +741,7 @@ void performEstimatorUpdate_forStateInterial(Controller::Request &request)
 		case ESTIMATOR_METHOD_POINT_MASS_PER_DIMENSION:
 		{
 			// Transfer the estimate
-			for(int i = 0; i < 12; ++i)
+			for(int i = 0; i < 9; ++i)
 			{
 				m_current_stateInertialEstimate[i]  = m_stateInterialEstimate_viaPointMassKalmanFilter[i];
 			}
@@ -361,9 +751,9 @@ void performEstimatorUpdate_forStateInterial(Controller::Request &request)
 		default:
 		{
 			// Display that the "yaml_estimator_method" was not recognised
-			ROS_INFO_STREAM("[PICKER CONTROLLER] ERROR: in the 'calculateControlOutput' function of the 'PickerControllerService': the 'yaml_estimator_method' is not recognised.");
+			ROS_INFO_STREAM("[DEFAULT CONTROLLER] ERROR: in the 'calculateControlOutput' function of the 'DefaultControllerService': the 'yaml_estimator_method' is not recognised.");
 			// Transfer the finite difference estimate by default
-			for(int i = 0; i < 12; ++i)
+			for(int i = 0; i < 9; ++i)
 			{
 				m_current_stateInertialEstimate[i]  = m_stateInterialEstimate_viaFiniteDifference[i];
 			}
@@ -403,10 +793,6 @@ void performEstimatorUpdate_forStateInterial_viaFiniteDifference()
 	m_stateInterialEstimate_viaFiniteDifference[3]  = (m_current_xzy_rpy_measurement[0] - m_previous_xzy_rpy_measurement[0]) * m_estimator_frequency;
 	m_stateInterialEstimate_viaFiniteDifference[4]  = (m_current_xzy_rpy_measurement[1] - m_previous_xzy_rpy_measurement[1]) * m_estimator_frequency;
 	m_stateInterialEstimate_viaFiniteDifference[5]  = (m_current_xzy_rpy_measurement[2] - m_previous_xzy_rpy_measurement[2]) * m_estimator_frequency;
-	// > for (roll,pitch,yaw) velocities
-	m_stateInterialEstimate_viaFiniteDifference[9]  = (m_current_xzy_rpy_measurement[3] - m_previous_xzy_rpy_measurement[3]) * m_estimator_frequency;
-	m_stateInterialEstimate_viaFiniteDifference[10] = (m_current_xzy_rpy_measurement[4] - m_previous_xzy_rpy_measurement[4]) * m_estimator_frequency;
-	m_stateInterialEstimate_viaFiniteDifference[11] = (m_current_xzy_rpy_measurement[5] - m_previous_xzy_rpy_measurement[5]) * m_estimator_frequency;
 }
 
 
@@ -415,8 +801,8 @@ void performEstimatorUpdate_forStateInterial_viaPointMassKalmanFilter()
 {
 	// PERFORM THE KALMAN FILTER UPDATE STEP
 	// > First take a copy of the estimator state
-	float temp_PMKFstate[12];
-	for(int i = 0; i < 12; ++i)
+	float temp_PMKFstate[9];
+	for(int i = 0; i < 9; ++i)
 	{
 		temp_PMKFstate[i]  = m_stateInterialEstimate_viaPointMassKalmanFilter[i];
 	}
@@ -431,16 +817,12 @@ void performEstimatorUpdate_forStateInterial_viaPointMassKalmanFilter()
 	m_stateInterialEstimate_viaPointMassKalmanFilter[2] = yaml_PMKF_Ahat_row1_for_positions[0]*temp_PMKFstate[2] + yaml_PMKF_Ahat_row1_for_positions[1]*temp_PMKFstate[5] + yaml_PMKF_Kinf_for_positions[0]*m_current_xzy_rpy_measurement[2];
 	m_stateInterialEstimate_viaPointMassKalmanFilter[5] = yaml_PMKF_Ahat_row2_for_positions[0]*temp_PMKFstate[2] + yaml_PMKF_Ahat_row2_for_positions[1]*temp_PMKFstate[5] + yaml_PMKF_Kinf_for_positions[1]*m_current_xzy_rpy_measurement[2];
 
-	// > roll  position and velocity:
-	m_stateInterialEstimate_viaPointMassKalmanFilter[6]  = yaml_PMKF_Ahat_row1_for_angles[0]*temp_PMKFstate[6] + yaml_PMKF_Ahat_row1_for_angles[1]*temp_PMKFstate[9]  + yaml_PMKF_Kinf_for_angles[0]*m_current_xzy_rpy_measurement[3];
-	m_stateInterialEstimate_viaPointMassKalmanFilter[9]  = yaml_PMKF_Ahat_row2_for_angles[0]*temp_PMKFstate[6] + yaml_PMKF_Ahat_row2_for_angles[1]*temp_PMKFstate[9]  + yaml_PMKF_Kinf_for_angles[1]*m_current_xzy_rpy_measurement[3];
-	// > pitch position and velocity:
-	m_stateInterialEstimate_viaPointMassKalmanFilter[7]  = yaml_PMKF_Ahat_row1_for_angles[0]*temp_PMKFstate[7] + yaml_PMKF_Ahat_row1_for_angles[1]*temp_PMKFstate[10] + yaml_PMKF_Kinf_for_angles[0]*m_current_xzy_rpy_measurement[4];
-	m_stateInterialEstimate_viaPointMassKalmanFilter[10] = yaml_PMKF_Ahat_row2_for_angles[0]*temp_PMKFstate[7] + yaml_PMKF_Ahat_row2_for_angles[1]*temp_PMKFstate[10] + yaml_PMKF_Kinf_for_angles[1]*m_current_xzy_rpy_measurement[4];
-	// > yaw   position and velocity:
-	m_stateInterialEstimate_viaPointMassKalmanFilter[8]  = yaml_PMKF_Ahat_row1_for_angles[0]*temp_PMKFstate[8] + yaml_PMKF_Ahat_row1_for_angles[1]*temp_PMKFstate[11] + yaml_PMKF_Kinf_for_angles[0]*m_current_xzy_rpy_measurement[5];
-	m_stateInterialEstimate_viaPointMassKalmanFilter[11] = yaml_PMKF_Ahat_row2_for_angles[0]*temp_PMKFstate[8] + yaml_PMKF_Ahat_row2_for_angles[1]*temp_PMKFstate[11] + yaml_PMKF_Kinf_for_angles[1]*m_current_xzy_rpy_measurement[5];
-}
+	// > for (roll,pitch,yaw) angles
+	//   (taken directly from the measurement):
+	m_stateInterialEstimate_viaPointMassKalmanFilter[6]  = m_current_xzy_rpy_measurement[3];
+	m_stateInterialEstimate_viaPointMassKalmanFilter[7]  = m_current_xzy_rpy_measurement[4];
+	m_stateInterialEstimate_viaPointMassKalmanFilter[8]  = m_current_xzy_rpy_measurement[5];
+}	
 
 
 
@@ -467,14 +849,10 @@ void calculateControlOutput_viaLQR_givenSetpoint(float setpoint[4], float stateI
 	stateInertial[2] = stateInertial[2] - setpoint[2];
 
 	// Clip the z-coordination to within the specified bounds
-	if (stateInertial[2] > 0.40f)
-	{
-		stateInertial[2] = 0.40f;
-	}
-	else if (stateInertial[2] < -0.40f)
-	{
-		stateInertial[2] = -0.40f;
-	}
+	if (stateInertial[2] > yaml_max_setpoint_error_z)
+		stateInertial[2] = yaml_max_setpoint_error_z;
+	else if (stateInertial[2] < -yaml_max_setpoint_error_z)
+		stateInertial[2] = -yaml_max_setpoint_error_z;
 
 	// Fill in the yaw angle error
 	// > This error should be "unwrapped" to be in the range
@@ -485,51 +863,108 @@ void calculateControlOutput_viaLQR_givenSetpoint(float setpoint[4], float stateI
 	while(yawError > PI) {yawError -= 2 * PI;}
 	while(yawError < -PI) {yawError += 2 * PI;}
 	// Clip the error to within the specified bounds
-		if (yawError>(PI/3))
-	{
-		yawError = (PI/3);
-	}
-	else if (yawError<(-PI/3))
-	{
-		yawError = (-PI/3);
-	}
+	if (yawError > yaml_max_setpoint_error_yaw_radians)
+		yawError = yaml_max_setpoint_error_yaw_radians;
+	else if (yawError < -yaml_max_setpoint_error_yaw_radians)
+		yawError = -yaml_max_setpoint_error_yaw_radians;
+
 	// > Finally, put the "yawError" into the "stateError" variable
 	stateInertial[8] = yawError;
 
 	// CONVERSION INTO BODY FRAME
-	// Convert the state erorr from the Inertial frame into the Body frame
+	// Initialise a variable for the body frame error
+	float bodyFrameError[9];
+	// Call the function to convert the state erorr from
+	// the Inertial frame into the Body frame
 	convertIntoBodyFrame(stateInertial, bodyFrameError, temp_stateInertial_yaw);
 
-	calculateControlOutput_viaLQRforRates(bodyFrameError, response);
+	calculateControlOutput_viaLQR_givenError(bodyFrameError, response);
 }
 
-void calculateControlOutput_viaLQRforRates(float stateErrorBody[12], Controller::Response &response)
+void calculateControlOutput_viaLQR_givenError(float stateErrorBody[12], Controller::Response &response)
 {
 	// PERFORM THE "u=Kx" LQR CONTROLLER COMPUTATION
+
+	// Compute the Z-CONTROLLER
+	// > provides the total thrust adjustment
+	float thrustAdjustment =
+		- yaml_gainMatrixThrust_2StateVector[0] * stateErrorBody[2]
+		- yaml_gainMatrixThrust_2StateVector[1] * stateErrorBody[5];
+
+	// Compute the YAW-CONTROLLER
+	// > provides the body frame yaw rate
+	float yawRate_forResponse =
+		- yaml_gainYawRate_fromAngle * stateErrorBody[8];
 
 	// Instantiate the local variables for the following:
 	// > body frame roll rate,
 	// > body frame pitch rate,
-	// > body frame yaw rate,
-	// > total thrust adjustment.
-	// These will be requested from the Crazyflie's on-baord "inner-loop" controller
-	float rollRate_forResponse = 0;
-	float pitchRate_forResponse = 0;
-	float yawRate_forResponse = 0;
-	float thrustAdjustment = 0;
-	
-	// Perform the "-Kx" LQR computation for the rates and thrust:
-	for(int i = 0; i < 9; ++i)
+	float rollRate_forResponse = 0.0;
+	float pitchRate_forResponse = 0.0;
+
+	// Switch between the differnt control method for
+	// the X-Y-CONTROLLER
+	switch (yaml_controller_method)
 	{
-		// BODY FRAME Y CONTROLLER
-		rollRate_forResponse  -= yaml_gainMatrixRollRate[i] * stateErrorBody[i];
-		// BODY FRAME X CONTROLLER
-		pitchRate_forResponse -= yaml_gainMatrixPitchRate[i] * stateErrorBody[i];
-		// BODY FRAME YAW CONTROLLER
-		yawRate_forResponse   -= yaml_gainMatrixYawRate[i] * stateErrorBody[i];
-		// > ALITUDE CONTROLLER (i.e., z-controller):
-		thrustAdjustment      -= yaml_gainMatrixThrust_NineStateVector[i] * stateErrorBody[i];
+		case CONTROLLER_METHOD_RATES:
+		{
+			// Compute the X-CONTROLLER
+			// > provides the body frame pitch rate
+			pitchRate_forResponse = 
+				- yaml_gainMatrixPitchRate_3StateVector[0] * stateErrorBody[0]
+				- yaml_gainMatrixPitchRate_3StateVector[1] * stateErrorBody[3]
+				- yaml_gainMatrixPitchRate_3StateVector[2] * stateErrorBody[7];
+
+			// Compute the Y-CONTROLLER
+			// > provides the body frame roll rate
+			rollRate_forResponse = 
+				- yaml_gainMatrixRollRate_3StateVector[0] * stateErrorBody[1]
+				- yaml_gainMatrixRollRate_3StateVector[1] * stateErrorBody[4]
+				- yaml_gainMatrixRollRate_3StateVector[2] * stateErrorBody[6];
+			break;
+		}
+
+		case CONTROLLER_METHOD_RATE_ANGLE_NESTED:
+		{
+			// Compute the X-CONTROLLER
+			// > Compute the desired pitch angle
+			float pitchAngle_desired = 
+				- yaml_gainMatrixPitchAngle_2StateVector[0] * stateErrorBody[0]
+				- yaml_gainMatrixPitchAngle_2StateVector[1] * stateErrorBody[3];
+			// Clip the request to within the specified limits
+			if (pitchAngle_desired > yaml_max_roll_pitch_request_radians)
+				pitchAngle_desired = yaml_max_roll_pitch_request_radians;
+			else if (pitchAngle_desired < -yaml_max_roll_pitch_request_radians)
+				pitchAngle_desired = -yaml_max_roll_pitch_request_radians;				
+			// > Compute the pitch rate
+			pitchRate_forResponse =
+				- yaml_gainPitchRate_fromAngle * (stateErrorBody[7] - pitchAngle_desired);
+
+			// Compute the Y-CONTROLLER
+			// > Compute the desired roll angle
+			float rollAngle_desired = 
+				- yaml_gainMatrixRollAngle_2StateVector[0] * stateErrorBody[1]
+				- yaml_gainMatrixRollAngle_2StateVector[1] * stateErrorBody[4];
+			// Clip the request to within the specified limits
+			if (rollAngle_desired > yaml_max_roll_pitch_request_radians)
+				rollAngle_desired = yaml_max_roll_pitch_request_radians;
+			else if (rollAngle_desired < -yaml_max_roll_pitch_request_radians)
+				rollAngle_desired = -yaml_max_roll_pitch_request_radians;
+			// > Compute the roll rate
+			rollRate_forResponse =
+				- yaml_gainRollRate_fromAngle * (stateErrorBody[6] - rollAngle_desired);
+
+			break;
+		}
+
+		default:
+		{
+			// Inform the user of the error
+			ROS_ERROR("[DEFAULT CONTROLLER] The variable \"yaml_controller_method\" is not recognised.");
+			break;
+		}
 	}
+
 
 
 	// UPDATE THE "RETURN" THE VARIABLE NAMED "response"
@@ -895,6 +1330,22 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 
 
 
+// PUBLISH MOTORS-OFF MESSAGE TO FLYING AGENT CLIENT
+void publish_motors_off_to_flying_agent_client()
+{
+	// Instantiate a local variable of type "IntWithHeader"
+	IntWithHeader msg;
+	// Fill in the MOTORS-OFF command
+	msg.data = CMD_CRAZYFLY_MOTORS_OFF;
+	// Fill in the header that this applies
+	msg.shouldCheckForAgentID = false;
+	// Publish the message
+	m_motorsOffToFlyingAgentClientPublisher.publish(msg);
+}
+
+
+
+
 
 //    ----------------------------------------------------------------------------------
 //    L       OOO     A    DDDD
@@ -977,18 +1428,52 @@ void fetchDefaultControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	yaml_max_setpoint_change_per_second_horizontal = getParameterFloat(nodeHandle_for_paramaters , "max_setpoint_change_per_second_horizontal");
 	yaml_max_setpoint_change_per_second_vertical = getParameterFloat(nodeHandle_for_paramaters , "max_setpoint_change_per_second_vertical");
 	
+	// Max error for z
+	yaml_max_setpoint_error_z = = getParameterFloat(nodeHandle_for_paramaters , "max_setpoint_error_z");
+
 	// Max error for yaw angle
 	yaml_max_setpoint_error_yaw_degrees = getParameterFloat(nodeHandle_for_paramaters , "max_setpoint_error_yaw_degrees");
+
+	// Max {roll,pitch} angle request
+	yaml_max_roll_pitch_request_degrees = getParameterFloat(nodeHandle_for_paramaters , "max_roll_pitch_request_degrees");
+
+	// Theshold for {roll,pitch} angle beyond
+	// which the motors are turned off
+	yaml_threshold_roll_pitch_for_turn_off_degrees = getParameterFloat(nodeHandle_for_paramaters , "threshold_roll_pitch_for_turn_off_degrees");
 
 	// The thrust for take off spin motors
 	yaml_takeoff_spin_motors_thrust = getParameterFloat(nodeHandle_for_paramaters , "takeoff_spin_motors_thrust");
 	// The time for the take off spin(-up) motors
-	yaml_takoff_spin_motots_time = getParameterFloat(nodeHandle_for_paramaters , "takoff_spin_motots_time");
+	yaml_takoff_spin_motors_time = getParameterFloat(nodeHandle_for_paramaters , "takoff_spin_motors_time");
 
 	// Height change for the take off move-up
 	yaml_takeoff_move_up_height = getParameterFloat(nodeHandle_for_paramaters , "takeoff_move_up_height");
 	// The time for the take off spin motors
 	yaml_takoff_move_up_time = getParameterFloat(nodeHandle_for_paramaters , "takoff_move_up_time");
+
+	// Minimum and maximum allowed time for: take off goto setpoint
+	yaml_takoff_goto_setpoint_min_time = getParameterFloat(nodeHandle_for_paramaters , "takoff_goto_setpoint_min_time");
+	yaml_takoff_goto_setpoint_max_time = getParameterFloat(nodeHandle_for_paramaters , "takoff_goto_setpoint_max_time");
+
+	// Box within which to keep the integrator on
+	// > Units of [meters]
+	// > The box consider is plus/minus this value
+	yaml_takoff_integrator_on_box_horizontal = getParameterFloat(nodeHandle_for_paramaters , "takoff_integrator_on_box_horizontal");
+	yaml_takoff_integrator_on_box_vertical   = getParameterFloat(nodeHandle_for_paramaters , "takoff_integrator_on_box_vertical");
+	// The time for: take off integrator-on
+	yaml_takoff_integrator_on_time = getParameterFloat(nodeHandle_for_paramaters , "takoff_integrator_on_time");
+
+	// Height change for the landing move-down
+	yaml_landing_move_down_end_height_setpoint  = getParameterFloat(nodeHandle_for_paramaters , "landing_move_down_end_height_setpoint");
+	yaml_landing_move_down_end_height_threshold = getParameterFloat(nodeHandle_for_paramaters , "landing_move_down_end_height_threshold");
+	// The time for: landing move-down
+	yaml_landing_move_down_time_max = getParameterFloat(nodeHandle_for_paramaters , "landing_move_down_time_max");
+
+	// The thrust for landing spin motors
+	yaml_landing_spin_motors_thrust = getParameterFloat(nodeHandle_for_paramaters , "landing_spin_motors_thrust");
+	// The time for: landing spin motors
+	yaml_landing_spin_motors_time = getParameterFloat(nodeHandle_for_paramaters , "landing_spin_motors_time");
+
 
 
 
@@ -1022,14 +1507,24 @@ void fetchDefaultControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	// Boolean indiciating whether the debugging ROS_INFO_STREAM should be displayed or not
 	yaml_shouldDisplayDebugInfo = getParameterBool(nodeHandle_for_paramaters, "shouldDisplayDebugInfo");
 	
-	// The LQR Controller parameters for "LQR_MODE_RATE"
-	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixThrust_NineStateVector", yaml_gainMatrixThrust_NineStateVector, 9);
-	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixRollRate",               yaml_gainMatrixRollRate,               9);
-	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixPitchRate",              yaml_gainMatrixPitchRate,              9);
-	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixYawRate",                yaml_gainMatrixYawRate,                9);
+	// > A flag for which controller to use:
+	yaml_controller_method = getParameterInt( nodeHandle_for_paramaters , "controller_method" );	
+
+	// The LQR Controller parameters for z-height
+	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixThrust_2StateVector", yaml_gainMatrixThrust_2StateVector, 2);
+	// The LQR Controller parameters for "CONTROLLER_MODE_LQR_RATE"
+	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixRollRate_3StateVector",   yaml_gainMatrixRollRate_3StateVector,  3);
+	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixPitchRate_3StateVector",  yaml_gainMatrixPitchRate_3StateVector, 3);
+	// The LQR Controller parameters for "CONTROLLER_MODE_LQR_RATE"
+	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixRollAngle_2StateVector",   yaml_gainMatrixRollAngle_2StateVector,  2);
+	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixPitchAngle_2StateVector",  yaml_gainMatrixPitchAngle_2StateVector, 2);
+	yaml_gainRollRate_fromAngle  = getParameterFloat(nodeHandle_for_paramaters, "gainRollRate_fromAngle");
+	yaml_gainPitchRate_fromAngle = getParameterFloat(nodeHandle_for_paramaters, "gainPitchRate_fromAngle");
+	// The LQR Controller parameters for yaw
+	yaml_gainYawRate_fromAngle = getParameterFloat(nodeHandle_for_paramaters, "gainYawRate_fromAngle");
 	
 	// A flag for which estimator to use:
-	yaml_estimator_method = getParameterInt( nodeHandle_for_paramaters , "estimator_method" );	
+	yaml_estimator_method = getParameterInt( nodeHandle_for_paramaters , "estimator_method" );
 	
 	// THE POINT MASS KALMAN FILTER (PMKF) GAINS AND ERROR EVOLUATION
 	// > For the (x,y,z) position
@@ -1058,6 +1553,16 @@ void fetchDefaultControllerYamlParameters(ros::NodeHandle& nodeHandle)
 
 	// > Conver the control frequency to a delta T
 	m_control_deltaT = 1.0 / yaml_control_frequency;
+
+	// Max error for yaw angle
+	yaml_max_setpoint_error_yaw_radians = DEG2RAD * yaml_max_setpoint_error_yaw_degrees;
+
+	// Max {roll,pitch} angle request
+	yaml_max_roll_pitch_request_radians = DEG2RAD * yaml_max_roll_pitch_request_degrees;
+
+	// Theshold for {roll,pitch} angle beyond
+	// which the motors are turned off
+	yaml_threshold_roll_pitch_for_turn_off_radians = DEG2RAD * yaml_threshold_roll_pitch_for_turn_off_degrees;
 
 	// DEBUGGING: Print out one of the computed quantities
 	ROS_INFO_STREAM("[DEFAULT CONTROLLER] DEBUGGING: thus the weight of this agent in [Newtons] = " << m_cf_weight_in_newtons);
@@ -1281,7 +1786,18 @@ int main(int argc, char* argv[])
 	// will take to perform (in milliseconds)
 	ros::ServiceServer requestManoeuvreService = nodeHandle.advertiseService("RequestManoeuvre", requestManoeuvreCallback);
 
-
+	// Instantiate the class variable "m_motorsOffToFlyingAgentClientPublisher"
+	// to be a "ros::Publisher". This variable advertises under the
+	// name space:
+	// "FlyingAgentClient/Command"
+	// meaning that it is mimicing messages send by the "Fying
+	// Agent Client" node. The message sent has the structure
+	// defined in the file "IntWithHeader.msg".
+	// > First create a node handle to the base namespace
+	//   i.e., the namespace: "/dfall/agentXXX/"
+    ros::NodeHandle base_nodeHandle(m_namespace);
+    // > Now instantiate the publisher
+	m_motorsOffToFlyingAgentClientPublisher = base_nodeHandle.advertise<dfall_pkg::IntWithHeader>("FlyingAgentClient/Command", 1);
 
 
 

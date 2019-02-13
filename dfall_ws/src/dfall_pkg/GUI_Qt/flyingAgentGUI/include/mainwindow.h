@@ -124,7 +124,7 @@ private slots:
     // PRIVATE METHODS FOR MENU ITEM CALLBACKS
     void on_actionShowHide_Coordinator_triggered();
     void on_action_LoadYAML_BatteryMonitor_triggered();
-    void on_action_LoadYAML_ClientConfig_triggered();
+    void on_action_LoadYAML_FlyingAgentClientConfig_triggered();
 
     // FOR THE CONTROLLERS MENU
     void on_action_showHideController_default_changed();

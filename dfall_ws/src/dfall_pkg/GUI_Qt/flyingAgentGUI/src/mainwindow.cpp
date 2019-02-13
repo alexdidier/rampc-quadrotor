@@ -194,7 +194,7 @@ void MainWindow::on_action_LoadYAML_BatteryMonitor_triggered()
 }
 
 
-void MainWindow::on_action_LoadYAML_ClientConfig_triggered()
+void MainWindow::on_action_LoadYAML_FlyingAgentClientConfig_triggered()
 {
 #ifdef CATKIN_MAKE
     // Inform the user that the menu item was selected
@@ -203,7 +203,7 @@ void MainWindow::on_action_LoadYAML_ClientConfig_triggered()
     // Create a local variable for the message
     StringWithHeader yaml_filename_msg;
     // Specify the data
-    yaml_filename_msg.data = "ClientConfig";
+    yaml_filename_msg.data = "FlyingAgentClientConfig";
     // Set for whom this applies to
     yaml_filename_msg.shouldCheckForAgentID = false;
     // Send the message

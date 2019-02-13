@@ -44,7 +44,7 @@
 			/>
 			<rosparam
 				command = "load"
-				file    = "$(find dfall_pkg)/param/ClientConfig.yaml"
+				file    = "$(find dfall_pkg)/param/FlyingAgentClientConfig.yaml"
 				ns      = "SafeController"
 			/>
 		</node>

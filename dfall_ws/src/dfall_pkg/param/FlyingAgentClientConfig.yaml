@@ -29,8 +29,3 @@ shouldPerfom_takeOff_with_defaultController: true
 # Flag for whether the landing should be performed
 # with the default controller
 shouldPerfom_landing_with_defaultController: true
-
-
-#battery_threshold_while_flying: 2.60       # in V
-#battery_threshold_while_motors_off: 3.30   # in V
-#battery_polling_period: 200                # in ms

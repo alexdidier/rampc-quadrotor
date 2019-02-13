@@ -150,7 +150,7 @@ float yaml_mocap_timeout_duration = 1.0;
 bool yaml_isEnabled_strictSafety = true;
 // > The maximum allowed tilt angle, in degrees and radians
 float yaml_maxTiltAngle_for_strictSafety_degrees = 70;
-float m_maxTiltAngle_for_strictSafety_radians = 70 * DEG2RAD;
+float yaml_maxTiltAngle_for_strictSafety_radians = 70 * DEG2RAD;
 
 
 
@@ -192,15 +192,15 @@ int m_controller_nominally_selected;
 
 
 // VARIABLES FOR THE CONTROLER SERVIVCE CLIENTS
-// The default controller specified in the ClientConfig.yaml
+// The default controller specified in the FlyingAgentClientConfig.yaml
 ros::ServiceClient m_defaultController;
-// The Student controller specified in the ClientConfig.yaml
+// The Student controller specified in the FlyingAgentClientConfig.yaml
 ros::ServiceClient m_studentController;
-// The Tuning controller specified in the ClientConfig.yaml
+// The Tuning controller specified in the FlyingAgentClientConfig.yaml
 ros::ServiceClient m_tuningController;
-// The Picker controller specified in the ClientConfig.yaml
+// The Picker controller specified in the FlyingAgentClientConfig.yaml
 ros::ServiceClient m_pickerController;
-// The Template controller specified in the ClientConfig.yaml
+// The Template controller specified in the FlyingAgentClientConfig.yaml
 ros::ServiceClient m_templateController;
 
 
@@ -216,7 +216,7 @@ int m_crazyradio_status;
 CrazyflieContext m_context;
 
 // Service Client from which the "CrazyflieContext" is loaded
-ros::ServiceClient centralManager;
+ros::ServiceClient m_centralManager;
 
 // Publisher for the control actions to be sent on
 // to the Crazyflie (the CrazyRadio node listen to this
@@ -232,10 +232,10 @@ ros::Publisher m_flyingStatePublisher;
 //ros::Publisher commandPublisher;
 
 // Publisher Communication with crazyRadio node. Connect and disconnect
-ros::Publisher crazyRadioCommandPublisher;
+ros::Publisher m_crazyRadioCommandPublisher;
 
 // Publisher for which controller is currently being used
-ros::Publisher controllerUsedPublisher;
+ros::Publisher m_controllerUsedPublisher;
 
 
 
@@ -358,5 +358,5 @@ void timerCallback_for_createAllcontrollerServiceClients(const ros::TimerEvent&)
 
 
 // FOR LOADING THE YAML PARAMETERS
-void isReadyClientConfigYamlCallback(const IntWithHeader & msg);
-void fetchClientConfigYamlParameters(ros::NodeHandle& nodeHandle);
+void isReadyFlyingAgentClientConfigYamlCallback(const IntWithHeader & msg);
+void fetchFlyingAgentClientConfigYamlParameters(ros::NodeHandle& nodeHandle);

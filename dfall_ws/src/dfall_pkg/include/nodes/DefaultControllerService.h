@@ -104,10 +104,28 @@ using namespace dfall_pkg;
 
 // NOTE: many constants are already defined in the "Constant.h" header file
 
-// These constants define the method used for estimating the Inertial
-// frame state.
-// All methods are run at all times, this flag indicates which estimate
-// is passed onto the controller.
+// These constants define the method used for computing
+// the control actions from the state error estimates.
+// The following is a short description about each mode:
+//
+// CONTROLLER_METHOD_RATES
+//       Uses the poisition, linear velocity and angle
+//       error estimates to compute the rates
+//
+// CONTROLLER_METHOD_RATE_ANGLE_NESTED
+//       Uses the position and linear velocity error
+//       estimates to compute an angle, and then uses
+//       this as a reference to construct an angle error
+//       estimate and compute from that the rates
+//
+#define CONTROLLER_METHOD_RATES               1
+#define CONTROLLER_METHOD_RATE_ANGLE_NESTED   2   // (DEFAULT)
+
+
+// These constants define the method used for estimating
+// the Inertial frame state.
+// All methods are run at all times, this flag indicates
+// which estimate is passed onto the controller.
 // The following is a short description about each mode:
 //
 // ESTIMATOR_METHOD_FINITE_DIFFERENCE
@@ -160,20 +178,57 @@ float m_time_in_seconds = 0.0;
 float yaml_max_setpoint_change_per_second_horizontal = 0.1;
 float yaml_max_setpoint_change_per_second_vertical = 0.1;
 
+// Max error for z
+float yaml_max_setpoint_error_z = 0.4;
+
 // Max error for yaw angle
 float yaml_max_setpoint_error_yaw_degrees = 60.0;
 float yaml_max_setpoint_error_yaw_radians = 60.0 * DEG2RAD;
 
+// Max {roll,pitch} angle request
+float yaml_max_roll_pitch_request_degrees = 30.0;
+float yaml_max_roll_pitch_request_radians = 30.0 * DEG2RAD;
+
+// Theshold for {roll,pitch} angle beyond
+// which the motors are turned off
+float yaml_threshold_roll_pitch_for_turn_off_degrees = 70.0;
+float yaml_threshold_roll_pitch_for_turn_off_radians = 70.0 * DEG2RAD;
+
 // The thrust for take off spin motors
 float yaml_takeoff_spin_motors_thrust = 8000;
-// The time for the take off spin(-up) motors
-float takoff_spin_motots_time = 0.8;
+// The time for: take off spin(-up) motors
+float yaml_takoff_spin_motors_time = 0.8;
 
 // Height change for the take off move-up
 float yaml_takeoff_move_up_start_height = 0.1;
 float yaml_takeoff_move_up_end_height   = 0.4;
-// The time for the take off spin motors
+// The time for: take off spin motors
 float yaml_takoff_move_up_time = 1.2;
+
+// Minimum and maximum allowed time for: take off goto setpoint
+float yaml_takoff_goto_setpoint_min_time = 1.2;
+float yaml_takoff_goto_setpoint_max_time = 2.0;
+
+// Box within which to keep the integrator on
+// > Units of [meters]
+// > The box consider is plus/minus this value
+float yaml_takoff_integrator_on_box_horizontal = 0.25;
+float yaml_takoff_integrator_on_box_vertical   = 0.15;
+// The time for: take off integrator-on
+float yaml_takoff_integrator_on_time = 1.5;
+
+
+// Height change for the landing move-down
+float yaml_landing_move_down_end_height_setpoint  = 0.05;
+float yaml_landing_move_down_end_height_threshold = 0.10;
+// The time for: landing move-down
+float yaml_landing_move_down_time_max = 2.0;
+
+// The thrust for landing spin motors
+float yaml_landing_spin_motors_thrust = 10000;
+// The time for: landing spin motors
+float yaml_landing_spin_motors_time = 1.0;
+
 
 
 
@@ -244,12 +299,21 @@ bool yaml_shouldDisplayDebugInfo = false;
 
 // VARIABLES FOR THE CONTROLLER
 
-// The LQR Controller parameters for "CONTROLLER_MODE_LQR_RATE"
-std::vector<float> yaml_gainMatrixThrust_NineStateVector  =  { 0.00, 0.00, 0.98, 0.00, 0.00, 0.25, 0.00, 0.00, 0.00};
-std::vector<float> yaml_gainMatrixRollRate                =  { 0.00,-6.20, 0.00, 0.00,-3.00, 0.00, 5.20, 0.00, 0.00};
-std::vector<float> yaml_gainMatrixPitchRate               =  { 6.20, 0.00, 0.00, 3.00, 0.00, 0.00, 0.00, 5.20, 0.00};
-std::vector<float> yaml_gainMatrixYawRate                 =  { 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.30};
+// > A flag for which controller to use:
+int yaml_controller_method = CONTROLLER_METHOD_RATE_ANGLE_NESTED;
 
+// The LQR Controller parameters for z-height
+std::vector<float> yaml_gainMatrixThrust_2StateVector     =  { 0.98, 0.25};
+// The LQR Controller parameters for "CONTROLLER_METHOD_RATES"
+std::vector<float> yaml_gainMatrixRollRate_3StateVector   =  {-6.20,-3.00, 5.20};
+std::vector<float> yaml_gainMatrixPitchRate_3StateVector  =  { 6.20, 3.00, 5.20};
+// The LQR Controller parameters for "CONTROLLER_METHOD_RATE_ANGLE_NESTED"
+std::vector<float> yaml_gainMatrixRollAngle_2StateVector  =  {-0.20,-0.20};
+std::vector<float> yaml_gainMatrixPitchAngle_2StateVector =  { 0.20, 0.20};
+float yaml_gainRollRate_fromAngle   =  4.00;
+float yaml_gainPitchRate_fromAngle  =  4.00;
+// The LQR Controller parameters for yaw
+float yaml_gainYawRate_fromAngle    =  2.30;
 
 
 // VARIABLES FOR THE ESTIMATOR
@@ -259,9 +323,10 @@ float m_estimator_frequency = 200.0;
 
 // > A flag for which estimator to use:
 int yaml_estimator_method = ESTIMATOR_METHOD_FINITE_DIFFERENCE;
+
 // > The current state interial estimate,
 //   for use by the controller
-float m_current_stateInertialEstimate[12];
+float m_current_stateInertialEstimate[9];
 
 // > The measurement of the Crazyflie at the "current" time step,
 //   to avoid confusion
@@ -273,22 +338,17 @@ float m_previous_xzy_rpy_measurement[6];
 
 // > The full 12 state estimate maintained by the finite
 //   difference state estimator
-float m_stateInterialEstimate_viaFiniteDifference[12];
+float m_stateInterialEstimate_viaFiniteDifference[9];
 
 // > The full 12 state estimate maintained by the point mass
 //   kalman filter state estimator
-float m_stateInterialEstimate_viaPointMassKalmanFilter[12];
+float m_stateInterialEstimate_viaPointMassKalmanFilter[9];
 
 // THE POINT MASS KALMAN FILTER (PMKF) GAINS AND ERROR EVOLUATION
 // > For the (x,y,z) position
 std::vector<float> yaml_PMKF_Ahat_row1_for_positions  =  {  0.6723, 0.0034};
 std::vector<float> yaml_PMKF_Ahat_row2_for_positions  =  {-12.9648, 0.9352};
 std::vector<float> yaml_PMKF_Kinf_for_positions       =  {  0.3277,12.9648};
-// > For the (roll,pitch,yaw) angles
-std::vector<float> yaml_PMKF_Ahat_row1_for_angles     =  {  0.6954, 0.0035};
-std::vector<float> yaml_PMKF_Ahat_row2_for_angles     =  {-11.0342, 0.9448};
-std::vector<float> yaml_PMKF_Kinf_for_angles          =  {  0.3046,11.0342};
-
 
 
 // VARIABLES RELATING TO PUBLISHING
@@ -299,6 +359,11 @@ ros::Publisher m_debugPublisher;
 // ROS Publisher to inform the network about
 // changes to the setpoint
 ros::Publisher m_setpointChangedPublisher;
+
+
+// ROS Publisher for sending motors-off command
+// to the flying agent client
+ros::Publisher m_motorsOffToFlyingAgentClientPublisher;
 
 
 
@@ -335,11 +400,28 @@ bool requestManoeuvreCallback(IntIntService::Request &request, IntIntService::Re
 // CONTROLLER COMPUTATIONS
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response);
 
+// > For the normal state
+void computeResponse_for_normal(Controller::Response &response);
+// > For the standby state (also used for unknown state)
+void computeResponse_for_standby(Controller::Response &response);
+// > For the take-off phases
+void computeResponse_for_takeoff_move_up(Controller::Response &response);
+void computeResponse_for_takeoff_spin_motors(Controller::Response &response);
+void computeResponse_for_takeoff_goto_setpoint(Controller::Response &response);
+void computeResponse_for_takeoff_integrator_on(Controller::Response &response);
+// > For the landing phases
+void computeResponse_for_landing_move_down(Controller::Response &response);
+void computeResponse_for_landing_spin_motors(Controller::Response &response);
+
+
+// SMOOTHING SETPOINT CHANGES
+void smoothSetpointChanges( float target_setpoint[4] , float (&current_setpoint)[4] );
+
 // > This function constructs the error in the body frame
 //   before calling the appropriate control function
 void calculateControlOutput_viaLQR_givenSetpoint(float setpoint[4], float stateInertial[12], Controller::Response &response)
 // > The various functions that implement an LQR controller
-void calculateControlOutput_viaLQRforRates(float stateErrorBody[12], Controller::Response &response);
+void calculateControlOutput_viaLQR_givenError(float stateErrorBody[12], Controller::Response &response);
 
 // ESTIMATOR COMPUTATIONS
 void performEstimatorUpdate_forStateInterial(Controller::Request &request);
@@ -370,6 +452,9 @@ void publishCurrentSetpointAndState();
 
 // CUSTOM COMMAND RECEIVED CALLBACK
 void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived);
+
+// PUBLISH MOTORS-OFF MESSAGE TO FLYING AGENT CLIENT
+void publish_motors_off_to_flying_agent_client();
 
 // LOADING OF YAML PARAMETERS
 void isReadyDefaultControllerYamlCallback(const IntWithHeader & msg);

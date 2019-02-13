@@ -204,7 +204,7 @@
      <string>LoadYAML</string>
     </property>
     <addaction name="action_LoadYAML_BatteryMonitor"/>
-    <addaction name="action_LoadYAML_ClientConfig"/>
+    <addaction name="action_LoadYAML_FlyingAgentClientConfig"/>
    </widget>
    <widget class="QMenu" name="menuControllers">
     <property name="title">
@@ -239,9 +239,9 @@
     <string>BatteryMonitor</string>
    </property>
   </action>
-  <action name="action_LoadYAML_ClientConfig">
+  <action name="action_LoadYAML_FlyingAgentClientConfig">
    <property name="text">
-    <string>ClientConfig</string>
+    <string>FlyingAgentClientConfig</string>
    </property>
   </action>
   <action name="action_showHideController_default">

@@ -130,8 +130,8 @@
 			<param name="agentID"  value="$(arg agentID)" />
 			<rosparam
 				command = "load"
-				file    = "$(find dfall_pkg)/param/ClientConfig.yaml"
-				ns      = "ClientConfig"
+				file    = "$(find dfall_pkg)/param/FlyingAgentClientConfig.yaml"
+				ns      = "FlyingAgentClientConfig"
 			/>
 			<rosparam
 				command = "load"

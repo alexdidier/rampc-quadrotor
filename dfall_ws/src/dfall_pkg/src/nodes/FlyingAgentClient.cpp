@@ -377,9 +377,9 @@ bool safetyCheck_on_positionAndTilt(CrazyflieData data)
     {
         // Check on the ROLL angle
         if(
-            (data.roll > m_maxTiltAngle_for_strictSafety_radians)
+            (data.roll > yaml_maxTiltAngle_for_strictSafety_radians)
             or
-            (data.roll < -m_maxTiltAngle_for_strictSafety_radians)
+            (data.roll < -yaml_maxTiltAngle_for_strictSafety_radians)
         )
         {
             ROS_INFO_STREAM("[FLYING AGENT CLIENT] roll too big.");
@@ -387,9 +387,9 @@ bool safetyCheck_on_positionAndTilt(CrazyflieData data)
         }
         // Check on the PITCH angle
         if(
-            (data.pitch > m_maxTiltAngle_for_strictSafety_radians)
+            (data.pitch > yaml_maxTiltAngle_for_strictSafety_radians)
             or
-            (data.pitch < -m_maxTiltAngle_for_strictSafety_radians)
+            (data.pitch < -yaml_maxTiltAngle_for_strictSafety_radians)
         )
         {
             ROS_INFO_STREAM("[FLYING AGENT CLIENT] pitch too big.");
@@ -721,7 +721,7 @@ void setInstantController(int controller)
     // GUI" about this update to the instant controller
     std_msgs::Int32 controller_used_msg;
     controller_used_msg.data = controller;
-    controllerUsedPublisher.publish(controller_used_msg);
+    m_controllerUsedPublisher.publish(controller_used_msg);
 }
 
 
@@ -1006,9 +1006,9 @@ void loadCrazyflieContext()
 
     CrazyflieContext new_context;
 
-    centralManager.waitForExistence(ros::Duration(-1));
+    m_centralManager.waitForExistence(ros::Duration(-1));
 
-    if(centralManager.call(contextCall)) {
+    if(m_centralManager.call(contextCall)) {
         new_context = contextCall.response.crazyflieContext;
         ROS_INFO_STREAM("[FLYING AGENT CLIENT] CrazyflieContext:\n" << new_context);
 
@@ -1027,7 +1027,7 @@ void loadCrazyflieContext()
             IntWithHeader msg;
             msg.shouldCheckForAgentID = false;
             msg.data = CMD_DISCONNECT;
-            crazyRadioCommandPublisher.publish(msg);
+            m_crazyRadioCommandPublisher.publish(msg);
         }
 
         m_context = new_context;
@@ -1079,7 +1079,7 @@ void loadCrazyflieContext()
 void createControllerServiceClientFromParameterName( std::string paramter_name , ros::ServiceClient& serviceClient )
 {
     ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
-    ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "ClientConfig");
+    ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "FlyingAgentClientConfig");
 
     std::string controllerName;
     if(!nodeHandle.getParam(paramter_name, controllerName))
@@ -1096,7 +1096,7 @@ void createControllerServiceClientFromParameterName( std::string paramter_name ,
 void createIntIntServiceClientFromParameterName( std::string paramter_name , ros::ServiceClient& serviceClient )
 {
     ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
-    ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "ClientConfig");
+    ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "FlyingAgentClientConfig");
 
     std::string controllerName;
     if(!nodeHandle.getParam(paramter_name, controllerName))
@@ -1157,7 +1157,7 @@ void timerCallback_for_createAllcontrollerServiceClients(const ros::TimerEvent&)
 //    ----------------------------------------------------------------------------------
 
 
-void isReadyClientConfigYamlCallback(const IntWithHeader & msg)
+void isReadyFlyingAgentClientConfigYamlCallback(const IntWithHeader & msg)
 {
     // Check whether the message is relevant
     bool isRevelant = checkMessageHeader( m_agentID , msg.shouldCheckForAgentID , msg.agentIDs );
@@ -1175,14 +1175,14 @@ void isReadyClientConfigYamlCallback(const IntWithHeader & msg)
             // > FOR FETCHING FROM THE AGENT'S OWN PARAMETER SERVICE
             case LOAD_YAML_FROM_AGENT:
             {
-                ROS_INFO("[FLYING AGENT CLIENT] Now fetching the ClientConfig YAML parameter values from this agent.");
+                ROS_INFO("[FLYING AGENT CLIENT] Now fetching the FlyingAgentClientConfig YAML parameter values from this agent.");
                 namespace_to_use = m_namespace_to_own_agent_parameter_service;
                 break;
             }
             // > FOR FETCHING FROM THE COORDINATOR'S PARAMETER SERVICE
             case LOAD_YAML_FROM_COORDINATOR:
             {
-                ROS_INFO("[FLYING AGENT CLIENT] Now fetching the ClientConfig YAML parameter values from this agent's coordinator.");
+                ROS_INFO("[FLYING AGENT CLIENT] Now fetching the FlyingAgentClientConfig YAML parameter values from this agent's coordinator.");
                 namespace_to_use = m_namespace_to_coordinator_parameter_service;
                 break;
             }
@@ -1197,20 +1197,20 @@ void isReadyClientConfigYamlCallback(const IntWithHeader & msg)
         // Create a node handle to the selected parameter service
         ros::NodeHandle nodeHandle_to_use(namespace_to_use);
         // Call the function that fetches the parameters
-        fetchClientConfigYamlParameters(nodeHandle_to_use);
+        fetchFlyingAgentClientConfigYamlParameters(nodeHandle_to_use);
     }
 }
 
 
 
 // > Load the paramters from the Client Config YAML file
-void fetchClientConfigYamlParameters(ros::NodeHandle& nodeHandle)
+void fetchFlyingAgentClientConfigYamlParameters(ros::NodeHandle& nodeHandle)
 {
     // Here we load the parameters that are specified in the file:
-    // ClientConfig.yaml
+    // FlyingAgentClientConfig.yaml
 
-    // Add the "ClientConfig" namespace to the "nodeHandle"
-    ros::NodeHandle nodeHandle_for_paramaters(nodeHandle, "ClientConfig");
+    // Add the "FlyingAgentClientConfig" namespace to the "nodeHandle"
+    ros::NodeHandle nodeHandle_for_paramaters(nodeHandle, "FlyingAgentClientConfig");
 
     // Flag for whether to use angle for switching to the Safe Controller
     yaml_isEnabled_strictSafety = getParameterBool(nodeHandle_for_paramaters,"isEnabled_strictSafety");
@@ -1232,16 +1232,16 @@ void fetchClientConfigYamlParameters(ros::NodeHandle& nodeHandle)
 	yaml_shouldPerfom_landing_with_defaultController = getParameterBool(nodeHandle_for_paramaters,"shouldPerfom_landing_with_defaultController");
     
     // DEBUGGING: Print out one of the parameters that was loaded
-    ROS_INFO_STREAM("[FLYING AGENT CLIENT] DEBUGGING: the fetched ClientConfig/isEnabled_strictSafety = " << yaml_isEnabled_strictSafety);
+    ROS_INFO_STREAM("[FLYING AGENT CLIENT] DEBUGGING: the fetched FlyingAgentClientConfig/isEnabled_strictSafety = " << yaml_isEnabled_strictSafety);
 
 
 
     // PROCESS THE PARAMTERS
     // Convert from degrees to radians
-    m_maxTiltAngle_for_strictSafety_radians = DEG2RAD * yaml_maxTiltAngle_for_strictSafety_degrees;
+    yaml_maxTiltAngle_for_strictSafety_radians = DEG2RAD * yaml_maxTiltAngle_for_strictSafety_degrees;
 
     // DEBUGGING: Print out one of the processed values
-    ROS_INFO_STREAM("[FLYING AGENT CLIENT CONTROLLER] DEBUGGING: after processing m_maxTiltAngle_for_strictSafety_radians = " << m_maxTiltAngle_for_strictSafety_radians);
+    ROS_INFO_STREAM("[FLYING AGENT CLIENT CONTROLLER] DEBUGGING: after processing yaml_maxTiltAngle_for_strictSafety_radians = " << yaml_maxTiltAngle_for_strictSafety_radians);
 }
 
 
@@ -1259,70 +1259,91 @@ void fetchClientConfigYamlParameters(ros::NodeHandle& nodeHandle)
 
 int main(int argc, char* argv[])
 {
-    // Starting the ROS-node
+	// Starting the ROS-node
 	ros::init(argc, argv, "FlyingAgentClient");
 
-    // Create a "ros::NodeHandle" type local variable named "nodeHandle",
-    // the "~" indcates that "self" is the node handle assigned.
+	// Create a "ros::NodeHandle" type local variable "nodeHandle"
+	// as the current node, the "~" indcates that "self" is the
+	// node handle assigned to this variable.
 	ros::NodeHandle nodeHandle("~");
 
-    // Get the namespace of this node
-    std::string m_namespace = ros::this_node::getNamespace();
-    ROS_INFO_STREAM("[FLYING AGENT CLIENT] ros::this_node::getNamespace() =  " << m_namespace);
+	// Get the namespace of this node
+	std::string m_namespace = ros::this_node::getNamespace();
+	ROS_INFO_STREAM("[FLYING AGENT CLIENT] ros::this_node::getNamespace() =  " << m_namespace);
 
 
 
-    // AGENT ID AND COORDINATOR ID
+	// AGENT ID AND COORDINATOR ID
 
-    // Get the ID of the agent and its coordinator
-    bool isValid_IDs = getAgentIDandCoordIDfromClientNode( m_namespace + "/FlyingAgentClient" , &m_agentID , &m_coordID);
-
-    // Stall the node IDs are not valid
-    if ( !isValid_IDs )
-    {
-        ROS_ERROR("[FLYING AGENT CLIENT] Node NOT FUNCTIONING :-)");
-        ros::spin();
-    }
-    else
-    {
-        ROS_INFO_STREAM("[FLYING AGENT CLIENT] loaded agentID = " << m_agentID << ", and coordID = " << m_coordID);
-    }
+	// NOTES:
+	// > If you look at the "Agent.launch" file in the "launch" folder,
+	//   you will see the following line of code:
+	//   <param name="agentID" value="$(optenv ROS_NAMESPACE)" />
+	//   This line of code adds a parameter named "agentID" to the
+	//   "FlyingAgentClient" node.
+	// > Thus, to get access to this "agentID" paremeter, we first
+	//   need to get a handle to the "FlyingAgentClient" node within which this
+	//   controller service is nested.
 
 
+	// Get the ID of the agent and its coordinator
+	bool isValid_IDs = getAgentIDandCoordIDfromClientNode( m_namespace + "/FlyingAgentClient" , &m_agentID , &m_coordID);
 
-    // PARAMETER SERVICE NAMESPACE AND NODEHANDLES:
-
-    // Set the class variable "m_namespace_to_own_agent_parameter_service",
-    // i.e., the namespace of parameter service for this agent
-    m_namespace_to_own_agent_parameter_service = m_namespace + "/ParameterService";
-
-    // Set the class variable "m_namespace_to_coordinator_parameter_service",
-    // i.e., the namespace of parameter service for this agent's coordinator
-    constructNamespaceForCoordinatorParameterService( m_coordID, m_namespace_to_coordinator_parameter_service );
-
-    // Inform the user of what namespaces are being used
-    ROS_INFO_STREAM("[FLYING AGENT CLIENT] m_namespace_to_own_agent_parameter_service    =  " << m_namespace_to_own_agent_parameter_service);
-    ROS_INFO_STREAM("[FLYING AGENT CLIENT] m_namespace_to_coordinator_parameter_service  =  " << m_namespace_to_coordinator_parameter_service);
-
-    // Create, as local variables, node handles to the parameters services
-    ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
-    ros::NodeHandle nodeHandle_to_coordinator_parameter_service(m_namespace_to_coordinator_parameter_service);
+	// Stall the node IDs are not valid
+	if ( !isValid_IDs )
+	{
+		ROS_ERROR("[FLYING AGENT CLIENT] Node NOT FUNCTIONING :-)");
+		ros::spin();
+	}
+	else
+	{
+		ROS_INFO_STREAM("[FLYING AGENT CLIENT] loaded agentID = " << m_agentID << ", and coordID = " << m_coordID);
+	}
 
 
 
-    // SUBSCRIBE TO "YAML PARAMTERS READY" MESSAGES
+	// PARAMETER SERVICE NAMESPACE AND NODEHANDLES:
 
-    // The parameter service publishes messages with names of the form:
-    // /dfall/.../ParameterService/<filename with .yaml extension>
-    ros::Subscriber clientConfig_yamlReady_fromAgent = nodeHandle_to_own_agent_parameter_service.subscribe(  "ClientConfig", 1, isReadyClientConfigYamlCallback);
-    ros::Subscriber clientConfig_yamlReady_fromCoord = nodeHandle_to_coordinator_parameter_service.subscribe("ClientConfig", 1, isReadyClientConfigYamlCallback);
+	// NOTES:
+	// > The parameters that are specified thorugh the *.yaml files
+	//   are managed by a separate node called the "Parameter Service"
+	// > A separate node is used for reasons of speed and generality
+	// > To allow for a distirbuted architecture, there are two
+	//   "ParamterService" nodes that are relevant:
+	//   1) the one that is nested under the "m_agentID" namespace
+	//   2) the one that is nested under the "m_coordID" namespace
+	// > The following lines of code create the namespace (as strings)
+	//   to there two relevant "ParameterService" nodes.
+	// > The node handles are also created because they are needed
+	//   for the ROS Subscriptions that follow.
 
-    //ros::Subscriber safeController_yamlReady_fromAgent = nodeHandle_to_own_agent_parameter_service.subscribe(  "SafeController", 1, isReadySafeControllerYamlCallback);
-    //ros::Subscriber safeController_yamlReady_fromCoord = nodeHandle_to_coordinator_parameter_service.subscribe("SafeController", 1, isReadySafeControllerYamlCallback);
+	// Set the class variable "m_namespace_to_own_agent_parameter_service",
+	// i.e., the namespace of parameter service for this agent
+	m_namespace_to_own_agent_parameter_service = m_namespace + "/ParameterService";
+
+	// Set the class variable "m_namespace_to_coordinator_parameter_service",
+	// i.e., the namespace of parameter service for this agent's coordinator
+	constructNamespaceForCoordinatorParameterService( m_coordID, m_namespace_to_coordinator_parameter_service );
+
+	// Inform the user of what namespaces are being used
+	ROS_INFO_STREAM("[FLYING AGENT CLIENT] m_namespace_to_own_agent_parameter_service    =  " << m_namespace_to_own_agent_parameter_service);
+	ROS_INFO_STREAM("[FLYING AGENT CLIENT] m_namespace_to_coordinator_parameter_service  =  " << m_namespace_to_coordinator_parameter_service);
+
+	// Create, as local variables, node handles to the parameters services
+	ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
+	ros::NodeHandle nodeHandle_to_coordinator_parameter_service(m_namespace_to_coordinator_parameter_service);
 
 
 
-    // GIVE YAML VARIABLES AN INITIAL VALUE
+	// SUBSCRIBE TO "YAML PARAMTERS READY" MESSAGES
+
+	// The parameter service publishes messages with names of the form:
+	// /dfall/.../ParameterService/<filename with .yaml extension>
+	ros::Subscriber flyingAgentClientConfig_yamlReady_fromAgent = nodeHandle_to_own_agent_parameter_service.subscribe(  "FlyingAgentClientConfig", 1, isReadyFlyingAgentClientConfigYamlCallback);
+	ros::Subscriber flyingAgentClientConfig_yamlReady_fromCoord = nodeHandle_to_coordinator_parameter_service.subscribe("FlyingAgentClientConfig", 1, isReadyFlyingAgentClientConfigYamlCallback);
+
+
+	// GIVE YAML VARIABLES AN INITIAL VALUE
 
 	// This can be done either here or as part of declaring the
 	// variables in the header file
@@ -1331,183 +1352,174 @@ int main(int argc, char* argv[])
 
 	// FETCH ANY PARAMETERS REQUIRED FROM THE "PARAMETER SERVICES"
 
-    // Call the class function that loads the parameters for this class.
-    fetchClientConfigYamlParameters(nodeHandle_to_own_agent_parameter_service);
-    //fetchSafeControllerYamlParameters(nodeHandle_to_own_agent_parameter_service);
+	// Call the class function that loads the parameters
+	// from the "FlyingAgentClientConfig.yaml" file.
+	// > This is possible because that YAML file is added
+	//   to the parameter service when launched via the
+	//   "agent.launch" file.
+	fetchFlyingAgentClientConfigYamlParameters(nodeHandle_to_own_agent_parameter_service);
 
 
 
 
 
-    // INITIALISE ALL THE CONTROLLER SERVICE CLIENTS
-    // > This cannot be done directly here because the other nodes may
-    //   be currently unavailable. Hence, we start a timer for a few
-    //   seconds and in the call back all the controller service
-    //   clients are created.
-    m_controllers_avialble = false;
-    m_timer_for_createAllControllerServiceClients = nodeHandle.createTimer(ros::Duration(3), timerCallback_for_createAllcontrollerServiceClients, true);
+	// INITIALISE ALL THE CONTROLLER SERVICE CLIENTS    
+	// > This cannot be done directly here because the other nodes may
+	//   be currently unavailable. Hence, we start a timer for a few
+	//   seconds and in the call back all the controller service
+	//   clients are created.
+	m_controllers_avialble = false;
+	m_timer_for_createAllControllerServiceClients = nodeHandle.createTimer(ros::Duration(3), timerCallback_for_createAllcontrollerServiceClients, true);
+
+
+
+	// INITIALISE THE MOTION CAPTURE TIME-OUT TIMER
+	// > And stop it immediately
+	m_isAvailable_mocap_data = false;
+	m_timer_mocap_timeout_check = nodeHandle.createTimer(ros::Duration(yaml_mocap_timeout_duration), timerCallback_mocap_timeout_check, true);
+	m_timer_mocap_timeout_check.stop();
+
+
+
+	// INITIALISE THE TAKE-OFF AND LANDING COMPLETE TIMERS
+	// > And stop it immediately
+	m_timer_takeoff_complete = nodeHandle.createTimer(ros::Duration(1.0), timerCallback_takeoff_complete, true);
+	m_timer_takeoff_complete.stop();
+	m_timer_land_complete = nodeHandle.createTimer(ros::Duration(1.0), timerCallback_takeoff_complete, true);
+	m_timer_land_complete.stop();
+
+
+
+	// INITIALISE THE CRAZY RADIO STATUS
+	m_crazyradio_status = CRAZY_RADIO_STATE_DISCONNECTED;
+
+
+
+	// INITIALISE THE FLYING STATE AND PUBLISH
+	m_flying_state = STATE_MOTORS_OFF;
 
 
 
 
 
-    // INITIALISE THE MOTION CAPTURE TIME-OUT TIMER
-    // > And stop it immediately
-    m_isAvailable_mocap_data = false;
-    m_timer_mocap_timeout_check = nodeHandle.createTimer(ros::Duration(yaml_mocap_timeout_duration), timerCallback_mocap_timeout_check, true);
-    m_timer_mocap_timeout_check.stop();
-    
-
-    // INITIALISE THE TAKE-OFF AND LANDING COMPLETE TIMERS
-    // > And stop it immediately
-    m_timer_takeoff_complete = nodeHandle.createTimer(ros::Duration(1.0), timerCallback_takeoff_complete, true);
-    m_timer_takeoff_complete.stop();
-    m_timer_land_complete = nodeHandle.createTimer(ros::Duration(1.0), timerCallback_takeoff_complete, true);
-    m_timer_land_complete.stop();
+	// PUBLISHERS, SUBSCRIBERS, AND SERVICE CLIENTS
 
 
+	// CREATE A NODE HANDLE TO THE ROOT OF THE D-FaLL SYSTEM
+	ros::NodeHandle nodeHandle_dfall_root("/dfall");
 
 
-
-    // PUBLISHERS, SUBSCRIBERS, AND SERVICE CLIENTS
-
-	
-
-    // CREATE A NODE HANDLE TO THE ROOT OF THE D-FaLL SYSTEM
-    ros::NodeHandle nodeHandle_dfall_root("/dfall");
-
-    // CREATE A NODE HANDLE TO THE COORDINATOR
-    std::string namespace_to_coordinator;
-    constructNamespaceForCoordinator( m_coordID, namespace_to_coordinator );
-    ros::NodeHandle nodeHandle_to_coordinator(namespace_to_coordinator);
+	// CREATE A NODE HANDLE TO THE COORDINATOR
+	std::string namespace_to_coordinator;
+	constructNamespaceForCoordinator( m_coordID, namespace_to_coordinator );
+	ros::NodeHandle nodeHandle_to_coordinator(namespace_to_coordinator);
 
 
-
-
-    // SERVICE CLIENT FOR LOADING THE ALLOCATED FLYING ZONE
-    // AND OTHER CONTEXT DETAILS
-
-    //ros::service::waitForService("/CentralManagerService/CentralManager");
-	centralManager = nodeHandle_dfall_root.serviceClient<CMQuery>("CentralManagerService/Query", false);
+	// LOADING OF THIS AGENT'S CONTEXT
+	// Service cleint for loading the allocated flying
+	// zone and other context details
+	//ros::service::waitForService("/CentralManagerService/CentralManager");
+	m_centralManager = nodeHandle_dfall_root.serviceClient<CMQuery>("CentralManagerService/Query", false);
+	// Call the class function that uses this service
+	// client to load the context
 	loadCrazyflieContext();
+	// Subscriber for when the Flying Zone Database changed
+	ros::Subscriber databaseChangedSubscriber = nodeHandle_dfall_root.subscribe("CentralManagerService/DBChanged", 1, crazyflieContextDatabaseChangedCallback);
 
-    // Subscriber for when the Flying Zone Database changed
-    ros::Subscriber databaseChangedSubscriber = nodeHandle_dfall_root.subscribe("CentralManagerService/DBChanged", 1, crazyflieContextDatabaseChangedCallback);
 
-    // EMERGENCY STOP OF THE WHOLE "D-FaLL-System"
-    ros::Subscriber emergencyStopSubscriber = nodeHandle_dfall_root.subscribe("emergencyStop", 1, emergencyStopReceivedCallback);
+	// EMERGENCY STOP OF THE WHOLE "D-FaLL-System"
+	ros::Subscriber emergencyStopSubscriber = nodeHandle_dfall_root.subscribe("emergencyStop", 1, emergencyStopReceivedCallback);
 
-    // LOCALISATION DATA FROM MOTION CAPTURE SYSTEM
+
+	// LOCALISATION DATA FROM MOTION CAPTURE SYSTEM
 	//keeps 100 messages because otherwise ViconDataPublisher would override the data immediately
 	ros::Subscriber viconSubscriber = nodeHandle_dfall_root.subscribe("ViconDataPublisher/ViconData", 100, viconCallback);
 
 
 
-    // PUBLISHER FOR COMMANDING THE CRAZYFLIE
-    // i.e., motorCmd{1,2,3,4}, roll, pitch, yaw, and onboardControllerType
+	// PUBLISHER FOR COMMANDING THE CRAZYFLIE
+	// i.e., motorCmd{1,2,3,4}, roll, pitch, yaw, and onboardControllerType
 	//ros::Publishers to advertise the control output
 	m_commandForSendingToCrazyfliePublisher = nodeHandle.advertise <ControlCommand>("ControlCommand", 1);
 
-	//this topic lets the FlyingAgentClient listen to the terminal commands
-    //commandPublisher = nodeHandle.advertise<std_msgs::Int32>("Command", 1);
+
+	// SUBSCRIBER FOR THE CHANGE STATE COMMANDS
+	// i.e., {TAKE-OFF,LAND,MOTORS-OFF,CONTROLLER SELECTION}
+	// > for the agent GUI
+	ros::Subscriber commandSubscriber_to_agent = nodeHandle.subscribe("Command", 1, flyingStateRequestCallback);
+	// > for the coord GUI
+	ros::Subscriber commandSubscriber_to_coord = nodeHandle_to_coordinator.subscribe("FlyingAgentClient/Command", 1, flyingStateRequestCallback);
 
 
-
-    // SUBSCRIBER FOR THE CHANGE STATE COMMANDS
-    // i.e., {TAKE-OFF,LAND,MOTORS-OFF,CONTROLLER SELECTION}
-    // > for the agent GUI
-    ros::Subscriber commandSubscriber_to_agent = nodeHandle.subscribe("Command", 1, flyingStateRequestCallback);
-    // > for the coord GUI
-    ros::Subscriber commandSubscriber_to_coord = nodeHandle_to_coordinator.subscribe("FlyingAgentClient/Command", 1, flyingStateRequestCallback);
+	// PUBLISHER FOR THE CRAZYRADIO COMMANDS
+	// i.e., {CONNECT,DISCONNECT}
+	// This topic lets us use the terminal to communicate with
+	// the crazyRadio node even when the GUI is not launched
+	m_crazyRadioCommandPublisher = nodeHandle.advertise<IntWithHeader>("crazyRadioCommand", 1);
 
 
+	// PUBLISHER FOR THE FLYING STATE
+	// Possible states: {MOTORS-OFF,TAKE-OFF,FLYING,LAND}
+	// This topic will publish flying state whenever it changes.
+	m_flyingStatePublisher = nodeHandle.advertise<std_msgs::Int32>("flyingState", 1);
 
 
-    // PUBLISHER FOR THE CRAZYRADIO COMMANDS
-    // i.e., {CONNECT,DISCONNECT}
-    // This topic lets us use the terminal to communicate with
-    // the crazyRadio node even when the GUI is not launched
-    crazyRadioCommandPublisher = nodeHandle.advertise<IntWithHeader>("crazyRadioCommand", 1);
+	// PUBLISHER FOR THE CONTROLLER CURRENTLY IN USE
+	// This publishes the "m_instant_controller" variable
+	// to reflect the controller that is actually called
+	// when motion capture data is received.
+	m_controllerUsedPublisher = nodeHandle.advertise<std_msgs::Int32>("controllerUsed", 1);
 
 
-
-    // PUBLISHER FOR THE FLYING STATE
-    // Possible states: {MOTORS-OFF,TAKE-OFF,FLYING,LAND}
-    // This topic will publish flying state whenever it changes.
-    m_flyingStatePublisher = nodeHandle.advertise<std_msgs::Int32>("flyingState", 1);
-
-    
-
-    // PUBLISHER FOR THE 
-    controllerUsedPublisher = nodeHandle.advertise<std_msgs::Int32>("controllerUsed", 1);
+	// SUBSCRIBER FOR CRAZY RADIO STATUS CHANGES
+	// crazyradio status. Connected, connecting or disconnected
+	std::string namespace_to_crazy_radio = m_namespace + "/CrazyRadio";
+	ros::NodeHandle nodeHandle_to_crazy_radio(namespace_to_crazy_radio);
+	ros::Subscriber crazyRadioStatusSubscriber = nodeHandle_to_crazy_radio.subscribe("CrazyRadio/CrazyRadioStatus", 1, crazyRadioStatusCallback);
 
 
+	// SUBSCRIBER FOR BATTERY STATE CHANGES
+	// The battery state change message from the Battery
+	// Monitor node
+	std::string namespace_to_battery_monitor = m_namespace + "/BatteryMonitor";
+	ros::NodeHandle nodeHandle_to_battery_monitor(namespace_to_battery_monitor);
+	ros::Subscriber CFBatterySubscriber = nodeHandle_to_battery_monitor.subscribe("ChangedStateTo", 1, batteryMonitorStateChangedCallback);
 
 
-    // crazy radio status
-    m_crazyradio_status = CRAZY_RADIO_STATE_DISCONNECTED;
-
-    // publish first flying state data
-    std_msgs::Int32 flying_state_msg;
-    flying_state_msg.data = m_flying_state;
-    m_flyingStatePublisher.publish(flying_state_msg);
-
-    // SafeControllerServicePublisher:
-    ros::NodeHandle namespaceNodeHandle = ros::NodeHandle();
-    //safeControllerServiceSetpointPublisher = namespaceNodeHandle.advertise<dfall_pkg::Setpoint>("SafeControllerService/Setpoint", 1);
-    //ros::Subscriber controllerSetpointSubscriber = namespaceNodeHandle.subscribe("student_GUI/ControllerSetpoint", 1, controllerSetPointCallback);
-    //ros::Subscriber safeSetpointSubscriber = namespaceNodeHandle.subscribe("SafeControllerService/Setpoint", 1, safeSetPointCallback);
-
-    
-
-    
-    // crazyradio status. Connected, connecting or disconnected
-    ros::Subscriber crazyRadioStatusSubscriber = namespaceNodeHandle.subscribe("CrazyRadio/CrazyRadioStatus", 1, crazyRadioStatusCallback);
+	// SERVICE SERVER FOR OTHERS TO GET THE CURRENT FLYING STATE
+	// Advertise the service that return the "m_flying_state"
+	// variable when called upon
+	ros::ServiceServer getCurrentFlyingStateService = nodeHandle.advertiseService("getCurrentFlyingState", getCurrentFlyingStateServiceCallback);
 
 
 
 
 
-    // will publish battery state when it changes
-    //batteryStatePublisher = nodeHandle.advertise<std_msgs::Int32>("batteryState", 1);
-
-    // INITIALISE THE BATTERY VOLTAGE TO SOMETHING CLOSE TO FULL
-    // > This is used to prevent the "Low Battery" being trigged when the 
-    //   first battery voltage data is received
-    //m_battery_voltage = 4.2f;
-    // know the battery level of the CF
-    //ros::Subscriber CFBatterySubscriber = namespaceNodeHandle.subscribe("CrazyRadio/CFBattery", 1, CFBatteryCallback);
-
-    //setBatteryStateTo(BATTERY_STATE_NORMAL); //initialize battery state
-
-    // Subscribe to the battery state change message from the Battery Monitor node
-    std::string namespace_to_battery_monitor = m_namespace + "/BatteryMonitor";
-    ros::NodeHandle nodeHandle_to_battery_monitor(namespace_to_battery_monitor);
-    ros::Subscriber CFBatterySubscriber = nodeHandle_to_battery_monitor.subscribe("ChangedStateTo", 1, batteryMonitorStateChangedCallback);
+	// PUBLISH THE FLYING STATE
+	// Ideally the GUI receives this message
+	std_msgs::Int32 flying_state_msg;
+	flying_state_msg.data = m_flying_state;
+	m_flyingStatePublisher.publish(flying_state_msg);
 
 
-	//start with safe controller
-    m_flying_state = STATE_MOTORS_OFF;
-    setControllerNominallySelected(DEFAULT_CONTROLLER);
-    setInstantController(DEFAULT_CONTROLLER); //initialize this also, so we notify GUI
-
-
-    // Advertise the service for the current flying state
-    ros::ServiceServer getCurrentFlyingStateService = nodeHandle.advertiseService("getCurrentFlyingState", getCurrentFlyingStateServiceCallback);
+	// SET THE INITIAL CONTROLLER
+	// This cannot be done before the publishers because
+	// the function also sets the "m_instant_controller"
+	// (as the "m_flying_state" is "STATE_MOTORS_OFF")
+	// and the function that sets the instant controller
+	// publishes a message with the information.
+	setControllerNominallySelected(DEFAULT_CONTROLLER);
 
 
 
-    // Open a ROS "bag" to store data for post-analysis
-	// std::string package_path;
-	// package_path = ros::package::getPath("dfall_pkg") + "/";
-	// ROS_INFO_STREAM(package_path);
-	// std::string record_file = package_path + "LoggingFlyingAgentClient.bag";
-	// bag.open(record_file, rosbag::bagmode::Write);
 
-	ros::spin();
 
-	// Close the ROS "bag" that was opened to store data for post-analysis
-	//bag.close();
+	// Print out some information to the user.
+    ROS_INFO("[FLYING AGENT CLIENT] Ready :-)");
 
+    // Enter an endless while loop to keep the node alive.
+    ros::spin();
+
+    // Return zero if the "ross::spin" is cancelled.
     return 0;
 }
