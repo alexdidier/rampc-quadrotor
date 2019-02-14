@@ -179,18 +179,21 @@ float m_time_in_seconds = 0.0;
 
 // Max setpoint change per second
 float yaml_max_setpoint_change_per_second_horizontal = 0.60;
-float yaml_max_setpoint_change_per_second_vertical   = 0.30;
+float yaml_max_setpoint_change_per_second_vertical   = 0.40;
 
 // Max error for z
 float yaml_max_setpoint_error_z = 0.4;
 
-// Max error for yaw angle
-float yaml_max_setpoint_error_yaw_degrees = 60.0;
-float yaml_max_setpoint_error_yaw_radians = 60.0 * DEG2RAD;
+// Max error for xy
+float yaml_max_setpoint_error_xy = 0.3;
 
 // Max {roll,pitch} angle request
 float yaml_max_roll_pitch_request_degrees = 30.0;
 float yaml_max_roll_pitch_request_radians = 30.0 * DEG2RAD;
+
+// Max error for yaw angle
+float yaml_max_setpoint_error_yaw_degrees = 60.0;
+float yaml_max_setpoint_error_yaw_radians = 60.0 * DEG2RAD;
 
 // Theshold for {roll,pitch} angle beyond
 // which the motors are turned off
@@ -225,7 +228,7 @@ float yaml_takoff_integrator_on_time = 2.0;
 float yaml_landing_move_down_end_height_setpoint  = 0.05;
 float yaml_landing_move_down_end_height_threshold = 0.10;
 // The time for: landing move-down
-float yaml_landing_move_down_time_max = 2.0;
+float yaml_landing_move_down_time_max = 5.0;
 
 // The thrust for landing spin motors
 float yaml_landing_spin_motors_thrust = 10000;
@@ -302,7 +305,7 @@ bool yaml_shouldDisplayDebugInfo = false;
 // VARIABLES FOR THE CONTROLLER
 
 // > A flag for which controller to use:
-int yaml_controller_method = CONTROLLER_METHOD_RATES;
+int yaml_controller_method = CONTROLLER_METHOD_RATE_ANGLE_NESTED;
 
 // The LQR Controller parameters for z-height
 std::vector<float> yaml_gainMatrixThrust_2StateVector     =  { 0.98, 0.25};

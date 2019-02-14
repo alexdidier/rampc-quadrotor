@@ -3,16 +3,19 @@
 
 # Max setpoint change per second
 max_setpoint_change_per_second_horizontal  :  0.60 # [meters]
-max_setpoint_change_per_second_vertical    :  0.30 # [meters]
+max_setpoint_change_per_second_vertical    :  0.40 # [meters]
 
 # Max error for z
 max_setpoint_error_z: 0.4
 
-# Max error for yaw angle
-max_setpoint_error_yaw_degrees: 60
+# Max error for xy
+max_setpoint_error_xy: 0.3
 
 # Max {roll,pitch} angle request
 max_roll_pitch_request_degrees: 30
+
+# Max error for yaw angle
+max_setpoint_error_yaw_degrees: 60
 
 # Theshold for {roll,pitch} angle beyond
 # which the motors are turned off
@@ -46,7 +49,7 @@ takoff_integrator_on_time: 2.0
 landing_move_down_end_height_setpoint:  0.05
 landing_move_down_end_height_threshold: 0.10
 # The time for: landing move-down
-landing_move_down_time_max: 4.0
+landing_move_down_time_max: 5.0
 
 # The thrust for landing spin motors
 landing_spin_motors_thrust: 10000
@@ -88,7 +91,7 @@ shouldDisplayDebugInfo : false
 # A flag for which controller to use, defined as:
 # 1  -  Rate controller
 # 2  -  Angle-Rate nested controller
-controller_method : 1
+controller_method : 2
 
 # The LQR Controller parameters for z-height
 gainMatrixThrust_2StateVector     :  [ 0.98, 0.25]
@@ -103,9 +106,9 @@ gainPitchRate_fromAngle  :  4.00
 # The LQR Controller parameters for yaw
 gainYawRate_fromAngle    :  2.30
 # Integrator gains
-integratorGain_forThrust  :  0.01
-integratorGain_forTauXY   :  0.01
-integratorGain_forTauYaw  :  0.01
+integratorGain_forThrust  :  0.00
+integratorGain_forTauXY   :  0.00
+integratorGain_forTauYaw  :  0.00
 
 
 

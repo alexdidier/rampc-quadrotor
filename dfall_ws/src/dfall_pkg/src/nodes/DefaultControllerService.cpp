@@ -487,8 +487,6 @@ void computeResponse_for_takeoff_goto_setpoint(Controller::Response &response)
 		box_reached = true;
 	}
 
-	ROS_INFO_STREAM("[DEFAULT CONTROLLER] time = " << m_time_in_seconds << ", switch at = " << time_to_switch << " abs error (x,y,z) = ( " << abs_error_x << ", " << abs_error_y << ", " << abs_error_z << ")" );
-
 	if (m_time_in_seconds > time_to_switch)
 	{
 		// Inform the user
@@ -584,8 +582,6 @@ void computeResponse_for_landing_move_down(Controller::Response &response)
 
 	// Call the LQR control function
 	calculateControlOutput_viaLQR_givenSetpoint(m_setpoint_for_controller, m_current_stateInertialEstimate, response, INTEGRATOR_FLAG_OFF);
-
-	ROS_INFO_STREAM("[DEFAULT CONTROLLER] m_current_stateInertialEstimate[2] = " << m_current_stateInertialEstimate[2] );
 
 	// Check if within the threshold of zero
 	if (m_current_stateInertialEstimate[2] < yaml_landing_move_down_end_height_threshold)
@@ -699,6 +695,10 @@ void computeResponse_for_landing_spin_motors(Controller::Response &response)
 
 void smoothSetpointChanges( float target_setpoint[4] , float (&current_setpoint)[4] )
 {
+	// NO SMOOTHING IS APPLIED TO THE YAW-COORDINATE
+	// > Hence copy it across directly
+	current_setpoint[3] = target_setpoint[3];
+
 	// SMOOTH THE Z-COORIDINATE
 	// > Compute the max allowed change
 	float max_for_z = yaml_max_setpoint_change_per_second_vertical / yaml_control_frequency;
@@ -892,16 +892,41 @@ void calculateControlOutput_viaLQR_givenSetpoint(float setpoint[4], float stateI
 	// Store the current YAW in a local variable
 	float temp_stateInertial_yaw = stateInertial[8];
 
+	// Initialise an array for the state error in the inertial frame
+	float stateInertialError[9];
+
 	// Adjust the INERTIAL (x,y,z) position for the setpoint
-	stateInertial[0] = stateInertial[0] - setpoint[0];
-	stateInertial[1] = stateInertial[1] - setpoint[1];
-	stateInertial[2] = stateInertial[2] - setpoint[2];
+	stateInertialError[0] = stateInertial[0] - setpoint[0];
+	stateInertialError[1] = stateInertial[1] - setpoint[1];
+	stateInertialError[2] = stateInertial[2] - setpoint[2];
+
+	// The linear velocities can be directly copied across
+	stateInertialError[3] = stateInertial[3];
+	stateInertialError[4] = stateInertial[4];
+	stateInertialError[5] = stateInertial[5];
+
+	// The angular velocities for {roll,pitch} can be directly
+	// copied across
+	stateInertialError[6] = stateInertial[6];
+	stateInertialError[7] = stateInertial[7];
+
+	// Clip the x-coordination to within the specified bounds
+	if (stateInertialError[0] > yaml_max_setpoint_error_xy)
+		stateInertialError[0] = yaml_max_setpoint_error_xy;
+	else if (stateInertialError[0] < -yaml_max_setpoint_error_xy)
+		stateInertialError[0] = -yaml_max_setpoint_error_xy;
+
+	// Clip the y-coordination to within the specified bounds
+	if (stateInertialError[1] > yaml_max_setpoint_error_xy)
+		stateInertialError[1] = yaml_max_setpoint_error_xy;
+	else if (stateInertialError[1] < -yaml_max_setpoint_error_xy)
+		stateInertialError[1] = -yaml_max_setpoint_error_xy;
 
 	// Clip the z-coordination to within the specified bounds
-	if (stateInertial[2] > yaml_max_setpoint_error_z)
-		stateInertial[2] = yaml_max_setpoint_error_z;
-	else if (stateInertial[2] < -yaml_max_setpoint_error_z)
-		stateInertial[2] = -yaml_max_setpoint_error_z;
+	if (stateInertialError[2] > yaml_max_setpoint_error_z)
+		stateInertialError[2] = yaml_max_setpoint_error_z;
+	else if (stateInertialError[2] < -yaml_max_setpoint_error_z)
+		stateInertialError[2] = -yaml_max_setpoint_error_z;
 
 	// Fill in the yaw angle error
 	// > This error should be "unwrapped" to be in the range
@@ -918,14 +943,14 @@ void calculateControlOutput_viaLQR_givenSetpoint(float setpoint[4], float stateI
 		yawError = -yaml_max_setpoint_error_yaw_radians;
 
 	// > Finally, put the "yawError" into the "stateError" variable
-	stateInertial[8] = yawError;
+	stateInertialError[8] = yawError;
 
 	// CONVERSION INTO BODY FRAME
 	// Initialise a variable for the body frame error
 	float bodyFrameError[9];
 	// Call the function to convert the state erorr from
 	// the Inertial frame into the Body frame
-	convertIntoBodyFrame(stateInertial, bodyFrameError, temp_stateInertial_yaw);
+	convertIntoBodyFrame(stateInertialError, bodyFrameError, temp_stateInertial_yaw);
 
 	calculateControlOutput_viaLQR_givenError(bodyFrameError, response, integrator_flag);
 }
@@ -1538,11 +1563,14 @@ void fetchDefaultControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	// Max error for z
 	yaml_max_setpoint_error_z = getParameterFloat(nodeHandle_for_paramaters , "max_setpoint_error_z");
 
-	// Max error for yaw angle
-	yaml_max_setpoint_error_yaw_degrees = getParameterFloat(nodeHandle_for_paramaters , "max_setpoint_error_yaw_degrees");
-
+	// Max error for xy
+	yaml_max_setpoint_error_xy = getParameterFloat(nodeHandle_for_paramaters , "max_setpoint_error_xy");
+	
 	// Max {roll,pitch} angle request
 	yaml_max_roll_pitch_request_degrees = getParameterFloat(nodeHandle_for_paramaters , "max_roll_pitch_request_degrees");
+
+	// Max error for yaw angle
+	yaml_max_setpoint_error_yaw_degrees = getParameterFloat(nodeHandle_for_paramaters , "max_setpoint_error_yaw_degrees");
 
 	// Theshold for {roll,pitch} angle beyond
 	// which the motors are turned off
