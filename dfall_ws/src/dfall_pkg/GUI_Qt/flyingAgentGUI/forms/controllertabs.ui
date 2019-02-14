@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ControllerTabs</class>
+ <widget class="QWidget" name="ControllerTabs">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1150</width>
+    <height>718</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="font">
+   <font>
+    <pointsize>16</pointsize>
+   </font>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="0" column="0">
+    <widget class="QTabWidget" name="controller_tabs_widget">
+     <property name="currentIndex">
+      <number>4</number>
+     </property>
+     <property name="movable">
+      <bool>true</bool>
+     </property>
+     <widget class="QWidget" name="default_tab">
+      <attribute name="title">
+       <string>Default</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_2">
+       <item row="0" column="0">
+        <widget class="DefaultControllerTab" name="default_controller_tab_widget" native="true"/>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="student_tab">
+      <attribute name="title">
+       <string>Student</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_4">
+       <item row="0" column="0">
+        <widget class="StudentControllerTab" name="student_controller_tab_widget" native="true"/>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="picker_tab">
+      <attribute name="title">
+       <string>Picker</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_5">
+       <item row="0" column="0">
+        <widget class="PickerControllerTab" name="picker_controller_tab_widget" native="true"/>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tuning_tab">
+      <attribute name="title">
+       <string>Tuning</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_6">
+       <item row="0" column="0">
+        <widget class="TuningControllerTab" name="tuning_controller_tab_widget" native="true"/>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="template_tab">
+      <attribute name="title">
+       <string>Template</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_7">
+       <item row="0" column="0">
+        <widget class="TemplateControllerTab" name="template_controller_tab_widget" native="true"/>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>StudentControllerTab</class>
+   <extends>QWidget</extends>
+   <header>studentcontrollertab.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>DefaultControllerTab</class>
+   <extends>QWidget</extends>
+   <header>defaultcontrollertab.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>PickerControllerTab</class>
+   <extends>QWidget</extends>
+   <header>pickercontrollertab.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>TuningControllerTab</class>
+   <extends>QWidget</extends>
+   <header>tuningcontrollertab.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>TemplateControllerTab</class>
+   <extends>QWidget</extends>
+   <header>templatecontrollertab.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

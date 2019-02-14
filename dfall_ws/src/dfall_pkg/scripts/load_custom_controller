@@ -1,0 +1,7 @@
+#!/bin/bash
+
+if [ "$#" -ne 0 ] 
+then echo "usage: load_custom_controller <no arguments>"
+else rostopic pub -1 /$ROS_NAMESPACE/FlyingAgentClient/Command std_msgs/Int32 2;
+fi
+

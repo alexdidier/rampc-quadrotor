@@ -1,0 +1,184 @@
+<launch>
+
+	<!-- INPUT ARGUMENT OF THE AGENT's ID -->
+	<arg name="agentID" default="$(optenv DFALL_DEFAULT_AGENT_ID)" />
+
+	<!-- INPUT ARGUMENT OF THE COORDINATOR's ID -->
+	<arg name="coordID" default="$(optenv DFALL_DEFAULT_COORD_ID)" />
+
+	<!-- INPUT ARGUMENT FOR LAUNCHING A GUI OR NOT -->
+	<arg name="withGUI" default="true" />
+
+	<!-- Example of how to use the value in agentID -->
+    <!-- <param name="param" value="$(arg agentID)"/> -->
+
+    <!-- Example of how to specify the agentID from command line -->
+    <!-- roslaunch dfall_pkg agentID:=1 -->
+
+    <group ns="$(eval 'agent' + str(agentID).zfill(3))">
+
+		<!-- CRAZY RADIO -->
+		<node
+			pkg    = "dfall_pkg"
+			name   = "CrazyRadio"
+			output = "screen"
+			type   = "CrazyRadio.py"
+			>
+			<rosparam command="load" file="$(find dfall_pkg)/param/BatteryMonitor.yaml" />
+		</node>
+
+		<!-- FLYING AGENT CLIENT -->
+		<node
+			pkg    = "dfall_pkg"
+			name   = "FlyingAgentClient"
+			output = "screen"
+			type   = "FlyingAgentClient"
+			>
+			<param name="agentID" value="$(arg agentID)" />
+			<param name="coordID" value="$(arg coordID)" />
+		</node>
+
+		<!-- BATTERY MONITOR -->
+		<node
+			pkg    = "dfall_pkg"
+			name   = "BatteryMonitor"
+			output = "screen"
+			type   = "BatteryMonitor"
+			>
+		</node>
+
+		<!-- DEFAULT CONTROLLER -->
+		<node
+			pkg    = "dfall_pkg"
+			name   = "DefaultControllerService"
+			output = "screen"
+			type   = "DefaultControllerService"
+			>
+		</node>
+
+		<!-- SAFE CONTROLLER -->
+		<node
+			pkg    = "dfall_pkg"
+			name   = "SafeControllerService"
+			output = "screen"
+			type   = "SafeControllerService"
+			>
+		</node>
+
+		<!-- DEMO CONTROLLER -->
+		<node
+			pkg    = "dfall_pkg"
+			name   = "DemoControllerService"
+			output = "screen"
+			type   = "DemoControllerService"
+			>
+		</node>
+
+		<!-- STUDENT CONTROLLER -->
+		<node
+			pkg    = "dfall_pkg"
+			name   = "StudentControllerService"
+			output = "screen"
+			type   = "StudentControllerService"
+			>
+		</node>
+
+		<!-- REMOTE CONTROLLER -->
+		<node
+			pkg    = "dfall_pkg"
+			name   = "RemoteControllerService"
+			output = "screen"
+			type   = "RemoteControllerService"
+			>
+		</node>
+
+		<!-- TUNING CONTROLLER -->
+		<node
+			pkg    = "dfall_pkg"
+			name   = "TuningControllerService"
+			output = "screen"
+			type   = "TuningControllerService"
+			>
+		</node>
+
+		<!-- PICKER CONTROLLER -->
+		<node
+			pkg    = "dfall_pkg"
+			name   = "PickerControllerService"
+			output = "screen"
+			type   = "PickerControllerService"
+			>
+		</node>
+
+		<!-- TEMPLATE CONTROLLER -->
+		<node
+			pkg    = "dfall_pkg"
+			name   = "TemplateControllerService"
+			output = "screen"
+			type   = "TemplateControllerService"
+			>
+		</node>
+
+		<!-- PARAMETER SERVICE -->
+		<node
+			pkg    = "dfall_pkg"
+			name   = "ParameterService"
+			output = "screen"
+			type   = "ParameterService"
+			>
+			<param name="type"     type="str"  value="agent" />
+			<param name="agentID"  value="$(arg agentID)" />
+			<rosparam
+				command = "load"
+				file    = "$(find dfall_pkg)/param/FlyingAgentClientConfig.yaml"
+				ns      = "FlyingAgentClientConfig"
+			/>
+			<rosparam
+				command = "load"
+				file    = "$(find dfall_pkg)/param/BatteryMonitor.yaml"
+				ns      = "BatteryMonitor"
+			/>
+			<rosparam
+				command = "load"
+				file    = "$(find dfall_pkg)/param/SafeController.yaml"
+				ns      = "SafeController"
+			/>
+			<rosparam
+				command = "load"
+				file    = "$(find dfall_pkg)/param/RemoteController.yaml"
+				ns      = "RemoteController"
+			/>
+			<rosparam
+				command = "load"
+				file    = "$(find dfall_pkg)/param/TuningController.yaml"
+				ns      = "TuningController"
+			/>
+			<rosparam
+				command = "load"
+				file    = "$(find dfall_pkg)/param/PickerController.yaml"
+				ns      = "PickerController"
+			/>
+			<rosparam
+				command = "load"
+				file    = "$(find dfall_pkg)/param/TemplateController.yaml"
+				ns      = "TemplateController"
+			/>
+		</node>
+
+
+		<!-- AGENT GUI (aka. the "student GUI") -->
+		<group if="$(arg withGUI)">
+			<node
+				pkg    = "dfall_pkg"
+				name   = "FlyingAgentGUI"
+				output = "screen"
+				type   = "FlyingAgentGUI"
+				>
+				<param name="type"     type="str"  value="agent" />
+				<param name="agentID"  value="$(arg agentID)" />
+			</node>
+		</group>
+		
+	</group>
+
+</launch>

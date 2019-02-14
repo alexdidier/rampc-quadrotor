@@ -1,0 +1,6 @@
+#!/bin/bash
+
+if [ "$#" -ne 0 ]
+then echo "usage: land crazyfly <no arguments>"
+else rostopic pub -1 /$ROS_NAMESPACE/FlyingAgentClient/Command std_msgs/Int32 4;
+fi

@@ -1,0 +1,22 @@
+<RCC>
+    <qresource prefix="/">
+        <file>images/battery_20.png</file>
+        <file>images/battery_40.png</file>
+        <file>images/battery_60.png</file>
+        <file>images/battery_80.png</file>
+        <file>images/battery_empty.png</file>
+        <file>images/battery_full.png</file>
+        <file>images/battery_unknown.png</file>
+        <file>images/battery_unavailable.png</file>
+        <file>images/rf_connected.png</file>
+        <file>images/rf_connecting.png</file>
+        <file>images/rf_disconnected.png</file>
+        <file>images/flying_state_disabling.png</file>
+        <file>images/flying_state_enabling.png</file>
+        <file>images/flying_state_flying.png</file>
+        <file>images/flying_state_off.png</file>
+        <file>images/flying_state_unknown.png</file>
+        <file>images/flying_state_unavailable.png</file>
+        <file>images/emergency_stop.png</file>
+    </qresource>
+</RCC>

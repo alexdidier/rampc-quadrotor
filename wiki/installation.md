@@ -5,7 +5,7 @@
 ### Install Script
 Installation with the install script is the easiest. You will need:
 - the install script
-- the ``d_fall_pps`` package compressed in a file called ``package.tar.gz``
+- the ``dfall_pkg`` package compressed in a file called ``package.tar.gz``
 - the rule files for the USB connection to the crazyradio, called ``99-crazyflie.rules`` and ``99-crazyradio.rules``
 
 These files all need to be in the same directory. To run the installation, move to the containing directory (pps\ install) and call it with
@@ -21,7 +21,7 @@ The installation process consists of the following steps:
 The detailed instructions for the installation of ROS can be found [here](http://wiki.ros.org/kinetic/Installation/Ubuntu).
 
 - Workspace: <br />
-Create a new catkin workspace and copy the ``d_fall_pps`` package into the ``src`` folder of the workspace. Then build the package with ``catkin_make`` called from the workspace root.
+Create a new catkin workspace and copy the ``dfall_pkg`` package into the ``src`` folder of the workspace. Then build the package with ``catkin_make`` called from the workspace root.
 
 - Environment Setup: <br />
 Add a new line in the ``/etc/hosts`` file that links the teacher's IP with the domain name ``teacher`` and create a file called ``/etc/StudentID`` that contains the student id. Only write digits without any other symbols or whitespace characters.
@@ -47,7 +47,7 @@ Add following lines to the bottom of the file ``~/.bashrc`` (replace ``<catkin w
 ```
 source /opt/ros/kinetic/setup.bash
 source <catkin workspace>/devel/setup.bash
-source <catkin workspace>/src/d_fall_pps/launch/Config.sh
+source <catkin workspace>/src/dfall_pkg/launch/Config.sh
 ```
 
 The workspace setup script will only appear after the first compilation of the catkin workspace.
@@ -63,11 +63,11 @@ A Vicon motion capture system can be used to provide position and attitude measu
 - De-compress the downloaded file and open the folder that corresponds to the latest ``Linux64-boost-1.xx.x`` version, when tested this was ``1.58.0``
 - From the files found in this folder, copy the file ``DataStreamClient.h`` into the following folder:
 ```
-~/pps_ws/src/d_fall_pps/include/
+~/dfall_ws/src/dfall_pkg/include/
 ```
 - Copy the file ``libViconDataStreamSDK_CPP.so`` into the following folder (noting that the folder ``lib`` and ``vicon`` may need to be created):
 ```
-~/pps_ws/src/d_fall_pps/lib/vicon/
+~/dfall_ws/src/dfall_pkg/lib/vicon/
 ```
 - Copy all the files of the form ``libboost_*`` into the same ``/lib/vicon/`` folder
 - Note that the ``DataStreamClient.h`` header file and the ``/lib/vicon/`` folder are in the ``.gitignore`` and hence will not be tracked or removed by the git repository (though some more advanced git commands may still remove them anyway).
@@ -78,7 +78,7 @@ A Vicon motion capture system can be used to provide position and attitude measu
 ### Removing Config.sh and replacing
 As the teacher must not source the script ``Config.sh``, the ``.bashrc`` must be edited and the last line
 ```
-source ~/pps_ws/src/d_fall_pps/launch/Config.sh
+source ~/dfall_ws/src/dfall_pkg/launch/Config.sh
 ```
 must be replaced with
 ```
@@ -109,7 +109,7 @@ doing so are these:
    changes to take effect) <br><br>
 2. After having put some reflective markers in the crazyflie, register it in the Vicon system with the name that you want. (in the PPS case, we call them PPS_CFXX)<br><br>
 3. Go to the file channelLUT.cpp (path:
-   `pps_ws/src/d_fall_pps/GUI_Qt/CrazyFlyGUI/src/channelLUT.cpp`) and add an
+   `dfall_ws/src/dfall_pkg/GUI_Qt/CrazyFlyGUI/src/channelLUT.cpp`) and add an
    entry with the name of the crazyflie and the radio address. Follow the
    formatting that the other entries have.<br><br>
    <img src="./pics/LUT.png" style="width: 450px;"/> <br><br>

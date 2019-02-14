@@ -1,0 +1,54 @@
+<launch>
+
+	<!-- INPUT ARGUMENT OF THE COORDINATOR's ID -->
+	<arg name="coordID" default="$(optenv DFALL_DEFAULT_COORD_ID)" />
+
+	<!-- INPUT ARGUMENT FOR LAUNCHING A GUI OR NOT -->
+	<arg name="withGUI" default="true" />
+
+	<!-- Example of how to use the value in coordID -->
+	<!-- <param name="param" value="$(arg coordID)"/> -->
+
+	<!-- Example of how to specify the coordID from command line -->
+	<!-- roslaunch dfall_pkg coordID:=001 -->
+
+	<group ns="coord$(arg coordID)">
+
+		<!-- COORDINATOR GUI -->
+		<group if="$(arg withGUI)">
+			<node
+				pkg="dfall_pkg"
+				name="FlyingAgentGUI"
+				output="screen"
+				type="FlyingAgentGUI"
+				>
+				<param name="type"     type="str"  value="coordinator" />
+				<param name="coordID"  value="$(arg coordID)" />
+			</node>
+		</group>
+
+
+		<!-- PARAMETER SERVICE -->
+		<node
+			pkg    = "dfall_pkg"
+			name   = "ParameterService"
+			output = "screen"
+			type   = "ParameterService"
+			>
+			<param name="type"     type="str"  value="coordinator" />
+			<param name="coordID"  value="$(arg coordID)" />
+			<rosparam
+				command = "load"
+				file    = "$(find dfall_pkg)/param/BatteryMonitor.yaml"
+				ns      = "YamlFileNames"
+			/>
+			<rosparam
+				command = "load"
+				file    = "$(find dfall_pkg)/param/FlyingAgentClientConfig.yaml"
+				ns      = "SafeController"
+			/>
+		</node>
+
+	</group>
+
+</launch>

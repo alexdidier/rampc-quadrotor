@@ -1,0 +1,31 @@
+<launch>
+
+	<!-- CENTRAL MANAGER -->
+	<node
+		pkg="dfall_pkg"
+		name="CentralManagerService"
+		output="screen"
+		type="CentralManagerService"
+		>
+	</node>
+
+	<!-- VICON DATA PUBLISHER -->
+	<node
+		pkg="dfall_pkg"
+		name="ViconDataPublisher"
+		output="screen"
+		type="ViconDataPublisher"
+		>
+		<rosparam command="load" file="$(find dfall_pkg)/param/ViconConfig.yaml" />
+	</node>
+
+	<!-- TEACHER GUI -->
+	<node
+		pkg="dfall_pkg"
+		name="SystemConfigGUI"
+		output="screen"
+		type="SystemConfigGUI"
+		>
+	</node>
+
+</launch>
