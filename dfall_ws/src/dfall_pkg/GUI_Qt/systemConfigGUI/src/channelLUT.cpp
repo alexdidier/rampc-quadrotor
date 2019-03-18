@@ -52,4 +52,7 @@ std::map<std::string, std::string> channel_LUT
     {"CF15", "0/112/2M/E7E7E7E70F"},
     {"CF16", "0/120/2M/E7E7E7E710"},
     {"CF17", "0/4/2M/E7E7E7E711"},
+    {"CF18", "0/12/2M/E7E7E7E712"},
+    {"CF19", "0/20/2M/E7E7E7E713"},
+    {"CF20", "0/28/2M/E7E7E7E714"},
 };
