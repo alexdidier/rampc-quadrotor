@@ -94,6 +94,8 @@ public:
     void showHideController_tuning_changed();
     void showHideController_template_changed();
 
+    void testMotors_changed();
+
 
 public slots:
     void setAgentIDsToCoordinate(QVector<int> agentIDs , bool shouldCoordinateAll);

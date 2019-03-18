@@ -133,6 +133,8 @@ private slots:
     void on_action_showHideController_tuning_changed();
     void on_action_showHideController_template_changed();
 
+    void on_action_testMotors_changed();
+
 };
 
 #endif // MAINWINDOW_H

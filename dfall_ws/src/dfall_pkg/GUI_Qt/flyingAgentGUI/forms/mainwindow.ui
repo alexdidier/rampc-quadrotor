@@ -215,6 +215,8 @@
     <addaction name="action_showHideController_picker"/>
     <addaction name="action_showHideController_tuning"/>
     <addaction name="action_showHideController_template"/>
+    <addaction name="separator"/>
+    <addaction name="action_testMotors"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuLoad_YAML"/>
@@ -311,6 +313,11 @@
    </property>
    <property name="text">
     <string>Template</string>
+   </property>
+  </action>
+  <action name="action_testMotors">
+   <property name="text">
+    <string>TestMotors</string>
    </property>
   </action>
  </widget>

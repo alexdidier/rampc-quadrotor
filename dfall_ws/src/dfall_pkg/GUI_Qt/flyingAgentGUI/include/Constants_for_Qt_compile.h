@@ -132,6 +132,8 @@
 #define CMD_CRAZYFLY_LAND            12
 #define CMD_CRAZYFLY_MOTORS_OFF      13
 
+#define CMD_USE_TESTMOTORS_CONTROLLER 21
+
 // Flying states
 #define STATE_MOTORS_OFF     1
 #define STATE_TAKE_OFF       2
