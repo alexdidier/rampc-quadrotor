@@ -116,6 +116,43 @@ void viconCallback(const ViconData& viconData)
 	)
 	{
 
+        // If motors-off and testing motors
+        if (
+            m_flying_state == STATE_MOTORS_OFF
+            &&
+            m_controller_nominally_selected == TESTMOTORS_CONTROLLER
+            &&
+            m_testMotorsController.exists()
+            )
+        {
+            // Initliase the "Contrller" service call variable
+            Controller testMotorsCall;
+
+            // Initialise a local boolean success variable
+            bool isSuccessful_testMotorsCall = false;
+
+            // Call the controller service client
+            isSuccessful_testMotorsCall = m_testMotorsController.call(testMotorsCall);
+
+            // Ensure success and enforce safety
+            if(isSuccessful_testMotorsCall)
+            {
+                m_commandForSendingToCrazyfliePublisher.publish(testMotorsCall.response.controlOutput);
+            }
+            else
+            {
+                // Let the user know that the controller call failed
+                ROS_ERROR_STREAM("[FLYING AGENT CLIENT] Failed to call test motors controller, valid: " << m_testMotorsController.isValid() << ", exists: " << m_testMotorsController.exists());
+                // Change back to the default controller
+                setControllerNominallySelected(DEFAULT_CONTROLLER);
+                // Send the command to turn the motors off
+                sendZeroOutputCommandForMotors();
+            }
+            return;
+        }
+
+
+
 		// Only continue if:
 		// (1) the agent is NOT occulded
 		if(!poseDataForThisAgent.occluded)
@@ -726,6 +763,9 @@ void setInstantController(int controller)
         case TEMPLATE_CONTROLLER:
             m_instant_controller_service_client = &m_templateController;
             break;
+        case TESTMOTORS_CONTROLLER:
+            m_instant_controller_service_client = &m_defaultController;
+            break;
         default:
             break;
     }
@@ -863,6 +903,7 @@ void flyingStateRequestCallback(const IntWithHeader & msg) {
                 setControllerNominallySelected(TEMPLATE_CONTROLLER);
                 break;
 
+
             case CMD_CRAZYFLY_TAKE_OFF:
                 ROS_INFO("[FLYING AGENT CLIENT] TAKE_OFF Command received");
                 requestChangeFlyingStateTo(STATE_TAKE_OFF);
@@ -876,6 +917,20 @@ void flyingStateRequestCallback(const IntWithHeader & msg) {
                 ROS_INFO("[FLYING AGENT CLIENT] MOTORS_OFF Command received");
                 requestChangeFlyingStateTo(STATE_MOTORS_OFF);
                 break;
+
+
+            case CMD_USE_TESTMOTORS_CONTROLLER:
+                if (m_flying_state == STATE_MOTORS_OFF)
+                {
+                    ROS_INFO("[FLYING AGENT CLIENT] USE_TEST_MOTORS_CONTROLLER Command received");
+                    setControllerNominallySelected(TESTMOTORS_CONTROLLER);
+                }
+                else
+                {
+                    ROS_INFO("[FLYING AGENT CLIENT] USE_TEST_MOTORS_CONTROLLER Command received, but state is not currently STATE_MOTORS_OFF");
+                }
+                break;
+
 
             default:
                 ROS_ERROR_STREAM("[FLYING AGENT CLIENT] unexpected command number: " << cmd);
@@ -1140,6 +1195,8 @@ void timerCallback_for_createAllcontrollerServiceClients(const ros::TimerEvent&)
     createControllerServiceClientFromParameterName( "tuningController"   , m_tuningController );
     createControllerServiceClientFromParameterName( "pickerController"   , m_pickerController );
     createControllerServiceClientFromParameterName( "templateController" , m_templateController );
+
+    createControllerServiceClientFromParameterName( "testMotorsController" , m_testMotorsController );
 
     // INITIALISE THE SERVICE FOR REQUESTING THE DEFAULT
     // CONTROLLER TO PERFORM MANOEUVRES

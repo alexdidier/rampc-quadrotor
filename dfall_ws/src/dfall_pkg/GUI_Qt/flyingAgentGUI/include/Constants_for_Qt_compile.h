@@ -116,6 +116,8 @@
 #define PICKER_CONTROLLER    7
 #define TEMPLATE_CONTROLLER  8
 
+#define TESTMOTORS_CONTROLLER  21
+
 // The constants that "command" changes in the
 // operation state of this agent
 #define CMD_USE_DEFAULT_CONTROLLER      1

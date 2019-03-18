@@ -94,7 +94,7 @@ public:
     void showHideController_tuning_changed();
     void showHideController_template_changed();
 
-    void testMotors_changed();
+    void testMotors_triggered();
 
 
 public slots:

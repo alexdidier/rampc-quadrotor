@@ -704,13 +704,6 @@ void smoothSetpointChanges( float target_setpoint[4] , float (&current_setpoint)
 	float max_for_z = yaml_max_setpoint_change_per_second_vertical / yaml_control_frequency;
 	// > Compute the current difference
 	float diff_for_z = target_setpoint[2] - current_setpoint[2];
-	// > Clip the difference to the maximum
-	if (diff_for_z > max_for_z)
-		diff_for_z = max_for_z;
-	else if (diff_for_z < -max_for_z)
-		diff_for_z = -max_for_z;
-	// > Update the current setpoint
-	current_setpoint[2] += diff_for_z;
 
 	// SMOOTH THE X-Y-COORIDINATES
 	// > Compute the max allowed change
@@ -719,14 +712,19 @@ void smoothSetpointChanges( float target_setpoint[4] , float (&current_setpoint)
 	float diff_for_x  = target_setpoint[0] - current_setpoint[0];
 	float diff_for_y  = target_setpoint[1] - current_setpoint[1];
 	float diff_for_xy = sqrt( diff_for_x*diff_for_x + diff_for_y*diff_for_y );
-	// > Clip the difference to the maximum
-	if (diff_for_xy > max_for_xy)
+
+	// > Compute if outside the allowed ellipse
+	float ellipse_value = (diff_for_xy*diff_for_xy)/(max_for_xy*max_for_xy) + (diff_for_z*diff_for_z)/(max_for_z*max_for_z);
+
+	// > Clip the difference with outside the allowed ellispe
+	if (ellipse_value > 1.0f)
 	{
-		// > Convert the difference to a proportion
-		float proportion_xy = max_for_xy / diff_for_xy;
+		// > Compute the proportion
+		float proportion_xyz = 1.0f / sqrt(ellipse_value);
 		// > Update the current setpoint
-		current_setpoint[0] += proportion_xy * diff_for_x;
-		current_setpoint[1] += proportion_xy * diff_for_y;
+		current_setpoint[0] += proportion_xyz * diff_for_x;
+		current_setpoint[1] += proportion_xyz * diff_for_y;
+		current_setpoint[2] += proportion_xyz * diff_for_z;
 	}
 	else
 	{
@@ -735,7 +733,9 @@ void smoothSetpointChanges( float target_setpoint[4] , float (&current_setpoint)
 		//   reach
 		current_setpoint[0] = target_setpoint[0];
 		current_setpoint[1] = target_setpoint[1];
-	}	
+		current_setpoint[2] = target_setpoint[2];
+	}
+
 }
 
 
@@ -1014,9 +1014,17 @@ void calculateControlOutput_viaLQR_givenError(float stateErrorBody[9], Controlle
 				- yaml_gainMatrixPitchAngle_2StateVector[1] * stateErrorBody[3];
 			// Clip the request to within the specified limits
 			if (pitchAngle_desired > yaml_max_roll_pitch_request_radians)
+			{
 				pitchAngle_desired = yaml_max_roll_pitch_request_radians;
+				//ROS_ERROR_STREAM("[DEFAULT CONTROLLER] pitchAngle_desired = " << pitchAngle_desired);
+			}
 			else if (pitchAngle_desired < -yaml_max_roll_pitch_request_radians)
-				pitchAngle_desired = -yaml_max_roll_pitch_request_radians;				
+			{
+				pitchAngle_desired = -yaml_max_roll_pitch_request_radians;
+				//ROS_ERROR_STREAM("[DEFAULT CONTROLLER] pitchAngle_desired = " << pitchAngle_desired);
+			}
+
+
 			// > Compute the pitch rate
 			pitchRate_forResponse =
 				- yaml_gainPitchRate_fromAngle * (stateErrorBody[7] - pitchAngle_desired);

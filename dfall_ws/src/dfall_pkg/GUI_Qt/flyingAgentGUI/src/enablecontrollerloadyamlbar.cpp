@@ -118,7 +118,7 @@ void EnableControllerLoadYamlBar::showHideController_template_changed()
 
 // TEST MOTORS
 
-void EnableControllerLoadYamlBar::testMotors_changed()
+void EnableControllerLoadYamlBar::testMotors_triggered()
 {
 #ifdef CATKIN_MAKE
     dfall_pkg::IntWithHeader msg;

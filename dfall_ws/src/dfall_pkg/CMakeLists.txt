@@ -328,6 +328,8 @@ add_executable(PickerControllerService   src/nodes/PickerControllerService.cpp
                                          src/classes/GetParamtersAndNamespaces.cpp)
 add_executable(TemplateControllerService src/nodes/TemplateControllerService.cpp
                                          src/classes/GetParamtersAndNamespaces.cpp)
+add_executable(TestMotorsControllerService src/nodes/TestMotorsControllerService.cpp
+                                         src/classes/GetParamtersAndNamespaces.cpp)
 add_executable(CentralManagerService     src/nodes/CentralManagerService.cpp src/CrazyflieIO.cpp)
 add_executable(ParameterService          src/nodes/ParameterService.cpp)
 
@@ -403,6 +405,7 @@ add_dependencies(RemoteControllerService   dfall_pkg_generate_messages_cpp ${cat
 add_dependencies(TuningControllerService   dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(PickerControllerService   dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(TemplateControllerService dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(TestMotorsControllerService dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(CentralManagerService     dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(ParameterService          dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
@@ -455,6 +458,7 @@ target_link_libraries(RemoteControllerService   ${catkin_LIBRARIES})
 target_link_libraries(TuningControllerService   ${catkin_LIBRARIES})
 target_link_libraries(PickerControllerService   ${catkin_LIBRARIES})
 target_link_libraries(TemplateControllerService ${catkin_LIBRARIES})
+target_link_libraries(TestMotorsControllerService ${catkin_LIBRARIES})
 target_link_libraries(CentralManagerService     ${catkin_LIBRARIES})
 target_link_libraries(ParameterService          ${catkin_LIBRARIES})
 

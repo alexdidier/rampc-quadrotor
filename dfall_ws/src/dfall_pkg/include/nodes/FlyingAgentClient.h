@@ -204,6 +204,8 @@ ros::ServiceClient m_pickerController;
 // The Template controller specified in the FlyingAgentClientConfig.yaml
 ros::ServiceClient m_templateController;
 
+// The Test Mtoros controller specified in the FlyingAgentClientConfig.yaml
+ros::ServiceClient m_testMotorsController;
 
 
 

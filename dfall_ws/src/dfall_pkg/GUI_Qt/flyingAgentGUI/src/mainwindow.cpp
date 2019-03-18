@@ -253,14 +253,10 @@ void MainWindow::on_action_showHideController_template_changed()
 }
 
 
-void MainWindow::on_action_testMotors_changed()
+void MainWindow::on_action_testMotors_triggered()
 {
-#ifdef CATKIN_MAKE
-    // Inform the user that the menu item was selected
-    ROS_INFO("[FLYING AGENT GUI MAIN WINDOW] Test Motors Menu Item clicked in Main Window.");
-#endif
     // Notify the UI elements of this change
-    ui->customWidget_enableControllerLoadYamlBar->testMotors_changed();
+    ui->customWidget_enableControllerLoadYamlBar->testMotors_triggered();
 }
 
 

@@ -42,7 +42,7 @@ takoff_goto_setpoint_max_time: 4.0
 takoff_integrator_on_box_horizontal: 0.25
 takoff_integrator_on_box_vertical:   0.15
 # The time for: take off integrator-on
-takoff_integrator_on_time: 2.0
+takoff_integrator_on_time: 3.0
 
 
 # Height change for the landing move-down
@@ -106,7 +106,7 @@ gainPitchRate_fromAngle  :  4.00
 # The LQR Controller parameters for yaw
 gainYawRate_fromAngle    :  2.30
 # Integrator gains
-integratorGain_forThrust  :  0.00
+integratorGain_forThrust  :  0.10
 integratorGain_forTauXY   :  0.00
 integratorGain_forTauYaw  :  0.00
 
