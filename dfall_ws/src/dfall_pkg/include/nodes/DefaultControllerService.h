@@ -369,6 +369,9 @@ ros::Publisher m_debugPublisher;
 // changes to the setpoint
 ros::Publisher m_setpointChangedPublisher;
 
+// ROS Publisher to inform the flying agent client
+// when a requested manoeuvre is complete
+ros::Publisher m_manoeuvreCompletePublisher;
 
 // ROS Publisher for sending motors-off command
 // to the flying agent client

@@ -663,8 +663,8 @@ void requestChangeFlyingStateToLand()
 
 void timerCallback_takeoff_complete(const ros::TimerEvent&)
 {
-    // Only change to flying if still in the take-off state
-    if (m_flying_state == STATE_TAKE_OFF)
+	// Only change to flying if still in the take-off state
+	if (m_flying_state == STATE_TAKE_OFF)
 	{
 		// Inform the user
 		ROS_INFO("[FLYING AGENT CLIENT] Take-off complete, changed state to STATE_FLYING");
@@ -686,8 +686,8 @@ void timerCallback_takeoff_complete(const ros::TimerEvent&)
 
 void timerCallback_land_complete(const ros::TimerEvent&)
 {
-    // Only change to flying if still in the take-off state
-    if (m_flying_state == STATE_LAND)
+	// Only change to flying if still in the take-off state
+	if (m_flying_state == STATE_LAND)
 	{
 		// Inform the user
 		ROS_INFO("[FLYING AGENT CLIENT] Land complete, changed state to STATE_MOTORS_OFF");
@@ -708,6 +708,67 @@ void timerCallback_land_complete(const ros::TimerEvent&)
 }
 
 
+
+
+void defaultControllerManoeuvreCompleteCallback(const IntWithHeader & msg)
+{
+	// Switch between the cases
+	switch (msg.data)
+	{
+		case DEFAULT_CONTROLLER_TAKEOFF_COMPLETE:
+		{
+			// Only change to flying if still in the take-off state
+			if (m_flying_state == STATE_TAKE_OFF)
+			{
+				// Stop the timer
+				m_timer_takeoff_complete.stop();
+				// Inform the user
+				ROS_INFO("[FLYING AGENT CLIENT] Take-off complete, changed state to STATE_FLYING");
+				// Update the class variable
+				m_flying_state = STATE_FLYING;
+				// Publish a message with the new flying state
+				std_msgs::Int32 flying_state_msg;
+				flying_state_msg.data = m_flying_state;
+				m_flyingStatePublisher.publish(flying_state_msg);
+				// Change back to the nominal controller
+				setInstantController( m_controller_nominally_selected );
+			}
+			else
+			{
+				// Inform the user
+				ROS_INFO("[FLYING AGENT CLIENT] Received a take-off complete message, BUT the agent is no longer in STATE_TAKE_OFF.");
+			}
+			break;
+		}
+
+
+		case DEFAULT_CONTROLLER_LANDING_COMPLETE:
+		{
+			// Only change to flying if still in the take-off state
+			if (m_flying_state == STATE_LAND)
+			{
+				// Stop the timer
+				m_timer_land_complete.stop();
+				// Inform the user
+				ROS_INFO("[FLYING AGENT CLIENT] Land complete, changed state to STATE_MOTORS_OFF");
+				// Update the class variable
+				m_flying_state = STATE_MOTORS_OFF;
+				// Publish a message with the new flying state
+				std_msgs::Int32 flying_state_msg;
+				flying_state_msg.data = m_flying_state;
+				m_flyingStatePublisher.publish(flying_state_msg);
+				// Change back to the nominal controller
+				setInstantController( m_controller_nominally_selected );
+			}
+			else
+			{
+				// Inform the user
+				ROS_INFO("[FLYING AGENT CLIENT] Received a landing complete message, BUT the agent is no longer in STATE_LAND.");
+			}
+			break;
+		}
+	}
+}
 
 
 
@@ -1562,6 +1623,15 @@ int main(int argc, char* argv[])
 	std::string namespace_to_battery_monitor = m_namespace + "/BatteryMonitor";
 	ros::NodeHandle nodeHandle_to_battery_monitor(namespace_to_battery_monitor);
 	ros::Subscriber CFBatterySubscriber = nodeHandle_to_battery_monitor.subscribe("ChangedStateTo", 1, batteryMonitorStateChangedCallback);
+
+
+	// SUBSCRIBER FOR BATTERY STATE CHANGES
+	// The battery state change message from the Battery
+	// Monitor node
+	std::string namespace_to_default_contoller = m_namespace + "/DefaultControllerService";
+	ros::NodeHandle nodeHandle_to_default_controller(namespace_to_default_contoller);
+	ros::Subscriber ManoeuvreCompleteSubscriber = nodeHandle_to_default_controller.subscribe("ManoeuvreComplete", 1, defaultControllerManoeuvreCompleteCallback);
+
 
 
 	// SERVICE SERVER FOR OTHERS TO GET THE CURRENT FLYING STATE

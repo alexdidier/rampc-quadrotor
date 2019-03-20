@@ -296,6 +296,8 @@ void requestChangeFlyingStateToLand();
 void takeOffTimerCallback(const ros::TimerEvent&);
 // > Callback that the landing phase is complete
 void landTimerCallback(const ros::TimerEvent&);
+// > Callback that the Default Controller complete a manoeuvre
+void defaultControllerManoeuvreCompleteCallback(const IntWithHeader & msg);
 
 
 

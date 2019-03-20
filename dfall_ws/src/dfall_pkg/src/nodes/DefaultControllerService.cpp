@@ -538,12 +538,16 @@ void computeResponse_for_takeoff_integrator_on(Controller::Response &response)
 	if (m_time_in_seconds > yaml_takoff_integrator_on_time)
 	{
 		// Inform the user
-		ROS_INFO("[DEFAULT CONTROLLER] Switch to state: normal");
+		ROS_INFO("[DEFAULT CONTROLLER] Publish message that take-off is complete, and  switch to state: normal");
 		// Reset the time variable
 		m_time_in_seconds = 0.0;
 		// Update the state accordingly
 		m_current_state = DEFAULT_CONTROLLER_STATE_NORMAL;
 		m_current_state_changed = true;
+		// Publish a message that the take-off is complete
+		IntWithHeader msg;
+		msg.data = DEFAULT_CONTROLLER_TAKEOFF_COMPLETE;
+		m_manoeuvreCompletePublisher.publish(msg);
 	}
 }
 
@@ -664,12 +668,16 @@ void computeResponse_for_landing_spin_motors(Controller::Response &response)
 		if ( m_time_in_seconds > (0.7*yaml_landing_spin_motors_time) )
 		{
 			// Inform the user
-			ROS_INFO("[DEFAULT CONTROLLER] Switch to state: standby");
+			ROS_INFO("[DEFAULT CONTROLLER] Publish message that landing is complete, and switch to state: standby");
 			// Reset the time variable
 			m_time_in_seconds = 0.0;
 			// Update the state accordingly
 			m_current_state = DEFAULT_CONTROLLER_STATE_STANDBY;
 			m_current_state_changed = true;
+			// Publish a message that the take-off is complete
+			IntWithHeader msg;
+			msg.data = DEFAULT_CONTROLLER_LANDING_COMPLETE;
+			m_manoeuvreCompletePublisher.publish(msg);
 		}
 	}	
 }
@@ -910,19 +918,19 @@ void calculateControlOutput_viaLQR_givenSetpoint(float setpoint[4], float stateI
 	stateInertialError[6] = stateInertial[6];
 	stateInertialError[7] = stateInertial[7];
 
-	// Clip the x-coordination to within the specified bounds
+	// Clip the x-error to within the specified bounds
 	if (stateInertialError[0] > yaml_max_setpoint_error_xy)
 		stateInertialError[0] = yaml_max_setpoint_error_xy;
 	else if (stateInertialError[0] < -yaml_max_setpoint_error_xy)
 		stateInertialError[0] = -yaml_max_setpoint_error_xy;
 
-	// Clip the y-coordination to within the specified bounds
+	// Clip the y-error to within the specified bounds
 	if (stateInertialError[1] > yaml_max_setpoint_error_xy)
 		stateInertialError[1] = yaml_max_setpoint_error_xy;
 	else if (stateInertialError[1] < -yaml_max_setpoint_error_xy)
 		stateInertialError[1] = -yaml_max_setpoint_error_xy;
 
-	// Clip the z-coordination to within the specified bounds
+	// Clip the z-error to within the specified bounds
 	if (stateInertialError[2] > yaml_max_setpoint_error_z)
 		stateInertialError[2] = yaml_max_setpoint_error_z;
 	else if (stateInertialError[2] < -yaml_max_setpoint_error_z)
@@ -1915,6 +1923,15 @@ int main(int argc, char* argv[])
 	// is requested and responds with the duration that menoeuvre
 	// will take to perform (in milliseconds)
 	ros::ServiceServer requestManoeuvreService = nodeHandle.advertiseService("RequestManoeuvre", requestManoeuvreCallback);
+
+	// Instantiate the class variable "m_manoeuvreCompletePublisher" to
+	// be a "ros::Publisher". This variable advertises under the name
+	// "ManoeuvreComplete" and is a message with the structure defined
+	// in the file "IntWithHeader.msg" (located in the "msg" folder).
+	// This publisher is used by the "flying agent GUI" to update the
+	// flying state once the manoeuvre is complete.
+	m_manoeuvreCompletePublisher = nodeHandle.advertise<IntWithHeader>("ManoeuvreComplete", 1);
+
 
 	// Instantiate the class variable "m_motorsOffToFlyingAgentClientPublisher"
 	// to be a "ros::Publisher". This variable advertises under the
