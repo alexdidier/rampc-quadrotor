@@ -410,16 +410,27 @@ void MainGUIWindow::updateNewViconData(const ptrToMessage& p_msg) //connected to
 
             QString filename(":/images/drone_fixed_");
 
-            if(std::regex_search(s, m, e))
-            {
-                std::string found_string = m[1].str();
-                filename.append(QString::fromStdString(found_string));
-                filename.append(".svg");
-            }
-            else
-            {
-                filename.append("unk.svg");
-            }
+			if(std::regex_search(s, m, e))
+			{
+				// Get the string that was found
+				// > it should be a zero-padded 2-digit number
+				std::string found_string = m[1].str();
+				// Convert to an integer
+				int found_string_as_int = QString::fromStdString(found_string).toInt();
+				if ((1 <= found_string_as_int) && (found_string_as_int <= 9))
+				{
+					filename.append(QString::fromStdString(found_string));
+					filename.append(".svg");
+				}
+				else
+				{
+					filename.append("unk.svg");
+				}
+			}
+			else
+			{
+				filename.append("unk.svg");
+			}
 
             crazyFly* tmp_p_crazyfly = new crazyFly(&(p_msg->crazyflies[i]), filename);
             tmp_p_crazyfly->setScaleCFs(ui->scaleSpinBox->value());
