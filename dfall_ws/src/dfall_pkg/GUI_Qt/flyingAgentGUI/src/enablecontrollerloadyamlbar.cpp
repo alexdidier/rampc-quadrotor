@@ -116,6 +116,20 @@ void EnableControllerLoadYamlBar::showHideController_template_changed()
 
 
 
+// TEST MOTORS
+
+void EnableControllerLoadYamlBar::testMotors_triggered()
+{
+#ifdef CATKIN_MAKE
+    dfall_pkg::IntWithHeader msg;
+    fillIntMessageHeader(msg);
+    msg.data = CMD_USE_TESTMOTORS_CONTROLLER;
+    this->commandPublisher.publish(msg);
+    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Enable Test Motors Controller");
+#endif
+}
+
+
 
 
 // ENABLE CONTROLLER BUTTONS ON-CLICK CALLBACK

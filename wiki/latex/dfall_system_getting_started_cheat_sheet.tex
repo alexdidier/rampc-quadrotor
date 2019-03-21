@@ -35,17 +35,22 @@
 
 
 % ----------------------------------------------------- %
-% THINGS THAT MAY CHANGES AS THE SYSTEM IS DEVELOPER
-\newcommand{\roslaunchcommand}{roslaunch d\_fall\_pps Agent.launch}
+% THINGS THAT MAY CHANGES AS THE SYSTEM IS DEVELOPED
+\newcommand{\gitwebaddress}{gitlab.ethz.ch/D-FaLL/PandS-System/D-FaLL-System/}
+\newcommand{\repositoryname}{D-FaLL-System}
+\newcommand{\roslaunchcommand}{roslaunch dfall\_pkg agent.launch}
+\newcommand{\rospackagename}{dfall\_pkg}
+\newcommand{\launchfilename}{agent.launch}
 \newcommand{\repositoryrootpath}{\textasciitilde/work/D-FaLL-System/}
-\newcommand{\catkinmakefullpath}{\textasciitilde/work/D-FaLL-System/pps\_ws}
+\newcommand{\catkinmakefullpath}{\textasciitilde/work/D-FaLL-System/dfall\_ws}
+\newcommand{\workspacefoldername}{dfall\_ws}
 
 % ----------------------------------------------------- %
 % BEGIN THE DOCUMENT
 \begin{document}
 	
 \begin{center}
-	\huge{\textsc{D-FaLL System Cheat Sheet}}
+	\huge{\textsc{D-FaLL-System Cheat Sheet}}
 \end{center}
 
 \noindent
@@ -53,12 +58,12 @@ A few useful hints, commands, web addresses, and file paths:
 	\begin{enumerate}[topsep=-1pt , itemsep=1pt ,  label = \textbf{(\arabic{*})} ]
 		\item The code can be found at the website \texttt{gitlab.ethz.ch}
 		
-		\item After logging into (or registering on) this website you can find the repository by searching for its name: \texttt{D-FaLL-System}
+		\item After logging into (or registering on) this website you can find the repository by searching for its name: \texttt{\repositoryname}
 		
 		\item Alternately, the full web address for the repository is:
 		
 		\begin{center}
-			\large{\texttt{gitlab.ethz.ch/D-FaLL/PandS-System/D-FaLL-System/}}
+			\large{\texttt{\gitwebaddress}}
 		\end{center}
 		
 		
@@ -75,7 +80,7 @@ A few useful hints, commands, web addresses, and file paths:
 		\begin{center}
 			\begin{tabular}{ll}
 				\large{\texttt{git checkout .}}
-					& Removes all changes
+					& Removes all changes (note the dot)
 				\\
 				\large{\texttt{git checkout master}}
 					& Switches to the ``master" branch
@@ -92,7 +97,7 @@ A few useful hints, commands, web addresses, and file paths:
 			\large{\texttt{\roslaunchcommand}}
 		\end{center}
 	
-		This will launch the Graphical User Interface (GUI) that is explained on the wiki and allows you to test out the flight performance of your control algorithm on the quad-rotor. This command works because \texttt{d\_fall\_pps} is defined as the absolute path to where the \texttt{Agent.launch} file is located.
+		This will launch the Graphical User Interface (GUI) that is explained on the wiki and allows you to test out the flight performance of your control algorithm on the quad-rotor. This command works because \texttt{\rospackagename} is defined as the absolute path to where the \texttt{\launchfilename} file is located.
 	\end{enumerate}
 
 	\clearpage
@@ -104,9 +109,7 @@ A few useful hints, commands, web addresses, and file paths:
 	\begin{enumerate}[topsep=-1pt , itemsep=1pt ,  label = \textbf{(\arabic{*})} ]
 		\item Close the GUI window,
 		\item Kill the GUI process, (this is achieved by pressing the \texttt{Ctrl+c} in the terminal window from which \texttt{\roslaunchcommand} was run),
-		\item Re-compile all of the code. To do this, in a Terminal window first change to the \texttt{pps\_ws} folder of the repository (where \texttt{ws} stands for workspace), and then use the \texttt{catkin\_make} command, i.e.:
-		
-		\texttt{catkin\_make}
+		\item Re-compile all of the code. To do this, in a Terminal window first change to the \texttt{\workspacefoldername} folder of the repository (where \texttt{ws} stands for workspace), and then use the \texttt{catkin\_make} command, i.e.:
 		
 		\begin{center}
 			\begin{tabular}{ll}
@@ -118,7 +121,7 @@ A few useful hints, commands, web addresses, and file paths:
 			\end{tabular}
 		\end{center}
 		
-		This will compile all the code, or throw an error if your changes have introduced errors that prevent the compilation from completing successfully.
+		This will compile all the code, or throw an error if the compilation is unsuccessfully.
 		
 		\item Relaunch the GUI, (by running \texttt{\roslaunchcommand} from a Terminal window).
 	\end{enumerate}
@@ -126,11 +129,11 @@ A few useful hints, commands, web addresses, and file paths:
 	\vspace{0.3cm}
 	
 	\noindent
-	Steps~\textbf{(1)} and \textbf{(2)} are required because the GUI and your controller is loaded into RAM when the system is launched, and so your newly compile changes in Step~\textbf{(3)} only take effect when the system is launched again in Step~\textbf{(4)}.
+	Steps~\textbf{(1)} and \textbf{(2)} are required because the GUI and your controller is loaded into RAM when the system is launched, and so your newly compiled changes in Step~\textbf{(3)} only take effect when the system is launched again in Step~\textbf{(4)}.
 	
 	\vspace{0.3cm}
 	
 	\noindent
-	Note also that the GUI will launch in Step~\textbf{(4)} even if there were compiler errors in Step~\textbf{(3)}, but it is launching the previously compiled version and hence any changes you made will not be running.
+	Note also that the GUI will launch in Step~\textbf{(4)} even if there were compiler errors in Step~\textbf{(3)}, but it is launching the previously compiled version and hence any changes you made will \textbf{not} be running.
 	
 \end{document}

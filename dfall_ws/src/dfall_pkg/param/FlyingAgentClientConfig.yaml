@@ -6,6 +6,8 @@ tuningController:   "TuningControllerService/TuningController"
 pickerController:   "PickerControllerService/PickerController"
 templateController: "TemplateControllerService/TemplateController"
 
+testMotorsController: "TestMotorsControllerService/TestMotorsController"
+
 # The name of the service advertised by the Default
 # Controller for requests manoeuvres to be performed
 defaultController_requestManoeuvre: "DefaultControllerService/RequestManoeuvre"

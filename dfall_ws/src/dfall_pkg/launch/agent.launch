@@ -119,6 +119,15 @@
 			>
 		</node>
 
+		<!-- TEST MOTORS CONTROLLER -->
+		<node
+			pkg    = "dfall_pkg"
+			name   = "TestMotorsControllerService"
+			output = "screen"
+			type   = "TestMotorsControllerService"
+			>
+		</node>
+
 		<!-- PARAMETER SERVICE -->
 		<node
 			pkg    = "dfall_pkg"

@@ -1,0 +1,147 @@
+\documentclass[]{report}
+
+
+% ----------------------------------------------------- %
+% PACKAGES REQUIRED
+\usepackage{enumitem}
+%\usepackage{amsmath}
+%\usepackage{amssymb}
+
+
+
+% ----------------------------------------------------- %
+% SET THE GEOMETRY OF THE PAGE
+\usepackage{geometry}
+\setlength{\paperwidth}{148mm}
+\setlength{\paperheight}{210mm}
+\setlength{\hoffset}{-20mm}  % -1in subtract latex default margin (1 inch) from hoffset
+\setlength{\textwidth}{120mm}		% Width of the Body Box   = 210mm - 50mm = 160mm
+
+\setlength{\textheight}{180mm}		% Height of the Body Box  = 297mm - 50mm = 247mm
+\setlength{\voffset}{-15mm}	% -1in subtract latex default margin (1 inch) from voffset
+
+
+% ----------------------------------------------------- %
+% SET THE PAGE STYLE
+\usepackage{fancyhdr} 
+\fancyhf{}
+\rhead{\textsc{page} \thepage}
+\pagestyle{fancy} 
+
+
+% ----------------------------------------------------- %
+% REMOVE THE PARAGRAPH INDENT
+
+
+
+% ----------------------------------------------------- %
+% THINGS THAT MAY CHANGES AS THE SYSTEM IS DEVELOPED
+\newcommand{\cppfile}{StudentControllerService.cpp}
+\newcommand{\headerfile}{StudentControllerService.h}
+\newcommand{\yamlfile}{StudentController.yaml}
+\newcommand{\computecontroloutputfunction}{calculateControlOutput}
+\newcommand{\convertintobodyframefunction}{convertIntoBodyFrame}
+\newcommand{\convertnewtonsintocommandfunction}{computeMotorPolyBackward}
+\newcommand{\loadyamlfunction}{fetchStudentControllerYamlParameters}
+
+
+% ----------------------------------------------------- %
+% BEGIN THE DOCUMENT
+\begin{document}
+	
+	\begin{center}
+		\huge{\textsc{Student Workflow Hints}}
+	\end{center}
+	
+	\begin{center}
+		\textbf{Emergency stop button: the space-bar can be pressed at anytime to trigger the motors-off command}
+	\end{center}
+
+
+	\begin{enumerate}[topsep=-1pt , itemsep=1pt ,  label = \textbf{(\arabic{*})} ]
+		\item Your controller is implemented using the following 3 files:
+		
+			\begin{center}
+				\begin{tabular}{l}
+					\large{\texttt{\cppfile}}
+					\\
+					\large{\texttt{\headerfile}}
+					\\
+					\large{\texttt{\yamlfile}}
+				\end{tabular}
+			\end{center}
+		
+		The \texttt{.cpp} file is where you implement your controller. The \texttt{.h} file is where you can define new variables and function (these can also be added at the top of the \texttt{.cpp} file). The \texttt{.yaml} file is where you add parameters that can be changed during flight.
+		
+		\item In the \texttt{\cppfile}, locate the function named:
+		\begin{center}
+			\large{\texttt{\computecontroloutputfunction}}
+		\end{center}
+		This is the function where you implement your controller. When your controller is running, this function is called at the frequency of the motion capture system, normally set to 200Hz. Every time your function is called, it is provided with the most recent position and attitude measurement, and is expected to return the control action to be sent to your Crazyflie.
+		
+		\item The position and yaw error are already computed in the first lines of the \texttt{\computecontroloutputfunction} function. You should check whether the error is computed as ``setpoint minus measurement" or the opposite.
+		
+		\item A function for rotating the inertial frame position errors into body frame errors is already defined and named:
+		\begin{center}
+			\large{\texttt{\convertintobodyframefunction}}
+		\end{center}
+		however the conversion is not implemented. You should edit this function to implement the conversion from inertial frame into body frame.
+		
+		\item A function for converting a thrust in Newtons to a 16-bit command is already defined and named:
+		\begin{center}
+			\large{\texttt{\convertnewtonsintocommandfunction}}
+		\end{center}
+		The conversion is correctly implemented, however, if the result is greater than ${(2^{16}\!-\!1)}$, then this is wrapped back around when the command is received by the Crazyflie. You should edit this function to limit commands to a maximum of \texttt{60000}, and set commands below \texttt{2000} to be \texttt{0}.
+		
+	\end{enumerate}
+
+	\clearpage
+
+	\begin{center}
+		\textbf{The following steps expliain how to add a \texttt{yaml} parameter}
+	\end{center}
+	
+	\begin{enumerate}[topsep=-1pt , itemsep=1pt ,  label = \textbf{(\arabic{*})} ]
+		\item In the file \texttt{\yamlfile} add the following line of code:
+		\begin{center}
+			\large{\texttt{example\_parameter : 10}}
+		\end{center}
+		Where the part before the \texttt{:} is the string that names the parameter, and the part after the \texttt{:} is the value of the parameter.
+		
+		\item In the file \texttt{\headerfile} add the following line of code:
+		\begin{center}
+			\large{\texttt{float yaml\_example\_parameter = 1.0;}}
+		\end{center}
+		This defines a class variable named \texttt{yaml\_example\_parameter} which is where the value from the \texttt{.yaml} file will be stored when it is loaded. 
+		\textbf{Note:} the variable can be given any name, we use the convention of a \texttt{yaml\_} prefix for variables that store values loaded from a yaml file.
+		
+		\textbf{Note:} it is important to the initialise the variable with an appropriate value, in this case \texttt{1.0}. This is because the variable \texttt{yaml\_example\_parameter} may be used during execution of your code before it is loaded for the first time, and so the default initialisation value of zero will be problematic if you divide by this variable anywhere.
+		
+		\item The loading of values from the \texttt{.yaml} file is performed in the \texttt{.cpp} file. Hence locate in the file \texttt{\cppfile} the function named:
+		\begin{center}
+			\large{\texttt{\loadyamlfunction}}
+		\end{center}
+		Add the following line of code to that function:
+		\begin{flushleft}
+			\large{\texttt{yaml\_example\_parameter =}}
+			\\
+			\hspace{0.8cm}\large{\texttt{getParameterFloat(nodeHandle\_for\_paramaters,}}
+			\\
+			\hspace{0.8cm}\large{\texttt{"example\_parameter");}}
+		\end{flushleft}
+		The function \texttt{getParameterFloat} that is called by this line searches the appropriate \texttt{.yaml} file for the string \texttt{"example\_parameter"} and returns the respective value found in the \texttt{.yaml} file. Other functions available for loading different types of parameters are:
+		\begin{center}
+			\begin{tabular}{l}
+				\large{\texttt{getParameterInt}}
+				\\
+				\large{\texttt{getParameterBool}}
+				\\
+				\large{\texttt{getParameterFloatVector}}
+			\end{tabular}
+		\end{center}
+		The syntax for the first two functions is identical to \texttt{getParameterFloat}, while the syntax for the third function differs slightly and an example can be found in the \texttt{.cpp} file.
+		
+	\end{enumerate}
+	
+
+\end{document}

@@ -42,7 +42,7 @@ takoff_goto_setpoint_max_time: 4.0
 takoff_integrator_on_box_horizontal: 0.25
 takoff_integrator_on_box_vertical:   0.15
 # The time for: take off integrator-on
-takoff_integrator_on_time: 2.0
+takoff_integrator_on_time: 4.0
 
 
 # Height change for the landing move-down
@@ -99,16 +99,16 @@ gainMatrixThrust_2StateVector     :  [ 0.98, 0.25]
 gainMatrixRollRate_3StateVector   :  [-6.20,-3.00, 5.20]
 gainMatrixPitchRate_3StateVector  :  [ 6.20, 3.00, 5.20]
 # The LQR Controller parameters for mode 2 (Angle-nested)
-gainMatrixRollAngle_2StateVector  :  [-0.20,-0.20]
-gainMatrixPitchAngle_2StateVector :  [ 0.20, 0.20]
+gainMatrixRollAngle_2StateVector  :  [-0.80,-0.50]
+gainMatrixPitchAngle_2StateVector :  [ 0.80, 0.50]
 gainRollRate_fromAngle   :  4.00
 gainPitchRate_fromAngle  :  4.00
 # The LQR Controller parameters for yaw
 gainYawRate_fromAngle    :  2.30
 # Integrator gains
-integratorGain_forThrust  :  0.00
-integratorGain_forTauXY   :  0.00
-integratorGain_forTauYaw  :  0.00
+integratorGain_forThrust  :  0.10
+integratorGain_forTauXY   :  0.06
+integratorGain_forTauYaw  :  0.05
 
 
 

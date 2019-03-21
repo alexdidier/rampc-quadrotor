@@ -116,6 +116,8 @@
 #define PICKER_CONTROLLER    7
 #define TEMPLATE_CONTROLLER  8
 
+#define TESTMOTORS_CONTROLLER  21
+
 // The constants that "command" changes in the
 // operation state of this agent
 #define CMD_USE_DEFAULT_CONTROLLER      1
@@ -131,6 +133,8 @@
 #define CMD_CRAZYFLY_TAKE_OFF        11
 #define CMD_CRAZYFLY_LAND            12
 #define CMD_CRAZYFLY_MOTORS_OFF      13
+
+#define CMD_USE_TESTMOTORS_CONTROLLER 21
 
 // Flying states
 #define STATE_MOTORS_OFF     1

@@ -116,6 +116,43 @@ void viconCallback(const ViconData& viconData)
 	)
 	{
 
+        // If motors-off and testing motors
+        if (
+            m_flying_state == STATE_MOTORS_OFF
+            &&
+            m_controller_nominally_selected == TESTMOTORS_CONTROLLER
+            &&
+            m_testMotorsController.exists()
+            )
+        {
+            // Initliase the "Contrller" service call variable
+            Controller testMotorsCall;
+
+            // Initialise a local boolean success variable
+            bool isSuccessful_testMotorsCall = false;
+
+            // Call the controller service client
+            isSuccessful_testMotorsCall = m_testMotorsController.call(testMotorsCall);
+
+            // Ensure success and enforce safety
+            if(isSuccessful_testMotorsCall)
+            {
+                m_commandForSendingToCrazyfliePublisher.publish(testMotorsCall.response.controlOutput);
+            }
+            else
+            {
+                // Let the user know that the controller call failed
+                ROS_ERROR_STREAM("[FLYING AGENT CLIENT] Failed to call test motors controller, valid: " << m_testMotorsController.isValid() << ", exists: " << m_testMotorsController.exists());
+                // Change back to the default controller
+                setControllerNominallySelected(DEFAULT_CONTROLLER);
+                // Send the command to turn the motors off
+                sendZeroOutputCommandForMotors();
+            }
+            return;
+        }
+
+
+
 		// Only continue if:
 		// (1) the agent is NOT occulded
 		if(!poseDataForThisAgent.occluded)
@@ -354,13 +391,15 @@ void sendZeroOutputCommandForMotors()
 bool safetyCheck_on_positionAndTilt(CrazyflieData data)
 {
     // Check on the X position
-    if((data.x < m_context.localArea.xmin) or (data.x > m_context.localArea.xmax))
+    float symmetric_bound_x = 0.5 * (m_context.localArea.xmax-m_context.localArea.xmin);
+    if((data.x < -symmetric_bound_x) or (data.x > symmetric_bound_x))
     {
         ROS_INFO_STREAM("[FLYING AGENT CLIENT] x safety failed");
         return false;
     }
     // Check on the Y position
-    if((data.y < m_context.localArea.ymin) or (data.y > m_context.localArea.ymax))
+    float symmetric_bound_y = 0.5 * (m_context.localArea.ymax-m_context.localArea.ymin);
+    if((data.y < -symmetric_bound_y) or (data.y > symmetric_bound_y))
     {
         ROS_INFO_STREAM("[FLYING AGENT CLIENT] y safety failed");
         return false;
@@ -626,8 +665,8 @@ void requestChangeFlyingStateToLand()
 
 void timerCallback_takeoff_complete(const ros::TimerEvent&)
 {
-    // Only change to flying if still in the take-off state
-    if (m_flying_state == STATE_TAKE_OFF)
+	// Only change to flying if still in the take-off state
+	if (m_flying_state == STATE_TAKE_OFF)
 	{
 		// Inform the user
 		ROS_INFO("[FLYING AGENT CLIENT] Take-off complete, changed state to STATE_FLYING");
@@ -649,8 +688,8 @@ void timerCallback_takeoff_complete(const ros::TimerEvent&)
 
 void timerCallback_land_complete(const ros::TimerEvent&)
 {
-    // Only change to flying if still in the take-off state
-    if (m_flying_state == STATE_LAND)
+	// Only change to flying if still in the take-off state
+	if (m_flying_state == STATE_LAND)
 	{
 		// Inform the user
 		ROS_INFO("[FLYING AGENT CLIENT] Land complete, changed state to STATE_MOTORS_OFF");
@@ -671,6 +710,67 @@ void timerCallback_land_complete(const ros::TimerEvent&)
 }
 
 
+
+
+void defaultControllerManoeuvreCompleteCallback(const IntWithHeader & msg)
+{
+	// Switch between the cases
+	switch (msg.data)
+	{
+		case DEFAULT_CONTROLLER_TAKEOFF_COMPLETE:
+		{
+			// Only change to flying if still in the take-off state
+			if (m_flying_state == STATE_TAKE_OFF)
+			{
+				// Stop the timer
+				m_timer_takeoff_complete.stop();
+				// Inform the user
+				ROS_INFO("[FLYING AGENT CLIENT] Take-off complete, changed state to STATE_FLYING");
+				// Update the class variable
+				m_flying_state = STATE_FLYING;
+				// Publish a message with the new flying state
+				std_msgs::Int32 flying_state_msg;
+				flying_state_msg.data = m_flying_state;
+				m_flyingStatePublisher.publish(flying_state_msg);
+				// Change back to the nominal controller
+				setInstantController( m_controller_nominally_selected );
+			}
+			else
+			{
+				// Inform the user
+				ROS_INFO("[FLYING AGENT CLIENT] Received a take-off complete message, BUT the agent is no longer in STATE_TAKE_OFF.");
+			}
+			break;
+		}
+
+
+		case DEFAULT_CONTROLLER_LANDING_COMPLETE:
+		{
+			// Only change to flying if still in the take-off state
+			if (m_flying_state == STATE_LAND)
+			{
+				// Stop the timer
+				m_timer_land_complete.stop();
+				// Inform the user
+				ROS_INFO("[FLYING AGENT CLIENT] Land complete, changed state to STATE_MOTORS_OFF");
+				// Update the class variable
+				m_flying_state = STATE_MOTORS_OFF;
+				// Publish a message with the new flying state
+				std_msgs::Int32 flying_state_msg;
+				flying_state_msg.data = m_flying_state;
+				m_flyingStatePublisher.publish(flying_state_msg);
+				// Change back to the nominal controller
+				setInstantController( m_controller_nominally_selected );
+			}
+			else
+			{
+				// Inform the user
+				ROS_INFO("[FLYING AGENT CLIENT] Received a landing complete message, BUT the agent is no longer in STATE_LAND.");
+			}
+			break;
+		}
+	}
+}
 
 
 
@@ -725,6 +825,9 @@ void setInstantController(int controller)
             break;
         case TEMPLATE_CONTROLLER:
             m_instant_controller_service_client = &m_templateController;
+            break;
+        case TESTMOTORS_CONTROLLER:
+            m_instant_controller_service_client = &m_defaultController;
             break;
         default:
             break;
@@ -863,6 +966,7 @@ void flyingStateRequestCallback(const IntWithHeader & msg) {
                 setControllerNominallySelected(TEMPLATE_CONTROLLER);
                 break;
 
+
             case CMD_CRAZYFLY_TAKE_OFF:
                 ROS_INFO("[FLYING AGENT CLIENT] TAKE_OFF Command received");
                 requestChangeFlyingStateTo(STATE_TAKE_OFF);
@@ -876,6 +980,20 @@ void flyingStateRequestCallback(const IntWithHeader & msg) {
                 ROS_INFO("[FLYING AGENT CLIENT] MOTORS_OFF Command received");
                 requestChangeFlyingStateTo(STATE_MOTORS_OFF);
                 break;
+
+
+            case CMD_USE_TESTMOTORS_CONTROLLER:
+                if (m_flying_state == STATE_MOTORS_OFF)
+                {
+                    ROS_INFO("[FLYING AGENT CLIENT] USE_TEST_MOTORS_CONTROLLER Command received");
+                    setControllerNominallySelected(TESTMOTORS_CONTROLLER);
+                }
+                else
+                {
+                    ROS_INFO("[FLYING AGENT CLIENT] USE_TEST_MOTORS_CONTROLLER Command received, but state is not currently STATE_MOTORS_OFF");
+                }
+                break;
+
 
             default:
                 ROS_ERROR_STREAM("[FLYING AGENT CLIENT] unexpected command number: " << cmd);
@@ -1140,6 +1258,8 @@ void timerCallback_for_createAllcontrollerServiceClients(const ros::TimerEvent&)
     createControllerServiceClientFromParameterName( "tuningController"   , m_tuningController );
     createControllerServiceClientFromParameterName( "pickerController"   , m_pickerController );
     createControllerServiceClientFromParameterName( "templateController" , m_templateController );
+
+    createControllerServiceClientFromParameterName( "testMotorsController" , m_testMotorsController );
 
     // INITIALISE THE SERVICE FOR REQUESTING THE DEFAULT
     // CONTROLLER TO PERFORM MANOEUVRES
@@ -1505,6 +1625,15 @@ int main(int argc, char* argv[])
 	std::string namespace_to_battery_monitor = m_namespace + "/BatteryMonitor";
 	ros::NodeHandle nodeHandle_to_battery_monitor(namespace_to_battery_monitor);
 	ros::Subscriber CFBatterySubscriber = nodeHandle_to_battery_monitor.subscribe("ChangedStateTo", 1, batteryMonitorStateChangedCallback);
+
+
+	// SUBSCRIBER FOR BATTERY STATE CHANGES
+	// The battery state change message from the Battery
+	// Monitor node
+	std::string namespace_to_default_contoller = m_namespace + "/DefaultControllerService";
+	ros::NodeHandle nodeHandle_to_default_controller(namespace_to_default_contoller);
+	ros::Subscriber ManoeuvreCompleteSubscriber = nodeHandle_to_default_controller.subscribe("ManoeuvreComplete", 1, defaultControllerManoeuvreCompleteCallback);
+
 
 
 	// SERVICE SERVER FOR OTHERS TO GET THE CURRENT FLYING STATE

@@ -3,16 +3,14 @@
 ## For Student and Teacher
 
 ### Install Script
-Installation with the install script is the easiest. You will need:
-- the install script
-- the ``dfall_pkg`` package compressed in a file called ``package.tar.gz``
-- the rule files for the USB connection to the crazyradio, called ``99-crazyflie.rules`` and ``99-crazyradio.rules``
+Installation with the install script is the easiest. You will need only the install script from this repository, located in the ``install`` folder and named ``dfall_install.sh``
 
-These files all need to be in the same directory. To run the installation, move to the containing directory (pps\ install) and call it with
+
+To run the installation, using terminal change directory to the folder containing ``dfall_install.sh`` and call it with
 ```
-./pps_install.sh <student id>
+./dfall_install.sh <agent id>
 ```
-The student id needs to be a unique number that is used as identication for the student laptops connected to the teacher. Make sure not that the script file is marked executable and to not run the script as root, as it will ask for the password and only execute some commands with root privilege.
+The ``<agent id>`` needs to be a unique number that is used as identication for the agent's laptop. Make sure not that the script file is marked executable and do NOT run the script as root, i.e., do NOT run the script using ``sudo``. The installation script will ask for the password and only execute commands with root privilege when required.
 
 ### Manual Installation
 The installation process consists of the following steps:
@@ -20,15 +18,36 @@ The installation process consists of the following steps:
 - Installation of ROS: <br />
 The detailed instructions for the installation of ROS can be found [here](http://wiki.ros.org/kinetic/Installation/Ubuntu).
 
-- Workspace: <br />
-Create a new catkin workspace and copy the ``dfall_pkg`` package into the ``src`` folder of the workspace. Then build the package with ``catkin_make`` called from the workspace root.
 
-- Environment Setup: <br />
-Add a new line in the ``/etc/hosts`` file that links the teacher's IP with the domain name ``teacher`` and create a file called ``/etc/StudentID`` that contains the student id. Only write digits without any other symbols or whitespace characters.
+- Clone this repository: <br />
+Clone this repository into the desired location on your computer, we use the location ``~/work``:
 
-- USB Crazyradio: <br />
-To set up the crazyradio USB dongle just copy the rule files ``99-crazyflie.rules`` and ``99-crazyradio.rules`` from directory ``pps\ install/`` to the directory ``/etc/udev/rules.d``.
-You also have to install the library pyusb:
+```
+mkdir -p ~/work
+```
+
+```
+cd ~/work
+```
+
+```
+git clone https://gitlab.ethz.ch/D-FaLL/PandS-System/D-FaLL-System.git
+```
+
+
+- USB Crazyradio and Python USB package: <br />
+To set up the crazyradio USB dongle just copy the rule files ``99-crazyflie.rules`` and ``99-crazyradio.rules`` from directory ``install`` to the directory ``/etc/udev/rules.d``:
+
+```
+sudo cp ~/work/D-FaLL-System/install/99-crazyflie.rules /etc/udev/rules.d
+```
+
+```
+sudo cp ~/work/D-FaLL-System/install/99-crazyradio.rules /etc/udev/rules.d
+```
+
+
+You also have to install the library ``pyusb``:
 
 ```
 sudo apt-get update
@@ -41,6 +60,35 @@ sudo apt-get install python-pip
 ```
 sudo pip install pyusb
 ```
+The second command installs the python package management system ``python-pip``. The third command installs the python USB package ``pyusb``
+
+
+- Environment Setup: <br />
+Add a new line in the ``/etc/hosts`` file that links the teacher's IP with the domain name ``teacher``, create a file called ``/etc/dfall_default_agent_id`` that contains the agent id, and create a file called ``/etc/dfall_default_coord_id`` that contains the coordinator id.
+```
+sudo sh -c "echo '10.42.0.10 teacher' >> /etc/hosts"
+```
+
+```
+sudo sh -c "echo $1 >> /etc/dfall_default_agent_id"
+```
+
+```
+sudo sh -c "echo 1 >> /etc/dfall_default_coord_id"
+```
+
+
+- Build the D-FaLL ROS Package: <br />
+To do this you need to first change direction to the ``dfall_ws`` directory, where ``ws`` stands for workspace:
+```
+cd ~/work/D-FaLL-System/dfall_ws
+```
+
+And then you build the D-FaLL ROS Package using the ``catkin_make`` command:
+```
+catkin_make -j4
+```
+
 
 - Source scripts in ``.bashrc``: <br />
 Add following lines to the bottom of the file ``~/.bashrc`` (replace ``<catkin workspace>`` with correct directory)
@@ -50,9 +98,10 @@ source <catkin workspace>/devel/setup.bash
 source <catkin workspace>/src/dfall_pkg/launch/Config.sh
 ```
 
-The workspace setup script will only appear after the first compilation of the catkin workspace.
+If you follow the steps above, then the ``<catkin workspace>`` should be ``~/work/D-FaLL-System/dfall_ws``. Note that the workspace setup script will only appear after the first compilation of the catkin workspace.
 
-If you are not sure at any point you can check out the install script.
+If you are not sure at any point you can check out the ``dfall_install.sh`` script.
+
 
 ### Vicon Datastream SDK Installation
 

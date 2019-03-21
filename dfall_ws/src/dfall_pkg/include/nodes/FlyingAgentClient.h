@@ -204,6 +204,8 @@ ros::ServiceClient m_pickerController;
 // The Template controller specified in the FlyingAgentClientConfig.yaml
 ros::ServiceClient m_templateController;
 
+// The Test Mtoros controller specified in the FlyingAgentClientConfig.yaml
+ros::ServiceClient m_testMotorsController;
 
 
 
@@ -294,6 +296,8 @@ void requestChangeFlyingStateToLand();
 void takeOffTimerCallback(const ros::TimerEvent&);
 // > Callback that the landing phase is complete
 void landTimerCallback(const ros::TimerEvent&);
+// > Callback that the Default Controller complete a manoeuvre
+void defaultControllerManoeuvreCompleteCallback(const IntWithHeader & msg);
 
 
 

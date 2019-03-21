@@ -253,6 +253,12 @@ void MainWindow::on_action_showHideController_template_changed()
 }
 
 
+void MainWindow::on_action_testMotors_triggered()
+{
+    // Notify the UI elements of this change
+    ui->customWidget_enableControllerLoadYamlBar->testMotors_triggered();
+}
+
 
 //    ----------------------------------------------------------------------------------
 //    III  DDDD       &&&      TTTTT  Y   Y  PPPP   EEEEE

@@ -70,6 +70,7 @@
 #include "dfall_pkg/IntIntService.h"
 #include "dfall_pkg/LoadYamlFromFilename.h"
 #include "dfall_pkg/GetSetpointService.h"
+#include "dfall_pkg/CMQuery.h"
 
 // Include the shared definitions
 #include "nodes/Constants.h"
@@ -369,12 +370,27 @@ ros::Publisher m_debugPublisher;
 // changes to the setpoint
 ros::Publisher m_setpointChangedPublisher;
 
+// ROS Publisher to inform the flying agent client
+// when a requested manoeuvre is complete
+ros::Publisher m_manoeuvreCompletePublisher;
 
 // ROS Publisher for sending motors-off command
 // to the flying agent client
 ros::Publisher m_motorsOffToFlyingAgentClientPublisher;
 
+// Describes the area of the crazyflie and other parameters
+//CrazyflieContext m_context;
 
+// Flag for whether a context is available or not
+bool m_isAvailableContext = false;
+
+// Variable for each coordinate
+float m_symmetric_area_bounds_x = 0.5;
+float m_symmetric_area_bounds_y = 0.5;
+float m_symmetric_area_bounds_z = 0.5;
+
+// Service Client from which the "CrazyflieContext" is loaded
+ros::ServiceClient m_centralManager;
 
 
 
@@ -458,11 +474,20 @@ bool getCurrentSetpointCallback(GetSetpointService::Request &request, GetSetpoin
 // PUBLISH THE CURRENT SETPOINT AND STATE
 void publishCurrentSetpointAndState();
 
+// CLIP TO MIN AND MAX
+float clipToBounds(float val, float val_min, float val_max);
+
 // CUSTOM COMMAND RECEIVED CALLBACK
 void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived);
 
 // PUBLISH MOTORS-OFF MESSAGE TO FLYING AGENT CLIENT
 void publish_motors_off_to_flying_agent_client();
+
+// FUNCTIONS FOR THE CONTEXT OF THIS AGENT
+// > Callback that the context database changed
+void crazyflieContextDatabaseChangedCallback(const std_msgs::Int32& msg);
+// > For loading the context of this agent
+void loadCrazyflieContext();
 
 // LOADING OF YAML PARAMETERS
 void timerCallback_initial_load_yaml(const ros::TimerEvent&);
