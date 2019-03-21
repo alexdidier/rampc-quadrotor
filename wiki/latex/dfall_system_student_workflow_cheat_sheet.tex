@@ -75,7 +75,7 @@
 		
 		\item In the \texttt{\cppfile}, locate the function named:
 		\begin{center}
-			\texttt{\computecontroloutputfunction}
+			\large{\texttt{\computecontroloutputfunction}}
 		\end{center}
 		This is the function where you implement your controller. When your controller is running, this function is called at the frequency of the motion capture system, normally set to 200Hz. Every time your function is called, it is provided with the most recent position and attitude measurement, and is expected to return the control action to be sent to your Crazyflie.
 		
@@ -83,13 +83,13 @@
 		
 		\item A function for rotating the inertial frame position errors into body frame errors is already defined and named:
 		\begin{center}
-			\texttt{\convertintobodyframefunction}
+			\large{\texttt{\convertintobodyframefunction}}
 		\end{center}
 		however the conversion is not implemented. You should edit this function to implement the conversion from inertial frame into body frame.
 		
 		\item A function for converting a thrust in Newtons to a 16-bit command is already defined and named:
 		\begin{center}
-			\texttt{\convertnewtonsintocommandfunction}
+			\large{\texttt{\convertnewtonsintocommandfunction}}
 		\end{center}
 		The conversion is correctly implemented, however, if the result is greater than ${(2^{16}\!-\!1)}$, then this is wrapped back around when the command is received by the Crazyflie. You should edit this function to limit commands to a maximum of \texttt{60000}, and set commands below \texttt{2000} to be \texttt{0}.
 		
