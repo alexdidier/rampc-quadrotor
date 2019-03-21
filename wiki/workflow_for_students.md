@@ -34,29 +34,29 @@ gyrosensor needs to initialize.
     <img src="./pics/student_gui.png" style="width: 800px;"/> <br><br>
 
   * Connect to/Disconnect from Crazyflie: this connects/disconnects your computer to
-  the assigned Crazyflie using the Crazyradio USB dongle.<br>
+  the assigned Crazyflie using the Crazyradio USB dongle.
     * Crazyradio status: can take the values "Connected!", "Disconnected" or
       "Connecting...", and the icon changes to display the current status.<br>
     * The title at the top contains information about your AgentID number, and the Crazyflie that is allocated to you. This is the only Crazyflie you can connect to.<br><br>
 
-  * The voltage displays the instantaneous voltage of the battery of the Crazyflie, in Volts.<br>
+  * The voltage displays the instantaneous voltage of the battery of the Crazyflie, in Volts.
     * The battery icon displays this relative to the voltages for full and empty.<br>
     * Because flying requires a high current draw from the battery, the full and empty voltages levels automatically adjust depending on whether your Crazyflie is flying or has the motors turned off.<br>
     * If the battery voltage falls below the empty level, then a low battery warning is raise and your Crazyflie will be forced to land.<br>
     * You must change the battery if the low battery warning occurs because continuing to drain the battery further will cause permanent damage to the battery.<br><br>
 
-  * There are 3 buttons to control the flying state of your Crazyflie: **"Take-off", "Land", and "Motors-OFF"**<br>
+  * There are 3 buttons to control the flying state of your Crazyflie: **"Take-off", "Land", and "Motors-OFF"**
     * The icon displays the current flying state. **It is important to know that you can only "Take-off" when the state is "Motors
   OFF", and you can only "Land" if the state is NOT "Motors OFF".**<br>
     * **IMPORTANT: YOU CAN PRESS SPACE-BAR AT ANYTIME AS A SHORT-CUT TO THE "MOTORS-OFF" BUTTON.**<br><br>
 
-  * In the lower part of the GUI there are two tabs: **"Default" and "Student" controller**<br>
+  * In the lower part of the GUI there are two tabs: **"Default" and "Student" controller**
     * These tabs allow you to interact with the respective controller.<br>
     * In these tabs, the first column of numbers provides information about the current position of the Crazyflie, the second column of numbers is computed as the difference between the current position and the current setpoint, and the third column of number is the current setpoint. This information is useful for keeping track of the error of your controller.<br>
     * The next column of boxes can be edited and allows you to type in a new setpoint. When you press the button "Set
   setpoint" (or the enter key on the keyboard), we change the current setpoint with the information filled.<br><br>
 
-  * The button called "Enable <controller> Controller" enables the selected controller. The current enabled controller is the one which is highlighted in green in the tab name.<br><br>
+  * The button called "Enable <controller> Controller" enables the selected controller. The current enabled controller is the one which is highlighted in green in the tab name.
     * The button "Load <filename> YAML file" loads and refreshes the parameters that are in the corresponding YAML file.<br><br>
 
 
