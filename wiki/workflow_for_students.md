@@ -21,48 +21,44 @@ gyrosensor needs to initialize.
 
 ### Start the student's GUI
 
-  * Once all the prerequisites have been fulfilled, you can start the student's
-    GUI by going to a terminal and typing:
+  * Once all the prerequisites have been fulfilled, you can start the student's GUI by going to a terminal and typing:
     `roslaunch dfall_pkg agent.launch`
 
-    *Note: for this to work, the teacher's computer has to be connected to the
-    network and the `teacher.launch` GUI has to be started before. Please wait until
-    your teacher has already set up everything.*
+    *Note: for this to work, the teacher's computer has to be connected to the network and the `teacher.launch` GUI has to be started before. Please wait until your teacher has already set up everything.*
 
-  * Once started, you will see something like this: <br>
+  * Once started, you will see something like this:<br>
 
     <img src="./pics/student_gui.png" style="width: 800px;"/> <br><br>
 
-  * Connect to/Disconnect from Crazyflie: this connects/disconnects your computer to
-  the assigned Crazyflie using the Crazyradio USB dongle.
+  * Connect to/Disconnect from Crazyflie: this connects/disconnects your computer to the assigned Crazyflie using the Crazyradio USB dongle.<br>
     * Crazyradio status: can take the values "Connected!", "Disconnected" or
       "Connecting...", and the icon changes to display the current status.<br>
     * The title at the top contains information about your AgentID number, and the Crazyflie that is allocated to you. This is the only Crazyflie you can connect to.<br><br>
 
-  * The voltage displays the instantaneous voltage of the battery of the Crazyflie, in Volts.
+  * The voltage displays the instantaneous voltage of the battery of the Crazyflie, in Volts.<br>
     * The battery icon displays this relative to the voltages for full and empty.<br>
     * Because flying requires a high current draw from the battery, the full and empty voltages levels automatically adjust depending on whether your Crazyflie is flying or has the motors turned off.<br>
     * If the battery voltage falls below the empty level, then a low battery warning is raise and your Crazyflie will be forced to land.<br>
     * You must change the battery if the low battery warning occurs because continuing to drain the battery further will cause permanent damage to the battery.<br><br>
 
-  * There are 3 buttons to control the flying state of your Crazyflie: **"Take-off", "Land", and "Motors-OFF"**
+  * There are 3 buttons to control the flying state of your Crazyflie: **"Take-off", "Land", and "Motors-OFF"**<br>
     * The icon displays the current flying state. **It is important to know that you can only "Take-off" when the state is "Motors
   OFF", and you can only "Land" if the state is NOT "Motors OFF".**<br>
     * **IMPORTANT: YOU CAN PRESS SPACE-BAR AT ANYTIME AS A SHORT-CUT TO THE "MOTORS-OFF" BUTTON.**<br><br>
 
-  * In the lower part of the GUI there are two tabs: **"Default" and "Student" controller**
+  * In the lower part of the GUI there are two tabs: **"Default" and "Student" controller**<br>
     * These tabs allow you to interact with the respective controller.<br>
     * In these tabs, the first column of numbers provides information about the current position of the Crazyflie, the second column of numbers is computed as the difference between the current position and the current setpoint, and the third column of number is the current setpoint. This information is useful for keeping track of the error of your controller.<br>
     * The next column of boxes can be edited and allows you to type in a new setpoint. When you press the button "Set
   setpoint" (or the enter key on the keyboard), we change the current setpoint with the information filled.<br><br>
 
-  * The button called "Enable <controller> Controller" enables the selected controller. The current enabled controller is the one which is highlighted in green in the tab name.
+  * The button called "Enable <controller> Controller" enables the selected controller. The current enabled controller is the one which is highlighted in green in the tab name.<br>
     * The button "Load <filename> YAML file" loads and refreshes the parameters that are in the corresponding YAML file.<br><br>
 
 
-  * You can now play with the landing, take off and change of setpoint using the default controller to get familiar with the system.
+  * You can now play with the landing, take off and change of setpoint using the default controller to get familiar with the system.<br>
 
-    *Note: there are different parameters in the file called `DefaultController.yaml`, in the folder param (use `roscd dfall_pkg/param` in a terminal to go there).* **These are the paramteres of the default controller parameters and should NOT be changed.** *Take a look at the file and get familiar with the format used, since may have to write your own for the student controller.*
+  *Note: there are different parameters in the file called `DefaultController.yaml`, in the folder param (use `roscd dfall_pkg/param` in a terminal to go there).* **These are the paramteres of the default controller parameters and should NOT be changed.** *Take a look at the file and get familiar with the format used, since may have to write your own for the student controller.*
 
 
 ### Creating your own controller!
@@ -119,19 +115,6 @@ important files that should be taken into account.
       The easiest way is to search for a file that exists and just add all the
       same things for your new file.*
 
-
-
-<!-- ##### -- Useful files: -->
-<!-- in `dfall_ws/src/dfall_pkg/scripts` -->
-<!-- -\-> call scripts in terminal by going to the above path and then typing -->
-<!-- ./SCRIPTNAME, e.g.: `./enable_crazyflie` -->
-
-<!--   * *disable_crazyflie* -->
-<!--   * *enable_crazyflie* -->
-<!--   * *load_custom_controller* -->
-<!--   * *load_safe_controller* -->
-<!--   * *safe_controller_setpoint* <br> -->
-<!--   This one needs 4 parameters for x,y,z and yaw. The setpoint of the crazyflie is then set to those values. -->
 
 
 <!-- ##### -- Files to look at: -->
@@ -225,31 +208,3 @@ to it*
 5. Start the Student node following the steps mentioned before (`roslaunch dfall_pkg Student.launch`) and enable the Student Controller.<br><br>
 6. Once we are using the Student Controller, we will be seeing how the data
    selected gets plotted in the rqt plots.
-
-<!-- --- -->
-
-
-<!-- ## Workflow: -->
-<!-- **Setup** -->
-<!-- 1.  Teacher must run his part, that publishes ViconData for students and hosts the roscore. -->
-<!-- 2.  Each student/group has a CrazyFlie and a laptop. -->
-<!-- 3.  Use `roscd dfall_pkg/launch` in a terminal as well as `roscd dfall_pkg/scripts` in another terminal -->
-
-<!-- <br> -->
-<!-- **Working** -->
-<!-- 1.  Adjust your custom controller -->
-<!-- 2.  Use `catkin_make` in the dfall_ws directory to compile your controller implementation -->
-<!-- 3.  Start your crazyflie -->
-<!-- 4.  Launch the correct file in the launch directory as described above. ClientConfig.yaml has to be correct. -->
-<!-- 5. Use the scripts to change from the safe to your custom controller. -->
-<!-- 6. When your done, you can turn of your crazyflie by using the script `disable_crazyflie`. -->
-<!-- 7. Repeat -->
-
-
-<!-- --- -->
-<!-- **Troubleshooting** -->
-<!-- - _SafeController is not working_ <br> -->
-<!-- Was the antenna of the crazyflie facing in the *opposite* direction of the defined Vicon x-axis? -\-> Define it again! <br> -->
-<!-- The crazyflie has to lie on the table when you turn it on because the gyro sensor is initialized upon start-up. <br> -->
-<!-- Is the crazyflie still properly showing in the ViconTracker software? -\-> Define it again and check that the markers don't move! -->
-<!-- - If you have added a new controller. Don't forget to adjust the CMakeList.txt file and use catkin_make again. -->
