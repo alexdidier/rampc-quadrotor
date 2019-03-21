@@ -391,13 +391,15 @@ void sendZeroOutputCommandForMotors()
 bool safetyCheck_on_positionAndTilt(CrazyflieData data)
 {
     // Check on the X position
-    if((data.x < m_context.localArea.xmin) or (data.x > m_context.localArea.xmax))
+    float symmetric_bound_x = 0.5 * (m_context.localArea.xmax-m_context.localArea.xmin);
+    if((data.x < -symmetric_bound_x) or (data.x > symmetric_bound_x))
     {
         ROS_INFO_STREAM("[FLYING AGENT CLIENT] x safety failed");
         return false;
     }
     // Check on the Y position
-    if((data.y < m_context.localArea.ymin) or (data.y > m_context.localArea.ymax))
+    float symmetric_bound_y = 0.5 * (m_context.localArea.ymax-m_context.localArea.ymin);
+    if((data.y < -symmetric_bound_y) or (data.y > symmetric_bound_y))
     {
         ROS_INFO_STREAM("[FLYING AGENT CLIENT] y safety failed");
         return false;

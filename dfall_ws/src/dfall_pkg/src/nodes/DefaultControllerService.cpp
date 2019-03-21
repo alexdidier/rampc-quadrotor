@@ -1310,11 +1310,22 @@ void requestSetpointChangeCallback(const SetpointWithHeader& newSetpoint)
 // CHANGE SETPOINT FUNCTION
 void setNewSetpoint(float x, float y, float z, float yaw)
 {
-	// Put the new setpoint into the class variable
-	m_setpoint[0] = x;
-	m_setpoint[1] = y;
-	m_setpoint[2] = z;
-	m_setpoint[3] = yaw;
+	if (!m_isAvailableContext)
+	{
+		ROS_ERROR("[DEFAULT CONTROLLER] New setpoint requested, however there is no context available, setting default setpoint instead.");
+		m_setpoint[0] = yaml_default_setpoint[0];
+		m_setpoint[1] = yaml_default_setpoint[1];
+		m_setpoint[2] = yaml_default_setpoint[2];
+		m_setpoint[3] = yaml_default_setpoint[3];
+	}
+	else
+	{
+		// Put the new setpoint into the class variable
+		m_setpoint[0] = clipToBounds( x , -m_symmetric_area_bounds_x , m_symmetric_area_bounds_x );
+		m_setpoint[1] = clipToBounds( y , -m_symmetric_area_bounds_y , m_symmetric_area_bounds_y );;
+		m_setpoint[2] = clipToBounds( z , -m_symmetric_area_bounds_z , m_symmetric_area_bounds_z );;
+		m_setpoint[3] = yaw;
+	}
 
 	// Publish the change so that the network is updated
 	// (mainly the "flying agent GUI" is interested in
@@ -1323,10 +1334,10 @@ void setNewSetpoint(float x, float y, float z, float yaw)
 	// Instantiate a local variable of type "SetpointWithHeader"
 	SetpointWithHeader msg;
 	// Fill in the setpoint
-	msg.x   = x;
-	msg.y   = y;
-	msg.z   = z;
-	msg.yaw = yaw;
+	msg.x   = m_setpoint[0];
+	msg.y   = m_setpoint[1];
+	msg.z   = m_setpoint[2];
+	msg.yaw = m_setpoint[3];
 	// Publish the message
 	m_setpointChangedPublisher.publish(msg);
 }
@@ -1363,6 +1374,16 @@ void publishCurrentSetpointAndState()
 	m_setpointChangedPublisher.publish(msg);
 }
 
+float clipToBounds(float val, float val_min, float val_max)
+{
+	float return_val = val;
+	if (return_val < val_min)
+		return_val = val_min;
+	if (return_val > val_max)
+		return_val = val_max;
+
+	return return_val;
+}
 
 
 
@@ -1460,6 +1481,79 @@ void publish_motors_off_to_flying_agent_client()
 	// Publish the message
 	m_motorsOffToFlyingAgentClientPublisher.publish(msg);
 }
+
+
+
+
+//    ----------------------------------------------------------------------------------
+//    L       OOO     A    DDDD
+//    L      O   O   A A   D   D
+//    L      O   O  A   A  D   D
+//    L      O   O  AAAAA  D   D
+//    LLLLL   OOO   A   A  DDDD
+//
+//     CCCC   OOO   N   N  TTTTT  EEEEE  X   X  TTTTT
+//    C      O   O  NN  N    T    E       X X     T
+//    C      O   O  N N N    T    EEE      X      T
+//    C      O   O  N  NN    T    E       X X     T
+//     CCCC   OOO   N   N    T    EEEEE  X   X    T
+//    ----------------------------------------------------------------------------------
+
+
+void crazyflieContextDatabaseChangedCallback(const std_msgs::Int32& msg)
+{
+    ROS_INFO("[DEFAULT CONTROLLER] Received message that the Context Database Changed");
+    loadCrazyflieContext();
+}
+
+
+
+void loadCrazyflieContext()
+{
+    CMQuery contextCall;
+    contextCall.request.studentID = m_agentID;
+    ROS_INFO_STREAM("[DEFAULT CONTROLLER] AgentID:" << m_agentID);
+
+    CrazyflieContext new_context;
+
+    m_centralManager.waitForExistence(ros::Duration(-1));
+
+    if(m_centralManager.call(contextCall)) {
+        new_context = contextCall.response.crazyflieContext;
+        //ROS_INFO_STREAM("[DEFAULT CONTROLLER] CrazyflieContext:\n" << new_context);
+
+        //if((m_context.crazyflieName != "") && (new_context.crazyflieName != m_context.crazyflieName)) //linked crazyflie name changed and it was not empty before
+        //{
+
+            // Motors off is done in python script now everytime we disconnect
+
+            // send motors OFF and disconnect before setting m_context = new_context
+            // std_msgs::Int32 msg;
+            // msg.data = CMD_CRAZYFLY_MOTORS_OFF;
+            // commandPublisher.publish(msg);
+
+            // ROS_INFO("[DEFAULT CONTROLLER] CF is now different for this student. Disconnect and turn it off");
+
+            // IntWithHeader msg;
+            // msg.shouldCheckForAgentID = false;
+            // msg.data = CMD_DISCONNECT;
+            // m_crazyRadioCommandPublisher.publish(msg);
+        //}
+
+        m_symmetric_area_bounds_x = 0.5 * (new_context.localArea.xmax - new_context.localArea.xmin);
+        m_symmetric_area_bounds_y = 0.5 * (new_context.localArea.ymax - new_context.localArea.ymin);
+        m_symmetric_area_bounds_z = 0.5 * (new_context.localArea.zmax - new_context.localArea.zmin);
+        m_isAvailableContext = true;
+
+    }
+    else
+    {
+    	m_isAvailableContext = false;
+        ROS_ERROR("[DEFAULT CONTROLLER] Failed to load context. Waiting for next Save in DB by teacher");
+    }
+}
+
+
 
 
 
@@ -1945,6 +2039,22 @@ int main(int argc, char* argv[])
     ros::NodeHandle base_nodeHandle(m_namespace);
     // > Now instantiate the publisher
 	m_motorsOffToFlyingAgentClientPublisher = base_nodeHandle.advertise<dfall_pkg::IntWithHeader>("FlyingAgentClient/Command", 1);
+
+
+
+	// CREATE A NODE HANDLE TO THE ROOT OF THE D-FaLL SYSTEM
+	ros::NodeHandle nodeHandle_dfall_root("/dfall");
+
+	// LOADING OF THIS AGENT'S CONTEXT
+	// Service cleint for loading the allocated flying
+	// zone and other context details
+	//ros::service::waitForService("/CentralManagerService/CentralManager");
+	m_centralManager = nodeHandle_dfall_root.serviceClient<CMQuery>("CentralManagerService/Query", false);
+	// Call the class function that uses this service
+	// client to load the context
+	loadCrazyflieContext();
+	// Subscriber for when the Flying Zone Database changed
+	ros::Subscriber databaseChangedSubscriber = nodeHandle_dfall_root.subscribe("CentralManagerService/DBChanged", 1, crazyflieContextDatabaseChangedCallback);
 
 
 
