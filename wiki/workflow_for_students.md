@@ -15,49 +15,46 @@ gyrosensor needs to initialize.
        2. Checkout master branch of the repository and pull:<br />
          ``git checkout master``<br />
          ``git pull origin master``<br />
-       *Note: to do this step, you will be asked a username and a password. Use
-       the same credentials you use for your ETH account. Also, make sure you
-       have an active account in gitlab: [https://gitlab.ethz.ch/](https://gitlab.ethz.ch/)*<br />
        3. Compile the source code running `catkin_make`
 
 ---
 
 ### Start the student's GUI
 
-  * Once all the prerequisites have been fulfilled, we can start the student's
+  * Once all the prerequisites have been fulfilled, you can start the student's
     GUI by going to a terminal and typing:
-    `roslaunch dfall_pkg Student.launch`
+    `roslaunch dfall_pkg agent.launch`
 
     *Note: for this to work, the teacher's computer has to be connected to the
-    network and the teacher's GUI has to be started before. Please wait until
+    network and the `teacher.launch` GUI has to be started before. Please wait until
     your teacher has already set up everything.*
 
   * Once started, you will see something like this: <br>
 
     <img src="./pics/student_gui.png" style="width: 800px;"/> <br><br>
 
-  * Connect to/Disconnect from Crazyflie: physically connects/disconnects our computer to
-  the assigned crazyflie using the Crazyradio dongle.<br><br>
+  * Connect to/Disconnect from Crazyflie: this connects/disconnects your computer to
+  the assigned Crazyflie using the Crazyradio USB dongle.<br><br>
     * Crazyradio status: can take the values "Connected!", "Disconnected" or
-      "Connecting..." <br><br>
-    * Below the disconnect button we see two lines of text. The first one
-  contains information about our StudentID number, and the Crazyflie we are
-  linked to. This is the Crazyflie we must connect to. <br><br>
-  Below that, we can also see the Raw voltage line, which contains the instantaneous voltage of the
-  battery of the Crazyflie, in Volts.<br><br>
-    * In the right part, there are 3 buttons to control the flying state of our
-  Crazyflie, and a text label containing the current flying state. **It is
-  important to know that we can only take off when we are in the state "Motors
-  OFF", and we can only land if we are NOT in the state "Motors OFF"**<br><br>
-    * In the middle-bottom part of the GUI there are two tabs: Safe and Student
-  controller. <br><br>
-  In the left part of these tabs, there is information about the
-  current position of the Crazyflie, and also the difference between the current
-  position and the current setpoint, useful for keeping track of the error of
-  our controller.<br><br>
-  In the right part of the tabs, there is information about the current
-  setpoint, and boxes to edit the new setpoint. When we press the button "Set
-  setpoint", we change the current setpoint with the information filled.<br><br>
+      "Connecting...", and the icon changes to display the current status.<br><br>
+    * The title at the top contains information about your AgentID number, and the Crazyflie that is allocated to you. This is the only Crazyflie you can connect to.<br><br>
+
+  * The voltage displays the instantaneous voltage of the battery of the Crazyflie, in Volts.<br><br>
+    * The battery icon displays this relative to the voltages for full and empty.<br><br>
+    * Because flying requires a high current draw from the battery, the full and empty voltages levels automatically adjust depending on whether your Crazyflie is flying or has the motors turned off.<br><br>
+    * If the battery voltage falls below the empty level, then a low battery warning is raise and your Crazyflie will be forced to land.<br><br>
+    * You must change the battery if the low battery warning occurs because continuing to drain the battery further will cause permanent damage to the battery.<br><br>
+
+  * There are 3 buttons to control the flying state of your Crazyflie: **"Take-off", "Land", and "Motors-OFF"**<br><br>
+    * The icon displays the current flying state. **It is important to know that you can only "Take-off" when the state is "Motors
+  OFF", and you can only "Land" if the state is NOT "Motors OFF".**<br><br>
+    * **IMPORTANT: YOU CAN PRESS SPACE-BAR AT ANYTIME AS A SHORT-CUT TO THE "MOTORS-OFF" BUTTON.**<br><br>
+
+  * In the lower part of the GUI there are two tabs: **"Default" and "Student" controller**<br><br>
+    * These tabs allow you to interact with the respective controller.<br><br>
+    * In these tabs, the first column of numbers provides information about the current position of the Crazyflie, the second column of numbers is computed as the difference between the current position and the current setpoint, and the third column of number is the current setpoint. This information is useful for keeping track of the error of your controller.<br><br>
+    * The next column of boxes can be edited and allows you to type in a new setpoint. When you press the button "Set
+  setpoint" (or the enter key on the keyboard), we change the current setpoint with the information filled.<br><br>
     * The button called "Enable <controller> Controller" enables the selected
   controller. The current enabled controller is the one which is highlighted in
   green in the tab name.<br><br>
