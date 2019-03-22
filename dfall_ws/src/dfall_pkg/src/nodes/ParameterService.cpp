@@ -148,7 +148,7 @@ void requestLoadYamlFilenameCallback(const StringWithHeader& yaml_filename_to_lo
         }
     }
     // Sleep to make the publisher known to ROS (in seconds)
-    ros::Duration(1.0).sleep();
+    ros::Duration(2.0).sleep();
     // Send the message
     yamlParametersReadyForFetchPublisher.publish(yaml_ready_msg);
 
@@ -332,13 +332,13 @@ int main(int argc, char* argv[])
     }
 
     // Subscribe to the messages that request loading a yaml file
-    ros::Subscriber requestLoadYamlFilenameSubscriber = nodeHandle.subscribe("requestLoadYamlFilename", 1, requestLoadYamlFilenameCallback);
+    ros::Subscriber requestLoadYamlFilenameSubscriber = nodeHandle.subscribe("requestLoadYamlFilename", 20, requestLoadYamlFilenameCallback);
 
     // Publisher for publishing "internally" to the subscriber above
     requestLoadYamlFilenamePublisher = nodeHandle.advertise <StringWithHeader>("requestLoadYamlFilename", 1);
 
     // Advertise the service for requests to load a yaml file
-    ros::ServiceServer getCurrentFlyingStateService = nodeHandle.advertiseService("requestLoadYamlFilename", requestLoadYamlFilenameCallbackServiceCallback);
+    ros::ServiceServer requestLoadYamlFilenameService = nodeHandle.advertiseService("requestLoadYamlFilename", requestLoadYamlFilenameCallbackServiceCallback);
 
     // Inform the user the this node is ready
     ROS_INFO("[PARAMETER SERVICE] Service ready :-)");

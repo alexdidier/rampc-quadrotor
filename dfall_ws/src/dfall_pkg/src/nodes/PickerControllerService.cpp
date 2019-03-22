@@ -1087,6 +1087,36 @@ void publish_current_xyz_yaw(float x, float y, float z, float yaw)
 //    ----------------------------------------------------------------------------------
 
 
+// TIMER CALLBACK FOR SENDING THE LOAD YAML REQUEST
+void timerCallback_initial_load_yaml(const ros::TimerEvent&)
+{
+	// Create a node handle to the selected parameter service
+	ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
+	// Create the service client as a local variable
+	ros::ServiceClient requestLoadYamlFilenameServiceClient = nodeHandle_to_own_agent_parameter_service.serviceClient<LoadYamlFromFilename>("requestLoadYamlFilename", false);
+	// Create the service call as a local variable
+	LoadYamlFromFilename loadYamlFromFilenameCall;
+	// Specify the Yaml filename as a string
+	loadYamlFromFilenameCall.request.stringWithHeader.data = "PickerController";
+	// Set for whom this applies to
+	loadYamlFromFilenameCall.request.stringWithHeader.shouldCheckForAgentID = false;
+	// Wait until the serivce exists
+	requestLoadYamlFilenameServiceClient.waitForExistence(ros::Duration(-1));
+	// Make the service call
+	if(requestLoadYamlFilenameServiceClient.call(loadYamlFromFilenameCall))
+	{
+		// Nothing to do in this case.
+		// The "isReadyDefaultControllerYamlCallback" function
+		// will be called once the YAML file is loaded
+	}
+	else
+	{
+	// Inform the user
+		ROS_ERROR("[DEFAULT CONTROLLER] The request load yaml file service call failed.");
+	}
+}
+
+
 // LOADING OF YAML PARAMETERS
 void isReadyPickerControllerYamlCallback(const IntWithHeader & msg)
 {
@@ -1338,32 +1368,16 @@ int main(int argc, char* argv[]) {
 	// service call containing the filename of the *.yaml file,
 	// and then a message will be received on the above subscribers
 	// when the paramters are ready.
-	// > NOTE IMPORTANTLY that by using a serice client
+	// > NOTE IMPORTANTLY that by using a service client
 	//   we stall the availability of this node until the
 	//   paramter service is ready
+	// > NOTE FURTHER that calling on the service directly from here
+	//   often means the yaml file is not actually loaded. So we
+	//   instead use a timer to delay the loading
 
-	// Create the service client as a local variable
-	ros::ServiceClient requestLoadYamlFilenameServiceClient = nodeHandle_to_own_agent_parameter_service.serviceClient<LoadYamlFromFilename>("requestLoadYamlFilename", false);
-	// Create the service call as a local variable
-	LoadYamlFromFilename loadYamlFromFilenameCall;
-	// Specify the Yaml filename as a string
-	loadYamlFromFilenameCall.request.stringWithHeader.data = "PickerController";
-	// Set for whom this applies to
-	loadYamlFromFilenameCall.request.stringWithHeader.shouldCheckForAgentID = false;
-	// Wait until the serivce exists
-	requestLoadYamlFilenameServiceClient.waitForExistence(ros::Duration(-1));
-	// Make the service call
-	if(requestLoadYamlFilenameServiceClient.call(loadYamlFromFilenameCall))
-	{
-		// Nothing to do in this case.
-		// The "isReadyPickerControllerYamlCallback" function
-		// will be called once the YAML file is loaded
-	}
-	else
-	{
-		// Inform the user
-		ROS_ERROR("[PICKER CONTROLLER] The request load yaml file service call failed.");
-	}
+	// Create a single-shot timer
+	ros::Timer timer_initial_load_yaml = nodeHandle.createTimer(ros::Duration(4.0), timerCallback_initial_load_yaml, true);
+	timer_initial_load_yaml.start();
 
 
 

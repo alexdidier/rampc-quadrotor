@@ -379,5 +379,6 @@ bool getCurrentSetpointCallback(GetSetpointService::Request &request, GetSetpoin
 void publish_current_xyz_yaw(float x, float y, float z, float yaw);
 
 // FOR LOADING THE YAML PARAMETERS
+void timerCallback_initial_load_yaml(const ros::TimerEvent&);
 void isReadyPickerControllerYamlCallback(const IntWithHeader & msg);
 void fetchPickerControllerYamlParameters(ros::NodeHandle& nodeHandle);

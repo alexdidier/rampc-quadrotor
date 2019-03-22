@@ -56,24 +56,6 @@
 			>
 		</node>
 
-		<!-- SAFE CONTROLLER -->
-		<node
-			pkg    = "dfall_pkg"
-			name   = "SafeControllerService"
-			output = "screen"
-			type   = "SafeControllerService"
-			>
-		</node>
-
-		<!-- DEMO CONTROLLER -->
-		<node
-			pkg    = "dfall_pkg"
-			name   = "DemoControllerService"
-			output = "screen"
-			type   = "DemoControllerService"
-			>
-		</node>
-
 		<!-- STUDENT CONTROLLER -->
 		<node
 			pkg    = "dfall_pkg"

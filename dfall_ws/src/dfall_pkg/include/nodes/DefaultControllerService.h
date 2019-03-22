@@ -314,8 +314,8 @@ std::vector<float> yaml_gainMatrixThrust_2StateVector     =  { 0.98, 0.25};
 std::vector<float> yaml_gainMatrixRollRate_3StateVector   =  {-6.20,-3.00, 5.20};
 std::vector<float> yaml_gainMatrixPitchRate_3StateVector  =  { 6.20, 3.00, 5.20};
 // The LQR Controller parameters for "CONTROLLER_METHOD_RATE_ANGLE_NESTED"
-std::vector<float> yaml_gainMatrixRollAngle_2StateVector  =  {-0.20,-0.20};
-std::vector<float> yaml_gainMatrixPitchAngle_2StateVector =  { 0.20, 0.20};
+std::vector<float> yaml_gainMatrixRollAngle_2StateVector  =  {-0.80,-0.50};
+std::vector<float> yaml_gainMatrixPitchAngle_2StateVector =  { 0.80, 0.50};
 float yaml_gainRollRate_fromAngle   =  4.00;
 float yaml_gainPitchRate_fromAngle  =  4.00;
 // The LQR Controller parameters for yaw

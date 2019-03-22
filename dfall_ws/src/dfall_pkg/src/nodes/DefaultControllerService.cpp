@@ -515,6 +515,13 @@ void computeResponse_for_takeoff_goto_setpoint(Controller::Response &response)
 
 void computeResponse_for_takeoff_integrator_on(Controller::Response &response)
 {
+	// Initialise static variables for only running the
+	// integrator once, and adjusting the time
+	// accordingly
+	static bool static_integrator_complete_once = false;
+	static float static_integrator_on_time = yaml_takoff_integrator_on_time;
+	static int static_integrator_flag = INTEGRATOR_FLAG_ON;
+
 	// Check if the state "just recently" changed
 	if (m_current_state_changed)
 	{
@@ -525,6 +532,17 @@ void computeResponse_for_takeoff_integrator_on(Controller::Response &response)
 		m_setpoint_for_controller[1] = m_setpoint[1];
 		m_setpoint_for_controller[2] = m_setpoint[2];
 		m_setpoint_for_controller[3] = m_setpoint[3];
+		// Adjust the integrator on/off and time
+		if (static_integrator_complete_once)
+		{
+			static_integrator_flag = INTEGRATOR_FLAG_OFF;
+			static_integrator_on_time = 0.5;
+		}
+		else
+		{
+			static_integrator_flag = INTEGRATOR_FLAG_ON;
+			static_integrator_on_time = yaml_takoff_integrator_on_time;
+		}
 		// Set the change flag back to false
 		m_current_state_changed = false;
 		// Inform the user
@@ -532,13 +550,15 @@ void computeResponse_for_takeoff_integrator_on(Controller::Response &response)
 	}
 
 	// Call the LQR control function
-	calculateControlOutput_viaLQR_givenSetpoint(m_setpoint_for_controller, m_current_stateInertialEstimate, response , INTEGRATOR_FLAG_ON);
+	calculateControlOutput_viaLQR_givenSetpoint(m_setpoint_for_controller, m_current_stateInertialEstimate, response , static_integrator_flag);
 
 	// Change to next state after specified time
-	if (m_time_in_seconds > yaml_takoff_integrator_on_time)
+	if (m_time_in_seconds > static_integrator_on_time)
 	{
 		// Inform the user
 		ROS_INFO("[DEFAULT CONTROLLER] Publish message that take-off is complete, and  switch to state: normal");
+		// Set that the integrator cylce was completed
+		static_integrator_complete_once = true;
 		// Reset the time variable
 		m_time_in_seconds = 0.0;
 		// Update the state accordingly
@@ -1929,7 +1949,7 @@ int main(int argc, char* argv[])
 	// service call containing the filename of the *.yaml file,
 	// and then a message will be received on the above subscribers
 	// when the paramters are ready.
-	// > NOTE IMPORTANTLY that by using a serice client
+	// > NOTE IMPORTANTLY that by using a service client
 	//   we stall the availability of this node until the
 	//   paramter service is ready
 	// > NOTE FURTHER that calling on the service directly from here
@@ -1937,7 +1957,7 @@ int main(int argc, char* argv[])
 	//   instead use a timer to delay the loading
 
 	// Create a single-shot timer
-	ros::Timer timer_initial_load_yaml = nodeHandle.createTimer(ros::Duration(1.0), timerCallback_initial_load_yaml, true);
+	ros::Timer timer_initial_load_yaml = nodeHandle.createTimer(ros::Duration(3.0), timerCallback_initial_load_yaml, true);
 	timer_initial_load_yaml.start();
 	
 
