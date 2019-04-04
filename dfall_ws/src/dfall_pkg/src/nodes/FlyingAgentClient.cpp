@@ -88,11 +88,21 @@ void viconCallback(const ViconData& viconData)
 	// Initilise a variable for the pose data of this agent
 	CrazyflieData poseDataForThisAgent;
 
-	// Extract the pose data from the full motion capture array
+	// Extract the pose data for the allocated object from the
+	// full motion capture array
 	// NOTE: that if the return index is a negative then this
 	//       indicates that the pose data was not found.
 	m_poseDataIndex = getPoseDataForObjectNameWithExpectedIndex( viconData, m_context.crazyflieName , m_poseDataIndex , poseDataForThisAgent );
 
+	// Initilise a variable for the pose data of another agent
+	CrazyflieData poseDataForOtherAgent;
+	poseDataForOtherAgent.occluded = true;
+
+	// Extract the pose data for the other object from the
+	// full motion capture array
+	// NOTE: that if the return index is a negative then this
+	//       indicates that the pose data was not found.
+	//m_otherObjectPoseDataIndex = getPoseDataForObjectNameWithExpectedIndex( viconData, "NameOfOtherObject" , m_otherObjectPoseDataIndex , poseDataForOtherAgent );
 
 	// Detecting time-out of the motion capture data
 	// > Update the flag
@@ -174,7 +184,12 @@ void viconCallback(const ViconData& viconData)
 				// Fill in the pose data for this agent
 				controllerCall.request.ownCrazyflie = poseDataForThisAgent;
 
-				
+				// Fill in the pose data of another agaent, if the data
+				// is avaialable
+				if (m_otherObjectPoseDataIndex >= 0)
+				{
+					controllerCall.request.otherCrazyflies.push_back(poseDataForOtherAgent);
+				}
 				
 
 				// PERFORM THE SAFTY CHECK (IF NOT THE DEFAULT CONTROLLER)
@@ -292,7 +307,7 @@ int getPoseDataForObjectNameWithExpectedIndex(const ViconData& viconData, std::s
     )
     {
         // Check if the names match
-        if (viconData.crazyflies[expected_index].crazyflieName == m_context.crazyflieName)
+        if (viconData.crazyflies[expected_index].crazyflieName == name)
         {
             object_index = expected_index;
         }
@@ -305,7 +320,7 @@ int getPoseDataForObjectNameWithExpectedIndex(const ViconData& viconData, std::s
         for( int i=0 ; i<length_poseData ; i++ )
         {    
             // Check if the names match
-            if(viconData.crazyflies[i].crazyflieName == m_context.crazyflieName)
+            if(viconData.crazyflies[i].crazyflieName == name)
             {
                 object_index = i;
             }

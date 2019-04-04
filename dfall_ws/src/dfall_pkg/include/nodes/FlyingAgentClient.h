@@ -142,6 +142,9 @@ ros::Timer m_timer_mocap_timeout_check;
 // > Time out duration after which Mocap is considered unavailable
 float yaml_mocap_timeout_duration = 1.0;
 
+// VARIABLES FOR GETTING MOTION CAPTURE DATA OF OTHER OBJECTS
+int m_otherObjectPoseDataIndex = -1;
+
 
 
 // VARIABLES FOR STORING THE PARAMTER OF THE POSITION
@@ -266,7 +269,7 @@ ros::Publisher m_controllerUsedPublisher;
 void viconCallback(const ViconData& viconData);
 // > For extracting the pose data of an specific
 //   object by name
-int getPoseDataForObjectNameWithExpectedIndex(const ViconData& viconData, std::string name , int expected_index , CrazyflieData& pose);
+int getPoseDataForObjectNameWithExpectedIndex(const ViconData& viconData, std::string name , int expected_index ,CrazyflieData& pose);
 // > For converting the global frame motion capture
 //   data to the local frame of this agent
 void coordinatesToLocal(CrazyflieData& cf);

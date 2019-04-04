@@ -179,7 +179,7 @@ The ``calculateControlOutput`` function of your ``StudentControllerService.cpp``
 ```
 ros::ServiceServer service = nodeHandle.advertiseService("StudentController", calculateControlOutput);
 ```
-This service is called on from the ``PPSClient.cpp`` file, and it is expected to adhere to the data structures described in ``/srv/Controller.srv``:
+This service is called on from the ``FlyingAgentClient.cpp`` file, and it is expected to adhere to the data structures described in ``/srv/Controller.srv``:
 ```
 CrazyflieData ownCrazyflie
 CrazyflieData[] otherCrazyflies
@@ -188,8 +188,8 @@ ControlCommand controlOutput
 ```
 Hence why the position and attitude information of your own Crazyflie is accessed from inside the ``calculateControlOutput`` function via ``request.ownCrazyflie.{x,y,z,roll,pitch,yaw}``.
 
-By default the property ``otherCrazyflies`` is left empty when the service request is constructed in the ``PPSClient.cpp``. Thus, in order to have access to the position of another object recognised by the Vicon system you can edit the ``PPSClient.cpp`` as per the following steps:
-- In the ``PPSClient.cpp`` file locate the implementation of the function ``viconCallback``, which has the full prototype:
+By default the property ``otherCrazyflies`` is left empty when the service request is constructed in the ``FlyingAgentClient.cpp``. Thus, in order to have access to the position of another object recognised by the Vicon system you can edit the ``FlyingAgentClient.cpp`` as per the following steps:
+- In the ``FlyingAgentClient.cpp`` file locate the implementation of the function ``viconCallback``, which has the full prototype:
 ```
 void viconCallback(const ViconData& viconData)
 ```
@@ -211,42 +211,27 @@ float64 acquiringTime #delta t
 bool occluded
 ```
 
-- At the start of the ``viconCallback`` in the ``PPSClient.cpp`` file (i.e., before the ``for`` loop), add the following varible declaration:
+- Locate the following commented out line near the start of the ``viconCallback`` in the ``FlyingAgentClient.cpp``:
 ```
-CrazyflieData otherObject;
+//m_otherObjectPoseDataIndex = getPoseDataForObjectNameWithExpectedIndex( viconData, "NameOfOtherObject" , m_otherObjectPoseDataIndex , poseDataForOtherAgent );
 ```
-where the plan is to fill in this variable with the data about the object of interest and then pass it as part of the service request in the ``.otherCrazyflies`` property.
 
-- In the ``viconCallback`` function of the ``PPSClient.cpp`` file, just after the variable declaration you added, add the following ``for`` loop:
+- Uncomment this line and change ``"NameOfOtherObject"`` to be the name of the object that zou would like the data of. For the Crazyflie, the format used is ``"CFXX"`` where you replace ``XX`` with the number of the Crazyflie you want (zero padded), i.e., ``"CF01"`` would give you the data for Crazyflie one.
+
+-Now the ``.otherCrazyflies`` property of the ``request`` variable that is passed to the ``calculateControlOutput`` function of your ``StudentControllerService.cpp`` file will contain the position of the ``NameOfOtherObject`` as the first entry in the array, i.e., you can access the data via ``request.otherCrazyflies[0].{x,y,z,roll,pitch,yaw}``.
+
+-IMPORTANT: if the other object is not visible by Vicon for some time, then the ``occluded`` property will indicate this, and the ``{x,y,z,roll,pitch,yaw}`` properties will have garbage values. Hence anywhere you use the data in your code, you should always check its validity with something like the following:
 ```
-for(std::vector<CrazyflieData>::const_iterator it = viconData.crazyflies.begin(); it != viconData.crazyflies.end(); ++it)
+if (request.otherCrazyflies[0].occluded)
 {
-		CrazyflieData thisObject = *it;
-
-		if ( thisObject.crazyflieName == "name_of_object_I_am_searching_for" )
-		{
-				otherObject = thisObject;
-				break;
-		}
+	// The data is garbage, do NOT use it
 }
-```
-This for loop iterates over all the objects provided to the ``viconCallback`` function, and fills in the ``otherObject`` variable with the object whose name matches the string ``"name_of_object_I_am_searching_for"``.
+else
+{
+	// The data is valid and can be used
+}
 
-- Define a new object via the Vicon Tracker software, give it a meaningful name in the Vicon software, and replace the string ``"name_of_object_I_am_searching_for"`` with the exact string that you used in the Vicon saftware.
-
-- In the ``viconCallback`` function of the ``PPSClient.cpp`` file, look for the following lines of code:
 ```
-Controller controllerCall;
-CrazyflieData local = global;
-coordinatesToLocal(local);
-controllerCall.request.ownCrazyflie = local;
-```
-and immediately after these existing lines of code, add the following new lines of code:
-```
-coordinatesToLocal(otherObject);
-controllerCall.request.otherCrazyflies.push_back(otherObject);
-```
-Now the ``.otherCrazyflies`` property of the ``request`` variable that is passed to the ``calculateControlOutput`` function of your ``StudentControllerService.cpp`` file will contain the position of the ``otherObject`` as the first entry in the array, i.e., you can access the data via ``request.otherCrazyflies[0].{x,y,z,roll,pitch,yaw}``.
 
 
 
