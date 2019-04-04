@@ -216,11 +216,11 @@ bool occluded
 //m_otherObjectPoseDataIndex = getPoseDataForObjectNameWithExpectedIndex( viconData, "NameOfOtherObject" , m_otherObjectPoseDataIndex , poseDataForOtherAgent );
 ```
 
-- Uncomment this line and change ``"NameOfOtherObject"`` to be the name of the object that zou would like the data of. For the Crazyflie, the format used is ``"CFXX"`` where you replace ``XX`` with the number of the Crazyflie you want (zero padded), i.e., ``"CF01"`` would give you the data for Crazyflie one.
+- Uncomment this line and change ``"NameOfOtherObject"`` to be the name of the object that you would like the data of. For the Crazyflies, the format used is ``"CFXX"`` where you replace ``XX`` with the number of the Crazyflie you want (zero padded), i.e., ``"CF01"`` would give you the data for Crazyflie one.
 
--Now the ``.otherCrazyflies`` property of the ``request`` variable that is passed to the ``calculateControlOutput`` function of your ``StudentControllerService.cpp`` file will contain the position of the ``NameOfOtherObject`` as the first entry in the array, i.e., you can access the data via ``request.otherCrazyflies[0].{x,y,z,roll,pitch,yaw}``.
+- Now the ``.otherCrazyflies`` property of the ``request`` variable that is passed to the ``calculateControlOutput`` function of your ``StudentControllerService.cpp`` file will contain the position of the ``NameOfOtherObject`` as the first entry in the array, i.e., you can access the data via ``request.otherCrazyflies[0].{x,y,z,roll,pitch,yaw}``.
 
--IMPORTANT: if the other object is not visible by Vicon for some time, then the ``occluded`` property will indicate this, and the ``{x,y,z,roll,pitch,yaw}`` properties will have garbage values. Hence anywhere you use the data in your code, you should always check its validity with something like the following:
+- IMPORTANT: if the other object is not visible by Vicon in a particular frame, then the ``occluded`` property will indicate this, and the ``{x,y,z,roll,pitch,yaw}`` properties will have garbage values. Hence anywhere you use the data in your code, you should always check its validity with something like the following:
 ```
 if (request.otherCrazyflies[0].occluded)
 {
