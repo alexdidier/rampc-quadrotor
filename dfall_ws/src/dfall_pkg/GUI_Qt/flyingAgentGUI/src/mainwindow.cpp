@@ -145,8 +145,6 @@ MainWindow::MainWindow(int argc, char **argv, QWidget *parent) :
     ui->action_showHideController_picker->trigger();
     // > For the tuning controller
     ui->action_showHideController_tuning->trigger();
-    // > For the template controller
-    ui->action_showHideController_template->trigger();
 
 }
 

@@ -257,6 +257,14 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	response.controlOutput.pitch = pitchRate_forResponse;
 	response.controlOutput.yaw = yawRate_forResponse;
 
+	// Roll/pitch/yaw rate perturbation
+	if (m_rollRatePerturbEnable)
+		response.controlOutput.roll += m_rollRatePerturbAmp_in_rad * sin(2 * PI * yaml_rollRatePerturbFreq * m_time);
+	if (m_pitchRatePerturbEnable)
+		response.controlOutput.pitch += m_pitchRatePerturbAmp_in_rad * sin(2 * PI * yaml_pitchRatePerturbFreq * m_time);
+	if (m_yawRatePerturbEnable)
+		response.controlOutput.yaw += m_yawRatePerturbAmp_in_rad * sin(2 * PI * yaml_yawRatePerturbFreq * m_time);
+
 	// Put the thrust commands into the "response" variable.
 	// The thrust adjustment computed by the controller need to be added to the
 	// the feed-forward thrust that "counter-acts" gravity.
@@ -268,6 +276,11 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	//         value is divided by four.
 	float feed_forward_thrust_per_motor = m_cf_weight_in_newtons / 4.0;
 	float thrust_request_per_motor = thrustAdjustment / 4.0 + feed_forward_thrust_per_motor;
+	
+	// Thrust perturbation
+	if (m_thrustPerturbEnable)
+		thrust_request_per_motor += m_thrustPerturbAmp_in_newtons / 4.0 * sin(2 * PI * yaml_thrustPerturbFreq * m_time);
+
 	// > NOTE: the function "computeMotorPolyBackward" converts the input argument
 	//         from Newtons to the 16-bit command expected by the Crazyflie.
 	response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrust_request_per_motor);
@@ -284,6 +297,8 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
 	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_ANGLE;
 
+	// ADVANCE TIME
+	m_time += 1 / yaml_control_frequency;
 
 
 
@@ -602,6 +617,13 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 				// Let the user know that this part of the code was triggered
 				ROS_INFO_STREAM("[TEMPLATE CONTROLLER] Button 1 received in controller, with message.float_data = " << float_data );
 				// Code here to respond to custom button 1
+				if (m_thrustPerturbEnable)
+					m_thrustPerturbEnable = false;
+				else
+				{
+					m_time = 0.0;
+					m_thrustPerturbEnable = true;
+				}
 				
 				break;
 			}
@@ -612,6 +634,13 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 				// Let the user know that this part of the code was triggered
 				ROS_INFO_STREAM("[TEMPLATE CONTROLLER] Button 2 received in controller, with message.float_data = " << float_data );
 				// Code here to respond to custom button 2
+				if (m_rollRatePerturbEnable)
+					m_rollRatePerturbEnable = false;
+				else
+				{
+					m_time = 0.0;
+					m_rollRatePerturbEnable = true;
+				}
 
 				break;
 			}
@@ -622,6 +651,30 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 				// Let the user know that this part of the code was triggered
 				ROS_INFO_STREAM("[TEMPLATE CONTROLLER] Button 3 received in controller, with message.float_data = " << float_data );
 				// Code here to respond to custom button 3
+				if (m_pitchRatePerturbEnable)
+					m_pitchRatePerturbEnable = false;
+				else
+				{
+					m_time = 0.0;
+					m_pitchRatePerturbEnable = true;
+				}
+
+				break;
+			}
+
+			// > FOR CUSTOM BUTTON 4
+			case 4:
+			{
+				// Let the user know that this part of the code was triggered
+				ROS_INFO_STREAM("[TEMPLATE CONTROLLER] Button 4 received in controller, with message.float_data = " << float_data );
+				// Code here to respond to custom button 3
+				if (m_yawRatePerturbEnable)
+					m_yawRatePerturbEnable = false;
+				else
+				{
+					m_time = 0.0;
+					m_yawRatePerturbEnable = true;
+				}
 
 				break;
 			}
@@ -749,6 +802,22 @@ void fetchTemplateControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixPitchRate",              yaml_gainMatrixPitchRate,              9);
 	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixYawRate",                yaml_gainMatrixYawRate,                9);
 
+	// Thrust perturbation parameters
+	yaml_thrustPerturbAmp_in_grams = getParameterFloat(nodeHandle_for_paramaters, "thrustPerturbAmp");
+	yaml_thrustPerturbFreq = getParameterFloat(nodeHandle_for_paramaters, "thrustPerturbFreq");
+
+	// Roll rate perturbation parameters
+	yaml_rollRatePerturbAmp_in_deg = getParameterFloat(nodeHandle_for_paramaters, "rollRatePerturbAmp");
+	yaml_rollRatePerturbFreq = getParameterFloat(nodeHandle_for_paramaters, "rollRatePerturbFreq");
+
+	// Pitch rate perturbation parameters
+	yaml_pitchRatePerturbAmp_in_deg = getParameterFloat(nodeHandle_for_paramaters, "pitchRatePerturbAmp");
+	yaml_pitchRatePerturbFreq = getParameterFloat(nodeHandle_for_paramaters, "pitchRatePerturbFreq");
+
+	// Yaw rate perturbation parameters
+	yaml_yawRatePerturbAmp_in_deg = getParameterFloat(nodeHandle_for_paramaters, "yawRatePerturbAmp");
+	yaml_yawRatePerturbFreq = getParameterFloat(nodeHandle_for_paramaters, "yawRatePerturbFreq");
+
 	// > DEBUGGING: Print out one of the parameters that was loaded to
 	//   debug if the fetching of parameters worked correctly
 	ROS_INFO_STREAM("[TEMPLATE CONTROLLER] DEBUGGING: the fetched TemplateController/mass = " << yaml_cf_mass_in_grams);
@@ -760,6 +829,19 @@ void fetchTemplateControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	// > Compute the feed-forward force that we need to counteract
 	//   gravity (i.e., mg) in units of [Newtons]
 	m_cf_weight_in_newtons = yaml_cf_mass_in_grams * 9.81/1000.0;
+
+	// > Compute the thrust perturbation force in units of [Newtons]
+	m_thrustPerturbAmp_in_newtons = yaml_thrustPerturbAmp_in_grams * 9.81/1000.0;
+
+	// > Compute the roll rate perturbation in units of [rad/s]
+	m_rollRatePerturbAmp_in_rad = yaml_rollRatePerturbAmp_in_deg * PI/180.0;
+
+	// > Compute the pitch rate perturbation in units of [rad/s]
+	m_pitchRatePerturbAmp_in_rad = yaml_pitchRatePerturbAmp_in_deg * PI/180.0;
+
+	// > Compute the yaw rate perturbation in units of [rad/s]
+	m_yawRatePerturbAmp_in_rad = yaml_yawRatePerturbAmp_in_deg * PI/180.0;
+
 
 	// DEBUGGING: Print out one of the computed quantities
 	ROS_INFO_STREAM("[TEMPLATE CONTROLLER] DEBUGGING: thus the weight of this agent in [Newtons] = " << m_cf_weight_in_newtons);

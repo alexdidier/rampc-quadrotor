@@ -178,7 +178,12 @@ void TemplateControllerTab::on_custom_button_3_clicked()
 #endif
 }
 
-
+void TemplateControllerTab::on_custom_button_4_clicked()
+{
+#ifdef CATKIN_MAKE
+    publish_custom_button_command(4,ui->lineEdit_custom_4);
+#endif
+}
 
 
 

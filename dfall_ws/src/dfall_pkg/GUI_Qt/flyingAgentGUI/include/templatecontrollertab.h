@@ -110,7 +110,7 @@ private slots:
     void on_custom_button_1_clicked();
     void on_custom_button_2_clicked();
     void on_custom_button_3_clicked();
-
+	void on_custom_button_4_clicked();
 
 
 

@@ -26,7 +26,7 @@ mocap_timeout_duration: 2.0
 
 # Flag for whether the take-off should be performed
 # with the default controller
-shouldPerfom_takeOff_with_defaultController: true
+shouldPerfom_takeOff_with_defaultController: false
 
 # Flag for whether the landing should be performed
 # with the default controller

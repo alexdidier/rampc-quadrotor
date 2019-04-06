@@ -163,10 +163,48 @@ std::vector<float> yaml_gainMatrixRollRate                =  { 0.00,-6.20, 0.00,
 std::vector<float> yaml_gainMatrixPitchRate               =  { 6.20, 0.00, 0.00, 3.00, 0.00, 0.00, 0.00, 5.20, 0.00};
 std::vector<float> yaml_gainMatrixYawRate                 =  { 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.30};
 
+// Thrust perturbation parameters
+float yaml_thrustPerturbAmp_in_grams = 0.0;
+float yaml_thrustPerturbFreq = 0.0;
 
+// Roll rate perturbation parameters
+float yaml_rollRatePerturbAmp_in_deg = 0.0;
+float yaml_rollRatePerturbFreq = 0.0;
+
+// Pitch rate perturbation parameters
+float yaml_pitchRatePerturbAmp_in_deg = 0.0;
+float yaml_pitchRatePerturbFreq = 0.0;
+
+// Yaw rate perturbation parameters
+float yaml_yawRatePerturbAmp_in_deg = 0.0;
+float yaml_yawRatePerturbFreq = 0.0;
 
 // The weight of the Crazyflie in Newtons, i.e., mg
 float m_cf_weight_in_newtons = 0.0;
+
+// Thrust perturbation in Newtons
+float m_thrustPerturbAmp_in_newtons = 0.0;
+
+// Roll rate perturbation in rad/s
+float m_rollRatePerturbAmp_in_rad = 0.0;
+
+// Pitch rate perturbation in rad/s
+float m_pitchRatePerturbAmp_in_rad = 0.0;
+
+// Yaw rate perturbation in rad/s
+float m_yawRatePerturbAmp_in_rad = 0.0;
+
+// Enable thrust perturbation
+bool m_thrustPerturbEnable = false;
+
+// Enable roll rate perturbation
+bool m_rollRatePerturbEnable = false;
+
+// Enable pitch rate perturbation
+bool m_pitchRatePerturbEnable = false;
+
+// Enable yaw rate perturbation
+bool m_yawRatePerturbEnable = false;
 
 // The location error of the Crazyflie at the "previous" time step
 float m_previous_stateErrorInertial[9];
@@ -175,7 +213,8 @@ float m_previous_stateErrorInertial[9];
 // with units [meters,meters,meters,radians]
 std::vector<float>  m_setpoint{0.0,0.0,0.4,0.0};
 
-
+// Time
+float m_time = 0.0;
 
 
 // ROS Publisher for debugging variables
