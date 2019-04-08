@@ -1,8 +1,31 @@
+# ------------------------------------------------------
+# PARAMTERS FOR THE LANDING MANOEUVRE
+
+# Height change for the landing move-down
+landing_move_down_end_height_setpoint:  0.2
+landing_move_down_end_height_threshold: 0.05
+# The time for: landing move-down
+landing_move_down_time_max: 2.0
+
+# The thrust for landing spin motors
+landing_spin_motors_thrust: 10000
+# The time for: landing spin motors
+landing_spin_motors_time: 1.5
+
+# IMPORTANT NOTE: the times above should NOT be set
+# to zero because this will cause a divide by zero
+# crash.
+
+
+# ------------------------------------------------------
+# PARAMTERS THAT ARE STANDARD FOR A "CONTROLLER SERVICE"
+
 # Mass of the crazyflie, in grams
 mass : 28
 
 # Frequency of the controller, in hertz
-control_frequency : 200
+#control_frequency : 200
+control_frequency : 25
 
 # Quadratic motor regression equation (a0, a1, a2)
 motorPoly : [5.484560e-4, 1.032633e-6, 2.130295e-11]
@@ -13,7 +36,7 @@ command_sixteenbit_max : 60000
 
 # The default setpoint, the ordering is (x,y,z,yaw),
 # with unit [meters,meters,meters,radians]
-default_setpoint : [0.0, 0.0, 0.4, 0.0]
+default_setpoint : [0.0, 0.0, 0.2, 0.0]
 
 # Boolean indiciating whether the "Debug Message" of this agent should be published or not
 shouldPublishDebugMessage : false
@@ -22,31 +45,45 @@ shouldPublishDebugMessage : false
 shouldDisplayDebugInfo : false
 
 # The LQR Controller parameters for rate mode
-gainMatrixThrust_NineStateVector    :  [ 0.00, 0.00, 0.98, 0.00, 0.00, 0.25, 0.00, 0.00, 0.00]
-gainMatrixRollRate                  :  [ 0.00,-6.20, 0.00, 0.00,-3.00, 0.00, 5.20, 0.00, 0.00]
-gainMatrixPitchRate                 :  [ 6.20, 0.00, 0.00, 3.00, 0.00, 0.00, 0.00, 5.20, 0.00]
-gainMatrixYawRate                   :  [ 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.30]
+#gainMatrixThrust_NineStateVector    :  [ 0.00, 0.00, 0.98, 0.00, 0.00, 0.25, 0.00, 0.00, 0.00]
+#gainMatrixRollRate                  :  [ 0.00,-6.20, 0.00, 0.00,-3.00, 0.00, 5.20, 0.00, 0.00]
+#gainMatrixPitchRate                 :  [ 6.20, 0.00, 0.00, 3.00, 0.00, 0.00, 0.00, 5.20, 0.00]
+#gainMatrixYawRate                   :  [ 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.30]
+gainMatrixThrust_NineStateVector    :  [ 0.00, 0.00, 0.45, 0.00, 0.00, 0.17, 0.00, 0.00, 0.00]
+gainMatrixRollRate                  :  [ 0.00,-2.79, 0.00, 0.00, -1.83, 0.00, 5.91, 0.00, 0.00]
+gainMatrixPitchRate                 :  [ 2.79, 0.00, 0.00, 1.83, 0.00, 0.00, 0.00, 5.91, 0.00]
+gainMatrixYawRate                   :  [ 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.97]
 
-# Thrust perturbation magnitude, in grams
-thrustPerturbAmp : 20
+# Thrust excitation magnitude, in grams
+thrustExcAmp : 10
 
-# Thrust perturbation frequency, in hertz
-thrustPerturbFreq: 0.1
+# Thrust excitation frequency, in hertz
+thrustExcFreq: 0.1
 
-# Roll rate perturbation magnitude, in deg/s
-rollRatePerturbAmp : 60
+# Roll rate excitation magnitude, in deg/s
+rollRateExcAmp : 30
 
-# Roll rate perturbation frequency, in hertz
-rollRatePerturbFreq: 0.1
+# Roll rate ecitation frequency, in hertz
+rollRateExcFreq: 0.1
 
-# Pitch rate perturbation magnitude, in deg/s
-pitchRatePerturbAmp : 60
+# Pitch rate excitation magnitude, in deg/s
+pitchRateExcAmp : 30
 
-# Pitch rate perturbation frequency, in hertz
-pitchRatePerturbFreq: 0.1
+# Pitch rate excitation frequency, in hertz
+pitchRateExcFreq: 0.1
 
-# Yaw rate perturbation magnitude, in deg/s
-yawRatePerturbAmp : 180
+# Yaw rate excitation magnitude, in deg/s
+yawRateExcAmp : 60
 
-# Yaw rate perturbation frequency, in hertz
-yawRatePerturbFreq: 0.1
+# Yaw rate excitation frequency, in hertz
+yawRateExcFreq : 0.1
+
+# CSV data folder location, relative to HOME path
+dataFolder : /work/D-FaLL-System/DeePC_data/
+
+# CSV data files location, relative to dataFolder
+outputFolder : output/
+thrustExcSignalFile : thrust_exc_signal.csv
+rollRateExcSignalFile : rollRate_exc_signal.csv
+pitchRateExcSignalFile : pitchRate_exc_signal.csv
+yawRateExcSignalFile : yawRate_exc_signal.csv

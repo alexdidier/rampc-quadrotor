@@ -727,7 +727,7 @@ void smoothSetpointChanges( float target_setpoint[4] , float (&current_setpoint)
 	// > Hence copy it across directly
 	current_setpoint[3] = target_setpoint[3];
 
-	// SMOOTH THE Z-COORIDINATE
+/*	// SMOOTH THE Z-COORIDINATE
 	// > Compute the max allowed change
 	float max_for_z = yaml_max_setpoint_change_per_second_vertical / yaml_control_frequency;
 	// > Compute the current difference
@@ -762,7 +762,11 @@ void smoothSetpointChanges( float target_setpoint[4] , float (&current_setpoint)
 		current_setpoint[0] = target_setpoint[0];
 		current_setpoint[1] = target_setpoint[1];
 		current_setpoint[2] = target_setpoint[2];
-	}
+	}*/
+
+	current_setpoint[0] = target_setpoint[0];
+	current_setpoint[1] = target_setpoint[1];
+	current_setpoint[2] = target_setpoint[2];
 
 }
 
@@ -1810,14 +1814,13 @@ void fetchDefaultControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	ROS_INFO_STREAM("[DEFAULT CONTROLLER] DEBUGGING: the fetched DefaultController/mass = " << yaml_cf_mass_in_grams);
 
 
-
 	// PROCESS THE PARAMTERS
 
 	// > Compute the feed-forward force that we need to counteract
 	//   gravity (i.e., mg) in units of [Newtons]
 	m_cf_weight_in_newtons = yaml_cf_mass_in_grams * 9.81/1000.0;
 
-	// > Conver the control frequency to a delta T
+	// > Convert the control frequency to a delta T
 	m_control_deltaT = 1.0 / yaml_control_frequency;
 
 	// Max error for yaw angle

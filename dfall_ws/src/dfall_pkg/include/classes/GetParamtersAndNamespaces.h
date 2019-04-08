@@ -110,6 +110,7 @@ using namespace dfall_pkg;
 float getParameterFloat(ros::NodeHandle& nodeHandle, std::string name);
 int getParameterInt(ros::NodeHandle& nodeHandle, std::string name);
 bool getParameterBool(ros::NodeHandle& nodeHandle, std::string name);
+std::string getParameterString(ros::NodeHandle& nodeHandle, std::string name);
 
 void getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length);
 void getParameterIntVectorWithKnownLength(ros::NodeHandle& nodeHandle, std::string name, std::vector<int>& val, int length);

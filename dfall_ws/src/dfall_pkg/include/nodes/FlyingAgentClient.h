@@ -68,6 +68,7 @@
 // Include the shared definitions
 #include "nodes/Constants.h"
 #include "nodes/DefaultControllerConstants.h"
+#include "nodes/TemplateControllerConstants.h"
 
 // Include other classes
 #include "classes/GetParamtersAndNamespaces.h"
@@ -168,6 +169,11 @@ bool yaml_shouldPerfom_landing_with_defaultController = true;
 // > Service Clients for requesting the Default controller
 //   to perform a {take-off,landing} maneouvre
 ros::ServiceClient m_defaultController_requestManoeuvre;
+
+// > Service Clients for requesting the Template controller
+//   to perform a {take-off,landing} maneouvre
+ros::ServiceClient m_templateController_requestManoeuvre;
+
 // > Timer that fire when the {take-off,landing} is complete
 ros::Timer m_timer_takeoff_complete;
 ros::Timer m_timer_land_complete;

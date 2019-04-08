@@ -2,8 +2,10 @@
 # PARAMTERS FOR THE TAKE-OFF AND LANDING MANOEUVRES
 
 # Max setpoint change per second
-max_setpoint_change_per_second_horizontal  :  0.60 # [meters]
-max_setpoint_change_per_second_vertical    :  0.40 # [meters]
+#max_setpoint_change_per_second_horizontal  :  0.60 # [meters]
+#max_setpoint_change_per_second_vertical    :  0.40 # [meters]
+max_setpoint_change_per_second_horizontal  :  1000 # [meters]
+max_setpoint_change_per_second_vertical    :  1000 # [meters]
 
 # Max error for z
 max_setpoint_error_z: 0.4
@@ -69,7 +71,8 @@ landing_spin_motors_time: 1.5
 mass : 30
 
 # Frequency of the controller, in [hertz]
-control_frequency : 200
+#control_frequency : 200
+control_frequency : 25
 
 # Quadratic motor regression equation (a0, a1, a2)
 motorPoly : [5.484560e-4, 1.032633e-6, 2.130295e-11]
@@ -91,20 +94,28 @@ shouldDisplayDebugInfo : false
 # A flag for which controller to use, defined as:
 # 1  -  Rate controller
 # 2  -  Angle-Rate nested controller
-controller_method : 2
+controller_method : 1
 
 # The LQR Controller parameters for z-height
-gainMatrixThrust_2StateVector     :  [ 0.98, 0.25]
+#gainMatrixThrust_2StateVector     :  [ 0.98, 0.25]
+gainMatrixThrust_2StateVector     :  [ 0.29, 0.14]
+
 # The LQR Controller parameters for mode 1 (the Rate controller)
-gainMatrixRollRate_3StateVector   :  [-6.20,-3.00, 5.20]
-gainMatrixPitchRate_3StateVector  :  [ 6.20, 3.00, 5.20]
+#gainMatrixRollRate_3StateVector   :  [-6.20,-3.00, 5.20]
+#gainMatrixPitchRate_3StateVector  :  [ 6.20, 3.00, 5.20]
+gainMatrixRollRate_3StateVector   :  [-0.92,-0.88, 4.10]
+gainMatrixPitchRate_3StateVector  :  [ 0.92, 0.88, 4.10]
+
 # The LQR Controller parameters for mode 2 (Angle-nested)
 gainMatrixRollAngle_2StateVector  :  [-0.80,-0.50]
 gainMatrixPitchAngle_2StateVector :  [ 0.80, 0.50]
 gainRollRate_fromAngle   :  4.00
 gainPitchRate_fromAngle  :  4.00
+
 # The LQR Controller parameters for yaw
-gainYawRate_fromAngle    :  2.30
+#gainYawRate_fromAngle    :  2.30
+gainYawRate_fromAngle    :  0.98
+
 # Integrator gains
 integratorGain_forThrust  :  0.10
 integratorGain_forTauXY   :  0.06

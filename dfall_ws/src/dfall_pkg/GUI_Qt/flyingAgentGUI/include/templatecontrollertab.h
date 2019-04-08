@@ -62,6 +62,7 @@
 
 // Include the shared definitions
 #include "nodes/Constants.h"
+#include "nodes/TemplateControllerConstants.h"
 
 // SPECIFY THE PACKAGE NAMESPACE
 //using namespace dfall_pkg;
@@ -111,6 +112,7 @@ private slots:
     void on_custom_button_2_clicked();
     void on_custom_button_3_clicked();
 	void on_custom_button_4_clicked();
+    void on_custom_button_5_clicked();
 
 
 
@@ -133,6 +135,8 @@ private:
     bool m_shouldCoordinateAll = true;
     QMutex m_agentIDs_toCoordinate_mutex;
 
+    // Mutex for the current state label
+    QMutex m_label_current_state_mutex;
 
 
 #ifdef CATKIN_MAKE

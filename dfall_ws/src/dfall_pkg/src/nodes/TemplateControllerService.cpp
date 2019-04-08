@@ -60,6 +60,76 @@
 
 
 //    ------------------------------------------------------------------------------
+//    RRRR   EEEEE   QQQ   U   U  EEEEE   SSSS  TTTTT
+//    R   R  E      Q   Q  U   U  E      S        T
+//    RRRR   EEE    Q   Q  U   U  EEE     SSS     T
+//    R   R  E      Q  Q   U   U  E          S    T
+//    R   R  EEEEE   QQ Q   UUU   EEEEE  SSSS     T
+//    
+//    M   M    A    N   N   OOO   EEEEE  U   U  V   V  RRRR   EEEEE
+//    MM MM   A A   NN  N  O   O  E      U   U  V   V  R   R  E
+//    M M M  A   A  N N N  O   O  EEE    U   U  V   V  RRRR   EEE
+//    M   M  AAAAA  N  NN  O   O  E      U   U   V V   R   R  E
+//    M   M  A   A  N   N   OOO   EEEEE   UUU     V    R   R  EEEEE
+//    ------------------------------------------------------------------------------
+
+// CALLBACK FOR THE REQUEST MANOEUVRE SERVICE
+bool requestManoeuvreCallback(IntIntService::Request &request, IntIntService::Response &response)
+{
+	// Extract the requested manoeuvre
+	int requestedManoeuvre = request.data;
+
+	// Switch between the possible manoeuvres
+	switch (requestedManoeuvre)
+	{
+		case TEMPLATE_CONTROLLER_REQUEST_TAKEOFF:
+		{
+			// Inform the user
+			ROS_INFO("[TEMPLATE CONTROLLER] Received request to take off. Switch to state: normal");
+			// Update the state accordingly
+			m_current_state = TEMPLATE_CONTROLLER_STATE_NORMAL;
+			m_current_state_changed = true;
+			// Provide dummy response
+			response.data = 0;
+			break;
+		}
+
+		case TEMPLATE_CONTROLLER_REQUEST_LANDING:
+		{
+			// Inform the user
+			ROS_INFO("[TEMPLATE CONTROLLER] Received request to perform landing manoeuvre. Switch to state: landing move down");
+			// Update the state accordingly
+			m_current_state = TEMPLATE_CONTROLLER_STATE_LANDING_MOVE_DOWN;
+			m_current_state_changed = true;
+			// Fill in the response duration in milliseconds
+			response.data = int(
+					1000 * (
+						+ yaml_landing_move_down_time_max
+						+ yaml_landing_spin_motors_time
+					)
+				);
+			break;
+		}
+
+		default:
+		{
+			// Inform the user
+			ROS_INFO("[TEMPLATE CONTROLLER] The requested manoeuvre is not recognised. Hence switching to standby state.");
+			// Update the state to standby
+			m_current_state = TEMPLATE_CONTROLLER_STATE_STANDBY;
+			m_current_state_changed = true;
+			// Fill in the response duration in milliseconds
+			response.data = 0;
+			break;
+		}
+	}
+
+	// Return success
+	return true;
+}
+
+
+//    ------------------------------------------------------------------------------
 //     OOO   U   U  TTTTT  EEEEE  RRRR 
 //    O   O  U   U    T    E      R   R
 //    O   O  U   U    T    EEE    RRRR
@@ -174,6 +244,8 @@
 //
 //
 //
+
+// THE MAIN CONTROL FUNCTION CALLED FROM THE FLYING AGENT CLIENT
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response)
 {
 
@@ -181,14 +253,527 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	// computation here, or you may find it convienient to create functions
 	// to keep you code cleaner
 
+	// Switch between the possible states
+	switch (m_current_state)
+	{
+		case TEMPLATE_CONTROLLER_STATE_NORMAL:
+			computeResponse_for_normal(request, response);
+			break;
 
+        case TEMPLATE_CONTROLLER_STATE_EXCITATION:
+            computeResponse_for_excitation(request, response);
+            break;
+
+		case TEMPLATE_CONTROLLER_STATE_LANDING_MOVE_DOWN:
+			computeResponse_for_landing_move_down(request, response);
+			break;
+
+		case TEMPLATE_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
+			computeResponse_for_landing_spin_motors(request, response);
+			break;
+
+		case TEMPLATE_CONTROLLER_STATE_STANDBY:
+		default:
+			computeResponse_for_standby(request, response);
+			break;
+	}
+
+
+	// Return "true" to indicate that the control computation was performed successfully
+	return true;
+}
+
+
+void computeResponse_for_standby(Controller::Request &request, Controller::Response &response)
+{
+	// Check if the state "just recently" changed
+	if (m_current_state_changed)
+	{
+		// PERFORM "ONE-OFF" OPERATIONS HERE
+		// Nothing to perform for this state
+		// Set the change flag back to false
+		m_current_state_changed = false;
+        // Publish the change
+        publishCurrentSetpointAndState();
+		// Inform the user
+		ROS_INFO_STREAM("[TEMPLATE CONTROLLER] State \"standby\" started");
+	}
+
+	// PREPARE AND RETURN THE VARIABLE "response"
+	// Specify that using a "motor type" of command
+	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTORS;
+
+	// Fill in zero for the angle parts
+	response.controlOutput.roll  = 0.0;
+	response.controlOutput.pitch = 0.0;
+	response.controlOutput.yaw   = 0.0;
+
+	// Fill in all motor thrusts as zero
+	response.controlOutput.motorCmd1 = 0.0;
+	response.controlOutput.motorCmd2 = 0.0;
+	response.controlOutput.motorCmd3 = 0.0;
+	response.controlOutput.motorCmd4 = 0.0;
+
+	// DEBUG INFO
+	if (yaml_shouldDisplayDebugInfo)
+	{
+		ROS_INFO_STREAM("output.thrust = " << 0.0);
+		ROS_INFO_STREAM("controlOutput.roll = " << response.controlOutput.roll);
+		ROS_INFO_STREAM("controlOutput.pitch = " << response.controlOutput.pitch);
+		ROS_INFO_STREAM("controlOutput.yaw = " << response.controlOutput.yaw);
+		ROS_INFO_STREAM("controlOutput.motorCmd1 = " << response.controlOutput.motorCmd1);
+		ROS_INFO_STREAM("controlOutput.motorCmd2 = " << response.controlOutput.motorCmd2);
+		ROS_INFO_STREAM("controlOutput.motorCmd3 = " << response.controlOutput.motorCmd3);
+		ROS_INFO_STREAM("controlOutput.motorCmd4 = " << response.controlOutput.motorCmd4);
+	}
+}
+
+void computeResponse_for_normal(Controller::Request &request, Controller::Response &response)
+{
+	// Check if the state "just recently" changed
+	if (m_current_state_changed)
+	{
+		// PERFORM "ONE-OFF" OPERATIONS HERE
+		for (int i = 0; i < 9; i++)
+			m_previous_stateErrorInertial[i] = 0.0;
+        m_thrustExcEnable = false;
+		m_rollRateExcEnable = false;
+        m_pitchRateExcEnable = false;
+        m_yawRateExcEnable = false;
+		// Set the change flag back to false
+		m_current_state_changed = false;
+
+		// If just coming from excitation state, write data collected
+		if (m_write_data)
+		{
+			ROS_INFO_STREAM("[TEMPLATE CONTROLLER] Writing input data to: " << m_outputFolder << "m_u_data.csv");
+            if (write_csv(m_outputFolder + "m_u_data.csv", m_u_data))
+            	ROS_INFO("[TEMPLATE CONTROLLER] Write file successful");
+            else
+            	ROS_INFO("[TEMPLATE CONTROLLER] Write file failed");
+
+            ROS_INFO_STREAM("[TEMPLATE CONTROLLER] Writing output data to: " << m_outputFolder << "m_y_data.csv");
+            if (write_csv(m_outputFolder + "m_y_data.csv", m_y_data))
+            	ROS_INFO("[TEMPLATE CONTROLLER] Write file successful");
+            else
+            	ROS_INFO("[TEMPLATE CONTROLLER] Write file failed");
+		}
+
+		// Publish the change
+		publishCurrentSetpointAndState();
+		// Inform the user
+		ROS_INFO_STREAM("[TEMPLATE CONTROLLER] State \"normal\" started");
+	}
+
+	m_setpoint_for_controller[0] = m_setpoint[0];
+	m_setpoint_for_controller[1] = m_setpoint[1];
+	m_setpoint_for_controller[2] = m_setpoint[2];
+	m_setpoint_for_controller[3] = m_setpoint[3];
+	
+	// Call the LQR control function
+	control_output output;
+	calculateControlOutput_viaLQR(request, output);
+
+	// PREPARE AND RETURN THE VARIABLE "response"
+	// Specify that using a "rate type" of command
+	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
+
+	// Put the computed body rate commands into the "response" variable
+	response.controlOutput.roll = output.rollRate;
+	response.controlOutput.pitch = output.pitchRate;
+	response.controlOutput.yaw = output.yawRate;
+
+	// Put the thrust commands into the "response" variable.
+	// . NOTE: The thrust is commanded per motor, so divide by 4.0
+	// > NOTE: The function "computeMotorPolyBackward" converts the input argument
+	//         from Newtons to the 16-bit command expected by the Crazyflie.
+	float thrust_request_per_motor = output.thrust / 4.0;
+	response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrust_request_per_motor);
+	response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrust_request_per_motor);
+	response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrust_request_per_motor);
+	response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrust_request_per_motor);
+
+	// DEBUG INFO
+	if (yaml_shouldDisplayDebugInfo)
+	{
+		ROS_INFO_STREAM("output.thrust = " << output.thrust);
+		ROS_INFO_STREAM("controlOutput.roll = " << response.controlOutput.roll);
+		ROS_INFO_STREAM("controlOutput.pitch = " << response.controlOutput.pitch);
+		ROS_INFO_STREAM("controlOutput.yaw = " << response.controlOutput.yaw);
+		ROS_INFO_STREAM("controlOutput.motorCmd1 = " << response.controlOutput.motorCmd1);
+		ROS_INFO_STREAM("controlOutput.motorCmd2 = " << response.controlOutput.motorCmd2);
+		ROS_INFO_STREAM("controlOutput.motorCmd3 = " << response.controlOutput.motorCmd3);
+		ROS_INFO_STREAM("controlOutput.motorCmd4 = " << response.controlOutput.motorCmd4);
+	}
+}
+
+void computeResponse_for_excitation(Controller::Request &request, Controller::Response &response)
+{
+    // Check if the state "just recently" changed
+    if (m_current_state_changed)
+    {
+        // PERFORM "ONE-OFF" OPERATIONS HERE
+        for (int i = 0; i < 9; i++)
+			m_previous_stateErrorInertial[i] = 0.0;
+        m_thrustExcTime_in_seconds = 0.0;
+        m_rollRateExcTime_in_seconds = 0.0;
+        m_pitchRateExcTime_in_seconds = 0.0;
+        m_yawRateExcTime_in_seconds = 0.0;
+        m_thrustExcIndex = 0;
+        m_rollRateExcIndex = 0;
+        m_pitchRateExcIndex = 0;
+        m_yawRateExcIndex = 0;
+        // Set the change flag back to false
+        m_current_state_changed = false;
+        // Publish the change
+        publishCurrentSetpointAndState();
+        // Inform the user
+        ROS_INFO_STREAM("[TEMPLATE CONTROLLER] State \"excitation\" started");
+    }
+
+    m_setpoint_for_controller[0] = m_setpoint[0];
+    m_setpoint_for_controller[1] = m_setpoint[1];
+    m_setpoint_for_controller[2] = m_setpoint[2];
+    m_setpoint_for_controller[3] = m_setpoint[3];
+
+    // Call the LQR control function
+    control_output output;
+    calculateControlOutput_viaLQR(request, output);
+
+    // Output excitation
+    if (m_thrustExcEnable)
+    {
+        //output.thrust += m_thrustExcAmp_in_newtons * sin(2 * PI * yaml_thrustExcFreq * m_thrustExcTime_in_seconds);
+        //m_thrustExcTime_in_seconds += m_control_deltaT;
+        if (m_thrustExcIndex < m_thrustExcSignal.size())
+        {
+        	output.thrust += m_thrustExcAmp_in_newtons * m_thrustExcSignal(m_thrustExcIndex);
+        	m_thrustExcIndex++;
+        }
+        else
+        {
+        	if (m_rollRateExcEnable || m_pitchRateExcEnable || m_yawRateExcEnable)
+            {
+                // Inform the user
+                ROS_INFO("[TEMPLATE CONTROLLER] Thrust excitation signal ended. State stays at: excitation");
+                m_thrustExcEnable = false;
+            }
+            else
+            {
+                // Inform the user
+                ROS_INFO("[TEMPLATE CONTROLLER] Thrust excitation signal ended. Switch to state: normal");
+                // Update the state accordingly
+                m_current_state = TEMPLATE_CONTROLLER_STATE_NORMAL;
+                m_current_state_changed = true;
+                m_write_data = true;
+            }
+        }
+    }
+
+    if (m_rollRateExcEnable)
+    {
+        //output.rollRate += m_rollRateExcAmp_in_rad * sin(2 * PI * yaml_rollRateExcFreq * m_rollRateExcTime_in_seconds);
+        //m_rollRateExcTime_in_seconds += m_control_deltaT;
+        if (m_rollRateExcIndex < m_rollRateExcSignal.size())
+        {
+        	output.rollRate += m_rollRateExcAmp_in_rad * m_rollRateExcSignal(m_rollRateExcIndex);
+        	m_rollRateExcIndex++;
+        }
+        else
+        {
+        	if (m_thrustExcEnable || m_pitchRateExcEnable || m_yawRateExcEnable)
+            {
+                // Inform the user
+                ROS_INFO("[TEMPLATE CONTROLLER] Roll rate excitation signal ended. State stays at: excitation");
+                m_rollRateExcEnable = false;
+            }
+            else
+            {
+                // Inform the user
+                ROS_INFO("[TEMPLATE CONTROLLER] Roll rate excitation signal ended. Switch to state: normal");
+                // Update the state accordingly
+                m_current_state = TEMPLATE_CONTROLLER_STATE_NORMAL;
+                m_current_state_changed = true;
+                m_write_data = true;
+            }
+        }
+    }
+
+    if (m_pitchRateExcEnable)
+    {
+        //output.pitchRate += m_pitchRateExcAmp_in_rad * sin(2 * PI * yaml_pitchRateExcFreq * m_pitchRateExcTime_in_seconds);
+        //m_pitchRateExcTime_in_seconds += m_control_deltaT;
+        if (m_pitchRateExcIndex < m_pitchRateExcSignal.size())
+        {
+        	output.pitchRate += m_pitchRateExcAmp_in_rad * m_pitchRateExcSignal(m_pitchRateExcIndex);
+        	m_pitchRateExcIndex++;
+        }
+        else
+        {
+        	if (m_thrustExcEnable || m_rollRateExcEnable || m_yawRateExcEnable)
+            {
+                // Inform the user
+                ROS_INFO("[TEMPLATE CONTROLLER] Pitch rate excitation signal ended. State stays at: excitation");
+                m_pitchRateExcEnable = false;
+            }
+            else
+            {
+                // Inform the user
+                ROS_INFO("[TEMPLATE CONTROLLER] Pitch rate excitation signal ended. Switch to state: normal");
+                // Update the state accordingly
+                m_current_state = TEMPLATE_CONTROLLER_STATE_NORMAL;
+                m_current_state_changed = true;
+                m_write_data = true;
+            }
+        }
+    }
+
+    if (m_yawRateExcEnable)
+    {
+        //output.yawRate += m_yawRateExcAmp_in_rad * sin(2 * PI * yaml_yawRateExcFreq * m_yawRateExcTime_in_seconds);
+        //m_yawRateExcTime_in_seconds += m_control_deltaT;
+        if (m_yawRateExcIndex < m_yawRateExcSignal.size())
+        {
+        	output.yawRate += m_yawRateExcAmp_in_rad * m_yawRateExcSignal(m_yawRateExcIndex);
+        	m_yawRateExcIndex++;
+        }
+        else
+        {
+        	if (m_thrustExcEnable || m_rollRateExcEnable || m_pitchRateExcEnable)
+            {
+                // Inform the user
+                ROS_INFO("[TEMPLATE CONTROLLER] Yaw rate excitation signal ended. State stays at: excitation");
+                m_yawRateExcEnable = false;
+            }
+            else
+            {
+                // Inform the user
+                ROS_INFO("[TEMPLATE CONTROLLER] Yaw rate excitation signal ended. Switch to state: normal");
+                // Update the state accordingly
+                m_current_state = TEMPLATE_CONTROLLER_STATE_NORMAL;
+                m_current_state_changed = true;
+                m_write_data = true;
+            }
+        }
+    }
+
+    // PREPARE AND RETURN THE VARIABLE "response"
+    // Specify that using a "rate type" of command
+    response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
+
+    // Put the computed body rate commands into the "response" variable
+    response.controlOutput.roll = output.rollRate;
+    response.controlOutput.pitch = output.pitchRate;
+    response.controlOutput.yaw = output.yawRate;
+
+    // Put the thrust commands into the "response" variable.
+    // . NOTE: The thrust is commanded per motor, so divide by 4.0
+    // > NOTE: The function "computeMotorPolyBackward" converts the input argument
+    //         from Newtons to the 16-bit command expected by the Crazyflie.
+    float thrust_request_per_motor = output.thrust / 4.0;
+    response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrust_request_per_motor);
+    response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrust_request_per_motor);
+    response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrust_request_per_motor);
+    response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrust_request_per_motor);
+
+    // Capture data
+    // Note that excitation indices have been incremented already,
+    // hence 1 is subtracted
+    int dataIndex = -1;
+    if (m_thrustExcEnable)
+    	dataIndex = m_thrustExcIndex - 1;
+    else if (m_rollRateExcEnable)
+    	dataIndex = m_rollRateExcIndex - 1;
+    else if (m_pitchRateExcEnable)
+    	dataIndex = m_pitchRateExcIndex - 1;
+    else if (m_yawRateExcEnable)
+    	dataIndex = m_yawRateExcIndex - 1;
+    if (dataIndex >= 0 && dataIndex < m_u_data.rows())
+    {
+    	// Input data
+    	m_u_data(dataIndex,0) = output.thrust;
+    	m_u_data(dataIndex,1) = output.rollRate;
+    	m_u_data(dataIndex,2) = output.pitchRate;
+    	m_u_data(dataIndex,3) = output.yawRate;
+
+    	// Output data
+    	m_y_data(dataIndex,0) = request.ownCrazyflie.x;
+    	m_y_data(dataIndex,1) = request.ownCrazyflie.y;
+    	m_y_data(dataIndex,2) = request.ownCrazyflie.z;
+    	m_y_data(dataIndex,3) = request.ownCrazyflie.roll;
+    	m_y_data(dataIndex,4) = request.ownCrazyflie.pitch;
+    	m_y_data(dataIndex,5) = request.ownCrazyflie.yaw;
+    }
+
+    // DEBUG INFO
+    if (yaml_shouldDisplayDebugInfo)
+    {
+        ROS_INFO_STREAM("output.thrust = " << output.thrust);
+        ROS_INFO_STREAM("controlOutput.roll = " << response.controlOutput.roll);
+        ROS_INFO_STREAM("controlOutput.pitch = " << response.controlOutput.pitch);
+        ROS_INFO_STREAM("controlOutput.yaw = " << response.controlOutput.yaw);
+        ROS_INFO_STREAM("controlOutput.motorCmd1 = " << response.controlOutput.motorCmd1);
+        ROS_INFO_STREAM("controlOutput.motorCmd2 = " << response.controlOutput.motorCmd2);
+        ROS_INFO_STREAM("controlOutput.motorCmd3 = " << response.controlOutput.motorCmd3);
+        ROS_INFO_STREAM("controlOutput.motorCmd4 = " << response.controlOutput.motorCmd4);
+    }
+}
+
+void computeResponse_for_landing_move_down(Controller::Request &request, Controller::Response &response)
+{
+	// Check if the state "just recently" changed
+	if (m_current_state_changed)
+	{
+		// PERFORM "ONE-OFF" OPERATIONS HERE
+		// Reset the time variable
+		m_time_in_seconds = 0.0;
+		// Set the current (x,y,z,yaw) location as the setpoint
+		m_setpoint_for_controller[0] = request.ownCrazyflie.x;
+		m_setpoint_for_controller[1] = request.ownCrazyflie.y;
+		m_setpoint_for_controller[2] = yaml_landing_move_down_end_height_setpoint;
+		m_setpoint_for_controller[3] = request.ownCrazyflie.yaw;
+		// Set the change flag back to false
+		m_current_state_changed = false;
+        // Publish the change
+        publishCurrentSetpointAndState();
+		// Inform the user
+		ROS_INFO_STREAM("[TEMPLATE CONTROLLER] State \"landing move-down\" started with \"m_setpoint_for_controller\" (x,y,z,yaw) =  ( " << m_setpoint_for_controller[0] << ", " << m_setpoint_for_controller[1] << ", " << m_setpoint_for_controller[2] << ", " << m_setpoint_for_controller[3] << ")");
+	}
+
+	// Check if within the threshold of zero
+	if (request.ownCrazyflie.z < yaml_landing_move_down_end_height_threshold)
+	{
+		// Inform the user
+		ROS_INFO("[TEMPLATE CONTROLLER] Switch to state: landing spin motors");
+		// Update the state accordingly
+		m_current_state = TEMPLATE_CONTROLLER_STATE_LANDING_SPIN_MOTORS;
+		m_current_state_changed = true;
+	}
+
+	// Change to landing spin motors if the timeout is reached
+	if (m_time_in_seconds > yaml_landing_move_down_time_max)
+	{
+		// Inform the user
+		ROS_INFO("[DEFAULT CONTROLLER] Did not reach the setpoint within the \"landing move down\" allowed time. Switch to state: landing spin motors");
+		// Update the state accordingly
+		m_current_state = TEMPLATE_CONTROLLER_STATE_LANDING_SPIN_MOTORS;
+		m_current_state_changed = true;
+	}
+	
+	// Call the LQR control function
+	control_output output;
+	calculateControlOutput_viaLQR(request, output);
+
+	// PREPARE AND RETURN THE VARIABLE "response"
+	// Specify that using a "rate type" of command
+	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
+
+	// Put the computed body rate commands into the "response" variable
+	response.controlOutput.roll = output.rollRate;
+	response.controlOutput.pitch = output.pitchRate;
+	response.controlOutput.yaw = output.yawRate;
+
+	// Put the thrust commands into the "response" variable.
+	// . NOTE: The thrust is commanded per motor, so divide by 4.0
+	// > NOTE: The function "computeMotorPolyBackward" converts the input argument
+	//         from Newtons to the 16-bit command expected by the Crazyflie.
+	float thrust_request_per_motor = output.thrust / 4.0;
+	response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrust_request_per_motor);
+	response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrust_request_per_motor);
+	response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrust_request_per_motor);
+	response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrust_request_per_motor);
+
+    // Increment time
+    m_time_in_seconds += m_control_deltaT;
+
+	// DEBUG INFO
+	if (yaml_shouldDisplayDebugInfo)
+	{
+		ROS_INFO_STREAM("output.thrust = " << output.thrust);
+		ROS_INFO_STREAM("controlOutput.roll = " << response.controlOutput.roll);
+		ROS_INFO_STREAM("controlOutput.pitch = " << response.controlOutput.pitch);
+		ROS_INFO_STREAM("controlOutput.yaw = " << response.controlOutput.yaw);
+		ROS_INFO_STREAM("controlOutput.motorcmd1 = " << response.controlOutput.motorCmd1);
+		ROS_INFO_STREAM("controlOutput.motorcmd3 = " << response.controlOutput.motorCmd2);
+		ROS_INFO_STREAM("controlOutput.motorcmd2 = " << response.controlOutput.motorCmd3);
+		ROS_INFO_STREAM("controlOutput.motorcmd4 = " << response.controlOutput.motorCmd4);
+	}
+}
+
+void computeResponse_for_landing_spin_motors(Controller::Request &request, Controller::Response &response)
+{
+	// Check if the state "just recently" changed
+	if (m_current_state_changed)
+	{
+		// PERFORM "ONE-OFF" OPERATIONS HERE
+		// Reset the time variable
+		m_time_in_seconds = 0.0;
+		// Set the change flag back to false
+		m_current_state_changed = false;
+        // Publish the change
+        publishCurrentSetpointAndState();
+		// Inform the user
+		ROS_INFO_STREAM("[TEMPLATE CONTROLLER] state \"landing spin motors\" started");
+	}
+
+	// Change to next state after specified time
+	if (m_time_in_seconds > 0.7 * yaml_landing_spin_motors_time)
+	{
+		// Inform the user
+		ROS_INFO("[TEMPLATE CONTROLLER] Publish message that landing is complete, and switch to state: standby");
+		// Update the state accordingly
+		m_current_state = TEMPLATE_CONTROLLER_STATE_STANDBY;
+		m_current_state_changed = true;
+		// Publish a message that the landing is complete
+		IntWithHeader msg;
+		msg.data = TEMPLATE_CONTROLLER_LANDING_COMPLETE;
+		m_manoeuvreCompletePublisher.publish(msg);
+		// Publish the change
+		publishCurrentSetpointAndState();
+	}
+
+	// PREPARE AND RETURN THE VARIABLE "response"
+	// Specify that using a "motor type" of command
+	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTORS;
+
+	// Fill in zero for the angle parts
+	response.controlOutput.roll  = 0.0;
+	response.controlOutput.pitch = 0.0;
+	response.controlOutput.yaw   = 0.0;
+
+	// Fill in all motor thrusts as landing sping thrust
+	response.controlOutput.motorCmd1 = yaml_landing_spin_motors_thrust;
+	response.controlOutput.motorCmd2 = yaml_landing_spin_motors_thrust;
+	response.controlOutput.motorCmd3 = yaml_landing_spin_motors_thrust;
+	response.controlOutput.motorCmd4 = yaml_landing_spin_motors_thrust;
+
+    // Increment time
+    m_time_in_seconds += m_control_deltaT;
+
+	// DEBUG INFO
+	if (yaml_shouldDisplayDebugInfo)
+	{
+		ROS_INFO_STREAM("output.thrust = " << 0.0);
+		ROS_INFO_STREAM("controlOutput.roll = " << response.controlOutput.roll);
+		ROS_INFO_STREAM("controlOutput.pitch = " << response.controlOutput.pitch);
+		ROS_INFO_STREAM("controlOutput.yaw = " << response.controlOutput.yaw);
+		ROS_INFO_STREAM("controlOutput.motorCmd1 = " << response.controlOutput.motorCmd1);
+		ROS_INFO_STREAM("controlOutput.motorCmd2 = " << response.controlOutput.motorCmd2);
+		ROS_INFO_STREAM("controlOutput.motorCmd3 = " << response.controlOutput.motorCmd3);
+		ROS_INFO_STREAM("controlOutput.motorCmd4 = " << response.controlOutput.motorCmd4);
+	}
+}
+
+
+void calculateControlOutput_viaLQR(Controller::Request &request, control_output &output)
+{
 	// Define a local array to fill in with the state error
 	float stateErrorInertial[9];
 
 	// Fill in the (x,y,z) position error
-	stateErrorInertial[0] = request.ownCrazyflie.x - m_setpoint[0];
-	stateErrorInertial[1] = request.ownCrazyflie.y - m_setpoint[1];
-	stateErrorInertial[2] = request.ownCrazyflie.z - m_setpoint[2];
+	stateErrorInertial[0] = request.ownCrazyflie.x - m_setpoint_for_controller[0];
+	stateErrorInertial[1] = request.ownCrazyflie.y - m_setpoint_for_controller[1];
+	stateErrorInertial[2] = request.ownCrazyflie.z - m_setpoint_for_controller[2];
 
 	// Compute an estimate of the velocity
 	// > As simply the derivative between the current and previous position
@@ -204,7 +789,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	// > This error should be "unwrapped" to be in the range
 	//   ( -pi , pi )
 	// > First, get the yaw error into a local variable
-	float yawError = request.ownCrazyflie.yaw - m_setpoint[3];
+	float yawError = request.ownCrazyflie.yaw - m_setpoint_for_controller[3];
 	// > Second, "unwrap" the yaw error to the interval ( -pi , pi )
 	while(yawError > PI) {yawError -= 2 * PI;}
 	while(yawError < -PI) {yawError += 2 * PI;}
@@ -230,133 +815,33 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	}
 
 
-	
 	// PERFORM THE "u=-Kx" CONTROLLER COMPUTATIONS
 
-	// Instantiate local variables for the responses
-	float thrustAdjustment = 0;
-	float rollRate_forResponse = 0;
-	float pitchRate_forResponse = 0;
-	float yawRate_forResponse = 0;
+	// Initialize control output
+	output.thrust = 0;
+	output.rollRate = 0;
+	output.pitchRate = 0;
+	output.yawRate = 0;
 
-	// Perform the "-Kx" LQR computation for the yaw rate to respoond with
+	// Perform the "-Kx" LQR computation
 	for(int i = 0; i < 9; ++i)
 	{
 		// For the z-controller
-		thrustAdjustment -= yaml_gainMatrixThrust_NineStateVector[i] * stateErrorBody[i];
+		output.thrust -= yaml_gainMatrixThrust_NineStateVector[i] * stateErrorBody[i];
 		// For the x-controller
-		pitchRate_forResponse -= yaml_gainMatrixPitchRate[i] * stateErrorBody[i];
+		output.pitchRate -= yaml_gainMatrixPitchRate[i] * stateErrorBody[i];
 		// For the y-controller
-		rollRate_forResponse -= yaml_gainMatrixRollRate[i] * stateErrorBody[i];
+		output.rollRate -= yaml_gainMatrixRollRate[i] * stateErrorBody[i];
 		// For the yaw-controller
-		yawRate_forResponse -= yaml_gainMatrixYawRate[i] * stateErrorBody[i];
+		output.yawRate -= yaml_gainMatrixYawRate[i] * stateErrorBody[i];
 	}
 
-	// Put the computed body rate commands into the "response" variable
-	response.controlOutput.roll = rollRate_forResponse;
-	response.controlOutput.pitch = pitchRate_forResponse;
-	response.controlOutput.yaw = yawRate_forResponse;
+	// Feedforward thrust command
+	output.thrust += m_cf_weight_in_newtons;
 
-	// Roll/pitch/yaw rate perturbation
-	if (m_rollRatePerturbEnable)
-		response.controlOutput.roll += m_rollRatePerturbAmp_in_rad * sin(2 * PI * yaml_rollRatePerturbFreq * m_time);
-	if (m_pitchRatePerturbEnable)
-		response.controlOutput.pitch += m_pitchRatePerturbAmp_in_rad * sin(2 * PI * yaml_pitchRatePerturbFreq * m_time);
-	if (m_yawRatePerturbEnable)
-		response.controlOutput.yaw += m_yawRatePerturbAmp_in_rad * sin(2 * PI * yaml_yawRatePerturbFreq * m_time);
-
-	// Put the thrust commands into the "response" variable.
-	// The thrust adjustment computed by the controller need to be added to the
-	// the feed-forward thrust that "counter-acts" gravity.
-	// > NOTE: remember that the thrust is commanded per motor, so you sohuld
-	//         consider whether the "thrustAdjustment" computed by your
-	//         controller needed to be divided by 4 or not.
-	// > NOTE: the "m_cf_weight_in_newtons" value is the total thrust required
-	//         as feed-forward. Assuming the the Crazyflie is symmetric, this
-	//         value is divided by four.
-	float feed_forward_thrust_per_motor = m_cf_weight_in_newtons / 4.0;
-	float thrust_request_per_motor = thrustAdjustment / 4.0 + feed_forward_thrust_per_motor;
-	
-	// Thrust perturbation
-	if (m_thrustPerturbEnable)
-		thrust_request_per_motor += m_thrustPerturbAmp_in_newtons / 4.0 * sin(2 * PI * yaml_thrustPerturbFreq * m_time);
-
-	// > NOTE: the function "computeMotorPolyBackward" converts the input argument
-	//         from Newtons to the 16-bit command expected by the Crazyflie.
-	response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrust_request_per_motor);
-	response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrust_request_per_motor);
-	response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrust_request_per_motor);
-	response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrust_request_per_motor);
-
-	
-	// PREPARE AND RETURN THE VARIABLE "response"
-
-	// Choose the controller type use on-board the Crazyflie,
-	// it can be either be Motor, Rate, or Angle based
-	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTORS;
-	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
-	// response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_ANGLE;
-
-	// ADVANCE TIME
-	m_time += 1 / yaml_control_frequency;
-
-
-
-	if (yaml_shouldPublishDebugMessage)
-	{
-		//  ***********************************************************
-		//  DDDD   EEEEE  BBBB   U   U   GGGG       M   M   SSSS   GGGG
-		//  D   D  E      B   B  U   U  G           MM MM  S      G
-		//  D   D  EEE    BBBB   U   U  G           M M M   SSS   G
-		//  D   D  E      B   B  U   U  G   G       M   M      S  G   G
-		//  DDDD   EEEEE  BBBB    UUU    GGGG       M   M  SSSS    GGGG
-
-		// DEBUGGING CODE:
-		// As part of the D-FaLL-System we have defined a message type names"DebugMsg".
-		// By fill this message with data and publishing it you can display the data in
-		// real time using rpt plots. Instructions for using rqt plots can be found on
-		// the wiki of the D-FaLL-System repository
-
-		// Instantiate a local variable of type "DebugMsg", see the file "DebugMsg.msg"
-		// (located in the "msg" folder) to see the full structure of this message.
-		DebugMsg debugMsg;
-
-		// Fill the debugging message with the data provided by Vicon
-		debugMsg.vicon_x = request.ownCrazyflie.x;
-		debugMsg.vicon_y = request.ownCrazyflie.y;
-		debugMsg.vicon_z = request.ownCrazyflie.z;
-		debugMsg.vicon_roll = request.ownCrazyflie.roll;
-		debugMsg.vicon_pitch = request.ownCrazyflie.pitch;
-		debugMsg.vicon_yaw = request.ownCrazyflie.yaw;
-
-		// Fill in the debugging message with any other data you would like to display
-		// in real time. For example, it might be useful to display the thrust
-		// adjustment computed by the z-altitude controller.
-		// The "DebugMsg" type has 10 properties from "value_1" to "value_10", all of
-		// type "float64" that you can fill in with data you would like to plot in
-		// real-time.
-		// debugMsg.value_1 = thrustAdjustment;
-		// ......................
-		// debugMsg.value_10 = your_variable_name;
-
-		// Publish the "debugMsg"
-		m_debugPublisher.publish(debugMsg);
-	}
-
-
+	// DEBUG INFO
 	if (yaml_shouldDisplayDebugInfo)
 	{
-		//  ***********************************************************
-		//  DDDD   EEEEE  BBBB   U   U   GGGG       M   M   SSSS   GGGG
-		//  D   D  E      B   B  U   U  G           MM MM  S      G
-		//  D   D  EEE    BBBB   U   U  G           M M M   SSS   G
-		//  D   D  E      B   B  U   U  G   G       M   M      S  G   G
-		//  DDDD   EEEEE  BBBB    UUU    GGGG       M   M  SSSS    GGGG
-		// An alternate debugging technique is to print out data directly to the
-		// command line from which this node was launched.
-
-		// An example of "printing out" the data from the "request" argument to the
-		// command line. This might be useful for debugging.
 		ROS_INFO_STREAM("x-coordinates: " << request.ownCrazyflie.x);
 		ROS_INFO_STREAM("y-coordinates: " << request.ownCrazyflie.y);
 		ROS_INFO_STREAM("z-coordinates: " << request.ownCrazyflie.z);
@@ -364,30 +849,8 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 		ROS_INFO_STREAM("pitch: " << request.ownCrazyflie.pitch);
 		ROS_INFO_STREAM("yaw: " << request.ownCrazyflie.yaw);
 		ROS_INFO_STREAM("Delta t: " << request.ownCrazyflie.acquiringTime);
-
-		// An example of "printing out" the control actions computed.
-		ROS_INFO_STREAM("thrustAdjustment = " << thrustAdjustment);
-		ROS_INFO_STREAM("controlOutput.roll = " << response.controlOutput.roll);
-		ROS_INFO_STREAM("controlOutput.pitch = " << response.controlOutput.pitch);
-		ROS_INFO_STREAM("controlOutput.yaw = " << response.controlOutput.yaw);
-
-		// An example of "printing out" the per motor 16-bit command computed.
-		ROS_INFO_STREAM("controlOutput.cmd1 = " << response.controlOutput.motorCmd1);
-		ROS_INFO_STREAM("controlOutput.cmd3 = " << response.controlOutput.motorCmd2);
-		ROS_INFO_STREAM("controlOutput.cmd2 = " << response.controlOutput.motorCmd3);
-		ROS_INFO_STREAM("controlOutput.cmd4 = " << response.controlOutput.motorCmd4);
-
-		// An example of "printing out" the "thrust-to-command" conversion parameters.
-		// ROS_INFO_STREAM("motorPoly 0:" << yaml_motorPoly[0]);
-		// ROS_INFO_STREAM("motorPoly 1:" << yaml_motorPoly[1]);
-		// ROS_INFO_STREAM("motorPoly 2:" << yaml_motorPoly[2]);
 	}
-
-	// Return "true" to indicate that the control computation was
-	// performed successfully
-	return true;
 }
-
 
 
 
@@ -551,16 +1014,7 @@ void setNewSetpoint(float x, float y, float z, float yaw)
 	// Publish the change so that the network is updated
 	// (mainly the "flying agent GUI" is interested in
 	// displaying this change to the user)
-
-	// Instantiate a local variable of type "SetpointWithHeader"
-	SetpointWithHeader msg;
-	// Fill in the setpoint
-	msg.x   = x;
-	msg.y   = y;
-	msg.z   = z;
-	msg.yaw = yaw;
-	// Publish the message
-	m_setpointChangedPublisher.publish(msg);
+	publishCurrentSetpointAndState();
 }
 
 
@@ -577,6 +1031,21 @@ bool getCurrentSetpointCallback(GetSetpointService::Request &request, GetSetpoin
 }
 
 
+// PUBLISH THE CURRENT SETPOINT SO THAT THE NETWORK IS UPDATED
+void publishCurrentSetpointAndState()
+{
+	// Instantiate a local variable of type "SetpointWithHeader"
+	SetpointWithHeader msg;
+	// Fill in the setpoint
+	msg.x   = m_setpoint[0];
+	msg.y   = m_setpoint[1];
+	msg.z   = m_setpoint[2];
+	msg.yaw = m_setpoint[3];
+	// Put the current state into the "buttonID" field
+	msg.buttonID = m_current_state;
+	// Publish the message
+	m_setpointChangedPublisher.publish(msg);
+}
 
 
 
@@ -605,91 +1074,294 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 		// Extract the data from the message
 		int custom_button_index = commandReceived.button_index;
 		float float_data        = commandReceived.float_data;
-		//std::string string_data = commandReceived.string_data;
+		//string string_data = commandReceived.string_data;
 
 		// Switch between the button pressed
 		switch(custom_button_index)
 		{
 
-			// > FOR CUSTOM BUTTON 1
+			// > FOR CUSTOM BUTTON 1 - THRUST EXCITATION
 			case 1:
-			{
 				// Let the user know that this part of the code was triggered
 				ROS_INFO_STREAM("[TEMPLATE CONTROLLER] Button 1 received in controller, with message.float_data = " << float_data );
 				// Code here to respond to custom button 1
-				if (m_thrustPerturbEnable)
-					m_thrustPerturbEnable = false;
-				else
-				{
-					m_time = 0.0;
-					m_thrustPerturbEnable = true;
-				}
-				
-				break;
-			}
+                // Switch between the possible states
+                switch (m_current_state)
+                {
+                    case TEMPLATE_CONTROLLER_STATE_NORMAL:
+                        // Inform the user
+                        ROS_INFO("[TEMPLATE CONTROLLER] Received request to start thrust excitation. Switch to state: excitation");
+                        // Update the state accordingly
+                        m_current_state = TEMPLATE_CONTROLLER_STATE_EXCITATION;
+                        m_current_state_changed = true;
+                        m_thrustExcEnable = true;
+                        break;
 
-			// > FOR CUSTOM BUTTON 2
+                    case TEMPLATE_CONTROLLER_STATE_EXCITATION:
+                        if (!m_thrustExcEnable)
+                        {
+                        	// Inform the user
+                            ROS_INFO("[TEMPLATE CONTROLLER] Received request to start thrust excitation. State stays at: excitation");
+                            m_thrustExcEnable = true;
+                        }
+                        else if (m_rollRateExcEnable || m_pitchRateExcEnable || m_yawRateExcEnable)
+                        {
+                            // Inform the user
+                            ROS_INFO("[TEMPLATE CONTROLLER] Received request to stop thrust excitation. State stays at: excitation");
+                            m_thrustExcEnable = false;
+                        }
+                        else
+                        {
+                            // Inform the user
+                            ROS_INFO("[TEMPLATE CONTROLLER] Received request to stop thrust excitation. Switch to state: normal");
+                            // Update the state accordingly
+                            m_current_state = TEMPLATE_CONTROLLER_STATE_NORMAL;
+                            m_current_state_changed = true;
+                            m_write_data = true;
+                        }
+                        break;
+
+                    case TEMPLATE_CONTROLLER_STATE_LANDING_MOVE_DOWN:
+                    case TEMPLATE_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
+                    case TEMPLATE_CONTROLLER_STATE_STANDBY:
+                    default:
+                        // Inform the user
+                        ROS_INFO("[TEMPLATE CONTROLLER] Received request to start thrust excitation in invalid state. Request ignored");
+
+                        // Write thrust excitation signal to CSV file. Used for debugging
+						ROS_INFO_STREAM("[TEMPLATE CONTROLLER] Writing file to: " << m_outputFolder << "m_thrustExcSignal.csv");
+                        if (write_csv(m_outputFolder + "m_thrustExcSignal.csv", m_thrustExcSignal))
+                        	ROS_INFO("[TEMPLATE CONTROLLER] Write file successful");
+                        else
+                        	ROS_INFO("[TEMPLATE CONTROLLER] Write file failed");
+
+                        break;
+                }
+                break;
+
+			// > FOR CUSTOM BUTTON 2 - ROLL RATE EXCITATION
 			case 2:
-			{
 				// Let the user know that this part of the code was triggered
 				ROS_INFO_STREAM("[TEMPLATE CONTROLLER] Button 2 received in controller, with message.float_data = " << float_data );
 				// Code here to respond to custom button 2
-				if (m_rollRatePerturbEnable)
-					m_rollRatePerturbEnable = false;
-				else
-				{
-					m_time = 0.0;
-					m_rollRatePerturbEnable = true;
-				}
+                // Switch between the possible states
+                switch (m_current_state)
+                {
+                    case TEMPLATE_CONTROLLER_STATE_NORMAL:
+                        // Inform the user
+                        ROS_INFO("[TEMPLATE CONTROLLER] Received request to start roll rate excitation. Switch to state: excitation");
+                        // Update the state accordingly
+                        m_current_state = TEMPLATE_CONTROLLER_STATE_EXCITATION;
+                        m_current_state_changed = true;
+                        m_rollRateExcEnable = true;
+                        break;
 
+                    case TEMPLATE_CONTROLLER_STATE_EXCITATION:
+                        if (!m_rollRateExcEnable)
+                        {
+                        	// Inform the user
+                            ROS_INFO("[TEMPLATE CONTROLLER] Received request to start roll rate excitation. State stays at: excitation");
+                            m_rollRateExcEnable = true;
+                        }
+                        else if (m_thrustExcEnable || m_pitchRateExcEnable || m_yawRateExcEnable)
+                        {
+                            // Inform the user
+                            ROS_INFO("[TEMPLATE CONTROLLER] Received request to stop roll rate excitation. State stays at: excitation");
+                            m_rollRateExcEnable = false;
+                        }
+                        else
+                        {
+                            // Inform the user
+                            ROS_INFO("[TEMPLATE CONTROLLER] Received request to stop roll rate excitation. Switch to state: normal");
+                            // Update the state accordingly
+                            m_current_state = TEMPLATE_CONTROLLER_STATE_NORMAL;
+                            m_current_state_changed = true;
+                            m_write_data = true;
+                        }
+                        break;
+
+                    case TEMPLATE_CONTROLLER_STATE_LANDING_MOVE_DOWN:
+                    case TEMPLATE_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
+                    case TEMPLATE_CONTROLLER_STATE_STANDBY:
+                    default:
+                        // Inform the user
+                        ROS_INFO("[TEMPLATE CONTROLLER] Received request to start roll rate excitation in invalid state. Request ignored");
+
+                        // Write roll rate excitation signal to CSV file. Used for debugging
+						ROS_INFO_STREAM("[TEMPLATE CONTROLLER] Writing file to: " << m_outputFolder << "m_rollRateExcSignal.csv");
+                        if (write_csv(m_outputFolder + "m_rollRateExcSignal.csv", m_rollRateExcSignal))
+                        	ROS_INFO("[TEMPLATE CONTROLLER] Write file successful");
+                        else
+                        	ROS_INFO("[TEMPLATE CONTROLLER] Write file failed");
+
+                        break;
+                }
 				break;
-			}
 
-			// > FOR CUSTOM BUTTON 3
+			// > FOR CUSTOM BUTTON 3 - PITCH RATE EXCITATION
 			case 3:
-			{
 				// Let the user know that this part of the code was triggered
 				ROS_INFO_STREAM("[TEMPLATE CONTROLLER] Button 3 received in controller, with message.float_data = " << float_data );
 				// Code here to respond to custom button 3
-				if (m_pitchRatePerturbEnable)
-					m_pitchRatePerturbEnable = false;
-				else
-				{
-					m_time = 0.0;
-					m_pitchRatePerturbEnable = true;
-				}
+                // Switch between the possible states
+                switch (m_current_state)
+                {
+                    case TEMPLATE_CONTROLLER_STATE_NORMAL:
+                        // Inform the user
+                        ROS_INFO("[TEMPLATE CONTROLLER] Received request to start pitch rate excitation. Switch to state: excitation");
+                        // Update the state accordingly
+                        m_current_state = TEMPLATE_CONTROLLER_STATE_EXCITATION;
+                        m_current_state_changed = true;
+                        m_pitchRateExcEnable = true;
+                        break;
 
+                    case TEMPLATE_CONTROLLER_STATE_EXCITATION:
+                        if (!m_pitchRateExcEnable)
+                        {
+                        	// Inform the user
+                            ROS_INFO("[TEMPLATE CONTROLLER] Received request to start pitch rate excitation. State stays at: excitation");
+                            m_pitchRateExcEnable = true;
+                        }
+                        else if (m_thrustExcEnable || m_rollRateExcEnable || m_yawRateExcEnable)
+                        {
+                            // Inform the user
+                            ROS_INFO("[TEMPLATE CONTROLLER] Received request to stop pitch rate excitation. State stays at: excitation");
+                            m_pitchRateExcEnable = false;
+                        }
+                        else
+                        {
+                            // Inform the user
+                            ROS_INFO("[TEMPLATE CONTROLLER] Received request to stop pitch rate excitation. Switch to state: normal");
+                            // Update the state accordingly
+                            m_current_state = TEMPLATE_CONTROLLER_STATE_NORMAL;
+                            m_current_state_changed = true;
+                            m_write_data = true;
+                        }
+                        break;
+
+                    case TEMPLATE_CONTROLLER_STATE_LANDING_MOVE_DOWN:
+                    case TEMPLATE_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
+                    case TEMPLATE_CONTROLLER_STATE_STANDBY:
+                    default:
+                        // Inform the user
+                        ROS_INFO("[TEMPLATE CONTROLLER] Received request to start pitch rate excitation in invalid state. Request ignored");
+
+                        // Write pitch rate excitation signal to CSV file. Used for debugging
+						ROS_INFO_STREAM("[TEMPLATE CONTROLLER] Writing file to: " << m_outputFolder << "m_pitchRateExcSignal.csv");
+                        if (write_csv(m_outputFolder + "m_pitchRateExcSignal.csv", m_pitchRateExcSignal))
+                        	ROS_INFO("[TEMPLATE CONTROLLER] Write file successful");
+                        else
+                        	ROS_INFO("[TEMPLATE CONTROLLER] Write file failed");
+
+                        break;
+                }
 				break;
-			}
 
-			// > FOR CUSTOM BUTTON 4
+			// > FOR CUSTOM BUTTON 4 - YAW RATE EXCITATION
 			case 4:
-			{
 				// Let the user know that this part of the code was triggered
 				ROS_INFO_STREAM("[TEMPLATE CONTROLLER] Button 4 received in controller, with message.float_data = " << float_data );
-				// Code here to respond to custom button 3
-				if (m_yawRatePerturbEnable)
-					m_yawRatePerturbEnable = false;
-				else
-				{
-					m_time = 0.0;
-					m_yawRatePerturbEnable = true;
-				}
+				// Code here to respond to custom button 4
+                // Switch between the possible states
+                switch (m_current_state)
+                {
+                    case TEMPLATE_CONTROLLER_STATE_NORMAL:
+                        // Inform the user
+                        ROS_INFO("[TEMPLATE CONTROLLER] Received request to start yaw rate excitation. Switch to state: excitation");
+                        // Update the state accordingly
+                        m_current_state = TEMPLATE_CONTROLLER_STATE_EXCITATION;
+                        m_current_state_changed = true;
+                        m_yawRateExcEnable = true;
+                        break;
 
+                    case TEMPLATE_CONTROLLER_STATE_EXCITATION:
+                        if (!m_yawRateExcEnable)
+                        {
+                        	// Inform the user
+                            ROS_INFO("[TEMPLATE CONTROLLER] Received request to start yaw rate excitation. State stays at: excitation");
+                            m_yawRateExcEnable = true;
+                        }
+                        else if (m_thrustExcEnable || m_rollRateExcEnable || m_pitchRateExcEnable)
+                        {
+                            // Inform the user
+                            ROS_INFO("[TEMPLATE CONTROLLER] Received request to stop yaw rate excitation. State stays at: excitation");
+                            m_yawRateExcEnable = false;
+                        }
+                        else
+                        {
+                            // Inform the user
+                            ROS_INFO("[TEMPLATE CONTROLLER] Received request to stop yaw rate excitation. Switch to state: normal");
+                            // Update the state accordingly
+                            m_current_state = TEMPLATE_CONTROLLER_STATE_NORMAL;
+                            m_current_state_changed = true;
+                            m_write_data = true;
+                        }
+                        break;
+
+                    case TEMPLATE_CONTROLLER_STATE_LANDING_MOVE_DOWN:
+                    case TEMPLATE_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
+                    case TEMPLATE_CONTROLLER_STATE_STANDBY:
+                    default:
+                        // Inform the user
+                        ROS_INFO("[TEMPLATE CONTROLLER] Received request to start yaw rate excitation in invalid state. Request ignored");
+
+						// Write yaw rate excitation signal to CSV file. Used for debugging
+						ROS_INFO_STREAM("[TEMPLATE CONTROLLER] Writing file to: " << m_outputFolder << "m_yawRateExcSignal.csv");
+                        if (write_csv(m_outputFolder + "m_yawRateExcSignal.csv", m_yawRateExcSignal))
+                        	ROS_INFO("[TEMPLATE CONTROLLER] Write file successful");
+                        else
+                        	ROS_INFO("[TEMPLATE CONTROLLER] Write file failed");
+
+                        break;
+                }
 				break;
-			}
+
+			// > FOR CUSTOM BUTTON 5 - EXCITE ALL
+			case 5:
+				// Let the user know that this part of the code was triggered
+				ROS_INFO_STREAM("[TEMPLATE CONTROLLER] Button 5 received in controller, with message.float_data = " << float_data );
+				// Code here to respond to custom button 5
+                // Switch between the possible states
+                switch (m_current_state)
+                {
+                    case TEMPLATE_CONTROLLER_STATE_NORMAL:
+                        // Inform the user
+                        ROS_INFO("[TEMPLATE CONTROLLER] Received request to start all excitation. Switch to state: excitation");
+                        // Update the state accordingly
+                        m_current_state = TEMPLATE_CONTROLLER_STATE_EXCITATION;
+                        m_current_state_changed = true;
+                        m_thrustExcEnable = true;
+                        m_rollRateExcEnable = true;
+                        m_pitchRateExcEnable = true;
+                        m_yawRateExcEnable = true;
+                        break;
+
+                    case TEMPLATE_CONTROLLER_STATE_EXCITATION:
+                        // Inform the user
+                        ROS_INFO("[TEMPLATE CONTROLLER] Received request to stop all excitation. Switch to state: normal");
+                        // Update the state accordingly
+                        m_current_state = TEMPLATE_CONTROLLER_STATE_NORMAL;
+                        m_current_state_changed = true;
+                        m_write_data = true;
+                        break;
+
+                    case TEMPLATE_CONTROLLER_STATE_LANDING_MOVE_DOWN:
+                    case TEMPLATE_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
+                    case TEMPLATE_CONTROLLER_STATE_STANDBY:
+                    default:
+                        // Inform the user
+                        ROS_INFO("[TEMPLATE CONTROLLER] Received request to start all excitation in invalid state. Request ignored");
+                        break;
+                }
+                break;
 
 			default:
-			{
 				// Let the user know that the command was not recognised
 				ROS_INFO_STREAM("[TEMPLATE CONTROLLER] A button clicked command was received in the controller but not recognised, message.button_index = " << custom_button_index << ", and message.float_data = " << float_data );
 				break;
-			}
 		}
 	}
 }
-
-
 
 
 
@@ -720,7 +1392,7 @@ void isReadyTemplateControllerYamlCallback(const IntWithHeader & msg)
 		// Extract the data
 		int parameter_service_to_load_from = msg.data;
 		// Initialise a local variable for the namespace
-		std::string namespace_to_use;
+		string namespace_to_use;
 		// Load from the respective parameter service
 		switch(parameter_service_to_load_from)
 		{
@@ -763,9 +1435,25 @@ void fetchTemplateControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	// Add the "TemplateController" namespace to the "nodeHandle"
 	ros::NodeHandle nodeHandle_for_paramaters(nodeHandle, "TemplateController");
 
-
-
 	// GET THE PARAMETERS:
+
+	// ------------------------------------------------------
+	// PARAMTERS FOR THE LANDING MANOEUVRE
+
+	// Height change for the landing move-down
+	yaml_landing_move_down_end_height_setpoint  = getParameterFloat(nodeHandle_for_paramaters , "landing_move_down_end_height_setpoint");
+	yaml_landing_move_down_end_height_threshold = getParameterFloat(nodeHandle_for_paramaters , "landing_move_down_end_height_threshold");
+	// The time for: landing move-down
+	yaml_landing_move_down_time_max = getParameterFloat(nodeHandle_for_paramaters , "landing_move_down_time_max");
+
+	// The thrust for landing spin motors
+	yaml_landing_spin_motors_thrust = getParameterFloat(nodeHandle_for_paramaters , "landing_spin_motors_thrust");
+	// The time for: landing spin motors
+	yaml_landing_spin_motors_time = getParameterFloat(nodeHandle_for_paramaters , "landing_spin_motors_time");
+
+
+	// ------------------------------------------------------
+	// PARAMTERS THAT ARE STANDARD FOR A "CONTROLLER SERVICE"
 
 	// > The mass of the crazyflie
 	yaml_cf_mass_in_grams = getParameterFloat(nodeHandle_for_paramaters , "mass");
@@ -802,26 +1490,33 @@ void fetchTemplateControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixPitchRate",              yaml_gainMatrixPitchRate,              9);
 	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixYawRate",                yaml_gainMatrixYawRate,                9);
 
-	// Thrust perturbation parameters
-	yaml_thrustPerturbAmp_in_grams = getParameterFloat(nodeHandle_for_paramaters, "thrustPerturbAmp");
-	yaml_thrustPerturbFreq = getParameterFloat(nodeHandle_for_paramaters, "thrustPerturbFreq");
+	// CSV data folder locations
+	yaml_dataFolder = getParameterString(nodeHandle_for_paramaters, "dataFolder");
+	yaml_outputFolder = getParameterString(nodeHandle_for_paramaters, "outputFolder");
 
-	// Roll rate perturbation parameters
-	yaml_rollRatePerturbAmp_in_deg = getParameterFloat(nodeHandle_for_paramaters, "rollRatePerturbAmp");
-	yaml_rollRatePerturbFreq = getParameterFloat(nodeHandle_for_paramaters, "rollRatePerturbFreq");
+	// Thrust excitation parameters
+	yaml_thrustExcAmp_in_grams = getParameterFloat(nodeHandle_for_paramaters, "thrustExcAmp");
+	yaml_thrustExcFreq = getParameterFloat(nodeHandle_for_paramaters, "thrustExcFreq");
+	yaml_thrustExcSignalFile = getParameterString(nodeHandle_for_paramaters, "thrustExcSignalFile");
 
-	// Pitch rate perturbation parameters
-	yaml_pitchRatePerturbAmp_in_deg = getParameterFloat(nodeHandle_for_paramaters, "pitchRatePerturbAmp");
-	yaml_pitchRatePerturbFreq = getParameterFloat(nodeHandle_for_paramaters, "pitchRatePerturbFreq");
+	// Roll rate excitation parameters
+	yaml_rollRateExcAmp_in_deg = getParameterFloat(nodeHandle_for_paramaters, "rollRateExcAmp");
+	yaml_rollRateExcFreq = getParameterFloat(nodeHandle_for_paramaters, "rollRateExcFreq");
+	yaml_rollRateExcSignalFile = getParameterString(nodeHandle_for_paramaters, "rollRateExcSignalFile");
+
+	// Pitch rate excitation parameters
+	yaml_pitchRateExcAmp_in_deg = getParameterFloat(nodeHandle_for_paramaters, "pitchRateExcAmp");
+	yaml_pitchRateExcFreq = getParameterFloat(nodeHandle_for_paramaters, "pitchRateExcFreq");
+	yaml_pitchRateExcSignalFile = getParameterString(nodeHandle_for_paramaters, "pitchRateExcSignalFile");
 
 	// Yaw rate perturbation parameters
-	yaml_yawRatePerturbAmp_in_deg = getParameterFloat(nodeHandle_for_paramaters, "yawRatePerturbAmp");
-	yaml_yawRatePerturbFreq = getParameterFloat(nodeHandle_for_paramaters, "yawRatePerturbFreq");
+	yaml_yawRateExcAmp_in_deg = getParameterFloat(nodeHandle_for_paramaters, "yawRateExcAmp");
+	yaml_yawRateExcFreq = getParameterFloat(nodeHandle_for_paramaters, "yawRateExcFreq");
+	yaml_yawRateExcSignalFile = getParameterString(nodeHandle_for_paramaters, "yawRateExcSignalFile");
 
 	// > DEBUGGING: Print out one of the parameters that was loaded to
 	//   debug if the fetching of parameters worked correctly
 	ROS_INFO_STREAM("[TEMPLATE CONTROLLER] DEBUGGING: the fetched TemplateController/mass = " << yaml_cf_mass_in_grams);
-
 
 
 	// PROCESS THE PARAMTERS
@@ -830,17 +1525,45 @@ void fetchTemplateControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	//   gravity (i.e., mg) in units of [Newtons]
 	m_cf_weight_in_newtons = yaml_cf_mass_in_grams * 9.81/1000.0;
 
-	// > Compute the thrust perturbation force in units of [Newtons]
-	m_thrustPerturbAmp_in_newtons = yaml_thrustPerturbAmp_in_grams * 9.81/1000.0;
+	// > Convert the control frequency to a delta T
+	m_control_deltaT = 1.0 / yaml_control_frequency;
 
-	// > Compute the roll rate perturbation in units of [rad/s]
-	m_rollRatePerturbAmp_in_rad = yaml_rollRatePerturbAmp_in_deg * PI/180.0;
+	// > Get absolute output data folder location
+	m_outputFolder = HOME + yaml_dataFolder + yaml_outputFolder;
 
-	// > Compute the pitch rate perturbation in units of [rad/s]
-	m_pitchRatePerturbAmp_in_rad = yaml_pitchRatePerturbAmp_in_deg * PI/180.0;
+	// > Compute the thrust excitation force in units of [Newtons]
+	m_thrustExcAmp_in_newtons = yaml_thrustExcAmp_in_grams * 9.81/1000.0;
 
-	// > Compute the yaw rate perturbation in units of [rad/s]
-	m_yawRatePerturbAmp_in_rad = yaml_yawRatePerturbAmp_in_deg * PI/180.0;
+	// > Compute the roll rate excitation in units of [rad/s]
+	m_rollRateExcAmp_in_rad = yaml_rollRateExcAmp_in_deg * PI/180.0;
+
+	// > Compute the pitch rate excitation in units of [rad/s]
+	m_pitchRateExcAmp_in_rad = yaml_pitchRateExcAmp_in_deg * PI/180.0;
+
+	// > Compute the yaw rate excitation in units of [rad/s]
+	m_yawRateExcAmp_in_rad = yaml_yawRateExcAmp_in_deg * PI/180.0;
+
+	// > Get the excitation signals from files
+	m_thrustExcSignal = read_csv(HOME + yaml_dataFolder + yaml_thrustExcSignalFile);
+	if (m_thrustExcSignal.size() <= 0)
+		ROS_INFO("[TEMPLATE CONTROLLER] Failed to read thrust excitation signal file");
+	else
+	{
+		m_u_data.setZero(m_thrustExcSignal.size(), 4);
+		m_y_data.setZero(m_thrustExcSignal.size(), 6);
+	}
+	
+	m_rollRateExcSignal = read_csv(HOME + yaml_dataFolder + yaml_rollRateExcSignalFile);
+	if (m_rollRateExcSignal.size() <= 0)
+		ROS_INFO("[TEMPLATE CONTROLLER] Failed to read roll rate excitation signal file");
+	
+	m_pitchRateExcSignal = read_csv(HOME + yaml_dataFolder + yaml_pitchRateExcSignalFile);
+	if (m_pitchRateExcSignal.size() <= 0)
+		ROS_INFO("[TEMPLATE CONTROLLER] Failed to read pitch rate excitation signal file");
+	
+	m_yawRateExcSignal = read_csv(HOME + yaml_dataFolder + yaml_yawRateExcSignalFile);
+	if (m_yawRateExcSignal.size() <= 0)
+		ROS_INFO("[TEMPLATE CONTROLLER] Failed to read yaw rate excitation signal file");
 
 
 	// DEBUGGING: Print out one of the computed quantities
@@ -848,7 +1571,54 @@ void fetchTemplateControllerYamlParameters(ros::NodeHandle& nodeHandle)
 }
 
 
+// ---------- READ/WRITE CSV FILES ----------
 
+// Read csv file into matrix
+MatrixXf read_csv(const string & path)
+{
+	ifstream fin;
+	fin.open(path);
+	if(!fin)
+	{
+		MatrixXf M;
+		return M;
+	}
+	string line;
+	vector<float> values;
+	int rows = 0;
+	while (getline(fin, line))
+	{
+		stringstream lineStream(line);
+		string cell;
+		bool empty_row = true;
+		while (getline(lineStream, cell, ','))
+		{
+			values.push_back(stof(cell));
+			empty_row = false;
+		}
+		if(!empty_row)
+			rows++;
+	}
+	return Map<Matrix<float, Dynamic, Dynamic, RowMajor>>(values.data(), rows, values.size()/rows);
+}
+
+// Write matrix into csv file
+bool write_csv(const string & path, MatrixXf M)
+{
+	ofstream fout;
+	fout.open(path);
+	if(!fout)
+		return false;
+	int rows = M.rows();
+	int cols = M.cols();
+	for(int i = 0; i < rows; i++)
+	{
+		for(int j = 0; j < cols - 1; j++)
+			fout << M(i,j) << ',';
+		fout << M(i,cols-1) << endl;
+	}
+	return true;
+}
 
 
 //    ----------------------------------------------------------------------------------
@@ -872,7 +1642,7 @@ int main(int argc, char* argv[]) {
 	ros::NodeHandle nodeHandle("~");
 
 	// Get the namespace of this "TemplateControllerService" node
-	std::string m_namespace = ros::this_node::getNamespace();
+	string m_namespace = ros::this_node::getNamespace();
 	ROS_INFO_STREAM("[TEMPLATE CONTROLLER] ros::this_node::getNamespace() =  " << m_namespace);
 
 
@@ -1013,7 +1783,7 @@ int main(int argc, char* argv[]) {
 
 	// Same again but instead for changes requested by the coordinator.
 	// For this we need to first create a node handle to the coordinator:
-	std::string namespace_to_coordinator;
+	string namespace_to_coordinator;
 	constructNamespaceForCoordinator( m_coordID, namespace_to_coordinator );
 	ros::NodeHandle nodeHandle_to_coordinator(namespace_to_coordinator);
 	// And now we can instantiate the subscriber:
@@ -1057,12 +1827,30 @@ int main(int argc, char* argv[]) {
 
     // Same again but instead for changes requested by the coordinator.
 	// For this we need to first create a node handle to the coordinator:
-	//std::string namespace_to_coordinator;
+	//string namespace_to_coordinator;
 	//constructNamespaceForCoordinator( m_coordID, namespace_to_coordinator );
 	//ros::NodeHandle nodeHandle_to_coordinator(namespace_to_coordinator);
 	// And now we can instantiate the subscriber:
 	ros::Subscriber customCommandReceivedSubscriber_from_coord = nodeHandle_to_coordinator.subscribe("TemplateControllerService/CustomButtonPressed", 1, customCommandReceivedCallback);
 
+
+	// Instantiate the local variable "service" to be a "ros::ServiceServer"
+	// type variable that advertises the service called:
+	// >> "RequestManoeuvre"
+	// This service has the input-output behaviour defined in the
+	// "IntIntService.srv" file (located in the "srv" folder).
+	// This service, when called, is provided with what manoeuvre
+	// is requested and responds with the duration that menoeuvre
+	// will take to perform (in milliseconds)
+	ros::ServiceServer requestManoeuvreService = nodeHandle.advertiseService("RequestManoeuvre", requestManoeuvreCallback);
+
+	// Instantiate the class variable "m_manoeuvreCompletePublisher" to
+	// be a "ros::Publisher". This variable advertises under the name
+	// "ManoeuvreComplete" and is a message with the structure defined
+	// in the file "IntWithHeader.msg" (located in the "msg" folder).
+	// This publisher is used by the "flying agent GUI" to update the
+	// flying state once the manoeuvre is complete.
+	m_manoeuvreCompletePublisher = nodeHandle.advertise<IntWithHeader>("ManoeuvreComplete", 1);
 
 
     // Print out some information to the user.

@@ -67,25 +67,30 @@
 #include "dfall_pkg/DebugMsg.h"
 
 // Include the DFALL service types
+#include "dfall_pkg/IntIntService.h"
 #include "dfall_pkg/LoadYamlFromFilename.h"
 #include "dfall_pkg/GetSetpointService.h"
 
 // Include the shared definitions
 #include "nodes/Constants.h"
+#include "nodes/TemplateControllerConstants.h"
 
 // Include other classes
 #include "classes/GetParamtersAndNamespaces.h"
 
 // Need for having a ROS "bag" to store data for post-analysis
 //#include <rosbag/bag.h>
+#include <fstream>
 
-
+// Include Eigen for matrix operations
+#include "Eigen/Dense"
 
 
 
 // Namespacing the package
 using namespace dfall_pkg;
-
+using namespace std;
+using namespace Eigen;
 
 
 
@@ -105,7 +110,16 @@ using namespace dfall_pkg;
 
 
 
+// ---------- STRUCTS ----------
 
+// Control output structure
+struct control_output
+{
+	float thrust;
+	float rollRate;
+	float pitchRate;
+	float yawRate;
+};
 
 
 //    ----------------------------------------------------------------------------------
@@ -125,10 +139,37 @@ int m_coordID;
 
 // NAMESPACES FOR THE PARAMETER SERVICES
 // > For the paramter service of this agent
-std::string m_namespace_to_own_agent_parameter_service;
+string m_namespace_to_own_agent_parameter_service;
 // > For the parameter service of the coordinator
-std::string m_namespace_to_coordinator_parameter_service;
+string m_namespace_to_coordinator_parameter_service;
 
+// STATE MACHINE VARIABLES
+
+// The current state of the Template Controller
+int m_current_state = TEMPLATE_CONTROLLER_STATE_STANDBY;
+
+// A flag for when the state is changed, this is used
+// so that a "one-off" operation can be performed
+// the first time after changing that state
+bool m_current_state_changed = false;
+
+// The elapased time, incremented by counting the motion
+// capture callbacks
+// Used in states that require time
+float m_time_in_seconds = 0.0;
+
+// VARIABLES FOR PERFORMING THE LANDING MANOEUVRE
+
+// Height change for the landing move-down
+float yaml_landing_move_down_end_height_setpoint  = 0.05;
+float yaml_landing_move_down_end_height_threshold = 0.10;
+// The time for: landing move-down
+float yaml_landing_move_down_time_max = 5.0;
+
+// The thrust for landing spin motors
+float yaml_landing_spin_motors_thrust = 10000;
+// The time for: landing spin motors
+float yaml_landing_spin_motors_time = 1.5;
 
 
 // VARAIBLES FOR VALUES LOADED FROM THE YAML FILE
@@ -137,10 +178,11 @@ float yaml_cf_mass_in_grams = 25.0;
 
 // > the frequency at which the controller is running
 float yaml_control_frequency = 200.0;
+float m_control_deltaT = (1.0/200.0);
 
 // > the coefficients of the 16-bit command to thrust conversion
 //std::vector<float> yaml_motorPoly(3);
-std::vector<float> yaml_motorPoly = {5.484560e-4, 1.032633e-6, 2.130295e-11};
+vector<float> yaml_motorPoly = {5.484560e-4, 1.032633e-6, 2.130295e-11};
 
 
 // The min and max for saturating 16 bit thrust commands
@@ -149,7 +191,7 @@ float yaml_command_sixteenbit_max = 60000;
 
 // > the default setpoint, the ordering is (x,y,z,yaw),
 //   with units [meters,meters,meters,radians]
-std::vector<float> yaml_default_setpoint = {0.0,0.0,0.4,0.0};
+vector<float> yaml_default_setpoint = {0.0,0.0,0.4,0.0};
 
 // Boolean indiciating whether the "Debug Message" of this agent should be published or not
 bool yaml_shouldPublishDebugMessage = false;
@@ -158,64 +200,92 @@ bool yaml_shouldPublishDebugMessage = false;
 bool yaml_shouldDisplayDebugInfo = false;
 
 // The LQR Controller parameters for "LQR_RATE_MODE"
-std::vector<float> yaml_gainMatrixThrust_NineStateVector  =  { 0.00, 0.00, 0.98, 0.00, 0.00, 0.25, 0.00, 0.00, 0.00};
-std::vector<float> yaml_gainMatrixRollRate                =  { 0.00,-6.20, 0.00, 0.00,-3.00, 0.00, 5.20, 0.00, 0.00};
-std::vector<float> yaml_gainMatrixPitchRate               =  { 6.20, 0.00, 0.00, 3.00, 0.00, 0.00, 0.00, 5.20, 0.00};
-std::vector<float> yaml_gainMatrixYawRate                 =  { 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.30};
+vector<float> yaml_gainMatrixThrust_NineStateVector  =  { 0.00, 0.00, 0.98, 0.00, 0.00, 0.25, 0.00, 0.00, 0.00};
+vector<float> yaml_gainMatrixRollRate                =  { 0.00,-6.20, 0.00, 0.00,-3.00, 0.00, 5.20, 0.00, 0.00};
+vector<float> yaml_gainMatrixPitchRate               =  { 6.20, 0.00, 0.00, 3.00, 0.00, 0.00, 0.00, 5.20, 0.00};
+vector<float> yaml_gainMatrixYawRate                 =  { 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.30};
 
-// Thrust perturbation parameters
-float yaml_thrustPerturbAmp_in_grams = 0.0;
-float yaml_thrustPerturbFreq = 0.0;
+// HOME path used for file read/write
+const string HOME = getenv("HOME");
 
-// Roll rate perturbation parameters
-float yaml_rollRatePerturbAmp_in_deg = 0.0;
-float yaml_rollRatePerturbFreq = 0.0;
+// CSV data folder location, relative to HOME path
+string yaml_dataFolder = "/work/D-FaLL-System/DeePC_data/";
 
-// Pitch rate perturbation parameters
-float yaml_pitchRatePerturbAmp_in_deg = 0.0;
-float yaml_pitchRatePerturbFreq = 0.0;
+// CSV output data folder location, relative to dataFolder
+string yaml_outputFolder = "output/";
 
-// Yaw rate perturbation parameters
-float yaml_yawRatePerturbAmp_in_deg = 0.0;
-float yaml_yawRatePerturbFreq = 0.0;
+// CSV data files location, relative to dataFolder
+string yaml_thrustExcSignalFile = "thrust_exc_signal.csv";
+string yaml_rollRateExcSignalFile = "rollRate_exc_signal.csv";
+string yaml_pitchRateExcSignalFile = "pitchRate_exc_signal.csv";
+string yaml_yawRateExcSignalFile = "yawRate_exc_signal.csv";
+
+// Thrust excitation parameters
+float yaml_thrustExcAmp_in_grams = 0.0;
+float yaml_thrustExcFreq = 0.0;
+
+// Roll rate excitation parameters
+float yaml_rollRateExcAmp_in_deg = 0.0;
+float yaml_rollRateExcFreq = 0.0;
+
+// Pitch rate excitation parameters
+float yaml_pitchRateExcAmp_in_deg = 0.0;
+float yaml_pitchRateExcFreq = 0.0;
+
+// Yaw rate excitation parameters
+float yaml_yawRateExcAmp_in_deg = 0.0;
+float yaml_yawRateExcFreq = 0.0;
+
 
 // The weight of the Crazyflie in Newtons, i.e., mg
 float m_cf_weight_in_newtons = 0.0;
-
-// Thrust perturbation in Newtons
-float m_thrustPerturbAmp_in_newtons = 0.0;
-
-// Roll rate perturbation in rad/s
-float m_rollRatePerturbAmp_in_rad = 0.0;
-
-// Pitch rate perturbation in rad/s
-float m_pitchRatePerturbAmp_in_rad = 0.0;
-
-// Yaw rate perturbation in rad/s
-float m_yawRatePerturbAmp_in_rad = 0.0;
-
-// Enable thrust perturbation
-bool m_thrustPerturbEnable = false;
-
-// Enable roll rate perturbation
-bool m_rollRatePerturbEnable = false;
-
-// Enable pitch rate perturbation
-bool m_pitchRatePerturbEnable = false;
-
-// Enable yaw rate perturbation
-bool m_yawRatePerturbEnable = false;
 
 // The location error of the Crazyflie at the "previous" time step
 float m_previous_stateErrorInertial[9];
 
 // The setpoint to be tracked, the ordering is (x,y,z,yaw),
 // with units [meters,meters,meters,radians]
-std::vector<float>  m_setpoint{0.0,0.0,0.4,0.0};
+float  m_setpoint[4] = {0.0,0.0,0.4,0.0};
 
-// Time
-float m_time = 0.0;
+// The setpoint that is actually used by the controller, this
+// differs from the setpoint when landing
+float m_setpoint_for_controller[4] = {0.0,0.0,0.4,0.0};
 
+// CSV absolute output data folder location
+string m_outputFolder = HOME + "/work/D-FaLL-System/DeePC_data/output/";
+
+// Thrust excitation variables
+float m_thrustExcAmp_in_newtons = 0.0;
+MatrixXf m_thrustExcSignal;
+bool m_thrustExcEnable = false;
+int m_thrustExcIndex = 0;
+float m_thrustExcTime_in_seconds = 0.0;
+
+// Roll rate excitation variables
+float m_rollRateExcAmp_in_rad = 0.0;
+MatrixXf m_rollRateExcSignal;
+bool m_rollRateExcEnable = false;
+int m_rollRateExcIndex = 0;
+float m_rollRateExcTime_in_seconds = 0.0;
+
+// Pitch rate excitation variables
+float m_pitchRateExcAmp_in_rad = 0.0;
+MatrixXf m_pitchRateExcSignal;
+bool m_pitchRateExcEnable = false;
+int m_pitchRateExcIndex = 0;
+float m_pitchRateExcTime_in_seconds = 0.0;
+
+// Yaw rate excitation in variables
+float m_yawRateExcAmp_in_rad = 0.0;
+MatrixXf m_yawRateExcSignal;
+bool m_yawRateExcEnable = false;
+int m_yawRateExcIndex = 0;
+float m_yawRateExcTime_in_seconds = 0.0;
+
+// Data collection matrices
+MatrixXf m_u_data;
+MatrixXf m_y_data;
+bool m_write_data = false;
 
 // ROS Publisher for debugging variables
 ros::Publisher m_debugPublisher;
@@ -224,6 +294,9 @@ ros::Publisher m_debugPublisher;
 // changes to the setpoin
 ros::Publisher m_setpointChangedPublisher;
 
+// ROS Publisher to inform the flying agent client
+// when a requested manoeuvre is complete
+ros::Publisher m_manoeuvreCompletePublisher;
 
 
 
@@ -251,6 +324,12 @@ ros::Publisher m_setpointChangedPublisher;
 
 // CONTROLLER COMPUTATIONS
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response);
+void computeResponse_for_standby(Controller::Request &request, Controller::Response &response);
+void computeResponse_for_normal(Controller::Request &request, Controller::Response &response);
+void computeResponse_for_excitation(Controller::Request &request, Controller::Response &response);
+void computeResponse_for_landing_move_down(Controller::Request &request, Controller::Response &response);
+void computeResponse_for_landing_spin_motors(Controller::Request &request, Controller::Response &response);
+void calculateControlOutput_viaLQR(Controller::Request &request, control_output &output);
 
 // TRANSFORMATION OF THE (x,y) INERTIAL FRAME ERROR
 // INTO AN (x,y) BODY FRAME ERROR
@@ -268,9 +347,16 @@ void setNewSetpoint(float x, float y, float z, float yaw);
 // GET CURRENT SETPOINT SERVICE CALLBACK
 bool getCurrentSetpointCallback(GetSetpointService::Request &request, GetSetpointService::Response &response);
 
+// PUBLISH THE CURRENT SETPOINT AND STATE
+void publishCurrentSetpointAndState();
+
 // CUSTOM COMMAND RECEIVED CALLBACK
 void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived);
 
 // FOR LOADING THE YAML PARAMETERS
 void isReadyTemplateControllerYamlCallback(const IntWithHeader & msg);
 void fetchTemplateControllerYamlParameters(ros::NodeHandle& nodeHandle);
+
+// READ/WRITE CSV FILES
+MatrixXf read_csv(const string & path);
+bool write_csv(const string & path, MatrixXf M);

@@ -185,7 +185,12 @@ void TemplateControllerTab::on_custom_button_4_clicked()
 #endif
 }
 
-
+void TemplateControllerTab::on_custom_button_5_clicked()
+{
+#ifdef CATKIN_MAKE
+    publish_custom_button_command(5,ui->lineEdit_custom_5);
+#endif
+}
 
 //    ----------------------------------------------------------------------------------
 //    PPPP    OOO    SSSS  EEEEE     DDDD     A    TTTTT    A
@@ -292,6 +297,37 @@ void TemplateControllerTab::setpointChangedCallback(const dfall_pkg::SetpointWit
 
     if (yaw < 0.0f) qstr = ""; else qstr = "+";
     ui->lineEdit_setpoint_current_yaw->setText(qstr + QString::number( yaw * RAD2DEG, 'f', 1));
+
+    // UPDATE THE CURRENT STATE LABEL
+    int current_state = newSetpoint.buttonID;
+    m_label_current_state_mutex.lock();
+    switch (current_state)
+    {
+        case TEMPLATE_CONTROLLER_STATE_STANDBY:
+            ui->label_current_state->setText("Standby");
+            break;
+
+        case TEMPLATE_CONTROLLER_STATE_NORMAL:
+            ui->label_current_state->setText("Normal");
+            break;
+
+        case TEMPLATE_CONTROLLER_STATE_EXCITATION:
+            ui->label_current_state->setText("Excitation");
+            break;
+
+        case TEMPLATE_CONTROLLER_STATE_LANDING_MOVE_DOWN:
+            ui->label_current_state->setText("Landing, move down");
+            break;
+
+        case TEMPLATE_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
+            ui->label_current_state->setText("Landing, spinning motors");
+            break;
+
+        default:
+            ui->label_current_state->setText("Not recognised");
+            break;
+    }
+    m_label_current_state_mutex.unlock();
 }
 #endif
 

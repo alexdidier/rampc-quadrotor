@@ -595,6 +595,24 @@ void requestChangeFlyingStateToTakeOff()
 				ROS_INFO("[FLYING AGENT CLIENT] Changed state directly to STATE_FLYING");
 				// Update the class variable
 				m_flying_state = STATE_FLYING;
+
+				// Notify Template Controller of take-Off request. Used for initialization
+				if(getInstantController() == TEMPLATE_CONTROLLER)
+				{
+					// Call the service offered by the template
+					// controller for take-off acknowledgement
+					dfall_pkg::IntIntService requestManoeurveCall;
+					requestManoeurveCall.request.data = TEMPLATE_CONTROLLER_REQUEST_TAKEOFF;
+					if(m_templateController_requestManoeuvre.call(requestManoeurveCall))
+					{
+						ROS_INFO_STREAM("[FLYING AGENT CLIENT] Notified Template controller of take-off.");
+					}
+					else
+					{
+						// Inform the user
+						ROS_INFO("[FLYING AGENT CLIENT] Failed to notify Template controller of take-off.");
+					}
+				}
 			}
 		}
 		else
@@ -665,14 +683,48 @@ void requestChangeFlyingStateToLand()
 				m_flying_state = STATE_MOTORS_OFF;
 			}
 		}
-		// Otherwise, just switch straight to the
-		// "motors off" state
+		// Otherwise, Template Controller has landing manoeuvre
 		else
 		{
-			// Inform the user
-			ROS_INFO("[FLYING AGENT CLIENT] Changed state directly to STATE_MOTORS_OFF");
-			// Update the class variable
-			m_flying_state = STATE_MOTORS_OFF;
+			if(getInstantController() == TEMPLATE_CONTROLLER)
+			{
+				// Call the service offered by the template
+				// controller for how long a landing will take
+				dfall_pkg::IntIntService requestManoeurveCall;
+				requestManoeurveCall.request.data = TEMPLATE_CONTROLLER_REQUEST_LANDING;
+				if(m_templateController_requestManoeuvre.call(requestManoeurveCall))
+				{
+					// Extract the duration
+					float land_duration = float(requestManoeurveCall.response.data) / 1000.0;
+					// Start the timer
+					// > Stop any previous instance
+					m_timer_land_complete.stop();
+					// > Set the period again (second argument is reset)
+					m_timer_land_complete.setPeriod( ros::Duration(land_duration), true);
+					// > Start the timer
+					m_timer_land_complete.start();
+					// Inform the user
+					ROS_INFO_STREAM("[FLYING AGENT CLIENT] Changed state to STATE_LAND for a duration of " << land_duration << " seconds.");
+					// Update the class variable
+					m_flying_state = STATE_LAND;
+				}
+				else
+				{
+					// Inform the user
+					ROS_INFO("[FLYING AGENT CLIENT] Failed to get land duration from Template controller. Switching to MOTORS-OFF.");
+					// Update the class variable
+					m_flying_state = STATE_MOTORS_OFF;
+				}
+			}
+			// Otherwise, just switch straight to the
+			// "motors off" state
+			else
+			{
+				// Inform the user
+				ROS_INFO("[FLYING AGENT CLIENT] Changed state directly to STATE_MOTORS_OFF");
+				// Update the class variable
+				m_flying_state = STATE_MOTORS_OFF;
+			}
 		}
 	}
 }
@@ -684,7 +736,7 @@ void timerCallback_takeoff_complete(const ros::TimerEvent&)
 	if (m_flying_state == STATE_TAKE_OFF)
 	{
 		// Inform the user
-		ROS_INFO("[FLYING AGENT CLIENT] Take-off complete, changed state to STATE_FLYING");
+		ROS_INFO("[FLYING AGENT CLIENT] Take-off complete on time-out, changed state to STATE_FLYING");
 		// Update the class variable
 		m_flying_state = STATE_FLYING;
 		// Publish a message with the new flying state
@@ -707,7 +759,7 @@ void timerCallback_land_complete(const ros::TimerEvent&)
 	if (m_flying_state == STATE_LAND)
 	{
 		// Inform the user
-		ROS_INFO("[FLYING AGENT CLIENT] Land complete, changed state to STATE_MOTORS_OFF");
+		ROS_INFO("[FLYING AGENT CLIENT] Land complete on time-out, changed state to STATE_MOTORS_OFF");
 		// Update the class variable
 		m_flying_state = STATE_MOTORS_OFF;
 		// Publish a message with the new flying state
@@ -788,7 +840,36 @@ void defaultControllerManoeuvreCompleteCallback(const IntWithHeader & msg)
 }
 
 
-
+void templateControllerManoeuvreCompleteCallback(const IntWithHeader & msg)
+{
+	// Switch between the cases
+	switch (msg.data)
+	{
+		case TEMPLATE_CONTROLLER_LANDING_COMPLETE:
+		{
+			// Only change to flying if still in the take-off state
+			if (m_flying_state == STATE_LAND)
+			{
+				// Stop the timer
+				m_timer_land_complete.stop();
+				// Inform the user
+				ROS_INFO("[FLYING AGENT CLIENT] Land complete, changed state to STATE_MOTORS_OFF");
+				// Update the class variable
+				m_flying_state = STATE_MOTORS_OFF;
+				// Publish a message with the new flying state
+				std_msgs::Int32 flying_state_msg;
+				flying_state_msg.data = m_flying_state;
+				m_flyingStatePublisher.publish(flying_state_msg);
+			}
+			else
+			{
+				// Inform the user
+				ROS_INFO("[FLYING AGENT CLIENT] Received a landing complete message, BUT the agent is no longer in STATE_LAND.");
+			}
+			break;
+		}
+	}
+}
 
 
 
@@ -1280,6 +1361,10 @@ void timerCallback_for_createAllcontrollerServiceClients(const ros::TimerEvent&)
     // CONTROLLER TO PERFORM MANOEUVRES
     createIntIntServiceClientFromParameterName( "defaultController_requestManoeuvre" , m_defaultController_requestManoeuvre );
 
+    // INITIALISE THE SERVICE FOR REQUESTING THE TEMPLATE
+    // CONTROLLER TO PERFORM MANOEUVRES
+    createIntIntServiceClientFromParameterName( "templateController_requestManoeuvre" , m_templateController_requestManoeuvre );
+
     // Check that at least the default controller is available
     // > Setting the flag accordingly
     if (m_defaultController)
@@ -1642,14 +1727,17 @@ int main(int argc, char* argv[])
 	ros::Subscriber CFBatterySubscriber = nodeHandle_to_battery_monitor.subscribe("ChangedStateTo", 1, batteryMonitorStateChangedCallback);
 
 
-	// SUBSCRIBER FOR BATTERY STATE CHANGES
-	// The battery state change message from the Battery
-	// Monitor node
+	// SUBSCRIBER FOR DEFAULT CONTROLLER
+	// Menoeuvres
 	std::string namespace_to_default_contoller = m_namespace + "/DefaultControllerService";
 	ros::NodeHandle nodeHandle_to_default_controller(namespace_to_default_contoller);
-	ros::Subscriber ManoeuvreCompleteSubscriber = nodeHandle_to_default_controller.subscribe("ManoeuvreComplete", 1, defaultControllerManoeuvreCompleteCallback);
+	ros::Subscriber DefaultManoeuvreCompleteSubscriber = nodeHandle_to_default_controller.subscribe("ManoeuvreComplete", 1, defaultControllerManoeuvreCompleteCallback);
 
-
+	// SUBSCRIBER FOR TEMPLATE CONTROLLER
+	// Menoeuvres
+	std::string namespace_to_template_contoller = m_namespace + "/TemplateControllerService";
+	ros::NodeHandle nodeHandle_to_template_controller(namespace_to_template_contoller);
+	ros::Subscriber TemplateManoeuvreCompleteSubscriber = nodeHandle_to_template_controller.subscribe("ManoeuvreComplete", 1, templateControllerManoeuvreCompleteCallback);
 
 	// SERVICE SERVER FOR OTHERS TO GET THE CURRENT FLYING STATE
 	// Advertise the service that return the "m_flying_state"

@@ -12,6 +12,10 @@ testMotorsController: "TestMotorsControllerService/TestMotorsController"
 # Controller for requests manoeuvres to be performed
 defaultController_requestManoeuvre: "DefaultControllerService/RequestManoeuvre"
 
+# The name of the service advertised by the Default
+# Controller for requests manoeuvres to be performed
+templateController_requestManoeuvre: "TemplateControllerService/RequestManoeuvre"
+
 # Flag for whether to use angle for switching
 # to the Default Controller
 isEnabled_strictSafety: true
@@ -30,4 +34,4 @@ shouldPerfom_takeOff_with_defaultController: false
 
 # Flag for whether the landing should be performed
 # with the default controller
-shouldPerfom_landing_with_defaultController: true
+shouldPerfom_landing_with_defaultController: false

@@ -109,6 +109,16 @@ bool getParameterBool(ros::NodeHandle& nodeHandle, std::string name)
 }
 
 
+std::string getParameterString(ros::NodeHandle& nodeHandle, std::string name)
+{
+    std::string val;
+    if(!nodeHandle.getParam(name, val))
+    {
+        ROS_ERROR_STREAM("missing parameter '" << name << "'");
+    }
+    return val;
+}
+
 
 void getParameterFloatVector(ros::NodeHandle& nodeHandle, std::string name, std::vector<float>& val, int length)
 {
