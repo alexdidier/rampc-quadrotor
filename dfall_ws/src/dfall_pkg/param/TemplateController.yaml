@@ -61,13 +61,13 @@ thrustExcAmp : 10
 thrustExcFreq: 0.1
 
 # Roll rate excitation magnitude, in deg/s
-rollRateExcAmp : 30
+rollRateExcAmp : 60
 
 # Roll rate ecitation frequency, in hertz
 rollRateExcFreq: 0.1
 
 # Pitch rate excitation magnitude, in deg/s
-pitchRateExcAmp : 30
+pitchRateExcAmp : 60
 
 # Pitch rate excitation frequency, in hertz
 pitchRateExcFreq: 0.1
