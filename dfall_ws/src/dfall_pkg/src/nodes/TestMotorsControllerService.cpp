@@ -73,7 +73,7 @@
 //     CCCC   OOO   N   N    T    R   R   OOO   LLLLL       LLLLL   OOO    OOO   P
 //    ----------------------------------------------------------------------------------
 
-// This function is the callback that is linked to the "TemplateController"
+// This function is the callback that is linked to the "TestMotorsController"
 // service that is advertised in the main function. This must have arguments
 // that match the "input-output" behaviour defined in the "Controller.srv"
 // file (located in the "srv" folder)
@@ -453,7 +453,7 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 			case 1:
 			{
 				// Let the user know that this part of the code was triggered
-				ROS_INFO_STREAM("[TEMPLATE CONTROLLER] Button 1 received in controller, with message.float_data = " << float_data );
+				ROS_INFO_STREAM("[TEST MOTORS CONTROLLER] Button 1 received in controller, with message.float_data = " << float_data );
 				// Code here to respond to custom button 1
 				
 				break;
@@ -463,7 +463,7 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 			case 2:
 			{
 				// Let the user know that this part of the code was triggered
-				ROS_INFO_STREAM("[TEMPLATE CONTROLLER] Button 2 received in controller, with message.float_data = " << float_data );
+				ROS_INFO_STREAM("[TEST MOTORS CONTROLLER] Button 2 received in controller, with message.float_data = " << float_data );
 				// Code here to respond to custom button 2
 
 				break;
@@ -473,7 +473,7 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 			case 3:
 			{
 				// Let the user know that this part of the code was triggered
-				ROS_INFO_STREAM("[TEMPLATE CONTROLLER] Button 3 received in controller, with message.float_data = " << float_data );
+				ROS_INFO_STREAM("[TEST MOTORS CONTROLLER] Button 3 received in controller, with message.float_data = " << float_data );
 				// Code here to respond to custom button 3
 
 				break;
@@ -482,7 +482,7 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 			default:
 			{
 				// Let the user know that the command was not recognised
-				ROS_INFO_STREAM("[TEMPLATE CONTROLLER] A button clicked command was received in the controller but not recognised, message.button_index = " << custom_button_index << ", and message.float_data = " << float_data );
+				ROS_INFO_STREAM("[TEST MOTORS CONTROLLER] A button clicked command was received in the controller but not recognised, message.button_index = " << custom_button_index << ", and message.float_data = " << float_data );
 				break;
 			}
 		}
@@ -509,7 +509,7 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 
 
 // CALLBACK NOTIFYING THAT THE YAML PARAMETERS ARE READY TO BE LOADED
-void isReadyTemplateControllerYamlCallback(const IntWithHeader & msg)
+void isReadyTestMotorsControllerYamlCallback(const IntWithHeader & msg)
 {
 	// Check whether the message is relevant
 	bool isRevelant = checkMessageHeader( m_agentID , msg.shouldCheckForAgentID , msg.agentIDs );
@@ -527,21 +527,21 @@ void isReadyTemplateControllerYamlCallback(const IntWithHeader & msg)
 			// > FOR FETCHING FROM THE AGENT'S OWN PARAMETER SERVICE
 			case LOAD_YAML_FROM_AGENT:
 			{
-				ROS_INFO("[TEMPLATE CONTROLLER] Now fetching the TemplateController YAML parameter values from this agent.");
+				ROS_INFO("[TEST MOTORS CONTROLLER] Now fetching the TestMotorsController YAML parameter values from this agent.");
 				namespace_to_use = m_namespace_to_own_agent_parameter_service;
 				break;
 			}
 			// > FOR FETCHING FROM THE COORDINATOR'S PARAMETER SERVICE
 			case LOAD_YAML_FROM_COORDINATOR:
 			{
-				ROS_INFO("[TEMPLATE CONTROLLER] Now fetching the TemplateController YAML parameter values from this agent's coordinator.");
+				ROS_INFO("[TEST MOTORS CONTROLLER] Now fetching the TestMotorsController YAML parameter values from this agent's coordinator.");
 				namespace_to_use = m_namespace_to_coordinator_parameter_service;
 				break;
 			}
 
 			default:
 			{
-				ROS_ERROR("[TEMPLATE CONTROLLER] Paramter service to load from was NOT recognised.");
+				ROS_ERROR("[TEST MOTORS CONTROLLER] Paramter service to load from was NOT recognised.");
 				namespace_to_use = m_namespace_to_own_agent_parameter_service;
 				break;
 			}
@@ -549,19 +549,19 @@ void isReadyTemplateControllerYamlCallback(const IntWithHeader & msg)
 		// Create a node handle to the selected parameter service
 		ros::NodeHandle nodeHandle_to_use(namespace_to_use);
 		// Call the function that fetches the parameters
-		fetchTemplateControllerYamlParameters(nodeHandle_to_use);
+		fetchTestMotorsControllerYamlParameters(nodeHandle_to_use);
 	}
 }
 
 
 // LOADING OF THE YAML PARAMTERS
-void fetchTemplateControllerYamlParameters(ros::NodeHandle& nodeHandle)
+void fetchTestMotorsControllerYamlParameters(ros::NodeHandle& nodeHandle)
 {
 	// Here we load the parameters that are specified in the file:
-	// TemplateController.yaml
+	// TestMotorsController.yaml
 
-	// Add the "TemplateController" namespace to the "nodeHandle"
-	ros::NodeHandle nodeHandle_for_paramaters(nodeHandle, "TemplateController");
+	// Add the "TestMotorsController" namespace to the "nodeHandle"
+	ros::NodeHandle nodeHandle_for_paramaters(nodeHandle, "TestMotorsController");
 
 
 
@@ -604,7 +604,7 @@ void fetchTemplateControllerYamlParameters(ros::NodeHandle& nodeHandle)
 
 	// > DEBUGGING: Print out one of the parameters that was loaded to
 	//   debug if the fetching of parameters worked correctly
-	ROS_INFO_STREAM("[TEMPLATE CONTROLLER] DEBUGGING: the fetched TemplateController/mass = " << yaml_cf_mass_in_grams);
+	ROS_INFO_STREAM("[TEST MOTORS CONTROLLER] DEBUGGING: the fetched TestMotorsController/mass = " << yaml_cf_mass_in_grams);
 
 
 
@@ -615,7 +615,7 @@ void fetchTemplateControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	m_cf_weight_in_newtons = yaml_cf_mass_in_grams * 9.81/1000.0;
 
 	// DEBUGGING: Print out one of the computed quantities
-	ROS_INFO_STREAM("[TEMPLATE CONTROLLER] DEBUGGING: thus the weight of this agent in [Newtons] = " << m_cf_weight_in_newtons);
+	ROS_INFO_STREAM("[TEST MOTORS CONTROLLER] DEBUGGING: thus the weight of this agent in [Newtons] = " << m_cf_weight_in_newtons);
 }
 
 
@@ -714,8 +714,8 @@ int main(int argc, char* argv[]) {
 
 	// The parameter service publishes messages with names of the form:
 	// /dfall/.../ParameterService/<filename with .yaml extension>
-	ros::Subscriber safeContoller_yamlReady_fromAgent = nodeHandle_to_own_agent_parameter_service.subscribe(  "TemplateController", 1, isReadyTemplateControllerYamlCallback);
-	ros::Subscriber safeContoller_yamlReady_fromCoord = nodeHandle_to_coordinator_parameter_service.subscribe("TemplateController", 1, isReadyTemplateControllerYamlCallback);
+	ros::Subscriber safeContoller_yamlReady_fromAgent = nodeHandle_to_own_agent_parameter_service.subscribe(  "TestMotorsController", 1, isReadyTestMotorsControllerYamlCallback);
+	ros::Subscriber safeContoller_yamlReady_fromCoord = nodeHandle_to_coordinator_parameter_service.subscribe("TestMotorsController", 1, isReadyTestMotorsControllerYamlCallback);
 
 
 
@@ -743,7 +743,7 @@ int main(int argc, char* argv[]) {
 	// Create the service call as a local variable
 	LoadYamlFromFilename loadYamlFromFilenameCall;
 	// Specify the Yaml filename as a string
-	loadYamlFromFilenameCall.request.stringWithHeader.data = "TemplateController";
+	loadYamlFromFilenameCall.request.stringWithHeader.data = "TestMotorsController";
 	// Set for whom this applies to
 	loadYamlFromFilenameCall.request.stringWithHeader.shouldCheckForAgentID = false;
 	// Wait until the serivce exists
@@ -752,7 +752,7 @@ int main(int argc, char* argv[]) {
 	if(requestLoadYamlFilenameServiceClient.call(loadYamlFromFilenameCall))
 	{
 		// Nothing to do in this case.
-		// The "isReadyTemplateControllerYamlCallback" function
+		// The "isReadyTestMotorsControllerYamlCallback" function
 		// will be called once the YAML file is loaded
 	}
 	else
@@ -788,7 +788,7 @@ int main(int argc, char* argv[]) {
 	constructNamespaceForCoordinator( m_coordID, namespace_to_coordinator );
 	ros::NodeHandle nodeHandle_to_coordinator(namespace_to_coordinator);
 	// And now we can instantiate the subscriber:
-	ros::Subscriber requestSetpointChangeSubscriber_from_coord = nodeHandle_to_coordinator.subscribe("TemplateControllerService/RequestSetpointChange", 1, requestSetpointChangeCallback);
+	ros::Subscriber requestSetpointChangeSubscriber_from_coord = nodeHandle_to_coordinator.subscribe("TestMotorsControllerService/RequestSetpointChange", 1, requestSetpointChangeCallback);
 
 	// Instantiate the class variable "m_setpointChangedPublisher" to
 	// be a "ros::Publisher". This variable advertises under the name
@@ -811,7 +811,7 @@ int main(int argc, char* argv[]) {
 
 
     // Instantiate the local variable "service" to be a "ros::ServiceServer" type
-    // variable that advertises the service called "TemplateController". This service has
+    // variable that advertises the service called "TestMotorsController". This service has
     // the input-output behaviour defined in the "Controller.srv" file (located in the
     // "srv" folder). This service, when called, is provided with the most recent
     // measurement of the Crazyflie and is expected to respond with the control action
@@ -832,7 +832,7 @@ int main(int argc, char* argv[]) {
 	//constructNamespaceForCoordinator( m_coordID, namespace_to_coordinator );
 	//ros::NodeHandle nodeHandle_to_coordinator(namespace_to_coordinator);
 	// And now we can instantiate the subscriber:
-	ros::Subscriber customCommandReceivedSubscriber_from_coord = nodeHandle_to_coordinator.subscribe("TemplateControllerService/CustomButtonPressed", 1, customCommandReceivedCallback);
+	ros::Subscriber customCommandReceivedSubscriber_from_coord = nodeHandle_to_coordinator.subscribe("TestMotorsControllerService/CustomButtonPressed", 1, customCommandReceivedCallback);
 
 
 

@@ -108,10 +108,10 @@ void EnableControllerLoadYamlBar::showHideController_tuning_changed()
     ui->load_yaml_tuning_button->setHidden( !(ui->load_yaml_tuning_button->isHidden()) );
 }
 
-void EnableControllerLoadYamlBar::showHideController_template_changed()
+void EnableControllerLoadYamlBar::showHideController_deepc_changed()
 {
-    ui->enable_template_button   ->setHidden( !(ui->enable_template_button->isHidden()) );
-    ui->load_yaml_template_button->setHidden( !(ui->load_yaml_template_button->isHidden()) );
+    ui->enable_deepc_button   ->setHidden( !(ui->enable_deepc_button->isHidden()) );
+    ui->load_yaml_deepc_button->setHidden( !(ui->load_yaml_deepc_button->isHidden()) );
 }
 
 
@@ -178,14 +178,14 @@ void EnableControllerLoadYamlBar::on_enable_tuning_button_clicked()
 #endif
 }
 
-void EnableControllerLoadYamlBar::on_enable_template_button_clicked()
+void EnableControllerLoadYamlBar::on_enable_deepc_button_clicked()
 {
 #ifdef CATKIN_MAKE
     dfall_pkg::IntWithHeader msg;
     fillIntMessageHeader(msg);
-    msg.data = CMD_USE_TEMPLATE_CONTROLLER;
+    msg.data = CMD_USE_DEEPC_CONTROLLER;
     this->commandPublisher.publish(msg);
-    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Enable Template Controller");
+    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Enable Deepc Controller");
 #endif
 }
 
@@ -261,7 +261,7 @@ void EnableControllerLoadYamlBar::on_load_yaml_tuning_button_clicked()
 #endif
 }
 
-void EnableControllerLoadYamlBar::on_load_yaml_template_button_clicked()
+void EnableControllerLoadYamlBar::on_load_yaml_deepc_button_clicked()
 {
 #ifdef CATKIN_MAKE
     // Create a local variable for the message
@@ -269,11 +269,11 @@ void EnableControllerLoadYamlBar::on_load_yaml_template_button_clicked()
     // Set for whom this applies to
     fillStringMessageHeader(yaml_filename_msg);
     // Specify the data
-    yaml_filename_msg.data = "TemplateController";
+    yaml_filename_msg.data = "DeepcController";
     // Send the message
     m_requestLoadYamlFilenamePublisher.publish(yaml_filename_msg);
     // Inform the user that the menu item was selected
-    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Load Template Controller YAML was clicked.");
+    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Load Deepc Controller YAML was clicked.");
 #endif
 }
 

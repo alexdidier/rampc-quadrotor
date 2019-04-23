@@ -25,7 +25,7 @@
 //
 //
 //    DESCRIPTION:
-//    The GUI for a Template Controller for students build from
+//    The GUI for a Deepc Controller for students build from
 //
 //    ----------------------------------------------------------------------------------
 
@@ -33,12 +33,12 @@
 
 
 
-#include "templatecontrollertab.h"
-#include "ui_templatecontrollertab.h"
+#include "deepccontrollertab.h"
+#include "ui_deepccontrollertab.h"
 
-TemplateControllerTab::TemplateControllerTab(QWidget *parent) :
+DeepcControllerTab::DeepcControllerTab(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::TemplateControllerTab)
+    ui(new Ui::DeepcControllerTab)
 {
     ui->setupUi(this);
 
@@ -55,7 +55,7 @@ TemplateControllerTab::TemplateControllerTab(QWidget *parent) :
 
     // Get the namespace of this node
     std::string this_namespace = ros::this_node::getNamespace();
-    ROS_INFO_STREAM("[TEMPLATE CONTROLLER TAB GUI] ros::this_node::getNamespace() =  " << this_namespace);
+    ROS_INFO_STREAM("[DEEPC CONTROLLER TAB GUI] ros::this_node::getNamespace() =  " << this_namespace);
 
     // Get the type and ID of this flying agent GUI
     bool isValid_type_and_ID = getTypeAndIDParameters();
@@ -63,7 +63,7 @@ TemplateControllerTab::TemplateControllerTab(QWidget *parent) :
     // Stall if the node IDs are not valid
     if ( !isValid_type_and_ID )
     {
-        ROS_ERROR("[TEMPLATE CONTROLLER TAB GUI] Node NOT FUNCTIONING :-)");
+        ROS_ERROR("[DEEPC CONTROLLER TAB GUI] Node NOT FUNCTIONING :-)");
         ros::spin();
     }
 
@@ -72,24 +72,24 @@ TemplateControllerTab::TemplateControllerTab(QWidget *parent) :
     ros::NodeHandle nodeHandle_for_this_gui(this_namespace);
 
     // CREATE THE REQUEST SETPOINT CHANGE PUBLISHER
-    requestSetpointChangePublisher = nodeHandle_for_this_gui.advertise<dfall_pkg::SetpointWithHeader>("TemplateControllerService/RequestSetpointChange", 1);
+    requestSetpointChangePublisher = nodeHandle_for_this_gui.advertise<dfall_pkg::SetpointWithHeader>("DeepcControllerService/RequestSetpointChange", 1);
 
     // SUBSCRIBE TO SETPOINT CHANGES
     // Only if this is an agent GUI
     if (m_type == TYPE_AGENT)
     {
-        setpointChangedSubscriber = nodeHandle_for_this_gui.subscribe("TemplateControllerService/SetpointChanged", 1, &TemplateControllerTab::setpointChangedCallback, this);
+        setpointChangedSubscriber = nodeHandle_for_this_gui.subscribe("DeepcControllerService/SetpointChanged", 1, &DeepcControllerTab::setpointChangedCallback, this);
     }
 
     // CREATE THE CUSTOM BUTTON PRESSED PUBLISHER
-    customButtonPublisher = nodeHandle_for_this_gui.advertise<dfall_pkg::CustomButtonWithHeader>("TemplateControllerService/CustomButtonPressed", 1);
+    customButtonPublisher = nodeHandle_for_this_gui.advertise<dfall_pkg::CustomButtonWithHeader>("DeepcControllerService/CustomButtonPressed", 1);
 
     // GET THE CURRENT SETPOINT
     // Only if this is an agent GUI
     if (m_type == TYPE_AGENT)
     {
         // > Request the current setpoint
-        ros::ServiceClient getCurrentSetpointServiceClient = nodeHandle_for_this_gui.serviceClient<dfall_pkg::GetSetpointService>("TemplateControllerService/GetCurrentSetpoint", false);
+        ros::ServiceClient getCurrentSetpointServiceClient = nodeHandle_for_this_gui.serviceClient<dfall_pkg::GetSetpointService>("DeepcControllerService/GetCurrentSetpoint", false);
         dfall_pkg::GetSetpointService getSetpointCall;
         getSetpointCall.request.data = 0;
         getCurrentSetpointServiceClient.waitForExistence(ros::Duration(2.0));
@@ -100,7 +100,7 @@ TemplateControllerTab::TemplateControllerTab(QWidget *parent) :
         else
         {
             // Inform the user
-            ROS_INFO("[TEMPLATE CONTROLLER GUI] Failed to get setpoint from controller using the \"GetCurrentSetpoint\" service");
+            ROS_INFO("[DEEPC CONTROLLER GUI] Failed to get setpoint from controller using the \"GetCurrentSetpoint\" service");
         }
     }
 
@@ -108,7 +108,7 @@ TemplateControllerTab::TemplateControllerTab(QWidget *parent) :
 
 }
 
-TemplateControllerTab::~TemplateControllerTab()
+DeepcControllerTab::~DeepcControllerTab()
 {
     delete ui;
 }
@@ -133,7 +133,7 @@ TemplateControllerTab::~TemplateControllerTab()
 
 
 #ifdef CATKIN_MAKE
-void TemplateControllerTab::publish_custom_button_command(int button_index , QLineEdit * lineEdit_pointer)
+void DeepcControllerTab::publish_custom_button_command(int button_index , QLineEdit * lineEdit_pointer)
 {
     // Initialise the message as a local variable
     dfall_pkg::CustomButtonWithHeader msg;
@@ -152,40 +152,40 @@ void TemplateControllerTab::publish_custom_button_command(int button_index , QLi
     // Publish the setpoint
     this->customButtonPublisher.publish(msg);
     // Inform the user about the change
-    ROS_INFO_STREAM("[TEMPLATE CONTROLLER TAB GUI] button " << button_index << " clicked.");
+    ROS_INFO_STREAM("[DEEPC CONTROLLER TAB GUI] button " << button_index << " clicked.");
 }
 #endif
 
 
-void TemplateControllerTab::on_custom_button_1_clicked()
+void DeepcControllerTab::on_custom_button_1_clicked()
 {
 #ifdef CATKIN_MAKE
     publish_custom_button_command(1,ui->lineEdit_custom_1);
 #endif
 }
 
-void TemplateControllerTab::on_custom_button_2_clicked()
+void DeepcControllerTab::on_custom_button_2_clicked()
 {
 #ifdef CATKIN_MAKE
     publish_custom_button_command(2,ui->lineEdit_custom_2);
 #endif
 }
 
-void TemplateControllerTab::on_custom_button_3_clicked()
+void DeepcControllerTab::on_custom_button_3_clicked()
 {
 #ifdef CATKIN_MAKE
     publish_custom_button_command(3,ui->lineEdit_custom_3);
 #endif
 }
 
-void TemplateControllerTab::on_custom_button_4_clicked()
+void DeepcControllerTab::on_custom_button_4_clicked()
 {
 #ifdef CATKIN_MAKE
     publish_custom_button_command(4,ui->lineEdit_custom_4);
 #endif
 }
 
-void TemplateControllerTab::on_custom_button_5_clicked()
+void DeepcControllerTab::on_custom_button_5_clicked()
 {
 #ifdef CATKIN_MAKE
     publish_custom_button_command(5,ui->lineEdit_custom_5);
@@ -201,7 +201,7 @@ void TemplateControllerTab::on_custom_button_5_clicked()
 //    ----------------------------------------------------------------------------------
 
 
-void TemplateControllerTab::setMeasuredPose(float x , float y , float z , float roll , float pitch , float yaw , bool occluded)
+void DeepcControllerTab::setMeasuredPose(float x , float y , float z , float roll , float pitch , float yaw , bool occluded)
 {
     if (!occluded)
     {
@@ -239,7 +239,7 @@ void TemplateControllerTab::setMeasuredPose(float x , float y , float z , float 
 }
 
 
-void TemplateControllerTab::poseDataUnavailableSlot()
+void DeepcControllerTab::poseDataUnavailableSlot()
 {
     ui->lineEdit_measured_x->setText("xx.xx");
     ui->lineEdit_measured_y->setText("xx.xx");
@@ -276,7 +276,7 @@ void TemplateControllerTab::poseDataUnavailableSlot()
 
 
 #ifdef CATKIN_MAKE
-void TemplateControllerTab::setpointChangedCallback(const dfall_pkg::SetpointWithHeader& newSetpoint)
+void DeepcControllerTab::setpointChangedCallback(const dfall_pkg::SetpointWithHeader& newSetpoint)
 {
     // INITIALISE A STRING VARIABLE FOR ADDING THE "+"
     QString qstr = "";
@@ -303,23 +303,23 @@ void TemplateControllerTab::setpointChangedCallback(const dfall_pkg::SetpointWit
     m_label_current_state_mutex.lock();
     switch (current_state)
     {
-        case TEMPLATE_CONTROLLER_STATE_STANDBY:
+        case DEEPC_CONTROLLER_STATE_STANDBY:
             ui->label_current_state->setText("Standby");
             break;
 
-        case TEMPLATE_CONTROLLER_STATE_NORMAL:
+        case DEEPC_CONTROLLER_STATE_NORMAL:
             ui->label_current_state->setText("Normal");
             break;
 
-        case TEMPLATE_CONTROLLER_STATE_EXCITATION:
+        case DEEPC_CONTROLLER_STATE_EXCITATION:
             ui->label_current_state->setText("Excitation");
             break;
 
-        case TEMPLATE_CONTROLLER_STATE_LANDING_MOVE_DOWN:
+        case DEEPC_CONTROLLER_STATE_LANDING_MOVE_DOWN:
             ui->label_current_state->setText("Landing, move down");
             break;
 
-        case TEMPLATE_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
+        case DEEPC_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
             ui->label_current_state->setText("Landing, spinning motors");
             break;
 
@@ -355,7 +355,7 @@ void TemplateControllerTab::setpointChangedCallback(const dfall_pkg::SetpointWit
 //    ----------------------------------------------------------------------------------
 
 
-void TemplateControllerTab::publishSetpoint(float x, float y, float z, float yaw_degrees)
+void DeepcControllerTab::publishSetpoint(float x, float y, float z, float yaw_degrees)
 {
 #ifdef CATKIN_MAKE
     // Initialise the message as a local variable
@@ -374,36 +374,36 @@ void TemplateControllerTab::publishSetpoint(float x, float y, float z, float yaw
     this->requestSetpointChangePublisher.publish(msg);
 
     // Inform the user about the change
-    ROS_INFO_STREAM("[TEMPLATE CONTROLLER GUI] Published request for setpoint change to: [" << x << ", "<< y << ", "<< z << ", "<< yaw_degrees << "]");
+    ROS_INFO_STREAM("[DEEPC CONTROLLER GUI] Published request for setpoint change to: [" << x << ", "<< y << ", "<< z << ", "<< yaw_degrees << "]");
 #else
     // TO ASSIST WITH DEBUGGING WHEN COMPILED AND RUN IN "QtCreator"
-    QTextStream(stdout) << "[TEMPLATE CONTROLLER GUI] would publish request for: [" << x << ", "<< y << ", "<< z << ", "<< yaw_degrees << "]";
+    QTextStream(stdout) << "[DEEPC CONTROLLER GUI] would publish request for: [" << x << ", "<< y << ", "<< z << ", "<< yaw_degrees << "]";
 #endif
 }
 
 
 
-void TemplateControllerTab::on_lineEdit_setpoint_new_x_returnPressed()
+void DeepcControllerTab::on_lineEdit_setpoint_new_x_returnPressed()
 {
     ui->set_setpoint_button->animateClick();
 }
 
-void TemplateControllerTab::on_lineEdit_setpoint_new_y_returnPressed()
+void DeepcControllerTab::on_lineEdit_setpoint_new_y_returnPressed()
 {
     ui->set_setpoint_button->animateClick();
 }
 
-void TemplateControllerTab::on_lineEdit_setpoint_new_z_returnPressed()
+void DeepcControllerTab::on_lineEdit_setpoint_new_z_returnPressed()
 {
     ui->set_setpoint_button->animateClick();
 }
 
-void TemplateControllerTab::on_lineEdit_setpoint_new_yaw_returnPressed()
+void DeepcControllerTab::on_lineEdit_setpoint_new_yaw_returnPressed()
 {
     ui->set_setpoint_button->animateClick();
 }
 
-void TemplateControllerTab::on_set_setpoint_button_clicked()
+void DeepcControllerTab::on_set_setpoint_button_clicked()
 {
 
     // Initialise local variable for each of (x,y,z,yaw)
@@ -435,7 +435,7 @@ void TemplateControllerTab::on_set_setpoint_button_clicked()
     publishSetpoint(x,y,z,yaw);
 }
 
-void TemplateControllerTab::on_default_setpoint_button_clicked()
+void DeepcControllerTab::on_default_setpoint_button_clicked()
 {
 #ifdef CATKIN_MAKE
     // Publish this as a blank setpoint with the
@@ -454,7 +454,7 @@ void TemplateControllerTab::on_default_setpoint_button_clicked()
     this->requestSetpointChangePublisher.publish(msg);
 
     // Inform the user about the change
-    ROS_INFO_STREAM("[TEMPLATE CONTROLLER GUI] Published request for setpoint change to the default");
+    ROS_INFO_STREAM("[DEEPC CONTROLLER GUI] Published request for setpoint change to the default");
 #endif
 }
 
@@ -471,7 +471,7 @@ void TemplateControllerTab::on_default_setpoint_button_clicked()
 //    ----------------------------------------------------------------------------------
 
 
-void TemplateControllerTab::setAgentIDsToCoordinate(QVector<int> agentIDs , bool shouldCoordinateAll)
+void DeepcControllerTab::setAgentIDsToCoordinate(QVector<int> agentIDs , bool shouldCoordinateAll)
 {
 
     // Lock the mutex
@@ -503,7 +503,7 @@ void TemplateControllerTab::setAgentIDsToCoordinate(QVector<int> agentIDs , bool
         ros::NodeHandle agent_base_nodeHandle(agent_base_namespace.toStdString());
 
         // // > Request the current setpoint
-        ros::ServiceClient getCurrentSetpointServiceClient = agent_base_nodeHandle.serviceClient<dfall_pkg::GetSetpointService>("TemplateControllerService/GetCurrentSetpoint", false);
+        ros::ServiceClient getCurrentSetpointServiceClient = agent_base_nodeHandle.serviceClient<dfall_pkg::GetSetpointService>("DeepcControllerService/GetCurrentSetpoint", false);
         dfall_pkg::GetSetpointService getSetpointCall;
         getSetpointCall.request.data = 0;
         getCurrentSetpointServiceClient.waitForExistence(ros::Duration(2.0));
@@ -514,12 +514,12 @@ void TemplateControllerTab::setAgentIDsToCoordinate(QVector<int> agentIDs , bool
         else
         {
             // Inform the user
-            ROS_INFO("[TEMPLATE CONTROLLER GUI] Failed to get setpoint from controller using the \"GetCurrentSetpoint\" service");
+            ROS_INFO("[DEEPC CONTROLLER GUI] Failed to get setpoint from controller using the \"GetCurrentSetpoint\" service");
         }
 
         // SUBSCRIBERS
         // > For receiving message that the setpoint was changed
-        setpointChangedSubscriber = agent_base_nodeHandle.subscribe("TemplateControllerService/SetpointChanged", 1, &TemplateControllerTab::setpointChangedCallback, this);
+        setpointChangedSubscriber = agent_base_nodeHandle.subscribe("DeepcControllerService/SetpointChanged", 1, &DeepcControllerTab::setpointChangedCallback, this);
     }
     else
     {
@@ -553,7 +553,7 @@ void TemplateControllerTab::setAgentIDsToCoordinate(QVector<int> agentIDs , bool
 
 #ifdef CATKIN_MAKE
 // Fill the header for a message
-void TemplateControllerTab::fillSetpointMessageHeader( dfall_pkg::SetpointWithHeader & msg )
+void DeepcControllerTab::fillSetpointMessageHeader( dfall_pkg::SetpointWithHeader & msg )
 {
     switch (m_type)
     {
@@ -584,7 +584,7 @@ void TemplateControllerTab::fillSetpointMessageHeader( dfall_pkg::SetpointWithHe
         default:
         {
             msg.shouldCheckForAgentID = true;
-            ROS_ERROR("[TEMPLATE CONTROLLER TAB GUI] The 'm_type' variable was not recognised.");
+            ROS_ERROR("[DEEPC CONTROLLER TAB GUI] The 'm_type' variable was not recognised.");
             break;
         }
     }
@@ -595,7 +595,7 @@ void TemplateControllerTab::fillSetpointMessageHeader( dfall_pkg::SetpointWithHe
 
 #ifdef CATKIN_MAKE
 // Fill the header for a message
-void TemplateControllerTab::fillCustomButtonMessageHeader( dfall_pkg::CustomButtonWithHeader & msg )
+void DeepcControllerTab::fillCustomButtonMessageHeader( dfall_pkg::CustomButtonWithHeader & msg )
 {
     switch (m_type)
     {
@@ -626,7 +626,7 @@ void TemplateControllerTab::fillCustomButtonMessageHeader( dfall_pkg::CustomButt
         default:
         {
             msg.shouldCheckForAgentID = true;
-            ROS_ERROR("[TEMPLATE CONTROLLER TAB GUI] The 'm_type' variable was not recognised.");
+            ROS_ERROR("[DEEPC CONTROLLER TAB GUI] The 'm_type' variable was not recognised.");
             break;
         }
     }
@@ -648,7 +648,7 @@ void TemplateControllerTab::fillCustomButtonMessageHeader( dfall_pkg::CustomButt
 
 
 #ifdef CATKIN_MAKE
-bool TemplateControllerTab::getTypeAndIDParameters()
+bool DeepcControllerTab::getTypeAndIDParameters()
 {
     // Initialise the return variable as success
     bool return_was_successful = true;
@@ -662,7 +662,7 @@ bool TemplateControllerTab::getTypeAndIDParameters()
     if(!nodeHandle.getParam("type", type_string))
     {
         // Throw an error if the agent ID parameter could not be obtained
-        ROS_ERROR("[TEMPLATE CONTROLLER TAB GUI] Failed to get type");
+        ROS_ERROR("[DEEPC CONTROLLER TAB GUI] Failed to get type");
     }
 
     // Set the "m_type" class variable based on this string loaded
@@ -679,7 +679,7 @@ bool TemplateControllerTab::getTypeAndIDParameters()
         // Set "m_type" to the value indicating that it is invlid
         m_type = TYPE_INVALID;
         return_was_successful = false;
-        ROS_ERROR("[TEMPLATE CONTROLLER TAB GUI] The 'type' parameter retrieved was not recognised.");
+        ROS_ERROR("[DEEPC CONTROLLER TAB GUI] The 'type' parameter retrieved was not recognised.");
     }
 
 
@@ -693,12 +693,12 @@ bool TemplateControllerTab::getTypeAndIDParameters()
             {
                 // Throw an error if the agent ID parameter could not be obtained
                 return_was_successful = false;
-                ROS_ERROR("[TEMPLATE CONTROLLER TAB GUI] Failed to get agentID");
+                ROS_ERROR("[DEEPC CONTROLLER TAB GUI] Failed to get agentID");
             }
             else
             {
                 // Inform the user about the type and ID
-                ROS_INFO_STREAM("[TEMPLATE CONTROLLER TAB GUI] Is of type AGENT with ID = " << m_ID);
+                ROS_INFO_STREAM("[DEEPC CONTROLLER TAB GUI] Is of type AGENT with ID = " << m_ID);
             }
             break;
         }
@@ -712,12 +712,12 @@ bool TemplateControllerTab::getTypeAndIDParameters()
             {
                 // Throw an error if the coord ID parameter could not be obtained
                 return_was_successful = false;
-                ROS_ERROR("[TEMPLATE CONTROLLER TAB GUI] Failed to get coordID");
+                ROS_ERROR("[DEEPC CONTROLLER TAB GUI] Failed to get coordID");
             }
             else
             {
                 // Inform the user about the type and ID
-                ROS_INFO_STREAM("[TEMPLATE CONTROLLER TAB GUI] Is of type COORDINATOR with ID = " << m_ID);
+                ROS_INFO_STREAM("[DEEPC CONTROLLER TAB GUI] Is of type COORDINATOR with ID = " << m_ID);
             }
             break;
         }
@@ -726,7 +726,7 @@ bool TemplateControllerTab::getTypeAndIDParameters()
         {
             // Throw an error if the type is not recognised
             return_was_successful = false;
-            ROS_ERROR("[TEMPLATE CONTROLLER TAB GUI] The 'm_type' variable was not recognised.");
+            ROS_ERROR("[DEEPC CONTROLLER TAB GUI] The 'm_type' variable was not recognised.");
             break;
         }
     }

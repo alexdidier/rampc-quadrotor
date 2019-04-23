@@ -25,7 +25,7 @@
 //
 //
 //    DESCRIPTION:
-//    A Template Controller for students build from
+//    A Deepc Controller for students build from
 //
 //    ----------------------------------------------------------------------------------
 
@@ -73,7 +73,7 @@
 
 // Include the shared definitions
 #include "nodes/Constants.h"
-#include "nodes/TemplateControllerConstants.h"
+#include "nodes/DeepcControllerConstants.h"
 
 // Include other classes
 #include "classes/GetParamtersAndNamespaces.h"
@@ -145,8 +145,8 @@ string m_namespace_to_coordinator_parameter_service;
 
 // STATE MACHINE VARIABLES
 
-// The current state of the Template Controller
-int m_current_state = TEMPLATE_CONTROLLER_STATE_STANDBY;
+// The current state of the Deepc Controller
+int m_current_state = DEEPC_CONTROLLER_STATE_STANDBY;
 
 // A flag for when the state is changed, this is used
 // so that a "one-off" operation can be performed
@@ -222,20 +222,18 @@ string yaml_yawRateExcSignalFile = "yawRate_exc_signal.csv";
 
 // Thrust excitation parameters
 float yaml_thrustExcAmp_in_grams = 0.0;
-float yaml_thrustExcFreq = 0.0;
 
 // Roll rate excitation parameters
 float yaml_rollRateExcAmp_in_deg = 0.0;
-float yaml_rollRateExcFreq = 0.0;
 
 // Pitch rate excitation parameters
 float yaml_pitchRateExcAmp_in_deg = 0.0;
-float yaml_pitchRateExcFreq = 0.0;
 
 // Yaw rate excitation parameters
 float yaml_yawRateExcAmp_in_deg = 0.0;
-float yaml_yawRateExcFreq = 0.0;
 
+// Excitation start time, in s. Used to collect steady-state data before excitation
+float yaml_exc_start_time = 0.0;
 
 // The weight of the Crazyflie in Newtons, i.e., mg
 float m_cf_weight_in_newtons = 0.0;
@@ -259,32 +257,29 @@ float m_thrustExcAmp_in_newtons = 0.0;
 MatrixXf m_thrustExcSignal;
 bool m_thrustExcEnable = false;
 int m_thrustExcIndex = 0;
-float m_thrustExcTime_in_seconds = 0.0;
 
 // Roll rate excitation variables
 float m_rollRateExcAmp_in_rad = 0.0;
 MatrixXf m_rollRateExcSignal;
 bool m_rollRateExcEnable = false;
 int m_rollRateExcIndex = 0;
-float m_rollRateExcTime_in_seconds = 0.0;
 
 // Pitch rate excitation variables
 float m_pitchRateExcAmp_in_rad = 0.0;
 MatrixXf m_pitchRateExcSignal;
 bool m_pitchRateExcEnable = false;
 int m_pitchRateExcIndex = 0;
-float m_pitchRateExcTime_in_seconds = 0.0;
 
 // Yaw rate excitation in variables
 float m_yawRateExcAmp_in_rad = 0.0;
 MatrixXf m_yawRateExcSignal;
 bool m_yawRateExcEnable = false;
 int m_yawRateExcIndex = 0;
-float m_yawRateExcTime_in_seconds = 0.0;
 
 // Data collection matrices
 MatrixXf m_u_data;
 MatrixXf m_y_data;
+int m_dataIndex = 0;
 bool m_write_data = false;
 
 // ROS Publisher for debugging variables
@@ -354,8 +349,8 @@ void publishCurrentSetpointAndState();
 void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived);
 
 // FOR LOADING THE YAML PARAMETERS
-void isReadyTemplateControllerYamlCallback(const IntWithHeader & msg);
-void fetchTemplateControllerYamlParameters(ros::NodeHandle& nodeHandle);
+void isReadyDeepcControllerYamlCallback(const IntWithHeader & msg);
+void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle);
 
 // READ/WRITE CSV FILES
 MatrixXf read_csv(const string & path);

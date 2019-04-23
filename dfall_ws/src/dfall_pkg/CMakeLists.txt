@@ -117,7 +117,7 @@ set(SRC_HDRS_QOBJECT_FLYING_AGENT_GUI
   ${FLYING_AGENT_GUI_LIB_PATH_INC}/rosNodeThread_for_flyingAgentGUI.h
   ${FLYING_AGENT_GUI_LIB_PATH_INC}/safecontrollertab.h
   ${FLYING_AGENT_GUI_LIB_PATH_INC}/studentcontrollertab.h
-  ${FLYING_AGENT_GUI_LIB_PATH_INC}/templatecontrollertab.h
+  ${FLYING_AGENT_GUI_LIB_PATH_INC}/deepccontrollertab.h
   ${FLYING_AGENT_GUI_LIB_PATH_INC}/topbanner.h
   ${FLYING_AGENT_GUI_LIB_PATH_INC}/tuningcontrollertab.h
   )
@@ -133,7 +133,7 @@ qt5_wrap_ui(UIS_HDRS_FLYING_AGENT_GUI
   ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/pickercontrollertab.ui
   ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/safecontrollertab.ui
   ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/studentcontrollertab.ui
-  ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/templatecontrollertab.ui
+  ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/deepccontrollertab.ui
   ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/topbanner.ui
   ${FLYING_AGENT_GUI_LIB_PATH_FORMS}/tuningcontrollertab.ui
   )
@@ -326,7 +326,7 @@ add_executable(TuningControllerService   src/nodes/TuningControllerService.cpp
                                          src/classes/GetParamtersAndNamespaces.cpp)
 add_executable(PickerControllerService   src/nodes/PickerControllerService.cpp
                                          src/classes/GetParamtersAndNamespaces.cpp)
-add_executable(TemplateControllerService src/nodes/TemplateControllerService.cpp
+add_executable(DeepcControllerService src/nodes/DeepcControllerService.cpp
                                          src/classes/GetParamtersAndNamespaces.cpp)
 add_executable(TestMotorsControllerService src/nodes/TestMotorsControllerService.cpp
                                          src/classes/GetParamtersAndNamespaces.cpp)
@@ -371,7 +371,7 @@ set(FLYING_AGENT_GUI_CPP_SOURCES         # compilation of sources
     ${FLYING_AGENT_GUI_LIB_PATH_SRC}/pickercontrollertab.cpp
     ${FLYING_AGENT_GUI_LIB_PATH_SRC}/safecontrollertab.cpp
     ${FLYING_AGENT_GUI_LIB_PATH_SRC}/studentcontrollertab.cpp
-    ${FLYING_AGENT_GUI_LIB_PATH_SRC}/templatecontrollertab.cpp
+    ${FLYING_AGENT_GUI_LIB_PATH_SRC}/deepccontrollertab.cpp
     ${FLYING_AGENT_GUI_LIB_PATH_SRC}/topbanner.cpp
     ${FLYING_AGENT_GUI_LIB_PATH_SRC}/tuningcontrollertab.cpp
     )
@@ -404,7 +404,7 @@ add_dependencies(MpcControllerService      dfall_pkg_generate_messages_cpp ${cat
 add_dependencies(RemoteControllerService   dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(TuningControllerService   dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(PickerControllerService   dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
-add_dependencies(TemplateControllerService dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(DeepcControllerService dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(TestMotorsControllerService dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(CentralManagerService     dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 add_dependencies(ParameterService          dfall_pkg_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
@@ -457,7 +457,7 @@ endif()
 target_link_libraries(RemoteControllerService   ${catkin_LIBRARIES})
 target_link_libraries(TuningControllerService   ${catkin_LIBRARIES})
 target_link_libraries(PickerControllerService   ${catkin_LIBRARIES})
-target_link_libraries(TemplateControllerService ${catkin_LIBRARIES})
+target_link_libraries(DeepcControllerService ${catkin_LIBRARIES})
 target_link_libraries(TestMotorsControllerService ${catkin_LIBRARIES})
 target_link_libraries(CentralManagerService     ${catkin_LIBRARIES})
 target_link_libraries(ParameterService          ${catkin_LIBRARIES})

@@ -4,7 +4,7 @@ defaultController:  "DefaultControllerService/DefaultController"
 studentController:  "StudentControllerService/StudentController"
 tuningController:   "TuningControllerService/TuningController"
 pickerController:   "PickerControllerService/PickerController"
-templateController: "TemplateControllerService/TemplateController"
+deepcController: "DeepcControllerService/DeepcController"
 
 testMotorsController: "TestMotorsControllerService/TestMotorsController"
 
@@ -14,7 +14,7 @@ defaultController_requestManoeuvre: "DefaultControllerService/RequestManoeuvre"
 
 # The name of the service advertised by the Default
 # Controller for requests manoeuvres to be performed
-templateController_requestManoeuvre: "TemplateControllerService/RequestManoeuvre"
+deepcController_requestManoeuvre: "DeepcControllerService/RequestManoeuvre"
 
 # Flag for whether to use angle for switching
 # to the Default Controller

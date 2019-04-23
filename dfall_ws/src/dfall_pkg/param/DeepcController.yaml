@@ -8,9 +8,9 @@ landing_move_down_end_height_threshold: 0.05
 landing_move_down_time_max: 2.0
 
 # The thrust for landing spin motors
-landing_spin_motors_thrust: 10000
+landing_spin_motors_thrust: 10000.0
 # The time for: landing spin motors
-landing_spin_motors_time: 1.5
+landing_spin_motors_time: 0
 
 # IMPORTANT NOTE: the times above should NOT be set
 # to zero because this will cause a divide by zero
@@ -21,11 +21,11 @@ landing_spin_motors_time: 1.5
 # PARAMTERS THAT ARE STANDARD FOR A "CONTROLLER SERVICE"
 
 # Mass of the crazyflie, in grams
-mass : 28
+mass : 28.0
 
 # Frequency of the controller, in hertz
 #control_frequency : 200
-control_frequency : 25
+control_frequency : 25.0
 
 # Quadratic motor regression equation (a0, a1, a2)
 motorPoly : [5.484560e-4, 1.032633e-6, 2.130295e-11]
@@ -36,7 +36,7 @@ command_sixteenbit_max : 60000
 
 # The default setpoint, the ordering is (x,y,z,yaw),
 # with unit [meters,meters,meters,radians]
-default_setpoint : [0.0, 0.0, 0.2, 0.0]
+default_setpoint : [0.0, 0.0, 0.4, 0.0]
 
 # Boolean indiciating whether the "Debug Message" of this agent should be published or not
 shouldPublishDebugMessage : false
@@ -55,28 +55,19 @@ gainMatrixPitchRate                 :  [ 2.79, 0.00, 0.00, 1.83, 0.00, 0.00, 0.0
 gainMatrixYawRate                   :  [ 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.97]
 
 # Thrust excitation magnitude, in grams
-thrustExcAmp : 10
-
-# Thrust excitation frequency, in hertz
-thrustExcFreq: 0.1
+thrustExcAmp : 10.0
 
 # Roll rate excitation magnitude, in deg/s
-rollRateExcAmp : 60
-
-# Roll rate ecitation frequency, in hertz
-rollRateExcFreq: 0.1
+rollRateExcAmp : 60.0
 
 # Pitch rate excitation magnitude, in deg/s
-pitchRateExcAmp : 60
-
-# Pitch rate excitation frequency, in hertz
-pitchRateExcFreq: 0.1
+pitchRateExcAmp : 60.0
 
 # Yaw rate excitation magnitude, in deg/s
-yawRateExcAmp : 60
+yawRateExcAmp : 60.0
 
-# Yaw rate excitation frequency, in hertz
-yawRateExcFreq : 0.1
+# Excitation start time, in s. Used to collect steady-state data before excitation
+exc_start_time : 5.0
 
 # CSV data folder location, relative to HOME path
 dataFolder : /work/D-FaLL-System/DeePC_data/

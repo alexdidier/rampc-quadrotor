@@ -233,5 +233,5 @@ bool getCurrentSetpointCallback(GetSetpointService::Request &request, GetSetpoin
 void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived);
 
 // FOR LOADING THE YAML PARAMETERS
-void isReadyTemplateControllerYamlCallback(const IntWithHeader & msg);
-void fetchTemplateControllerYamlParameters(ros::NodeHandle& nodeHandle);
+void isReadyTestMotorsControllerYamlCallback(const IntWithHeader & msg);
+void fetchTestMotorsControllerYamlParameters(ros::NodeHandle& nodeHandle);

@@ -28,7 +28,7 @@ SOURCES += src/main.cpp\
     src/studentcontrollertab.cpp \
     src/defaultcontrollertab.cpp \
     src/pickercontrollertab.cpp \
-    src/templatecontrollertab.cpp \
+    src/deepccontrollertab.cpp \
     src/tuningcontrollertab.cpp \
 
 
@@ -43,7 +43,7 @@ HEADERS  += include/mainwindow.h \
     include/studentcontrollertab.h \
     include/defaultcontrollertab.h \
     include/pickercontrollertab.h \
-    include/templatecontrollertab.h \
+    include/deepccontrollertab.h \
     include/tuningcontrollertab.h \
     include/Constants_for_Qt_compile.h \
 
@@ -60,7 +60,7 @@ FORMS    += forms/mainwindow.ui \
     forms/studentcontrollertab.ui \
     forms/defaultcontrollertab.ui \
     forms/pickercontrollertab.ui \
-    forms/templatecontrollertab.ui \
+    forms/deepccontrollertab.ui \
     forms/tuningcontrollertab.ui \
 
 

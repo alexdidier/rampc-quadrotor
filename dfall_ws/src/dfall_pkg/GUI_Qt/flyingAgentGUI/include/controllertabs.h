@@ -93,7 +93,7 @@ public:
     void showHideController_student_changed();
     void showHideController_picker_changed();
     void showHideController_tuning_changed();
-    void showHideController_template_changed();
+    void showHideController_deepc_changed();
 
 
 public slots:

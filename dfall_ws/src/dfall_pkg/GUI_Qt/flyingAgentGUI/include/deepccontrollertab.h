@@ -25,7 +25,7 @@
 //
 //
 //    DESCRIPTION:
-//    The GUI for a Template Controller for students build from
+//    The GUI for a Deepc Controller for students build from
 //
 //    ----------------------------------------------------------------------------------
 
@@ -33,8 +33,8 @@
 
 
 
-#ifndef TEMPLATECONTROLLERTAB_H
-#define TEMPLATECONTROLLERTAB_H
+#ifndef DEEPCCONTROLLERTAB_H
+#define DEEPCCONTROLLERTAB_H
 
 #include <QWidget>
 #include <QMutex>
@@ -62,7 +62,7 @@
 
 // Include the shared definitions
 #include "nodes/Constants.h"
-#include "nodes/TemplateControllerConstants.h"
+#include "nodes/DeepcControllerConstants.h"
 
 // SPECIFY THE PACKAGE NAMESPACE
 //using namespace dfall_pkg;
@@ -78,16 +78,16 @@
 
 
 namespace Ui {
-class TemplateControllerTab;
+class DeepcControllerTab;
 }
 
-class TemplateControllerTab : public QWidget
+class DeepcControllerTab : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit TemplateControllerTab(QWidget *parent = 0);
-    ~TemplateControllerTab();
+    explicit DeepcControllerTab(QWidget *parent = 0);
+    ~DeepcControllerTab();
 
 
 
@@ -118,7 +118,7 @@ private slots:
 
 
 private:
-    Ui::TemplateControllerTab *ui;
+    Ui::DeepcControllerTab *ui;
 
     // --------------------------------------------------- //
     // PRIVATE VARIABLES
@@ -177,4 +177,4 @@ private:
 
 };
 
-#endif // TEMPLATECONTROLLERTAB_H
+#endif // DEEPCCONTROLLERTAB_H

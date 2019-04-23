@@ -243,11 +243,11 @@ void MainWindow::on_action_showHideController_tuning_changed()
     ui->customWidget_controller_tabs->showHideController_tuning_changed();
 }
 
-void MainWindow::on_action_showHideController_template_changed()
+void MainWindow::on_action_showHideController_deepc_changed()
 {
     // Notify the UI elements of this change
-    ui->customWidget_enableControllerLoadYamlBar->showHideController_template_changed();
-    ui->customWidget_controller_tabs->showHideController_template_changed();
+    ui->customWidget_enableControllerLoadYamlBar->showHideController_deepc_changed();
+    ui->customWidget_controller_tabs->showHideController_deepc_changed();
 }
 
 

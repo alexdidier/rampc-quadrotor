@@ -92,12 +92,12 @@
 			>
 		</node>
 
-		<!-- TEMPLATE CONTROLLER -->
+		<!-- DEEPC CONTROLLER -->
 		<node
 			pkg    = "dfall_pkg"
-			name   = "TemplateControllerService"
+			name   = "DeepcControllerService"
 			output = "screen"
-			type   = "TemplateControllerService"
+			type   = "DeepcControllerService"
 			>
 		</node>
 
@@ -151,8 +151,8 @@
 			/>
 			<rosparam
 				command = "load"
-				file    = "$(find dfall_pkg)/param/TemplateController.yaml"
-				ns      = "TemplateController"
+				file    = "$(find dfall_pkg)/param/DeepcController.yaml"
+				ns      = "DeepcController"
 			/>
 		</node>
 

@@ -73,13 +73,13 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="template_tab">
+     <widget class="QWidget" name="deepc_tab">
       <attribute name="title">
-       <string>Template</string>
+       <string>Deepc</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_7">
        <item row="0" column="0">
-        <widget class="TemplateControllerTab" name="template_controller_tab_widget" native="true"/>
+        <widget class="DeepcControllerTab" name="deepc_controller_tab_widget" native="true"/>
        </item>
       </layout>
      </widget>
@@ -113,9 +113,9 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>TemplateControllerTab</class>
+   <class>DeepcControllerTab</class>
    <extends>QWidget</extends>
-   <header>templatecontrollertab.h</header>
+   <header>deepccontrollertab.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

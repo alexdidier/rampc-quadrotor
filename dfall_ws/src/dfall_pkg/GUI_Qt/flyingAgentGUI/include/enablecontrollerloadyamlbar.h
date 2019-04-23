@@ -92,7 +92,7 @@ public:
     void showHideController_student_changed();
     void showHideController_picker_changed();
     void showHideController_tuning_changed();
-    void showHideController_template_changed();
+    void showHideController_deepc_changed();
 
     void testMotors_triggered();
 
@@ -108,14 +108,14 @@ private slots:
     void on_enable_student_button_clicked();
     void on_enable_picker_button_clicked();
     void on_enable_tuning_button_clicked();
-    void on_enable_template_button_clicked();
+    void on_enable_deepc_button_clicked();
 
     // LOAD YAML BUTTONS ON-CLICK CALLBACK
     void on_load_yaml_default_button_clicked();
     void on_load_yaml_student_button_clicked();
     void on_load_yaml_picker_button_clicked();
     void on_load_yaml_tuning_button_clicked();
-    void on_load_yaml_template_button_clicked();
+    void on_load_yaml_deepc_button_clicked();
 
 
 private:

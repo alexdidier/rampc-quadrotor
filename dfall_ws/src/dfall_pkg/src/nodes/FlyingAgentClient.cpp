@@ -596,21 +596,21 @@ void requestChangeFlyingStateToTakeOff()
 				// Update the class variable
 				m_flying_state = STATE_FLYING;
 
-				// Notify Template Controller of take-Off request. Used for initialization
-				if(getInstantController() == TEMPLATE_CONTROLLER)
+				// Notify Deepc Controller of take-Off request. Used for initialization
+				if(getInstantController() == DEEPC_CONTROLLER)
 				{
-					// Call the service offered by the template
+					// Call the service offered by the deepc
 					// controller for take-off acknowledgement
 					dfall_pkg::IntIntService requestManoeurveCall;
-					requestManoeurveCall.request.data = TEMPLATE_CONTROLLER_REQUEST_TAKEOFF;
-					if(m_templateController_requestManoeuvre.call(requestManoeurveCall))
+					requestManoeurveCall.request.data = DEEPC_CONTROLLER_REQUEST_TAKEOFF;
+					if(m_deepcController_requestManoeuvre.call(requestManoeurveCall))
 					{
-						ROS_INFO_STREAM("[FLYING AGENT CLIENT] Notified Template controller of take-off.");
+						ROS_INFO_STREAM("[FLYING AGENT CLIENT] Notified Deepc controller of take-off.");
 					}
 					else
 					{
 						// Inform the user
-						ROS_INFO("[FLYING AGENT CLIENT] Failed to notify Template controller of take-off.");
+						ROS_INFO("[FLYING AGENT CLIENT] Failed to notify Deepc controller of take-off.");
 					}
 				}
 			}
@@ -683,16 +683,16 @@ void requestChangeFlyingStateToLand()
 				m_flying_state = STATE_MOTORS_OFF;
 			}
 		}
-		// Otherwise, Template Controller has landing manoeuvre
+		// Otherwise, Deepc Controller has landing manoeuvre
 		else
 		{
-			if(getInstantController() == TEMPLATE_CONTROLLER)
+			if(getInstantController() == DEEPC_CONTROLLER)
 			{
-				// Call the service offered by the template
+				// Call the service offered by the deepc
 				// controller for how long a landing will take
 				dfall_pkg::IntIntService requestManoeurveCall;
-				requestManoeurveCall.request.data = TEMPLATE_CONTROLLER_REQUEST_LANDING;
-				if(m_templateController_requestManoeuvre.call(requestManoeurveCall))
+				requestManoeurveCall.request.data = DEEPC_CONTROLLER_REQUEST_LANDING;
+				if(m_deepcController_requestManoeuvre.call(requestManoeurveCall))
 				{
 					// Extract the duration
 					float land_duration = float(requestManoeurveCall.response.data) / 1000.0;
@@ -711,7 +711,7 @@ void requestChangeFlyingStateToLand()
 				else
 				{
 					// Inform the user
-					ROS_INFO("[FLYING AGENT CLIENT] Failed to get land duration from Template controller. Switching to MOTORS-OFF.");
+					ROS_INFO("[FLYING AGENT CLIENT] Failed to get land duration from Deepc controller. Switching to MOTORS-OFF.");
 					// Update the class variable
 					m_flying_state = STATE_MOTORS_OFF;
 				}
@@ -840,12 +840,12 @@ void defaultControllerManoeuvreCompleteCallback(const IntWithHeader & msg)
 }
 
 
-void templateControllerManoeuvreCompleteCallback(const IntWithHeader & msg)
+void deepcControllerManoeuvreCompleteCallback(const IntWithHeader & msg)
 {
 	// Switch between the cases
 	switch (msg.data)
 	{
-		case TEMPLATE_CONTROLLER_LANDING_COMPLETE:
+		case DEEPC_CONTROLLER_LANDING_COMPLETE:
 		{
 			// Only change to flying if still in the take-off state
 			if (m_flying_state == STATE_LAND)
@@ -919,8 +919,8 @@ void setInstantController(int controller)
         case PICKER_CONTROLLER:
             m_instant_controller_service_client = &m_pickerController;
             break;
-        case TEMPLATE_CONTROLLER:
-            m_instant_controller_service_client = &m_templateController;
+        case DEEPC_CONTROLLER:
+            m_instant_controller_service_client = &m_deepcController;
             break;
         case TESTMOTORS_CONTROLLER:
             m_instant_controller_service_client = &m_defaultController;
@@ -1057,9 +1057,9 @@ void flyingStateRequestCallback(const IntWithHeader & msg) {
                 setControllerNominallySelected(PICKER_CONTROLLER);
                 break;
 
-            case CMD_USE_TEMPLATE_CONTROLLER:
-                ROS_INFO("[FLYING AGENT CLIENT] USE_TEMPLATE_CONTROLLER Command received");
-                setControllerNominallySelected(TEMPLATE_CONTROLLER);
+            case CMD_USE_DEEPC_CONTROLLER:
+                ROS_INFO("[FLYING AGENT CLIENT] USE_DEEPC_CONTROLLER Command received");
+                setControllerNominallySelected(DEEPC_CONTROLLER);
                 break;
 
 
@@ -1353,7 +1353,7 @@ void timerCallback_for_createAllcontrollerServiceClients(const ros::TimerEvent&)
     createControllerServiceClientFromParameterName( "studentController"  , m_studentController );
     createControllerServiceClientFromParameterName( "tuningController"   , m_tuningController );
     createControllerServiceClientFromParameterName( "pickerController"   , m_pickerController );
-    createControllerServiceClientFromParameterName( "templateController" , m_templateController );
+    createControllerServiceClientFromParameterName( "deepcController" , m_deepcController );
 
     createControllerServiceClientFromParameterName( "testMotorsController" , m_testMotorsController );
 
@@ -1361,9 +1361,9 @@ void timerCallback_for_createAllcontrollerServiceClients(const ros::TimerEvent&)
     // CONTROLLER TO PERFORM MANOEUVRES
     createIntIntServiceClientFromParameterName( "defaultController_requestManoeuvre" , m_defaultController_requestManoeuvre );
 
-    // INITIALISE THE SERVICE FOR REQUESTING THE TEMPLATE
+    // INITIALISE THE SERVICE FOR REQUESTING THE DEEPC
     // CONTROLLER TO PERFORM MANOEUVRES
-    createIntIntServiceClientFromParameterName( "templateController_requestManoeuvre" , m_templateController_requestManoeuvre );
+    createIntIntServiceClientFromParameterName( "deepcController_requestManoeuvre" , m_deepcController_requestManoeuvre );
 
     // Check that at least the default controller is available
     // > Setting the flag accordingly
@@ -1733,11 +1733,11 @@ int main(int argc, char* argv[])
 	ros::NodeHandle nodeHandle_to_default_controller(namespace_to_default_contoller);
 	ros::Subscriber DefaultManoeuvreCompleteSubscriber = nodeHandle_to_default_controller.subscribe("ManoeuvreComplete", 1, defaultControllerManoeuvreCompleteCallback);
 
-	// SUBSCRIBER FOR TEMPLATE CONTROLLER
+	// SUBSCRIBER FOR DEEPC CONTROLLER
 	// Menoeuvres
-	std::string namespace_to_template_contoller = m_namespace + "/TemplateControllerService";
-	ros::NodeHandle nodeHandle_to_template_controller(namespace_to_template_contoller);
-	ros::Subscriber TemplateManoeuvreCompleteSubscriber = nodeHandle_to_template_controller.subscribe("ManoeuvreComplete", 1, templateControllerManoeuvreCompleteCallback);
+	std::string namespace_to_deepc_controller = m_namespace + "/DeepcControllerService";
+	ros::NodeHandle nodeHandle_to_deepc_controller(namespace_to_deepc_controller);
+	ros::Subscriber DeepcManoeuvreCompleteSubscriber = nodeHandle_to_deepc_controller.subscribe("ManoeuvreComplete", 1, deepcControllerManoeuvreCompleteCallback);
 
 	// SERVICE SERVER FOR OTHERS TO GET THE CURRENT FLYING STATE
 	// Advertise the service that return the "m_flying_state"

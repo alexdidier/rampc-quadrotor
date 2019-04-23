@@ -79,7 +79,7 @@ ControllerTabs::ControllerTabs(QWidget *parent) :
 
     QObject::connect(
             this , &ControllerTabs::measuredPoseValueChanged ,
-            ui->template_controller_tab_widget , &TemplateControllerTab::setMeasuredPose
+            ui->deepc_controller_tab_widget , &DeepcControllerTab::setMeasuredPose
         );
 
 
@@ -108,7 +108,7 @@ ControllerTabs::ControllerTabs(QWidget *parent) :
 
     QObject::connect(
             this , &ControllerTabs::poseDataUnavailableSignal ,
-            ui->template_controller_tab_widget , &TemplateControllerTab::poseDataUnavailableSlot
+            ui->deepc_controller_tab_widget , &DeepcControllerTab::poseDataUnavailableSlot
         );
 
 
@@ -139,7 +139,7 @@ ControllerTabs::ControllerTabs(QWidget *parent) :
 
     QObject::connect(
             this , &ControllerTabs::agentIDsToCoordinateChanged ,
-            ui->template_controller_tab_widget , &TemplateControllerTab::setAgentIDsToCoordinate
+            ui->deepc_controller_tab_widget , &DeepcControllerTab::setAgentIDsToCoordinate
         );
 
     
@@ -247,9 +247,9 @@ void ControllerTabs::showHideController_tuning_changed()
     showHideController_toggle("Tuning",ui->tuning_tab);
 }
 
-void ControllerTabs::showHideController_template_changed()
+void ControllerTabs::showHideController_deepc_changed()
 {
-    showHideController_toggle("Template",ui->template_tab);
+    showHideController_toggle("Deepc",ui->deepc_tab);
 }
 
 
@@ -432,9 +432,9 @@ void ControllerTabs::setControllerEnabled(int new_controller)
             setTextColourOfTabLabel( m_tab_text_colour_highlight , ui->picker_tab );
             break;
         }
-        case TEMPLATE_CONTROLLER:
+        case DEEPC_CONTROLLER:
         {
-            setTextColourOfTabLabel( m_tab_text_colour_highlight , ui->template_tab );
+            setTextColourOfTabLabel( m_tab_text_colour_highlight , ui->deepc_tab );
             break;
         }
         default:
@@ -452,7 +452,7 @@ void ControllerTabs::setAllTabLabelsToNormalColouring()
     setTextColourOfTabLabel( m_tab_text_colour_normal , ui->student_tab );
     setTextColourOfTabLabel( m_tab_text_colour_normal , ui->picker_tab );
     setTextColourOfTabLabel( m_tab_text_colour_normal , ui->tuning_tab );
-    setTextColourOfTabLabel( m_tab_text_colour_normal , ui->template_tab );
+    setTextColourOfTabLabel( m_tab_text_colour_normal , ui->deepc_tab );
 }
 
 void ControllerTabs::setTextColourOfTabLabel(QColor color , QWidget * tab_widget)
