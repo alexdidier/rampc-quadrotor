@@ -58,10 +58,10 @@ gainMatrixYawRate                   :  [ 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.0
 thrustExcAmp : 10.0
 
 # Roll rate excitation magnitude, in deg/s
-rollRateExcAmp : 60.0
+rollRateExcAmp : 10.0
 
 # Pitch rate excitation magnitude, in deg/s
-pitchRateExcAmp : 60.0
+pitchRateExcAmp : 10.0
 
 # Yaw rate excitation magnitude, in deg/s
 yawRateExcAmp : 60.0

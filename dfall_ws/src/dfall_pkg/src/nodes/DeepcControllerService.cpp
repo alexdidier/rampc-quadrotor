@@ -1324,7 +1324,9 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
                         m_thrustExcEnable = true;
                         m_rollRateExcEnable = true;
                         m_pitchRateExcEnable = true;
-                        m_yawRateExcEnable = true;
+                        // If any non-zero value given, do not excite yaw. Allows selecting whether to excite yaw or not
+                        if (float_data == 0.0)
+                        	m_yawRateExcEnable = true;
                         break;
 
                     case DEEPC_CONTROLLER_STATE_EXCITATION:
