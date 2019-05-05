@@ -729,7 +729,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>Excite Roll Rate</string>
+        <string>Setup Optimization</string>
        </property>
       </widget>
      </item>
@@ -742,7 +742,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>Excite Pitch Rate</string>
+        <string>DeePC</string>
        </property>
       </widget>
      </item>
@@ -755,7 +755,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>Excite Thrust</string>
+        <string>Excitation</string>
        </property>
       </widget>
      </item>
@@ -846,7 +846,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>Excite Yaw Rate</string>
+        <string>Spare</string>
        </property>
       </widget>
      </item>
@@ -891,7 +891,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>Excite All</string>
+        <string>Spare</string>
        </property>
       </widget>
      </item>

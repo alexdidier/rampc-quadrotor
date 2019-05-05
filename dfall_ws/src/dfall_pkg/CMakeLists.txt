@@ -288,7 +288,28 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   include
   include/nodes
+  $ENV{GUROBI_HOME}/include
 )
+
+# Find Gurobi libraries
+# Clear cache to force finding each time
+unset(GUROBI_LIBRARY CACHE)
+unset(GUROBI_LIBRARY_CXX CACHE)
+
+# Gurobi C library
+find_library(GUROBI_LIBRARY
+  NAMES libgurobi81.so
+  PATHS "$ENV{GUROBI_HOME}/lib"
+  )
+
+# Gurobi C++ library
+find_library(GUROBI_LIBRARY_CXX
+  NAMES libgurobi_c++.a
+  PATHS "$ENV{GUROBI_HOME}/lib"
+  )
+
+# Must specify C++ library first
+set(GUROBI_LIBRARIES "${GUROBI_LIBRARY_CXX};${GUROBI_LIBRARY}" )
 
 ## Declare a C++ library
 ##add_library(${PROJECT_NAME}
@@ -457,7 +478,7 @@ endif()
 target_link_libraries(RemoteControllerService   ${catkin_LIBRARIES})
 target_link_libraries(TuningControllerService   ${catkin_LIBRARIES})
 target_link_libraries(PickerControllerService   ${catkin_LIBRARIES})
-target_link_libraries(DeepcControllerService ${catkin_LIBRARIES})
+target_link_libraries(DeepcControllerService    ${catkin_LIBRARIES} ${GUROBI_LIBRARIES})
 target_link_libraries(TestMotorsControllerService ${catkin_LIBRARIES})
 target_link_libraries(CentralManagerService     ${catkin_LIBRARIES})
 target_link_libraries(ParameterService          ${catkin_LIBRARIES})
@@ -474,7 +495,6 @@ target_link_libraries(SystemConfigGUI ${catkin_LIBRARIES})
 # Flying Agent GUI -- link libraries
 target_link_libraries(FlyingAgentGUI Qt5::Widgets) # GUI -- let FlyingAgentGUI have acesss to Qt stuff
 target_link_libraries(FlyingAgentGUI ${catkin_LIBRARIES})
-
 
 
 #############

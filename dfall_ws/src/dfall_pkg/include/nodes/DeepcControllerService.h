@@ -85,7 +85,12 @@
 // Include Eigen for matrix operations
 #include "Eigen/Dense"
 
+// Include Gurobi optimization platform
+#include "gurobi_c++.h"
 
+// Includes required for threading
+#include <mutex>
+#include <boost/thread/thread.hpp>
 
 // Namespacing the package
 using namespace dfall_pkg;
@@ -208,13 +213,16 @@ vector<float> yaml_gainMatrixYawRate                 =  { 0.00, 0.00, 0.00, 0.00
 // HOME path used for file read/write
 const string HOME = getenv("HOME");
 
-// CSV data folder location, relative to HOME path
-string yaml_dataFolder = "/work/D-FaLL-System/DeePC_data/";
+// Data folder location, relative to HOME path
+string yaml_dataFolder = "/work/D-FaLL-System/Deepc_data/";
 
 // CSV output data folder location, relative to dataFolder
 string yaml_outputFolder = "output/";
 
-// CSV data files location, relative to dataFolder
+// Log files folder location, relative to dataFolder
+string yaml_logFolder = "log/";
+
+// CSV input data files location, relative to dataFolder
 string yaml_thrustExcSignalFile = "thrust_exc_signal.csv";
 string yaml_rollRateExcSignalFile = "rollRate_exc_signal.csv";
 string yaml_pitchRateExcSignalFile = "pitchRate_exc_signal.csv";
@@ -235,6 +243,10 @@ float yaml_yawRateExcAmp_in_deg = 0.0;
 // Excitation start time, in s. Used to collect steady-state data before excitation
 float yaml_exc_start_time = 0.0;
 
+// Gurobi optimization parameters
+bool yaml_grb_LogToFile = false;
+bool yaml_grb_LogToConsole = false;
+
 // The weight of the Crazyflie in Newtons, i.e., mg
 float m_cf_weight_in_newtons = 0.0;
 
@@ -249,8 +261,11 @@ float  m_setpoint[4] = {0.0,0.0,0.4,0.0};
 // differs from the setpoint when landing
 float m_setpoint_for_controller[4] = {0.0,0.0,0.4,0.0};
 
-// CSV absolute output data folder location
-string m_outputFolder = HOME + "/work/D-FaLL-System/DeePC_data/output/";
+// Absolute CSV output data folder location
+string m_outputFolder = HOME + yaml_dataFolder + yaml_outputFolder;
+
+// Absolute log files folder location
+string m_logFolder = HOME + yaml_dataFolder + yaml_logFolder;
 
 // Thrust excitation variables
 float m_thrustExcAmp_in_newtons = 0.0;
@@ -281,6 +296,20 @@ MatrixXf m_u_data;
 MatrixXf m_y_data;
 int m_dataIndex = 0;
 bool m_write_data = false;
+
+// Gurobi optimization variables
+GRBEnv m_grb_env;
+GRBModel m_grb_model = GRBModel(m_grb_env);
+GRBVar m_grb_x;
+GRBVar m_grb_y;
+GRBVar m_grb_z;
+bool m_grb_setup_success = false;
+
+// Variables for thread management
+mutex m_Deepc_mutex;
+mutex m_Deepc_model_mutex;
+// Flag that triggers solving optimization by dedicated thread
+bool m_solveDeepc = false;
 
 // ROS Publisher for debugging variables
 ros::Publisher m_debugPublisher;
@@ -320,8 +349,9 @@ ros::Publisher m_manoeuvreCompletePublisher;
 // CONTROLLER COMPUTATIONS
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response);
 void computeResponse_for_standby(Controller::Request &request, Controller::Response &response);
-void computeResponse_for_normal(Controller::Request &request, Controller::Response &response);
+void computeResponse_for_LQR(Controller::Request &request, Controller::Response &response);
 void computeResponse_for_excitation(Controller::Request &request, Controller::Response &response);
+void computeResponse_for_Deepc(Controller::Request &request, Controller::Response &response);
 void computeResponse_for_landing_move_down(Controller::Request &request, Controller::Response &response);
 void computeResponse_for_landing_spin_motors(Controller::Request &request, Controller::Response &response);
 void calculateControlOutput_viaLQR(Controller::Request &request, control_output &output);
@@ -347,6 +377,9 @@ void publishCurrentSetpointAndState();
 
 // CUSTOM COMMAND RECEIVED CALLBACK
 void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived);
+void processCustomButton1(float float_data, int int_data, bool* bool_data);
+bool processCustomButton2(float float_data, int int_data, bool* bool_data);
+void processCustomButton3(float float_data, int int_data, bool* bool_data);
 
 // FOR LOADING THE YAML PARAMETERS
 void isReadyDeepcControllerYamlCallback(const IntWithHeader & msg);

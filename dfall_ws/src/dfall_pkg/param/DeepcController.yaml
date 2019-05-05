@@ -69,8 +69,8 @@ yawRateExcAmp : 60.0
 # Excitation start time, in s. Used to collect steady-state data before excitation
 exc_start_time : 5.0
 
-# CSV data folder location, relative to HOME path
-dataFolder : /work/D-FaLL-System/DeePC_data/
+# Data folder location, relative to HOME path
+dataFolder : /work/D-FaLL-System/Deepc_data/
 
 # CSV data files location, relative to dataFolder
 outputFolder : output/
@@ -78,3 +78,10 @@ thrustExcSignalFile : thrust_exc_signal.csv
 rollRateExcSignalFile : rollRate_exc_signal.csv
 pitchRateExcSignalFile : pitchRate_exc_signal.csv
 yawRateExcSignalFile : yawRate_exc_signal.csv
+
+# Log files folder location, relative to dataFolder
+logFolder : log/
+
+# Gurobi optimization parameters
+grb_LogToFile : false
+grb_LogToConsole : false

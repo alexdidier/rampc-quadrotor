@@ -85,9 +85,9 @@ bool requestManoeuvreCallback(IntIntService::Request &request, IntIntService::Re
 		case DEEPC_CONTROLLER_REQUEST_TAKEOFF:
 		{
 			// Inform the user
-			ROS_INFO("[DEEPC CONTROLLER] Received request to take off. Switch to state: normal");
+			ROS_INFO("[DEEPC CONTROLLER] Received request to take off. Switch to state: LQR");
 			// Update the state accordingly
-			m_current_state = DEEPC_CONTROLLER_STATE_NORMAL;
+			m_current_state = DEEPC_CONTROLLER_STATE_LQR;
 			m_current_state_changed = true;
 			// Provide dummy response
 			response.data = 0;
@@ -256,12 +256,16 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	// Switch between the possible states
 	switch (m_current_state)
 	{
-		case DEEPC_CONTROLLER_STATE_NORMAL:
-			computeResponse_for_normal(request, response);
+		case DEEPC_CONTROLLER_STATE_LQR:
+			computeResponse_for_LQR(request, response);
 			break;
 
         case DEEPC_CONTROLLER_STATE_EXCITATION:
             computeResponse_for_excitation(request, response);
+            break;
+
+        case DEEPC_CONTROLLER_STATE_DEEPC:
+            computeResponse_for_Deepc(request, response);
             break;
 
 		case DEEPC_CONTROLLER_STATE_LANDING_MOVE_DOWN:
@@ -328,7 +332,7 @@ void computeResponse_for_standby(Controller::Request &request, Controller::Respo
 	}
 }
 
-void computeResponse_for_normal(Controller::Request &request, Controller::Response &response)
+void computeResponse_for_LQR(Controller::Request &request, Controller::Response &response)
 {
 	// Check if the state "just recently" changed
 	if (m_current_state_changed)
@@ -362,7 +366,7 @@ void computeResponse_for_normal(Controller::Request &request, Controller::Respon
 		// Publish the change
 		publishCurrentSetpointAndState();
 		// Inform the user
-		ROS_INFO_STREAM("[DEEPC CONTROLLER] State \"normal\" started");
+		ROS_INFO_STREAM("[DEEPC CONTROLLER] State \"LQR\" started");
 	}
 
 	m_setpoint_for_controller[0] = m_setpoint[0];
@@ -459,9 +463,9 @@ void computeResponse_for_excitation(Controller::Request &request, Controller::Re
             else
             {
                 // Inform the user
-                ROS_INFO("[DEEPC CONTROLLER] Thrust excitation signal ended. Switch to state: normal");
+                ROS_INFO("[DEEPC CONTROLLER] Thrust excitation signal ended. Switch to state: LQR");
                 // Update the state accordingly
-                m_current_state = DEEPC_CONTROLLER_STATE_NORMAL;
+                m_current_state = DEEPC_CONTROLLER_STATE_LQR;
                 m_current_state_changed = true;
                 m_write_data = true;
             }
@@ -488,9 +492,9 @@ void computeResponse_for_excitation(Controller::Request &request, Controller::Re
             else
             {
                 // Inform the user
-                ROS_INFO("[DEEPC CONTROLLER] Roll rate excitation signal ended. Switch to state: normal");
+                ROS_INFO("[DEEPC CONTROLLER] Roll rate excitation signal ended. Switch to state: LQR");
                 // Update the state accordingly
-                m_current_state = DEEPC_CONTROLLER_STATE_NORMAL;
+                m_current_state = DEEPC_CONTROLLER_STATE_LQR;
                 m_current_state_changed = true;
                 m_write_data = true;
             }
@@ -517,9 +521,9 @@ void computeResponse_for_excitation(Controller::Request &request, Controller::Re
             else
             {
                 // Inform the user
-                ROS_INFO("[DEEPC CONTROLLER] Pitch rate excitation signal ended. Switch to state: normal");
+                ROS_INFO("[DEEPC CONTROLLER] Pitch rate excitation signal ended. Switch to state: LQR");
                 // Update the state accordingly
-                m_current_state = DEEPC_CONTROLLER_STATE_NORMAL;
+                m_current_state = DEEPC_CONTROLLER_STATE_LQR;
                 m_current_state_changed = true;
                 m_write_data = true;
             }
@@ -546,9 +550,9 @@ void computeResponse_for_excitation(Controller::Request &request, Controller::Re
             else
             {
                 // Inform the user
-                ROS_INFO("[DEEPC CONTROLLER] Yaw rate excitation signal ended. Switch to state: normal");
+                ROS_INFO("[DEEPC CONTROLLER] Yaw rate excitation signal ended. Switch to state: LQR");
                 // Update the state accordingly
-                m_current_state = DEEPC_CONTROLLER_STATE_NORMAL;
+                m_current_state = DEEPC_CONTROLLER_STATE_LQR;
                 m_current_state_changed = true;
                 m_write_data = true;
             }
@@ -608,6 +612,71 @@ void computeResponse_for_excitation(Controller::Request &request, Controller::Re
         ROS_INFO_STREAM("controlOutput.motorCmd3 = " << response.controlOutput.motorCmd3);
         ROS_INFO_STREAM("controlOutput.motorCmd4 = " << response.controlOutput.motorCmd4);
     }
+}
+
+void computeResponse_for_Deepc(Controller::Request &request, Controller::Response &response)
+{
+	// Check if the state "just recently" changed
+	if (m_current_state_changed)
+	{
+		// PERFORM "ONE-OFF" OPERATIONS HERE
+		for (int i = 0; i < 9; i++)
+			m_previous_stateErrorInertial[i] = 0.0;
+
+		// Set the change flag back to false
+		m_current_state_changed = false;
+
+		// Publish the change
+		publishCurrentSetpointAndState();
+		// Inform the user
+		ROS_INFO_STREAM("[DEEPC CONTROLLER] State \"Deepc\" started");
+	}
+
+	m_setpoint_for_controller[0] = m_setpoint[0];
+	m_setpoint_for_controller[1] = m_setpoint[1];
+	m_setpoint_for_controller[2] = m_setpoint[2];
+	m_setpoint_for_controller[3] = m_setpoint[3];
+	
+	// Call the LQR control function
+	control_output output;
+	calculateControlOutput_viaLQR(request, output);
+
+	// PREPARE AND RETURN THE VARIABLE "response"
+	// Specify that using a "rate type" of command
+	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
+
+	// Put the computed body rate commands into the "response" variable
+	response.controlOutput.roll = output.rollRate;
+	response.controlOutput.pitch = output.pitchRate;
+	response.controlOutput.yaw = output.yawRate;
+
+	// Put the thrust commands into the "response" variable.
+	// . NOTE: The thrust is commanded per motor, so divide by 4.0
+	// > NOTE: The function "computeMotorPolyBackward" converts the input argument
+	//         from Newtons to the 16-bit command expected by the Crazyflie.
+	float thrust_request_per_motor = output.thrust / 4.0;
+	response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrust_request_per_motor);
+	response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrust_request_per_motor);
+	response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrust_request_per_motor);
+	response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrust_request_per_motor);
+
+	// DEBUG INFO
+	if (yaml_shouldDisplayDebugInfo)
+	{
+		ROS_INFO_STREAM("output.thrust = " << output.thrust);
+		ROS_INFO_STREAM("controlOutput.roll = " << response.controlOutput.roll);
+		ROS_INFO_STREAM("controlOutput.pitch = " << response.controlOutput.pitch);
+		ROS_INFO_STREAM("controlOutput.yaw = " << response.controlOutput.yaw);
+		ROS_INFO_STREAM("controlOutput.motorCmd1 = " << response.controlOutput.motorCmd1);
+		ROS_INFO_STREAM("controlOutput.motorCmd2 = " << response.controlOutput.motorCmd2);
+		ROS_INFO_STREAM("controlOutput.motorCmd3 = " << response.controlOutput.motorCmd3);
+		ROS_INFO_STREAM("controlOutput.motorCmd4 = " << response.controlOutput.motorCmd4);
+	}
+
+	// Set flag to solve Deepc optimization
+	m_Deepc_mutex.lock();
+	m_solveDeepc = true;
+	m_Deepc_mutex.unlock();
 }
 
 void computeResponse_for_landing_move_down(Controller::Request &request, Controller::Response &response)
@@ -843,7 +912,50 @@ void calculateControlOutput_viaLQR(Controller::Request &request, control_output 
 	}
 }
 
+// SOLVE DEEPC OPTIMIZATION
+// This function runs in seperate thread
+void solve_Deepc()
+{
+	bool solveDeepc_local;
 
+	while (ros::ok())
+	{
+		m_Deepc_mutex.lock();
+        solveDeepc_local = m_solveDeepc;
+        m_Deepc_mutex.unlock();
+
+        if (solveDeepc_local)
+        {
+        	m_Deepc_model_mutex.lock();
+        	// Solve optimization
+			try
+			{
+				m_grb_model.optimize();
+				ROS_INFO("[DEEPC CONTROLLER] Deepc optimization solved with following results:");
+				ROS_INFO_STREAM(m_grb_x.get(GRB_StringAttr_VarName) << " " << m_grb_x.get(GRB_DoubleAttr_X));
+		    	ROS_INFO_STREAM(m_grb_y.get(GRB_StringAttr_VarName) << " " << m_grb_y.get(GRB_DoubleAttr_X));
+		    	ROS_INFO_STREAM(m_grb_z.get(GRB_StringAttr_VarName) << " " << m_grb_z.get(GRB_DoubleAttr_X));
+		    	ROS_INFO_STREAM("Objective: " << m_grb_model.get(GRB_DoubleAttr_ObjVal));
+		    	ROS_INFO_STREAM("Runtime: " << m_grb_model.get(GRB_DoubleAttr_Runtime));
+			}
+			catch(GRBException e)
+		    {
+			    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization failed to solve with error code = " << e.getErrorCode());
+			    ROS_INFO_STREAM("[DEEPC CONTROLLER] Error message: " << e.getMessage());
+		  	}
+		  	catch(...)
+		  	{
+		    	ROS_INFO("[DEEPC CONTROLLER] Deepc optimization failed to solve");
+		  	}
+		  	sleep(1);
+		  	m_Deepc_model_mutex.unlock();
+
+		  	m_Deepc_mutex.lock();
+        	m_solveDeepc = false;
+        	m_Deepc_mutex.unlock();
+        }
+	}
+}
 
 //    ------------------------------------------------------------------------------
 //    RRRR    OOO   TTTTT    A    TTTTT  EEEEE       III  N   N  TTTTT   OOO
@@ -1065,287 +1177,58 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 		// Extract the data from the message
 		int custom_button_index = commandReceived.button_index;
 		float float_data        = commandReceived.float_data;
-		//string string_data = commandReceived.string_data;
+		int int_data = int(float_data);
+		bool bool_data[32];
+		for (int i = 0; i < 32; i++)
+		{
+			bool_data[i] = (int_data >> i) & 1;
+		}
 
 		// Switch between the button pressed
 		switch(custom_button_index)
 		{
 
-			// > FOR CUSTOM BUTTON 1 - THRUST EXCITATION
+			// > FOR CUSTOM BUTTON 1 - EXCITATION
 			case 1:
 				// Let the user know that this part of the code was triggered
 				ROS_INFO_STREAM("[DEEPC CONTROLLER] Button 1 received in controller, with message.float_data = " << float_data );
 				// Code here to respond to custom button 1
-                // Switch between the possible states
-                switch (m_current_state)
-                {
-                    case DEEPC_CONTROLLER_STATE_NORMAL:
-                        // Inform the user
-                        ROS_INFO("[DEEPC CONTROLLER] Received request to start thrust excitation. Switch to state: excitation");
-                        // Update the state accordingly
-                        m_current_state = DEEPC_CONTROLLER_STATE_EXCITATION;
-                        m_current_state_changed = true;
-                        m_thrustExcEnable = true;
-                        break;
+				processCustomButton1(float_data, int_data, bool_data);
 
-                    case DEEPC_CONTROLLER_STATE_EXCITATION:
-                        if (!m_thrustExcEnable)
-                        {
-                        	// Inform the user
-                            ROS_INFO("[DEEPC CONTROLLER] Received request to start thrust excitation. State stays at: excitation");
-                            m_thrustExcEnable = true;
-                        }
-                        else if (m_rollRateExcEnable || m_pitchRateExcEnable || m_yawRateExcEnable)
-                        {
-                            // Inform the user
-                            ROS_INFO("[DEEPC CONTROLLER] Received request to stop thrust excitation. State stays at: excitation");
-                            m_thrustExcEnable = false;
-                        }
-                        else
-                        {
-                            // Inform the user
-                            ROS_INFO("[DEEPC CONTROLLER] Received request to stop thrust excitation. Switch to state: normal");
-                            // Update the state accordingly
-                            m_current_state = DEEPC_CONTROLLER_STATE_NORMAL;
-                            m_current_state_changed = true;
-                            m_write_data = true;
-                        }
-                        break;
-
-                    case DEEPC_CONTROLLER_STATE_LANDING_MOVE_DOWN:
-                    case DEEPC_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
-                    case DEEPC_CONTROLLER_STATE_STANDBY:
-                    default:
-                        // Inform the user
-                        ROS_INFO("[DEEPC CONTROLLER] Received request to start thrust excitation in invalid state. Request ignored");
-
-                        // Write thrust excitation signal to CSV file. Used for debugging
-						ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing file to: " << m_outputFolder << "m_thrustExcSignal.csv");
-                        if (write_csv(m_outputFolder + "m_thrustExcSignal.csv", m_thrustExcSignal))
-                        	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
-                        else
-                        	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
-
-                        break;
-                }
                 break;
 
-			// > FOR CUSTOM BUTTON 2 - ROLL RATE EXCITATION
+			// > FOR CUSTOM BUTTON 2 - SETUP GUROBI OPTIMIZATION
 			case 2:
 				// Let the user know that this part of the code was triggered
 				ROS_INFO_STREAM("[DEEPC CONTROLLER] Button 2 received in controller, with message.float_data = " << float_data );
 				// Code here to respond to custom button 2
-                // Switch between the possible states
-                switch (m_current_state)
-                {
-                    case DEEPC_CONTROLLER_STATE_NORMAL:
-                        // Inform the user
-                        ROS_INFO("[DEEPC CONTROLLER] Received request to start roll rate excitation. Switch to state: excitation");
-                        // Update the state accordingly
-                        m_current_state = DEEPC_CONTROLLER_STATE_EXCITATION;
-                        m_current_state_changed = true;
-                        m_rollRateExcEnable = true;
-                        break;
+                m_grb_setup_success = processCustomButton2(float_data, int_data, bool_data);
 
-                    case DEEPC_CONTROLLER_STATE_EXCITATION:
-                        if (!m_rollRateExcEnable)
-                        {
-                        	// Inform the user
-                            ROS_INFO("[DEEPC CONTROLLER] Received request to start roll rate excitation. State stays at: excitation");
-                            m_rollRateExcEnable = true;
-                        }
-                        else if (m_thrustExcEnable || m_pitchRateExcEnable || m_yawRateExcEnable)
-                        {
-                            // Inform the user
-                            ROS_INFO("[DEEPC CONTROLLER] Received request to stop roll rate excitation. State stays at: excitation");
-                            m_rollRateExcEnable = false;
-                        }
-                        else
-                        {
-                            // Inform the user
-                            ROS_INFO("[DEEPC CONTROLLER] Received request to stop roll rate excitation. Switch to state: normal");
-                            // Update the state accordingly
-                            m_current_state = DEEPC_CONTROLLER_STATE_NORMAL;
-                            m_current_state_changed = true;
-                            m_write_data = true;
-                        }
-                        break;
-
-                    case DEEPC_CONTROLLER_STATE_LANDING_MOVE_DOWN:
-                    case DEEPC_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
-                    case DEEPC_CONTROLLER_STATE_STANDBY:
-                    default:
-                        // Inform the user
-                        ROS_INFO("[DEEPC CONTROLLER] Received request to start roll rate excitation in invalid state. Request ignored");
-
-                        // Write roll rate excitation signal to CSV file. Used for debugging
-						ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing file to: " << m_outputFolder << "m_rollRateExcSignal.csv");
-                        if (write_csv(m_outputFolder + "m_rollRateExcSignal.csv", m_rollRateExcSignal))
-                        	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
-                        else
-                        	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
-
-                        break;
-                }
 				break;
 
-			// > FOR CUSTOM BUTTON 3 - PITCH RATE EXCITATION
+			// > FOR CUSTOM BUTTON 3 - DEEPC
 			case 3:
 				// Let the user know that this part of the code was triggered
 				ROS_INFO_STREAM("[DEEPC CONTROLLER] Button 3 received in controller, with message.float_data = " << float_data );
 				// Code here to respond to custom button 3
-                // Switch between the possible states
-                switch (m_current_state)
-                {
-                    case DEEPC_CONTROLLER_STATE_NORMAL:
-                        // Inform the user
-                        ROS_INFO("[DEEPC CONTROLLER] Received request to start pitch rate excitation. Switch to state: excitation");
-                        // Update the state accordingly
-                        m_current_state = DEEPC_CONTROLLER_STATE_EXCITATION;
-                        m_current_state_changed = true;
-                        m_pitchRateExcEnable = true;
-                        break;
+                processCustomButton3(float_data, int_data, bool_data);
 
-                    case DEEPC_CONTROLLER_STATE_EXCITATION:
-                        if (!m_pitchRateExcEnable)
-                        {
-                        	// Inform the user
-                            ROS_INFO("[DEEPC CONTROLLER] Received request to start pitch rate excitation. State stays at: excitation");
-                            m_pitchRateExcEnable = true;
-                        }
-                        else if (m_thrustExcEnable || m_rollRateExcEnable || m_yawRateExcEnable)
-                        {
-                            // Inform the user
-                            ROS_INFO("[DEEPC CONTROLLER] Received request to stop pitch rate excitation. State stays at: excitation");
-                            m_pitchRateExcEnable = false;
-                        }
-                        else
-                        {
-                            // Inform the user
-                            ROS_INFO("[DEEPC CONTROLLER] Received request to stop pitch rate excitation. Switch to state: normal");
-                            // Update the state accordingly
-                            m_current_state = DEEPC_CONTROLLER_STATE_NORMAL;
-                            m_current_state_changed = true;
-                            m_write_data = true;
-                        }
-                        break;
-
-                    case DEEPC_CONTROLLER_STATE_LANDING_MOVE_DOWN:
-                    case DEEPC_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
-                    case DEEPC_CONTROLLER_STATE_STANDBY:
-                    default:
-                        // Inform the user
-                        ROS_INFO("[DEEPC CONTROLLER] Received request to start pitch rate excitation in invalid state. Request ignored");
-
-                        // Write pitch rate excitation signal to CSV file. Used for debugging
-						ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing file to: " << m_outputFolder << "m_pitchRateExcSignal.csv");
-                        if (write_csv(m_outputFolder + "m_pitchRateExcSignal.csv", m_pitchRateExcSignal))
-                        	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
-                        else
-                        	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
-
-                        break;
-                }
 				break;
 
-			// > FOR CUSTOM BUTTON 4 - YAW RATE EXCITATION
+			// > FOR CUSTOM BUTTON 4 - SPARE
 			case 4:
 				// Let the user know that this part of the code was triggered
 				ROS_INFO_STREAM("[DEEPC CONTROLLER] Button 4 received in controller, with message.float_data = " << float_data );
 				// Code here to respond to custom button 4
-                // Switch between the possible states
-                switch (m_current_state)
-                {
-                    case DEEPC_CONTROLLER_STATE_NORMAL:
-                        // Inform the user
-                        ROS_INFO("[DEEPC CONTROLLER] Received request to start yaw rate excitation. Switch to state: excitation");
-                        // Update the state accordingly
-                        m_current_state = DEEPC_CONTROLLER_STATE_EXCITATION;
-                        m_current_state_changed = true;
-                        m_yawRateExcEnable = true;
-                        break;
-
-                    case DEEPC_CONTROLLER_STATE_EXCITATION:
-                        if (!m_yawRateExcEnable)
-                        {
-                        	// Inform the user
-                            ROS_INFO("[DEEPC CONTROLLER] Received request to start yaw rate excitation. State stays at: excitation");
-                            m_yawRateExcEnable = true;
-                        }
-                        else if (m_thrustExcEnable || m_rollRateExcEnable || m_pitchRateExcEnable)
-                        {
-                            // Inform the user
-                            ROS_INFO("[DEEPC CONTROLLER] Received request to stop yaw rate excitation. State stays at: excitation");
-                            m_yawRateExcEnable = false;
-                        }
-                        else
-                        {
-                            // Inform the user
-                            ROS_INFO("[DEEPC CONTROLLER] Received request to stop yaw rate excitation. Switch to state: normal");
-                            // Update the state accordingly
-                            m_current_state = DEEPC_CONTROLLER_STATE_NORMAL;
-                            m_current_state_changed = true;
-                            m_write_data = true;
-                        }
-                        break;
-
-                    case DEEPC_CONTROLLER_STATE_LANDING_MOVE_DOWN:
-                    case DEEPC_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
-                    case DEEPC_CONTROLLER_STATE_STANDBY:
-                    default:
-                        // Inform the user
-                        ROS_INFO("[DEEPC CONTROLLER] Received request to start yaw rate excitation in invalid state. Request ignored");
-
-						// Write yaw rate excitation signal to CSV file. Used for debugging
-						ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing file to: " << m_outputFolder << "m_yawRateExcSignal.csv");
-                        if (write_csv(m_outputFolder + "m_yawRateExcSignal.csv", m_yawRateExcSignal))
-                        	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
-                        else
-                        	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
-
-                        break;
-                }
+                
 				break;
 
-			// > FOR CUSTOM BUTTON 5 - EXCITE ALL
+			// > FOR CUSTOM BUTTON 5 - SPARE
 			case 5:
 				// Let the user know that this part of the code was triggered
 				ROS_INFO_STREAM("[DEEPC CONTROLLER] Button 5 received in controller, with message.float_data = " << float_data );
 				// Code here to respond to custom button 5
-                // Switch between the possible states
-                switch (m_current_state)
-                {
-                    case DEEPC_CONTROLLER_STATE_NORMAL:
-                        // Inform the user
-                        ROS_INFO("[DEEPC CONTROLLER] Received request to start all excitation. Switch to state: excitation");
-                        // Update the state accordingly
-                        m_current_state = DEEPC_CONTROLLER_STATE_EXCITATION;
-                        m_current_state_changed = true;
-                        m_thrustExcEnable = true;
-                        m_rollRateExcEnable = true;
-                        m_pitchRateExcEnable = true;
-                        // If any non-zero value given, do not excite yaw. Allows selecting whether to excite yaw or not
-                        if (float_data == 0.0)
-                        	m_yawRateExcEnable = true;
-                        break;
-
-                    case DEEPC_CONTROLLER_STATE_EXCITATION:
-                        // Inform the user
-                        ROS_INFO("[DEEPC CONTROLLER] Received request to stop all excitation. Switch to state: normal");
-                        // Update the state accordingly
-                        m_current_state = DEEPC_CONTROLLER_STATE_NORMAL;
-                        m_current_state_changed = true;
-                        m_write_data = true;
-                        break;
-
-                    case DEEPC_CONTROLLER_STATE_LANDING_MOVE_DOWN:
-                    case DEEPC_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
-                    case DEEPC_CONTROLLER_STATE_STANDBY:
-                    default:
-                        // Inform the user
-                        ROS_INFO("[DEEPC CONTROLLER] Received request to start all excitation in invalid state. Request ignored");
-                        break;
-                }
+                
                 break;
 
 			default:
@@ -1356,7 +1239,176 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 	}
 }
 
+// CUSTOM BUTTON 1 - EXCITATION
+void processCustomButton1(float float_data, int int_data, bool* bool_data)
+{
+	// Button data decoding:
+	// int_data		== 0 => Excite all
+	// bool_data[0]	== 1 => Excite thrust
+	// bool_data[1]	== 1 => Excite roll rate
+	// bool_data[2]	== 1 => Excite pitch rate
+	// bool_data[3]	 == 1 => Excite yaw rate 
+	
+    // Switch between the possible states
+    switch (m_current_state)
+    {
+        case DEEPC_CONTROLLER_STATE_LQR:
+            // Inform the user
+            ROS_INFO("[DEEPC CONTROLLER] Received request to start excitation. Switch to state: excitation");
+            // Update the state accordingly
+            m_current_state = DEEPC_CONTROLLER_STATE_EXCITATION;
+            m_current_state_changed = true;
+            if (!int_data)
+            {
+            	m_thrustExcEnable = true;
+            	m_rollRateExcEnable = true;
+            	m_pitchRateExcEnable = true;
+            	m_yawRateExcEnable = true;
+            	// Inform the user
+            	ROS_INFO("[DEEPC CONTROLLER] Exciting all");
+            }
+            if (bool_data[0])
+            {
+            	m_thrustExcEnable = true;
+            	// Inform the user
+            	ROS_INFO("[DEEPC CONTROLLER] Exciting thrust");
+            }
+            if (bool_data[1])
+            {
+            	m_rollRateExcEnable = true;
+            	// Inform the user
+            	ROS_INFO("[DEEPC CONTROLLER] Exciting roll rate");
+            }
+            if (bool_data[2])
+            {
+            	m_pitchRateExcEnable = true;
+            	// Inform the user
+            	ROS_INFO("[DEEPC CONTROLLER] Exciting pitch rate");
+            }
+            if (bool_data[3])
+            {
+            	m_yawRateExcEnable = true;
+            	// Inform the user
+            	ROS_INFO("[DEEPC CONTROLLER] Exciting yaw rate");
+            }
+            break;
 
+        case DEEPC_CONTROLLER_STATE_EXCITATION:
+            // Inform the user
+            ROS_INFO("[DEEPC CONTROLLER] Received request to stop excitation. Switch to state: LQR");
+            // Update the state accordingly
+            m_current_state = DEEPC_CONTROLLER_STATE_LQR;
+            m_current_state_changed = true;
+            m_write_data = true;
+            break;
+
+        case DEEPC_CONTROLLER_STATE_DEEPC:
+        case DEEPC_CONTROLLER_STATE_LANDING_MOVE_DOWN:
+        case DEEPC_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
+        case DEEPC_CONTROLLER_STATE_STANDBY:
+        default:
+            // Inform the user
+            ROS_INFO("[DEEPC CONTROLLER] Received request to start excitation in invalid state. Request ignored");
+            break;
+    }
+}
+
+// CUSTOM BUTTON 2 - SETUP GUROBI OPTIMIZATION
+bool processCustomButton2(float float_data, int int_data, bool* bool_data)
+{
+	// Inform the user
+    ROS_INFO("[DEEPC CONTROLLER] Received request to setup Deepc optimization");
+
+    try
+    {
+    	// Configure environment
+	    m_grb_env.set(GRB_StringParam_LogFile, m_logFolder + "gurobi.log");
+	    m_grb_env.start();
+
+	    // Create variables
+	    if (!m_Deepc_model_mutex.try_lock())
+	    {
+	    	ROS_INFO("[DEEPC CONTROLLER] Deepc optimization setup failed. Optimization currently running");
+
+	    	return false;
+	    }
+
+	    m_grb_x = m_grb_model.addVar(0.0, 1.0, 0.0, GRB_BINARY, "x");
+	    m_grb_y = m_grb_model.addVar(0.0, 1.0, 0.0, GRB_BINARY, "y");
+	    m_grb_z = m_grb_model.addVar(0.0, 1.0, 0.0, GRB_BINARY, "z");
+
+	    // Set objective: maximize x + y + 2 z
+	    m_grb_model.setObjective(m_grb_x + m_grb_y + 2 * m_grb_z, GRB_MAXIMIZE);
+
+	    // Add constraint: x + 2 y + 3 z <= 4
+	    m_grb_model.addConstr(m_grb_x + 2 * m_grb_y + 3 * m_grb_z <= 4, "c0");
+
+	    // Add constraint: x + y >= 1
+	    m_grb_model.addConstr(m_grb_x + m_grb_y >= 1, "c1");
+
+	    m_Deepc_model_mutex.unlock();
+
+	    // Inform the user
+	    ROS_INFO("[DEEPC CONTROLLER] Deepc optimization setup successful");
+
+	    return true;
+    }
+    
+    catch(GRBException e)
+    {
+	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization setup failed with error code = " << e.getErrorCode());
+	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Error message: " << e.getMessage());
+
+	    return false;
+  	}
+  	catch(...)
+  	{
+    	ROS_INFO("[DEEPC CONTROLLER] Deepc optimization setup failed");
+
+    	return false;
+  	}
+}
+
+// CUSTOM BUTTON 3 - DEEPC
+void processCustomButton3(float float_data, int int_data, bool* bool_data)
+{	
+    // Check if Deepc optimization was setup successfully
+    if (!m_grb_setup_success)
+    {
+    	// Inform the user
+        ROS_INFO("[DEEPC CONTROLLER] Received request to start Deepc but optimization is not setup successfully. Request ignored");
+        return;
+    }
+
+    // Switch between the possible states
+    switch (m_current_state)
+    {
+        case DEEPC_CONTROLLER_STATE_LQR:
+            // Inform the user
+            ROS_INFO("[DEEPC CONTROLLER] Received request to start Deepc. Switch to state: Deepc");
+            // Update the state accordingly
+            m_current_state = DEEPC_CONTROLLER_STATE_DEEPC;
+            m_current_state_changed = true;
+            break;
+
+        case DEEPC_CONTROLLER_STATE_DEEPC:
+            // Inform the user
+            ROS_INFO("[DEEPC CONTROLLER] Received request to stop Deepc. Switch to state: LQR");
+            // Update the state accordingly
+            m_current_state = DEEPC_CONTROLLER_STATE_LQR;
+            m_current_state_changed = true;
+            break;
+
+        case DEEPC_CONTROLLER_STATE_EXCITATION:
+        case DEEPC_CONTROLLER_STATE_LANDING_MOVE_DOWN:
+        case DEEPC_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
+        case DEEPC_CONTROLLER_STATE_STANDBY:
+        default:
+            // Inform the user
+            ROS_INFO("[DEEPC CONTROLLER] Received request to start Deepc in invalid state. Request ignored");
+            break;
+    }
+}
 
 //    ----------------------------------------------------------------------------------
 //    L       OOO     A    DDDD
@@ -1483,9 +1535,10 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixPitchRate",              yaml_gainMatrixPitchRate,              9);
 	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixYawRate",                yaml_gainMatrixYawRate,                9);
 
-	// CSV data folder locations
+	// Data folder locations
 	yaml_dataFolder = getParameterString(nodeHandle_for_paramaters, "dataFolder");
 	yaml_outputFolder = getParameterString(nodeHandle_for_paramaters, "outputFolder");
+	yaml_logFolder = getParameterString(nodeHandle_for_paramaters, "logFolder");
 
 	// Thrust excitation parameters
 	yaml_thrustExcAmp_in_grams = getParameterFloat(nodeHandle_for_paramaters, "thrustExcAmp");
@@ -1503,9 +1556,13 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	yaml_yawRateExcAmp_in_deg = getParameterFloat(nodeHandle_for_paramaters, "yawRateExcAmp");
 	yaml_yawRateExcSignalFile = getParameterString(nodeHandle_for_paramaters, "yawRateExcSignalFile");
 
-
 	// Excitation start time, in s. Used to collect steady-state data before excitation
 	yaml_exc_start_time = getParameterFloat(nodeHandle_for_paramaters, "exc_start_time");
+
+	// Gurobi optimization parameters
+	yaml_grb_LogToFile = getParameterBool(nodeHandle_for_paramaters, "grb_LogToFile");
+	yaml_grb_LogToConsole = getParameterBool(nodeHandle_for_paramaters, "grb_LogToConsole");
+
 
 	// > DEBUGGING: Print out one of the parameters that was loaded to
 	//   debug if the fetching of parameters worked correctly
@@ -1523,6 +1580,9 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 
 	// > Get absolute output data folder location
 	m_outputFolder = HOME + yaml_dataFolder + yaml_outputFolder;
+
+	// > Get absolute log files folder location
+	m_logFolder = HOME + yaml_dataFolder + yaml_logFolder;
 
 	// > Compute the thrust excitation force in units of [Newtons]
 	m_thrustExcAmp_in_newtons = yaml_thrustExcAmp_in_grams * 9.81/1000.0;
@@ -1559,6 +1619,13 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	if (m_yawRateExcSignal.size() <= 0)
 		ROS_INFO("[DEEPC CONTROLLER] Failed to read yaw rate excitation signal file");
 
+	// > Change Gurobi optimization parameters
+	if (yaml_grb_LogToFile)
+		m_grb_model.set(GRB_StringParam_LogFile, m_logFolder + "gurobi.log");
+	else
+		m_grb_model.set(GRB_StringParam_LogFile, "");
+
+	m_grb_model.set(GRB_IntParam_LogToConsole, yaml_grb_LogToConsole);
 
 	// DEBUGGING: Print out one of the computed quantities
 	ROS_INFO_STREAM("[DEEPC CONTROLLER] DEBUGGING: thus the weight of this agent in [Newtons] = " << m_cf_weight_in_newtons);
@@ -1846,12 +1913,17 @@ int main(int argc, char* argv[]) {
 	// flying state once the manoeuvre is complete.
 	m_manoeuvreCompletePublisher = nodeHandle.advertise<IntWithHeader>("ManoeuvreComplete", 1);
 
+	// Create thread for solving Deepc optimization
+	boost::thread Deepc_thread(solve_Deepc);
 
     // Print out some information to the user.
     ROS_INFO("[DEEPC CONTROLLER] Service ready :-)");
 
     // Enter an endless while loop to keep the node alive.
     ros::spin();
+
+    // Wait for Deepc thread to finish
+    Deepc_thread.join();
 
     // Return zero if the "ross::spin" is cancelled.
     return 0;
