@@ -307,8 +307,9 @@ bool m_grb_setup_success = false;
 
 // Variables for thread management
 mutex m_Deepc_mutex;
-mutex m_Deepc_model_mutex;
-// Flag that triggers solving optimization by dedicated thread
+// Flags for communication with Deepc thread
+bool m_params_changed = false;
+bool m_setupDeepc = false;
 bool m_solveDeepc = false;
 
 // ROS Publisher for debugging variables
@@ -346,6 +347,18 @@ ros::Publisher m_manoeuvreCompletePublisher;
 // each function is implemented before it is called from another function,
 // hence why the "main" function is at the bottom.
 
+// DEEPC FUNCTIONS
+void deepc_thread_main();
+void change_Deepc_params();
+bool setup_Deepc();
+bool solve_Deepc();
+
+// DEEPC HELPER FUNCTIONS
+
+// READ/WRITE CSV FILES
+MatrixXf read_csv(const string & path);
+bool write_csv(const string & path, MatrixXf M);
+
 // CONTROLLER COMPUTATIONS
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response);
 void computeResponse_for_standby(Controller::Request &request, Controller::Response &response);
@@ -378,13 +391,9 @@ void publishCurrentSetpointAndState();
 // CUSTOM COMMAND RECEIVED CALLBACK
 void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived);
 void processCustomButton1(float float_data, int int_data, bool* bool_data);
-bool processCustomButton2(float float_data, int int_data, bool* bool_data);
+void processCustomButton2(float float_data, int int_data, bool* bool_data);
 void processCustomButton3(float float_data, int int_data, bool* bool_data);
 
 // FOR LOADING THE YAML PARAMETERS
 void isReadyDeepcControllerYamlCallback(const IntWithHeader & msg);
 void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle);
-
-// READ/WRITE CSV FILES
-MatrixXf read_csv(const string & path);
-bool write_csv(const string & path, MatrixXf M);

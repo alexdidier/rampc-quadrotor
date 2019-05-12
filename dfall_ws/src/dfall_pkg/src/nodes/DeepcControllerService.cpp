@@ -56,8 +56,189 @@
 //    ----------------------------------------------------------------------------------
 
 
+// DEEPC FUNCTIONS
 
+// DEEPC THREAD MAIN
+// Deepc operations run in seperate thread as they are time consuming
+void deepc_thread_main()
+{
+	bool params_changed_local;
+	bool setupDeepc_local;
+	bool grb_setup_success_local;
+	bool solveDeepc_local;
 
+	while (ros::ok())
+	{
+		m_Deepc_mutex.lock();
+        params_changed_local = m_params_changed;
+        setupDeepc_local = m_setupDeepc;
+        solveDeepc_local = m_solveDeepc;
+        m_Deepc_mutex.unlock();
+
+        if (params_changed_local)
+        	change_Deepc_params;
+
+        if (setupDeepc_local)
+        {
+        	grb_setup_success_local = setup_Deepc();
+
+        	m_Deepc_mutex.lock();
+        	m_setupDeepc = false;
+        	m_grb_setup_success = grb_setup_success_local;
+        	m_Deepc_mutex.unlock();
+        }
+
+        if (solveDeepc_local)
+        {
+        	solve_Deepc();
+		  	sleep(1);
+
+		  	m_Deepc_mutex.lock();
+        	m_solveDeepc = false;
+        	m_Deepc_mutex.unlock();
+        }
+	}
+}
+
+void change_Deepc_params()
+{
+	m_Deepc_mutex.lock();
+	
+	// > Change Gurobi optimization parameters
+	if (yaml_grb_LogToFile)
+		m_grb_model.set(GRB_StringParam_LogFile, m_logFolder + "gurobi.log");
+	else
+		m_grb_model.set(GRB_StringParam_LogFile, "");
+	m_grb_model.set(GRB_IntParam_LogToConsole, yaml_grb_LogToConsole);
+	
+	m_params_changed = false;
+
+	m_Deepc_mutex.unlock();
+}
+
+bool setup_Deepc()
+{
+	try
+    {
+    	// Configure environment
+	    m_grb_env.set(GRB_StringParam_LogFile, m_logFolder + "gurobi.log");
+	    m_grb_env.start();
+
+	    // Create variables
+	    m_grb_x = m_grb_model.addVar(0.0, 1.0, 0.0, GRB_BINARY, "x");
+	    m_grb_y = m_grb_model.addVar(0.0, 1.0, 0.0, GRB_BINARY, "y");
+	    m_grb_z = m_grb_model.addVar(0.0, 1.0, 0.0, GRB_BINARY, "z");
+
+	    // Set objective: maximize x + y + 2 z
+	    m_grb_model.setObjective(m_grb_x + m_grb_y + 2 * m_grb_z, GRB_MAXIMIZE);
+
+	    // Add constraint: x + 2 y + 3 z <= 4
+	    m_grb_model.addConstr(m_grb_x + 2 * m_grb_y + 3 * m_grb_z <= 4, "c0");
+
+	    // Add constraint: x + y >= 1
+	    m_grb_model.addConstr(m_grb_x + m_grb_y >= 1, "c1");
+
+	    // Inform the user
+	    ROS_INFO("[DEEPC CONTROLLER] Deepc optimization setup successful");
+
+	    return true;
+    }
+    
+    catch(GRBException e)
+    {
+	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization setup failed with error code = " << e.getErrorCode());
+	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Error message: " << e.getMessage());
+
+	    return false;
+  	}
+  	catch(...)
+  	{
+    	ROS_INFO("[DEEPC CONTROLLER] Deepc optimization setup failed");
+
+    	return false;
+  	}
+}
+
+bool solve_Deepc()
+{
+	// Solve optimization
+	try
+	{
+		m_grb_model.optimize();
+		ROS_INFO("[DEEPC CONTROLLER] Deepc optimization solved with following results:");
+		ROS_INFO_STREAM(m_grb_x.get(GRB_StringAttr_VarName) << " " << m_grb_x.get(GRB_DoubleAttr_X));
+    	ROS_INFO_STREAM(m_grb_y.get(GRB_StringAttr_VarName) << " " << m_grb_y.get(GRB_DoubleAttr_X));
+    	ROS_INFO_STREAM(m_grb_z.get(GRB_StringAttr_VarName) << " " << m_grb_z.get(GRB_DoubleAttr_X));
+    	ROS_INFO_STREAM("Objective: " << m_grb_model.get(GRB_DoubleAttr_ObjVal));
+    	ROS_INFO_STREAM("Runtime: " << m_grb_model.get(GRB_DoubleAttr_Runtime));
+
+    	return true;
+	}
+	catch(GRBException e)
+    {
+	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization failed to solve with error code = " << e.getErrorCode());
+	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Error message: " << e.getMessage());
+
+	    return false;
+  	}
+  	catch(...)
+  	{
+    	ROS_INFO("[DEEPC CONTROLLER] Deepc optimization failed to solve");
+
+    	return false;
+  	}
+}
+
+// DEEPC HELPER FUNCTIONS
+
+// ---------- READ/WRITE CSV FILES ----------
+
+// Read csv file into matrix
+MatrixXf read_csv(const string & path)
+{
+	ifstream fin;
+	fin.open(path);
+	if(!fin)
+	{
+		MatrixXf M;
+		return M;
+	}
+	string line;
+	vector<float> values;
+	int rows = 0;
+	while (getline(fin, line))
+	{
+		stringstream lineStream(line);
+		string cell;
+		bool empty_row = true;
+		while (getline(lineStream, cell, ','))
+		{
+			values.push_back(stof(cell));
+			empty_row = false;
+		}
+		if(!empty_row)
+			rows++;
+	}
+	return Map<Matrix<float, Dynamic, Dynamic, RowMajor>>(values.data(), rows, values.size()/rows);
+}
+
+// Write matrix into csv file
+bool write_csv(const string & path, MatrixXf M)
+{
+	ofstream fout;
+	fout.open(path);
+	if(!fout)
+		return false;
+	int rows = M.rows();
+	int cols = M.cols();
+	for(int i = 0; i < rows; i++)
+	{
+		for(int j = 0; j < cols - 1; j++)
+			fout << M(i,j) << ',';
+		fout << M(i,cols-1) << endl;
+	}
+	return true;
+}
 
 //    ------------------------------------------------------------------------------
 //    RRRR   EEEEE   QQQ   U   U  EEEEE   SSSS  TTTTT
@@ -912,51 +1093,6 @@ void calculateControlOutput_viaLQR(Controller::Request &request, control_output 
 	}
 }
 
-// SOLVE DEEPC OPTIMIZATION
-// This function runs in seperate thread
-void solve_Deepc()
-{
-	bool solveDeepc_local;
-
-	while (ros::ok())
-	{
-		m_Deepc_mutex.lock();
-        solveDeepc_local = m_solveDeepc;
-        m_Deepc_mutex.unlock();
-
-        if (solveDeepc_local)
-        {
-        	m_Deepc_model_mutex.lock();
-        	// Solve optimization
-			try
-			{
-				m_grb_model.optimize();
-				ROS_INFO("[DEEPC CONTROLLER] Deepc optimization solved with following results:");
-				ROS_INFO_STREAM(m_grb_x.get(GRB_StringAttr_VarName) << " " << m_grb_x.get(GRB_DoubleAttr_X));
-		    	ROS_INFO_STREAM(m_grb_y.get(GRB_StringAttr_VarName) << " " << m_grb_y.get(GRB_DoubleAttr_X));
-		    	ROS_INFO_STREAM(m_grb_z.get(GRB_StringAttr_VarName) << " " << m_grb_z.get(GRB_DoubleAttr_X));
-		    	ROS_INFO_STREAM("Objective: " << m_grb_model.get(GRB_DoubleAttr_ObjVal));
-		    	ROS_INFO_STREAM("Runtime: " << m_grb_model.get(GRB_DoubleAttr_Runtime));
-			}
-			catch(GRBException e)
-		    {
-			    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization failed to solve with error code = " << e.getErrorCode());
-			    ROS_INFO_STREAM("[DEEPC CONTROLLER] Error message: " << e.getMessage());
-		  	}
-		  	catch(...)
-		  	{
-		    	ROS_INFO("[DEEPC CONTROLLER] Deepc optimization failed to solve");
-		  	}
-		  	sleep(1);
-		  	m_Deepc_model_mutex.unlock();
-
-		  	m_Deepc_mutex.lock();
-        	m_solveDeepc = false;
-        	m_Deepc_mutex.unlock();
-        }
-	}
-}
-
 //    ------------------------------------------------------------------------------
 //    RRRR    OOO   TTTTT    A    TTTTT  EEEEE       III  N   N  TTTTT   OOO
 //    R   R  O   O    T     A A     T    E            I   NN  N    T    O   O
@@ -1202,7 +1338,7 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 				// Let the user know that this part of the code was triggered
 				ROS_INFO_STREAM("[DEEPC CONTROLLER] Button 2 received in controller, with message.float_data = " << float_data );
 				// Code here to respond to custom button 2
-                m_grb_setup_success = processCustomButton2(float_data, int_data, bool_data);
+                processCustomButton2(float_data, int_data, bool_data);
 
 				break;
 
@@ -1314,59 +1450,14 @@ void processCustomButton1(float float_data, int int_data, bool* bool_data)
 }
 
 // CUSTOM BUTTON 2 - SETUP GUROBI OPTIMIZATION
-bool processCustomButton2(float float_data, int int_data, bool* bool_data)
+void processCustomButton2(float float_data, int int_data, bool* bool_data)
 {
 	// Inform the user
     ROS_INFO("[DEEPC CONTROLLER] Received request to setup Deepc optimization");
 
-    try
-    {
-    	// Configure environment
-	    m_grb_env.set(GRB_StringParam_LogFile, m_logFolder + "gurobi.log");
-	    m_grb_env.start();
-
-	    // Create variables
-	    if (!m_Deepc_model_mutex.try_lock())
-	    {
-	    	ROS_INFO("[DEEPC CONTROLLER] Deepc optimization setup failed. Optimization currently running");
-
-	    	return false;
-	    }
-
-	    m_grb_x = m_grb_model.addVar(0.0, 1.0, 0.0, GRB_BINARY, "x");
-	    m_grb_y = m_grb_model.addVar(0.0, 1.0, 0.0, GRB_BINARY, "y");
-	    m_grb_z = m_grb_model.addVar(0.0, 1.0, 0.0, GRB_BINARY, "z");
-
-	    // Set objective: maximize x + y + 2 z
-	    m_grb_model.setObjective(m_grb_x + m_grb_y + 2 * m_grb_z, GRB_MAXIMIZE);
-
-	    // Add constraint: x + 2 y + 3 z <= 4
-	    m_grb_model.addConstr(m_grb_x + 2 * m_grb_y + 3 * m_grb_z <= 4, "c0");
-
-	    // Add constraint: x + y >= 1
-	    m_grb_model.addConstr(m_grb_x + m_grb_y >= 1, "c1");
-
-	    m_Deepc_model_mutex.unlock();
-
-	    // Inform the user
-	    ROS_INFO("[DEEPC CONTROLLER] Deepc optimization setup successful");
-
-	    return true;
-    }
-    
-    catch(GRBException e)
-    {
-	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization setup failed with error code = " << e.getErrorCode());
-	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Error message: " << e.getMessage());
-
-	    return false;
-  	}
-  	catch(...)
-  	{
-    	ROS_INFO("[DEEPC CONTROLLER] Deepc optimization setup failed");
-
-    	return false;
-  	}
+    m_Deepc_mutex.lock();
+    m_setupDeepc = true;
+    m_Deepc_mutex.unlock();
 }
 
 // CUSTOM BUTTON 3 - DEEPC
@@ -1535,11 +1626,6 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixPitchRate",              yaml_gainMatrixPitchRate,              9);
 	getParameterFloatVector(nodeHandle_for_paramaters, "gainMatrixYawRate",                yaml_gainMatrixYawRate,                9);
 
-	// Data folder locations
-	yaml_dataFolder = getParameterString(nodeHandle_for_paramaters, "dataFolder");
-	yaml_outputFolder = getParameterString(nodeHandle_for_paramaters, "outputFolder");
-	yaml_logFolder = getParameterString(nodeHandle_for_paramaters, "logFolder");
-
 	// Thrust excitation parameters
 	yaml_thrustExcAmp_in_grams = getParameterFloat(nodeHandle_for_paramaters, "thrustExcAmp");
 	yaml_thrustExcSignalFile = getParameterString(nodeHandle_for_paramaters, "thrustExcSignalFile");
@@ -1559,10 +1645,6 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	// Excitation start time, in s. Used to collect steady-state data before excitation
 	yaml_exc_start_time = getParameterFloat(nodeHandle_for_paramaters, "exc_start_time");
 
-	// Gurobi optimization parameters
-	yaml_grb_LogToFile = getParameterBool(nodeHandle_for_paramaters, "grb_LogToFile");
-	yaml_grb_LogToConsole = getParameterBool(nodeHandle_for_paramaters, "grb_LogToConsole");
-
 
 	// > DEBUGGING: Print out one of the parameters that was loaded to
 	//   debug if the fetching of parameters worked correctly
@@ -1577,12 +1659,6 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 
 	// > Convert the control frequency to a delta T
 	m_control_deltaT = 1.0 / yaml_control_frequency;
-
-	// > Get absolute output data folder location
-	m_outputFolder = HOME + yaml_dataFolder + yaml_outputFolder;
-
-	// > Get absolute log files folder location
-	m_logFolder = HOME + yaml_dataFolder + yaml_logFolder;
 
 	// > Compute the thrust excitation force in units of [Newtons]
 	m_thrustExcAmp_in_newtons = yaml_thrustExcAmp_in_grams * 9.81/1000.0;
@@ -1619,66 +1695,31 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	if (m_yawRateExcSignal.size() <= 0)
 		ROS_INFO("[DEEPC CONTROLLER] Failed to read yaw rate excitation signal file");
 
-	// > Change Gurobi optimization parameters
-	if (yaml_grb_LogToFile)
-		m_grb_model.set(GRB_StringParam_LogFile, m_logFolder + "gurobi.log");
-	else
-		m_grb_model.set(GRB_StringParam_LogFile, "");
+	// PARAMETERS ACCESSED BY DEEPC THREAD
+	m_Deepc_mutex.lock();
+	
+	// Data folder locations
+	yaml_dataFolder = getParameterString(nodeHandle_for_paramaters, "dataFolder");
+	yaml_outputFolder = getParameterString(nodeHandle_for_paramaters, "outputFolder");
+	yaml_logFolder = getParameterString(nodeHandle_for_paramaters, "logFolder");
+	
+	// Gurobi optimization parameters
+	yaml_grb_LogToFile = getParameterBool(nodeHandle_for_paramaters, "grb_LogToFile");
+	yaml_grb_LogToConsole = getParameterBool(nodeHandle_for_paramaters, "grb_LogToConsole");
 
-	m_grb_model.set(GRB_IntParam_LogToConsole, yaml_grb_LogToConsole);
+	// > Get absolute output data folder location
+	m_outputFolder = HOME + yaml_dataFolder + yaml_outputFolder;
+
+	// > Get absolute log files folder location
+	m_logFolder = HOME + yaml_dataFolder + yaml_logFolder;
+
+	// > Set flag for Deepc thread to update parameters
+	m_params_changed = true;
+
+	m_Deepc_mutex.lock();
 
 	// DEBUGGING: Print out one of the computed quantities
 	ROS_INFO_STREAM("[DEEPC CONTROLLER] DEBUGGING: thus the weight of this agent in [Newtons] = " << m_cf_weight_in_newtons);
-}
-
-
-// ---------- READ/WRITE CSV FILES ----------
-
-// Read csv file into matrix
-MatrixXf read_csv(const string & path)
-{
-	ifstream fin;
-	fin.open(path);
-	if(!fin)
-	{
-		MatrixXf M;
-		return M;
-	}
-	string line;
-	vector<float> values;
-	int rows = 0;
-	while (getline(fin, line))
-	{
-		stringstream lineStream(line);
-		string cell;
-		bool empty_row = true;
-		while (getline(lineStream, cell, ','))
-		{
-			values.push_back(stof(cell));
-			empty_row = false;
-		}
-		if(!empty_row)
-			rows++;
-	}
-	return Map<Matrix<float, Dynamic, Dynamic, RowMajor>>(values.data(), rows, values.size()/rows);
-}
-
-// Write matrix into csv file
-bool write_csv(const string & path, MatrixXf M)
-{
-	ofstream fout;
-	fout.open(path);
-	if(!fout)
-		return false;
-	int rows = M.rows();
-	int cols = M.cols();
-	for(int i = 0; i < rows; i++)
-	{
-		for(int j = 0; j < cols - 1; j++)
-			fout << M(i,j) << ',';
-		fout << M(i,cols-1) << endl;
-	}
-	return true;
 }
 
 
@@ -1914,7 +1955,7 @@ int main(int argc, char* argv[]) {
 	m_manoeuvreCompletePublisher = nodeHandle.advertise<IntWithHeader>("ManoeuvreComplete", 1);
 
 	// Create thread for solving Deepc optimization
-	boost::thread Deepc_thread(solve_Deepc);
+	boost::thread deepc_thread(deepc_thread_main);
 
     // Print out some information to the user.
     ROS_INFO("[DEEPC CONTROLLER] Service ready :-)");
@@ -1923,7 +1964,7 @@ int main(int argc, char* argv[]) {
     ros::spin();
 
     // Wait for Deepc thread to finish
-    Deepc_thread.join();
+    deepc_thread.join();
 
     // Return zero if the "ross::spin" is cancelled.
     return 0;
