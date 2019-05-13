@@ -179,11 +179,11 @@ float yaml_landing_spin_motors_time = 1.5;
 
 // VARAIBLES FOR VALUES LOADED FROM THE YAML FILE
 // > the mass of the crazyflie, in [grams]
-float yaml_cf_mass_in_grams = 25.0;
+float yaml_cf_mass_in_grams = 28.0;
 
 // > the frequency at which the controller is running
-float yaml_control_frequency = 200.0;
-float m_control_deltaT = (1.0/200.0);
+float yaml_control_frequency = 25.0;
+float m_control_deltaT = 1.0 / yaml_control_frequency;
 
 // > the coefficients of the 16-bit command to thrust conversion
 //std::vector<float> yaml_motorPoly(3);
@@ -243,6 +243,31 @@ float yaml_yawRateExcAmp_in_deg = 0.0;
 // Excitation start time, in s. Used to collect steady-state data before excitation
 float yaml_exc_start_time = 0.0;
 
+// Deepc parameters
+// Flag that indicates whether to use roll and pitch angle measurements in Deepc
+bool yaml_Deepc_measure_roll_pitch = true;
+// Flag that activates yaw control through Deepc
+bool yaml_Deepc_yaw_control = true;
+// Tini in discrete time steps
+int yaml_Tini = 3;
+// Prediction horizon in discrete time steps
+int yaml_N = 25;
+// Output cost matrix diagonal entries (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
+vector<float> yaml_Q = {40.0, 40.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0};
+// Input cost matrix diagonal entries (thurst, rollRate, pitchRate, yawRate)
+vector<float> yaml_R = {4.0, 4.0, 4.0, 1.0};
+// Terminal output cost matrix diagonal entries (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
+vector<float> yaml_P = {657.21, 657.21, 8.88, 96.92, 96.92, 0.47, 629.60, 629.60, 84.21};
+// Regularization parameters
+float yaml_lambda2_g = 0.0;
+float yaml_lambda2_s = 1.0e7;
+// Output constraints (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
+vector<float> yaml_output_min = {-4.0, -4.0, -4.0, -100, -100, -100, -PI/6, -PI/6, -PI/6};
+vector<float> yaml_output_max = {4.0, 4.0, 4.0, 100, 100, 100, PI/6, PI/6, PI/6};
+// Input constraints (thurst, rollRate, pitchRate, yawRate)
+vector<float> yaml_input_min = {0.0, -PI, -PI, -PI};
+vector<float> yaml_input_max = {0.6388, PI, PI, PI};
+
 // Gurobi optimization parameters
 bool yaml_grb_LogToFile = false;
 bool yaml_grb_LogToConsole = false;
@@ -261,11 +286,14 @@ float  m_setpoint[4] = {0.0,0.0,0.4,0.0};
 // differs from the setpoint when landing
 float m_setpoint_for_controller[4] = {0.0,0.0,0.4,0.0};
 
+// Absolute data folder location
+string m_dataFolder = HOME + yaml_dataFolder;
+
 // Absolute CSV output data folder location
-string m_outputFolder = HOME + yaml_dataFolder + yaml_outputFolder;
+string m_outputFolder = m_dataFolder + yaml_outputFolder;
 
 // Absolute log files folder location
-string m_logFolder = HOME + yaml_dataFolder + yaml_logFolder;
+string m_logFolder = m_dataFolder + yaml_logFolder;
 
 // Thrust excitation variables
 float m_thrustExcAmp_in_newtons = 0.0;
@@ -297,18 +325,32 @@ MatrixXf m_y_data;
 int m_dataIndex = 0;
 bool m_write_data = false;
 
+// Deepc variables
+int m_num_inputs;
+int m_num_outputs;
+int m_Ng;
+MatrixXf m_U_f;
+Map<MatrixXf> m_r(m_setpoint, 4, 1);
+MatrixXf m_uini;
+MatrixXf m_yini;
+MatrixXf m_g;
+MatrixXf m_u_f;
+
 // Gurobi optimization variables
 GRBEnv m_grb_env;
 GRBModel m_grb_model = GRBModel(m_grb_env);
-GRBVar m_grb_x;
-GRBVar m_grb_y;
-GRBVar m_grb_z;
+GRBVar* m_grb_vars = 0;
+GRBQuadExpr m_q_obj = 0;
+GRBLinExpr m_l_obj_us = 0;
+GRBConstr* m_grb_eq_constrs = 0;
 bool m_grb_setup_success = false;
+int m_opt_status;
 
 // Variables for thread management
 mutex m_Deepc_mutex;
 // Flags for communication with Deepc thread
 bool m_params_changed = false;
+bool m_setpoint_changed = false;
 bool m_setupDeepc = false;
 bool m_solveDeepc = false;
 
@@ -348,12 +390,14 @@ ros::Publisher m_manoeuvreCompletePublisher;
 // hence why the "main" function is at the bottom.
 
 // DEEPC FUNCTIONS
-void deepc_thread_main();
+void Deepc_thread_main();
 void change_Deepc_params();
 bool setup_Deepc();
 bool solve_Deepc();
 
 // DEEPC HELPER FUNCTIONS
+// DATA TO HANKEL
+MatrixXf data2hankel(MatrixXf data, int num_block_rows);
 
 // READ/WRITE CSV FILES
 MatrixXf read_csv(const string & path);
