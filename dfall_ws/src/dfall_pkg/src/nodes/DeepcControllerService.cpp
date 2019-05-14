@@ -112,6 +112,10 @@ void Deepc_thread_main()
         	s_Deepc_mutex.unlock();
         }
 	}
+
+	// Clear any heap allocated variables
+	delete[] d_grb_vars;
+	delete[] d_grb_eq_constrs;
 }
 
 void change_Deepc_params()
@@ -243,6 +247,7 @@ void change_Deepc_setpoint()
 void setup_Deepc()
 {
 	s_Deepc_mutex.lock();
+	ROS_INFO("[DEEPC CONTROLLER] DEEPC SETUP STARTED LOCK");
 	string dataFolder = s_dataFolder;
 	int Tini = s_yaml_Tini;
 	int N = s_yaml_N;
@@ -257,21 +262,11 @@ void setup_Deepc()
 	vector<float> output_max_vec = s_yaml_output_max;
 	vector<float> input_min_vec = s_yaml_input_min;
 	vector<float> input_max_vec = s_yaml_input_max;
+	ROS_INFO("[DEEPC CONTROLLER] DEEPC SETUP ABOUT TO UNLOCK");
 	s_Deepc_mutex.unlock();
 
 	try
     {
-		MatrixXf y_data_in = read_csv(dataFolder + "u_data.csv");
-		if (y_data_in.size() <= 0)
-		{	
-			s_Deepc_mutex.lock();
-        	s_setupDeepc_success = false;
-        	s_Deepc_mutex.unlock();
-			
-			ROS_INFO("[DEEPC CONTROLLER] Failed to read y data file");
-
-			return;
-		}
 		MatrixXf u_data_in = read_csv(dataFolder + "u_data.csv");
 		if (u_data_in.size() <= 0)
 		{
@@ -283,6 +278,23 @@ void setup_Deepc()
 
 			return;
 		}
+		MatrixXf y_data_in = read_csv(dataFolder + "y_data.csv");
+		if (y_data_in.size() <= 0)
+		{	
+			s_Deepc_mutex.lock();
+        	s_setupDeepc_success = false;
+        	s_Deepc_mutex.unlock();
+			
+			ROS_INFO("[DEEPC CONTROLLER] Failed to read y data file");
+
+			return;
+		}
+
+		MatrixXf u_data;
+		if (d_Deepc_yaw_control)
+			u_data = u_data_in;
+		else
+			u_data = u_data_in.topRows(3);
 
 		MatrixXf y_data;
 		if (d_Deepc_measure_roll_pitch && d_Deepc_yaw_control)
@@ -291,18 +303,12 @@ void setup_Deepc()
 			y_data = y_data_in.topRows(5);
 		else if (d_Deepc_yaw_control)
 		{
-			y_data = MatrixXf(4, y_data_in.cols());
+			y_data = MatrixXf::Zero(4, y_data_in.cols());
 			y_data.topRows(3) = y_data_in.topRows(3);
 			y_data.bottomRows(1) = y_data_in.bottomRows(1);
 		}
 		else
 			y_data = y_data_in.topRows(3);
-
-		MatrixXf u_data;
-		if (d_Deepc_yaw_control)
-			u_data = u_data_in;
-		else
-			u_data = u_data_in.topRows(3);
 
 		// HANKEL MATRICES
 		int num_inputs = u_data.rows();
@@ -520,6 +526,9 @@ void setup_Deepc()
 	    	d_grb_eq_constrs[i] = d_grb_model.addConstr(lhs, '=', grb_b_eq(i));
 	    }
 
+	    // Set model parameters
+	    d_grb_model.set(GRB_IntParam_DualReductions, 0);
+
 	    // Setup output variables
 	    d_g = MatrixXf::Zero(d_Ng, 1);
 
@@ -553,7 +562,7 @@ void setup_Deepc()
     	s_setupDeepc_success = false;
     	s_Deepc_mutex.unlock();
 
-	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization setup failed with standard error message: " << e.what());
+	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization setup exception with standard error message: " << e.what());
 	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
   	}
   	catch(...)
@@ -573,6 +582,9 @@ void solve_Deepc()
 	d_uini = s_uini;
 	d_yini = s_yini;
 	s_Deepc_mutex.unlock();
+
+	ROS_INFO_STREAM("[DEEPC CONTROLLER] DEBUG d_uini = " << d_uini);
+	ROS_INFO_STREAM("[DEEPC CONTROLLER] DEBUG d_yini = " << d_yini);
 
 	try
 	{
@@ -691,33 +703,45 @@ void update_uini_yini(Controller::Request &request, control_output &output)
 	int Nyini = s_Nyini;
 	s_Deepc_mutex.unlock();
 
-	// Update uini
-	int u_shift = Nuini - num_inputs;
-	m_uini.topRows(u_shift) = m_uini.bottomRows(u_shift);
-	m_uini(u_shift) = output.thrust;
-	m_uini(u_shift + 1) = output.rollRate;
-	m_uini(u_shift + 2) = output.pitchRate;
-	if (yaml_Deepc_yaw_control)
-		m_uini(u_shift + 3) = output.yawRate;
-
-	// Update uini
-	int y_shift = Nyini - num_outputs;
-	m_yini.topRows(y_shift) = m_yini.bottomRows(y_shift);
-	m_yini(y_shift) = request.ownCrazyflie.x;
-	m_yini(y_shift + 1) = request.ownCrazyflie.y;
-	m_yini(y_shift + 2) = request.ownCrazyflie.z;
-	if (yaml_Deepc_measure_roll_pitch)
+	try
 	{
-		m_yini(y_shift + 3) = request.ownCrazyflie.roll;
-		m_yini(y_shift + 4) = request.ownCrazyflie.pitch;
-	}
-	if (yaml_Deepc_yaw_control)
-		m_uini(Nyini - 1) = request.ownCrazyflie.yaw;
+		// Update uini
+		int u_shift = Nuini - num_inputs;
+		m_uini.topRows(u_shift) = m_uini.bottomRows(u_shift);
+		m_uini(u_shift) = output.thrust;
+		m_uini(u_shift + 1) = output.rollRate;
+		m_uini(u_shift + 2) = output.pitchRate;
+		if (yaml_Deepc_yaw_control)
+			m_uini(u_shift + 3) = output.yawRate;
 
-	s_Deepc_mutex.lock();
-	s_uini = m_uini;
-	s_yini = m_yini;
-	s_Deepc_mutex.unlock();
+		// Update uini
+		int y_shift = Nyini - num_outputs;
+		m_yini.topRows(y_shift) = m_yini.bottomRows(y_shift);
+		m_yini(y_shift) = request.ownCrazyflie.x;
+		m_yini(y_shift + 1) = request.ownCrazyflie.y;
+		m_yini(y_shift + 2) = request.ownCrazyflie.z;
+		if (yaml_Deepc_measure_roll_pitch)
+		{
+			m_yini(y_shift + 3) = request.ownCrazyflie.roll;
+			m_yini(y_shift + 4) = request.ownCrazyflie.pitch;
+		}
+		if (yaml_Deepc_yaw_control)
+			m_yini(Nyini - 1) = request.ownCrazyflie.yaw;
+
+		s_Deepc_mutex.lock();
+		s_uini = m_uini;
+		s_yini = m_yini;
+		s_Deepc_mutex.unlock();
+	}
+
+	catch(exception& e)
+    {
+	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Update uini yini exception with standard error message: " << e.what());
+  	}
+  	catch(...)
+  	{
+    	ROS_INFO("[DEEPC CONTROLLER] Update uini yini exception");
+  	}
 }
 
 
@@ -736,20 +760,38 @@ MatrixXf read_csv(const string & path)
 	string line;
 	vector<float> values;
 	int rows = 0;
-	while (getline(fin, line))
+	try
 	{
-		stringstream lineStream(line);
-		string cell;
-		bool empty_row = true;
-		while (getline(lineStream, cell, ','))
+		while (getline(fin, line))
 		{
-			values.push_back(stof(cell));
-			empty_row = false;
+			stringstream lineStream(line);
+			string cell;
+			bool empty_row = true;
+			while (getline(lineStream, cell, ','))
+			{
+				values.push_back(stof(cell));
+				empty_row = false;
+			}
+			if(!empty_row)
+				rows++;
 		}
-		if(!empty_row)
-			rows++;
+		return Map<Matrix<float, Dynamic, Dynamic, RowMajor>>(values.data(), rows, values.size()/rows);
 	}
-	return Map<Matrix<float, Dynamic, Dynamic, RowMajor>>(values.data(), rows, values.size()/rows);
+
+	catch(exception& e)
+    {
+	    ROS_INFO_STREAM("[DEEPC CONTROLLER] CSV read exception with standard error message: " << e.what());
+
+	    MatrixXf M;
+		return M;
+  	}
+  	catch(...)
+  	{
+    	ROS_INFO("[DEEPC CONTROLLER] CSV read exception");
+
+    	MatrixXf M;
+		return M;
+  	}
 }
 
 // Write matrix into csv file
@@ -2034,6 +2076,7 @@ void processCustomButton2(float float_data, int int_data, bool* bool_data)
     ROS_INFO("[DEEPC CONTROLLER] Received request to setup Deepc optimization");
 
     s_Deepc_mutex.lock();
+    ROS_INFO("[DEEPC CONTROLLER] WAZZUP");
     s_setupDeepc = true;
     s_Deepc_mutex.unlock();
 }
