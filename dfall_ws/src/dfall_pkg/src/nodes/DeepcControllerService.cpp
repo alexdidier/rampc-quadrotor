@@ -62,103 +62,234 @@
 // Deepc operations run in seperate thread as they are time consuming
 void Deepc_thread_main()
 {
-	bool params_changed_local;
-	bool setupDeepc_local;
-	bool grb_setup_success_local;
-	bool solveDeepc_local;
+	bool params_changed;
+	bool setpoint_changed;
+	bool setupDeepc;
+	bool solveDeepc;
 
 	while (ros::ok())
 	{
-		m_Deepc_mutex.lock();
-        params_changed_local = m_params_changed;
-        setupDeepc_local = m_setupDeepc;
-        solveDeepc_local = m_solveDeepc;
-        m_Deepc_mutex.unlock();
+		s_Deepc_mutex.lock();
+        params_changed = s_params_changed;
+        setpoint_changed = s_setpoint_changed;
+        setupDeepc = s_setupDeepc;
+        solveDeepc = s_solveDeepc;
+        s_Deepc_mutex.unlock();
 
-        if (params_changed_local)
-        	change_Deepc_params;
-
-        if (setupDeepc_local)
+        if (params_changed)
         {
-        	grb_setup_success_local = setup_Deepc();
-
-        	m_Deepc_mutex.lock();
-        	m_setupDeepc = false;
-        	m_grb_setup_success = grb_setup_success_local;
-        	m_Deepc_mutex.unlock();
+        	change_Deepc_params();
+        	
+        	s_Deepc_mutex.lock();
+        	s_params_changed = false;
+        	s_Deepc_mutex.unlock();
         }
 
-        if (solveDeepc_local)
+        if (setpoint_changed)
+        {
+        	change_Deepc_setpoint();
+        	
+        	s_Deepc_mutex.lock();
+        	s_setpoint_changed = false;
+        	s_Deepc_mutex.unlock();
+        }
+
+        if (setupDeepc)
+        {
+        	setup_Deepc();
+
+        	s_Deepc_mutex.lock();
+        	s_setupDeepc = false;
+        	s_Deepc_mutex.unlock();
+        }
+
+        if (solveDeepc)
         {
         	solve_Deepc();
 
-		  	m_Deepc_mutex.lock();
-        	m_solveDeepc = false;
-        	m_Deepc_mutex.unlock();
+		  	s_Deepc_mutex.lock();
+        	s_solveDeepc = false;
+        	s_Deepc_mutex.unlock();
         }
 	}
 }
 
 void change_Deepc_params()
 {
-	m_Deepc_mutex.lock();
-	
-	// > Change Gurobi optimization parameters
-	if (yaml_grb_LogToFile)
-		m_grb_model.set(GRB_StringParam_LogFile, m_logFolder + "gurobi.log");
-	else
-		m_grb_model.set(GRB_StringParam_LogFile, "");
-	m_grb_model.set(GRB_IntParam_LogToConsole, yaml_grb_LogToConsole);
-	
-	m_params_changed = false;
+	s_Deepc_mutex.lock();
+	d_logFolder = s_logFolder;
+	d_Deepc_measure_roll_pitch = s_Deepc_measure_roll_pitch;
+	d_Deepc_yaw_control = s_Deepc_yaw_control;
+	bool grb_LogToFile = s_yaml_grb_LogToFile;
+	bool grb_LogToConsole = s_yaml_grb_LogToConsole;
+	s_Deepc_mutex.unlock();
 
-	m_Deepc_mutex.unlock();
+	try
+	{
+		if (grb_LogToFile)
+			d_grb_model.set(GRB_StringParam_LogFile, d_logFolder + "gurobi.log");
+		else
+			d_grb_model.set(GRB_StringParam_LogFile, "");
+		d_grb_model.set(GRB_IntParam_LogToConsole, grb_LogToConsole);
+
+		// Inform the user
+	    ROS_INFO("[DEEPC CONTROLLER] Deepc parameters change successful");
+	}
+
+	catch(GRBException e)
+    {
+    	s_Deepc_mutex.lock();
+    	s_setupDeepc_success = false;
+    	s_Deepc_mutex.unlock();
+
+	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc parameter change exception with Gurobi error code = " << e.getErrorCode());
+	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Error message: " << e.getMessage());
+	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+  	}
+  	catch(exception& e)
+  	{
+  		s_Deepc_mutex.lock();
+    	s_setupDeepc_success = false;
+    	s_Deepc_mutex.unlock();
+
+	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc parameter change exception with standard error message: " << e.what());
+	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+  	}
+  	catch(...)
+  	{
+  		s_Deepc_mutex.lock();
+    	s_setupDeepc_success = false;
+    	s_Deepc_mutex.unlock();
+
+  		ROS_INFO("[DEEPC CONTROLLER] Deepc parameter change exception");
+  		ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+  	}
 }
 
-bool setup_Deepc()
+void change_Deepc_setpoint()
 {
-	m_Deepc_mutex.lock();
-	string dataFolder_local = m_dataFolder;
-	bool Deepc_measure_roll_pitch_local = yaml_Deepc_measure_roll_pitch;
-	bool Deepc_yaw_control_local = yaml_Deepc_yaw_control;
-	int Tini_local = yaml_Tini;
-	int N_local = yaml_N;
-	vector<float> Q_local = yaml_Q;
-	vector<float> R_local = yaml_R;
-	vector<float> P_local = yaml_P;
-	float lambda2_g_local = yaml_lambda2_g;
-	float lambda2_s_local = yaml_lambda2_s;
-	float cf_weight_in_newtons_local = m_cf_weight_in_newtons;
-	MatrixXf r_local = m_r;
-	vector<float> output_min_local = yaml_output_min;
-	vector<float> output_max_local = yaml_output_max;
-	vector<float> input_min_local = yaml_input_min;
-	vector<float> input_max_local = yaml_input_max;
-	MatrixXf uini_local = m_uini;
-	MatrixXf yini_local = m_yini;
-	m_Deepc_mutex.unlock();
+	s_Deepc_mutex.lock();
+	bool setupDeepc_success = s_setupDeepc_success;
+	s_Deepc_mutex.unlock();
+
+	if (!setupDeepc_success)
+		return
+
+	s_Deepc_mutex.lock();
+	int N = s_yaml_N;
+	MatrixXf setpoint = s_setpoint;
+	int num_outputs = s_num_outputs;
+	s_Deepc_mutex.unlock();
+
+	try
+	{
+		// UPDATE GUROBI LINEAR COST VECTOR FOR REFERENCE TRACKING
+		MatrixXf r = MatrixXf::Zero(num_outputs, 1);
+		r.topRows(3) = setpoint.topRows(3);
+		if (d_Deepc_yaw_control)
+			r.bottomRows(1) = setpoint.bottomRows(1);
+
+		MatrixXf grb_cg_r = MatrixXf::Zero(d_Ng, 1);
+		for (int i = 0; i < N + 1; i++)
+		{
+			if (i < N)
+				grb_cg_r -= 2.0 * d_Y_f.middleRows(i * num_outputs, num_outputs).transpose() * d_Q * r;
+			else
+				grb_cg_r -= 2.0 * d_Y_f.middleRows(i * num_outputs, num_outputs).transpose() * d_P * r;
+		}
+
+		// Update linear objective term for reference tracking
+	    GRBLinExpr grb_lin_obj_r = 0;
+	    for (int i = 0; i < d_Ng; i++)
+	    	grb_lin_obj_r += grb_cg_r(i) * d_grb_vars[i];
+
+	    // Update objective
+	    d_grb_model.setObjective(d_grb_quad_obj + d_grb_lin_obj_us + grb_lin_obj_r);
+
+	    // Inform the user
+	    ROS_INFO("[DEEPC CONTROLLER] Deepc setpoint update successful");
+	}
+
+	catch(GRBException e)
+    {
+    	s_Deepc_mutex.lock();
+    	s_setupDeepc_success = false;
+    	s_Deepc_mutex.unlock();
+
+	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc setpoint update exception with Gurobi error code = " << e.getErrorCode());
+	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Error message: " << e.getMessage());
+	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+  	}
+  	catch(exception& e)
+    {
+    	s_Deepc_mutex.lock();
+    	s_setupDeepc_success = false;
+    	s_Deepc_mutex.unlock();
+
+	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc setpoint update exception with standard error message: " << e.what());
+	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+  	}
+  	catch(...)
+  	{
+  		s_Deepc_mutex.lock();
+    	s_setupDeepc_success = false;
+    	s_Deepc_mutex.unlock();
+
+  		ROS_INFO("[DEEPC CONTROLLER] Deepc setpoint update exception");
+  		ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+  	}
+}
+
+void setup_Deepc()
+{
+	s_Deepc_mutex.lock();
+	string dataFolder = s_dataFolder;
+	int Tini = s_yaml_Tini;
+	int N = s_yaml_N;
+	vector<float> Q_vec = s_yaml_Q;
+	vector<float> R_vec = s_yaml_R;
+	vector<float> P_vec = s_yaml_P;
+	float lambda2_g = s_yaml_lambda2_g;
+	float lambda2_s = s_yaml_lambda2_s;
+	float cf_weight_in_newtons = s_cf_weight_in_newtons;
+	MatrixXf setpoint = s_setpoint;
+	vector<float> output_min_vec = s_yaml_output_min;
+	vector<float> output_max_vec = s_yaml_output_max;
+	vector<float> input_min_vec = s_yaml_input_min;
+	vector<float> input_max_vec = s_yaml_input_max;
+	s_Deepc_mutex.unlock();
 
 	try
     {
-		MatrixXf y_data_in = read_csv(dataFolder_local + "u_data.csv");
+		MatrixXf y_data_in = read_csv(dataFolder + "u_data.csv");
 		if (y_data_in.size() <= 0)
-		{
+		{	
+			s_Deepc_mutex.lock();
+        	s_setupDeepc_success = false;
+        	s_Deepc_mutex.unlock();
+			
 			ROS_INFO("[DEEPC CONTROLLER] Failed to read y data file");
-			return false;
+
+			return;
 		}
-		MatrixXf u_data_in = read_csv(dataFolder_local + "u_data.csv");
+		MatrixXf u_data_in = read_csv(dataFolder + "u_data.csv");
 		if (u_data_in.size() <= 0)
 		{
-			ROS_INFO("[DEEPC CONTROLLER] Failed to read u data file");
-			return false;
+			s_Deepc_mutex.lock();
+        	s_setupDeepc_success = false;
+        	s_Deepc_mutex.unlock();
+
+        	ROS_INFO("[DEEPC CONTROLLER] Failed to read u data file");
+
+			return;
 		}
 
 		MatrixXf y_data;
-		if (Deepc_measure_roll_pitch_local && Deepc_yaw_control_local)
+		if (d_Deepc_measure_roll_pitch && d_Deepc_yaw_control)
 			y_data = y_data_in;
-		else if (Deepc_measure_roll_pitch_local)
+		else if (d_Deepc_measure_roll_pitch)
 			y_data = y_data_in.topRows(5);
-		else if (Deepc_yaw_control_local)
+		else if (d_Deepc_yaw_control)
 		{
 			y_data = MatrixXf(4, y_data_in.cols());
 			y_data.topRows(3) = y_data_in.topRows(3);
@@ -168,315 +299,354 @@ bool setup_Deepc()
 			y_data = y_data_in.topRows(3);
 
 		MatrixXf u_data;
-		if (Deepc_yaw_control_local)
+		if (d_Deepc_yaw_control)
 			u_data = u_data_in;
 		else
 			u_data = u_data_in.topRows(3);
 
 		// HANKEL MATRICES
-		int num_inputs_local = u_data.rows();
-		int num_outputs_local = y_data.rows();
-		MatrixXf H_u = data2hankel(u_data, Tini_local + N_local + 1);
-		MatrixXf H_y = data2hankel(y_data, Tini_local + N_local + 1);
-		MatrixXf U_p = H_u.topRows(num_inputs_local * Tini_local);
-		m_U_f = H_u.middleRows(num_inputs_local * Tini_local, num_inputs_local * N_local);
-		MatrixXf Y_p = H_y.topRows(num_outputs_local * Tini_local);
-		MatrixXf Y_f = H_y.bottomRows(num_outputs_local * (N_local + 1));
+		int num_inputs = u_data.rows();
+		int num_outputs = y_data.rows();
+		d_Nuini = num_inputs * Tini;
+		d_Nyini = num_outputs * Tini;
+		MatrixXf H_u = data2hankel(u_data, Tini + N + 1);
+		MatrixXf H_y = data2hankel(y_data, Tini + N + 1);
+		MatrixXf U_p = H_u.topRows(num_inputs * Tini);
+		d_U_f = H_u.middleRows(num_inputs * Tini, num_inputs * N);
+		MatrixXf Y_p = H_y.topRows(num_outputs * Tini);
+		d_Y_f = H_y.bottomRows(num_outputs * (N + 1));
 
 		// COST MATRICES
 		// Output cost and terminal output cost matrix
-		MatrixXf Q = MatrixXf::Zero(num_outputs_local, num_outputs_local);
-		MatrixXf P = MatrixXf::Zero(num_outputs_local, num_outputs_local);
+		d_Q = MatrixXf::Zero(num_outputs, num_outputs);
+		d_P = MatrixXf::Zero(num_outputs, num_outputs);
 		for (int i = 0; i < 3; i++)
 		{
-			Q(i,i) = Q_local[i];
-			P(i,i) = P_local[i];
+			d_Q(i,i) = Q_vec[i];
+			d_P(i,i) = P_vec[i];
 		}
-		if (Deepc_measure_roll_pitch_local)
+		if (d_Deepc_measure_roll_pitch)
 			for (int i = 3; i < 5; i++)
 			{
-				Q(i,i) = Q_local[i+3];
-				P(i,i) = P_local[i+3];
+				d_Q(i,i) = Q_vec[i+3];
+				d_P(i,i) = P_vec[i+3];
 			}
-		if (Deepc_yaw_control_local)
+		if (d_Deepc_yaw_control)
 		{
-			Q(num_outputs_local-1,num_outputs_local-1) = Q_local[8];
-			P(num_outputs_local-1,num_outputs_local-1) = P_local[8];
+			d_Q(num_outputs-1,num_outputs-1) = Q_vec[8];
+			d_P(num_outputs-1,num_outputs-1) = P_vec[8];
 		}
 
 		// Input cost matrix
-		MatrixXf R = MatrixXf::Zero(num_inputs_local, num_inputs_local);
-		for (int i = 0; i < num_inputs_local; i++)
-			R(i,i) = R_local[i];
+		MatrixXf R = MatrixXf::Zero(num_inputs, num_inputs);
+		for (int i = 0; i < num_inputs; i++)
+			R(i,i) = R_vec[i];
 
 		// GUROBI QUADRATIC COST MATRIX
-		m_Ng = U_p.cols();
-		int Ns = num_outputs_local * Tini_local;
-		MatrixXf Qg = lambda2_g_local * MatrixXf::Identity(m_Ng, m_Ng);
-		for (int i = 0; i < N_local; i++)
+		d_Ng = U_p.cols();
+		int Ns = num_outputs * Tini;
+		MatrixXf Qg = lambda2_g * MatrixXf::Identity(d_Ng, d_Ng);
+		for (int i = 0; i < N; i++)
 		{
-			Qg += Y_f.middleRows(i * num_outputs_local, num_outputs_local).transpose() * Q * Y_f.middleRows(i * num_outputs_local, num_outputs_local);
-			Qg += m_U_f.middleRows(i * num_inputs_local, num_inputs_local).transpose() * R * m_U_f.middleRows(i * num_inputs_local, num_inputs_local);
+			Qg += d_Y_f.middleRows(i * num_outputs, num_outputs).transpose() * d_Q * d_Y_f.middleRows(i * num_outputs, num_outputs);
+			Qg += d_U_f.middleRows(i * num_inputs, num_inputs).transpose() * R * d_U_f.middleRows(i * num_inputs, num_inputs);
 		}
-		Qg += Y_f.bottomRows(num_outputs_local).transpose() * P * Y_f.bottomRows(num_outputs_local);
-		MatrixXf Qs = lambda2_s_local * MatrixXf::Identity(Ns, Ns);
-		MatrixXf grb_Q = MatrixXf::Zero(m_Ng + Ns, m_Ng + Ns);
-		grb_Q.topLeftCorner(m_Ng, m_Ng) = Qg;
+		Qg += d_Y_f.bottomRows(num_outputs).transpose() * d_P * d_Y_f.bottomRows(num_outputs);
+		MatrixXf Qs = lambda2_s * MatrixXf::Identity(Ns, Ns);
+		MatrixXf grb_Q = MatrixXf::Zero(d_Ng + Ns, d_Ng + Ns);
+		grb_Q.topLeftCorner(d_Ng, d_Ng) = Qg;
 		grb_Q.bottomRightCorner(Ns, Ns) = Qs;
 
 		// GUROBI LINEAR COST VECTOR
-		MatrixXf r = MatrixXf::Zero(num_outputs_local, 1);
-		r.topRows(3) = r_local.topRows(3);
-		if (Deepc_yaw_control_local)
-			r.bottomRows(1) = r_local.bottomRows(1);
+		MatrixXf r = MatrixXf::Zero(num_outputs, 1);
+		r.topRows(3) = setpoint.topRows(3);
+		if (d_Deepc_yaw_control)
+			r.bottomRows(1) = setpoint.bottomRows(1);
 
-		MatrixXf us = MatrixXf::Zero(num_inputs_local, 1);
-		us(0) = cf_weight_in_newtons_local;
+		MatrixXf us = MatrixXf::Zero(num_inputs, 1);
+		us(0) = cf_weight_in_newtons;
 
-		MatrixXf grb_cg_us = MatrixXf::Zero(m_Ng, 1);
-		MatrixXf grb_cg_r = MatrixXf::Zero(m_Ng, 1);
-		for (int i = 0; i < N_local + 1; i++)
+		MatrixXf grb_cg_us = MatrixXf::Zero(d_Ng, 1);
+		MatrixXf grb_cg_r = MatrixXf::Zero(d_Ng, 1);
+		for (int i = 0; i < N + 1; i++)
 		{
-			if (i < N_local)
+			if (i < N)
 			{
-				grb_cg_us -= 2.0 * m_U_f.middleRows(i * num_inputs_local, num_inputs_local).transpose() * R * us;
-				grb_cg_r -= 2.0 * Y_f.middleRows(i * num_outputs_local, num_outputs_local).transpose() * Q * r;
+				grb_cg_us -= 2.0 * d_U_f.middleRows(i * num_inputs, num_inputs).transpose() * R * us;
+				grb_cg_r -= 2.0 * d_Y_f.middleRows(i * num_outputs, num_outputs).transpose() * d_Q * r;
 			}
 			else
-				grb_cg_r -= 2.0 * Y_f.middleRows(i * num_outputs_local, num_outputs_local).transpose() * P * r;
+				grb_cg_r -= 2.0 * d_Y_f.middleRows(i * num_outputs, num_outputs).transpose() * d_P * r;
 		}
 
 		// OUTPUT CONSTRAINTS
-		MatrixXf output_min = MatrixXf::Zero(num_outputs_local, 1);
-		MatrixXf output_max = MatrixXf::Zero(num_outputs_local, 1);
+		MatrixXf output_min = MatrixXf::Zero(num_outputs, 1);
+		MatrixXf output_max = MatrixXf::Zero(num_outputs, 1);
 		for (int i = 0; i < 3; i++)
 		{
-			output_min(i) = output_min_local[i];
-			output_max(i) = output_max_local[i];
+			output_min(i) = output_min_vec[i];
+			output_max(i) = output_max_vec[i];
 		}
-		if (Deepc_measure_roll_pitch_local)
+		if (d_Deepc_measure_roll_pitch)
 			for (int i = 3; i < 5; i++)
 			{
-				output_min(i) = output_min_local[i+3];
-				output_max(i) = output_max_local[i+3];
+				output_min(i) = output_min_vec[i+3];
+				output_max(i) = output_max_vec[i+3];
 			}
-		if (Deepc_yaw_control_local)
+		if (d_Deepc_yaw_control)
 		{
-			output_min(num_outputs_local-1) = output_min_local[8];
-			output_max(num_outputs_local-1) = output_max_local[8];
+			output_min(num_outputs-1) = output_min_vec[8];
+			output_max(num_outputs-1) = output_max_vec[8];
 		}
 
 		//INPUT CONSTRAINTS
-		MatrixXf input_min = MatrixXf::Zero(num_inputs_local, 1);
-		MatrixXf input_max = MatrixXf::Zero(num_inputs_local, 1);
-		for (int i = 0; i < num_inputs_local; i++)
+		MatrixXf input_min = MatrixXf::Zero(num_inputs, 1);
+		MatrixXf input_max = MatrixXf::Zero(num_inputs, 1);
+		for (int i = 0; i < num_inputs; i++)
 		{
-			input_min(i) = input_min_local[i];
-			input_max(i) = input_max_local[i];
+			input_min(i) = input_min_vec[i];
+			input_max(i) = input_max_vec[i];
 		}
 
 		// GUROBI LINEAR INEQUALITY CONSTRAINT MATRIX
-		MatrixXf grb_Ag = MatrixXf::Zero(2 * Y_f.rows() + 2 * m_U_f.rows(), m_Ng);
-		grb_Ag.topRows(Y_f.rows()) = -Y_f;
-		grb_Ag.middleRows(Y_f.rows(), Y_f.rows()) = Y_f;
-		grb_Ag.middleRows(2 * Y_f.rows(), m_U_f.rows()) = -m_U_f;
-		grb_Ag.bottomRows(m_U_f.rows()) = m_U_f;
+		MatrixXf grb_Ag = MatrixXf::Zero(2 * d_Y_f.rows() + 2 * d_U_f.rows(), d_Ng);
+		grb_Ag.topRows(d_Y_f.rows()) = -d_Y_f;
+		grb_Ag.middleRows(d_Y_f.rows(), d_Y_f.rows()) = d_Y_f;
+		grb_Ag.middleRows(2 * d_Y_f.rows(), d_U_f.rows()) = -d_U_f;
+		grb_Ag.bottomRows(d_U_f.rows()) = d_U_f;
 
 		// GUROBI LINEAR INEQUALITY CONSTRAINT VECTOR
 		MatrixXf grb_b = MatrixXf::Zero(grb_Ag.rows(), 1);
-		for (int i = 0; i < N_local + 1; i++)
+		for (int i = 0; i < N + 1; i++)
 		{
-			grb_b.middleRows(i * num_outputs_local, num_outputs_local) = -output_min;
-			grb_b.middleRows(Y_f.rows() + i * num_outputs_local, num_outputs_local) = output_max;
-			if (i < N_local)
+			grb_b.middleRows(i * num_outputs, num_outputs) = -output_min;
+			grb_b.middleRows(d_Y_f.rows() + i * num_outputs, num_outputs) = output_max;
+			if (i < N)
 			{
-				grb_b.middleRows(2 * Y_f.rows() + i * num_inputs_local, num_inputs_local) = -input_min;
-				grb_b.middleRows(2 * Y_f.rows() + m_U_f.rows() + i * num_inputs_local, num_inputs_local) = input_max;
+				grb_b.middleRows(2 * d_Y_f.rows() + i * num_inputs, num_inputs) = -input_min;
+				grb_b.middleRows(2 * d_Y_f.rows() + d_U_f.rows() + i * num_inputs, num_inputs) = input_max;
 			}
 		}
 
 		// GUROBI BOUNDS VECTOR
-		MatrixXf lb = -GRB_INFINITY * MatrixXf::Ones(m_Ng + Ns, 1);
-		MatrixXf ub = GRB_INFINITY * MatrixXf::Ones(m_Ng + Ns, 1);
+		MatrixXf lb = -GRB_INFINITY * MatrixXf::Ones(d_Ng + Ns, 1);
+		MatrixXf ub = GRB_INFINITY * MatrixXf::Ones(d_Ng + Ns, 1);
 
 		// GUROBI LINEAR EQUALITY CONSTRAINT MATRIX
-		MatrixXf grb_A_eq = MatrixXf::Zero(U_p.rows() + Y_p.rows(), m_Ng + Ns);
-		grb_A_eq.topLeftCorner(U_p.rows(), m_Ng) = U_p;
-		grb_A_eq.bottomLeftCorner(Y_p.rows(), m_Ng) = Y_p;
+		MatrixXf grb_A_eq = MatrixXf::Zero(U_p.rows() + Y_p.rows(), d_Ng + Ns);
+		grb_A_eq.topLeftCorner(U_p.rows(), d_Ng) = U_p;
+		grb_A_eq.bottomLeftCorner(Y_p.rows(), d_Ng) = Y_p;
 		grb_A_eq.bottomRightCorner(Ns, Ns) = -MatrixXf::Identity(Ns, Ns);
 
 		// GUROBI LINEAR EQUALITY CONSTRAINT VECTOR
+		d_uini = MatrixXf::Zero(num_inputs * Tini, 1);
+	    d_yini = MatrixXf::Zero(num_outputs * Tini, 1);
 		MatrixXf grb_b_eq = MatrixXf::Zero(grb_A_eq.rows(), 1);
-		grb_b_eq.topRows(uini_local.rows()) = uini_local;
-		grb_b_eq.bottomRows(yini_local.cols()) = yini_local;
+		grb_b_eq.topRows(d_uini.rows()) = d_uini;
+		grb_b_eq.bottomRows(d_yini.rows()) = d_yini;
 
 		// GUROBI MODEL SETUP
 		// Follows 'dense_c++.cpp' example
     	// (Re-)Configure environment
-	    m_grb_env.set(GRB_StringParam_LogFile, m_logFolder + "gurobi.log");
-	    m_grb_env.start();
+	    d_grb_env.set(GRB_StringParam_LogFile, d_logFolder + "gurobi.log");
+	    d_grb_env.start();
 
 	    // Clear variables if previously created
-	    int num_vars = m_grb_model.get(GRB_IntAttr_NumVars);
+	    int num_vars = d_grb_model.get(GRB_IntAttr_NumVars);
 	    if (num_vars > 0)
 	    {
 	    	for (int i = 0; i < num_vars; i++)
-	    		m_grb_model.remove(m_grb_vars[i]);
-	    	m_grb_model.update();
-	    	delete[] m_grb_vars;
+	    		d_grb_model.remove(d_grb_vars[i]);
+	    	d_grb_model.update();
+	    	delete[] d_grb_vars;
 	    }
 
 	    // Create variables
-	    double grb_lb[m_Ng + Ns];
-	    double grb_ub[m_Ng + Ns];
-	    for (int i = 0; i < m_Ng + Ns; i++)
+	    double grb_lb[d_Ng + Ns];
+	    double grb_ub[d_Ng + Ns];
+	    for (int i = 0; i < d_Ng + Ns; i++)
 	    {
 	    	grb_lb[i] = lb(i);
 	    	grb_ub[i] = ub(i);
 	    }
-	    m_grb_vars = m_grb_model.addVars(grb_lb, grb_ub, NULL, NULL, NULL, m_Ng + Ns);
+	    d_grb_vars = d_grb_model.addVars(grb_lb, grb_ub, NULL, NULL, NULL, d_Ng + Ns);
 
 	    // Set quadratic objective term
-	    m_q_obj = 0;
-	    for (int i = 0; i < m_Ng + Ns; i++)
-	    	for (int j = 0; j < m_Ng + Ns; j++)
-	    		m_q_obj += grb_Q(i,j) * m_grb_vars[i] * m_grb_vars[j];
+	    d_grb_quad_obj = 0;
+	    for (int i = 0; i < d_Ng + Ns; i++)
+	    	for (int j = 0; j < d_Ng + Ns; j++)
+	    		d_grb_quad_obj += grb_Q(i,j) * d_grb_vars[i] * d_grb_vars[j];
 
 	    // Set linear objective term
-	    m_l_obj_us = 0;
-	    GRBLinExpr l_obj_r = 0;
-	    for (int i = 0; i < m_Ng; i++)
+	    d_grb_lin_obj_us = 0;
+	    GRBLinExpr grb_lin_obj_r = 0;
+	    for (int i = 0; i < d_Ng; i++)
 	    {
-	    	m_l_obj_us += grb_cg_us(i) * m_grb_vars[i];
-	    	l_obj_r += grb_cg_r(i) * m_grb_vars[i];
+	    	d_grb_lin_obj_us += grb_cg_us(i) * d_grb_vars[i];
+	    	grb_lin_obj_r += grb_cg_r(i) * d_grb_vars[i];
 	    }
 
 	    // Set objective
-	    m_grb_model.setObjective(m_q_obj + m_l_obj_us + l_obj_r);
+	    d_grb_model.setObjective(d_grb_quad_obj + d_grb_lin_obj_us + grb_lin_obj_r);
 
 	    // Clear constraints if previously created
-	    int num_constrs = m_grb_model.get(GRB_IntAttr_NumConstrs);
+	    int num_constrs = d_grb_model.get(GRB_IntAttr_NumConstrs);
 	    if (num_constrs > 0)
 	    {
-	    	GRBConstr* grb_constrs = m_grb_model.getConstrs();
+	    	GRBConstr* grb_constrs = d_grb_model.getConstrs();
 	    	for (int i = 0; i < num_constrs; i++)
-	    		m_grb_model.remove(grb_constrs[i]);
-	    	m_grb_model.update();
+	    		d_grb_model.remove(grb_constrs[i]);
+	    	d_grb_model.update();
 	    	delete[] grb_constrs;
-	    	delete[] m_grb_eq_constrs;
+	    	delete[] d_grb_eq_constrs;
 	    }
 
 	    // Add inequality constraints
 	    for (int i = 0; i < grb_Ag.rows(); i++)
 	    {
 	    	GRBLinExpr lhs = 0;
-	    	for (int j = 0; j < m_Ng; j++)
-	    		lhs += grb_Ag(i,j) * m_grb_vars[j];
-	    	m_grb_model.addConstr(lhs, '<', grb_b(i));
+	    	for (int j = 0; j < d_Ng; j++)
+	    		lhs += grb_Ag(i,j) * d_grb_vars[j];
+	    	d_grb_model.addConstr(lhs, '<', grb_b(i));
 	    }
 
 	    // Add equality constraints and store in memory for quick change
-	    m_grb_eq_constrs = new GRBConstr[grb_A_eq.rows()];
+	    d_grb_eq_constrs = new GRBConstr[grb_A_eq.rows()];
 	    for (int i = 0; i < grb_A_eq.rows(); i++)
 	    {
 	    	GRBLinExpr lhs = 0;
-	    	for (int j = 0; j < m_Ng + Ns; j++)
-	    		lhs += grb_A_eq(i,j) * m_grb_vars[j];
-	    	m_grb_eq_constrs[i] = m_grb_model.addConstr(lhs, '=', grb_b_eq(i));
+	    	for (int j = 0; j < d_Ng + Ns; j++)
+	    		lhs += grb_A_eq(i,j) * d_grb_vars[j];
+	    	d_grb_eq_constrs[i] = d_grb_model.addConstr(lhs, '=', grb_b_eq(i));
 	    }
 
 	    // Setup output variables
-	    m_g = MatrixXf::Zero(m_Ng, 1);
-	    MatrixXf uini_local = MatrixXf::Zero(num_inputs_local * Tini_local, 1);
-	    MatrixXf yini_local = MatrixXf::Zero(num_outputs_local * Tini_local, 1);
+	    d_g = MatrixXf::Zero(d_Ng, 1);
 
-	    m_Deepc_mutex.lock();
-		m_num_inputs = num_inputs_local;
-		m_num_outputs = num_outputs_local;
-		m_uini = uini_local;
-		m_yini = yini_local;
-		m_Deepc_mutex.unlock();
+	    s_Deepc_mutex.lock();
+		s_num_inputs = num_inputs;
+		s_num_outputs = num_outputs;
+		s_Nuini = d_Nuini;
+		s_Nyini = d_Nyini;
+		s_uini = d_uini;
+		s_yini = d_yini;
+    	s_setupDeepc_success = true;
+		s_Deepc_mutex.unlock();
 
 	    // Inform the user
 	    ROS_INFO("[DEEPC CONTROLLER] Deepc optimization setup successful");
-
-	    return true;
     }
     
     catch(GRBException e)
     {
+    	s_Deepc_mutex.lock();
+    	s_setupDeepc_success = false;
+    	s_Deepc_mutex.unlock();
+
 	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization setup exception with Gurobi error code = " << e.getErrorCode());
 	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Error message: " << e.getMessage());
-
-	    return false;
+	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
   	}
   	catch(exception& e)
     {
-	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization setup failed with standard error message: " << e.what());
+    	s_Deepc_mutex.lock();
+    	s_setupDeepc_success = false;
+    	s_Deepc_mutex.unlock();
 
-	    return false;
+	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization setup failed with standard error message: " << e.what());
+	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
   	}
   	catch(...)
   	{
-    	ROS_INFO("[DEEPC CONTROLLER] Deepc optimization setup exception");
+  		s_Deepc_mutex.lock();
+    	s_setupDeepc_success = false;
+    	s_Deepc_mutex.unlock();
 
-    	return false;
+    	ROS_INFO("[DEEPC CONTROLLER] Deepc optimization setup exception");
+    	ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
   	}
 }
 
-bool solve_Deepc()
+void solve_Deepc()
 {
-	// Solve optimization
+	s_Deepc_mutex.lock();
+	d_uini = s_uini;
+	d_yini = s_yini;
+	s_Deepc_mutex.unlock();
+
 	try
 	{
-		m_grb_model.optimize();
-		m_opt_status = m_grb_model.get(GRB_IntAttr_Status);
-		if (m_opt_status == GRB_OPTIMAL)
-		{
-			for (int i = 0; i < m_Ng; i++)
-			{
-				m_g(i) = m_grb_vars[i].get(GRB_DoubleAttr_X);
-			}
+		// Update equality constraints RHS
+		for (d_i = 0; d_i < d_Nuini; d_i++)
+			d_grb_eq_constrs[d_i].set(GRB_DoubleAttr_RHS, d_uini(d_i));
+		for (d_i = 0; d_i < d_Nyini; d_i++)
+			d_grb_eq_constrs[d_Nuini + d_i].set(GRB_DoubleAttr_RHS, d_yini(d_i));
 
-			m_Deepc_mutex.lock();
-			m_u_f = m_U_f * m_g;
+		// Solve optimization
+		d_grb_model.optimize();
+		d_DeepcOpt_status = d_grb_model.get(GRB_IntAttr_Status);
+		
+
+		if (d_DeepcOpt_status == GRB_OPTIMAL)
+		{
+			for (d_i = 0; d_i < d_Ng; d_i++)
+				d_g(d_i) = d_grb_vars[d_i].get(GRB_DoubleAttr_X);
+
+			d_u_f = d_U_f * d_g;
+
+			s_Deepc_mutex.lock();
+			s_DeepcOpt_status = d_DeepcOpt_status;
+			s_u_f = d_u_f;
+			s_Deepc_mutex.unlock();
 
 			ROS_INFO("[DEEPC CONTROLLER] Deepc optimial solution found:");
-			ROS_INFO_STREAM("Thrust: " << m_u_f(0));
-			ROS_INFO_STREAM("Roll Rate: " << m_u_f(1));
-			ROS_INFO_STREAM("Pitch Rate: " << m_u_f(2));
-			if (yaml_Deepc_yaw_control)
-				ROS_INFO_STREAM("Yaw Rate: " << m_u_f(3));
-			m_Deepc_mutex.unlock();
-			
-	    	ROS_INFO_STREAM("Objective: " << m_grb_model.get(GRB_DoubleAttr_ObjVal));
-	    	ROS_INFO_STREAM("Runtime: " << m_grb_model.get(GRB_DoubleAttr_Runtime));
-
-	    	return true;
+			ROS_INFO_STREAM("Thrust: " << d_u_f(0));
+			ROS_INFO_STREAM("Roll Rate: " << d_u_f(1));
+			ROS_INFO_STREAM("Pitch Rate: " << d_u_f(2));
+			if (d_Deepc_yaw_control)
+				ROS_INFO_STREAM("Yaw Rate: " << d_u_f(3));
+	    	ROS_INFO_STREAM("Objective: " << d_grb_model.get(GRB_DoubleAttr_ObjVal));
+	    	ROS_INFO_STREAM("Runtime: " << d_grb_model.get(GRB_DoubleAttr_Runtime));
 		}
 		else
 		{
-			ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc failed to find optimal solution with status code = " << m_opt_status);
+			s_Deepc_mutex.lock();
+			s_DeepcOpt_status = d_DeepcOpt_status;
+			s_Deepc_mutex.unlock();
+
+			ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc failed to find optimal solution with status code = " << d_DeepcOpt_status);
 		}
 	}
 	catch(GRBException e)
     {
+    	s_Deepc_mutex.lock();
+		s_DeepcOpt_status = 0;
+    	s_setupDeepc_success = false;
+		s_Deepc_mutex.unlock();
+
 	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization exception with Gurobi error code = " << e.getErrorCode());
 	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Error message: " << e.getMessage());
-
-	    return false;
+	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
   	}
   	catch(exception& e)
     {
-	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization failed with standard error message: " << e.what());
+    	s_Deepc_mutex.lock();
+		s_DeepcOpt_status = 0;
+    	s_setupDeepc_success = false;
+		s_Deepc_mutex.unlock();
 
-	    return false;
+	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization exception with standard error message: " << e.what());
+	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
   	}
   	catch(...)
   	{
-    	ROS_INFO("[DEEPC CONTROLLER] Deepc optimization exception");
+  		s_Deepc_mutex.lock();
+		s_DeepcOpt_status = 0;
+    	s_setupDeepc_success = false;
+		s_Deepc_mutex.unlock();
 
-    	return false;
+    	ROS_INFO("[DEEPC CONTROLLER] Deepc optimization exception");
+    	ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
   	}
 }
 
@@ -499,6 +669,55 @@ MatrixXf data2hankel(MatrixXf data, int num_block_rows)
 	        H.block(dim*i,j,dim,1) = data.col(i+j);
 
     return H;
+}
+
+// Update uini yini
+// This function is called by main thread
+void update_uini_yini(Controller::Request &request, control_output &output)
+{
+	// If Deepc was not setup yet don't do anything as uini and yini matrices are not setup yet
+	s_Deepc_mutex.lock();
+	bool setupDeepc_success = s_setupDeepc_success;
+	s_Deepc_mutex.unlock();
+	if (!setupDeepc_success)
+		return;
+
+	s_Deepc_mutex.lock();
+	m_uini = s_uini;
+	m_yini = s_yini;
+	int num_inputs = s_num_inputs;
+	int num_outputs = s_num_outputs;
+	int Nuini = s_Nuini;
+	int Nyini = s_Nyini;
+	s_Deepc_mutex.unlock();
+
+	// Update uini
+	int u_shift = Nuini - num_inputs;
+	m_uini.topRows(u_shift) = m_uini.bottomRows(u_shift);
+	m_uini(u_shift) = output.thrust;
+	m_uini(u_shift + 1) = output.rollRate;
+	m_uini(u_shift + 2) = output.pitchRate;
+	if (yaml_Deepc_yaw_control)
+		m_uini(u_shift + 3) = output.yawRate;
+
+	// Update uini
+	int y_shift = Nyini - num_outputs;
+	m_yini.topRows(y_shift) = m_yini.bottomRows(y_shift);
+	m_yini(y_shift) = request.ownCrazyflie.x;
+	m_yini(y_shift + 1) = request.ownCrazyflie.y;
+	m_yini(y_shift + 2) = request.ownCrazyflie.z;
+	if (yaml_Deepc_measure_roll_pitch)
+	{
+		m_yini(y_shift + 3) = request.ownCrazyflie.roll;
+		m_yini(y_shift + 4) = request.ownCrazyflie.pitch;
+	}
+	if (yaml_Deepc_yaw_control)
+		m_uini(Nyini - 1) = request.ownCrazyflie.yaw;
+
+	s_Deepc_mutex.lock();
+	s_uini = m_uini;
+	s_yini = m_yini;
+	s_Deepc_mutex.unlock();
 }
 
 
@@ -795,6 +1014,9 @@ void computeResponse_for_standby(Controller::Request &request, Controller::Respo
 		ROS_INFO_STREAM("[DEEPC CONTROLLER] State \"standby\" started");
 	}
 
+	// Create dummy control output variable
+	control_output output = {0.0, 0.0, 0.0, 0.0};
+
 	// PREPARE AND RETURN THE VARIABLE "response"
 	// Specify that using a "motor type" of command
 	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTORS;
@@ -822,6 +1044,9 @@ void computeResponse_for_standby(Controller::Request &request, Controller::Respo
 		ROS_INFO_STREAM("controlOutput.motorCmd3 = " << response.controlOutput.motorCmd3);
 		ROS_INFO_STREAM("controlOutput.motorCmd4 = " << response.controlOutput.motorCmd4);
 	}
+
+	// Update uini yini
+	update_uini_yini(request, output);
 }
 
 void computeResponse_for_LQR(Controller::Request &request, Controller::Response &response)
@@ -901,6 +1126,9 @@ void computeResponse_for_LQR(Controller::Request &request, Controller::Response 
 		ROS_INFO_STREAM("controlOutput.motorCmd3 = " << response.controlOutput.motorCmd3);
 		ROS_INFO_STREAM("controlOutput.motorCmd4 = " << response.controlOutput.motorCmd4);
 	}
+
+	// Update uini yini
+	update_uini_yini(request, output);
 }
 
 void computeResponse_for_excitation(Controller::Request &request, Controller::Response &response)
@@ -1104,6 +1332,9 @@ void computeResponse_for_excitation(Controller::Request &request, Controller::Re
         ROS_INFO_STREAM("controlOutput.motorCmd3 = " << response.controlOutput.motorCmd3);
         ROS_INFO_STREAM("controlOutput.motorCmd4 = " << response.controlOutput.motorCmd4);
     }
+
+    // Update uini yini
+	update_uini_yini(request, output);
 }
 
 void computeResponse_for_Deepc(Controller::Request &request, Controller::Response &response)
@@ -1122,6 +1353,21 @@ void computeResponse_for_Deepc(Controller::Request &request, Controller::Respons
 		publishCurrentSetpointAndState();
 		// Inform the user
 		ROS_INFO_STREAM("[DEEPC CONTROLLER] State \"Deepc\" started");
+	}
+
+	// Check if Deepc is not setup and exit Deepc control mode
+	// Deepc control is not allowed to start unless setup, but on exceptions setup success flag is reset
+	// Deepc must be (re-)setup in this case to allow restart
+	s_Deepc_mutex.lock();
+	bool setupDeepc_success = s_setupDeepc_success;
+	s_Deepc_mutex.unlock();
+	if (!setupDeepc_success)
+	{
+		// Inform the user
+        ROS_INFO("[DEEPC CONTROLLER] Deepc control error. Deepc must be (re-)setup. Switch to state: LQR");
+        // Update the state accordingly
+        m_current_state = DEEPC_CONTROLLER_STATE_LQR;
+        m_current_state_changed = true;
 	}
 
 	m_setpoint_for_controller[0] = m_setpoint[0];
@@ -1165,10 +1411,13 @@ void computeResponse_for_Deepc(Controller::Request &request, Controller::Respons
 		ROS_INFO_STREAM("controlOutput.motorCmd4 = " << response.controlOutput.motorCmd4);
 	}
 
+	// Update uini yini BEFORE CALLING OPTIMIZATION
+	update_uini_yini(request, output);
+
 	// Set flag to solve Deepc optimization
-	m_Deepc_mutex.lock();
-	m_solveDeepc = true;
-	m_Deepc_mutex.unlock();
+	s_Deepc_mutex.lock();
+	s_solveDeepc = true;
+	s_Deepc_mutex.unlock();
 }
 
 void computeResponse_for_landing_move_down(Controller::Request &request, Controller::Response &response)
@@ -1250,6 +1499,9 @@ void computeResponse_for_landing_move_down(Controller::Request &request, Control
 		ROS_INFO_STREAM("controlOutput.motorcmd2 = " << response.controlOutput.motorCmd3);
 		ROS_INFO_STREAM("controlOutput.motorcmd4 = " << response.controlOutput.motorCmd4);
 	}
+
+	// Update uini yini
+	update_uini_yini(request, output);
 }
 
 void computeResponse_for_landing_spin_motors(Controller::Request &request, Controller::Response &response)
@@ -1284,6 +1536,9 @@ void computeResponse_for_landing_spin_motors(Controller::Request &request, Contr
 		publishCurrentSetpointAndState();
 	}
 
+	// Create dummy control output variable
+	control_output output = {0.0, 0.0, 0.0, 0.0};
+
 	// PREPARE AND RETURN THE VARIABLE "response"
 	// Specify that using a "motor type" of command
 	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTORS;
@@ -1314,6 +1569,9 @@ void computeResponse_for_landing_spin_motors(Controller::Request &request, Contr
 		ROS_INFO_STREAM("controlOutput.motorCmd3 = " << response.controlOutput.motorCmd3);
 		ROS_INFO_STREAM("controlOutput.motorCmd4 = " << response.controlOutput.motorCmd4);
 	}
+
+	// Update uini yini
+	update_uini_yini(request, output);
 }
 
 
@@ -1562,13 +1820,13 @@ void setNewSetpoint(float x, float y, float z, float yaw)
 	m_setpoint[3] = yaw;
 
 	// Tell Deepc thread that setpoint changed
-	m_Deepc_mutex.lock();
+	s_Deepc_mutex.lock();
 	for (int i = 0; i < 4; i++)
 	{
-		m_r(i) = m_setpoint[i];
+		s_setpoint(i) = m_setpoint[i];
 	}
-	m_setpoint_changed = true;
-	m_Deepc_mutex.unlock();
+	s_setpoint_changed = true;
+	s_Deepc_mutex.unlock();
 
 	// Publish the change so that the network is updated
 	// (mainly the "flying agent GUI" is interested in
@@ -1769,22 +2027,26 @@ void processCustomButton1(float float_data, int int_data, bool* bool_data)
     }
 }
 
-// CUSTOM BUTTON 2 - SETUP GUROBI OPTIMIZATION
+// CUSTOM BUTTON 2 - SETUP DEEPC OPTIMIZATION
 void processCustomButton2(float float_data, int int_data, bool* bool_data)
 {
 	// Inform the user
     ROS_INFO("[DEEPC CONTROLLER] Received request to setup Deepc optimization");
 
-    m_Deepc_mutex.lock();
-    m_setupDeepc = true;
-    m_Deepc_mutex.unlock();
+    s_Deepc_mutex.lock();
+    s_setupDeepc = true;
+    s_Deepc_mutex.unlock();
 }
 
 // CUSTOM BUTTON 3 - DEEPC
 void processCustomButton3(float float_data, int int_data, bool* bool_data)
 {	
+	s_Deepc_mutex.lock();
+	int setupDeepc_success = s_setupDeepc_success;
+	s_Deepc_mutex.unlock();
+
     // Check if Deepc optimization was setup successfully
-    if (!m_grb_setup_success)
+    if (!setupDeepc_success)
     {
     	// Inform the user
         ROS_INFO("[DEEPC CONTROLLER] Received request to start Deepc but optimization is not setup successfully. Request ignored");
@@ -1970,29 +2232,33 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	yaml_outputFolder = getParameterString(nodeHandle_for_paramaters, "outputFolder");
 	yaml_logFolder = getParameterString(nodeHandle_for_paramaters, "logFolder");
 
-	// PARAMETERS ACCESSED BY DEEPC THREAD
-	m_Deepc_mutex.lock();
-	
-	// DeePC parameters
+	// Deepc flag to use roll and pitch angle measurements
 	yaml_Deepc_measure_roll_pitch = getParameterBool(nodeHandle_for_paramaters, "Deepc_measure_roll_pitch");
-	yaml_Deepc_yaw_control = getParameterBool(nodeHandle_for_paramaters, "DeePC_yaw_control");
-	yaml_Tini = getParameterInt(nodeHandle_for_paramaters, "Tini");
-	yaml_N = getParameterInt(nodeHandle_for_paramaters, "N");
-	getParameterFloatVector(nodeHandle_for_paramaters, "Q", yaml_Q, 9);
-	getParameterFloatVector(nodeHandle_for_paramaters, "R", yaml_R, 4);
-	getParameterFloatVector(nodeHandle_for_paramaters, "P", yaml_P, 9);
-	yaml_lambda2_g = getParameterFloat(nodeHandle_for_paramaters, "lambda2_g");
-	yaml_lambda2_s = getParameterFloat(nodeHandle_for_paramaters, "lambda2_s");
-	getParameterFloatVector(nodeHandle_for_paramaters, "output_min", yaml_output_min, 9);
-	getParameterFloatVector(nodeHandle_for_paramaters, "output_max", yaml_output_max, 9);
-	getParameterFloatVector(nodeHandle_for_paramaters, "input_min", yaml_output_min, 4);
-	getParameterFloatVector(nodeHandle_for_paramaters, "input_max", yaml_output_max, 4);
+	
+	// Deepc flag to control yaw
+	yaml_Deepc_yaw_control = getParameterBool(nodeHandle_for_paramaters, "Deepc_yaw_control");
+
+	// PARAMETERS ACCESSED BY DEEPC THREAD
+	s_Deepc_mutex.lock();
+	
+	// Deepc parameters
+	s_yaml_Tini = getParameterInt(nodeHandle_for_paramaters, "Tini");
+	s_yaml_N = getParameterInt(nodeHandle_for_paramaters, "N");
+	getParameterFloatVector(nodeHandle_for_paramaters, "Q", s_yaml_Q, 9);
+	getParameterFloatVector(nodeHandle_for_paramaters, "R", s_yaml_R, 4);
+	getParameterFloatVector(nodeHandle_for_paramaters, "P", s_yaml_P, 9);
+	s_yaml_lambda2_g = getParameterFloat(nodeHandle_for_paramaters, "lambda2_g");
+	s_yaml_lambda2_s = getParameterFloat(nodeHandle_for_paramaters, "lambda2_s");
+	getParameterFloatVector(nodeHandle_for_paramaters, "output_min", s_yaml_output_min, 9);
+	getParameterFloatVector(nodeHandle_for_paramaters, "output_max", s_yaml_output_max, 9);
+	getParameterFloatVector(nodeHandle_for_paramaters, "input_min", s_yaml_output_min, 4);
+	getParameterFloatVector(nodeHandle_for_paramaters, "input_max", s_yaml_output_max, 4);
 
 	// Gurobi optimization parameters
-	yaml_grb_LogToFile = getParameterBool(nodeHandle_for_paramaters, "grb_LogToFile");
-	yaml_grb_LogToConsole = getParameterBool(nodeHandle_for_paramaters, "grb_LogToConsole");
+	s_yaml_grb_LogToFile = getParameterBool(nodeHandle_for_paramaters, "grb_LogToFile");
+	s_yaml_grb_LogToConsole = getParameterBool(nodeHandle_for_paramaters, "grb_LogToConsole");
 
-	m_Deepc_mutex.unlock();
+	s_Deepc_mutex.unlock();
 
 
 	// > DEBUGGING: Print out one of the parameters that was loaded to
@@ -2001,6 +2267,10 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 
 
 	// PROCESS THE PARAMTERS
+
+	// > Compute the feed-forward force that we need to counteract
+	//   gravity (i.e., mg) in units of [Newtons]
+	m_cf_weight_in_newtons = yaml_cf_mass_in_grams * 9.81/1000.0;
 
 	// > Convert the control frequency to a delta T
 	m_control_deltaT = 1.0 / yaml_control_frequency;
@@ -2017,24 +2287,11 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	// > Compute the yaw rate excitation in units of [rad/s]
 	m_yawRateExcAmp_in_rad = yaml_yawRateExcAmp_in_deg * PI/180.0;
 
-	// PARAMETERS ACCESSED BY DEEPC THREAD
-	m_Deepc_mutex.lock();
-
-	// > Compute the feed-forward force that we need to counteract
-	//   gravity (i.e., mg) in units of [Newtons]
-	m_cf_weight_in_newtons = yaml_cf_mass_in_grams * 9.81/1000.0;
-
 	// > Get absolute data folder location
 	m_dataFolder = HOME + yaml_dataFolder;
 
 	// > Get absolute output data folder location
 	m_outputFolder = m_dataFolder + yaml_outputFolder;
-
-	// > Get absolute log files folder location
-	m_logFolder = m_dataFolder + yaml_logFolder;
-
-	// > Set flag for Deepc thread to update parameters
-	m_params_changed = true;
 
 	// > Get the excitation signals from files
 	m_thrustExcSignal = read_csv(m_dataFolder + yaml_thrustExcSignalFile);
@@ -2059,7 +2316,28 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	if (m_yawRateExcSignal.size() <= 0)
 		ROS_INFO("[DEEPC CONTROLLER] Failed to read yaw rate excitation signal file");
 
-	m_Deepc_mutex.unlock();
+	// PARAMETERS ACCESSED BY DEEPC THREAD
+	s_Deepc_mutex.lock();
+
+	// Share feed-forward with Deepc thread
+	s_cf_weight_in_newtons = m_cf_weight_in_newtons;
+
+	// Share absolute data folder location with Deepc thread
+	s_dataFolder = m_dataFolder;
+
+	// > Get absolute log files folder location
+	s_logFolder = m_dataFolder + yaml_logFolder;
+
+	// Share Deepc flag to use roll and pitch angle measurements with Deepc thread
+	s_Deepc_measure_roll_pitch = yaml_Deepc_measure_roll_pitch;
+
+	// Share Deepc flag to control yaw with Deepc thread
+	s_Deepc_yaw_control = yaml_Deepc_yaw_control;
+
+	// > Set flag for Deepc thread to update parameters
+	s_params_changed = true;
+
+	s_Deepc_mutex.unlock();
 
 	// DEBUGGING: Print out one of the computed quantities
 	ROS_INFO_STREAM("[DEEPC CONTROLLER] DEBUGGING: thus the weight of this agent in [Newtons] = " << m_cf_weight_in_newtons);

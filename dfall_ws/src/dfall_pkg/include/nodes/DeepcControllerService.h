@@ -135,6 +135,12 @@ struct control_output
 //      V    A   A  R   R  III  A   A  BBBB   LLLLL  EEEEE  SSSS
 //    ----------------------------------------------------------------------------------
 
+// NOTE ABOUT THREAD MANAGEMENT
+// Variables starting with 's_' are shared between main and Deepc threads
+// Mutex must be used before read/writing them
+// Variables starting with 'd_' are used by Deepc thread only
+// They are declared global for inter-function communication and/or for speed
+// All other variables are used by main thread only
 
 // The ID of the agent that this node is monitoring
 int m_agentID;
@@ -219,14 +225,14 @@ string yaml_dataFolder = "/work/D-FaLL-System/Deepc_data/";
 // CSV output data folder location, relative to dataFolder
 string yaml_outputFolder = "output/";
 
-// Log files folder location, relative to dataFolder
-string yaml_logFolder = "log/";
-
 // CSV input data files location, relative to dataFolder
 string yaml_thrustExcSignalFile = "thrust_exc_signal.csv";
 string yaml_rollRateExcSignalFile = "rollRate_exc_signal.csv";
 string yaml_pitchRateExcSignalFile = "pitchRate_exc_signal.csv";
 string yaml_yawRateExcSignalFile = "yawRate_exc_signal.csv";
+
+// Log files folder location, relative to dataFolder
+string yaml_logFolder = "log/";
 
 // Thrust excitation parameters
 float yaml_thrustExcAmp_in_grams = 0.0;
@@ -249,28 +255,28 @@ bool yaml_Deepc_measure_roll_pitch = true;
 // Flag that activates yaw control through Deepc
 bool yaml_Deepc_yaw_control = true;
 // Tini in discrete time steps
-int yaml_Tini = 3;
+int s_yaml_Tini = 3;
 // Prediction horizon in discrete time steps
-int yaml_N = 25;
+int s_yaml_N = 25;
 // Output cost matrix diagonal entries (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
-vector<float> yaml_Q = {40.0, 40.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0};
+vector<float> s_yaml_Q = {40.0, 40.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0};
 // Input cost matrix diagonal entries (thurst, rollRate, pitchRate, yawRate)
-vector<float> yaml_R = {4.0, 4.0, 4.0, 1.0};
+vector<float> s_yaml_R = {4.0, 4.0, 4.0, 1.0};
 // Terminal output cost matrix diagonal entries (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
-vector<float> yaml_P = {657.21, 657.21, 8.88, 96.92, 96.92, 0.47, 629.60, 629.60, 84.21};
+vector<float> s_yaml_P = {657.21, 657.21, 8.88, 96.92, 96.92, 0.47, 629.60, 629.60, 84.21};
 // Regularization parameters
-float yaml_lambda2_g = 0.0;
-float yaml_lambda2_s = 1.0e7;
+float s_yaml_lambda2_g = 0.0;
+float s_yaml_lambda2_s = 1.0e7;
 // Output constraints (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
-vector<float> yaml_output_min = {-4.0, -4.0, -4.0, -100, -100, -100, -PI/6, -PI/6, -PI/6};
-vector<float> yaml_output_max = {4.0, 4.0, 4.0, 100, 100, 100, PI/6, PI/6, PI/6};
+vector<float> s_yaml_output_min = {-4.0, -4.0, -4.0, -100, -100, -100, -PI/6, -PI/6, -PI/6};
+vector<float> s_yaml_output_max = {4.0, 4.0, 4.0, 100, 100, 100, PI/6, PI/6, PI/6};
 // Input constraints (thurst, rollRate, pitchRate, yawRate)
-vector<float> yaml_input_min = {0.0, -PI, -PI, -PI};
-vector<float> yaml_input_max = {0.6388, PI, PI, PI};
+vector<float> s_yaml_input_min = {0.0, -PI, -PI, -PI};
+vector<float> s_yaml_input_max = {0.6388, PI, PI, PI};
 
 // Gurobi optimization parameters
-bool yaml_grb_LogToFile = false;
-bool yaml_grb_LogToConsole = false;
+bool s_yaml_grb_LogToFile = false;
+bool s_yaml_grb_LogToConsole = false;
 
 // The weight of the Crazyflie in Newtons, i.e., mg
 float m_cf_weight_in_newtons = 0.0;
@@ -292,9 +298,6 @@ string m_dataFolder = HOME + yaml_dataFolder;
 // Absolute CSV output data folder location
 string m_outputFolder = m_dataFolder + yaml_outputFolder;
 
-// Absolute log files folder location
-string m_logFolder = m_dataFolder + yaml_logFolder;
-
 // Thrust excitation variables
 float m_thrustExcAmp_in_newtons = 0.0;
 MatrixXf m_thrustExcSignal;
@@ -313,7 +316,7 @@ MatrixXf m_pitchRateExcSignal;
 bool m_pitchRateExcEnable = false;
 int m_pitchRateExcIndex = 0;
 
-// Yaw rate excitation in variables
+// Yaw rate excitation variables
 float m_yawRateExcAmp_in_rad = 0.0;
 MatrixXf m_yawRateExcSignal;
 bool m_yawRateExcEnable = false;
@@ -325,34 +328,60 @@ MatrixXf m_y_data;
 int m_dataIndex = 0;
 bool m_write_data = false;
 
-// Deepc variables
-int m_num_inputs;
-int m_num_outputs;
-int m_Ng;
-MatrixXf m_U_f;
-Map<MatrixXf> m_r(m_setpoint, 4, 1);
+// Variables shared between main and Deepc thread
+bool s_Deepc_measure_roll_pitch = true;
+bool s_Deepc_yaw_control = true;
+float s_cf_weight_in_newtons = m_cf_weight_in_newtons;
+string s_dataFolder = m_dataFolder;
+string s_logFolder = m_dataFolder + yaml_logFolder;
+int s_num_inputs;
+int s_num_outputs;
+int s_Nuini;
+int s_Nyini;
+MatrixXf s_setpoint = MatrixXf::Zero(4, 1);
+MatrixXf s_uini;
+MatrixXf s_yini;
+MatrixXf s_u_f;
+bool s_setupDeepc_success = false;
+int s_DeepcOpt_status = 0;
+// Variables for thread management
+mutex s_Deepc_mutex;
+// Flags for communication with Deepc thread
+bool s_params_changed = false;
+bool s_setpoint_changed = false;
+bool s_setupDeepc = false;
+bool s_solveDeepc = false;
+
+// Global variables used by Deepc thread only
+// Declared as global for inter-function communication and/or speed
+string d_logFolder = s_logFolder;
+bool d_Deepc_measure_roll_pitch = true;
+bool d_Deepc_yaw_control = true;
+int d_Nuini;
+int d_Nyini;
+int d_Ng;
+MatrixXf d_U_f;
+MatrixXf d_Y_f;
+MatrixXf d_Q;
+MatrixXf d_P;
+MatrixXf d_g;
+MatrixXf d_uini;
+MatrixXf d_yini;
+int d_DeepcOpt_status = 0;
+int d_i;
+MatrixXf d_u_f;
+// Gurobi optimization variables
+GRBEnv d_grb_env;
+GRBModel d_grb_model = GRBModel(d_grb_env);
+GRBVar* d_grb_vars = 0;
+GRBQuadExpr d_grb_quad_obj = 0;
+GRBLinExpr d_grb_lin_obj_us = 0;
+GRBConstr* d_grb_eq_constrs = 0;
+
+// Deepc related global variables used by main thread only
+// Declared as global for speed
 MatrixXf m_uini;
 MatrixXf m_yini;
-MatrixXf m_g;
-MatrixXf m_u_f;
-
-// Gurobi optimization variables
-GRBEnv m_grb_env;
-GRBModel m_grb_model = GRBModel(m_grb_env);
-GRBVar* m_grb_vars = 0;
-GRBQuadExpr m_q_obj = 0;
-GRBLinExpr m_l_obj_us = 0;
-GRBConstr* m_grb_eq_constrs = 0;
-bool m_grb_setup_success = false;
-int m_opt_status;
-
-// Variables for thread management
-mutex m_Deepc_mutex;
-// Flags for communication with Deepc thread
-bool m_params_changed = false;
-bool m_setpoint_changed = false;
-bool m_setupDeepc = false;
-bool m_solveDeepc = false;
 
 // ROS Publisher for debugging variables
 ros::Publisher m_debugPublisher;
@@ -392,13 +421,15 @@ ros::Publisher m_manoeuvreCompletePublisher;
 // DEEPC FUNCTIONS
 void Deepc_thread_main();
 void change_Deepc_params();
-bool setup_Deepc();
-bool solve_Deepc();
+void change_Deepc_setpoint();
+void setup_Deepc();
+void solve_Deepc();
 
 // DEEPC HELPER FUNCTIONS
 // DATA TO HANKEL
 MatrixXf data2hankel(MatrixXf data, int num_block_rows);
-
+// UPDATE UINI YINI
+void update_uini_yini(Controller::Request &request, control_output &output);
 // READ/WRITE CSV FILES
 MatrixXf read_csv(const string & path);
 bool write_csv(const string & path, MatrixXf M);

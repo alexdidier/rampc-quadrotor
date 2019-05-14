@@ -54,6 +54,19 @@ gainMatrixRollRate                  :  [ 0.00,-2.79, 0.00, 0.00, -1.83, 0.00, 5.
 gainMatrixPitchRate                 :  [ 2.79, 0.00, 0.00, 1.83, 0.00, 0.00, 0.00, 5.91, 0.00]
 gainMatrixYawRate                   :  [ 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.97]
 
+# Data folder location, relative to HOME path
+dataFolder : /work/D-FaLL-System/Deepc_data/
+
+# CSV data files location, relative to dataFolder
+outputFolder : output/
+thrustExcSignalFile : thrust_exc_signal.csv
+rollRateExcSignalFile : rollRate_exc_signal.csv
+pitchRateExcSignalFile : pitchRate_exc_signal.csv
+yawRateExcSignalFile : yawRate_exc_signal.csv
+
+# Log files folder location, relative to dataFolder
+logFolder : log/
+
 # Thrust excitation magnitude, in grams
 thrustExcAmp : 10.0
 
@@ -69,18 +82,40 @@ yawRateExcAmp : 60.0
 # Excitation start time, in s. Used to collect steady-state data before excitation
 exc_start_time : 5.0
 
-# Data folder location, relative to HOME path
-dataFolder : /work/D-FaLL-System/Deepc_data/
+# EVERYTHING DEEPC
 
-# CSV data files location, relative to dataFolder
-outputFolder : output/
-thrustExcSignalFile : thrust_exc_signal.csv
-rollRateExcSignalFile : rollRate_exc_signal.csv
-pitchRateExcSignalFile : pitchRate_exc_signal.csv
-yawRateExcSignalFile : yawRate_exc_signal.csv
+# Flag that indicates whether to use roll and pitch angle measurements in Deepc
+Deepc_measure_roll_pitch : true
 
-# Log files folder location, relative to dataFolder
-logFolder : log/
+# Flag that activates yaw control through Deepc
+Deepc_yaw_control : true
+
+# Tini in discrete time steps
+Tini : 3
+
+# Prediction horizon in discrete time steps
+N : 25
+
+# Output cost matrix diagonal entries (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
+Q : [40.0, 40.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0]
+
+# Input cost matrix diagonal entries (thurst, rollRate, pitchRate, yawRate)
+R : [4.0, 4.0, 4.0, 1.0]
+
+# Terminal output cost matrix diagonal entries (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
+P : [657.21, 657.21, 8.88, 96.92, 96.92, 0.47, 629.60, 629.60, 84.21]
+
+# Regularization parameters
+lambda2_g : 0.0
+lambda2_s : 1.0e7
+
+# Output constraints (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
+output_min : [-4.0, -4.0, -4.0, -100, -100, -100, -0.5236, -0.5236, -0.5236]
+output_max : [4.0, 4.0, 4.0, 100, 100, 100, 0.5236, 0.5236, 0.5236]
+
+# Input constraints (thurst, rollRate, pitchRate, yawRate)
+input_min : [0.0, -3.1416, -3.1416, -3.1416]
+input_max : [0.6388, 3.1416, 3.1416, 3.1416]
 
 # Gurobi optimization parameters
 grb_LogToFile : false
