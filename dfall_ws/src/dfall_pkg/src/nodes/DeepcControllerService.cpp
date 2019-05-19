@@ -70,19 +70,23 @@ void Deepc_thread_main()
 	while (ros::ok())
 	{
 		s_Deepc_mutex.lock();
+		//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 72");
         params_changed = s_params_changed;
         setpoint_changed = s_setpoint_changed;
         setupDeepc = s_setupDeepc;
         solveDeepc = s_solveDeepc;
         s_Deepc_mutex.unlock();
+        //ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 72");
 
         if (params_changed)
         {
         	change_Deepc_params();
         	
         	s_Deepc_mutex.lock();
+        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 85");
         	s_params_changed = false;
         	s_Deepc_mutex.unlock();
+        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 85");
         }
 
         if (setpoint_changed)
@@ -90,8 +94,10 @@ void Deepc_thread_main()
         	change_Deepc_setpoint();
         	
         	s_Deepc_mutex.lock();
+        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 96");
         	s_setpoint_changed = false;
         	s_Deepc_mutex.unlock();
+        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 96");
         }
 
         if (setupDeepc)
@@ -99,8 +105,10 @@ void Deepc_thread_main()
         	setup_Deepc();
 
         	s_Deepc_mutex.lock();
+        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 107");
         	s_setupDeepc = false;
         	s_Deepc_mutex.unlock();
+        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 107");
         }
 
         if (solveDeepc)
@@ -108,8 +116,10 @@ void Deepc_thread_main()
         	solve_Deepc();
 
 		  	s_Deepc_mutex.lock();
+		  	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 118");
         	s_solveDeepc = false;
         	s_Deepc_mutex.unlock();
+        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 118");
         }
 	}
 
@@ -121,12 +131,16 @@ void Deepc_thread_main()
 void change_Deepc_params()
 {
 	s_Deepc_mutex.lock();
+	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 133");
 	d_logFolder = s_logFolder;
 	d_Deepc_measure_roll_pitch = s_Deepc_measure_roll_pitch;
 	d_Deepc_yaw_control = s_Deepc_yaw_control;
 	bool grb_LogToFile = s_yaml_grb_LogToFile;
 	bool grb_LogToConsole = s_yaml_grb_LogToConsole;
+	// Deepc setup must be re-run after changes
+	s_setupDeepc_success = false;
 	s_Deepc_mutex.unlock();
+	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 133");
 
 	try
 	{
@@ -138,33 +152,22 @@ void change_Deepc_params()
 
 		// Inform the user
 	    ROS_INFO("[DEEPC CONTROLLER] Deepc parameters change successful");
+	    ROS_INFO("[DEEPC CONTROLLER] (Re-)setup Deepc to apply changes");
 	}
 
 	catch(GRBException e)
     {
-    	s_Deepc_mutex.lock();
-    	s_setupDeepc_success = false;
-    	s_Deepc_mutex.unlock();
-
 	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc parameter change exception with Gurobi error code = " << e.getErrorCode());
 	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Error message: " << e.getMessage());
 	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
   	}
   	catch(exception& e)
   	{
-  		s_Deepc_mutex.lock();
-    	s_setupDeepc_success = false;
-    	s_Deepc_mutex.unlock();
-
 	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc parameter change exception with standard error message: " << e.what());
 	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
   	}
   	catch(...)
   	{
-  		s_Deepc_mutex.lock();
-    	s_setupDeepc_success = false;
-    	s_Deepc_mutex.unlock();
-
   		ROS_INFO("[DEEPC CONTROLLER] Deepc parameter change exception");
   		ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
   	}
@@ -173,17 +176,16 @@ void change_Deepc_params()
 void change_Deepc_setpoint()
 {
 	s_Deepc_mutex.lock();
+	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 193");
 	bool setupDeepc_success = s_setupDeepc_success;
-	s_Deepc_mutex.unlock();
-
-	if (!setupDeepc_success)
-		return
-
-	s_Deepc_mutex.lock();
 	int N = s_yaml_N;
 	MatrixXf setpoint = s_setpoint;
 	int num_outputs = s_num_outputs;
 	s_Deepc_mutex.unlock();
+	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 193");
+
+	if (!setupDeepc_success)
+		return;
 
 	try
 	{
@@ -217,8 +219,10 @@ void change_Deepc_setpoint()
 	catch(GRBException e)
     {
     	s_Deepc_mutex.lock();
+    	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 241");
     	s_setupDeepc_success = false;
     	s_Deepc_mutex.unlock();
+    	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 241");
 
 	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc setpoint update exception with Gurobi error code = " << e.getErrorCode());
 	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Error message: " << e.getMessage());
@@ -227,8 +231,10 @@ void change_Deepc_setpoint()
   	catch(exception& e)
     {
     	s_Deepc_mutex.lock();
+    	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 253");
     	s_setupDeepc_success = false;
     	s_Deepc_mutex.unlock();
+    	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 253");
 
 	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc setpoint update exception with standard error message: " << e.what());
 	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
@@ -236,8 +242,10 @@ void change_Deepc_setpoint()
   	catch(...)
   	{
   		s_Deepc_mutex.lock();
+  		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 264");
     	s_setupDeepc_success = false;
     	s_Deepc_mutex.unlock();
+    	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 264");
 
   		ROS_INFO("[DEEPC CONTROLLER] Deepc setpoint update exception");
   		ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
@@ -247,7 +255,7 @@ void change_Deepc_setpoint()
 void setup_Deepc()
 {
 	s_Deepc_mutex.lock();
-	ROS_INFO("[DEEPC CONTROLLER] DEEPC SETUP STARTED LOCK");
+	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 277");
 	string dataFolder = s_dataFolder;
 	int Tini = s_yaml_Tini;
 	int N = s_yaml_N;
@@ -258,12 +266,12 @@ void setup_Deepc()
 	float lambda2_s = s_yaml_lambda2_s;
 	float cf_weight_in_newtons = s_cf_weight_in_newtons;
 	MatrixXf setpoint = s_setpoint;
-	vector<float> output_min_vec = s_yaml_output_min;
-	vector<float> output_max_vec = s_yaml_output_max;
 	vector<float> input_min_vec = s_yaml_input_min;
 	vector<float> input_max_vec = s_yaml_input_max;
-	ROS_INFO("[DEEPC CONTROLLER] DEEPC SETUP ABOUT TO UNLOCK");
+	vector<float> output_min_vec = s_yaml_output_min;
+	vector<float> output_max_vec = s_yaml_output_max;
 	s_Deepc_mutex.unlock();
+	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 277");
 
 	try
     {
@@ -271,8 +279,10 @@ void setup_Deepc()
 		if (u_data_in.size() <= 0)
 		{
 			s_Deepc_mutex.lock();
+			// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 301");
         	s_setupDeepc_success = false;
         	s_Deepc_mutex.unlock();
+        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 301");
 
         	ROS_INFO("[DEEPC CONTROLLER] Failed to read u data file");
 
@@ -282,8 +292,10 @@ void setup_Deepc()
 		if (y_data_in.size() <= 0)
 		{	
 			s_Deepc_mutex.lock();
+			// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 314");
         	s_setupDeepc_success = false;
         	s_Deepc_mutex.unlock();
+        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 314");
 			
 			ROS_INFO("[DEEPC CONTROLLER] Failed to read y data file");
 
@@ -354,8 +366,8 @@ void setup_Deepc()
 		MatrixXf Qg = lambda2_g * MatrixXf::Identity(d_Ng, d_Ng);
 		for (int i = 0; i < N; i++)
 		{
-			Qg += d_Y_f.middleRows(i * num_outputs, num_outputs).transpose() * d_Q * d_Y_f.middleRows(i * num_outputs, num_outputs);
 			Qg += d_U_f.middleRows(i * num_inputs, num_inputs).transpose() * R * d_U_f.middleRows(i * num_inputs, num_inputs);
+			Qg += d_Y_f.middleRows(i * num_outputs, num_outputs).transpose() * d_Q * d_Y_f.middleRows(i * num_outputs, num_outputs);
 		}
 		Qg += d_Y_f.bottomRows(num_outputs).transpose() * d_P * d_Y_f.bottomRows(num_outputs);
 		MatrixXf Qs = lambda2_s * MatrixXf::Identity(Ns, Ns);
@@ -385,6 +397,15 @@ void setup_Deepc()
 				grb_cg_r -= 2.0 * d_Y_f.middleRows(i * num_outputs, num_outputs).transpose() * d_P * r;
 		}
 
+		//INPUT CONSTRAINTS
+		MatrixXf input_min = MatrixXf::Zero(num_inputs, 1);
+		MatrixXf input_max = MatrixXf::Zero(num_inputs, 1);
+		for (int i = 0; i < num_inputs; i++)
+		{
+			input_min(i) = input_min_vec[i];
+			input_max(i) = input_max_vec[i];
+		}
+
 		// OUTPUT CONSTRAINTS
 		MatrixXf output_min = MatrixXf::Zero(num_outputs, 1);
 		MatrixXf output_max = MatrixXf::Zero(num_outputs, 1);
@@ -405,33 +426,24 @@ void setup_Deepc()
 			output_max(num_outputs-1) = output_max_vec[8];
 		}
 
-		//INPUT CONSTRAINTS
-		MatrixXf input_min = MatrixXf::Zero(num_inputs, 1);
-		MatrixXf input_max = MatrixXf::Zero(num_inputs, 1);
-		for (int i = 0; i < num_inputs; i++)
-		{
-			input_min(i) = input_min_vec[i];
-			input_max(i) = input_max_vec[i];
-		}
-
 		// GUROBI LINEAR INEQUALITY CONSTRAINT MATRIX
-		MatrixXf grb_Ag = MatrixXf::Zero(2 * d_Y_f.rows() + 2 * d_U_f.rows(), d_Ng);
-		grb_Ag.topRows(d_Y_f.rows()) = -d_Y_f;
-		grb_Ag.middleRows(d_Y_f.rows(), d_Y_f.rows()) = d_Y_f;
-		grb_Ag.middleRows(2 * d_Y_f.rows(), d_U_f.rows()) = -d_U_f;
-		grb_Ag.bottomRows(d_U_f.rows()) = d_U_f;
+		MatrixXf grb_Ag = MatrixXf::Zero(2 * d_U_f.rows() + 2 * d_Y_f.rows(), d_Ng);
+		grb_Ag.topRows(d_U_f.rows()) = -d_U_f;
+		grb_Ag.middleRows(d_U_f.rows(), d_U_f.rows()) = d_U_f;
+		grb_Ag.middleRows(2 * d_U_f.rows(), d_Y_f.rows()) = -d_Y_f;
+		grb_Ag.bottomRows(d_Y_f.rows()) = d_Y_f;
 
 		// GUROBI LINEAR INEQUALITY CONSTRAINT VECTOR
 		MatrixXf grb_b = MatrixXf::Zero(grb_Ag.rows(), 1);
 		for (int i = 0; i < N + 1; i++)
 		{
-			grb_b.middleRows(i * num_outputs, num_outputs) = -output_min;
-			grb_b.middleRows(d_Y_f.rows() + i * num_outputs, num_outputs) = output_max;
 			if (i < N)
 			{
-				grb_b.middleRows(2 * d_Y_f.rows() + i * num_inputs, num_inputs) = -input_min;
-				grb_b.middleRows(2 * d_Y_f.rows() + d_U_f.rows() + i * num_inputs, num_inputs) = input_max;
+				grb_b.middleRows(i * num_inputs, num_inputs) = -input_min;
+				grb_b.middleRows(d_U_f.rows() + i * num_inputs, num_inputs) = input_max;
 			}
+			grb_b.middleRows(2 * d_U_f.rows() + i * num_outputs, num_outputs) = -output_min;
+			grb_b.middleRows(2 * d_U_f.rows() + d_Y_f.rows() + i * num_outputs, num_outputs) = output_max;
 		}
 
 		// GUROBI BOUNDS VECTOR
@@ -527,12 +539,12 @@ void setup_Deepc()
 	    }
 
 	    // Set model parameters
-	    d_grb_model.set(GRB_IntParam_DualReductions, 0);
 
 	    // Setup output variables
 	    d_g = MatrixXf::Zero(d_Ng, 1);
 
 	    s_Deepc_mutex.lock();
+	    // ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 568");
 		s_num_inputs = num_inputs;
 		s_num_outputs = num_outputs;
 		s_Nuini = d_Nuini;
@@ -541,6 +553,7 @@ void setup_Deepc()
 		s_yini = d_yini;
     	s_setupDeepc_success = true;
 		s_Deepc_mutex.unlock();
+		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 568");
 
 	    // Inform the user
 	    ROS_INFO("[DEEPC CONTROLLER] Deepc optimization setup successful");
@@ -549,8 +562,10 @@ void setup_Deepc()
     catch(GRBException e)
     {
     	s_Deepc_mutex.lock();
+    	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 586");
     	s_setupDeepc_success = false;
     	s_Deepc_mutex.unlock();
+    	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 586");
 
 	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization setup exception with Gurobi error code = " << e.getErrorCode());
 	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Error message: " << e.getMessage());
@@ -559,8 +574,10 @@ void setup_Deepc()
   	catch(exception& e)
     {
     	s_Deepc_mutex.lock();
+    	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 598");
     	s_setupDeepc_success = false;
     	s_Deepc_mutex.unlock();
+    	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 598");
 
 	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization setup exception with standard error message: " << e.what());
 	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
@@ -568,8 +585,10 @@ void setup_Deepc()
   	catch(...)
   	{
   		s_Deepc_mutex.lock();
+  		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 609");
     	s_setupDeepc_success = false;
     	s_Deepc_mutex.unlock();
+    	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 609");
 
     	ROS_INFO("[DEEPC CONTROLLER] Deepc optimization setup exception");
     	ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
@@ -579,12 +598,11 @@ void setup_Deepc()
 void solve_Deepc()
 {
 	s_Deepc_mutex.lock();
+	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 622");
 	d_uini = s_uini;
 	d_yini = s_yini;
 	s_Deepc_mutex.unlock();
-
-	ROS_INFO_STREAM("[DEEPC CONTROLLER] DEBUG d_uini = " << d_uini);
-	ROS_INFO_STREAM("[DEEPC CONTROLLER] DEBUG d_yini = " << d_yini);
+	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 622");
 
 	try
 	{
@@ -607,11 +625,13 @@ void solve_Deepc()
 			d_u_f = d_U_f * d_g;
 
 			s_Deepc_mutex.lock();
+			// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 649");
 			s_DeepcOpt_status = d_DeepcOpt_status;
 			s_u_f = d_u_f;
 			s_Deepc_mutex.unlock();
+			//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 649");
 
-			ROS_INFO("[DEEPC CONTROLLER] Deepc optimial solution found:");
+			ROS_INFO("[DEEPC CONTROLLER] Deepc optimal solution found:");
 			ROS_INFO_STREAM("Thrust: " << d_u_f(0));
 			ROS_INFO_STREAM("Roll Rate: " << d_u_f(1));
 			ROS_INFO_STREAM("Pitch Rate: " << d_u_f(2));
@@ -623,8 +643,10 @@ void solve_Deepc()
 		else
 		{
 			s_Deepc_mutex.lock();
+			//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 667");
 			s_DeepcOpt_status = d_DeepcOpt_status;
 			s_Deepc_mutex.unlock();
+			//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 667");
 
 			ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc failed to find optimal solution with status code = " << d_DeepcOpt_status);
 		}
@@ -632,9 +654,11 @@ void solve_Deepc()
 	catch(GRBException e)
     {
     	s_Deepc_mutex.lock();
+    	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 678");
 		s_DeepcOpt_status = 0;
     	s_setupDeepc_success = false;
 		s_Deepc_mutex.unlock();
+		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 678");
 
 	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization exception with Gurobi error code = " << e.getErrorCode());
 	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Error message: " << e.getMessage());
@@ -643,9 +667,11 @@ void solve_Deepc()
   	catch(exception& e)
     {
     	s_Deepc_mutex.lock();
+    	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 691");
 		s_DeepcOpt_status = 0;
     	s_setupDeepc_success = false;
 		s_Deepc_mutex.unlock();
+		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 691");
 
 	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization exception with standard error message: " << e.what());
 	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
@@ -653,9 +679,11 @@ void solve_Deepc()
   	catch(...)
   	{
   		s_Deepc_mutex.lock();
+  		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 703");
 		s_DeepcOpt_status = 0;
     	s_setupDeepc_success = false;
 		s_Deepc_mutex.unlock();
+		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 703");
 
     	ROS_INFO("[DEEPC CONTROLLER] Deepc optimization exception");
     	ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
@@ -689,12 +717,8 @@ void update_uini_yini(Controller::Request &request, control_output &output)
 {
 	// If Deepc was not setup yet don't do anything as uini and yini matrices are not setup yet
 	s_Deepc_mutex.lock();
+	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 741");
 	bool setupDeepc_success = s_setupDeepc_success;
-	s_Deepc_mutex.unlock();
-	if (!setupDeepc_success)
-		return;
-
-	s_Deepc_mutex.lock();
 	m_uini = s_uini;
 	m_yini = s_yini;
 	int num_inputs = s_num_inputs;
@@ -702,6 +726,10 @@ void update_uini_yini(Controller::Request &request, control_output &output)
 	int Nuini = s_Nuini;
 	int Nyini = s_Nyini;
 	s_Deepc_mutex.unlock();
+	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 750");
+
+	if (!setupDeepc_success)
+		return;
 
 	try
 	{
@@ -729,9 +757,11 @@ void update_uini_yini(Controller::Request &request, control_output &output)
 			m_yini(Nyini - 1) = request.ownCrazyflie.yaw;
 
 		s_Deepc_mutex.lock();
+		//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 786");
 		s_uini = m_uini;
 		s_yini = m_yini;
 		s_Deepc_mutex.unlock();
+		//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 786");
 	}
 
 	catch(exception& e)
@@ -1381,12 +1411,17 @@ void computeResponse_for_excitation(Controller::Request &request, Controller::Re
 
 void computeResponse_for_Deepc(Controller::Request &request, Controller::Response &response)
 {
+	bool Deepc_first_pass = false;
+
 	// Check if the state "just recently" changed
 	if (m_current_state_changed)
 	{
 		// PERFORM "ONE-OFF" OPERATIONS HERE
 		for (int i = 0; i < 9; i++)
 			m_previous_stateErrorInertial[i] = 0.0;
+		Deepc_first_pass = true;
+		m_Deepc_solving_first_opt = false;
+		m_Deepc_cycles_since_solve = 0;
 
 		// Set the change flag back to false
 		m_current_state_changed = false;
@@ -1401,8 +1436,17 @@ void computeResponse_for_Deepc(Controller::Request &request, Controller::Respons
 	// Deepc control is not allowed to start unless setup, but on exceptions setup success flag is reset
 	// Deepc must be (re-)setup in this case to allow restart
 	s_Deepc_mutex.lock();
+	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1460");
 	bool setupDeepc_success = s_setupDeepc_success;
+	bool solveDeepc = s_solveDeepc;
+	m_u_f = s_u_f;
+	int num_inputs = s_num_inputs;
 	s_Deepc_mutex.unlock();
+	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1460");
+
+	bool use_LQR = false;
+	control_output output;
+
 	if (!setupDeepc_success)
 	{
 		// Inform the user
@@ -1410,16 +1454,49 @@ void computeResponse_for_Deepc(Controller::Request &request, Controller::Respons
         // Update the state accordingly
         m_current_state = DEEPC_CONTROLLER_STATE_LQR;
         m_current_state_changed = true;
+        use_LQR = true;
 	}
 
-	m_setpoint_for_controller[0] = m_setpoint[0];
-	m_setpoint_for_controller[1] = m_setpoint[1];
-	m_setpoint_for_controller[2] = m_setpoint[2];
-	m_setpoint_for_controller[3] = m_setpoint[3];
-	
-	// Call the LQR control function
-	control_output output;
-	calculateControlOutput_viaLQR(request, output);
+	if (m_Deepc_solving_first_opt && !solveDeepc)
+		m_Deepc_solving_first_opt = false;
+
+	if (Deepc_first_pass || m_Deepc_solving_first_opt)
+		use_LQR = true;
+
+	if (solveDeepc)
+		m_Deepc_cycles_since_solve++;
+	else if (!Deepc_first_pass)
+	{
+		ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc solving optimization took " << m_Deepc_cycles_since_solve + 1 << " cycles");
+		m_Deepc_cycles_since_solve = 0;
+	}
+
+	if (use_LQR)
+	{
+		m_setpoint_for_controller[0] = m_setpoint[0];
+		m_setpoint_for_controller[1] = m_setpoint[1];
+		m_setpoint_for_controller[2] = m_setpoint[2];
+		m_setpoint_for_controller[3] = m_setpoint[3];
+		
+		// Call the LQR control function
+		calculateControlOutput_viaLQR(request, output);
+	}
+	else
+	{
+		output.thrust = m_u_f(m_Deepc_cycles_since_solve * num_inputs);
+		output.rollRate = m_u_f(m_Deepc_cycles_since_solve * num_inputs + 1);
+		output.pitchRate = m_u_f(m_Deepc_cycles_since_solve * num_inputs + 2);
+		if (yaml_Deepc_yaw_control)
+			output.yawRate = m_u_f(m_Deepc_cycles_since_solve * num_inputs + 3);
+		else
+		{
+			float yawError = request.ownCrazyflie.yaw - m_setpoint[3];
+			while(yawError > PI) {yawError -= 2 * PI;}
+			while(yawError < -PI) {yawError += 2 * PI;}
+			output.yawRate = -yaml_gainMatrixYawRate[8] * yawError;
+		}
+		
+	}
 
 	// PREPARE AND RETURN THE VARIABLE "response"
 	// Specify that using a "rate type" of command
@@ -1456,10 +1533,18 @@ void computeResponse_for_Deepc(Controller::Request &request, Controller::Respons
 	// Update uini yini BEFORE CALLING OPTIMIZATION
 	update_uini_yini(request, output);
 
-	// Set flag to solve Deepc optimization
-	s_Deepc_mutex.lock();
-	s_solveDeepc = true;
-	s_Deepc_mutex.unlock();
+	if (!solveDeepc)
+	{
+		// Set flag to solve Deepc optimization
+		s_Deepc_mutex.lock();
+		//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1520");
+		s_solveDeepc = true;
+		s_Deepc_mutex.unlock();
+		//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1520");
+
+		if (Deepc_first_pass)
+			m_Deepc_solving_first_opt = true;
+	}
 }
 
 void computeResponse_for_landing_move_down(Controller::Request &request, Controller::Response &response)
@@ -1863,12 +1948,14 @@ void setNewSetpoint(float x, float y, float z, float yaw)
 
 	// Tell Deepc thread that setpoint changed
 	s_Deepc_mutex.lock();
+	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1927");
 	for (int i = 0; i < 4; i++)
 	{
 		s_setpoint(i) = m_setpoint[i];
 	}
 	s_setpoint_changed = true;
 	s_Deepc_mutex.unlock();
+	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1927");
 
 	// Publish the change so that the network is updated
 	// (mainly the "flying agent GUI" is interested in
@@ -2076,17 +2163,20 @@ void processCustomButton2(float float_data, int int_data, bool* bool_data)
     ROS_INFO("[DEEPC CONTROLLER] Received request to setup Deepc optimization");
 
     s_Deepc_mutex.lock();
-    ROS_INFO("[DEEPC CONTROLLER] WAZZUP");
+    // ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 2142");
     s_setupDeepc = true;
     s_Deepc_mutex.unlock();
+    // ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 2142");
 }
 
 // CUSTOM BUTTON 3 - DEEPC
 void processCustomButton3(float float_data, int int_data, bool* bool_data)
 {	
 	s_Deepc_mutex.lock();
+	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 2152");
 	int setupDeepc_success = s_setupDeepc_success;
 	s_Deepc_mutex.unlock();
+	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 2152");
 
     // Check if Deepc optimization was setup successfully
     if (!setupDeepc_success)
@@ -2235,6 +2325,8 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	// The default setpoint, the ordering is (x,y,z,yaw),
 	// with unit [meters,meters,meters,radians]
 	getParameterFloatVector(nodeHandle_for_paramaters, "default_setpoint", yaml_default_setpoint, 4);
+	// Update setpoint to default
+	setNewSetpoint(yaml_default_setpoint[0], yaml_default_setpoint[1], yaml_default_setpoint[2], yaml_default_setpoint[3]);
 
 	// Boolean indiciating whether the "Debug Message" of this agent
 	// should be published or not
@@ -2283,6 +2375,7 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 
 	// PARAMETERS ACCESSED BY DEEPC THREAD
 	s_Deepc_mutex.lock();
+	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 2352");
 	
 	// Deepc parameters
 	s_yaml_Tini = getParameterInt(nodeHandle_for_paramaters, "Tini");
@@ -2294,14 +2387,15 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	s_yaml_lambda2_s = getParameterFloat(nodeHandle_for_paramaters, "lambda2_s");
 	getParameterFloatVector(nodeHandle_for_paramaters, "output_min", s_yaml_output_min, 9);
 	getParameterFloatVector(nodeHandle_for_paramaters, "output_max", s_yaml_output_max, 9);
-	getParameterFloatVector(nodeHandle_for_paramaters, "input_min", s_yaml_output_min, 4);
-	getParameterFloatVector(nodeHandle_for_paramaters, "input_max", s_yaml_output_max, 4);
+	getParameterFloatVector(nodeHandle_for_paramaters, "input_min", s_yaml_input_min, 4);
+	getParameterFloatVector(nodeHandle_for_paramaters, "input_max", s_yaml_input_max, 4);
 
 	// Gurobi optimization parameters
 	s_yaml_grb_LogToFile = getParameterBool(nodeHandle_for_paramaters, "grb_LogToFile");
 	s_yaml_grb_LogToConsole = getParameterBool(nodeHandle_for_paramaters, "grb_LogToConsole");
 
 	s_Deepc_mutex.unlock();
+	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 2352");
 
 
 	// > DEBUGGING: Print out one of the parameters that was loaded to
@@ -2361,6 +2455,7 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 
 	// PARAMETERS ACCESSED BY DEEPC THREAD
 	s_Deepc_mutex.lock();
+	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 2432");
 
 	// Share feed-forward with Deepc thread
 	s_cf_weight_in_newtons = m_cf_weight_in_newtons;
@@ -2381,6 +2476,7 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	s_params_changed = true;
 
 	s_Deepc_mutex.unlock();
+	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 2433");
 
 	// DEBUGGING: Print out one of the computed quantities
 	ROS_INFO_STREAM("[DEEPC CONTROLLER] DEBUGGING: thus the weight of this agent in [Newtons] = " << m_cf_weight_in_newtons);

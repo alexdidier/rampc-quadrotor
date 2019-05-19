@@ -382,6 +382,9 @@ GRBConstr* d_grb_eq_constrs = 0;
 // Declared as global for speed
 MatrixXf m_uini;
 MatrixXf m_yini;
+bool m_Deepc_solving_first_opt = false;
+int m_Deepc_cycles_since_solve = 0;
+MatrixXf m_u_f;
 
 // ROS Publisher for debugging variables
 ros::Publisher m_debugPublisher;
