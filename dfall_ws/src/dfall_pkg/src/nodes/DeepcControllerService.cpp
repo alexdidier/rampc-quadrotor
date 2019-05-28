@@ -1140,13 +1140,13 @@ void computeResponse_for_LQR(Controller::Request &request, Controller::Response 
 		if (m_write_data)
 		{
 			ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing input data to: " << m_outputFolder << "m_u_data.csv");
-            if (write_csv(m_outputFolder + "m_u_data.csv", m_u_data))
+            if (write_csv(m_outputFolder + "m_u_data.csv", m_u_data.transpose()))
             	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
             else
             	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
 
             ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing output data to: " << m_outputFolder << "m_y_data.csv");
-            if (write_csv(m_outputFolder + "m_y_data.csv", m_y_data))
+            if (write_csv(m_outputFolder + "m_y_data.csv", m_y_data.transpose()))
             	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
             else
             	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
