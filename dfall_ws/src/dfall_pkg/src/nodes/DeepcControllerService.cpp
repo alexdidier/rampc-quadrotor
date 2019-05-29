@@ -135,6 +135,9 @@ void change_Deepc_params()
 	d_logFolder = s_logFolder;
 	d_Deepc_measure_roll_pitch = s_Deepc_measure_roll_pitch;
 	d_Deepc_yaw_control = s_Deepc_yaw_control;
+	d_Tini = s_yaml_Tini;
+	d_N = s_yaml_N;
+	d_lambda2_g = s_yaml_lambda2_g;
 	bool grb_LogToFile = s_yaml_grb_LogToFile;
 	bool grb_LogToConsole = s_yaml_grb_LogToConsole;
 	// Deepc setup must be re-run after changes
@@ -178,7 +181,6 @@ void change_Deepc_setpoint()
 	s_Deepc_mutex.lock();
 	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 193");
 	bool setupDeepc_success = s_setupDeepc_success;
-	int N = s_yaml_N;
 	MatrixXf setpoint = s_setpoint;
 	int num_outputs = s_num_outputs;
 	s_Deepc_mutex.unlock();
@@ -190,27 +192,36 @@ void change_Deepc_setpoint()
 	try
 	{
 		// UPDATE GUROBI LINEAR COST VECTOR FOR REFERENCE TRACKING
-		MatrixXf r = MatrixXf::Zero(num_outputs, 1);
-		r.topRows(3) = setpoint.topRows(3);
+		d_r.topRows(3) = setpoint.topRows(3);
 		if (d_Deepc_yaw_control)
-			r.bottomRows(1) = setpoint.bottomRows(1);
+			d_r.bottomRows(1) = setpoint.bottomRows(1);
 
-		MatrixXf grb_cg_r = MatrixXf::Zero(d_Ng, 1);
-		for (int i = 0; i < N + 1; i++)
+		for (int i = 0; i < d_N + 1; i++)
 		{
-			if (i < N)
-				grb_cg_r -= 2.0 * d_Y_f.middleRows(i * num_outputs, num_outputs).transpose() * d_Q * r;
+			if (i < d_N)
+				d_grb_cg_r -= 2.0 * d_Y_f.middleRows(i * num_outputs, num_outputs).transpose() * d_Q * d_r;
 			else
-				grb_cg_r -= 2.0 * d_Y_f.middleRows(i * num_outputs, num_outputs).transpose() * d_P * r;
+				d_grb_cg_r -= 2.0 * d_Y_f.middleRows(i * num_outputs, num_outputs).transpose() * d_P * d_r;
 		}
 
-		// Update linear objective term for reference tracking
-	    GRBLinExpr grb_lin_obj_r = 0;
+		// UPDATE GUROBI LINEAR COST VECTOR FOR STEADY STATE TRAJECTORY MAPPER
+		d_r_gs = d_r.replicate(d_Tini + d_N + 1, 1);
+		d_b_gs.bottomRows(d_r_gs.rows()) = d_r_gs;
+		d_gs = d_A_gs.bdcSvd(ComputeThinU | ComputeThinV).solve(d_b_gs);
+		d_grb_cg_gs = -2.0 * d_lambda2_g * MatrixXf::Identity(d_Ng, d_Ng) * d_gs;
+
+
+		// Update linear objective terms
+	    d_grb_lin_obj_r = 0;
+	    d_grb_lin_obj_gs = 0;
 	    for (int i = 0; i < d_Ng; i++)
-	    	grb_lin_obj_r += grb_cg_r(i) * d_grb_vars[i];
+	    {
+	    	d_grb_lin_obj_r += d_grb_cg_r(i) * d_grb_vars[i];
+	    	d_grb_lin_obj_gs += d_grb_cg_gs(i) * d_grb_vars[i];
+	    }
 
 	    // Update objective
-	    d_grb_model.setObjective(d_grb_quad_obj + d_grb_lin_obj_us + grb_lin_obj_r);
+	    d_grb_model.setObjective(d_grb_quad_obj + d_grb_lin_obj_us + d_grb_lin_obj_r + d_grb_lin_obj_gs);
 
 	    // Inform the user
 	    ROS_INFO("[DEEPC CONTROLLER] Deepc setpoint update successful");
@@ -257,12 +268,9 @@ void setup_Deepc()
 	s_Deepc_mutex.lock();
 	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 277");
 	string dataFolder = s_dataFolder;
-	int Tini = s_yaml_Tini;
-	int N = s_yaml_N;
 	vector<float> Q_vec = s_yaml_Q;
 	vector<float> R_vec = s_yaml_R;
 	vector<float> P_vec = s_yaml_P;
-	float lambda2_g = s_yaml_lambda2_g;
 	float lambda2_s = s_yaml_lambda2_s;
 	float cf_weight_in_newtons = s_cf_weight_in_newtons;
 	MatrixXf setpoint = s_setpoint;
@@ -325,14 +333,14 @@ void setup_Deepc()
 		// HANKEL MATRICES
 		int num_inputs = u_data.rows();
 		int num_outputs = y_data.rows();
-		d_Nuini = num_inputs * Tini;
-		d_Nyini = num_outputs * Tini;
-		MatrixXf H_u = data2hankel(u_data, Tini + N + 1);
-		MatrixXf H_y = data2hankel(y_data, Tini + N + 1);
-		MatrixXf U_p = H_u.topRows(num_inputs * Tini);
-		d_U_f = H_u.middleRows(num_inputs * Tini, num_inputs * N);
-		MatrixXf Y_p = H_y.topRows(num_outputs * Tini);
-		d_Y_f = H_y.bottomRows(num_outputs * (N + 1));
+		d_Nuini = num_inputs * d_Tini;
+		d_Nyini = num_outputs * d_Tini;
+		MatrixXf H_u = data2hankel(u_data, d_Tini + d_N + 1);
+		MatrixXf H_y = data2hankel(y_data, d_Tini + d_N + 1);
+		MatrixXf U_p = H_u.topRows(num_inputs * d_Tini);
+		d_U_f = H_u.middleRows(num_inputs * d_Tini, num_inputs * d_N);
+		MatrixXf Y_p = H_y.topRows(num_outputs * d_Tini);
+		d_Y_f = H_y.bottomRows(num_outputs * (d_N + 1));
 
 		// COST MATRICES
 		// Output cost and terminal output cost matrix
@@ -362,9 +370,9 @@ void setup_Deepc()
 
 		// GUROBI QUADRATIC COST MATRIX
 		d_Ng = U_p.cols();
-		int Ns = num_outputs * Tini;
-		MatrixXf Qg = lambda2_g * MatrixXf::Identity(d_Ng, d_Ng);
-		for (int i = 0; i < N; i++)
+		int Ns = num_outputs * d_Tini;
+		MatrixXf Qg = d_lambda2_g * MatrixXf::Identity(d_Ng, d_Ng);
+		for (int i = 0; i < d_N; i++)
 		{
 			Qg += d_U_f.middleRows(i * num_inputs, num_inputs).transpose() * R * d_U_f.middleRows(i * num_inputs, num_inputs);
 			Qg += d_Y_f.middleRows(i * num_outputs, num_outputs).transpose() * d_Q * d_Y_f.middleRows(i * num_outputs, num_outputs);
@@ -376,26 +384,42 @@ void setup_Deepc()
 		grb_Q.bottomRightCorner(Ns, Ns) = Qs;
 
 		// GUROBI LINEAR COST VECTOR
-		MatrixXf r = MatrixXf::Zero(num_outputs, 1);
-		r.topRows(3) = setpoint.topRows(3);
-		if (d_Deepc_yaw_control)
-			r.bottomRows(1) = setpoint.bottomRows(1);
-
+		// Steady state input
 		MatrixXf us = MatrixXf::Zero(num_inputs, 1);
 		us(0) = cf_weight_in_newtons;
 
+		// Reference
+		d_r = MatrixXf::Zero(num_outputs, 1);
+		d_r.topRows(3) = setpoint.topRows(3);
+		if (d_Deepc_yaw_control)
+			d_r.bottomRows(1) = setpoint.bottomRows(1);
+
+		// Steady state trajectory mapper
+		MatrixXf u_gs = us.replicate(d_Tini + d_N, 1);
+		d_r_gs = d_r.replicate(d_Tini + d_N + 1, 1);
+		d_A_gs = MatrixXf::Zero(U_p.rows() + d_U_f.rows() + Y_p.rows() + d_Y_f.rows(), d_Ng);
+		d_b_gs = MatrixXf::Zero(d_A_gs.rows(), 1);
+		d_A_gs.topRows(U_p.rows()) = U_p;
+		d_A_gs.middleRows(U_p.rows(), d_U_f.rows()) = d_U_f;
+		d_A_gs.middleRows(U_p.rows() + d_U_f.rows(), Y_p.rows()) = Y_p;
+		d_A_gs.bottomRows(d_Y_f.rows()) = d_Y_f;
+		d_b_gs.topRows(u_gs.rows()) = u_gs;
+		d_b_gs.bottomRows(d_r_gs.rows()) = d_r_gs;
+		d_gs = d_A_gs.bdcSvd(ComputeThinU | ComputeThinV).solve(d_b_gs);
+
 		MatrixXf grb_cg_us = MatrixXf::Zero(d_Ng, 1);
-		MatrixXf grb_cg_r = MatrixXf::Zero(d_Ng, 1);
-		for (int i = 0; i < N + 1; i++)
+		d_grb_cg_r = MatrixXf::Zero(d_Ng, 1);
+		for (int i = 0; i < d_N + 1; i++)
 		{
-			if (i < N)
+			if (i < d_N)
 			{
 				grb_cg_us -= 2.0 * d_U_f.middleRows(i * num_inputs, num_inputs).transpose() * R * us;
-				grb_cg_r -= 2.0 * d_Y_f.middleRows(i * num_outputs, num_outputs).transpose() * d_Q * r;
+				d_grb_cg_r -= 2.0 * d_Y_f.middleRows(i * num_outputs, num_outputs).transpose() * d_Q * d_r;
 			}
 			else
-				grb_cg_r -= 2.0 * d_Y_f.middleRows(i * num_outputs, num_outputs).transpose() * d_P * r;
+				d_grb_cg_r -= 2.0 * d_Y_f.middleRows(i * num_outputs, num_outputs).transpose() * d_P * d_r;
 		}
+		d_grb_cg_gs = -2.0 * d_lambda2_g * MatrixXf::Identity(d_Ng, d_Ng) * d_gs;
 
 		//INPUT CONSTRAINTS
 		MatrixXf input_min = MatrixXf::Zero(num_inputs, 1);
@@ -435,9 +459,9 @@ void setup_Deepc()
 
 		// GUROBI LINEAR INEQUALITY CONSTRAINT VECTOR
 		MatrixXf grb_b = MatrixXf::Zero(grb_Ag.rows(), 1);
-		for (int i = 0; i < N + 1; i++)
+		for (int i = 0; i < d_N + 1; i++)
 		{
-			if (i < N)
+			if (i < d_N)
 			{
 				grb_b.middleRows(i * num_inputs, num_inputs) = -input_min;
 				grb_b.middleRows(d_U_f.rows() + i * num_inputs, num_inputs) = input_max;
@@ -457,8 +481,8 @@ void setup_Deepc()
 		grb_A_eq.bottomRightCorner(Ns, Ns) = -MatrixXf::Identity(Ns, Ns);
 
 		// GUROBI LINEAR EQUALITY CONSTRAINT VECTOR
-		d_uini = MatrixXf::Zero(num_inputs * Tini, 1);
-	    d_yini = MatrixXf::Zero(num_outputs * Tini, 1);
+		d_uini = MatrixXf::Zero(num_inputs * d_Tini, 1);
+	    d_yini = MatrixXf::Zero(num_outputs * d_Tini, 1);
 		MatrixXf grb_b_eq = MatrixXf::Zero(grb_A_eq.rows(), 1);
 		grb_b_eq.topRows(d_uini.rows()) = d_uini;
 		grb_b_eq.bottomRows(d_yini.rows()) = d_yini;
@@ -497,15 +521,17 @@ void setup_Deepc()
 
 	    // Set linear objective term
 	    d_grb_lin_obj_us = 0;
-	    GRBLinExpr grb_lin_obj_r = 0;
+	    d_grb_lin_obj_r = 0;
+	    d_grb_lin_obj_gs = 0;
 	    for (int i = 0; i < d_Ng; i++)
 	    {
 	    	d_grb_lin_obj_us += grb_cg_us(i) * d_grb_vars[i];
-	    	grb_lin_obj_r += grb_cg_r(i) * d_grb_vars[i];
+	    	d_grb_lin_obj_r += d_grb_cg_r(i) * d_grb_vars[i];
+	    	d_grb_lin_obj_gs = d_grb_cg_gs(i) * d_grb_vars[i];
 	    }
 
 	    // Set objective
-	    d_grb_model.setObjective(d_grb_quad_obj + d_grb_lin_obj_us + grb_lin_obj_r);
+	    d_grb_model.setObjective(d_grb_quad_obj + d_grb_lin_obj_us + d_grb_lin_obj_r + d_grb_lin_obj_gs);
 
 	    // Clear constraints if previously created
 	    int num_constrs = d_grb_model.get(GRB_IntAttr_NumConstrs);

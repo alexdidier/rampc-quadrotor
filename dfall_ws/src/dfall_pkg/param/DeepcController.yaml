@@ -24,7 +24,6 @@ landing_spin_motors_time: 0
 mass : 29
 
 # Frequency of the controller, in hertz
-#control_frequency : 200
 control_frequency : 25.0
 
 # Quadratic motor regression equation (a0, a1, a2)
@@ -45,10 +44,6 @@ shouldPublishDebugMessage : false
 shouldDisplayDebugInfo : false
 
 # The LQR Controller parameters for rate mode
-#gainMatrixThrust_NineStateVector    :  [ 0.00, 0.00, 0.98, 0.00, 0.00, 0.25, 0.00, 0.00, 0.00]
-#gainMatrixRollRate                  :  [ 0.00,-6.20, 0.00, 0.00,-3.00, 0.00, 5.20, 0.00, 0.00]
-#gainMatrixPitchRate                 :  [ 6.20, 0.00, 0.00, 3.00, 0.00, 0.00, 0.00, 5.20, 0.00]
-#gainMatrixYawRate                   :  [ 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.30]
 gainMatrixThrust_NineStateVector    :  [ 0.00, 0.00, 0.45, 0.00, 0.00, 0.17, 0.00, 0.00, 0.00]
 gainMatrixRollRate                  :  [ 0.00,-2.79, 0.00, 0.00, -1.83, 0.00, 5.91, 0.00, 0.00]
 gainMatrixPitchRate                 :  [ 2.79, 0.00, 0.00, 1.83, 0.00, 0.00, 0.00, 5.91, 0.00]
@@ -71,10 +66,10 @@ logFolder : log/
 thrustExcAmp : 10.0
 
 # Roll rate excitation magnitude, in deg/s
-rollRateExcAmp : 10.0
+rollRateExcAmp : 60.0
 
 # Pitch rate excitation magnitude, in deg/s
-pitchRateExcAmp : 10.0
+pitchRateExcAmp : 60.0
 
 # Yaw rate excitation magnitude, in deg/s
 yawRateExcAmp : 60.0
@@ -91,22 +86,22 @@ Deepc_measure_roll_pitch : false
 Deepc_yaw_control : false
 
 # Tini in discrete time steps
-Tini : 3
+Tini : 6
 
 # Prediction horizon in discrete time steps
-N : 20
+N : 15
 
 # Output cost matrix diagonal entries (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
 Q : [40.0, 40.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0]
 
 # Input cost matrix diagonal entries (thrust, rollRate, pitchRate, yawRate)
-R : [16.0, 4.0, 4.0, 1.0]
+R : [4.0, 4.0, 4.0, 1.0]
 
 # Terminal output cost matrix diagonal entries (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
 P : [657.21, 657.21, 8.88, 96.92, 96.92, 0.47, 629.60, 629.60, 84.21]
 
 # Regularization parameters
-lambda2_g : 10.0
+lambda2_g : 0.0
 lambda2_s : 100000000.0
 
 # Output constraints (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
