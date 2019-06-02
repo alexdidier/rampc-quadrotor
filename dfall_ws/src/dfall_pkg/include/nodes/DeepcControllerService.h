@@ -360,6 +360,7 @@ bool d_Deepc_yaw_control = true;
 int d_Tini;
 int d_N;
 float d_lambda2_g;
+int d_num_outputs;
 int d_Nuini;
 int d_Nyini;
 int d_Ng;
@@ -383,6 +384,7 @@ MatrixXf d_u_f;
 // Gurobi optimization variables
 GRBEnv d_grb_env;
 GRBModel d_grb_model = GRBModel(d_grb_env);
+GRBModel* d_grb_model_presolved;
 GRBVar* d_grb_vars = 0;
 GRBQuadExpr d_grb_quad_obj = 0;
 GRBLinExpr d_grb_lin_obj_us = 0;

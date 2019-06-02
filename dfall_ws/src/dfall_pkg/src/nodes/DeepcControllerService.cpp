@@ -182,7 +182,6 @@ void change_Deepc_setpoint()
 	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 193");
 	bool setupDeepc_success = s_setupDeepc_success;
 	MatrixXf setpoint = s_setpoint;
-	int num_outputs = s_num_outputs;
 	s_Deepc_mutex.unlock();
 	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 193");
 
@@ -196,12 +195,13 @@ void change_Deepc_setpoint()
 		if (d_Deepc_yaw_control)
 			d_r.bottomRows(1) = setpoint.bottomRows(1);
 
+		d_grb_cg_r = MatrixXf::Zero(d_Ng, 1);
 		for (int i = 0; i < d_N + 1; i++)
 		{
 			if (i < d_N)
-				d_grb_cg_r -= 2.0 * d_Y_f.middleRows(i * num_outputs, num_outputs).transpose() * d_Q * d_r;
+				d_grb_cg_r -= 2.0 * d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_Q * d_r;
 			else
-				d_grb_cg_r -= 2.0 * d_Y_f.middleRows(i * num_outputs, num_outputs).transpose() * d_P * d_r;
+				d_grb_cg_r -= 2.0 * d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_P * d_r;
 		}
 
 		// UPDATE GUROBI LINEAR COST VECTOR FOR STEADY STATE TRAJECTORY MAPPER
@@ -332,20 +332,20 @@ void setup_Deepc()
 
 		// HANKEL MATRICES
 		int num_inputs = u_data.rows();
-		int num_outputs = y_data.rows();
+		d_num_outputs = y_data.rows();
 		d_Nuini = num_inputs * d_Tini;
-		d_Nyini = num_outputs * d_Tini;
+		d_Nyini = d_num_outputs * d_Tini;
 		MatrixXf H_u = data2hankel(u_data, d_Tini + d_N + 1);
 		MatrixXf H_y = data2hankel(y_data, d_Tini + d_N + 1);
 		MatrixXf U_p = H_u.topRows(num_inputs * d_Tini);
 		d_U_f = H_u.middleRows(num_inputs * d_Tini, num_inputs * d_N);
-		MatrixXf Y_p = H_y.topRows(num_outputs * d_Tini);
-		d_Y_f = H_y.bottomRows(num_outputs * (d_N + 1));
+		MatrixXf Y_p = H_y.topRows(d_num_outputs * d_Tini);
+		d_Y_f = H_y.bottomRows(d_num_outputs * (d_N + 1));
 
 		// COST MATRICES
 		// Output cost and terminal output cost matrix
-		d_Q = MatrixXf::Zero(num_outputs, num_outputs);
-		d_P = MatrixXf::Zero(num_outputs, num_outputs);
+		d_Q = MatrixXf::Zero(d_num_outputs, d_num_outputs);
+		d_P = MatrixXf::Zero(d_num_outputs, d_num_outputs);
 		for (int i = 0; i < 3; i++)
 		{
 			d_Q(i,i) = Q_vec[i];
@@ -359,8 +359,8 @@ void setup_Deepc()
 			}
 		if (d_Deepc_yaw_control)
 		{
-			d_Q(num_outputs-1,num_outputs-1) = Q_vec[8];
-			d_P(num_outputs-1,num_outputs-1) = P_vec[8];
+			d_Q(d_num_outputs-1,d_num_outputs-1) = Q_vec[8];
+			d_P(d_num_outputs-1,d_num_outputs-1) = P_vec[8];
 		}
 
 		// Input cost matrix
@@ -370,14 +370,14 @@ void setup_Deepc()
 
 		// GUROBI QUADRATIC COST MATRIX
 		d_Ng = U_p.cols();
-		int Ns = num_outputs * d_Tini;
+		int Ns = d_num_outputs * d_Tini;
 		MatrixXf Qg = d_lambda2_g * MatrixXf::Identity(d_Ng, d_Ng);
 		for (int i = 0; i < d_N; i++)
 		{
 			Qg += d_U_f.middleRows(i * num_inputs, num_inputs).transpose() * R * d_U_f.middleRows(i * num_inputs, num_inputs);
-			Qg += d_Y_f.middleRows(i * num_outputs, num_outputs).transpose() * d_Q * d_Y_f.middleRows(i * num_outputs, num_outputs);
+			Qg += d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_Q * d_Y_f.middleRows(i * d_num_outputs, d_num_outputs);
 		}
-		Qg += d_Y_f.bottomRows(num_outputs).transpose() * d_P * d_Y_f.bottomRows(num_outputs);
+		Qg += d_Y_f.bottomRows(d_num_outputs).transpose() * d_P * d_Y_f.bottomRows(d_num_outputs);
 		MatrixXf Qs = lambda2_s * MatrixXf::Identity(Ns, Ns);
 		MatrixXf grb_Q = MatrixXf::Zero(d_Ng + Ns, d_Ng + Ns);
 		grb_Q.topLeftCorner(d_Ng, d_Ng) = Qg;
@@ -389,7 +389,7 @@ void setup_Deepc()
 		us(0) = cf_weight_in_newtons;
 
 		// Reference
-		d_r = MatrixXf::Zero(num_outputs, 1);
+		d_r = MatrixXf::Zero(d_num_outputs, 1);
 		d_r.topRows(3) = setpoint.topRows(3);
 		if (d_Deepc_yaw_control)
 			d_r.bottomRows(1) = setpoint.bottomRows(1);
@@ -414,10 +414,10 @@ void setup_Deepc()
 			if (i < d_N)
 			{
 				grb_cg_us -= 2.0 * d_U_f.middleRows(i * num_inputs, num_inputs).transpose() * R * us;
-				d_grb_cg_r -= 2.0 * d_Y_f.middleRows(i * num_outputs, num_outputs).transpose() * d_Q * d_r;
+				d_grb_cg_r -= 2.0 * d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_Q * d_r;
 			}
 			else
-				d_grb_cg_r -= 2.0 * d_Y_f.middleRows(i * num_outputs, num_outputs).transpose() * d_P * d_r;
+				d_grb_cg_r -= 2.0 * d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_P * d_r;
 		}
 		d_grb_cg_gs = -2.0 * d_lambda2_g * MatrixXf::Identity(d_Ng, d_Ng) * d_gs;
 
@@ -431,8 +431,8 @@ void setup_Deepc()
 		}
 
 		// OUTPUT CONSTRAINTS
-		MatrixXf output_min = MatrixXf::Zero(num_outputs, 1);
-		MatrixXf output_max = MatrixXf::Zero(num_outputs, 1);
+		MatrixXf output_min = MatrixXf::Zero(d_num_outputs, 1);
+		MatrixXf output_max = MatrixXf::Zero(d_num_outputs, 1);
 		for (int i = 0; i < 3; i++)
 		{
 			output_min(i) = output_min_vec[i];
@@ -446,8 +446,8 @@ void setup_Deepc()
 			}
 		if (d_Deepc_yaw_control)
 		{
-			output_min(num_outputs-1) = output_min_vec[8];
-			output_max(num_outputs-1) = output_max_vec[8];
+			output_min(d_num_outputs-1) = output_min_vec[8];
+			output_max(d_num_outputs-1) = output_max_vec[8];
 		}
 
 		// GUROBI LINEAR INEQUALITY CONSTRAINT MATRIX
@@ -466,8 +466,8 @@ void setup_Deepc()
 				grb_b.middleRows(i * num_inputs, num_inputs) = -input_min;
 				grb_b.middleRows(d_U_f.rows() + i * num_inputs, num_inputs) = input_max;
 			}
-			grb_b.middleRows(2 * d_U_f.rows() + i * num_outputs, num_outputs) = -output_min;
-			grb_b.middleRows(2 * d_U_f.rows() + d_Y_f.rows() + i * num_outputs, num_outputs) = output_max;
+			grb_b.middleRows(2 * d_U_f.rows() + i * d_num_outputs, d_num_outputs) = -output_min;
+			grb_b.middleRows(2 * d_U_f.rows() + d_Y_f.rows() + i * d_num_outputs, d_num_outputs) = output_max;
 		}
 
 		// GUROBI BOUNDS VECTOR
@@ -482,7 +482,7 @@ void setup_Deepc()
 
 		// GUROBI LINEAR EQUALITY CONSTRAINT VECTOR
 		d_uini = MatrixXf::Zero(num_inputs * d_Tini, 1);
-	    d_yini = MatrixXf::Zero(num_outputs * d_Tini, 1);
+	    d_yini = MatrixXf::Zero(d_num_outputs * d_Tini, 1);
 		MatrixXf grb_b_eq = MatrixXf::Zero(grb_A_eq.rows(), 1);
 		grb_b_eq.topRows(d_uini.rows()) = d_uini;
 		grb_b_eq.bottomRows(d_yini.rows()) = d_yini;
@@ -527,7 +527,7 @@ void setup_Deepc()
 	    {
 	    	d_grb_lin_obj_us += grb_cg_us(i) * d_grb_vars[i];
 	    	d_grb_lin_obj_r += d_grb_cg_r(i) * d_grb_vars[i];
-	    	d_grb_lin_obj_gs = d_grb_cg_gs(i) * d_grb_vars[i];
+	    	d_grb_lin_obj_gs += d_grb_cg_gs(i) * d_grb_vars[i];
 	    }
 
 	    // Set objective
@@ -565,6 +565,14 @@ void setup_Deepc()
 	    }
 
 	    // Set model parameters
+	    d_grb_model.set(GRB_IntParam_Method, 0);
+	    //d_grb_model.set(GRB_IntParam_Aggregate, 0);
+
+
+	    // Pre-solve
+	    static GRBModel grb_model_presolved = d_grb_model.presolve();
+	    grb_model_presolved.set(GRB_IntParam_Presolve, 0);
+	    d_grb_model_presolved = &grb_model_presolved;
 
 	    // Setup output variables
 	    d_g = MatrixXf::Zero(d_Ng, 1);
@@ -572,7 +580,7 @@ void setup_Deepc()
 	    s_Deepc_mutex.lock();
 	    // ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 568");
 		s_num_inputs = num_inputs;
-		s_num_outputs = num_outputs;
+		s_num_outputs = d_num_outputs;
 		s_Nuini = d_Nuini;
 		s_Nyini = d_Nyini;
 		s_uini = d_uini;
@@ -639,8 +647,11 @@ void solve_Deepc()
 			d_grb_eq_constrs[d_Nuini + d_i].set(GRB_DoubleAttr_RHS, d_yini(d_i));
 
 		// Solve optimization
-		d_grb_model.optimize();
-		d_DeepcOpt_status = d_grb_model.get(GRB_IntAttr_Status);
+		ROS_INFO("[DEEPC CONTROLLER] DEBUG 1");
+		d_grb_model_presolved->optimize();
+		ROS_INFO("[DEEPC CONTROLLER] DEBUG 2");
+		d_DeepcOpt_status = d_grb_model_presolved->get(GRB_IntAttr_Status);
+		ROS_INFO("[DEEPC CONTROLLER] DEBUG 3");
 		
 
 		if (d_DeepcOpt_status == GRB_OPTIMAL)
@@ -663,8 +674,8 @@ void solve_Deepc()
 			ROS_INFO_STREAM("Pitch Rate: " << d_u_f(2));
 			if (d_Deepc_yaw_control)
 				ROS_INFO_STREAM("Yaw Rate: " << d_u_f(3));
-	    	ROS_INFO_STREAM("Objective: " << d_grb_model.get(GRB_DoubleAttr_ObjVal));
-	    	ROS_INFO_STREAM("Runtime: " << d_grb_model.get(GRB_DoubleAttr_Runtime));
+	    	ROS_INFO_STREAM("Objective: " << d_grb_model_presolved->get(GRB_DoubleAttr_ObjVal));
+	    	ROS_INFO_STREAM("Runtime: " << d_grb_model_presolved->get(GRB_DoubleAttr_Runtime));
 		}
 		else
 		{
