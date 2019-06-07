@@ -139,43 +139,17 @@ void change_Deepc_params()
 	d_N = s_yaml_N;
 	d_lambda2_g = s_yaml_lambda2_g;
 	d_opt_sparse = s_yaml_opt_sparse;
-	bool opt_verbose = s_yaml_opt_verbose;
-	bool grb_LogToFile = s_yaml_grb_LogToFile;
+	d_opt_verbose = s_yaml_opt_verbose;
+	d_grb_LogToFile = s_yaml_grb_LogToFile;
 	d_grb_presolve_at_setup = s_yaml_grb_presolve_at_setup;
 	// Deepc setup must be re-run after changes
 	s_setupDeepc_success = false;
 	s_Deepc_mutex.unlock();
 	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 133");
 
-	try
-	{
-		if (grb_LogToFile)
-			d_grb_model.set(GRB_StringParam_LogFile, d_logFolder + "gurobi.log");
-		else
-			d_grb_model.set(GRB_StringParam_LogFile, "");
-		d_grb_model.set(GRB_IntParam_LogToConsole, opt_verbose);
-
-		// Inform the user
-	    ROS_INFO("[DEEPC CONTROLLER] Deepc parameters change successful");
-	    ROS_INFO("[DEEPC CONTROLLER] (Re-)setup Deepc to apply changes");
-	}
-
-	catch(GRBException e)
-    {
-	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc parameter change exception with Gurobi error code = " << e.getErrorCode());
-	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Error message: " << e.getMessage());
-	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
-  	}
-  	catch(exception& e)
-  	{
-	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc parameter change exception with standard error message: " << e.what());
-	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
-  	}
-  	catch(...)
-  	{
-  		ROS_INFO("[DEEPC CONTROLLER] Deepc parameter change exception");
-  		ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
-  	}
+	// Inform the user
+	ROS_INFO("[DEEPC CONTROLLER] Deepc parameters change successful");
+	ROS_INFO("[DEEPC CONTROLLER] (Re-)setup Deepc to apply changes");
 }
 
 void change_Deepc_setpoint()
@@ -247,7 +221,11 @@ void change_Deepc_setpoint()
 	    }
 
 	    // Update objective
-	    d_grb_model.setObjective(d_grb_quad_obj + d_grb_lin_obj_us + d_grb_lin_obj_r + d_grb_lin_obj_gs);
+	    // It was observed that objective of pre-solved model is same as original model
+	    if (d_opt_sparse || !d_grb_presolve_at_setup)
+	    	d_grb_model.setObjective(d_grb_quad_obj + d_grb_lin_obj_us + d_grb_lin_obj_r + d_grb_lin_obj_gs);
+	    else
+	    	d_grb_model_presolved->setObjective(d_grb_quad_obj + d_grb_lin_obj_us + d_grb_lin_obj_r + d_grb_lin_obj_gs);
 
 	    // Inform the user
 	    ROS_INFO("[DEEPC CONTROLLER] Deepc setpoint update successful");
@@ -719,12 +697,20 @@ void setup_Deepc()
 	    }
 
 	    // Set model parameters
+	    if (d_grb_LogToFile)
+			d_grb_model.set(GRB_StringParam_LogFile, d_logFolder + "gurobi.log");
+		else
+			d_grb_model.set(GRB_StringParam_LogFile, "");
+		d_grb_model.set(GRB_IntParam_LogToConsole, d_opt_verbose);
+		// Setting Aggregate to 0 was found to speed up optimization using Gurobi auto-tune
+	    // This is only relevant when Presolve is on (dense formulation)
+	    d_grb_model.set(GRB_IntParam_Aggregate, 0);
 	    // Skip Presolve when using sparse model, as it returns same model (presolving sparsifies)
 	    if (d_opt_sparse)
 	    	d_grb_model.set(GRB_IntParam_Presolve, 0);
-	    // Setting Aggregate to 0 was found to speed up optimization using Gurobi auto-tune
-	    // This is only relevant when Presolve is on (dense formulation)
-	    d_grb_model.set(GRB_IntParam_Aggregate, 0);
+	    else
+	    	d_grb_model.set(GRB_IntParam_Presolve, -1);
+	    
 
 	    // Presolve - only applicable for dense formulation
 	    if (!d_opt_sparse && d_grb_presolve_at_setup)

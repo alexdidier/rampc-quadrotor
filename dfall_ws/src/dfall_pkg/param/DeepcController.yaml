@@ -113,7 +113,7 @@ input_min : [0.0, -1.5708, -1.5708, -1.5708]
 input_max : [0.4791, 1.5708, 1.5708, 1.5708]
 
 # Optimization parameters
-opt_sparse : true
+opt_sparse : false
 opt_verbose : false
 
 # Parameters specific to Gurobi
