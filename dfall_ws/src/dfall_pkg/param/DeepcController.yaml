@@ -21,7 +21,7 @@ landing_spin_motors_time: 0
 # PARAMTERS THAT ARE STANDARD FOR A "CONTROLLER SERVICE"
 
 # Mass of the crazyflie, in grams
-mass : 29
+mass : 28
 
 # Frequency of the controller, in hertz
 control_frequency : 25.0
@@ -86,22 +86,22 @@ Deepc_measure_roll_pitch : true
 Deepc_yaw_control : false
 
 # Tini in discrete time steps
-Tini : 6
+Tini : 4
 
 # Prediction horizon in discrete time steps
-N : 25
+N : 15
 
 # Output cost matrix diagonal entries (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
-Q : [40.0, 40.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0]
+Q : [40.0, 40.0, 40.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0]
 
 # Input cost matrix diagonal entries (thrust, rollRate, pitchRate, yawRate)
-R : [4.0, 1.0, 1.0, 1.0]
+R : [16.0, 16.0, 16.0, 1.0]
 
 # Terminal output cost matrix diagonal entries (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
-P : [657.21, 657.21, 8.88, 96.92, 96.92, 0.47, 629.60, 629.60, 84.21]
+P : [657.21, 657.21, 657.21, 96.92, 96.92, 0.47, 629.60, 629.60, 84.21]
 
 # Regularization parameters
-lambda2_g : 0.001
+lambda2_g : 20.0
 lambda2_s : 1000000.0
 
 # Output constraints (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
@@ -109,9 +109,10 @@ output_min : [-4.0, -4.0, -4.0, -100, -100, -100, -0.5236, -0.5236, -0.5236]
 output_max : [4.0, 4.0, 4.0, 100, 100, 100, 0.5236, 0.5236, 0.5236]
 
 # Input constraints (thurst, rollRate, pitchRate, yawRate)
-input_min : [0.0, -3.1416, -3.1416, -3.1416]
-input_max : [0.6388, 3.1416, 3.1416, 3.1416]
+input_min : [0.0, -1.5708, -1.5708, -1.5708]
+input_max : [0.4791, 1.5708, 1.5708, 1.5708]
 
 # Gurobi optimization parameters
 grb_LogToFile : false
-grb_LogToConsole : true
+grb_LogToConsole : false
+grb_presolve_at_setup : false

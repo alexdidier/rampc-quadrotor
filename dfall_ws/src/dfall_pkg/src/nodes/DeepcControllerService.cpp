@@ -140,6 +140,7 @@ void change_Deepc_params()
 	d_lambda2_g = s_yaml_lambda2_g;
 	bool grb_LogToFile = s_yaml_grb_LogToFile;
 	bool grb_LogToConsole = s_yaml_grb_LogToConsole;
+	d_grb_presolve_at_setup = s_yaml_grb_presolve_at_setup;
 	// Deepc setup must be re-run after changes
 	s_setupDeepc_success = false;
 	s_Deepc_mutex.unlock();
@@ -208,7 +209,7 @@ void change_Deepc_setpoint()
 		d_r_gs = d_r.replicate(d_Tini + d_N + 1, 1);
 		d_b_gs.bottomRows(d_r_gs.rows()) = d_r_gs;
 		d_gs = d_A_gs.bdcSvd(ComputeThinU | ComputeThinV).solve(d_b_gs);
-		d_grb_cg_gs = -2.0 * d_lambda2_g * MatrixXf::Identity(d_Ng, d_Ng) * d_gs;
+		d_grb_cg_gs = -2.0 * d_lambda2_g * d_gs;
 
 
 		// Update linear objective terms
@@ -419,7 +420,7 @@ void setup_Deepc()
 			else
 				d_grb_cg_r -= 2.0 * d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_P * d_r;
 		}
-		d_grb_cg_gs = -2.0 * d_lambda2_g * MatrixXf::Identity(d_Ng, d_Ng) * d_gs;
+		d_grb_cg_gs = -2.0 * d_lambda2_g * d_gs;
 
 		//INPUT CONSTRAINTS
 		MatrixXf input_min = MatrixXf::Zero(num_inputs, 1);
@@ -495,13 +496,11 @@ void setup_Deepc()
 
 	    // Clear variables if previously created
 	    int num_vars = d_grb_model.get(GRB_IntAttr_NumVars);
-	    if (num_vars > 0)
-	    {
-	    	for (int i = 0; i < num_vars; i++)
-	    		d_grb_model.remove(d_grb_vars[i]);
-	    	d_grb_model.update();
-	    	delete[] d_grb_vars;
-	    }
+	    d_grb_vars = d_grb_model.getVars();
+	    for (int i = 0; i < num_vars; i++)
+	    	d_grb_model.remove(d_grb_vars[i]);
+	    d_grb_model.update();
+	    delete[] d_grb_vars;
 
 	    // Create variables
 	    double grb_lb[d_Ng + Ns];
@@ -535,15 +534,12 @@ void setup_Deepc()
 
 	    // Clear constraints if previously created
 	    int num_constrs = d_grb_model.get(GRB_IntAttr_NumConstrs);
-	    if (num_constrs > 0)
-	    {
-	    	GRBConstr* grb_constrs = d_grb_model.getConstrs();
-	    	for (int i = 0; i < num_constrs; i++)
-	    		d_grb_model.remove(grb_constrs[i]);
-	    	d_grb_model.update();
-	    	delete[] grb_constrs;
-	    	delete[] d_grb_eq_constrs;
-	    }
+    	GRBConstr* grb_constrs = d_grb_model.getConstrs();
+    	for (int i = 0; i < num_constrs; i++)
+    		d_grb_model.remove(grb_constrs[i]);
+    	d_grb_model.update();
+    	delete[] grb_constrs;
+    	delete[] d_grb_eq_constrs;
 
 	    // Add inequality constraints
 	    for (int i = 0; i < grb_Ag.rows(); i++)
@@ -555,8 +551,9 @@ void setup_Deepc()
 	    }
 
 	    // Add equality constraints and store in memory for quick change
-	    d_grb_eq_constrs = new GRBConstr[grb_A_eq.rows()];
-	    for (int i = 0; i < grb_A_eq.rows(); i++)
+	    int num_eq_constrs = grb_A_eq.rows();
+	    d_grb_eq_constrs = new GRBConstr[num_eq_constrs];
+	    for (int i = 0; i < num_eq_constrs; i++)
 	    {
 	    	GRBLinExpr lhs = 0;
 	    	for (int j = 0; j < d_Ng + Ns; j++)
@@ -565,14 +562,38 @@ void setup_Deepc()
 	    }
 
 	    // Set model parameters
-	    d_grb_model.set(GRB_IntParam_Method, 0);
-	    //d_grb_model.set(GRB_IntParam_Aggregate, 0);
+	    // d_grb_model.set(GRB_IntParam_Method, 0);
+	    if (!d_grb_presolve_at_setup)
+	    {
+	    	d_grb_model.set(GRB_IntParam_Aggregate, 0);
+	    }
 
 
 	    // Pre-solve
-	    static GRBModel grb_model_presolved = d_grb_model.presolve();
-	    grb_model_presolved.set(GRB_IntParam_Presolve, 0);
-	    d_grb_model_presolved = &grb_model_presolved;
+	    if (d_grb_presolve_at_setup)
+	    {
+		    static GRBModel grb_model_presolved = d_grb_model.presolve();
+		    
+		    // Update variables to presolved model variables
+		    d_grb_vars = grb_model_presolved.getVars();
+
+		    // Update equality constraints to presolved model constraints. They are last set of constraints in presolved model
+		    num_constrs = grb_model_presolved.get(GRB_IntAttr_NumConstrs);
+		    GRBConstr* grb_constrs_presolved = grb_model_presolved.getConstrs();
+		    int j = 0;
+	    	for (int i = num_constrs - num_eq_constrs; i < num_constrs; i++)
+	    	{
+	    		d_grb_eq_constrs[j] = grb_constrs_presolved[i];
+	    		j++;
+	    	}
+	    	delete[] grb_constrs_presolved;
+
+	    	// Set Presolve parameter of presolved model to 0 to avoid re-presolving
+		    grb_model_presolved.set(GRB_IntParam_Presolve, 0);
+
+		    // Global variable is pointer to model
+		    d_grb_model_presolved = &grb_model_presolved;
+		}
 
 	    // Setup output variables
 	    d_g = MatrixXf::Zero(d_Ng, 1);
@@ -647,11 +668,16 @@ void solve_Deepc()
 			d_grb_eq_constrs[d_Nuini + d_i].set(GRB_DoubleAttr_RHS, d_yini(d_i));
 
 		// Solve optimization
-		ROS_INFO("[DEEPC CONTROLLER] DEBUG 1");
-		d_grb_model_presolved->optimize();
-		ROS_INFO("[DEEPC CONTROLLER] DEBUG 2");
-		d_DeepcOpt_status = d_grb_model_presolved->get(GRB_IntAttr_Status);
-		ROS_INFO("[DEEPC CONTROLLER] DEBUG 3");
+		if (!d_grb_presolve_at_setup)
+		{
+			d_grb_model.optimize();
+			d_DeepcOpt_status = d_grb_model.get(GRB_IntAttr_Status);
+		}
+		else
+		{
+			d_grb_model_presolved->optimize();
+			d_DeepcOpt_status = d_grb_model_presolved->get(GRB_IntAttr_Status);
+		}
 		
 
 		if (d_DeepcOpt_status == GRB_OPTIMAL)
@@ -663,7 +689,6 @@ void solve_Deepc()
 
 			s_Deepc_mutex.lock();
 			// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 649");
-			s_DeepcOpt_status = d_DeepcOpt_status;
 			s_u_f = d_u_f;
 			s_Deepc_mutex.unlock();
 			//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 649");
@@ -674,17 +699,20 @@ void solve_Deepc()
 			ROS_INFO_STREAM("Pitch Rate: " << d_u_f(2));
 			if (d_Deepc_yaw_control)
 				ROS_INFO_STREAM("Yaw Rate: " << d_u_f(3));
-	    	ROS_INFO_STREAM("Objective: " << d_grb_model_presolved->get(GRB_DoubleAttr_ObjVal));
-	    	ROS_INFO_STREAM("Runtime: " << d_grb_model_presolved->get(GRB_DoubleAttr_Runtime));
+
+			if (!d_grb_presolve_at_setup)
+			{
+				ROS_INFO_STREAM("Objective: " << d_grb_model.get(GRB_DoubleAttr_ObjVal));
+	    		ROS_INFO_STREAM("Runtime: " << d_grb_model.get(GRB_DoubleAttr_Runtime));
+			}
+			else
+			{
+				ROS_INFO_STREAM("Objective: " << d_grb_model_presolved->get(GRB_DoubleAttr_ObjVal));
+	    		ROS_INFO_STREAM("Runtime: " << d_grb_model_presolved->get(GRB_DoubleAttr_Runtime));
+			}
 		}
 		else
 		{
-			s_Deepc_mutex.lock();
-			//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 667");
-			s_DeepcOpt_status = d_DeepcOpt_status;
-			s_Deepc_mutex.unlock();
-			//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 667");
-
 			ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc failed to find optimal solution with status code = " << d_DeepcOpt_status);
 		}
 	}
@@ -692,7 +720,6 @@ void solve_Deepc()
     {
     	s_Deepc_mutex.lock();
     	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 678");
-		s_DeepcOpt_status = 0;
     	s_setupDeepc_success = false;
 		s_Deepc_mutex.unlock();
 		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 678");
@@ -705,7 +732,6 @@ void solve_Deepc()
     {
     	s_Deepc_mutex.lock();
     	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 691");
-		s_DeepcOpt_status = 0;
     	s_setupDeepc_success = false;
 		s_Deepc_mutex.unlock();
 		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 691");
@@ -717,7 +743,6 @@ void solve_Deepc()
   	{
   		s_Deepc_mutex.lock();
   		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 703");
-		s_DeepcOpt_status = 0;
     	s_setupDeepc_success = false;
 		s_Deepc_mutex.unlock();
 		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 703");
@@ -1578,10 +1603,10 @@ void computeResponse_for_Deepc(Controller::Request &request, Controller::Respons
 		s_solveDeepc = true;
 		s_Deepc_mutex.unlock();
 		//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1520");
-
-		if (Deepc_first_pass)
-			m_Deepc_solving_first_opt = true;
 	}
+
+	if (Deepc_first_pass)
+			m_Deepc_solving_first_opt = true;
 }
 
 void computeResponse_for_landing_move_down(Controller::Request &request, Controller::Response &response)
@@ -2430,6 +2455,7 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	// Gurobi optimization parameters
 	s_yaml_grb_LogToFile = getParameterBool(nodeHandle_for_paramaters, "grb_LogToFile");
 	s_yaml_grb_LogToConsole = getParameterBool(nodeHandle_for_paramaters, "grb_LogToConsole");
+	s_yaml_grb_presolve_at_setup = getParameterBool(nodeHandle_for_paramaters, "grb_presolve_at_setup");
 
 	s_Deepc_mutex.unlock();
 	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 2352");

@@ -277,6 +277,7 @@ vector<float> s_yaml_input_max = {0.6388, PI, PI, PI};
 // Gurobi optimization parameters
 bool s_yaml_grb_LogToFile = false;
 bool s_yaml_grb_LogToConsole = false;
+bool s_yaml_grb_presolve_at_setup = false;
 
 // The weight of the Crazyflie in Newtons, i.e., mg
 float m_cf_weight_in_newtons = 0.0;
@@ -343,7 +344,6 @@ MatrixXf s_uini;
 MatrixXf s_yini;
 MatrixXf s_u_f;
 bool s_setupDeepc_success = false;
-int s_DeepcOpt_status = 0;
 // Variables for thread management
 mutex s_Deepc_mutex;
 // Flags for communication with Deepc thread
@@ -360,6 +360,7 @@ bool d_Deepc_yaw_control = true;
 int d_Tini;
 int d_N;
 float d_lambda2_g;
+bool d_grb_presolve_at_setup = false;
 int d_num_outputs;
 int d_Nuini;
 int d_Nyini;
