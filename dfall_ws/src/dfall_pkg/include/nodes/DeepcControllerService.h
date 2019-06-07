@@ -274,9 +274,12 @@ vector<float> s_yaml_output_max = {4.0, 4.0, 4.0, 100, 100, 100, PI/6, PI/6, PI/
 vector<float> s_yaml_input_min = {0.0, -PI, -PI, -PI};
 vector<float> s_yaml_input_max = {0.6388, PI, PI, PI};
 
-// Gurobi optimization parameters
+// Optimization parameters
+bool s_yaml_opt_sparse = true;
+bool s_yaml_opt_verbose = false;
+
+// Parameters specific to Gurobi
 bool s_yaml_grb_LogToFile = false;
-bool s_yaml_grb_LogToConsole = false;
 bool s_yaml_grb_presolve_at_setup = false;
 
 // The weight of the Crazyflie in Newtons, i.e., mg
@@ -360,10 +363,14 @@ bool d_Deepc_yaw_control = true;
 int d_Tini;
 int d_N;
 float d_lambda2_g;
+bool d_opt_sparse = s_yaml_opt_sparse;
 bool d_grb_presolve_at_setup = false;
 int d_num_outputs;
 int d_Nuini;
 int d_Nyini;
+int d_Ns;
+int d_Nuf;
+int d_Nyf;
 int d_Ng;
 MatrixXf d_U_f;
 MatrixXf d_Y_f;
@@ -374,13 +381,14 @@ MatrixXf d_r_gs;
 MatrixXf d_A_gs;
 MatrixXf d_b_gs;
 MatrixXf d_gs;
-MatrixXf d_grb_cg_r;
-MatrixXf d_grb_cg_gs;
+MatrixXf d_grb_c_r;
+MatrixXf d_grb_c_gs;
 MatrixXf d_g;
 MatrixXf d_uini;
 MatrixXf d_yini;
 int d_DeepcOpt_status = 0;
 int d_i;
+int d_uf_start_i;
 MatrixXf d_u_f;
 // Gurobi optimization variables
 GRBEnv d_grb_env;
@@ -391,7 +399,7 @@ GRBQuadExpr d_grb_quad_obj = 0;
 GRBLinExpr d_grb_lin_obj_us = 0;
 GRBLinExpr d_grb_lin_obj_r = 0;
 GRBLinExpr d_grb_lin_obj_gs = 0;
-GRBConstr* d_grb_eq_constrs = 0;
+GRBConstr* d_grb_ini_constrs = 0;
 
 // Deepc related global variables used by main thread only
 // Declared as global for speed

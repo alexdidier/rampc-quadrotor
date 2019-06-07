@@ -125,7 +125,7 @@ void Deepc_thread_main()
 
 	// Clear any heap allocated variables
 	delete[] d_grb_vars;
-	delete[] d_grb_eq_constrs;
+	delete[] d_grb_ini_constrs;
 }
 
 void change_Deepc_params()
@@ -138,8 +138,9 @@ void change_Deepc_params()
 	d_Tini = s_yaml_Tini;
 	d_N = s_yaml_N;
 	d_lambda2_g = s_yaml_lambda2_g;
+	d_opt_sparse = s_yaml_opt_sparse;
+	bool opt_verbose = s_yaml_opt_verbose;
 	bool grb_LogToFile = s_yaml_grb_LogToFile;
-	bool grb_LogToConsole = s_yaml_grb_LogToConsole;
 	d_grb_presolve_at_setup = s_yaml_grb_presolve_at_setup;
 	// Deepc setup must be re-run after changes
 	s_setupDeepc_success = false;
@@ -152,7 +153,7 @@ void change_Deepc_params()
 			d_grb_model.set(GRB_StringParam_LogFile, d_logFolder + "gurobi.log");
 		else
 			d_grb_model.set(GRB_StringParam_LogFile, "");
-		d_grb_model.set(GRB_IntParam_LogToConsole, grb_LogToConsole);
+		d_grb_model.set(GRB_IntParam_LogToConsole, opt_verbose);
 
 		// Inform the user
 	    ROS_INFO("[DEEPC CONTROLLER] Deepc parameters change successful");
@@ -196,29 +197,53 @@ void change_Deepc_setpoint()
 		if (d_Deepc_yaw_control)
 			d_r.bottomRows(1) = setpoint.bottomRows(1);
 
-		d_grb_cg_r = MatrixXf::Zero(d_Ng, 1);
-		for (int i = 0; i < d_N + 1; i++)
+		if (d_opt_sparse)
 		{
-			if (i < d_N)
-				d_grb_cg_r -= 2.0 * d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_Q * d_r;
-			else
-				d_grb_cg_r -= 2.0 * d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_P * d_r;
+			d_grb_c_r = MatrixXf::Zero(d_Nyf + d_num_outputs, 1);
+			for (int i = 0; i < d_N + 1; i++)
+			{
+				if (i < d_N)
+					d_grb_c_r.middleRows(i * d_num_outputs, d_num_outputs) = -2.0 * d_Q * d_r;
+				else
+					d_grb_c_r.middleRows(i * d_num_outputs, d_num_outputs) = -2.0 * d_P * d_r;
+			}
+		}
+		else
+		{
+			d_grb_c_r = MatrixXf::Zero(d_Ng, 1);
+			for (int i = 0; i < d_N + 1; i++)
+			{
+				if (i < d_N)
+					d_grb_c_r -= 2.0 * d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_Q * d_r;
+				else
+					d_grb_c_r -= 2.0 * d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_P * d_r;
+			}
 		}
 
 		// UPDATE GUROBI LINEAR COST VECTOR FOR STEADY STATE TRAJECTORY MAPPER
 		d_r_gs = d_r.replicate(d_Tini + d_N + 1, 1);
 		d_b_gs.bottomRows(d_r_gs.rows()) = d_r_gs;
 		d_gs = d_A_gs.bdcSvd(ComputeThinU | ComputeThinV).solve(d_b_gs);
-		d_grb_cg_gs = -2.0 * d_lambda2_g * d_gs;
 
+		d_grb_c_gs = -2.0 * d_lambda2_g * d_gs;
 
 		// Update linear objective terms
 	    d_grb_lin_obj_r = 0;
 	    d_grb_lin_obj_gs = 0;
-	    for (int i = 0; i < d_Ng; i++)
+	    if (d_opt_sparse)
 	    {
-	    	d_grb_lin_obj_r += d_grb_cg_r(i) * d_grb_vars[i];
-	    	d_grb_lin_obj_gs += d_grb_cg_gs(i) * d_grb_vars[i];
+	    	for (int i = 0; i < d_Ng; i++)
+		    	d_grb_lin_obj_gs += d_grb_c_gs(i) * d_grb_vars[i];
+		    for (int i = 0; i < d_Nyf + d_num_outputs; i++)
+		    	d_grb_lin_obj_r += d_grb_c_r(i) * d_grb_vars[d_Ng + d_Ns + d_Nuf + i];
+	    }
+	    else
+	    {
+	    	for (int i = 0; i < d_Ng; i++)
+		    {
+		    	d_grb_lin_obj_r += d_grb_c_r(i) * d_grb_vars[i];
+		    	d_grb_lin_obj_gs += d_grb_c_gs(i) * d_grb_vars[i];
+		    }
 	    }
 
 	    // Update objective
@@ -331,17 +356,45 @@ void setup_Deepc()
 		else
 			y_data = y_data_in.topRows(3);
 
-		// HANKEL MATRICES
+		// VARIABLE LENGTHS
+		// Number of inputs m
 		int num_inputs = u_data.rows();
+		// Number of outputs p
 		d_num_outputs = y_data.rows();
+		// Previous inputs vector (uini) length
 		d_Nuini = num_inputs * d_Tini;
+		// Previous outputs vector (yini) length
 		d_Nyini = d_num_outputs * d_Tini;
+		// Slack variable length
+		d_Ns = d_Nyini;
+		// Future inputs vector (uf) length
+		d_Nuf = num_inputs * d_N;
+		// Future output vector (yf) length (!!not including terminal output!!)
+		d_Nyf = d_num_outputs * d_N;
+
+		// HANKEL MATRICES
 		MatrixXf H_u = data2hankel(u_data, d_Tini + d_N + 1);
 		MatrixXf H_y = data2hankel(y_data, d_Tini + d_N + 1);
-		MatrixXf U_p = H_u.topRows(num_inputs * d_Tini);
-		d_U_f = H_u.middleRows(num_inputs * d_Tini, num_inputs * d_N);
-		MatrixXf Y_p = H_y.topRows(d_num_outputs * d_Tini);
-		d_Y_f = H_y.bottomRows(d_num_outputs * (d_N + 1));
+		MatrixXf U_p = H_u.topRows(d_Nuini);
+		d_U_f = H_u.middleRows(d_Nuini, d_Nuf);
+		MatrixXf Y_p = H_y.topRows(d_Nyini);
+		d_Y_f = H_y.bottomRows(d_Nyf + d_num_outputs);
+
+		// MORE VARIABLE SIZES
+		// g vector size
+		d_Ng = U_p.cols();
+		// Optimization decision vector size
+		int num_opt_vars;
+		if (d_opt_sparse)
+		{
+			// Sparse optimization variables: [g; slack; uf; yf; yt], where yt is terminal output
+			num_opt_vars = d_Ng + d_Ns + d_Nuf + d_Nyf + d_num_outputs;
+		}
+		else
+		{
+			// Dense optimization variables: [g; slack]
+			num_opt_vars = d_Ng + d_Ns;
+		}
 
 		// COST MATRICES
 		// Output cost and terminal output cost matrix
@@ -370,19 +423,37 @@ void setup_Deepc()
 			R(i,i) = R_vec[i];
 
 		// GUROBI QUADRATIC COST MATRIX
-		d_Ng = U_p.cols();
-		int Ns = d_num_outputs * d_Tini;
-		MatrixXf Qg = d_lambda2_g * MatrixXf::Identity(d_Ng, d_Ng);
-		for (int i = 0; i < d_N; i++)
+		MatrixXf Q_g = d_lambda2_g * MatrixXf::Identity(d_Ng, d_Ng);
+		MatrixXf Q_s = lambda2_s * MatrixXf::Identity(d_Ns, d_Ns);
+		MatrixXf Q_uf = MatrixXf::Zero(d_Nuf, d_Nuf);
+		MatrixXf Q_yf = MatrixXf::Zero(d_Nyf, d_Nyf);
+		MatrixXf Q_yt = d_P;
+		MatrixXf grb_Q = MatrixXf::Zero(num_opt_vars, num_opt_vars);
+		if (d_opt_sparse)
 		{
-			Qg += d_U_f.middleRows(i * num_inputs, num_inputs).transpose() * R * d_U_f.middleRows(i * num_inputs, num_inputs);
-			Qg += d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_Q * d_Y_f.middleRows(i * d_num_outputs, d_num_outputs);
+			for (int i = 0; i < d_N; i++)
+			{
+				Q_uf.block(i * num_inputs, i * num_inputs, num_inputs, num_inputs) = R;
+				Q_yf.block(i * d_num_outputs, i * d_num_outputs, d_num_outputs, d_num_outputs) = d_Q;
+			}
 		}
-		Qg += d_Y_f.bottomRows(d_num_outputs).transpose() * d_P * d_Y_f.bottomRows(d_num_outputs);
-		MatrixXf Qs = lambda2_s * MatrixXf::Identity(Ns, Ns);
-		MatrixXf grb_Q = MatrixXf::Zero(d_Ng + Ns, d_Ng + Ns);
-		grb_Q.topLeftCorner(d_Ng, d_Ng) = Qg;
-		grb_Q.bottomRightCorner(Ns, Ns) = Qs;
+		else
+		{
+			for (int i = 0; i < d_N; i++)
+			{
+				Q_g += d_U_f.middleRows(i * num_inputs, num_inputs).transpose() * R * d_U_f.middleRows(i * num_inputs, num_inputs);
+				Q_g += d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_Q * d_Y_f.middleRows(i * d_num_outputs, d_num_outputs);
+			}
+			Q_g += d_Y_f.bottomRows(d_num_outputs).transpose() * d_P * d_Y_f.bottomRows(d_num_outputs);
+		}
+		grb_Q.topLeftCorner(d_Ng, d_Ng) = Q_g;
+		grb_Q.block(d_Ng, d_Ng, d_Ns, d_Ns) = Q_s;
+		if (d_opt_sparse)
+		{
+			grb_Q.block(d_Ng + d_Ns, d_Ng + d_Ns, d_Nuf, d_Nuf) = Q_uf;
+			grb_Q.block(d_Ng + d_Ns + d_Nuf, d_Ng + d_Ns + d_Nuf, d_Nyf, d_Nyf) = Q_yf;
+			grb_Q.bottomRightCorner(d_num_outputs, d_num_outputs) = Q_yt;
+		}
 
 		// GUROBI LINEAR COST VECTOR
 		// Steady state input
@@ -408,19 +479,40 @@ void setup_Deepc()
 		d_b_gs.bottomRows(d_r_gs.rows()) = d_r_gs;
 		d_gs = d_A_gs.bdcSvd(ComputeThinU | ComputeThinV).solve(d_b_gs);
 
-		MatrixXf grb_cg_us = MatrixXf::Zero(d_Ng, 1);
-		d_grb_cg_r = MatrixXf::Zero(d_Ng, 1);
-		for (int i = 0; i < d_N + 1; i++)
+		d_grb_c_gs = -2.0 * d_lambda2_g * d_gs;
+		MatrixXf grb_c_us;
+		if (d_opt_sparse)
 		{
-			if (i < d_N)
+			grb_c_us = MatrixXf::Zero(d_Nuf, 1);
+			d_grb_c_r = MatrixXf::Zero(d_Nyf + d_num_outputs, 1);
+
+			for (int i = 0; i < d_N + 1; i++)
 			{
-				grb_cg_us -= 2.0 * d_U_f.middleRows(i * num_inputs, num_inputs).transpose() * R * us;
-				d_grb_cg_r -= 2.0 * d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_Q * d_r;
+				if (i < d_N)
+				{
+					grb_c_us.middleRows(i * num_inputs, num_inputs) = -2.0 * R * us;
+					d_grb_c_r.middleRows(i * d_num_outputs, d_num_outputs) = -2.0 * d_Q * d_r;
+				}
+				else
+					d_grb_c_r.middleRows(i * d_num_outputs, d_num_outputs) = -2.0 * d_P * d_r;
 			}
-			else
-				d_grb_cg_r -= 2.0 * d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_P * d_r;
 		}
-		d_grb_cg_gs = -2.0 * d_lambda2_g * d_gs;
+		else
+		{
+			grb_c_us = MatrixXf::Zero(d_Ng, 1);
+			d_grb_c_r = MatrixXf::Zero(d_Ng, 1);
+
+			for (int i = 0; i < d_N + 1; i++)
+			{
+				if (i < d_N)
+				{
+					grb_c_us -= 2.0 * d_U_f.middleRows(i * num_inputs, num_inputs).transpose() * R * us;
+					d_grb_c_r -= 2.0 * d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_Q * d_r;
+				}
+				else
+					d_grb_c_r -= 2.0 * d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_P * d_r;
+			}
+		}
 
 		//INPUT CONSTRAINTS
 		MatrixXf input_min = MatrixXf::Zero(num_inputs, 1);
@@ -452,41 +544,83 @@ void setup_Deepc()
 		}
 
 		// GUROBI LINEAR INEQUALITY CONSTRAINT MATRIX
-		MatrixXf grb_Ag = MatrixXf::Zero(2 * d_U_f.rows() + 2 * d_Y_f.rows(), d_Ng);
-		grb_Ag.topRows(d_U_f.rows()) = -d_U_f;
-		grb_Ag.middleRows(d_U_f.rows(), d_U_f.rows()) = d_U_f;
-		grb_Ag.middleRows(2 * d_U_f.rows(), d_Y_f.rows()) = -d_Y_f;
-		grb_Ag.bottomRows(d_Y_f.rows()) = d_Y_f;
+		// Only used in 'dense' formulation
+		MatrixXf grb_Ag;
+		if (d_opt_sparse)
+			grb_Ag = MatrixXf::Zero(0, 0);
+		else
+		{
+			grb_Ag = MatrixXf::Zero(2 * d_U_f.rows() + 2 * d_Y_f.rows(), d_Ng);
+			grb_Ag.topRows(d_U_f.rows()) = -d_U_f;
+			grb_Ag.middleRows(d_U_f.rows(), d_U_f.rows()) = d_U_f;
+			grb_Ag.middleRows(2 * d_U_f.rows(), d_Y_f.rows()) = -d_Y_f;
+			grb_Ag.bottomRows(d_Y_f.rows()) = d_Y_f;
+		}
 
 		// GUROBI LINEAR INEQUALITY CONSTRAINT VECTOR
-		MatrixXf grb_b = MatrixXf::Zero(grb_Ag.rows(), 1);
-		for (int i = 0; i < d_N + 1; i++)
+		// Only used in 'dense' formulation
+		MatrixXf grb_b;
+		if (d_opt_sparse)
+			grb_b = MatrixXf::Zero(0, 0);
+		else
 		{
-			if (i < d_N)
+			grb_b = MatrixXf::Zero(grb_Ag.rows(), 1);
+			for (int i = 0; i < d_N + 1; i++)
 			{
-				grb_b.middleRows(i * num_inputs, num_inputs) = -input_min;
-				grb_b.middleRows(d_U_f.rows() + i * num_inputs, num_inputs) = input_max;
+				if (i < d_N)
+				{
+					grb_b.middleRows(i * num_inputs, num_inputs) = -input_min;
+					grb_b.middleRows(d_U_f.rows() + i * num_inputs, num_inputs) = input_max;
+				}
+				grb_b.middleRows(2 * d_U_f.rows() + i * d_num_outputs, d_num_outputs) = -output_min;
+				grb_b.middleRows(2 * d_U_f.rows() + d_Y_f.rows() + i * d_num_outputs, d_num_outputs) = output_max;
 			}
-			grb_b.middleRows(2 * d_U_f.rows() + i * d_num_outputs, d_num_outputs) = -output_min;
-			grb_b.middleRows(2 * d_U_f.rows() + d_Y_f.rows() + i * d_num_outputs, d_num_outputs) = output_max;
 		}
 
 		// GUROBI BOUNDS VECTOR
-		MatrixXf lb = -GRB_INFINITY * MatrixXf::Ones(d_Ng + Ns, 1);
-		MatrixXf ub = GRB_INFINITY * MatrixXf::Ones(d_Ng + Ns, 1);
+		MatrixXf lb = -GRB_INFINITY * MatrixXf::Ones(num_opt_vars, 1);
+		MatrixXf ub = GRB_INFINITY * MatrixXf::Ones(num_opt_vars, 1);
+		if (d_opt_sparse)
+		{
+			lb.middleRows(d_Ng + d_Ns, d_Nuf) = input_min.replicate(d_N, 1);
+			lb.bottomRows(d_Nyf + d_num_outputs) = output_min.replicate(d_N + 1, 1);
 
-		// GUROBI LINEAR EQUALITY CONSTRAINT MATRIX
-		MatrixXf grb_A_eq = MatrixXf::Zero(U_p.rows() + Y_p.rows(), d_Ng + Ns);
-		grb_A_eq.topLeftCorner(U_p.rows(), d_Ng) = U_p;
-		grb_A_eq.bottomLeftCorner(Y_p.rows(), d_Ng) = Y_p;
-		grb_A_eq.bottomRightCorner(Ns, Ns) = -MatrixXf::Identity(Ns, Ns);
+			ub.middleRows(d_Ng + d_Ns, d_Nuf) = input_max.replicate(d_N, 1);
+			ub.bottomRows(d_Nyf + d_num_outputs) = output_max.replicate(d_N + 1, 1);
+		}
 
-		// GUROBI LINEAR EQUALITY CONSTRAINT VECTOR
-		d_uini = MatrixXf::Zero(num_inputs * d_Tini, 1);
-	    d_yini = MatrixXf::Zero(d_num_outputs * d_Tini, 1);
-		MatrixXf grb_b_eq = MatrixXf::Zero(grb_A_eq.rows(), 1);
-		grb_b_eq.topRows(d_uini.rows()) = d_uini;
-		grb_b_eq.bottomRows(d_yini.rows()) = d_yini;
+		// GUROBI LINEAR EQUALITY CONSTRAINTS
+		// Static equality constraints ([uf; yf; yt])
+		MatrixXf grb_A_eq;
+		MatrixXf grb_b_eq;
+		if (d_opt_sparse)
+		{
+			grb_A_eq = MatrixXf::Zero(d_Nuf + d_Nyf + d_num_outputs, num_opt_vars);
+			grb_A_eq.topLeftCorner(d_Nuf, d_Ng) = d_U_f;
+			grb_A_eq.block(0, d_Ng + d_Ns, d_Nuf, d_Nuf) = -MatrixXf::Identity(d_Nuf, d_Nuf);
+			grb_A_eq.bottomLeftCorner(d_Nyf + d_num_outputs, d_Ng) = d_Y_f;
+			grb_A_eq.bottomRightCorner(d_Nyf + d_num_outputs, d_Nyf + d_num_outputs) = -MatrixXf::Identity(d_Nyf + d_num_outputs, d_Nyf + d_num_outputs);
+
+			grb_b_eq = MatrixXf::Zero(d_Nuf + d_Nyf + d_num_outputs, 1);
+		}
+		else
+		{
+			// There are no static equality constraints in dense formulation (they are subtituted)
+			grb_A_eq = MatrixXf::Zero(0, 0);
+			grb_b_eq = MatrixXf::Zero(0, 0);
+		}
+		
+		// Dynamic equality constraints that change every time ([uini; uini])
+		MatrixXf grb_A_eq_ini = MatrixXf::Zero(d_Nuini + d_Nyini, num_opt_vars);
+		grb_A_eq_ini.topLeftCorner(d_Nuini, d_Ng) = U_p;
+		grb_A_eq_ini.bottomLeftCorner(d_Nyini, d_Ng) = Y_p;
+		grb_A_eq_ini.block(d_Nuini, d_Ng, d_Ns, d_Ns) = -MatrixXf::Identity(d_Ns, d_Ns);
+
+		MatrixXf grb_b_eq_ini = MatrixXf::Zero(d_Nuini + d_Nyini, 1);
+		d_uini = MatrixXf::Zero(d_Nuini, 1);
+	    d_yini = MatrixXf::Zero(d_Nyini, 1);
+		grb_b_eq_ini.topRows(d_Nuini) = d_uini;
+		grb_b_eq_ini.bottomRows(d_Nyini) = d_yini;
 
 		// GUROBI MODEL SETUP
 		// Follows 'dense_c++.cpp' example
@@ -503,32 +637,44 @@ void setup_Deepc()
 	    delete[] d_grb_vars;
 
 	    // Create variables
-	    double grb_lb[d_Ng + Ns];
-	    double grb_ub[d_Ng + Ns];
-	    for (int i = 0; i < d_Ng + Ns; i++)
+	    double grb_lb[num_opt_vars];
+	    double grb_ub[num_opt_vars];
+	    for (int i = 0; i < num_opt_vars; i++)
 	    {
 	    	grb_lb[i] = lb(i);
 	    	grb_ub[i] = ub(i);
 	    }
-	    d_grb_vars = d_grb_model.addVars(grb_lb, grb_ub, NULL, NULL, NULL, d_Ng + Ns);
+	    d_grb_vars = d_grb_model.addVars(grb_lb, grb_ub, NULL, NULL, NULL, num_opt_vars);
 
 	    // Set quadratic objective term
 	    d_grb_quad_obj = 0;
-	    for (int i = 0; i < d_Ng + Ns; i++)
-	    	for (int j = 0; j < d_Ng + Ns; j++)
+	    for (int i = 0; i < num_opt_vars; i++)
+	    	for (int j = 0; j < num_opt_vars; j++)
 	    		d_grb_quad_obj += grb_Q(i,j) * d_grb_vars[i] * d_grb_vars[j];
 
 	    // Set linear objective term
 	    d_grb_lin_obj_us = 0;
 	    d_grb_lin_obj_r = 0;
 	    d_grb_lin_obj_gs = 0;
-	    for (int i = 0; i < d_Ng; i++)
+	    if (d_opt_sparse)
 	    {
-	    	d_grb_lin_obj_us += grb_cg_us(i) * d_grb_vars[i];
-	    	d_grb_lin_obj_r += d_grb_cg_r(i) * d_grb_vars[i];
-	    	d_grb_lin_obj_gs += d_grb_cg_gs(i) * d_grb_vars[i];
+	    	for (int i = 0; i < d_Ng; i++)
+		    	d_grb_lin_obj_gs += d_grb_c_gs(i) * d_grb_vars[i];
+		    for (int i = 0; i < d_Nuf; i++)
+		    	d_grb_lin_obj_us += grb_c_us(i) * d_grb_vars[d_Ng + d_Ns + i];
+		    for (int i = 0; i < d_Nyf + d_num_outputs; i++)
+		    	d_grb_lin_obj_r += d_grb_c_r(i) * d_grb_vars[d_Ng + d_Ns + d_Nuf + i];
 	    }
-
+	    else
+	    {
+	    	for (int i = 0; i < d_Ng; i++)
+		    {
+		    	d_grb_lin_obj_us += grb_c_us(i) * d_grb_vars[i];
+		    	d_grb_lin_obj_r += d_grb_c_r(i) * d_grb_vars[i];
+		    	d_grb_lin_obj_gs += d_grb_c_gs(i) * d_grb_vars[i];
+		    }
+	    }
+	    
 	    // Set objective
 	    d_grb_model.setObjective(d_grb_quad_obj + d_grb_lin_obj_us + d_grb_lin_obj_r + d_grb_lin_obj_gs);
 
@@ -539,9 +685,10 @@ void setup_Deepc()
     		d_grb_model.remove(grb_constrs[i]);
     	d_grb_model.update();
     	delete[] grb_constrs;
-    	delete[] d_grb_eq_constrs;
+    	delete[] d_grb_ini_constrs;
 
 	    // Add inequality constraints
+	    // Note that grb_Ag is empty when using sparse formulation and for loop below does not run
 	    for (int i = 0; i < grb_Ag.rows(); i++)
 	    {
 	    	GRBLinExpr lhs = 0;
@@ -550,40 +697,50 @@ void setup_Deepc()
 	    	d_grb_model.addConstr(lhs, '<', grb_b(i));
 	    }
 
-	    // Add equality constraints and store in memory for quick change
-	    int num_eq_constrs = grb_A_eq.rows();
-	    d_grb_eq_constrs = new GRBConstr[num_eq_constrs];
-	    for (int i = 0; i < num_eq_constrs; i++)
+	    // Add static equality constraints
+	    // Note that grb_A_eq is empty when using dense formulation and for loop below does not run
+	    for (int i = 0; i < grb_A_eq.rows(); i++)
 	    {
 	    	GRBLinExpr lhs = 0;
-	    	for (int j = 0; j < d_Ng + Ns; j++)
+	    	for (int j = 0; j < num_opt_vars; j++)
 	    		lhs += grb_A_eq(i,j) * d_grb_vars[j];
-	    	d_grb_eq_constrs[i] = d_grb_model.addConstr(lhs, '=', grb_b_eq(i));
+	    	d_grb_model.addConstr(lhs, '=', grb_b_eq(i));
+	    }
+
+	    // Add dynamic equality constraints and store in memory for quick change
+	    int num_ini_constrs = grb_A_eq_ini.rows();
+	    d_grb_ini_constrs = new GRBConstr[num_ini_constrs];
+	    for (int i = 0; i < num_ini_constrs; i++)
+	    {
+	    	GRBLinExpr lhs = 0;
+	    	for (int j = 0; j < num_opt_vars; j++)
+	    		lhs += grb_A_eq_ini(i,j) * d_grb_vars[j];
+	    	d_grb_ini_constrs[i] = d_grb_model.addConstr(lhs, '=', grb_b_eq_ini(i));
 	    }
 
 	    // Set model parameters
-	    // d_grb_model.set(GRB_IntParam_Method, 0);
-	    if (!d_grb_presolve_at_setup)
-	    {
-	    	d_grb_model.set(GRB_IntParam_Aggregate, 0);
-	    }
+	    // Skip Presolve when using sparse model, as it returns same model (presolving sparsifies)
+	    if (d_opt_sparse)
+	    	d_grb_model.set(GRB_IntParam_Presolve, 0);
+	    // Setting Aggregate to 0 was found to speed up optimization using Gurobi auto-tune
+	    // This is only relevant when Presolve is on (dense formulation)
+	    d_grb_model.set(GRB_IntParam_Aggregate, 0);
 
-
-	    // Pre-solve
-	    if (d_grb_presolve_at_setup)
+	    // Presolve - only applicable for dense formulation
+	    if (!d_opt_sparse && d_grb_presolve_at_setup)
 	    {
 		    static GRBModel grb_model_presolved = d_grb_model.presolve();
 		    
 		    // Update variables to presolved model variables
 		    d_grb_vars = grb_model_presolved.getVars();
 
-		    // Update equality constraints to presolved model constraints. They are last set of constraints in presolved model
+		    // Update dynamic equality constraints to presolved model constraints. They are last set of constraints in presolved model
 		    num_constrs = grb_model_presolved.get(GRB_IntAttr_NumConstrs);
 		    GRBConstr* grb_constrs_presolved = grb_model_presolved.getConstrs();
 		    int j = 0;
-	    	for (int i = num_constrs - num_eq_constrs; i < num_constrs; i++)
+	    	for (int i = num_constrs - num_ini_constrs; i < num_constrs; i++)
 	    	{
-	    		d_grb_eq_constrs[j] = grb_constrs_presolved[i];
+	    		d_grb_ini_constrs[j] = grb_constrs_presolved[i];
 	    		j++;
 	    	}
 	    	delete[] grb_constrs_presolved;
@@ -597,6 +754,11 @@ void setup_Deepc()
 
 	    // Setup output variables
 	    d_g = MatrixXf::Zero(d_Ng, 1);
+	    if (d_opt_sparse)
+	    {
+	    	d_uf_start_i = d_Ng + d_Ns;
+	    	d_u_f = MatrixXf::Zero(d_Nuf, 1);
+	    }
 
 	    s_Deepc_mutex.lock();
 	    // ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 568");
@@ -663,12 +825,12 @@ void solve_Deepc()
 	{
 		// Update equality constraints RHS
 		for (d_i = 0; d_i < d_Nuini; d_i++)
-			d_grb_eq_constrs[d_i].set(GRB_DoubleAttr_RHS, d_uini(d_i));
+			d_grb_ini_constrs[d_i].set(GRB_DoubleAttr_RHS, d_uini(d_i));
 		for (d_i = 0; d_i < d_Nyini; d_i++)
-			d_grb_eq_constrs[d_Nuini + d_i].set(GRB_DoubleAttr_RHS, d_yini(d_i));
+			d_grb_ini_constrs[d_Nuini + d_i].set(GRB_DoubleAttr_RHS, d_yini(d_i));
 
-		// Solve optimization
-		if (!d_grb_presolve_at_setup)
+		// Solve optimization - presolve only applies if using dense formulation
+		if (d_opt_sparse || !d_grb_presolve_at_setup)
 		{
 			d_grb_model.optimize();
 			d_DeepcOpt_status = d_grb_model.get(GRB_IntAttr_Status);
@@ -681,11 +843,21 @@ void solve_Deepc()
 		
 
 		if (d_DeepcOpt_status == GRB_OPTIMAL)
-		{
-			for (d_i = 0; d_i < d_Ng; d_i++)
-				d_g(d_i) = d_grb_vars[d_i].get(GRB_DoubleAttr_X);
+		{	
+			// With sparse formulation can get uf directly
+			if (d_opt_sparse)
+			{
+				for (d_i = 0; d_i < d_Nuf; d_i++)
+					d_u_f(d_i) = d_grb_vars[d_uf_start_i + d_i].get(GRB_DoubleAttr_X);
+			}
+			// With dense formulation get uf through g
+			else
+			{
+				for (d_i = 0; d_i < d_Ng; d_i++)
+					d_g(d_i) = d_grb_vars[d_i].get(GRB_DoubleAttr_X);
 
-			d_u_f = d_U_f * d_g;
+				d_u_f = d_U_f * d_g;
+			}
 
 			s_Deepc_mutex.lock();
 			// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 649");
@@ -700,7 +872,7 @@ void solve_Deepc()
 			if (d_Deepc_yaw_control)
 				ROS_INFO_STREAM("Yaw Rate: " << d_u_f(3));
 
-			if (!d_grb_presolve_at_setup)
+			if (d_opt_sparse || !d_grb_presolve_at_setup)
 			{
 				ROS_INFO_STREAM("Objective: " << d_grb_model.get(GRB_DoubleAttr_ObjVal));
 	    		ROS_INFO_STREAM("Runtime: " << d_grb_model.get(GRB_DoubleAttr_Runtime));
@@ -2452,9 +2624,13 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	getParameterFloatVector(nodeHandle_for_paramaters, "input_min", s_yaml_input_min, 4);
 	getParameterFloatVector(nodeHandle_for_paramaters, "input_max", s_yaml_input_max, 4);
 
-	// Gurobi optimization parameters
+
+	// Optimization parameters
+	s_yaml_opt_sparse = getParameterBool(nodeHandle_for_paramaters, "opt_sparse");
+	s_yaml_opt_verbose = getParameterBool(nodeHandle_for_paramaters, "opt_verbose");
+
+	// Parameters specific to Gurobi
 	s_yaml_grb_LogToFile = getParameterBool(nodeHandle_for_paramaters, "grb_LogToFile");
-	s_yaml_grb_LogToConsole = getParameterBool(nodeHandle_for_paramaters, "grb_LogToConsole");
 	s_yaml_grb_presolve_at_setup = getParameterBool(nodeHandle_for_paramaters, "grb_presolve_at_setup");
 
 	s_Deepc_mutex.unlock();
