@@ -85,12 +85,15 @@
 // Include Eigen for matrix operations
 #include "Eigen/Dense"
 
-// Include Gurobi optimization platform
-#include "gurobi_c++.h"
-
 // Includes required for threading
 #include <mutex>
 #include <boost/thread/thread.hpp>
+
+// Include Gurobi optimization platform
+#include "gurobi_c++.h"
+
+// Include OSQP optimization platform
+#include "osqp.h"
 
 // Namespacing the package
 using namespace dfall_pkg;
@@ -275,6 +278,7 @@ vector<float> s_yaml_input_min = {0.0, -PI, -PI, -PI};
 vector<float> s_yaml_input_max = {0.6388, PI, PI, PI};
 
 // Optimization parameters
+string s_yaml_solver = "gurobi";
 bool s_yaml_opt_sparse = true;
 bool s_yaml_opt_verbose = false;
 
@@ -333,16 +337,16 @@ int m_dataIndex = 0;
 bool m_write_data = false;
 
 // Variables shared between main and Deepc thread
-bool s_Deepc_measure_roll_pitch = true;
-bool s_Deepc_yaw_control = true;
 float s_cf_weight_in_newtons = m_cf_weight_in_newtons;
+MatrixXf s_setpoint = MatrixXf::Zero(4, 1);
 string s_dataFolder = m_dataFolder;
 string s_logFolder = m_dataFolder + yaml_logFolder;
+bool s_Deepc_measure_roll_pitch = true;
+bool s_Deepc_yaw_control = true;
 int s_num_inputs;
 int s_num_outputs;
 int s_Nuini;
 int s_Nyini;
-MatrixXf s_setpoint = MatrixXf::Zero(4, 1);
 MatrixXf s_uini;
 MatrixXf s_yini;
 MatrixXf s_u_f;
@@ -357,40 +361,64 @@ bool s_solveDeepc = false;
 
 // Global variables used by Deepc thread only
 // Declared as global for inter-function communication and/or speed
+float d_cf_weight_in_newtons = s_cf_weight_in_newtons;
+MatrixXf d_setpoint = s_setpoint;
+string d_dataFolder = s_dataFolder;
 string d_logFolder = s_logFolder;
-bool d_Deepc_measure_roll_pitch = true;
-bool d_Deepc_yaw_control = true;
-int d_Tini;
-int d_N;
-float d_lambda2_g;
+bool d_Deepc_measure_roll_pitch = s_Deepc_measure_roll_pitch;
+bool d_Deepc_yaw_control = s_Deepc_yaw_control;
+int d_Tini = s_yaml_Tini;
+int d_N = s_yaml_N;
+float d_lambda2_g = s_yaml_lambda2_g;
+float d_lambda2_s = s_yaml_lambda2_s;
+vector<float> d_Q_vec = s_yaml_Q;
+vector<float> d_R_vec = s_yaml_R;
+vector<float> d_P_vec = s_yaml_P;
+vector<float> d_input_min_vec = s_yaml_input_min;
+vector<float> d_input_max_vec = s_yaml_input_max;
+vector<float> d_output_min_vec = s_yaml_output_min;
+vector<float> d_output_max_vec = s_yaml_output_max;
+int d_solver = DEEPC_CONTROLLER_SOLVER_GUROBI;
 bool d_opt_sparse = s_yaml_opt_sparse;
 bool d_opt_verbose = s_yaml_opt_verbose;
 bool d_grb_LogToFile = s_yaml_grb_LogToFile;
 bool d_grb_presolve_at_setup = s_yaml_grb_presolve_at_setup;
+int d_num_inputs;
 int d_num_outputs;
-int d_Nuini;
-int d_Nyini;
+int d_num_block_rows;
+int d_Ng;
 int d_Ns;
 int d_Nuf;
 int d_Nyf;
-int d_Ng;
+int d_Nuini;
+int d_Nyini;
+int d_num_opt_vars;
+MatrixXf d_U_p;
 MatrixXf d_U_f;
+MatrixXf d_Y_p;
 MatrixXf d_Y_f;
 MatrixXf d_Q;
 MatrixXf d_P;
+MatrixXf d_R;
 MatrixXf d_r;
 MatrixXf d_r_gs;
 MatrixXf d_A_gs;
 MatrixXf d_b_gs;
 MatrixXf d_gs;
-MatrixXf d_grb_c_r;
-MatrixXf d_grb_c_gs;
+MatrixXf d_lin_cost_vec_gs;
+MatrixXf d_lin_cost_vec_us;
+MatrixXf d_lin_cost_vec_r;
+MatrixXf d_input_min;
+MatrixXf d_input_max;
+MatrixXf d_output_min;
+MatrixXf d_output_max;
 MatrixXf d_g;
 MatrixXf d_uini;
 MatrixXf d_yini;
 int d_DeepcOpt_status = 0;
 int d_i;
 int d_uf_start_i;
+int d_yf_start_i;
 MatrixXf d_u_f;
 // Gurobi optimization variables
 GRBEnv d_grb_env;
@@ -401,10 +429,11 @@ GRBQuadExpr d_grb_quad_obj = 0;
 GRBLinExpr d_grb_lin_obj_us = 0;
 GRBLinExpr d_grb_lin_obj_r = 0;
 GRBLinExpr d_grb_lin_obj_gs = 0;
-GRBConstr* d_grb_ini_constrs = 0;
+GRBConstr* d_grb_dyn_constrs = 0;
 
 // Deepc related global variables used by main thread only
 // Declared as global for speed
+int m_num_inputs = s_num_inputs;
 MatrixXf m_uini;
 MatrixXf m_yini;
 bool m_Deepc_solving_first_opt = false;
@@ -449,18 +478,49 @@ ros::Publisher m_manoeuvreCompletePublisher;
 // DEEPC FUNCTIONS
 void Deepc_thread_main();
 void change_Deepc_params();
-void change_Deepc_setpoint();
-void setup_Deepc();
-void solve_Deepc();
+void change_Deepc_setpoint_gurobi();
+void change_Deepc_setpoint_osqp();
+void setup_Deepc_gurobi();
+void setup_Deepc_osqp();
+void solve_Deepc_gurobi();
+void solve_Deepc_osqp();
 
 // DEEPC HELPER FUNCTIONS
+// GET U_DATA FROM FILE
+MatrixXf get_u_data();
+// GET Y_DATA FROM FILE
+MatrixXf get_y_data();
+// GET VARIABLE LENGTHS
+void get_variable_lengths(const MatrixXf& u_data, const MatrixXf& y_data);
+// GET HANKEL MATICES
+void get_hankel_matrices(const MatrixXf& u_data, const MatrixXf& y_data);
+// GET COST MATRICES
+void get_cost_matrices();
+// GET INPUT/OUTPUT CONSTRAINT VECTORS
+void get_input_output_constr_vectors();
+// GET OPTIMIZATION QUADRATIC COST MATRIX
+MatrixXf get_quad_cost_matrix();
+// GET OPTIMIZATION LINEAR COST VECTORS
+void get_lin_cost_vectors();
+// UPDATE OPTIMIZATION LINEAR COST VECTORS
+void update_lin_cost_vectors();
+// GET STATIC EQUALITY CONSTRAINTS MATRIX
+MatrixXf get_static_eq_constr_matrix();
+// GET STATIC EQUALITY CONSTRAINTS VECTOR
+MatrixXf get_static_eq_constr_vector();
+// GET DYNAMIC EQUALITY CONSTRAINTS MATRIX
+MatrixXf get_dynamic_eq_constr_matrix();
+// GET DYNAMIC EQUALITY CONSTRAINTS VECTOR
+MatrixXf get_dynamic_eq_constr_vector();
+// SOME STEPS TO FINISH DEEPC SETUP
+void finish_Deepc_setup();
 // DATA TO HANKEL
-MatrixXf data2hankel(MatrixXf data, int num_block_rows);
+MatrixXf data2hankel(const MatrixXf& data, int num_block_rows);
 // UPDATE UINI YINI
 void update_uini_yini(Controller::Request &request, control_output &output);
 // READ/WRITE CSV FILES
-MatrixXf read_csv(const string & path);
-bool write_csv(const string & path, MatrixXf M);
+MatrixXf read_csv(const string& path);
+bool write_csv(const string& path, const MatrixXf& M);
 
 // CONTROLLER COMPUTATIONS
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response);
@@ -498,5 +558,5 @@ void processCustomButton2(float float_data, int int_data, bool* bool_data);
 void processCustomButton3(float float_data, int int_data, bool* bool_data);
 
 // FOR LOADING THE YAML PARAMETERS
-void isReadyDeepcControllerYamlCallback(const IntWithHeader & msg);
+void isReadyDeepcControllerYamlCallback(const IntWithHeader& msg);
 void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle);

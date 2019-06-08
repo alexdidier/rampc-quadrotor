@@ -80,13 +80,13 @@ exc_start_time : 0.0
 # EVERYTHING DEEPC
 
 # Flag that indicates whether to use roll and pitch angle measurements in Deepc
-Deepc_measure_roll_pitch : false
+Deepc_measure_roll_pitch : true
 
 # Flag that activates yaw control through Deepc
 Deepc_yaw_control : false
 
 # Tini in discrete time steps
-Tini : 6
+Tini : 4
 
 # Prediction horizon in discrete time steps
 N : 25
@@ -102,7 +102,7 @@ P : [657.21, 657.21, 657.21, 96.92, 96.92, 0.47, 629.60, 629.60, 84.21]
 
 # Regularization parameters
 lambda2_g : 0.001
-lambda2_s : 100000000.0
+lambda2_s : 10000000.0
 
 # Output constraints (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
 output_min : [-4.0, -4.0, -4.0, -100, -100, -100, -0.5236, -0.5236, -0.5236]
@@ -113,9 +113,10 @@ input_min : [0.0, -1.5708, -1.5708, -1.5708]
 input_max : [0.4791, 1.5708, 1.5708, 1.5708]
 
 # Optimization parameters
-opt_sparse : false
+solver : gurobi
+opt_sparse : true
 opt_verbose : false
 
 # Parameters specific to Gurobi
 grb_LogToFile : false
-grb_presolve_at_setup : true
+grb_presolve_at_setup : false

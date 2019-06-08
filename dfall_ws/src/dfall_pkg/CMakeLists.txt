@@ -289,6 +289,7 @@ include_directories(
   include
   include/nodes
   $ENV{GUROBI_HOME}/include
+  $ENV{HOME}/Software/osqp-0.5.0-linux64/include
 )
 
 # Find Gurobi libraries
@@ -310,6 +311,14 @@ find_library(GUROBI_LIBRARY_CXX
 
 # Must specify C++ library first
 set(GUROBI_LIBRARIES "${GUROBI_LIBRARY_CXX};${GUROBI_LIBRARY}" )
+
+# Find OSQP library
+# Clear cache to force finding each time
+unset(OSQP_LIBRARY CACHE)
+find_library(OSQP_LIBRARY
+  NAMES libosqp.a
+  PATHS "$ENV{HOME}/Software/osqp-0.5.0-linux64/lib"
+  )
 
 ## Declare a C++ library
 ##add_library(${PROJECT_NAME}
@@ -478,7 +487,7 @@ endif()
 target_link_libraries(RemoteControllerService   ${catkin_LIBRARIES})
 target_link_libraries(TuningControllerService   ${catkin_LIBRARIES})
 target_link_libraries(PickerControllerService   ${catkin_LIBRARIES})
-target_link_libraries(DeepcControllerService    ${catkin_LIBRARIES} ${GUROBI_LIBRARIES})
+target_link_libraries(DeepcControllerService    ${catkin_LIBRARIES} ${GUROBI_LIBRARIES} ${OSQP_LIBRARY})
 target_link_libraries(TestMotorsControllerService ${catkin_LIBRARIES})
 target_link_libraries(CentralManagerService     ${catkin_LIBRARIES})
 target_link_libraries(ParameterService          ${catkin_LIBRARIES})
