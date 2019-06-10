@@ -44,10 +44,17 @@ shouldPublishDebugMessage : false
 shouldDisplayDebugInfo : false
 
 # The LQR Controller parameters for rate mode
+# 25Hz Gains
 gainMatrixThrust_NineStateVector    :  [ 0.00, 0.00, 0.45, 0.00, 0.00, 0.17, 0.00, 0.00, 0.00]
 gainMatrixRollRate                  :  [ 0.00,-2.79, 0.00, 0.00, -1.83, 0.00, 5.91, 0.00, 0.00]
 gainMatrixPitchRate                 :  [ 2.79, 0.00, 0.00, 1.83, 0.00, 0.00, 0.00, 5.91, 0.00]
 gainMatrixYawRate                   :  [ 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.97]
+
+# 50 Hz Gains
+#gainMatrixThrust_NineStateVector    :  [ 0.00, 0.00, 0.47, 0.00, 0.00, 0.17, 0.00, 0.00, 0.00]
+#gainMatrixRollRate                  :  [ 0.00, -2.97, 0.00, 0.00, -1.92, 0.00, 6.09, 0.00, 0.00]
+#gainMatrixPitchRate                 :  [ 2.97, 0.00, 0.00, 1.92, 0.00, 0.00, 0.00, 6.09, 0.00]
+#gainMatrixYawRate                   :  [ -0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 3.06]
 
 # Data folder location, relative to HOME path
 dataFolder : /work/D-FaLL-System/Deepc_data/
@@ -86,23 +93,23 @@ Deepc_measure_roll_pitch : true
 Deepc_yaw_control : false
 
 # Tini in discrete time steps
-Tini : 4
+Tini : 6
 
 # Prediction horizon in discrete time steps
 N : 25
 
 # Output cost matrix diagonal entries (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
-Q : [40.0, 40.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0]
+Q : [40.0, 40.0, 40.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0]
 
 # Input cost matrix diagonal entries (thrust, rollRate, pitchRate, yawRate)
-R : [4.0, 4.0, 4.0, 1.0]
+R : [160.0, 4.0, 4.0, 1.0]
 
 # Terminal output cost matrix diagonal entries (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
 P : [657.21, 657.21, 657.21, 96.92, 96.92, 0.47, 629.60, 629.60, 84.21]
 
 # Regularization parameters
-lambda2_g : 0.001
-lambda2_s : 10000000.0
+lambda2_g : 400.0
+lambda2_s : 600000.0
 
 # Output constraints (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
 output_min : [-4.0, -4.0, -4.0, -100, -100, -100, -0.5236, -0.5236, -0.5236]
@@ -113,7 +120,7 @@ input_min : [0.0, -1.5708, -1.5708, -1.5708]
 input_max : [0.4791, 1.5708, 1.5708, 1.5708]
 
 # Optimization parameters
-solver : gurobi
+solver : osqp
 opt_sparse : true
 opt_verbose : false
 

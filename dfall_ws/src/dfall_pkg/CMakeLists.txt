@@ -316,7 +316,7 @@ set(GUROBI_LIBRARIES "${GUROBI_LIBRARY_CXX};${GUROBI_LIBRARY}" )
 # Clear cache to force finding each time
 unset(OSQP_LIBRARY CACHE)
 find_library(OSQP_LIBRARY
-  NAMES libosqp.a
+  NAMES libosqp.so
   PATHS "$ENV{HOME}/Software/osqp-0.5.0-linux64/lib"
   )
 

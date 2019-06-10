@@ -84,6 +84,7 @@
 
 // Include Eigen for matrix operations
 #include "Eigen/Dense"
+#include "Eigen/Sparse"
 
 // Includes required for threading
 #include <mutex>
@@ -413,8 +414,11 @@ MatrixXf d_input_max;
 MatrixXf d_output_min;
 MatrixXf d_output_max;
 MatrixXf d_g;
+int d_uini_start_i;
+int d_yini_start_i;
 MatrixXf d_uini;
 MatrixXf d_yini;
+bool d_setupDeepc_success = s_setupDeepc_success;
 int d_DeepcOpt_status = 0;
 int d_i;
 int d_uf_start_i;
@@ -430,6 +434,13 @@ GRBLinExpr d_grb_lin_obj_us = 0;
 GRBLinExpr d_grb_lin_obj_r = 0;
 GRBLinExpr d_grb_lin_obj_gs = 0;
 GRBConstr* d_grb_dyn_constrs = 0;
+// OSQP optimization variables
+OSQPSettings* d_osqp_settings;
+OSQPWorkspace* d_osqp_work;
+MatrixXf d_osqp_q;
+c_float* d_osqp_q_new;
+c_float* d_osqp_l_new;
+c_float* d_osqp_u_new;
 
 // Deepc related global variables used by main thread only
 // Declared as global for speed
@@ -486,6 +497,8 @@ void solve_Deepc_gurobi();
 void solve_Deepc_osqp();
 
 // DEEPC HELPER FUNCTIONS
+// UPDATE UINI YINI
+void update_uini_yini(Controller::Request &request, control_output &output);
 // GET U_DATA FROM FILE
 MatrixXf get_u_data();
 // GET Y_DATA FROM FILE
@@ -514,10 +527,17 @@ MatrixXf get_dynamic_eq_constr_matrix();
 MatrixXf get_dynamic_eq_constr_vector();
 // SOME STEPS TO FINISH DEEPC SETUP
 void finish_Deepc_setup();
+// CLEAR SETUP DEEPC SUCCESS FLAG
+void clear_setupDeepc_success_flag();
+// GUROBI CLEANUP
+void gurobi_cleanup();
+// OSQP CLEANUP FUNCTIONS
+void osqp_extended_cleanup();
+void osqp_cleanup_data(OSQPData* data);
 // DATA TO HANKEL
 MatrixXf data2hankel(const MatrixXf& data, int num_block_rows);
-// UPDATE UINI YINI
-void update_uini_yini(Controller::Request &request, control_output &output);
+// CONVERT EIGEN SPARSE MATRIX TO CSC FORMAT USED IN OSQP
+csc* eigen2csc(const MatrixXf& eigen_dense_mat);
 // READ/WRITE CSV FILES
 MatrixXf read_csv(const string& path);
 bool write_csv(const string& path, const MatrixXf& M);

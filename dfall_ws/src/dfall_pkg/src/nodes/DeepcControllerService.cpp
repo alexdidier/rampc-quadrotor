@@ -95,7 +95,7 @@ void Deepc_thread_main()
 			switch (d_solver)
 			{
 				case DEEPC_CONTROLLER_SOLVER_OSQP:
-					//change_Deepc_setpoint_osqp();
+					change_Deepc_setpoint_osqp();
 					break;
 
 				case DEEPC_CONTROLLER_SOLVER_GUROBI:
@@ -117,7 +117,7 @@ void Deepc_thread_main()
 			switch (d_solver)
 			{
 				case DEEPC_CONTROLLER_SOLVER_OSQP:
-					//setup_Deepc_osqp();
+					setup_Deepc_osqp();
 					break;
 
 				case DEEPC_CONTROLLER_SOLVER_GUROBI:
@@ -139,7 +139,7 @@ void Deepc_thread_main()
 			switch (d_solver)
 			{
 				case DEEPC_CONTROLLER_SOLVER_OSQP:
-					//solve_Deepc_osqp();
+					solve_Deepc_osqp();
 					break;
 
 				case DEEPC_CONTROLLER_SOLVER_GUROBI:
@@ -156,9 +156,9 @@ void Deepc_thread_main()
         }
 	}
 
-	// Clear any heap allocated variables
-	delete[] d_grb_vars;
-	delete[] d_grb_dyn_constrs;
+	// Cleanup for memory allocation etc.
+	gurobi_cleanup();
+	osqp_extended_cleanup();
 }
 
 void change_Deepc_params()
@@ -194,10 +194,11 @@ void change_Deepc_params()
 	d_opt_verbose = s_yaml_opt_verbose;
 	d_grb_LogToFile = s_yaml_grb_LogToFile;
 	d_grb_presolve_at_setup = s_yaml_grb_presolve_at_setup;
-	// Deepc setup must be re-run after changes
-	s_setupDeepc_success = false;
 	s_Deepc_mutex.unlock();
 	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 133");
+
+	// Deepc setup must be re-run after changes
+	clear_setupDeepc_success_flag();
 
 	// Inform the user
 	ROS_INFO("[DEEPC CONTROLLER] Deepc parameters change successful");
@@ -208,12 +209,11 @@ void change_Deepc_setpoint_gurobi()
 {
 	s_Deepc_mutex.lock();
 	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 193");
-	bool setupDeepc_success = s_setupDeepc_success;
 	d_setpoint = s_setpoint;
 	s_Deepc_mutex.unlock();
 	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 193");
 
-	if (!setupDeepc_success)
+	if (!d_setupDeepc_success)
 		return;
 
 	try
@@ -253,11 +253,7 @@ void change_Deepc_setpoint_gurobi()
 
 	catch(GRBException e)
     {
-    	s_Deepc_mutex.lock();
-    	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 241");
-    	s_setupDeepc_success = false;
-    	s_Deepc_mutex.unlock();
-    	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 241");
+    	clear_setupDeepc_success_flag();
 
 	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc setpoint update exception with Gurobi error code = " << e.getErrorCode());
 	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Error message: " << e.getMessage());
@@ -265,24 +261,65 @@ void change_Deepc_setpoint_gurobi()
   	}
   	catch(exception& e)
     {
-    	s_Deepc_mutex.lock();
-    	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 253");
-    	s_setupDeepc_success = false;
-    	s_Deepc_mutex.unlock();
-    	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 253");
+    	clear_setupDeepc_success_flag();
 
 	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc setpoint update exception with Gurobi with standard error message: " << e.what());
 	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
   	}
   	catch(...)
   	{
-  		s_Deepc_mutex.lock();
-  		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 264");
-    	s_setupDeepc_success = false;
-    	s_Deepc_mutex.unlock();
-    	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 264");
+  		clear_setupDeepc_success_flag();
 
   		ROS_INFO("[DEEPC CONTROLLER] Deepc setpoint update exception with Gurobi");
+  		ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+  	}
+}
+
+void change_Deepc_setpoint_osqp()
+{
+	s_Deepc_mutex.lock();
+	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 193");
+	d_setpoint = s_setpoint;
+	s_Deepc_mutex.unlock();
+	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 193");
+
+	if (!d_setupDeepc_success)
+		return;
+
+	try
+	{
+		// Update linear cost vector
+		update_lin_cost_vectors();
+		if (d_opt_sparse)
+		{
+			d_osqp_q.topRows(d_Ng) = d_lin_cost_vec_gs;
+			d_osqp_q.bottomRows(d_Nyf + d_num_outputs) = d_lin_cost_vec_r;
+		}
+		else
+			d_osqp_q.topRows(d_Ng) = d_lin_cost_vec_us + d_lin_cost_vec_r + d_lin_cost_vec_gs;
+
+		// Convert Eigen vector to c_float array
+		Matrix<c_float, Dynamic, Dynamic>::Map(d_osqp_q_new, d_osqp_q.rows(), d_osqp_q.cols()) = d_osqp_q.cast<c_float>();
+
+		// Update OSQP linear cost
+		osqp_update_lin_cost(d_osqp_work, d_osqp_q_new);
+
+	    // Inform the user
+	    ROS_INFO("[DEEPC CONTROLLER] Deepc setpoint update successful with OSQP");
+	}
+
+  	catch(exception& e)
+    {
+    	clear_setupDeepc_success_flag();
+
+	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc setpoint update exception with OSQP with standard error message: " << e.what());
+	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+  	}
+  	catch(...)
+  	{
+  		clear_setupDeepc_success_flag();
+
+  		ROS_INFO("[DEEPC CONTROLLER] Deepc setpoint update exception with OSQP");
   		ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
   	}
 }
@@ -365,7 +402,7 @@ void setup_Deepc_gurobi()
 		
 
 		// GUROBI MODEL SETUP
-		// Follows 'dense_c++.cpp' example
+		// Follows 'dense_c++.cpp' example (https://www.gurobi.com/documentation/8.1/examples/dense_cpp_cpp.html)
     	// (Re-)Configure environment
 	    d_grb_env.set(GRB_StringParam_LogFile, d_logFolder + "gurobi.log");
 	    d_grb_env.start();
@@ -400,12 +437,14 @@ void setup_Deepc_gurobi()
 	    d_grb_lin_obj_gs = 0;
 	    if (d_opt_sparse)
 	    {
+	    	d_uf_start_i = d_Ng + d_Ns;
+    		d_yf_start_i = d_uf_start_i + d_Nuf;
 	    	for (int i = 0; i < d_Ng; i++)
 		    	d_grb_lin_obj_gs += d_lin_cost_vec_gs(i) * d_grb_vars[i];
 		    for (int i = 0; i < d_Nuf; i++)
-		    	d_grb_lin_obj_us += d_lin_cost_vec_us(i) * d_grb_vars[d_Ng + d_Ns + i];
+		    	d_grb_lin_obj_us += d_lin_cost_vec_us(i) * d_grb_vars[d_uf_start_i + i];
 		    for (int i = 0; i < d_Nyf + d_num_outputs; i++)
-		    	d_grb_lin_obj_r += d_lin_cost_vec_r(i) * d_grb_vars[d_Ng + d_Ns + d_Nuf + i];
+		    	d_grb_lin_obj_r += d_lin_cost_vec_r(i) * d_grb_vars[d_yf_start_i + i];
 	    }
 	    else
 	    {
@@ -511,11 +550,7 @@ void setup_Deepc_gurobi()
     
     catch(GRBException e)
     {
-    	s_Deepc_mutex.lock();
-    	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 586");
-    	s_setupDeepc_success = false;
-    	s_Deepc_mutex.unlock();
-    	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 586");
+    	clear_setupDeepc_success_flag();
 
 	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization setup exception with Gurobi error code = " << e.getErrorCode());
 	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Error message: " << e.getMessage());
@@ -523,24 +558,189 @@ void setup_Deepc_gurobi()
   	}
   	catch(exception& e)
     {
-    	s_Deepc_mutex.lock();
-    	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 598");
-    	s_setupDeepc_success = false;
-    	s_Deepc_mutex.unlock();
-    	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 598");
+    	clear_setupDeepc_success_flag();
 
 	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization setup exception with Gurobi with standard error message: " << e.what());
 	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
   	}
   	catch(...)
   	{
-  		s_Deepc_mutex.lock();
-  		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 609");
-    	s_setupDeepc_success = false;
-    	s_Deepc_mutex.unlock();
-    	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 609");
+  		clear_setupDeepc_success_flag();
 
     	ROS_INFO("[DEEPC CONTROLLER] Deepc optimization setup exception with Gurobi");
+    	ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+  	}
+}
+
+void setup_Deepc_osqp()
+{
+	try
+    {
+		// Get u_data & y_data from files
+		MatrixXf u_data = get_u_data();
+		MatrixXf y_data = get_y_data();
+
+		// Get variable lengths
+		get_variable_lengths(u_data, y_data);
+
+		// Get Hankel matrices
+		get_hankel_matrices(u_data, y_data);
+
+		// Get cost matrices
+		get_cost_matrices();
+
+		// Input/output constraint vectors
+		get_input_output_constr_vectors();
+
+		// OSQP QUADRATIC COST MATRIX
+		MatrixXf osqp_P = get_quad_cost_matrix();
+
+		// OSQP LINEAR COST VECTORS
+		get_lin_cost_vectors();
+		d_osqp_q = MatrixXf::Zero(d_num_opt_vars, 1);
+		if (d_opt_sparse)
+		{
+			d_uf_start_i = d_Ng + d_Ns;
+    		d_yf_start_i = d_uf_start_i + d_Nuf;
+			d_osqp_q.topRows(d_Ng) = d_lin_cost_vec_gs;
+			d_osqp_q.middleRows(d_uf_start_i, d_Nuf) = d_lin_cost_vec_us;
+			d_osqp_q.bottomRows(d_Nyf + d_num_outputs) = d_lin_cost_vec_r;
+		}
+		else
+			d_osqp_q.topRows(d_Ng) = d_lin_cost_vec_us + d_lin_cost_vec_r + d_lin_cost_vec_gs;
+
+		// OSQP LINEAR INEQUALITY CONSTRAINT MATRIX
+		MatrixXf osqp_A_ineq = MatrixXf::Zero(d_Nuf + d_Nyf + d_num_outputs, d_num_opt_vars);
+		if (d_opt_sparse)
+			osqp_A_ineq.rightCols(d_Nuf + d_Nyf + d_num_outputs) = MatrixXf::Identity(d_Nuf + d_Nyf + d_num_outputs, d_Nuf + d_Nyf + d_num_outputs);
+		else
+		{
+			osqp_A_ineq.topLeftCorner(d_Nuf, d_Ng) = d_U_f;
+			osqp_A_ineq.bottomLeftCorner(d_Nyf + d_num_outputs, d_Ng) = d_Y_f;
+		}
+
+		// OSQP LINEAR INEQUALITY CONSTRAINT VECTORS
+		MatrixXf osqp_l_ineq = MatrixXf::Zero(d_Nuf + d_Nyf + d_num_outputs, 1);
+		MatrixXf osqp_u_ineq = MatrixXf::Zero(d_Nuf + d_Nyf + d_num_outputs, 1);
+		osqp_l_ineq.topRows(d_Nuf) = d_input_min;
+		osqp_l_ineq.bottomRows(d_Nyf + d_num_outputs) = d_output_min;
+		osqp_u_ineq.topRows(d_Nuf) = d_input_max;
+		osqp_u_ineq.bottomRows(d_Nyf + d_num_outputs) = d_output_max;
+
+		// OSQP LINEAR EQUALITY CONSTRAINTS
+		// Static equality constraints ([uf; yf; yt])
+		MatrixXf osqp_A_eq_stat = get_static_eq_constr_matrix();
+		MatrixXf osqp_l_eq_stat = get_static_eq_constr_vector();
+		MatrixXf osqp_u_eq_stat = osqp_l_eq_stat;
+		// Dynamic equality constraints that change every time ([uini; uini])
+		MatrixXf osqp_A_eq_dyn = get_dynamic_eq_constr_matrix();
+		MatrixXf osqp_l_eq_dyn = get_dynamic_eq_constr_vector();
+		MatrixXf osqp_u_eq_dyn = osqp_l_eq_dyn;
+		d_uini_start_i = osqp_A_ineq.rows() + osqp_A_eq_stat.rows();
+		d_yini_start_i = d_uini_start_i + d_Nuini;
+
+		// OSQP CONSTRAINTS
+		// Concatenate all constraints in single matrix/vectors
+		MatrixXf osqp_A = MatrixXf::Zero(osqp_A_ineq.rows() + osqp_A_eq_stat.rows() + osqp_A_eq_dyn.rows(), d_num_opt_vars);
+		MatrixXf osqp_l = MatrixXf::Zero(osqp_A_ineq.rows() + osqp_A_eq_stat.rows() + osqp_A_eq_dyn.rows(), 1);
+		MatrixXf osqp_u = osqp_l;
+		
+		osqp_A.topRows(osqp_A_ineq.rows()) = osqp_A_ineq;
+		osqp_l.topRows(osqp_A_ineq.rows()) = osqp_l_ineq;
+		osqp_u.topRows(osqp_A_ineq.rows()) = osqp_u_ineq;
+
+		// Static equality constraints only present in sparse formulation
+		if (d_opt_sparse)
+		{
+			osqp_A.middleRows(osqp_A_ineq.rows(), osqp_A_eq_stat.rows()) = osqp_A_eq_stat;
+			osqp_l.middleRows(osqp_A_ineq.rows(), osqp_A_eq_stat.rows()) = osqp_l_eq_stat;
+			osqp_u.middleRows(osqp_A_ineq.rows(), osqp_A_eq_stat.rows()) = osqp_u_eq_stat;
+		}
+
+		osqp_A.bottomRows(osqp_A_eq_dyn.rows()) = osqp_A_eq_dyn;
+		osqp_l.bottomRows(osqp_A_eq_dyn.rows()) = osqp_l_eq_dyn;
+		osqp_u.bottomRows(osqp_A_eq_dyn.rows()) = osqp_u_eq_dyn;
+
+		// OSQP MODEL SETUP
+		// Follows 'Setup and solve' example (https://osqp.org/docs/examples/setup-and-solve.html)
+
+		osqp_extended_cleanup();
+
+		// Convert Eigen matrices to CSC format
+		csc* osqp_P_csc = eigen2csc(osqp_P);
+		csc* osqp_A_csc = eigen2csc(osqp_A);
+
+		// Convert Eigen vectors to c_float arrays
+		// One copy is used for initial setup, the other is used during runtime in update function
+		c_float* osqp_q_cfloat = (c_float*) c_malloc(d_osqp_q.rows() * sizeof(c_float));
+		c_float* osqp_l_cfloat = (c_float*) c_malloc(osqp_l.rows() * sizeof(c_float));
+		c_float* osqp_u_cfloat = (c_float*) c_malloc(osqp_u.rows() * sizeof(c_float));
+
+		d_osqp_q_new = (c_float*) c_malloc(d_osqp_q.rows() * sizeof(c_float));
+		d_osqp_l_new = (c_float*) c_malloc(osqp_l.rows() * sizeof(c_float));
+		d_osqp_u_new = (c_float*) c_malloc(osqp_u.rows() * sizeof(c_float));
+
+		Matrix<c_float, Dynamic, Dynamic>::Map(osqp_q_cfloat, d_osqp_q.rows(), d_osqp_q.cols()) = d_osqp_q.cast<c_float>();
+		Matrix<c_float, Dynamic, Dynamic>::Map(d_osqp_q_new, d_osqp_q.rows(), d_osqp_q.cols()) = d_osqp_q.cast<c_float>();
+
+		Matrix<c_float, Dynamic, Dynamic>::Map(osqp_l_cfloat, osqp_l.rows(), osqp_l.cols()) = osqp_l.cast<c_float>();
+		Matrix<c_float, Dynamic, Dynamic>::Map(d_osqp_l_new, osqp_l.rows(), osqp_l.cols()) = osqp_l.cast<c_float>();
+
+		Matrix<c_float, Dynamic, Dynamic>::Map(osqp_u_cfloat, osqp_u.rows(), osqp_u.cols()) = osqp_u.cast<c_float>();
+		Matrix<c_float, Dynamic, Dynamic>::Map(d_osqp_u_new, osqp_u.rows(), osqp_u.cols()) = osqp_u.cast<c_float>();
+
+		// Populate data
+	    OSQPData* osqp_data = (OSQPData*) c_malloc(sizeof(OSQPData));
+	    osqp_data->n = d_num_opt_vars;
+	    osqp_data->m = osqp_A.rows();
+	    osqp_data->P = osqp_P_csc;
+	    osqp_data->q = osqp_q_cfloat;
+	    osqp_data->A = osqp_A_csc;
+	    osqp_data->l = osqp_l_cfloat;
+	    osqp_data->u = osqp_u_cfloat;
+
+		// Problem settings
+	    d_osqp_settings = (OSQPSettings*) c_malloc(sizeof(OSQPSettings));
+
+	    // Define Solver settings as default, and change settings as desired
+	    osqp_set_default_settings(d_osqp_settings);
+	    d_osqp_settings->verbose = d_opt_verbose;
+
+	    // Setup workspace
+	    d_osqp_work = osqp_setup(osqp_data, d_osqp_settings);
+
+	    // Clear data after setting up to allow subseqeuent setups
+	    osqp_cleanup_data(osqp_data);
+
+	    if (!d_osqp_work)
+	    {
+	    	clear_setupDeepc_success_flag();
+
+	    	ROS_INFO("[DEEPC CONTROLLER] Deepc optimization setup failed with OSQP");
+	    	ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+
+	    	return;
+	    }
+
+	    // Some steps to finish setup
+		finish_Deepc_setup();
+
+	    // Inform the user
+	    ROS_INFO("[DEEPC CONTROLLER] Deepc optimization setup successful with OSQP");
+    }
+
+  	catch(exception& e)
+    {
+    	clear_setupDeepc_success_flag();
+
+	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization setup exception with OSQP with standard error message: " << e.what());
+	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+  	}
+  	catch(...)
+  	{
+  		clear_setupDeepc_success_flag();
+
+    	ROS_INFO("[DEEPC CONTROLLER] Deepc optimization setup exception with OSQP");
     	ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
   	}
 }
@@ -598,7 +798,7 @@ void solve_Deepc_gurobi()
 			s_Deepc_mutex.unlock();
 			//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 649");
 
-			ROS_INFO("[DEEPC CONTROLLER] Deepc optimal solution found with Gurobi:");
+			ROS_INFO("[DEEPC CONTROLLER] Deepc found optimal solution with Gurobi:");
 			ROS_INFO_STREAM("Thrust: " << d_u_f(0));
 			ROS_INFO_STREAM("Roll Rate: " << d_u_f(1));
 			ROS_INFO_STREAM("Pitch Rate: " << d_u_f(2));
@@ -618,16 +818,13 @@ void solve_Deepc_gurobi()
 		}
 		else
 		{
-			ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc failed to find optimal solution with Gurobi with status code = " << d_DeepcOpt_status);
+			ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc failed to find optimal solution with Gurobi status code = " << d_DeepcOpt_status);
 		}
 	}
+
 	catch(GRBException e)
     {
-    	s_Deepc_mutex.lock();
-    	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 678");
-    	s_setupDeepc_success = false;
-		s_Deepc_mutex.unlock();
-		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 678");
+    	clear_setupDeepc_success_flag();
 
 	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization exception with Gurobi error code = " << e.getErrorCode());
 	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Error message: " << e.getMessage());
@@ -635,29 +832,164 @@ void solve_Deepc_gurobi()
   	}
   	catch(exception& e)
     {
-    	s_Deepc_mutex.lock();
-    	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 691");
-    	s_setupDeepc_success = false;
-		s_Deepc_mutex.unlock();
-		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 691");
+    	clear_setupDeepc_success_flag();
 
 	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization exception with Gurobi with standard error message: " << e.what());
 	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
   	}
   	catch(...)
   	{
-  		s_Deepc_mutex.lock();
-  		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 703");
-    	s_setupDeepc_success = false;
-		s_Deepc_mutex.unlock();
-		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 703");
+  		clear_setupDeepc_success_flag();
 
     	ROS_INFO("[DEEPC CONTROLLER] Deepc optimization exception with Gurobi");
     	ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
   	}
 }
 
+void solve_Deepc_osqp()
+{
+	s_Deepc_mutex.lock();
+	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 622");
+	d_uini = s_uini;
+	d_yini = s_yini;
+	s_Deepc_mutex.unlock();
+	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 622");
+
+	try
+	{
+		// Update equality constraint vectors
+		for (d_i = 0; d_i < d_Nuini; d_i++)
+		{
+			d_osqp_l_new[d_uini_start_i + d_i] = d_uini(d_i);
+			d_osqp_u_new[d_uini_start_i + d_i] = d_osqp_l_new[d_uini_start_i + d_i];
+		}
+		for (d_i = 0; d_i < d_Nyini; d_i++)
+		{
+			d_osqp_l_new[d_yini_start_i + d_i] = d_yini(d_i);
+			d_osqp_u_new[d_yini_start_i + d_i] = d_osqp_l_new[d_yini_start_i + d_i];
+		}
+		osqp_update_bounds(d_osqp_work, d_osqp_l_new, d_osqp_u_new);
+
+		// Solve optimization
+		osqp_solve(d_osqp_work);
+		d_DeepcOpt_status = d_osqp_work->info->status_val;
+
+		if (d_DeepcOpt_status > 0)
+		{	
+			// With sparse formulation can get uf directly
+			if (d_opt_sparse)
+				for (d_i = 0; d_i < d_Nuf; d_i++)
+					d_u_f(d_i) = d_osqp_work->solution->x[d_uf_start_i + d_i];
+			// With dense formulation get uf through g
+			else
+			{
+				for (d_i = 0; d_i < d_Ng; d_i++)
+					d_g(d_i) = d_osqp_work->solution->x[d_i];
+
+				d_u_f = d_U_f * d_g;
+			}
+
+			s_Deepc_mutex.lock();
+			// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 649");
+			s_u_f = d_u_f;
+			s_Deepc_mutex.unlock();
+			//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 649");
+
+			ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc found optimal solution with OSQP status: " << d_osqp_work->info->status);
+			ROS_INFO_STREAM("Thrust: " << d_u_f(0));
+			ROS_INFO_STREAM("Roll Rate: " << d_u_f(1));
+			ROS_INFO_STREAM("Pitch Rate: " << d_u_f(2));
+			if (d_Deepc_yaw_control)
+				ROS_INFO_STREAM("Yaw Rate: " << d_u_f(3));
+			ROS_INFO_STREAM("Objective: " << d_osqp_work->info->obj_val);
+			ROS_INFO_STREAM("Runtime: " << d_osqp_work->info->run_time);
+		}
+		else
+		{
+			ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc failed to find optimal solution with OSQP status: " << d_osqp_work->info->status);
+		}
+	}
+
+  	catch(exception& e)
+    {
+    	clear_setupDeepc_success_flag();
+
+	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization exception with OSQP with standard error message: " << e.what());
+	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+  	}
+  	catch(...)
+  	{
+  		clear_setupDeepc_success_flag();
+
+    	ROS_INFO("[DEEPC CONTROLLER] Deepc optimization exception with OSQP");
+    	ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+  	}
+}
+
 // DEEPC HELPER FUNCTIONS
+
+// Update uini yini
+// This function is called by main thread
+void update_uini_yini(Controller::Request &request, control_output &output)
+{
+	// If Deepc was not setup yet don't do anything as uini and yini matrices are not setup yet
+	s_Deepc_mutex.lock();
+	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 741");
+	bool setupDeepc_success = s_setupDeepc_success;
+	m_uini = s_uini;
+	m_yini = s_yini;
+	m_num_inputs = s_num_inputs;
+	int num_outputs = s_num_outputs;
+	int Nuini = s_Nuini;
+	int Nyini = s_Nyini;
+	s_Deepc_mutex.unlock();
+	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 750");
+
+	if (!setupDeepc_success)
+		return;
+
+	try
+	{
+		// Update uini
+		int u_shift = Nuini - m_num_inputs;
+		m_uini.topRows(u_shift) = m_uini.bottomRows(u_shift);
+		m_uini(u_shift) = output.thrust;
+		m_uini(u_shift + 1) = output.rollRate;
+		m_uini(u_shift + 2) = output.pitchRate;
+		if (yaml_Deepc_yaw_control)
+			m_uini(u_shift + 3) = output.yawRate;
+
+		// Update uini
+		int y_shift = Nyini - num_outputs;
+		m_yini.topRows(y_shift) = m_yini.bottomRows(y_shift);
+		m_yini(y_shift) = request.ownCrazyflie.x;
+		m_yini(y_shift + 1) = request.ownCrazyflie.y;
+		m_yini(y_shift + 2) = request.ownCrazyflie.z;
+		if (yaml_Deepc_measure_roll_pitch)
+		{
+			m_yini(y_shift + 3) = request.ownCrazyflie.roll;
+			m_yini(y_shift + 4) = request.ownCrazyflie.pitch;
+		}
+		if (yaml_Deepc_yaw_control)
+			m_yini(Nyini - 1) = request.ownCrazyflie.yaw;
+
+		s_Deepc_mutex.lock();
+		//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 786");
+		s_uini = m_uini;
+		s_yini = m_yini;
+		s_Deepc_mutex.unlock();
+		//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 786");
+	}
+
+	catch(exception& e)
+    {
+	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Update uini yini exception with standard error message: " << e.what());
+  	}
+  	catch(...)
+  	{
+    	ROS_INFO("[DEEPC CONTROLLER] Update uini yini exception");
+  	}
+}
 
 // Get u_data from file
 MatrixXf get_u_data()
@@ -665,11 +997,7 @@ MatrixXf get_u_data()
 	MatrixXf u_data_in = read_csv(d_dataFolder + "u_data.csv");
 	if (u_data_in.size() <= 0)
 	{
-		s_Deepc_mutex.lock();
-		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 301");
-    	s_setupDeepc_success = false;
-    	s_Deepc_mutex.unlock();
-    	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 301");
+		clear_setupDeepc_success_flag();
 
     	ROS_INFO("[DEEPC CONTROLLER] Failed to read u data file");
 
@@ -691,11 +1019,7 @@ MatrixXf get_y_data()
 	MatrixXf y_data_in = read_csv(d_dataFolder + "y_data.csv");
 	if (y_data_in.size() <= 0)
 	{	
-		s_Deepc_mutex.lock();
-		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 314");
-    	s_setupDeepc_success = false;
-    	s_Deepc_mutex.unlock();
-    	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 314");
+		clear_setupDeepc_success_flag();
 		
 		ROS_INFO("[DEEPC CONTROLLER] Failed to read y data file");
 
@@ -728,6 +1052,10 @@ void get_variable_lengths(const MatrixXf& u_data, const MatrixXf& y_data)
 	d_num_outputs = y_data.rows();
 	// Number of block rows for Hankel matrices
 	d_num_block_rows = d_Tini + d_N + 1;
+	// Previous inputs vector (uini) length
+	d_Nuini = d_num_inputs * d_Tini;
+	// Previous outputs vector (yini) length
+	d_Nyini = d_num_outputs * d_Tini;
 	// Trajectory mapper g vector size
 	d_Ng = u_data.cols() - d_num_block_rows + 1;
 	// Slack variable length
@@ -736,10 +1064,6 @@ void get_variable_lengths(const MatrixXf& u_data, const MatrixXf& y_data)
 	d_Nuf = d_num_inputs * d_N;
 	// Future output vector (yf) length (!!not including terminal output!!)
 	d_Nyf = d_num_outputs * d_N;
-	// Previous inputs vector (uini) length
-	d_Nuini = d_num_inputs * d_Tini;
-	// Previous outputs vector (yini) length
-	d_Nyini = d_num_outputs * d_Tini;
 
 	// Optimization decision vector size
 	if (d_opt_sparse)
@@ -897,7 +1221,8 @@ void get_lin_cost_vectors()
 	d_A_gs.bottomRows(d_Y_f.rows()) = d_Y_f;
 	d_b_gs.topRows(u_gs.rows()) = u_gs;
 	d_b_gs.bottomRows(d_r_gs.rows()) = d_r_gs;
-	d_gs = d_A_gs.bdcSvd(ComputeThinU | ComputeThinV).solve(d_b_gs);
+	//d_gs = d_A_gs.bdcSvd(ComputeThinU | ComputeThinV).solve(d_b_gs);
+	d_gs = MatrixXf::Zero(d_Ng, 1);
 
 	d_lin_cost_vec_gs = -d_lambda2_g * d_gs;
 	if (d_opt_sparse)
@@ -979,7 +1304,8 @@ void update_lin_cost_vectors()
 	// Steady state trajectory mapper
 	d_r_gs = d_r.replicate(d_Tini + d_N + 1, 1);
 	d_b_gs.bottomRows(d_r_gs.rows()) = d_r_gs;
-	d_gs = d_A_gs.bdcSvd(ComputeThinU | ComputeThinV).solve(d_b_gs);
+	//d_gs = d_A_gs.bdcSvd(ComputeThinU | ComputeThinV).solve(d_b_gs);
+	d_gs = MatrixXf::Zero(d_Ng, 1);
 	d_lin_cost_vec_gs = -d_lambda2_g * d_gs;
 
 	if (d_solver == DEEPC_CONTROLLER_SOLVER_GUROBI)
@@ -1064,11 +1390,10 @@ void finish_Deepc_setup()
 	// Setup output variables
     d_g = MatrixXf::Zero(d_Ng, 1);
     if (d_opt_sparse)
-    {
-    	d_uf_start_i = d_Ng + d_Ns;
-    	d_yf_start_i = d_uf_start_i + d_Nuf;
     	d_u_f = MatrixXf::Zero(d_Nuf, 1);
-    }
+
+    // Setup successful flag
+    d_setupDeepc_success = true;
 
     s_Deepc_mutex.lock();
     // ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1285");
@@ -1078,9 +1403,57 @@ void finish_Deepc_setup()
 	s_Nyini = d_Nyini;
 	s_uini = d_uini;
 	s_yini = d_yini;
-	s_setupDeepc_success = true;
+	s_setupDeepc_success = d_setupDeepc_success;
 	s_Deepc_mutex.unlock();
 	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1294");
+}
+
+// Clear setup Deepc success flag
+// This function was written because following code is re-curring
+void clear_setupDeepc_success_flag()
+{
+	d_setupDeepc_success = false;
+	s_Deepc_mutex.lock();
+	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 586");
+	s_setupDeepc_success = d_setupDeepc_success;
+	s_Deepc_mutex.unlock();
+	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1294");
+}
+
+// Gurobi cleanup
+// Deletes any heap allocated variables
+void gurobi_cleanup()
+{
+	delete[] d_grb_vars;
+	delete[] d_grb_dyn_constrs;
+}
+
+// OSQP extended cleanup
+// Frees any data structures to which memory was allocated
+void osqp_extended_cleanup()
+{
+	osqp_cleanup(d_osqp_work);
+	c_free(d_osqp_settings);
+	c_free(d_osqp_q_new);
+	c_free(d_osqp_l_new);
+	c_free(d_osqp_u_new);
+}
+
+void osqp_cleanup_data(OSQPData* data)
+{
+	if (!data)
+	{
+		return;
+	}
+
+	// Public members
+	csc_spfree(data->P);
+	csc_spfree(data->A);
+	c_free(data->q);
+	c_free(data->l);
+	c_free(data->u);
+
+	c_free(data);
 }
 
 // Data to Hankel function
@@ -1103,67 +1476,34 @@ MatrixXf data2hankel(const MatrixXf& data, int num_block_rows)
     return H;
 }
 
-// Update uini yini
-// This function is called by main thread
-void update_uini_yini(Controller::Request &request, control_output &output)
+// Convert Eigen Dense matrix to CSC format used in OSQP
+csc* eigen2csc(const MatrixXf& eigen_dense_mat)
 {
-	// If Deepc was not setup yet don't do anything as uini and yini matrices are not setup yet
-	s_Deepc_mutex.lock();
-	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 741");
-	bool setupDeepc_success = s_setupDeepc_success;
-	m_uini = s_uini;
-	m_yini = s_yini;
-	m_num_inputs = s_num_inputs;
-	int num_outputs = s_num_outputs;
-	int Nuini = s_Nuini;
-	int Nyini = s_Nyini;
-	s_Deepc_mutex.unlock();
-	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 750");
+	// First convert Eigen Dense matrix to Eigen Sparse
+	SparseMatrix<float> eigen_sparse_mat = eigen_dense_mat.sparseView();
 
-	if (!setupDeepc_success)
-		return;
+	// Second convert Eigen Sparse matrix to TRIPLET format, because it is not as mind bending as CSC format
+	csc* trip_mat = csc_spalloc(eigen_sparse_mat.rows(), eigen_sparse_mat.cols(), eigen_sparse_mat.nonZeros(), 1, 1);
+	trip_mat->nz = eigen_sparse_mat.nonZeros();
+	// The following code was found under 'Iterating over the nonzero coefficients' section here: https://eigen.tuxfamily.org/dox/group__TutorialSparse.html
+	int i = 0;
+	for (int j = 0; j < eigen_sparse_mat.outerSize(); j++)
+		for (SparseMatrix<float>::InnerIterator it(eigen_sparse_mat, j); it; ++it)
+			{
+				trip_mat->x[i] = it.value();	// Value
+				trip_mat->i[i] = it.row();		// Row index
+				trip_mat->p[i] = it.col();		// Column index
+				
+				i++;
+			}
 
-	try
-	{
-		// Update uini
-		int u_shift = Nuini - m_num_inputs;
-		m_uini.topRows(u_shift) = m_uini.bottomRows(u_shift);
-		m_uini(u_shift) = output.thrust;
-		m_uini(u_shift + 1) = output.rollRate;
-		m_uini(u_shift + 2) = output.pitchRate;
-		if (yaml_Deepc_yaw_control)
-			m_uini(u_shift + 3) = output.yawRate;
+	// Third convert TRIPLET matrix to CSC format, using OSQP built in function
+	csc* csc_mat = triplet_to_csc(trip_mat, OSQP_NULL);
 
-		// Update uini
-		int y_shift = Nyini - num_outputs;
-		m_yini.topRows(y_shift) = m_yini.bottomRows(y_shift);
-		m_yini(y_shift) = request.ownCrazyflie.x;
-		m_yini(y_shift + 1) = request.ownCrazyflie.y;
-		m_yini(y_shift + 2) = request.ownCrazyflie.z;
-		if (yaml_Deepc_measure_roll_pitch)
-		{
-			m_yini(y_shift + 3) = request.ownCrazyflie.roll;
-			m_yini(y_shift + 4) = request.ownCrazyflie.pitch;
-		}
-		if (yaml_Deepc_yaw_control)
-			m_yini(Nyini - 1) = request.ownCrazyflie.yaw;
+	// triplet_to_csc makes new copy of matrix, so intermediate TRIPLET matrix must be de-allocated
+	csc_spfree(trip_mat);
 
-		s_Deepc_mutex.lock();
-		//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 786");
-		s_uini = m_uini;
-		s_yini = m_yini;
-		s_Deepc_mutex.unlock();
-		//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 786");
-	}
-
-	catch(exception& e)
-    {
-	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Update uini yini exception with standard error message: " << e.what());
-  	}
-  	catch(...)
-  	{
-    	ROS_INFO("[DEEPC CONTROLLER] Update uini yini exception");
-  	}
+	return csc_mat;
 }
 
 
@@ -2562,7 +2902,7 @@ void processCustomButton3(float float_data, int int_data, bool* bool_data)
 {	
 	s_Deepc_mutex.lock();
 	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 2152");
-	int setupDeepc_success = s_setupDeepc_success;
+	bool setupDeepc_success = s_setupDeepc_success;
 	s_Deepc_mutex.unlock();
 	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 2152");
 
