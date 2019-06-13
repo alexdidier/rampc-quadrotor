@@ -459,6 +459,19 @@ MatrixXf d_osqp_q;
 c_float* d_osqp_q_new;
 c_float* d_osqp_l_new;
 c_float* d_osqp_u_new;
+// Repeat variables for Deepc gs matrix inversion thread variables
+bool d_get_gs = false;
+bool d_gs_inversion_complete = false;
+
+// Variables shared between Deepc thread and Deepc gs matrix inversion thread
+MatrixXf ds_A_gs;
+MatrixXf ds_b_gs;
+MatrixXf ds_gs;
+// Variables for thread management
+mutex ds_Deepc_gs_inversion_mutex;
+// Flags for communication with Deepc thread
+bool ds_get_gs = false;
+bool ds_gs_inversion_complete = false;
 
 // Deepc related global variables used by main thread only
 // Declared as global for speed
@@ -559,6 +572,9 @@ csc* eigen2csc(const MatrixXf& eigen_dense_mat);
 // READ/WRITE CSV FILES
 MatrixXf read_csv(const string& path);
 bool write_csv(const string& path, const MatrixXf& M);
+
+// DEEPC GS MATRIX INVERSION THREAD MAIN
+void Deepc_gs_inversion_thread_main();
 
 // CONTROLLER COMPUTATIONS
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response);

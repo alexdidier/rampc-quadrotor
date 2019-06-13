@@ -67,6 +67,9 @@ void Deepc_thread_main()
 	bool setupDeepc;
 	bool solveDeepc;
 
+	// Create thread for gs matrix inversion
+	boost::thread Deepc_gs_inversion_thread(Deepc_gs_inversion_thread_main);
+
 	while (ros::ok())
 	{
 		s_Deepc_mutex.lock();
@@ -91,24 +94,47 @@ void Deepc_thread_main()
 
         if (setpoint_changed)
         {
-        	// Switch between the possible solvers
-			switch (d_solver)
-			{
-				case DEEPC_CONTROLLER_SOLVER_OSQP:
-					change_Deepc_setpoint_osqp();
-					break;
+        	if (d_setupDeepc_success)
+        	{
+        		// Switch between the possible solvers
+				switch (d_solver)
+				{
+					case DEEPC_CONTROLLER_SOLVER_OSQP:
+						change_Deepc_setpoint_osqp();
+						break;
 
-				case DEEPC_CONTROLLER_SOLVER_GUROBI:
-				default:
-					change_Deepc_setpoint_gurobi();
-					break;
-			}
-        	
-        	s_Deepc_mutex.lock();
-        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 96");
-        	s_setpoint_changed = false;
-        	s_Deepc_mutex.unlock();
-        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 96");
+					case DEEPC_CONTROLLER_SOLVER_GUROBI:
+					default:
+						change_Deepc_setpoint_gurobi();
+						break;
+				}
+	        	
+				// Wait for gs inversion to complete before exiting this mode
+				if (d_gs_inversion_complete)
+				{
+					d_gs_inversion_complete = false;
+
+					ds_Deepc_gs_inversion_mutex.lock();
+					//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 117");
+			        ds_gs_inversion_complete = d_gs_inversion_complete;
+			        ds_Deepc_gs_inversion_mutex.unlock();
+			        //ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 117");
+
+		        	s_Deepc_mutex.lock();
+		        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 96");
+		        	s_setpoint_changed = false;
+		        	s_Deepc_mutex.unlock();
+		        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 96");
+	        	}
+        	}
+        	else
+        	{
+        		s_Deepc_mutex.lock();
+	        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 96");
+	        	s_setpoint_changed = false;
+	        	s_Deepc_mutex.unlock();
+	        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 96");
+        	}
         }
 
         if (setupDeepc)
@@ -159,7 +185,12 @@ void Deepc_thread_main()
 	// Cleanup for memory allocation etc.
 	gurobi_cleanup();
 	osqp_extended_cleanup();
+
+	// Wait for gs matrix inversion thread to finish
+    Deepc_gs_inversion_thread.join();
 }
+
+
 
 void change_Deepc_params()
 {
@@ -207,48 +238,43 @@ void change_Deepc_params()
 
 void change_Deepc_setpoint_gurobi()
 {
-	s_Deepc_mutex.lock();
-	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 193");
-	d_setpoint = s_setpoint;
-	s_Deepc_mutex.unlock();
-	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 193");
-
-	if (!d_setupDeepc_success)
-		return;
-
 	try
 	{
 		// Update linear cost vectors
 		update_lin_cost_vectors();
 
-		// Update linear objective terms
-	    d_grb_lin_obj_r = 0;
-	    d_grb_lin_obj_gs = 0;
-	    if (d_opt_sparse)
-	    {
-	    	for (int i = 0; i < d_Ng; i++)
-		    	d_grb_lin_obj_gs += d_lin_cost_vec_gs(i) * d_grb_vars[i];
-		    for (int i = 0; i < d_Nyf + d_num_outputs; i++)
-		    	d_grb_lin_obj_r += d_lin_cost_vec_r(i) * d_grb_vars[d_yf_start_i + i];
-	    }
-	    else
-	    {
-	    	for (int i = 0; i < d_Ng; i++)
+		// Wait for gs inversion to complete before proceeding
+		if (d_gs_inversion_complete)
+		{
+			// Update linear objective terms
+		    d_grb_lin_obj_r = 0;
+		    d_grb_lin_obj_gs = 0;
+		    if (d_opt_sparse)
 		    {
-		    	d_grb_lin_obj_r += d_lin_cost_vec_r(i) * d_grb_vars[i];
-		    	d_grb_lin_obj_gs += d_lin_cost_vec_gs(i) * d_grb_vars[i];
+		    	for (int i = 0; i < d_Ng; i++)
+			    	d_grb_lin_obj_gs += d_lin_cost_vec_gs(i) * d_grb_vars[i];
+			    for (int i = 0; i < d_Nyf + d_num_outputs; i++)
+			    	d_grb_lin_obj_r += d_lin_cost_vec_r(i) * d_grb_vars[d_yf_start_i + i];
 		    }
+		    else
+		    {
+		    	for (int i = 0; i < d_Ng; i++)
+			    {
+			    	d_grb_lin_obj_r += d_lin_cost_vec_r(i) * d_grb_vars[i];
+			    	d_grb_lin_obj_gs += d_lin_cost_vec_gs(i) * d_grb_vars[i];
+			    }
+		    }
+
+		    // Update objective
+		    // It was observed that objective of pre-solved model is same as original model
+		    if (d_opt_sparse || !d_grb_presolve_at_setup)
+		    	d_grb_model.setObjective(d_grb_quad_obj + d_grb_lin_obj_us + d_grb_lin_obj_r + d_grb_lin_obj_gs);
+		    else
+		    	d_grb_model_presolved->setObjective(d_grb_quad_obj + d_grb_lin_obj_us + d_grb_lin_obj_r + d_grb_lin_obj_gs);
+
+		    // Inform the user
+		    ROS_INFO("[DEEPC CONTROLLER] Deepc setpoint update successful with Gurobi");
 	    }
-
-	    // Update objective
-	    // It was observed that objective of pre-solved model is same as original model
-	    if (d_opt_sparse || !d_grb_presolve_at_setup)
-	    	d_grb_model.setObjective(d_grb_quad_obj + d_grb_lin_obj_us + d_grb_lin_obj_r + d_grb_lin_obj_gs);
-	    else
-	    	d_grb_model_presolved->setObjective(d_grb_quad_obj + d_grb_lin_obj_us + d_grb_lin_obj_r + d_grb_lin_obj_gs);
-
-	    // Inform the user
-	    ROS_INFO("[DEEPC CONTROLLER] Deepc setpoint update successful with Gurobi");
 	}
 
 	catch(GRBException e)
@@ -277,35 +303,31 @@ void change_Deepc_setpoint_gurobi()
 
 void change_Deepc_setpoint_osqp()
 {
-	s_Deepc_mutex.lock();
-	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 193");
-	d_setpoint = s_setpoint;
-	s_Deepc_mutex.unlock();
-	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 193");
-
-	if (!d_setupDeepc_success)
-		return;
-
 	try
 	{
 		// Update linear cost vector
 		update_lin_cost_vectors();
-		if (d_opt_sparse)
+
+		// Wait for gs inversion to complete before proceeding
+		if (d_gs_inversion_complete)
 		{
-			d_osqp_q.topRows(d_Ng) = d_lin_cost_vec_gs;
-			d_osqp_q.bottomRows(d_Nyf + d_num_outputs) = d_lin_cost_vec_r;
+			if (d_opt_sparse)
+			{
+				d_osqp_q.topRows(d_Ng) = d_lin_cost_vec_gs;
+				d_osqp_q.bottomRows(d_Nyf + d_num_outputs) = d_lin_cost_vec_r;
+			}
+			else
+				d_osqp_q.topRows(d_Ng) = d_lin_cost_vec_us + d_lin_cost_vec_r + d_lin_cost_vec_gs;
+
+			// Convert Eigen vector to c_float array
+			Matrix<c_float, Dynamic, Dynamic>::Map(d_osqp_q_new, d_osqp_q.rows(), d_osqp_q.cols()) = d_osqp_q.cast<c_float>();
+
+			// Update OSQP linear cost
+			osqp_update_lin_cost(d_osqp_work, d_osqp_q_new);
+
+		    // Inform the user
+		    ROS_INFO("[DEEPC CONTROLLER] Deepc setpoint update successful with OSQP");
 		}
-		else
-			d_osqp_q.topRows(d_Ng) = d_lin_cost_vec_us + d_lin_cost_vec_r + d_lin_cost_vec_gs;
-
-		// Convert Eigen vector to c_float array
-		Matrix<c_float, Dynamic, Dynamic>::Map(d_osqp_q_new, d_osqp_q.rows(), d_osqp_q.cols()) = d_osqp_q.cast<c_float>();
-
-		// Update OSQP linear cost
-		osqp_update_lin_cost(d_osqp_work, d_osqp_q_new);
-
-	    // Inform the user
-	    ROS_INFO("[DEEPC CONTROLLER] Deepc setpoint update successful with OSQP");
 	}
 
   	catch(exception& e)
@@ -1200,6 +1222,12 @@ MatrixXf get_quad_cost_matrix()
 // OSQP refers to this as 'q'. It is not multiplied by 2 since OSQP minimizes (1/2 * x^T * Q * x + c^t * x)
 void get_lin_cost_vectors()
 {
+	s_Deepc_mutex.lock();
+	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1225");
+	d_setpoint = s_setpoint;
+	s_Deepc_mutex.unlock();
+	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1225");
+
 	// Steady state input
 	MatrixXf us = MatrixXf::Zero(d_num_inputs, 1);
 	us(0) = d_cf_weight_in_newtons;
@@ -1273,46 +1301,83 @@ void get_lin_cost_vectors()
 // OSQP refers to this as 'q'. It is not multiplied by 2 since OSQP minimizes (1/2 * x^T * Q * x + c^t * x)
 void update_lin_cost_vectors()
 {
-	// Reference
-	d_r.topRows(3) = d_setpoint.topRows(3);
-	if (d_Deepc_yaw_control)
-		d_r.bottomRows(1) = d_setpoint.bottomRows(1);
+	ds_Deepc_gs_inversion_mutex.lock();
+	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1327");
+    d_gs_inversion_complete = ds_gs_inversion_complete;
+    ds_Deepc_gs_inversion_mutex.unlock();
+    //ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1327");
 
-	if (d_opt_sparse)
+	if (!d_get_gs)
 	{
-		d_lin_cost_vec_r = MatrixXf::Zero(d_Nyf + d_num_outputs, 1);
-		for (int i = 0; i < d_N + 1; i++)
+		s_Deepc_mutex.lock();
+		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1312");
+		d_setpoint = s_setpoint;
+		s_Deepc_mutex.unlock();
+		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1312");
+
+		// Reference
+		d_r.topRows(3) = d_setpoint.topRows(3);
+		if (d_Deepc_yaw_control)
+			d_r.bottomRows(1) = d_setpoint.bottomRows(1);
+
+		if (d_opt_sparse)
 		{
-			if (i < d_N)
-				d_lin_cost_vec_r.middleRows(i * d_num_outputs, d_num_outputs) = -d_Q * d_r;
-			else
-				d_lin_cost_vec_r.middleRows(i * d_num_outputs, d_num_outputs) = -d_P * d_r;
+			d_lin_cost_vec_r = MatrixXf::Zero(d_Nyf + d_num_outputs, 1);
+			for (int i = 0; i < d_N + 1; i++)
+			{
+				if (i < d_N)
+					d_lin_cost_vec_r.middleRows(i * d_num_outputs, d_num_outputs) = -d_Q * d_r;
+				else
+					d_lin_cost_vec_r.middleRows(i * d_num_outputs, d_num_outputs) = -d_P * d_r;
+			}
 		}
-	}
-	else
-	{
-		d_lin_cost_vec_r = MatrixXf::Zero(d_Ng, 1);
-		for (int i = 0; i < d_N + 1; i++)
+		else
 		{
-			if (i < d_N)
-				d_lin_cost_vec_r -= d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_Q * d_r;
-			else
-				d_lin_cost_vec_r -= d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_P * d_r;
+			d_lin_cost_vec_r = MatrixXf::Zero(d_Ng, 1);
+			for (int i = 0; i < d_N + 1; i++)
+			{
+				if (i < d_N)
+					d_lin_cost_vec_r -= d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_Q * d_r;
+				else
+					d_lin_cost_vec_r -= d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_P * d_r;
+			}
 		}
+
+		// Steady state trajectory mapper
+		d_r_gs = d_r.replicate(d_Tini + d_N + 1, 1);
+		d_b_gs.bottomRows(d_r_gs.rows()) = d_r_gs;
+
+		// Get gs from gs matrix inversion thread
+		d_get_gs = true;
+
+		ds_Deepc_gs_inversion_mutex.lock();
+		//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1320");
+		ds_A_gs = d_A_gs;
+		ds_b_gs = d_b_gs;
+        ds_get_gs = d_get_gs;
+        ds_Deepc_gs_inversion_mutex.unlock();
+        //ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1320");
 	}
 
-	// Steady state trajectory mapper
-	d_r_gs = d_r.replicate(d_Tini + d_N + 1, 1);
-	d_b_gs.bottomRows(d_r_gs.rows()) = d_r_gs;
-	//d_gs = d_A_gs.bdcSvd(ComputeThinU | ComputeThinV).solve(d_b_gs);
-	d_gs = MatrixXf::Zero(d_Ng, 1);
-	d_lin_cost_vec_gs = -d_lambda2_g * d_gs;
+    if (d_gs_inversion_complete)
+    {
+    	d_get_gs = false;
 
-	if (d_solver == DEEPC_CONTROLLER_SOLVER_GUROBI)
-	{
-		d_lin_cost_vec_gs *= 2.0;
-		d_lin_cost_vec_r *= 2.0;
-	}
+    	ds_Deepc_gs_inversion_mutex.lock();
+		//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1337");
+	    d_gs = ds_gs;
+	    ds_get_gs = d_get_gs;
+	    ds_Deepc_gs_inversion_mutex.unlock();
+	    //ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1337");
+
+	    d_lin_cost_vec_gs = -d_lambda2_g * d_gs;
+
+		if (d_solver == DEEPC_CONTROLLER_SOLVER_GUROBI)
+		{
+			d_lin_cost_vec_gs *= 2.0;
+			d_lin_cost_vec_r *= 2.0;
+		}
+    }
 }
 
 // Get static equality constraints matrix
@@ -1570,6 +1635,54 @@ bool write_csv(const string& path, const MatrixXf& M)
 	}
 	return true;
 }
+
+// DEEPC GS MATRIX INVERSION THREAD MAIN
+// Matrix inversion for steady state trajectory mapper gs takes long so it is performed in seperate thread
+void Deepc_gs_inversion_thread_main()
+{
+	bool get_gs;
+	bool gs_inversion_complete = false;
+	MatrixXf gs;
+	MatrixXf A_gs;
+	MatrixXf b_gs;
+
+	while (ros::ok())
+	{
+		ds_Deepc_gs_inversion_mutex.lock();
+		//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1593");
+        get_gs = ds_get_gs;
+        ds_Deepc_gs_inversion_mutex.unlock();
+        //ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1593");
+        
+        if (!get_gs)
+        	gs_inversion_complete = false;
+
+        if (get_gs && !gs_inversion_complete)
+        {
+        	ds_Deepc_gs_inversion_mutex.lock();
+			//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1593");
+	        A_gs = ds_A_gs;
+	        b_gs = ds_b_gs;
+	        ds_Deepc_gs_inversion_mutex.unlock();
+	        //ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1593");
+
+	        // This line is why this thread was created. It takes looong
+        	gs = A_gs.bdcSvd(ComputeThinU | ComputeThinV).solve(b_gs);
+        	
+        	gs_inversion_complete = true;
+
+        	ds_Deepc_gs_inversion_mutex.lock();
+        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1609");
+        	ds_gs = gs;
+        	ds_gs_inversion_complete = gs_inversion_complete;
+        	ds_Deepc_gs_inversion_mutex.unlock();
+        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1609");
+
+        	ROS_INFO("[DEEPC CONTROLLER] Deepc gs matrix inversion complete");
+        }
+    }
+}
+
 
 //    ------------------------------------------------------------------------------
 //    RRRR   EEEEE   QQQ   U   U  EEEEE   SSSS  TTTTT
