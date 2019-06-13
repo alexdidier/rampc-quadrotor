@@ -56,6 +56,9 @@ gainMatrixYawRate                   :  [ 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.0
 #gainMatrixPitchRate                 :  [ 2.97, 0.00, 0.00, 1.92, 0.00, 0.00, 0.00, 6.09, 0.00]
 #gainMatrixYawRate                   :  [ -0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 3.06]
 
+# Data collection max time, in minutes
+data_collection_max_time : 10
+
 # Data folder location, relative to HOME path
 dataFolder : /work/D-FaLL-System/Deepc_data/
 
@@ -87,7 +90,7 @@ exc_start_time : 0.0
 # EVERYTHING DEEPC
 
 # Flag that indicates whether to use roll and pitch angle measurements in Deepc
-Deepc_measure_roll_pitch : true
+Deepc_measure_roll_pitch : false
 
 # Flag that activates yaw control through Deepc
 Deepc_yaw_control : false
@@ -105,18 +108,18 @@ Q : [40.0, 40.0, 40.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0]
 R : [160.0, 4.0, 4.0, 1.0]
 
 # Terminal output cost matrix diagonal entries (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
-P : [657.21, 657.21, 657.21, 96.92, 96.92, 0.47, 629.60, 629.60, 84.21]
+P : [657.21, 657.21, 355.26, 96.92, 96.92, 18.77, 629.60, 629.60, 84.21]
 
 # Regularization parameters
-lambda2_g : 400.0
-lambda2_s : 600000.0
+lambda2_g : 600.0
+lambda2_s : 10000000.0
 
 # Output constraints (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
-output_min : [-4.0, -4.0, -4.0, -100, -100, -100, -0.5236, -0.5236, -0.5236]
+output_min : [-4.0, -4.0, 0.1, -100, -100, -100, -0.5236, -0.5236, -0.5236]
 output_max : [4.0, 4.0, 4.0, 100, 100, 100, 0.5236, 0.5236, 0.5236]
 
 # Input constraints (thurst, rollRate, pitchRate, yawRate)
-input_min : [0.0, -1.5708, -1.5708, -1.5708]
+input_min : [0.1597, -1.5708, -1.5708, -1.5708]
 input_max : [0.4791, 1.5708, 1.5708, 1.5708]
 
 # Optimization parameters

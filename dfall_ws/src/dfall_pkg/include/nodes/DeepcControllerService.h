@@ -220,6 +220,9 @@ vector<float> yaml_gainMatrixRollRate                =  { 0.00,-6.20, 0.00, 0.00
 vector<float> yaml_gainMatrixPitchRate               =  { 6.20, 0.00, 0.00, 3.00, 0.00, 0.00, 0.00, 5.20, 0.00};
 vector<float> yaml_gainMatrixYawRate                 =  { 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.30};
 
+// Data collection max time, in minutes
+float yaml_data_collection_max_time;
+
 // HOME path used for file read/write
 const string HOME = getenv("HOME");
 
@@ -301,6 +304,9 @@ float  m_setpoint[4] = {0.0,0.0,0.4,0.0};
 // differs from the setpoint when landing
 float m_setpoint_for_controller[4] = {0.0,0.0,0.4,0.0};
 
+// Data collection matrix max size
+int m_data_collection_max_size;
+
 // Absolute data folder location
 string m_dataFolder = HOME + yaml_dataFolder;
 
@@ -332,10 +338,22 @@ bool m_yawRateExcEnable = false;
 int m_yawRateExcIndex = 0;
 
 // Data collection matrices
+// Variables used for excitation
 MatrixXf m_u_data;
 MatrixXf m_y_data;
 int m_dataIndex = 0;
 bool m_write_data = false;
+
+// Variables used for general data collection
+bool m_collect_data = false;
+MatrixXf m_u_data_lqr = MatrixXf::Zero(0,0);
+MatrixXf m_y_data_lqr = MatrixXf::Zero(0,0);
+MatrixXf m_r_data_lqr = MatrixXf::Zero(0,0);
+int m_dataIndex_lqr = 0;
+MatrixXf m_u_data_Deepc = MatrixXf::Zero(0,0);
+MatrixXf m_y_data_Deepc = MatrixXf::Zero(0,0);
+MatrixXf m_r_data_Deepc = MatrixXf::Zero(0,0);
+int m_dataIndex_Deepc = 0;
 
 // Variables shared between main and Deepc thread
 float s_cf_weight_in_newtons = m_cf_weight_in_newtons;
@@ -576,6 +594,7 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 void processCustomButton1(float float_data, int int_data, bool* bool_data);
 void processCustomButton2(float float_data, int int_data, bool* bool_data);
 void processCustomButton3(float float_data, int int_data, bool* bool_data);
+void processCustomButton4(float float_data, int int_data, bool* bool_data);
 
 // FOR LOADING THE YAML PARAMETERS
 void isReadyDeepcControllerYamlCallback(const IntWithHeader& msg);

@@ -846,7 +846,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>Spare</string>
+        <string>Collect Data</string>
        </property>
       </widget>
      </item>

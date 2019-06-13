@@ -1862,6 +1862,7 @@ void computeResponse_for_LQR(Controller::Request &request, Controller::Response 
 		m_rollRateExcEnable = false;
         m_pitchRateExcEnable = false;
         m_yawRateExcEnable = false;
+		m_dataIndex_lqr = 0;
 		// Set the change flag back to false
 		m_current_state_changed = false;
 
@@ -1914,6 +1915,61 @@ void computeResponse_for_LQR(Controller::Request &request, Controller::Response 
 	response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrust_request_per_motor);
 	response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrust_request_per_motor);
 	response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrust_request_per_motor);
+
+	// Capture data
+	if (m_collect_data)
+	{
+		if (m_dataIndex_lqr < m_u_data_lqr.rows())
+	    {
+	    	// Input data
+	    	m_u_data_lqr(m_dataIndex_lqr,0) = output.thrust;
+	    	m_u_data_lqr(m_dataIndex_lqr,1) = output.rollRate;
+	    	m_u_data_lqr(m_dataIndex_lqr,2) = output.pitchRate;
+	    	m_u_data_lqr(m_dataIndex_lqr,3) = output.yawRate;
+
+	    	// Output data
+	    	m_y_data_lqr(m_dataIndex_lqr,0) = request.ownCrazyflie.x;
+	    	m_y_data_lqr(m_dataIndex_lqr,1) = request.ownCrazyflie.y;
+	    	m_y_data_lqr(m_dataIndex_lqr,2) = request.ownCrazyflie.z;
+	    	m_y_data_lqr(m_dataIndex_lqr,3) = request.ownCrazyflie.roll;
+	    	m_y_data_lqr(m_dataIndex_lqr,4) = request.ownCrazyflie.pitch;
+	    	m_y_data_lqr(m_dataIndex_lqr,5) = request.ownCrazyflie.yaw;
+
+
+	    	// Reference data
+	    	m_r_data_lqr(m_dataIndex_lqr,0) = m_setpoint_for_controller[0];
+	    	m_r_data_lqr(m_dataIndex_lqr,1) = m_setpoint_for_controller[1];
+	    	m_r_data_lqr(m_dataIndex_lqr,2) = m_setpoint_for_controller[2];
+	    	m_r_data_lqr(m_dataIndex_lqr,3) = m_setpoint_for_controller[3];
+
+	    	m_dataIndex_lqr++;
+	    }
+	    else
+	    {
+	    	// Inform the user
+	    	ROS_INFO("[DEEPC CONTROLLER] LQR data collection timeout expired.");
+
+	    	ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing input data to: " << m_outputFolder << "m_u_data_lqr.csv");
+            if (write_csv(m_outputFolder + "m_u_data_lqr.csv", m_u_data_lqr.transpose()))
+            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            else
+            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+
+            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing output data to: " << m_outputFolder << "m_y_data_lqr.csv");
+            if (write_csv(m_outputFolder + "m_y_data_lqr.csv", m_y_data_lqr.transpose()))
+            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            else
+            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+
+            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing reference data to: " << m_outputFolder << "m_r_data_lqr.csv");
+            if (write_csv(m_outputFolder + "m_r_data_lqr.csv", m_r_data_lqr.transpose()))
+            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            else
+            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+
+            m_collect_data = false;
+	    }
+	}
 
 	// DEBUG INFO
 	if (yaml_shouldDisplayDebugInfo)
@@ -2151,7 +2207,7 @@ void computeResponse_for_Deepc(Controller::Request &request, Controller::Respons
 		Deepc_first_pass = true;
 		m_Deepc_solving_first_opt = false;
 		m_Deepc_cycles_since_solve = 0;
-
+		m_dataIndex_Deepc = 0;
 		// Set the change flag back to false
 		m_current_state_changed = false;
 
@@ -2244,6 +2300,61 @@ void computeResponse_for_Deepc(Controller::Request &request, Controller::Respons
 	response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrust_request_per_motor);
 	response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrust_request_per_motor);
 	response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrust_request_per_motor);
+
+	// Capture data
+	if (m_collect_data && !use_LQR)
+	{
+		if (m_dataIndex_Deepc < m_u_data_Deepc.rows())
+	    {
+	    	// Input data
+	    	m_u_data_Deepc(m_dataIndex_Deepc,0) = output.thrust;
+	    	m_u_data_Deepc(m_dataIndex_Deepc,1) = output.rollRate;
+	    	m_u_data_Deepc(m_dataIndex_Deepc,2) = output.pitchRate;
+	    	m_u_data_Deepc(m_dataIndex_Deepc,3) = output.yawRate;
+
+	    	// Output data
+	    	m_y_data_Deepc(m_dataIndex_Deepc,0) = request.ownCrazyflie.x;
+	    	m_y_data_Deepc(m_dataIndex_Deepc,1) = request.ownCrazyflie.y;
+	    	m_y_data_Deepc(m_dataIndex_Deepc,2) = request.ownCrazyflie.z;
+	    	m_y_data_Deepc(m_dataIndex_Deepc,3) = request.ownCrazyflie.roll;
+	    	m_y_data_Deepc(m_dataIndex_Deepc,4) = request.ownCrazyflie.pitch;
+	    	m_y_data_Deepc(m_dataIndex_Deepc,5) = request.ownCrazyflie.yaw;
+
+
+	    	// Reference data
+	    	m_r_data_Deepc(m_dataIndex_Deepc,0) = m_setpoint[0];
+	    	m_r_data_Deepc(m_dataIndex_Deepc,1) = m_setpoint[1];
+	    	m_r_data_Deepc(m_dataIndex_Deepc,2) = m_setpoint[2];
+	    	m_r_data_Deepc(m_dataIndex_Deepc,3) = m_setpoint[3];
+
+	    	m_dataIndex_Deepc++;
+	    }
+	    else
+	    {
+	    	// Inform the user
+	    	ROS_INFO("[DEEPC CONTROLLER] Deepc data collection timeout expired.");
+
+	    	ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing input data to: " << m_outputFolder << "m_u_data_Deepc.csv");
+            if (write_csv(m_outputFolder + "m_u_data_Deepc.csv", m_u_data_Deepc.transpose()))
+            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            else
+            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+
+            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing output data to: " << m_outputFolder << "m_y_data_Deepc.csv");
+            if (write_csv(m_outputFolder + "m_y_data_Deepc.csv", m_y_data_Deepc.transpose()))
+            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            else
+            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+
+            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing reference data to: " << m_outputFolder << "m_r_data_Deepc.csv");
+            if (write_csv(m_outputFolder + "m_r_data_Deepc.csv", m_r_data_Deepc.transpose()))
+            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            else
+            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+
+            m_collect_data = false;
+	    }
+	}
 
 	// DEBUG INFO
 	if (yaml_shouldDisplayDebugInfo)
@@ -2786,11 +2897,12 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 
 				break;
 
-			// > FOR CUSTOM BUTTON 4 - SPARE
+			// > FOR CUSTOM BUTTON 4 - COLLECT DATA
 			case 4:
 				// Let the user know that this part of the code was triggered
 				ROS_INFO_STREAM("[DEEPC CONTROLLER] Button 4 received in controller, with message.float_data = " << float_data );
 				// Code here to respond to custom button 4
+				processCustomButton4(float_data, int_data, bool_data);
                 
 				break;
 
@@ -2944,6 +3056,74 @@ void processCustomButton3(float float_data, int int_data, bool* bool_data)
     }
 }
 
+// CUSTOM BUTTON 4 - COLLECT DATA
+void processCustomButton4(float float_data, int int_data, bool* bool_data)
+{	
+	if (!m_collect_data)
+	{
+		// Inform the user
+        ROS_INFO("[DEEPC CONTROLLER] Received request to start data collection");
+
+		m_dataIndex_lqr = 0;
+		m_dataIndex_Deepc = 0;
+		m_collect_data = true;
+	}
+	else
+	{
+		// Inform the user
+        ROS_INFO("[DEEPC CONTROLLER] Received request to stop data collection");
+
+		if (m_dataIndex_lqr > 0)
+		{
+			// Inform the user
+	    	ROS_INFO("[DEEPC CONTROLLER] LQR data found");
+
+	    	ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing input data to: " << m_outputFolder << "m_u_data_lqr.csv");
+            if (write_csv(m_outputFolder + "m_u_data_lqr.csv", m_u_data_lqr.topRows(m_dataIndex_lqr).transpose()))
+            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            else
+            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+
+            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing output data to: " << m_outputFolder << "m_y_data_lqr.csv");
+            if (write_csv(m_outputFolder + "m_y_data_lqr.csv", m_y_data_lqr.topRows(m_dataIndex_lqr).transpose()))
+            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            else
+            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+
+            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing reference data to: " << m_outputFolder << "m_r_data_lqr.csv");
+            if (write_csv(m_outputFolder + "m_r_data_lqr.csv", m_r_data_lqr.topRows(m_dataIndex_lqr).transpose()))
+            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            else
+            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+		}
+		if (m_dataIndex_Deepc > 0)
+		{
+			// Inform the user
+	    	ROS_INFO("[DEEPC CONTROLLER] Deepc data found");
+
+	    	ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing input data to: " << m_outputFolder << "m_u_data_Deepc.csv");
+            if (write_csv(m_outputFolder + "m_u_data_Deepc.csv", m_u_data_Deepc.topRows(m_dataIndex_Deepc).transpose()))
+            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            else
+            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+
+            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing output data to: " << m_outputFolder << "m_y_data_Deepc.csv");
+            if (write_csv(m_outputFolder + "m_y_data_Deepc.csv", m_y_data_Deepc.topRows(m_dataIndex_Deepc).transpose()))
+            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            else
+            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+
+            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing reference data to: " << m_outputFolder << "m_r_data_Deepc.csv");
+            if (write_csv(m_outputFolder + "m_r_data_Deepc.csv", m_r_data_Deepc.topRows(m_dataIndex_Deepc).transpose()))
+            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            else
+            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+		}
+
+		m_collect_data = false;
+	}
+}
+
 //    ----------------------------------------------------------------------------------
 //    L       OOO     A    DDDD
 //    L      O   O   A A   D   D
@@ -3090,6 +3270,9 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	// Excitation start time, in s. Used to collect steady-state data before excitation
 	yaml_exc_start_time = getParameterFloat(nodeHandle_for_paramaters, "exc_start_time");
 
+	// Data collection max time, in minutes
+	yaml_data_collection_max_time = getParameterFloat(nodeHandle_for_paramaters, "data_collection_max_time");
+
 	// Data folder locations
 	yaml_dataFolder = getParameterString(nodeHandle_for_paramaters, "dataFolder");
 	yaml_outputFolder = getParameterString(nodeHandle_for_paramaters, "outputFolder");
@@ -3157,6 +3340,20 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 
 	// > Compute the yaw rate excitation in units of [rad/s]
 	m_yawRateExcAmp_in_rad = yaml_yawRateExcAmp_in_deg * PI/180.0;
+
+	// > Initialize data collection matrices
+	int num_rows = ceil(yaml_data_collection_max_time * 60.0 * yaml_control_frequency);
+	if (num_rows != m_u_data_lqr.rows())
+	{
+		m_u_data_lqr = MatrixXf::Zero(num_rows, 4);
+		m_u_data_Deepc = MatrixXf::Zero(num_rows, 4);
+
+		m_y_data_lqr = MatrixXf::Zero(num_rows, 6);
+		m_y_data_Deepc = MatrixXf::Zero(num_rows, 6);
+
+		m_r_data_lqr = MatrixXf::Zero(num_rows, 4);
+		m_r_data_Deepc = MatrixXf::Zero(num_rows, 4);		
+	}
 
 	// > Get absolute data folder location
 	m_dataFolder = HOME + yaml_dataFolder;
