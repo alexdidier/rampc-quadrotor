@@ -109,8 +109,17 @@ void Deepc_thread_main()
 						break;
 				}
 	        	
+				// If optimizing over steady state gs & us, no need to perform gs inversion logic
+				if (d_opt_sparse && d_opt_steady_state)
+				{
+					s_Deepc_mutex.lock();
+		        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 96");
+		        	s_setpoint_changed = false;
+		        	s_Deepc_mutex.unlock();
+		        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 96");
+				}
 				// Wait for gs inversion to complete before exiting this mode
-				if (d_gs_inversion_complete)
+				else if (d_gs_inversion_complete)
 				{
 					d_gs_inversion_complete = false;
 
@@ -223,6 +232,7 @@ void change_Deepc_params()
 
 	d_opt_sparse = s_yaml_opt_sparse;
 	d_opt_verbose = s_yaml_opt_verbose;
+	d_opt_steady_state = s_yaml_opt_steady_state;
 	d_grb_LogToFile = s_yaml_grb_LogToFile;
 	d_grb_presolve_at_setup = s_yaml_grb_presolve_at_setup;
 	s_Deepc_mutex.unlock();
@@ -243,25 +253,43 @@ void change_Deepc_setpoint_gurobi()
 		// Update linear cost vectors
 		update_lin_cost_vectors();
 
+		// If optimizing over steady state gs & us, no need to perform gs inversion logic
+		if (d_opt_sparse && d_opt_steady_state)
+		{
+			// Update linear objective terms
+		    d_grb_lin_obj_r = 0;
+		    for (d_i = 0; d_i < d_Nyf + d_num_outputs; d_i++)
+		    	d_grb_lin_obj_r += d_lin_cost_vec_r(d_i) * d_grb_vars[d_yf_start_i + d_i];
+
+		    // Update objective
+		    d_grb_model.setObjective(d_grb_quad_obj + d_grb_lin_obj_us + d_grb_lin_obj_r + d_grb_lin_obj_gs);
+
+			// Update equality constraints RHS
+			for (d_i = 0; d_i < d_Nyini + d_Nyf + d_num_outputs; d_i++)
+				d_grb_dyn_constrs[d_r_gs_start_i + d_i].set(GRB_DoubleAttr_RHS, d_r_gs(d_i));
+
+		    // Inform the user
+		    ROS_INFO("[DEEPC CONTROLLER] Deepc setpoint update successful with Gurobi");
+		}
 		// Wait for gs inversion to complete before proceeding
-		if (d_gs_inversion_complete)
+		else if (d_gs_inversion_complete)
 		{
 			// Update linear objective terms
 		    d_grb_lin_obj_r = 0;
 		    d_grb_lin_obj_gs = 0;
 		    if (d_opt_sparse)
 		    {
-		    	for (int i = 0; i < d_Ng; i++)
-			    	d_grb_lin_obj_gs += d_lin_cost_vec_gs(i) * d_grb_vars[i];
-			    for (int i = 0; i < d_Nyf + d_num_outputs; i++)
-			    	d_grb_lin_obj_r += d_lin_cost_vec_r(i) * d_grb_vars[d_yf_start_i + i];
+		    	for (d_i = 0; d_i < d_Ng; d_i++)
+			    	d_grb_lin_obj_gs += d_lin_cost_vec_gs(d_i) * d_grb_vars[d_i];
+			    for (d_i = 0; d_i < d_Nyf + d_num_outputs; d_i++)
+			    	d_grb_lin_obj_r += d_lin_cost_vec_r(d_i) * d_grb_vars[d_yf_start_i + d_i];
 		    }
 		    else
 		    {
-		    	for (int i = 0; i < d_Ng; i++)
+		    	for (d_i = 0; d_i < d_Ng; d_i++)
 			    {
-			    	d_grb_lin_obj_r += d_lin_cost_vec_r(i) * d_grb_vars[i];
-			    	d_grb_lin_obj_gs += d_lin_cost_vec_gs(i) * d_grb_vars[i];
+			    	d_grb_lin_obj_r += d_lin_cost_vec_r(d_i) * d_grb_vars[d_i];
+			    	d_grb_lin_obj_gs += d_lin_cost_vec_gs(d_i) * d_grb_vars[d_i];
 			    }
 		    }
 
@@ -308,9 +336,32 @@ void change_Deepc_setpoint_osqp()
 		// Update linear cost vector
 		update_lin_cost_vectors();
 
-		// Wait for gs inversion to complete before proceeding
-		if (d_gs_inversion_complete)
+		// If optimizing over steady state gs & us, no need to perform gs inversion logic
+		if (d_opt_sparse && d_opt_steady_state)
 		{
+			// Update linear cost vector
+			d_osqp_q.middleRows(d_yf_start_i, d_Nyf + d_num_outputs) = d_lin_cost_vec_r;
+
+			// Convert Eigen vector to c_float array
+			Matrix<c_float, Dynamic, Dynamic>::Map(d_osqp_q_new, d_osqp_q.rows(), d_osqp_q.cols()) = d_osqp_q.cast<c_float>();
+
+			// Update OSQP linear cost
+			osqp_update_lin_cost(d_osqp_work, d_osqp_q_new);
+
+			// Update equality constraint vectors
+			for (d_i = 0; d_i < d_Nyini + d_Nyf + d_num_outputs; d_i++)
+			{
+				d_osqp_l_new[d_r_gs_start_i + d_i] = d_r_gs(d_i);
+				d_osqp_u_new[d_r_gs_start_i + d_i] = d_osqp_l_new[d_r_gs_start_i + d_i];
+			}
+
+		    // Inform the user
+		    ROS_INFO("[DEEPC CONTROLLER] Deepc setpoint update successful with OSQP");
+		}
+		// Wait for gs inversion to complete before proceeding
+		else if (d_gs_inversion_complete)
+		{
+			// Update linear cost vector
 			if (d_opt_sparse)
 			{
 				d_osqp_q.topRows(d_Ng) = d_lin_cost_vec_gs;
@@ -405,23 +456,23 @@ void setup_Deepc_gurobi()
 		MatrixXf ub = GRB_INFINITY * MatrixXf::Ones(d_num_opt_vars, 1);
 		if (d_opt_sparse)
 		{
-			lb.middleRows(d_Ng + d_Ns, d_Nuf) = d_input_min;
-			lb.bottomRows(d_Nyf + d_num_outputs) = d_output_min;
+			lb.middleRows(d_uf_start_i, d_Nuf) = d_input_min;
+			lb.middleRows(d_yf_start_i, d_Nyf + d_num_outputs) = d_output_min;
 
-			ub.middleRows(d_Ng + d_Ns, d_Nuf) = d_input_max;
-			ub.bottomRows(d_Nyf + d_num_outputs) = d_output_max;
+			ub.middleRows(d_uf_start_i, d_Nuf) = d_input_max;
+			ub.middleRows(d_yf_start_i, d_Nyf + d_num_outputs) = d_output_max;
 		}
 
 		// GUROBI LINEAR EQUALITY CONSTRAINTS
-		// Static equality constraints ([uf; yf; yt])
+		// Static equality constraints ([uf; yf; yt]), and ([gs; us]) if optimizing over steady state gs & us
 		MatrixXf grb_A_eq_stat = get_static_eq_constr_matrix();
 		MatrixXf grb_b_eq_stat = get_static_eq_constr_vector();
 		
-		
-		// Dynamic equality constraints that change every time ([uini; uini])
+		// Dynamic equality constraints that change every time ([uini; uini]), and ([gs; r]) if optimizing over steady state gs & us
 		MatrixXf grb_A_eq_dyn = get_dynamic_eq_constr_matrix();
 		MatrixXf grb_b_eq_dyn = get_dynamic_eq_constr_vector();
-		
+		if (d_opt_sparse && d_opt_steady_state)
+			d_r_gs_start_i = d_Nuini + d_Nyini;
 
 		// GUROBI MODEL SETUP
 		// Follows 'dense_c++.cpp' example (https://www.gurobi.com/documentation/8.1/examples/dense_cpp_cpp.html)
@@ -459,8 +510,6 @@ void setup_Deepc_gurobi()
 	    d_grb_lin_obj_gs = 0;
 	    if (d_opt_sparse)
 	    {
-	    	d_uf_start_i = d_Ng + d_Ns;
-    		d_yf_start_i = d_uf_start_i + d_Nuf;
 	    	for (int i = 0; i < d_Ng; i++)
 		    	d_grb_lin_obj_gs += d_lin_cost_vec_gs(i) * d_grb_vars[i];
 		    for (int i = 0; i < d_Nuf; i++)
@@ -511,9 +560,8 @@ void setup_Deepc_gurobi()
 	    }
 
 	    // Add dynamic equality constraints and store in memory for quick change
-	    int num_dyn_constrs = grb_A_eq_dyn.rows();
-	    d_grb_dyn_constrs = new GRBConstr[num_dyn_constrs];
-	    for (int i = 0; i < num_dyn_constrs; i++)
+	    d_grb_dyn_constrs = new GRBConstr[d_num_dyn_eq_constr];
+	    for (int i = 0; i < d_num_dyn_eq_constr; i++)
 	    {
 	    	GRBLinExpr lhs = 0;
 	    	for (int j = 0; j < d_num_opt_vars; j++)
@@ -549,7 +597,7 @@ void setup_Deepc_gurobi()
 		    num_constrs = grb_model_presolved.get(GRB_IntAttr_NumConstrs);
 		    GRBConstr* grb_constrs_presolved = grb_model_presolved.getConstrs();
 		    int j = 0;
-	    	for (int i = num_constrs - num_dyn_constrs; i < num_constrs; i++)
+	    	for (int i = num_constrs - d_num_dyn_eq_constr; i < num_constrs; i++)
 	    	{
 	    		d_grb_dyn_constrs[j] = grb_constrs_presolved[i];
 	    		j++;
@@ -622,11 +670,9 @@ void setup_Deepc_osqp()
 		d_osqp_q = MatrixXf::Zero(d_num_opt_vars, 1);
 		if (d_opt_sparse)
 		{
-			d_uf_start_i = d_Ng + d_Ns;
-    		d_yf_start_i = d_uf_start_i + d_Nuf;
 			d_osqp_q.topRows(d_Ng) = d_lin_cost_vec_gs;
 			d_osqp_q.middleRows(d_uf_start_i, d_Nuf) = d_lin_cost_vec_us;
-			d_osqp_q.bottomRows(d_Nyf + d_num_outputs) = d_lin_cost_vec_r;
+			d_osqp_q.middleRows(d_yf_start_i, d_Nyf + d_num_outputs) = d_lin_cost_vec_r;
 		}
 		else
 			d_osqp_q.topRows(d_Ng) = d_lin_cost_vec_us + d_lin_cost_vec_r + d_lin_cost_vec_gs;
@@ -634,7 +680,7 @@ void setup_Deepc_osqp()
 		// OSQP LINEAR INEQUALITY CONSTRAINT MATRIX
 		MatrixXf osqp_A_ineq = MatrixXf::Zero(d_Nuf + d_Nyf + d_num_outputs, d_num_opt_vars);
 		if (d_opt_sparse)
-			osqp_A_ineq.rightCols(d_Nuf + d_Nyf + d_num_outputs) = MatrixXf::Identity(d_Nuf + d_Nyf + d_num_outputs, d_Nuf + d_Nyf + d_num_outputs);
+			osqp_A_ineq.middleCols(d_uf_start_i, d_Nuf + d_Nyf + d_num_outputs) = MatrixXf::Identity(d_Nuf + d_Nyf + d_num_outputs, d_Nuf + d_Nyf + d_num_outputs);
 		else
 		{
 			osqp_A_ineq.topLeftCorner(d_Nuf, d_Ng) = d_U_f;
@@ -650,16 +696,19 @@ void setup_Deepc_osqp()
 		osqp_u_ineq.bottomRows(d_Nyf + d_num_outputs) = d_output_max;
 
 		// OSQP LINEAR EQUALITY CONSTRAINTS
-		// Static equality constraints ([uf; yf; yt])
+		// Static equality constraints ([uf; yf; yt]), and ([gs; us]) if optimizing over steady state gs & us
 		MatrixXf osqp_A_eq_stat = get_static_eq_constr_matrix();
 		MatrixXf osqp_l_eq_stat = get_static_eq_constr_vector();
 		MatrixXf osqp_u_eq_stat = osqp_l_eq_stat;
-		// Dynamic equality constraints that change every time ([uini; uini])
+
+		// Dynamic equality constraints that change every time ([uini; uini]), and ([gs; r]) if optimizing over steady state gs & us
 		MatrixXf osqp_A_eq_dyn = get_dynamic_eq_constr_matrix();
 		MatrixXf osqp_l_eq_dyn = get_dynamic_eq_constr_vector();
 		MatrixXf osqp_u_eq_dyn = osqp_l_eq_dyn;
 		d_uini_start_i = osqp_A_ineq.rows() + osqp_A_eq_stat.rows();
 		d_yini_start_i = d_uini_start_i + d_Nuini;
+		if (d_opt_sparse && d_opt_steady_state)
+			d_r_gs_start_i = d_yini_start_i + d_Nyini;
 
 		// OSQP CONSTRAINTS
 		// Concatenate all constraints in single matrix/vectors
@@ -1088,15 +1137,25 @@ void get_variable_lengths(const MatrixXf& u_data, const MatrixXf& y_data)
 	d_Nyf = d_num_outputs * d_N;
 
 	// Optimization decision vector size
+	// Optimization variables in all formulations: [g; slack]
+	d_num_opt_vars = d_Ng + d_Ns;
+
+	// In sparse formulation, add [uf; yf; yt], where yt is terminal output
 	if (d_opt_sparse)
 	{
-		// Sparse optimization variables: [g; slack; uf; yf; yt], where yt is terminal output
-		d_num_opt_vars = d_Ng + d_Ns + d_Nuf + d_Nyf + d_num_outputs;
-	}
-	else
-	{
-		// Dense optimization variables: [g; slack]
-		d_num_opt_vars = d_Ng + d_Ns;
+		d_num_opt_vars += d_Nuf + d_Nyf + d_num_outputs;
+
+		d_uf_start_i = d_Ng + d_Ns;
+    	d_yf_start_i = d_uf_start_i + d_Nuf;
+
+		// If optimizing over steady state values, add [gs; us]. This is available in sparse formulation only
+		if (d_opt_steady_state)
+		{
+			d_num_opt_vars += d_Ng + d_num_inputs;
+
+			d_gs_start_i = d_yf_start_i + d_Nyf + d_num_outputs;
+			d_us_start_i = d_gs_start_i + d_Ng;
+		}
 	}
 }
 
@@ -1184,12 +1243,16 @@ MatrixXf get_quad_cost_matrix()
 {
 	MatrixXf quad_cost_mat_g = d_lambda2_g * MatrixXf::Identity(d_Ng, d_Ng);
 	MatrixXf quad_cost_mat_s = d_lambda2_s * MatrixXf::Identity(d_Ns, d_Ns);
-	MatrixXf quad_cost_mat_uf = MatrixXf::Zero(d_Nuf, d_Nuf);
-	MatrixXf quad_cost_mat_yf = MatrixXf::Zero(d_Nyf, d_Nyf);
-	MatrixXf quad_cost_mat_yt = d_P;
+	MatrixXf quad_cost_mat_uf;
+	MatrixXf quad_cost_mat_yf;
+	MatrixXf quad_cost_mat_yt;
+
 	MatrixXf quad_cost_mat = MatrixXf::Zero(d_num_opt_vars, d_num_opt_vars);
 	if (d_opt_sparse)
 	{
+		quad_cost_mat_uf = MatrixXf::Zero(d_Nuf, d_Nuf);
+		quad_cost_mat_yf = MatrixXf::Zero(d_Nyf, d_Nyf);
+		quad_cost_mat_yt = d_P;
 		for (int i = 0; i < d_N; i++)
 		{
 			quad_cost_mat_uf.block(i * d_num_inputs, i * d_num_inputs, d_num_inputs, d_num_inputs) = d_R;
@@ -1211,7 +1274,23 @@ MatrixXf get_quad_cost_matrix()
 	{
 		quad_cost_mat.block(d_Ng + d_Ns, d_Ng + d_Ns, d_Nuf, d_Nuf) = quad_cost_mat_uf;
 		quad_cost_mat.block(d_Ng + d_Ns + d_Nuf, d_Ng + d_Ns + d_Nuf, d_Nyf, d_Nyf) = quad_cost_mat_yf;
-		quad_cost_mat.bottomRightCorner(d_num_outputs, d_num_outputs) = quad_cost_mat_yt;
+		quad_cost_mat.block(d_Ng + d_Ns + d_Nuf + d_Nyf, d_Ng + d_Ns + d_Nuf + d_Nyf, d_num_outputs, d_num_outputs) = quad_cost_mat_yt;
+
+		if (d_opt_steady_state)
+		{
+			MatrixXf quad_cost_mat_gs = quad_cost_mat_g + MatrixXf::Identity(d_Ng, d_Ng);
+			MatrixXf quad_cost_mat_g_gs = -quad_cost_mat_g;
+			MatrixXf quad_cost_mat_us = d_N * d_R;
+			MatrixXf quad_cost_mat_uf_us = -d_R.replicate(d_N, 1);
+
+			quad_cost_mat.block(d_gs_start_i, d_gs_start_i, d_Ng, d_Ng) = quad_cost_mat_gs;
+			quad_cost_mat.block(0, d_gs_start_i, d_Ng, d_Ng) = quad_cost_mat_g_gs;
+			quad_cost_mat.block(d_gs_start_i, 0, d_Ng, d_Ng) = quad_cost_mat_g_gs.transpose();
+			
+			quad_cost_mat.bottomRightCorner(d_num_inputs, d_num_inputs) = quad_cost_mat_us;
+			quad_cost_mat.block(d_uf_start_i, d_us_start_i, d_Nuf, d_num_inputs) = quad_cost_mat_uf_us;
+			quad_cost_mat.block(d_us_start_i, d_uf_start_i, d_num_inputs, d_Nuf) = quad_cost_mat_uf_us.transpose();
+		}
 	}
 
 	return quad_cost_mat;
@@ -1219,7 +1298,7 @@ MatrixXf get_quad_cost_matrix()
 
 // Get optimization linear cost vectors
 // Gurobi refers to this as 'c'. It is multiplied by 2 since Gurobi minimizes (x^T * Q * x + c^t * x)
-// OSQP refers to this as 'q'. It is not multiplied by 2 since OSQP minimizes (1/2 * x^T * Q * x + c^t * x)
+// OSQP refers to this as 'q'. It is not multiplied by 2 since OSQP minimizes (1/2 * x^T * P * x + q^t * x)
 void get_lin_cost_vectors()
 {
 	s_Deepc_mutex.lock();
@@ -1228,61 +1307,63 @@ void get_lin_cost_vectors()
 	s_Deepc_mutex.unlock();
 	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1225");
 
-	// Steady state input
-	MatrixXf us = MatrixXf::Zero(d_num_inputs, 1);
-	us(0) = d_cf_weight_in_newtons;
-
 	// Reference
 	d_r = MatrixXf::Zero(d_num_outputs, 1);
 	d_r.topRows(3) = d_setpoint.topRows(3);
 	if (d_Deepc_yaw_control)
 		d_r.bottomRows(1) = d_setpoint.bottomRows(1);
 
-	// Steady state trajectory mapper
-	MatrixXf u_gs = us.replicate(d_Tini + d_N, 1);
-	d_r_gs = d_r.replicate(d_Tini + d_N + 1, 1);
-	d_A_gs = MatrixXf::Zero(d_U_p.rows() + d_U_f.rows() + d_Y_p.rows() + d_Y_f.rows(), d_Ng);
-	d_b_gs = MatrixXf::Zero(d_A_gs.rows(), 1);
-	d_A_gs.topRows(d_U_p.rows()) = d_U_p;
-	d_A_gs.middleRows(d_U_p.rows(), d_U_f.rows()) = d_U_f;
-	d_A_gs.middleRows(d_U_p.rows() + d_U_f.rows(), d_Y_p.rows()) = d_Y_p;
-	d_A_gs.bottomRows(d_Y_f.rows()) = d_Y_f;
-	d_b_gs.topRows(u_gs.rows()) = u_gs;
-	d_b_gs.bottomRows(d_r_gs.rows()) = d_r_gs;
-	//d_gs = d_A_gs.bdcSvd(ComputeThinU | ComputeThinV).solve(d_b_gs);
-	d_gs = MatrixXf::Zero(d_Ng, 1);
-
-	d_lin_cost_vec_gs = -d_lambda2_g * d_gs;
 	if (d_opt_sparse)
 	{
-		d_lin_cost_vec_us = MatrixXf::Zero(d_Nuf, 1);
 		d_lin_cost_vec_r = MatrixXf::Zero(d_Nyf + d_num_outputs, 1);
-
-		for (int i = 0; i < d_N + 1; i++)
-		{
-			if (i < d_N)
-			{
-				d_lin_cost_vec_us.middleRows(i * d_num_inputs, d_num_inputs) = -d_R * us;
-				d_lin_cost_vec_r.middleRows(i * d_num_outputs, d_num_outputs) = -d_Q * d_r;
-			}
-			else
-				d_lin_cost_vec_r.middleRows(i * d_num_outputs, d_num_outputs) = -d_P * d_r;
-		}
+		d_lin_cost_vec_r.topRows(d_Nyf) = (-d_Q * d_r).replicate(d_N, 1);
+		d_lin_cost_vec_r.bottomRows(d_num_outputs) = -d_P * d_r;
 	}
 	else
 	{
-		d_lin_cost_vec_us = MatrixXf::Zero(d_Ng, 1);
 		d_lin_cost_vec_r = MatrixXf::Zero(d_Ng, 1);
 
-		for (int i = 0; i < d_N + 1; i++)
+		for (int i = 0; i < d_N; i++)
+			d_lin_cost_vec_r -= d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_Q * d_r;
+
+		d_lin_cost_vec_r -= d_Y_f.bottomRows(d_num_outputs).transpose() * d_P * d_r;
+	}
+	d_r_gs = d_r.replicate(d_Tini + d_N + 1, 1);
+
+	// Steady state input us and trajectory mapper gs
+	// Only execute this if not optimizing over gs & us
+	if (d_opt_sparse && d_opt_steady_state)
+	{
+		d_lin_cost_vec_gs = MatrixXf::Zero(d_Ng, 1);
+		d_lin_cost_vec_us = MatrixXf::Zero(d_Nuf, 1);
+	}
+	else
+	{
+		// Steady state input
+		MatrixXf us = MatrixXf::Zero(d_num_inputs, 1);
+		us(0) = d_cf_weight_in_newtons;
+
+		// Steady state trajectory mapper
+		MatrixXf u_gs = us.replicate(d_Tini + d_N, 1);
+		d_A_gs = MatrixXf::Zero(d_U_p.rows() + d_U_f.rows() + d_Y_p.rows() + d_Y_f.rows(), d_Ng);
+		d_b_gs = MatrixXf::Zero(d_A_gs.rows(), 1);
+		d_A_gs.topRows(d_U_p.rows()) = d_U_p;
+		d_A_gs.middleRows(d_U_p.rows(), d_U_f.rows()) = d_U_f;
+		d_A_gs.middleRows(d_U_p.rows() + d_U_f.rows(), d_Y_p.rows()) = d_Y_p;
+		d_A_gs.bottomRows(d_Y_f.rows()) = d_Y_f;
+		d_b_gs.topRows(u_gs.rows()) = u_gs;
+		d_b_gs.bottomRows(d_r_gs.rows()) = d_r_gs;
+		d_gs = d_A_gs.bdcSvd(ComputeThinU | ComputeThinV).solve(d_b_gs);
+
+		d_lin_cost_vec_gs = -d_lambda2_g * d_gs;
+		if (d_opt_sparse)
+			d_lin_cost_vec_us = (-d_R * us).replicate(d_N, 1);
+		else
 		{
-			if (i < d_N)
-			{
+			d_lin_cost_vec_us = MatrixXf::Zero(d_Ng, 1);
+
+			for (int i = 0; i < d_N; i++)
 				d_lin_cost_vec_us -= d_U_f.middleRows(i * d_num_inputs, d_num_inputs).transpose() * d_R * us;
-				d_lin_cost_vec_r -= d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_Q * d_r;
-			}
-			else
-				d_lin_cost_vec_r -= d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_P * d_r;
 		}
 	}
 
@@ -1298,9 +1379,40 @@ void get_lin_cost_vectors()
 // Used during runtime to update objective on reference r and steady-state trajectory mapper gs
 // us is hovering steady state input and is constant so does not get updated
 // Gurobi refers to this as 'c'. It is multiplied by 2 since Gurobi minimizes (x^T * Q * x + c^t * x)
-// OSQP refers to this as 'q'. It is not multiplied by 2 since OSQP minimizes (1/2 * x^T * Q * x + c^t * x)
+// OSQP refers to this as 'q'. It is not multiplied by 2 since OSQP minimizes (1/2 * x^T * P * x + q^t * x)
 void update_lin_cost_vectors()
 {
+	s_Deepc_mutex.lock();
+	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1312");
+	d_setpoint = s_setpoint;
+	s_Deepc_mutex.unlock();
+	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1312");
+
+    // Reference
+	d_r.topRows(3) = d_setpoint.topRows(3);
+	if (d_Deepc_yaw_control)
+		d_r.bottomRows(1) = d_setpoint.bottomRows(1);
+
+	if (d_opt_sparse)
+	{
+		d_lin_cost_vec_r.topRows(d_Nyf) = (-d_Q * d_r).replicate(d_N, 1);
+		d_lin_cost_vec_r.bottomRows(d_num_outputs) = -d_P * d_r;
+	}
+	else
+	{
+		d_lin_cost_vec_r = MatrixXf::Zero(d_Ng, 1);
+
+		for (int i = 0; i < d_N; i++)
+			d_lin_cost_vec_r -= d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_Q * d_r;
+
+		d_lin_cost_vec_r -= d_Y_f.bottomRows(d_num_outputs).transpose() * d_P * d_r;
+	}
+	d_r_gs = d_r.replicate(d_Tini + d_N + 1, 1);
+
+	// If optimizing over steady state gs & us, no need to perform gs inversion logic
+	if (d_opt_sparse && d_opt_steady_state)
+		return;
+
 	ds_Deepc_gs_inversion_mutex.lock();
 	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1327");
     d_gs_inversion_complete = ds_gs_inversion_complete;
@@ -1309,42 +1421,7 @@ void update_lin_cost_vectors()
 
 	if (!d_get_gs)
 	{
-		s_Deepc_mutex.lock();
-		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1312");
-		d_setpoint = s_setpoint;
-		s_Deepc_mutex.unlock();
-		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1312");
-
-		// Reference
-		d_r.topRows(3) = d_setpoint.topRows(3);
-		if (d_Deepc_yaw_control)
-			d_r.bottomRows(1) = d_setpoint.bottomRows(1);
-
-		if (d_opt_sparse)
-		{
-			d_lin_cost_vec_r = MatrixXf::Zero(d_Nyf + d_num_outputs, 1);
-			for (int i = 0; i < d_N + 1; i++)
-			{
-				if (i < d_N)
-					d_lin_cost_vec_r.middleRows(i * d_num_outputs, d_num_outputs) = -d_Q * d_r;
-				else
-					d_lin_cost_vec_r.middleRows(i * d_num_outputs, d_num_outputs) = -d_P * d_r;
-			}
-		}
-		else
-		{
-			d_lin_cost_vec_r = MatrixXf::Zero(d_Ng, 1);
-			for (int i = 0; i < d_N + 1; i++)
-			{
-				if (i < d_N)
-					d_lin_cost_vec_r -= d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_Q * d_r;
-				else
-					d_lin_cost_vec_r -= d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_P * d_r;
-			}
-		}
-
 		// Steady state trajectory mapper
-		d_r_gs = d_r.replicate(d_Tini + d_N + 1, 1);
 		d_b_gs.bottomRows(d_r_gs.rows()) = d_r_gs;
 
 		// Get gs from gs matrix inversion thread
@@ -1381,22 +1458,38 @@ void update_lin_cost_vectors()
 }
 
 // Get static equality constraints matrix
-// Static equality constraints don't change in runtime ([uf; yf; yt])
+// Static equality constraints don't change in runtime ([uf; yf; yt]), and ([gs; us]) if optimizing over steady state gs & us
 // This is part of Gurobi/OSQP A matrix
 MatrixXf get_static_eq_constr_matrix()
 {
 	MatrixXf A_eq_stat;
 	if (d_opt_sparse)
 	{
-		A_eq_stat = MatrixXf::Zero(d_Nuf + d_Nyf + d_num_outputs, d_num_opt_vars);
+		d_num_stat_eq_constr = d_Nuf + d_Nyf + d_num_outputs;
+		if (d_opt_steady_state)
+			d_num_stat_eq_constr += d_Nuini + d_Nuf;
+
+		A_eq_stat = MatrixXf::Zero(d_num_stat_eq_constr, d_num_opt_vars);
 		A_eq_stat.topLeftCorner(d_Nuf, d_Ng) = d_U_f;
-		A_eq_stat.block(0, d_Ng + d_Ns, d_Nuf, d_Nuf) = -MatrixXf::Identity(d_Nuf, d_Nuf);
-		A_eq_stat.bottomLeftCorner(d_Nyf + d_num_outputs, d_Ng) = d_Y_f;
-		A_eq_stat.bottomRightCorner(d_Nyf + d_num_outputs, d_Nyf + d_num_outputs) = -MatrixXf::Identity(d_Nyf + d_num_outputs, d_Nyf + d_num_outputs);
+		A_eq_stat.block(0, d_uf_start_i, d_Nuf, d_Nuf) = -MatrixXf::Identity(d_Nuf, d_Nuf);
+		A_eq_stat.block(d_Nuf, 0, d_Nyf + d_num_outputs, d_Ng) = d_Y_f;
+		A_eq_stat.block(d_Nuf, d_yf_start_i, d_Nyf + d_num_outputs, d_Nyf + d_num_outputs) = -MatrixXf::Identity(d_Nyf + d_num_outputs, d_Nyf + d_num_outputs);
+
+		if (d_opt_steady_state)
+		{
+			MatrixXf Up_Uf = MatrixXf::Zero(d_Nuini + d_Nuf, d_Ng);
+			Up_Uf.topRows(d_Nuini) = d_U_p;
+			Up_Uf.bottomRows(d_Nuf) = d_U_f;
+
+			A_eq_stat.block(d_Nuf + d_Nyf + d_num_outputs, d_gs_start_i, d_Nuini + d_Nuf, d_Ng) = Up_Uf;
+			A_eq_stat.bottomRightCorner(d_Nuini + d_Nuf, d_num_inputs) = -MatrixXf::Identity(d_num_inputs, d_num_inputs).replicate(d_Tini + d_N, 1);
+		}
 	}
 	else
 	{
 		// There are no static equality constraints in dense formulation (they are subtituted)
+		d_num_stat_eq_constr = 0;
+
 		A_eq_stat = MatrixXf::Zero(0, 0);
 	}
 
@@ -1404,14 +1497,14 @@ MatrixXf get_static_eq_constr_matrix()
 }
 
 // Get static equality constraints vector
-// Static equality constraints don't change in runtime ([uf; yf; yt])
+// Static equality constraints don't change in runtime ([uf; yf; yt]), and ([gs; us]) if optimizing over steady state gs & us
 // This is part of Gurobi b vector
 // This is part of OSQP l/u vectors
 MatrixXf get_static_eq_constr_vector()
 {
 	MatrixXf stat_eq_constr_vec;
-	if (d_opt_sparse)
-		stat_eq_constr_vec = MatrixXf::Zero(d_Nuf + d_Nyf + d_num_outputs, 1);
+	if (d_num_stat_eq_constr > 0)
+		stat_eq_constr_vec = MatrixXf::Zero(d_num_stat_eq_constr, 1);
 	else
 	{
 		// There are no static equality constraints in dense formulation (they are subtituted)
@@ -1422,29 +1515,45 @@ MatrixXf get_static_eq_constr_vector()
 }
 
 // Get dynamic equality constraints matrix
-// Dynamic equality constraints change in runtime ([uini; yini])
+// Dynamic equality constraints change in runtime ([uini; yini]), and ([gs; r]) if optimizing over steady state gs & us
 // This is part of Gurobi/OSQP A matrix
 MatrixXf get_dynamic_eq_constr_matrix()
 {
-	MatrixXf A_eq_dyn = MatrixXf::Zero(d_Nuini + d_Nyini, d_num_opt_vars);
+	d_num_dyn_eq_constr = d_Nuini + d_Nyini;
+	if (d_opt_sparse && d_opt_steady_state)
+		d_num_dyn_eq_constr += d_Nyini + d_Nyf + d_num_outputs;
+
+	MatrixXf A_eq_dyn = MatrixXf::Zero(d_num_dyn_eq_constr, d_num_opt_vars);
 	A_eq_dyn.topLeftCorner(d_Nuini, d_Ng) = d_U_p;
-	A_eq_dyn.bottomLeftCorner(d_Nyini, d_Ng) = d_Y_p;
+	A_eq_dyn.block(d_Nuini, 0, d_Nyini, d_Ng) = d_Y_p;
 	A_eq_dyn.block(d_Nuini, d_Ng, d_Ns, d_Ns) = -MatrixXf::Identity(d_Ns, d_Ns);
+
+	if (d_opt_sparse && d_opt_steady_state)
+	{
+		MatrixXf Yp_Yf = MatrixXf::Zero(d_Nyini + d_Nyf + d_num_outputs, d_Ng);
+		Yp_Yf.topRows(d_Nyini) = d_Y_p;
+		Yp_Yf.bottomRows(d_Nyf + d_num_outputs) = d_Y_f;
+
+		A_eq_dyn.block(d_Nuini + d_Nyini, d_gs_start_i, d_Nyini + d_Nyf + d_num_outputs, d_Ng) = Yp_Yf;
+	}
 
 	return A_eq_dyn;
 }
 
 // Get dynamic equality constraints vector
-// Dynamic equality constraints change in runtime ([uini; yini])
+// Dynamic equality constraints change in runtime ([uini; yini]), and ([gs; r]) if optimizing over steady state gs & us
 // This is part of Gurobi b vector
 // This is part of OSQP l/u vectors
 MatrixXf get_dynamic_eq_constr_vector()
 {
-	MatrixXf dyn_eq_constr_vec = MatrixXf::Zero(d_Nuini + d_Nyini, 1);
+	MatrixXf dyn_eq_constr_vec = MatrixXf::Zero(d_num_dyn_eq_constr, 1);
 	d_uini = MatrixXf::Zero(d_Nuini, 1);
     d_yini = MatrixXf::Zero(d_Nyini, 1);
 	dyn_eq_constr_vec.topRows(d_Nuini) = d_uini;
-	dyn_eq_constr_vec.bottomRows(d_Nyini) = d_yini;
+	dyn_eq_constr_vec.middleRows(d_Nuini, d_Nyini) = d_yini;
+
+	if (d_opt_sparse && d_opt_steady_state)
+		dyn_eq_constr_vec.bottomRows(d_Nyini + d_Nuf + d_num_outputs) = d_r_gs;
 
 	return dyn_eq_constr_vec;
 }
@@ -3346,8 +3455,6 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	// The default setpoint, the ordering is (x,y,z,yaw),
 	// with unit [meters,meters,meters,radians]
 	getParameterFloatVector(nodeHandle_for_paramaters, "default_setpoint", yaml_default_setpoint, 4);
-	// Update setpoint to default
-	setNewSetpoint(yaml_default_setpoint[0], yaml_default_setpoint[1], yaml_default_setpoint[2], yaml_default_setpoint[3]);
 
 	// Boolean indiciating whether the "Debug Message" of this agent
 	// should be published or not
@@ -3419,6 +3526,7 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	s_yaml_solver = getParameterString(nodeHandle_for_paramaters, "solver");
 	s_yaml_opt_sparse = getParameterBool(nodeHandle_for_paramaters, "opt_sparse");
 	s_yaml_opt_verbose = getParameterBool(nodeHandle_for_paramaters, "opt_verbose");
+	s_yaml_opt_steady_state = getParameterBool(nodeHandle_for_paramaters, "opt_steady_state");
 
 	// Parameters specific to Gurobi
 	s_yaml_grb_LogToFile = getParameterBool(nodeHandle_for_paramaters, "grb_LogToFile");
@@ -3521,6 +3629,9 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 
 	s_Deepc_mutex.unlock();
 	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 2433");
+
+	// Update setpoint to default
+	setNewSetpoint(yaml_default_setpoint[0], yaml_default_setpoint[1], yaml_default_setpoint[2], yaml_default_setpoint[3]);
 
 	// DEBUGGING: Print out one of the computed quantities
 	ROS_INFO_STREAM("[DEEPC CONTROLLER] DEBUGGING: thus the weight of this agent in [Newtons] = " << m_cf_weight_in_newtons);

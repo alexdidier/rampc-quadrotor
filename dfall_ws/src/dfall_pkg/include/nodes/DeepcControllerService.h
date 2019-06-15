@@ -285,6 +285,7 @@ vector<float> s_yaml_input_max = {0.6388, PI, PI, PI};
 string s_yaml_solver = "gurobi";
 bool s_yaml_opt_sparse = true;
 bool s_yaml_opt_verbose = false;
+bool s_yaml_opt_steady_state = false;
 
 // Parameters specific to Gurobi
 bool s_yaml_grb_LogToFile = false;
@@ -400,6 +401,7 @@ vector<float> d_output_max_vec = s_yaml_output_max;
 int d_solver = DEEPC_CONTROLLER_SOLVER_GUROBI;
 bool d_opt_sparse = s_yaml_opt_sparse;
 bool d_opt_verbose = s_yaml_opt_verbose;
+bool d_opt_steady_state = s_yaml_opt_steady_state;
 bool d_grb_LogToFile = s_yaml_grb_LogToFile;
 bool d_grb_presolve_at_setup = s_yaml_grb_presolve_at_setup;
 int d_num_inputs;
@@ -432,8 +434,6 @@ MatrixXf d_input_max;
 MatrixXf d_output_min;
 MatrixXf d_output_max;
 MatrixXf d_g;
-int d_uini_start_i;
-int d_yini_start_i;
 MatrixXf d_uini;
 MatrixXf d_yini;
 bool d_setupDeepc_success = s_setupDeepc_success;
@@ -441,6 +441,13 @@ int d_DeepcOpt_status = 0;
 int d_i;
 int d_uf_start_i;
 int d_yf_start_i;
+int d_gs_start_i;
+int d_us_start_i;
+int d_uini_start_i;
+int d_yini_start_i;
+int d_r_gs_start_i;
+int d_num_stat_eq_constr;
+int d_num_dyn_eq_constr;
 MatrixXf d_u_f;
 // Gurobi optimization variables
 GRBEnv d_grb_env;
