@@ -891,7 +891,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>Spare</string>
+        <string>Changing Reference</string>
        </property>
       </widget>
      </item>

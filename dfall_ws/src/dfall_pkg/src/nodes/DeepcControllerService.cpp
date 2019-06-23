@@ -2119,6 +2119,17 @@ void computeResponse_for_LQR(Controller::Request &request, Controller::Response 
 	m_setpoint_for_controller[2] = m_setpoint[2];
 	m_setpoint_for_controller[3] = m_setpoint[3];
 	
+	// Add 'Figure 8' (found here: "https://gamedev.stackexchange.com/questions/43691/how-can-i-move-an-object-in-an-infinity-or-figure-8-trajectory", as "Lemniscate of Bernoulli")
+	if (m_changing_ref_enable)
+	{
+		float scale = 2 / (3 - cos(2 * m_figure_8_frequency_rad * (m_time_in_seconds - PI/2))) * yaml_figure_8_amplitude;
+		m_setpoint_for_controller[0] += scale * cos(m_figure_8_frequency_rad * (m_time_in_seconds - PI/2));
+		m_setpoint_for_controller[1] += scale * sin(2 * m_figure_8_frequency_rad * (m_time_in_seconds - PI/2)) / 2;
+		m_setpoint_for_controller[2] += yaml_z_sine_amplitude * sin(m_z_sine_frequency_rad * m_time_in_seconds);
+
+		m_time_in_seconds += m_control_deltaT;
+	}
+
 	// Call the LQR control function
 	control_output output;
 	calculateControlOutput_viaLQR(request, output);
@@ -3420,11 +3431,12 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
                 
 				break;
 
-			// > FOR CUSTOM BUTTON 5 - SPARE
+			// > FOR CUSTOM BUTTON 5 - CHANGING REFERENCE
 			case 5:
 				// Let the user know that this part of the code was triggered
 				ROS_INFO_STREAM("[DEEPC CONTROLLER] Button 5 received in controller, with message.float_data = " << float_data );
 				// Code here to respond to custom button 5
+				processCustomButton5(float_data, int_data, bool_data);
                 
                 break;
 
@@ -3688,6 +3700,42 @@ void processCustomButton4(float float_data, int int_data, bool* bool_data)
 	}
 }
 
+// CUSTOM BUTTON 5 - CHANGING REFERENCE
+void processCustomButton5(float float_data, int int_data, bool* bool_data)
+{	
+	// If already following changing reference, disable it and return
+	if (m_changing_ref_enable)
+	{
+		m_changing_ref_enable = false;
+
+		return;
+	}
+
+    // Switch between the possible states
+    switch (m_current_state)
+    {
+        case DEEPC_CONTROLLER_STATE_LQR:
+            // Inform the user
+            ROS_INFO("[DEEPC CONTROLLER] Received request to follow changing reference while in LQR");
+            // Reset time
+            m_time_in_seconds = 0.0;
+            // Set the flag
+            m_changing_ref_enable = true;
+            break;
+
+        case DEEPC_CONTROLLER_STATE_DEEPC:
+        case DEEPC_CONTROLLER_STATE_EXCITATION_LQR:
+        case DEEPC_CONTROLLER_STATE_EXCITATION_DEEPC:
+        case DEEPC_CONTROLLER_STATE_LANDING_MOVE_DOWN:
+        case DEEPC_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
+        case DEEPC_CONTROLLER_STATE_STANDBY:
+        default:
+            // Inform the user
+            ROS_INFO("[DEEPC CONTROLLER] Received request to follow changing reference in invalid state. Request ignored");
+            break;
+    }
+}
+
 //    ----------------------------------------------------------------------------------
 //    L       OOO     A    DDDD
 //    L      O   O   A A   D   D
@@ -3849,6 +3897,19 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	// Deepc prediction horizon
 	yaml_N = getParameterInt(nodeHandle_for_paramaters, "N");
 
+	// Changing reference parameters
+	// Figure 8 amplitude, in m
+	yaml_figure_8_amplitude = getParameterFloat(nodeHandle_for_paramaters, "figure_8_amplitude");
+	
+	// Figure 8 frequency, in Hz
+	yaml_figure_8_frequency = getParameterFloat(nodeHandle_for_paramaters, "figure_8_frequency");
+	
+	// z sine amplitude, in m
+	yaml_z_sine_amplitude = getParameterFloat(nodeHandle_for_paramaters, "z_sine_amplitude");
+	
+	// z sine frequency, in Hz
+	yaml_z_sine_frequency = getParameterFloat(nodeHandle_for_paramaters, "z_sine_frequency");
+
 	// PARAMETERS ACCESSED BY DEEPC THREAD
 	s_Deepc_mutex.lock();
 	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 2352");
@@ -3948,6 +4009,12 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	m_yawRateExcSignal = read_csv(m_dataFolder + yaml_yawRateExcSignalFile);
 	if (m_yawRateExcSignal.size() <= 0)
 		ROS_INFO("[DEEPC CONTROLLER] Failed to read yaw rate excitation signal file");
+
+	// > Compute the Figure 8 frequency in units of rad/s
+	m_figure_8_frequency_rad = 2 * PI * yaml_figure_8_frequency;
+	
+	// > Compute the z sine frequency in units of rad/s
+	m_z_sine_frequency_rad = 2 * PI * yaml_z_sine_frequency;
 
 	// PARAMETERS ACCESSED BY DEEPC THREAD
 	s_Deepc_mutex.lock();

@@ -292,6 +292,16 @@ bool s_yaml_opt_steady_state = false;
 bool s_yaml_grb_LogToFile = false;
 bool s_yaml_grb_presolve_at_setup = false;
 
+// Changing reference parameters
+// Figure 8 amplitude, in m
+float yaml_figure_8_amplitude = 0.5;
+// Figure 8 frequency, in Hz
+float yaml_figure_8_frequency = 0.1;
+// z sine amplitude, in m
+float yaml_z_sine_amplitude = 0.2;
+// z sine frequency, in Hz
+float yaml_z_sine_frequency = 0.1;
+
 // The weight of the Crazyflie in Newtons, i.e., mg
 float m_cf_weight_in_newtons = 0.0;
 
@@ -356,6 +366,12 @@ MatrixXf m_u_data_Deepc = MatrixXf::Zero(0,0);
 MatrixXf m_y_data_Deepc = MatrixXf::Zero(0,0);
 MatrixXf m_r_data_Deepc = MatrixXf::Zero(0,0);
 int m_dataIndex_Deepc = 0;
+
+// Variables used for changing reference
+bool m_changing_ref_enable = false;
+float m_figure_8_frequency_rad;
+float m_z_sine_frequency_rad;
+
 
 // Variables shared between main and Deepc thread
 float s_cf_weight_in_newtons = m_cf_weight_in_newtons;
@@ -620,6 +636,7 @@ void processCustomButton1(float float_data, int int_data, bool* bool_data);
 void processCustomButton2(float float_data, int int_data, bool* bool_data);
 void processCustomButton3(float float_data, int int_data, bool* bool_data);
 void processCustomButton4(float float_data, int int_data, bool* bool_data);
+void processCustomButton5(float float_data, int int_data, bool* bool_data);
 
 // FOR LOADING THE YAML PARAMETERS
 void isReadyDeepcControllerYamlCallback(const IntWithHeader& msg);
