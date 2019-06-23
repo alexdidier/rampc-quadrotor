@@ -1994,12 +1994,16 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 			computeResponse_for_LQR(request, response);
 			break;
 
-        case DEEPC_CONTROLLER_STATE_EXCITATION:
-            computeResponse_for_excitation(request, response);
+        case DEEPC_CONTROLLER_STATE_EXCITATION_LQR:
+            computeResponse_for_excitation_LQR(request, response);
             break;
 
         case DEEPC_CONTROLLER_STATE_DEEPC:
             computeResponse_for_Deepc(request, response);
+            break;
+
+        case DEEPC_CONTROLLER_STATE_EXCITATION_DEEPC:
+            computeResponse_for_excitation_Deepc(request, response);
             break;
 
 		case DEEPC_CONTROLLER_STATE_LANDING_MOVE_DOWN:
@@ -2210,7 +2214,7 @@ void computeResponse_for_LQR(Controller::Request &request, Controller::Response 
 	update_uini_yini(request, output);
 }
 
-void computeResponse_for_excitation(Controller::Request &request, Controller::Response &response)
+void computeResponse_for_excitation_LQR(Controller::Request &request, Controller::Response &response)
 {
     // Check if the state "just recently" changed
     if (m_current_state_changed)
@@ -2229,7 +2233,7 @@ void computeResponse_for_excitation(Controller::Request &request, Controller::Re
         // Publish the change
         publishCurrentSetpointAndState();
         // Inform the user
-        ROS_INFO_STREAM("[DEEPC CONTROLLER] State \"excitation\" started");
+        ROS_INFO_STREAM("[DEEPC CONTROLLER] State \"Excitation LQR\" started");
     }
 
     m_setpoint_for_controller[0] = m_setpoint[0];
@@ -2256,7 +2260,7 @@ void computeResponse_for_excitation(Controller::Request &request, Controller::Re
         	if (m_rollRateExcEnable || m_pitchRateExcEnable || m_yawRateExcEnable)
             {
                 // Inform the user
-                ROS_INFO("[DEEPC CONTROLLER] Thrust excitation signal ended. State stays at: excitation");
+                ROS_INFO("[DEEPC CONTROLLER] Thrust excitation signal ended. State stays at: Excitation LQR");
                 m_thrustExcEnable = false;
             }
             else
@@ -2285,7 +2289,7 @@ void computeResponse_for_excitation(Controller::Request &request, Controller::Re
         	if (m_thrustExcEnable || m_pitchRateExcEnable || m_yawRateExcEnable)
             {
                 // Inform the user
-                ROS_INFO("[DEEPC CONTROLLER] Roll rate excitation signal ended. State stays at: excitation");
+                ROS_INFO("[DEEPC CONTROLLER] Roll rate excitation signal ended. State stays at: Excitation LQR");
                 m_rollRateExcEnable = false;
             }
             else
@@ -2314,7 +2318,7 @@ void computeResponse_for_excitation(Controller::Request &request, Controller::Re
         	if (m_thrustExcEnable || m_rollRateExcEnable || m_yawRateExcEnable)
             {
                 // Inform the user
-                ROS_INFO("[DEEPC CONTROLLER] Pitch rate excitation signal ended. State stays at: excitation");
+                ROS_INFO("[DEEPC CONTROLLER] Pitch rate excitation signal ended. State stays at: Excitation LQR");
                 m_pitchRateExcEnable = false;
             }
             else
@@ -2343,7 +2347,7 @@ void computeResponse_for_excitation(Controller::Request &request, Controller::Re
         	if (m_thrustExcEnable || m_rollRateExcEnable || m_pitchRateExcEnable)
             {
                 // Inform the user
-                ROS_INFO("[DEEPC CONTROLLER] Yaw rate excitation signal ended. State stays at: excitation");
+                ROS_INFO("[DEEPC CONTROLLER] Yaw rate excitation signal ended. State stays at: Excitation LQR");
                 m_yawRateExcEnable = false;
             }
             else
@@ -2426,12 +2430,29 @@ void computeResponse_for_Deepc(Controller::Request &request, Controller::Respons
 		// PERFORM "ONE-OFF" OPERATIONS HERE
 		for (int i = 0; i < 9; i++)
 			m_previous_stateErrorInertial[i] = 0.0;
-		Deepc_first_pass = true;
+		if (!m_write_data)
+			Deepc_first_pass = true;
 		m_Deepc_solving_first_opt = false;
 		m_Deepc_cycles_since_solve = 0;
 		m_dataIndex_Deepc = 0;
 		// Set the change flag back to false
 		m_current_state_changed = false;
+
+		// If just coming from excitation state, write data collected
+		if (m_write_data)
+		{
+			ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing input data to: " << m_outputFolder << "m_u_data.csv");
+            if (write_csv(m_outputFolder + "m_u_data.csv", m_u_data.transpose()))
+            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            else
+            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+
+            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing output data to: " << m_outputFolder << "m_y_data.csv");
+            if (write_csv(m_outputFolder + "m_y_data.csv", m_y_data.transpose()))
+            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            else
+            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+		}
 
 		// Publish the change
 		publishCurrentSetpointAndState();
@@ -2470,7 +2491,11 @@ void computeResponse_for_Deepc(Controller::Request &request, Controller::Respons
 		use_LQR = true;
 
 	if (solveDeepc)
+	{
 		m_Deepc_cycles_since_solve++;
+		if (m_Deepc_cycles_since_solve >= yaml_N)
+			use_LQR = true;
+	}
 	else if (!Deepc_first_pass)
 	{
 		ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc solving optimization took " << m_Deepc_cycles_since_solve + 1 << " cycles");
@@ -2606,6 +2631,273 @@ void computeResponse_for_Deepc(Controller::Request &request, Controller::Respons
 
 	if (Deepc_first_pass)
 			m_Deepc_solving_first_opt = true;
+}
+
+void computeResponse_for_excitation_Deepc(Controller::Request &request, Controller::Response &response)
+{
+    // Check if the state "just recently" changed
+    if (m_current_state_changed)
+    {
+        // PERFORM "ONE-OFF" OPERATIONS HERE
+        for (int i = 0; i < 9; i++)
+			m_previous_stateErrorInertial[i] = 0.0;
+		m_time_in_seconds = 0.0;
+        m_thrustExcIndex = 0;
+        m_rollRateExcIndex = 0;
+        m_pitchRateExcIndex = 0;
+        m_yawRateExcIndex = 0;
+        m_Deepc_cycles_since_solve = 0;
+        m_dataIndex = 0;
+        // Set the change flag back to false
+        m_current_state_changed = false;
+        // Publish the change
+        publishCurrentSetpointAndState();
+        // Inform the user
+        ROS_INFO_STREAM("[DEEPC CONTROLLER] State \"Excitation Deepc\" started");
+    }
+
+    // Check if Deepc is not setup and exit Deepc control mode
+	// Deepc control is not allowed to start unless setup, but on exceptions setup success flag is reset
+	// Deepc must be (re-)setup in this case to allow restart
+	s_Deepc_mutex.lock();
+	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1460");
+	bool setupDeepc_success = s_setupDeepc_success;
+	bool solveDeepc = s_solveDeepc;
+	m_u_f = s_u_f;
+	s_Deepc_mutex.unlock();
+	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1460");
+
+	bool use_LQR = false;
+	control_output output;
+
+	if (!setupDeepc_success)
+	{
+		// Inform the user
+        ROS_INFO("[DEEPC CONTROLLER] Deepc control error. Deepc must be (re-)setup. Switch to state: LQR");
+        // Update the state accordingly
+        m_current_state = DEEPC_CONTROLLER_STATE_LQR;
+        m_current_state_changed = true;
+        use_LQR = true;
+	}
+
+	if (solveDeepc)
+		m_Deepc_cycles_since_solve++;
+	else
+	{
+		ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc solving optimization took " << m_Deepc_cycles_since_solve + 1 << " cycles");
+		m_Deepc_cycles_since_solve = 0;
+	}
+
+	if (use_LQR)
+	{
+		m_setpoint_for_controller[0] = m_setpoint[0];
+		m_setpoint_for_controller[1] = m_setpoint[1];
+		m_setpoint_for_controller[2] = m_setpoint[2];
+		m_setpoint_for_controller[3] = m_setpoint[3];
+		
+		// Call the LQR control function
+		calculateControlOutput_viaLQR(request, output);
+	}
+	else
+	{
+		output.thrust = m_u_f(m_Deepc_cycles_since_solve * m_num_inputs);
+		output.rollRate = m_u_f(m_Deepc_cycles_since_solve * m_num_inputs + 1);
+		output.pitchRate = m_u_f(m_Deepc_cycles_since_solve * m_num_inputs + 2);
+		if (yaml_Deepc_yaw_control)
+			output.yawRate = m_u_f(m_Deepc_cycles_since_solve * m_num_inputs + 3);
+		else
+		{
+			float yawError = request.ownCrazyflie.yaw - m_setpoint[3];
+			while(yawError > PI) {yawError -= 2 * PI;}
+			while(yawError < -PI) {yawError += 2 * PI;}
+			output.yawRate = -yaml_gainMatrixYawRate[8] * yawError;
+		}
+		
+	}
+
+    // Output excitation
+    if (m_thrustExcEnable && m_time_in_seconds > yaml_exc_start_time - m_control_deltaT)
+    {
+        //output.thrust += m_thrustExcAmp_in_newtons * sin(2 * PI * yaml_thrustExcFreq * m_thrustExcTime_in_seconds);
+        //m_thrustExcTime_in_seconds += m_control_deltaT;
+        if (m_thrustExcIndex < m_thrustExcSignal.size())
+        {
+        	output.thrust += m_thrustExcAmp_in_newtons * m_thrustExcSignal(m_thrustExcIndex);
+        	m_thrustExcIndex++;
+        }
+        else
+        {
+        	if (m_rollRateExcEnable || m_pitchRateExcEnable || m_yawRateExcEnable)
+            {
+                // Inform the user
+                ROS_INFO("[DEEPC CONTROLLER] Thrust excitation signal ended. State stays at: Excitation Deepc");
+                m_thrustExcEnable = false;
+            }
+            else
+            {
+                // Inform the user
+                ROS_INFO("[DEEPC CONTROLLER] Thrust excitation signal ended. Switch to state: Deepc");
+                // Update the state accordingly
+                m_current_state = DEEPC_CONTROLLER_STATE_DEEPC;
+                m_current_state_changed = true;
+                m_write_data = true;
+            }
+        }
+    }
+
+    if (m_rollRateExcEnable && m_time_in_seconds > yaml_exc_start_time - m_control_deltaT)
+    {
+        //output.rollRate += m_rollRateExcAmp_in_rad * sin(2 * PI * yaml_rollRateExcFreq * m_rollRateExcTime_in_seconds);
+        //m_rollRateExcTime_in_seconds += m_control_deltaT;
+        if (m_rollRateExcIndex < m_rollRateExcSignal.size())
+        {
+        	output.rollRate += m_rollRateExcAmp_in_rad * m_rollRateExcSignal(m_rollRateExcIndex);
+        	m_rollRateExcIndex++;
+        }
+        else
+        {
+        	if (m_thrustExcEnable || m_pitchRateExcEnable || m_yawRateExcEnable)
+            {
+                // Inform the user
+                ROS_INFO("[DEEPC CONTROLLER] Roll rate excitation signal ended. State stays at: Excitation Deepc");
+                m_rollRateExcEnable = false;
+            }
+            else
+            {
+                // Inform the user
+                ROS_INFO("[DEEPC CONTROLLER] Roll rate excitation signal ended. Switch to state: Deepc");
+                // Update the state accordingly
+                m_current_state = DEEPC_CONTROLLER_STATE_DEEPC;
+                m_current_state_changed = true;
+                m_write_data = true;
+            }
+        }
+    }
+
+    if (m_pitchRateExcEnable && m_time_in_seconds > yaml_exc_start_time - m_control_deltaT)
+    {
+        //output.pitchRate += m_pitchRateExcAmp_in_rad * sin(2 * PI * yaml_pitchRateExcFreq * m_pitchRateExcTime_in_seconds);
+        //m_pitchRateExcTime_in_seconds += m_control_deltaT;
+        if (m_pitchRateExcIndex < m_pitchRateExcSignal.size())
+        {
+        	output.pitchRate += m_pitchRateExcAmp_in_rad * m_pitchRateExcSignal(m_pitchRateExcIndex);
+        	m_pitchRateExcIndex++;
+        }
+        else
+        {
+        	if (m_thrustExcEnable || m_rollRateExcEnable || m_yawRateExcEnable)
+            {
+                // Inform the user
+                ROS_INFO("[DEEPC CONTROLLER] Pitch rate excitation signal ended. State stays at: Excitation Deepc");
+                m_pitchRateExcEnable = false;
+            }
+            else
+            {
+                // Inform the user
+                ROS_INFO("[DEEPC CONTROLLER] Pitch rate excitation signal ended. Switch to state: Deepc");
+                // Update the state accordingly
+                m_current_state = DEEPC_CONTROLLER_STATE_DEEPC;
+                m_current_state_changed = true;
+                m_write_data = true;
+            }
+        }
+    }
+
+    if (m_yawRateExcEnable  && m_time_in_seconds > yaml_exc_start_time - m_control_deltaT)
+    {
+        //output.yawRate += m_yawRateExcAmp_in_rad * sin(2 * PI * yaml_yawRateExcFreq * m_yawRateExcTime_in_seconds);
+        //m_yawRateExcTime_in_seconds += m_control_deltaT;
+        if (m_yawRateExcIndex < m_yawRateExcSignal.size())
+        {
+        	output.yawRate += m_yawRateExcAmp_in_rad * m_yawRateExcSignal(m_yawRateExcIndex);
+        	m_yawRateExcIndex++;
+        }
+        else
+        {
+        	if (m_thrustExcEnable || m_rollRateExcEnable || m_pitchRateExcEnable)
+            {
+                // Inform the user
+                ROS_INFO("[DEEPC CONTROLLER] Yaw rate excitation signal ended. State stays at: Excitation Deepc");
+                m_yawRateExcEnable = false;
+            }
+            else
+            {
+                // Inform the user
+                ROS_INFO("[DEEPC CONTROLLER] Yaw rate excitation signal ended. Switch to state: Deepc");
+                // Update the state accordingly
+                m_current_state = DEEPC_CONTROLLER_STATE_DEEPC;
+                m_current_state_changed = true;
+                m_write_data = true;
+            }
+        }
+    }
+
+    // PREPARE AND RETURN THE VARIABLE "response"
+    // Specify that using a "rate type" of command
+    response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
+
+    // Put the computed body rate commands into the "response" variable
+    response.controlOutput.roll = output.rollRate;
+    response.controlOutput.pitch = output.pitchRate;
+    response.controlOutput.yaw = output.yawRate;
+
+    // Put the thrust commands into the "response" variable.
+    // . NOTE: The thrust is commanded per motor, so divide by 4.0
+    // > NOTE: The function "computeMotorPolyBackward" converts the input argument
+    //         from Newtons to the 16-bit command expected by the Crazyflie.
+    float thrust_request_per_motor = output.thrust / 4.0;
+    response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrust_request_per_motor);
+    response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrust_request_per_motor);
+    response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrust_request_per_motor);
+    response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrust_request_per_motor);
+
+    // Capture data
+    if (m_dataIndex < m_u_data.rows())
+    {
+    	// Input data
+    	m_u_data(m_dataIndex,0) = output.thrust;
+    	m_u_data(m_dataIndex,1) = output.rollRate;
+    	m_u_data(m_dataIndex,2) = output.pitchRate;
+    	m_u_data(m_dataIndex,3) = output.yawRate;
+
+    	// Output data
+    	m_y_data(m_dataIndex,0) = request.ownCrazyflie.x;
+    	m_y_data(m_dataIndex,1) = request.ownCrazyflie.y;
+    	m_y_data(m_dataIndex,2) = request.ownCrazyflie.z;
+    	m_y_data(m_dataIndex,3) = request.ownCrazyflie.roll;
+    	m_y_data(m_dataIndex,4) = request.ownCrazyflie.pitch;
+    	m_y_data(m_dataIndex,5) = request.ownCrazyflie.yaw;
+    }
+    m_dataIndex++;
+
+	// Increment time
+    m_time_in_seconds += m_control_deltaT;
+
+    // DEBUG INFO
+    if (yaml_shouldDisplayDebugInfo)
+    {
+        ROS_INFO_STREAM("output.thrust = " << output.thrust);
+        ROS_INFO_STREAM("controlOutput.roll = " << response.controlOutput.roll);
+        ROS_INFO_STREAM("controlOutput.pitch = " << response.controlOutput.pitch);
+        ROS_INFO_STREAM("controlOutput.yaw = " << response.controlOutput.yaw);
+        ROS_INFO_STREAM("controlOutput.motorCmd1 = " << response.controlOutput.motorCmd1);
+        ROS_INFO_STREAM("controlOutput.motorCmd2 = " << response.controlOutput.motorCmd2);
+        ROS_INFO_STREAM("controlOutput.motorCmd3 = " << response.controlOutput.motorCmd3);
+        ROS_INFO_STREAM("controlOutput.motorCmd4 = " << response.controlOutput.motorCmd4);
+    }
+
+    // Update uini yini BEFORE CALLING OPTIMIZATION
+	update_uini_yini(request, output);
+
+	if (!solveDeepc)
+	{
+		// Set flag to solve Deepc optimization
+		s_Deepc_mutex.lock();
+		//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1520");
+		s_solveDeepc = true;
+		s_Deepc_mutex.unlock();
+		//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1520");
+	}
 }
 
 void computeResponse_for_landing_move_down(Controller::Request &request, Controller::Response &response)
@@ -3159,9 +3451,9 @@ void processCustomButton1(float float_data, int int_data, bool* bool_data)
     {
         case DEEPC_CONTROLLER_STATE_LQR:
             // Inform the user
-            ROS_INFO("[DEEPC CONTROLLER] Received request to start excitation. Switch to state: excitation");
+            ROS_INFO("[DEEPC CONTROLLER] Received request to start excitation while in LQR. Switch to state: Excitation LQR");
             // Update the state accordingly
-            m_current_state = DEEPC_CONTROLLER_STATE_EXCITATION;
+            m_current_state = DEEPC_CONTROLLER_STATE_EXCITATION_LQR;
             m_current_state_changed = true;
             if (!int_data)
             {
@@ -3198,9 +3490,9 @@ void processCustomButton1(float float_data, int int_data, bool* bool_data)
             }
             break;
 
-        case DEEPC_CONTROLLER_STATE_EXCITATION:
+        case DEEPC_CONTROLLER_STATE_EXCITATION_LQR:
             // Inform the user
-            ROS_INFO("[DEEPC CONTROLLER] Received request to stop excitation. Switch to state: LQR");
+            ROS_INFO("[DEEPC CONTROLLER] Received request to stop excitation while in LQR. Switch to state: LQR");
             // Update the state accordingly
             m_current_state = DEEPC_CONTROLLER_STATE_LQR;
             m_current_state_changed = true;
@@ -3208,6 +3500,55 @@ void processCustomButton1(float float_data, int int_data, bool* bool_data)
             break;
 
         case DEEPC_CONTROLLER_STATE_DEEPC:
+            // Inform the user
+            ROS_INFO("[DEEPC CONTROLLER] Received request to start excitation while in Deepc. Switch to state: Excitation Deepc");
+            // Update the state accordingly
+            m_current_state = DEEPC_CONTROLLER_STATE_EXCITATION_DEEPC;
+            m_current_state_changed = true;
+            if (!int_data)
+            {
+            	m_thrustExcEnable = true;
+            	m_rollRateExcEnable = true;
+            	m_pitchRateExcEnable = true;
+            	m_yawRateExcEnable = true;
+            	// Inform the user
+            	ROS_INFO("[DEEPC CONTROLLER] Exciting all");
+            }
+            if (bool_data[0])
+            {
+            	m_thrustExcEnable = true;
+            	// Inform the user
+            	ROS_INFO("[DEEPC CONTROLLER] Exciting thrust");
+            }
+            if (bool_data[1])
+            {
+            	m_rollRateExcEnable = true;
+            	// Inform the user
+            	ROS_INFO("[DEEPC CONTROLLER] Exciting roll rate");
+            }
+            if (bool_data[2])
+            {
+            	m_pitchRateExcEnable = true;
+            	// Inform the user
+            	ROS_INFO("[DEEPC CONTROLLER] Exciting pitch rate");
+            }
+            if (bool_data[3])
+            {
+            	m_yawRateExcEnable = true;
+            	// Inform the user
+            	ROS_INFO("[DEEPC CONTROLLER] Exciting yaw rate");
+            }
+            break;
+
+        case DEEPC_CONTROLLER_STATE_EXCITATION_DEEPC:
+            // Inform the user
+            ROS_INFO("[DEEPC CONTROLLER] Received request to stop excitation while in Deepc. Switch to state: Deepc");
+            // Update the state accordingly
+            m_current_state = DEEPC_CONTROLLER_STATE_DEEPC;
+            m_current_state_changed = true;
+            m_write_data = true;
+            break;
+
         case DEEPC_CONTROLLER_STATE_LANDING_MOVE_DOWN:
         case DEEPC_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
         case DEEPC_CONTROLLER_STATE_STANDBY:
@@ -3267,7 +3608,8 @@ void processCustomButton3(float float_data, int int_data, bool* bool_data)
             m_current_state_changed = true;
             break;
 
-        case DEEPC_CONTROLLER_STATE_EXCITATION:
+        case DEEPC_CONTROLLER_STATE_EXCITATION_LQR:
+        case DEEPC_CONTROLLER_STATE_EXCITATION_DEEPC:
         case DEEPC_CONTROLLER_STATE_LANDING_MOVE_DOWN:
         case DEEPC_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
         case DEEPC_CONTROLLER_STATE_STANDBY:
@@ -3504,13 +3846,15 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	// Deepc flag to control yaw
 	yaml_Deepc_yaw_control = getParameterBool(nodeHandle_for_paramaters, "Deepc_yaw_control");
 
+	// Deepc prediction horizon
+	yaml_N = getParameterInt(nodeHandle_for_paramaters, "N");
+
 	// PARAMETERS ACCESSED BY DEEPC THREAD
 	s_Deepc_mutex.lock();
 	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 2352");
 	
 	// Deepc parameters
 	s_yaml_Tini = getParameterInt(nodeHandle_for_paramaters, "Tini");
-	s_yaml_N = getParameterInt(nodeHandle_for_paramaters, "N");
 	getParameterFloatVector(nodeHandle_for_paramaters, "Q", s_yaml_Q, 9);
 	getParameterFloatVector(nodeHandle_for_paramaters, "R", s_yaml_R, 4);
 	getParameterFloatVector(nodeHandle_for_paramaters, "P", s_yaml_P, 9);
@@ -3623,6 +3967,9 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 
 	// Share Deepc flag to control yaw with Deepc thread
 	s_Deepc_yaw_control = yaml_Deepc_yaw_control;
+
+	// Share Deepc prediction horizon
+	s_yaml_N = yaml_N;
 
 	// > Set flag for Deepc thread to update parameters
 	s_params_changed = true;

@@ -311,12 +311,16 @@ void DeepcControllerTab::setpointChangedCallback(const dfall_pkg::SetpointWithHe
             ui->label_current_state->setText("LQR");
             break;
 
-        case DEEPC_CONTROLLER_STATE_EXCITATION:
-            ui->label_current_state->setText("Excitation");
+        case DEEPC_CONTROLLER_STATE_EXCITATION_LQR:
+            ui->label_current_state->setText("Excitation LQR");
             break;
 
         case DEEPC_CONTROLLER_STATE_DEEPC:
             ui->label_current_state->setText("Deepc");
+            break;
+
+        case DEEPC_CONTROLLER_STATE_EXCITATION_DEEPC:
+            ui->label_current_state->setText("Excitation Deepc");
             break;
 
         case DEEPC_CONTROLLER_STATE_LANDING_MOVE_DOWN:

@@ -261,10 +261,11 @@ float yaml_exc_start_time = 0.0;
 bool yaml_Deepc_measure_roll_pitch = true;
 // Flag that activates yaw control through Deepc
 bool yaml_Deepc_yaw_control = true;
+// Prediction horizon in discrete time steps
+int yaml_N = 25;
+int s_yaml_N = yaml_N;
 // Tini in discrete time steps
 int s_yaml_Tini = 3;
-// Prediction horizon in discrete time steps
-int s_yaml_N = 25;
 // Output cost matrix diagonal entries (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
 vector<float> s_yaml_Q = {40.0, 40.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0};
 // Input cost matrix diagonal entries (thurst, rollRate, pitchRate, yawRate)
@@ -587,8 +588,9 @@ void Deepc_gs_inversion_thread_main();
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response);
 void computeResponse_for_standby(Controller::Request &request, Controller::Response &response);
 void computeResponse_for_LQR(Controller::Request &request, Controller::Response &response);
-void computeResponse_for_excitation(Controller::Request &request, Controller::Response &response);
+void computeResponse_for_excitation_LQR(Controller::Request &request, Controller::Response &response);
 void computeResponse_for_Deepc(Controller::Request &request, Controller::Response &response);
+void computeResponse_for_excitation_Deepc(Controller::Request &request, Controller::Response &response);
 void computeResponse_for_landing_move_down(Controller::Request &request, Controller::Response &response);
 void computeResponse_for_landing_spin_motors(Controller::Request &request, Controller::Response &response);
 void calculateControlOutput_viaLQR(Controller::Request &request, control_output &output);
