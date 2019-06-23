@@ -395,6 +395,13 @@ bool s_params_changed = false;
 bool s_setpoint_changed = false;
 bool s_setupDeepc = false;
 bool s_solveDeepc = false;
+// Variables used for changing reference
+bool s_changing_ref_enable = m_changing_ref_enable;
+float s_figure_8_amplitude = yaml_figure_8_amplitude;
+float s_figure_8_frequency_rad = m_figure_8_frequency_rad;
+float s_z_sine_amplitude = yaml_z_sine_amplitude;
+float s_z_sine_frequency_rad = m_z_sine_frequency_rad;
+float s_control_deltaT = m_control_deltaT;
 
 // Global variables used by Deepc thread only
 // Declared as global for inter-function communication and/or speed
@@ -486,6 +493,15 @@ c_float* d_osqp_u_new;
 // Repeat variables for Deepc gs matrix inversion thread variables
 bool d_get_gs = false;
 bool d_gs_inversion_complete = false;
+// Variables used for changing reference
+bool d_changing_ref_enable = s_changing_ref_enable;
+float d_figure_8_amplitude = s_figure_8_amplitude;
+float d_figure_8_frequency_rad = s_figure_8_frequency_rad;
+float d_z_sine_amplitude = s_z_sine_amplitude;
+float d_z_sine_frequency_rad = s_z_sine_frequency_rad;
+float d_figure_8_scale;
+float d_time_in_seconds;
+float d_control_deltaT = s_control_deltaT;
 
 // Variables shared between Deepc thread and Deepc gs matrix inversion thread
 MatrixXf ds_A_gs;
@@ -545,7 +561,9 @@ ros::Publisher m_manoeuvreCompletePublisher;
 void Deepc_thread_main();
 void change_Deepc_params();
 void change_Deepc_setpoint_gurobi();
+void change_Deepc_setpoint_gurobi_changing_ref();
 void change_Deepc_setpoint_osqp();
+void change_Deepc_setpoint_osqp_changing_ref();
 void setup_Deepc_gurobi();
 void setup_Deepc_osqp();
 void solve_Deepc_gurobi();
@@ -572,6 +590,8 @@ MatrixXf get_quad_cost_matrix();
 void get_lin_cost_vectors();
 // UPDATE OPTIMIZATION LINEAR COST VECTORS
 void update_lin_cost_vectors();
+// UPDATE OPTIMIZATION LINEAR COST VECTORS WHEN REFERENCE IS CHANGING
+void update_lin_cost_vectors_changing_ref();
 // GET STATIC EQUALITY CONSTRAINTS MATRIX
 MatrixXf get_static_eq_constr_matrix();
 // GET STATIC EQUALITY CONSTRAINTS VECTOR

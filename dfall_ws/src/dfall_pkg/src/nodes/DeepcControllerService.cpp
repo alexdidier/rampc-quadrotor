@@ -66,6 +66,7 @@ void Deepc_thread_main()
 	bool setpoint_changed;
 	bool setupDeepc;
 	bool solveDeepc;
+	bool changing_ref_enable_prev = false;
 
 	// Create thread for gs matrix inversion
 	boost::thread Deepc_gs_inversion_thread(Deepc_gs_inversion_thread_main);
@@ -78,8 +79,20 @@ void Deepc_thread_main()
         setpoint_changed = s_setpoint_changed;
         setupDeepc = s_setupDeepc;
         solveDeepc = s_solveDeepc;
+        d_changing_ref_enable = s_changing_ref_enable;
         s_Deepc_mutex.unlock();
         //ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 72");
+
+        // Detect changing_ref_enable rising edge to reset time
+        if (!changing_ref_enable_prev && d_changing_ref_enable)
+        	d_time_in_seconds = 0.0;
+        
+        // Detect changing_ref_enable falling edge to reset setpoint to before it was enabled
+        if (changing_ref_enable_prev && !d_changing_ref_enable)
+        	setpoint_changed = true;
+
+        changing_ref_enable_prev = d_changing_ref_enable;
+        
 
         if (params_changed)
         {
@@ -235,6 +248,14 @@ void change_Deepc_params()
 	d_opt_steady_state = s_yaml_opt_steady_state;
 	d_grb_LogToFile = s_yaml_grb_LogToFile;
 	d_grb_presolve_at_setup = s_yaml_grb_presolve_at_setup;
+
+	// Variables used for changing reference
+	d_changing_ref_enable = s_changing_ref_enable;
+	d_figure_8_amplitude = s_figure_8_amplitude;
+	d_figure_8_frequency_rad = s_figure_8_frequency_rad;
+	d_z_sine_amplitude = s_z_sine_amplitude;
+	d_z_sine_frequency_rad = s_z_sine_frequency_rad;
+	d_control_deltaT = s_control_deltaT;
 	s_Deepc_mutex.unlock();
 	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 133");
 
@@ -329,6 +350,68 @@ void change_Deepc_setpoint_gurobi()
   	}
 }
 
+void change_Deepc_setpoint_gurobi_changing_ref()
+{
+	try
+	{
+		// Update linear cost vectors
+		update_lin_cost_vectors_changing_ref();
+
+		// Update linear cost vector, depending on optimization formulation
+		d_grb_lin_obj_r = 0;
+		if (d_opt_sparse)
+		{
+			// Update linear objective terms
+		    for (d_i = 0; d_i < d_Nyf + d_num_outputs; d_i++)
+		    	d_grb_lin_obj_r += d_lin_cost_vec_r(d_i) * d_grb_vars[d_yf_start_i + d_i];
+
+		    // Update equality constraint RHS if optimizing over gs
+			if (d_opt_steady_state)
+				for (d_i = 0; d_i < d_Nyini + d_Nyf + d_num_outputs; d_i++)
+					d_grb_dyn_constrs[d_r_gs_start_i + d_i].set(GRB_DoubleAttr_RHS, d_r_gs(d_i));
+		}
+		else
+		{
+			// Update linear objective terms
+	    	for (d_i = 0; d_i < d_Ng; d_i++)
+		    {
+		    	d_grb_lin_obj_r += d_lin_cost_vec_r(d_i) * d_grb_vars[d_i];
+		    	d_grb_lin_obj_gs += d_lin_cost_vec_gs(d_i) * d_grb_vars[d_i];
+		    }
+		}
+
+	    // Update objective
+	    // It was observed that objective of pre-solved model is same as original model
+	    if (d_opt_sparse || !d_grb_presolve_at_setup)
+	    	d_grb_model.setObjective(d_grb_quad_obj + d_grb_lin_obj_us + d_grb_lin_obj_r + d_grb_lin_obj_gs);
+	    else
+	    	d_grb_model_presolved->setObjective(d_grb_quad_obj + d_grb_lin_obj_us + d_grb_lin_obj_r + d_grb_lin_obj_gs);
+	}
+
+	catch(GRBException e)
+    {
+    	clear_setupDeepc_success_flag();
+
+	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc setpoint update exception with Gurobi error code = " << e.getErrorCode());
+	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Error message: " << e.getMessage());
+	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+  	}
+  	catch(exception& e)
+    {
+    	clear_setupDeepc_success_flag();
+
+	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc setpoint update exception with Gurobi with standard error message: " << e.what());
+	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+  	}
+  	catch(...)
+  	{
+  		clear_setupDeepc_success_flag();
+
+  		ROS_INFO("[DEEPC CONTROLLER] Deepc setpoint update exception with Gurobi");
+  		ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+  	}
+}
+
 void change_Deepc_setpoint_osqp()
 {
 	try
@@ -379,6 +462,52 @@ void change_Deepc_setpoint_osqp()
 		    // Inform the user
 		    ROS_INFO("[DEEPC CONTROLLER] Deepc setpoint update successful with OSQP");
 		}
+	}
+
+  	catch(exception& e)
+    {
+    	clear_setupDeepc_success_flag();
+
+	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc setpoint update exception with OSQP with standard error message: " << e.what());
+	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+  	}
+  	catch(...)
+  	{
+  		clear_setupDeepc_success_flag();
+
+  		ROS_INFO("[DEEPC CONTROLLER] Deepc setpoint update exception with OSQP");
+  		ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+  	}
+}
+
+void change_Deepc_setpoint_osqp_changing_ref()
+{
+	try
+	{
+		// Update linear cost vector
+		update_lin_cost_vectors_changing_ref();
+
+		// Update linear cost vector, depending on optimization formulation
+		if (d_opt_sparse)
+		{
+			d_osqp_q.middleRows(d_yf_start_i, d_Nyf + d_num_outputs) = d_lin_cost_vec_r;
+
+			// Update equality constraint vectors if optimizing over gs
+			if (d_opt_steady_state)
+				for (d_i = 0; d_i < d_Nyini + d_Nyf + d_num_outputs; d_i++)
+				{
+					d_osqp_l_new[d_r_gs_start_i + d_i] = d_r_gs(d_i);
+					d_osqp_u_new[d_r_gs_start_i + d_i] = d_osqp_l_new[d_r_gs_start_i + d_i];
+				}
+		}
+		else
+			d_osqp_q.topRows(d_Ng) = d_lin_cost_vec_us + d_lin_cost_vec_r + d_lin_cost_vec_gs;
+
+		// Convert Eigen vector to c_float array
+		Matrix<c_float, Dynamic, Dynamic>::Map(d_osqp_q_new, d_osqp_q.rows(), d_osqp_q.cols()) = d_osqp_q.cast<c_float>();
+
+		// Update OSQP linear cost
+		osqp_update_lin_cost(d_osqp_work, d_osqp_q_new);
 	}
 
   	catch(exception& e)
@@ -827,6 +956,10 @@ void solve_Deepc_gurobi()
 
 	try
 	{
+		// Update reference if reference is changing
+		if (d_changing_ref_enable)
+			change_Deepc_setpoint_gurobi_changing_ref();
+
 		// Update equality constraints RHS
 		for (d_i = 0; d_i < d_Nuini; d_i++)
 			d_grb_dyn_constrs[d_i].set(GRB_DoubleAttr_RHS, d_uini(d_i));
@@ -928,6 +1061,10 @@ void solve_Deepc_osqp()
 
 	try
 	{
+		// Update reference if reference is changing
+		if (d_changing_ref_enable)
+			change_Deepc_setpoint_osqp_changing_ref();
+
 		// Update equality constraint vectors
 		for (d_i = 0; d_i < d_Nuini; d_i++)
 		{
@@ -1328,6 +1465,9 @@ void get_lin_cost_vectors()
 
 		d_lin_cost_vec_r -= d_Y_f.bottomRows(d_num_outputs).transpose() * d_P * d_r;
 	}
+	if (d_solver == DEEPC_CONTROLLER_SOLVER_GUROBI)
+		d_lin_cost_vec_r *= 2.0;
+
 	d_r_gs = d_r.replicate(d_Tini + d_N + 1, 1);
 
 	// Steady state input us and trajectory mapper gs
@@ -1371,7 +1511,6 @@ void get_lin_cost_vectors()
 	{
 		d_lin_cost_vec_gs *= 2.0;
 		d_lin_cost_vec_us *= 2.0;
-		d_lin_cost_vec_r *= 2.0;
 	}
 }
 
@@ -1407,6 +1546,9 @@ void update_lin_cost_vectors()
 
 		d_lin_cost_vec_r -= d_Y_f.bottomRows(d_num_outputs).transpose() * d_P * d_r;
 	}
+	if (d_solver == DEEPC_CONTROLLER_SOLVER_GUROBI)
+		d_lin_cost_vec_r *= 2.0;
+
 	d_r_gs = d_r.replicate(d_Tini + d_N + 1, 1);
 
 	// If optimizing over steady state gs & us, no need to perform gs inversion logic
@@ -1450,11 +1592,47 @@ void update_lin_cost_vectors()
 	    d_lin_cost_vec_gs = -d_lambda2_g * d_gs;
 
 		if (d_solver == DEEPC_CONTROLLER_SOLVER_GUROBI)
-		{
 			d_lin_cost_vec_gs *= 2.0;
-			d_lin_cost_vec_r *= 2.0;
-		}
     }
+}
+
+// Update optimization linear cost vectors when reference is changing
+// Used during runtime to update objective on reference r only steady-state trajectory mapper is not updated since it takes too long for inversion to do in real-time
+// us is hovering steady state input and is constant so does not get updated
+// Gurobi refers to this as 'c'. It is multiplied by 2 since Gurobi minimizes (x^T * Q * x + c^t * x)
+// OSQP refers to this as 'q'. It is not multiplied by 2 since OSQP minimizes (1/2 * x^T * P * x + q^t * x)
+void update_lin_cost_vectors_changing_ref()
+{
+    // Reference
+	d_r.topRows(3) = d_setpoint.topRows(3);
+	if (d_Deepc_yaw_control)
+		d_r.bottomRows(1) = d_setpoint.bottomRows(1);
+
+	d_figure_8_scale = 2 / (3 - cos(2 * d_figure_8_frequency_rad * (d_time_in_seconds - PI/2))) * d_figure_8_amplitude;
+	d_r(0) += d_figure_8_scale * cos(d_figure_8_frequency_rad * (d_time_in_seconds - PI/2));
+	d_r(1) += d_figure_8_scale * sin(2 * d_figure_8_frequency_rad * (d_time_in_seconds - PI/2)) / 2;
+	d_r(2) += d_z_sine_amplitude * sin(d_z_sine_frequency_rad * d_time_in_seconds);
+
+	d_time_in_seconds += d_control_deltaT;
+
+	if (d_opt_sparse)
+	{
+		d_lin_cost_vec_r.topRows(d_Nyf) = (-d_Q * d_r).replicate(d_N, 1);
+		d_lin_cost_vec_r.bottomRows(d_num_outputs) = -d_P * d_r;
+	}
+	else
+	{
+		d_lin_cost_vec_r = MatrixXf::Zero(d_Ng, 1);
+
+		for (int i = 0; i < d_N; i++)
+			d_lin_cost_vec_r -= d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_Q * d_r;
+
+		d_lin_cost_vec_r -= d_Y_f.bottomRows(d_num_outputs).transpose() * d_P * d_r;
+	}
+	if (d_solver == DEEPC_CONTROLLER_SOLVER_GUROBI)
+		d_lin_cost_vec_r *= 2.0;
+
+	d_r_gs = d_r.replicate(d_Tini + d_N + 1, 1);
 }
 
 // Get static equality constraints matrix
@@ -2122,9 +2300,9 @@ void computeResponse_for_LQR(Controller::Request &request, Controller::Response 
 	// Add 'Figure 8' (found here: "https://gamedev.stackexchange.com/questions/43691/how-can-i-move-an-object-in-an-infinity-or-figure-8-trajectory", as "Lemniscate of Bernoulli")
 	if (m_changing_ref_enable)
 	{
-		float scale = 2 / (3 - cos(2 * m_figure_8_frequency_rad * (m_time_in_seconds - PI/2))) * yaml_figure_8_amplitude;
-		m_setpoint_for_controller[0] += scale * cos(m_figure_8_frequency_rad * (m_time_in_seconds - PI/2));
-		m_setpoint_for_controller[1] += scale * sin(2 * m_figure_8_frequency_rad * (m_time_in_seconds - PI/2)) / 2;
+		float figure_8_scale = 2 / (3 - cos(2 * m_figure_8_frequency_rad * (m_time_in_seconds - PI/2))) * yaml_figure_8_amplitude;
+		m_setpoint_for_controller[0] += figure_8_scale * cos(m_figure_8_frequency_rad * (m_time_in_seconds - PI/2));
+		m_setpoint_for_controller[1] += figure_8_scale * sin(2 * m_figure_8_frequency_rad * (m_time_in_seconds - PI/2)) / 2;
 		m_setpoint_for_controller[2] += yaml_z_sine_amplitude * sin(m_z_sine_frequency_rad * m_time_in_seconds);
 
 		m_time_in_seconds += m_control_deltaT;
@@ -2747,9 +2925,9 @@ void computeResponse_for_excitation_Deepc(Controller::Request &request, Controll
             else
             {
                 // Inform the user
-                ROS_INFO("[DEEPC CONTROLLER] Thrust excitation signal ended. Switch to state: Deepc");
+                ROS_INFO("[DEEPC CONTROLLER] Thrust excitation signal ended. Switch to state: LQR");
                 // Update the state accordingly
-                m_current_state = DEEPC_CONTROLLER_STATE_DEEPC;
+                m_current_state = DEEPC_CONTROLLER_STATE_LQR;
                 m_current_state_changed = true;
                 m_write_data = true;
             }
@@ -2776,9 +2954,9 @@ void computeResponse_for_excitation_Deepc(Controller::Request &request, Controll
             else
             {
                 // Inform the user
-                ROS_INFO("[DEEPC CONTROLLER] Roll rate excitation signal ended. Switch to state: Deepc");
+                ROS_INFO("[DEEPC CONTROLLER] Roll rate excitation signal ended. Switch to state: LQR");
                 // Update the state accordingly
-                m_current_state = DEEPC_CONTROLLER_STATE_DEEPC;
+                m_current_state = DEEPC_CONTROLLER_STATE_LQR;
                 m_current_state_changed = true;
                 m_write_data = true;
             }
@@ -2805,9 +2983,9 @@ void computeResponse_for_excitation_Deepc(Controller::Request &request, Controll
             else
             {
                 // Inform the user
-                ROS_INFO("[DEEPC CONTROLLER] Pitch rate excitation signal ended. Switch to state: Deepc");
+                ROS_INFO("[DEEPC CONTROLLER] Pitch rate excitation signal ended. Switch to state: LQR");
                 // Update the state accordingly
-                m_current_state = DEEPC_CONTROLLER_STATE_DEEPC;
+                m_current_state = DEEPC_CONTROLLER_STATE_LQR;
                 m_current_state_changed = true;
                 m_write_data = true;
             }
@@ -2834,9 +3012,9 @@ void computeResponse_for_excitation_Deepc(Controller::Request &request, Controll
             else
             {
                 // Inform the user
-                ROS_INFO("[DEEPC CONTROLLER] Yaw rate excitation signal ended. Switch to state: Deepc");
+                ROS_INFO("[DEEPC CONTROLLER] Yaw rate excitation signal ended. Switch to state: LQR");
                 // Update the state accordingly
-                m_current_state = DEEPC_CONTROLLER_STATE_DEEPC;
+                m_current_state = DEEPC_CONTROLLER_STATE_LQR;
                 m_current_state_changed = true;
                 m_write_data = true;
             }
@@ -3708,6 +3886,12 @@ void processCustomButton5(float float_data, int int_data, bool* bool_data)
 	{
 		m_changing_ref_enable = false;
 
+		s_Deepc_mutex.lock();
+		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 3876");
+		s_changing_ref_enable = m_changing_ref_enable;
+		s_Deepc_mutex.unlock();
+		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 3876");
+
 		return;
 	}
 
@@ -3715,15 +3899,21 @@ void processCustomButton5(float float_data, int int_data, bool* bool_data)
     switch (m_current_state)
     {
         case DEEPC_CONTROLLER_STATE_LQR:
+        case DEEPC_CONTROLLER_STATE_DEEPC:
             // Inform the user
-            ROS_INFO("[DEEPC CONTROLLER] Received request to follow changing reference while in LQR");
+            ROS_INFO("[DEEPC CONTROLLER] Received request to follow changing reference");
             // Reset time
             m_time_in_seconds = 0.0;
             // Set the flag
             m_changing_ref_enable = true;
+
+            s_Deepc_mutex.lock();
+			// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 3896");
+			s_changing_ref_enable = m_changing_ref_enable;
+			s_Deepc_mutex.unlock();
+			// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 3896");
             break;
 
-        case DEEPC_CONTROLLER_STATE_DEEPC:
         case DEEPC_CONTROLLER_STATE_EXCITATION_LQR:
         case DEEPC_CONTROLLER_STATE_EXCITATION_DEEPC:
         case DEEPC_CONTROLLER_STATE_LANDING_MOVE_DOWN:
@@ -4037,6 +4227,13 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 
 	// Share Deepc prediction horizon
 	s_yaml_N = yaml_N;
+
+	// Share changing reference parameters
+	s_figure_8_amplitude = yaml_figure_8_amplitude;
+	s_figure_8_frequency_rad = m_figure_8_frequency_rad;
+	s_z_sine_amplitude = yaml_z_sine_amplitude;
+	s_z_sine_frequency_rad = m_z_sine_frequency_rad;
+	s_control_deltaT = m_control_deltaT;
 
 	// > Set flag for Deepc thread to update parameters
 	s_params_changed = true;

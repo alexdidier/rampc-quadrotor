@@ -142,10 +142,10 @@ grb_presolve_at_setup : true
 # This implements a 'Figure 8' in x and y and a sine in z
 
 # Figure 8 amplitude, in m
-figure_8_amplitude : 0.5
+figure_8_amplitude : 1
 # Figure 8 frequency, in Hz
-figure_8_frequency : 0.1
+figure_8_frequency : 0.2
 # z sine amplitude, in m
-z_sine_amplitude : 0.2
+z_sine_amplitude : 0.3
 # z sine frequency, in Hz
 z_sine_frequency : 0.1
