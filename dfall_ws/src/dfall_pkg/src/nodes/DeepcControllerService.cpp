@@ -1202,7 +1202,7 @@ void update_uini_yini(Controller::Request &request, control_output &output)
 // Get u_data from file
 MatrixXf get_u_data()
 {
-	MatrixXf u_data_in = read_csv(d_dataFolder + "/output/m_u_data.csv");
+	MatrixXf u_data_in = read_csv(d_dataFolder + "/u_data.csv");
 	if (u_data_in.size() <= 0)
 	{
 		clear_setupDeepc_success_flag();
@@ -1224,7 +1224,7 @@ MatrixXf get_u_data()
 // Get y_data from file
 MatrixXf get_y_data()
 {
-	MatrixXf y_data_in = read_csv(d_dataFolder + "/output/m_y_data.csv");
+	MatrixXf y_data_in = read_csv(d_dataFolder + "/y_data.csv");
 	if (y_data_in.size() <= 0)
 	{	
 		clear_setupDeepc_success_flag();
@@ -2691,13 +2691,26 @@ void computeResponse_for_Deepc(Controller::Request &request, Controller::Respons
 		m_Deepc_cycles_since_solve = 0;
 	}
 
-	if (use_LQR)
+	// Set reference for LQR controller in case it is used
+	m_setpoint_for_controller[0] = m_setpoint[0];
+	m_setpoint_for_controller[1] = m_setpoint[1];
+	m_setpoint_for_controller[2] = m_setpoint[2];
+	m_setpoint_for_controller[3] = m_setpoint[3];
+	
+	// Add 'Figure 8' (found here: "https://gamedev.stackexchange.com/questions/43691/how-can-i-move-an-object-in-an-infinity-or-figure-8-trajectory", as "Lemniscate of Bernoulli")
+	// Note that this computation is repeated in the DeePC thread to update reference in optimization problem
+	if (m_changing_ref_enable)
 	{
-		m_setpoint_for_controller[0] = m_setpoint[0];
-		m_setpoint_for_controller[1] = m_setpoint[1];
-		m_setpoint_for_controller[2] = m_setpoint[2];
-		m_setpoint_for_controller[3] = m_setpoint[3];
-		
+		float figure_8_scale = 2 / (3 - cos(2 * m_figure_8_frequency_rad * (m_time_in_seconds - PI/2))) * yaml_figure_8_amplitude;
+		m_setpoint_for_controller[0] += figure_8_scale * cos(m_figure_8_frequency_rad * (m_time_in_seconds - PI/2));
+		m_setpoint_for_controller[1] += figure_8_scale * sin(2 * m_figure_8_frequency_rad * (m_time_in_seconds - PI/2)) / 2;
+		m_setpoint_for_controller[2] += yaml_z_sine_amplitude * sin(m_z_sine_frequency_rad * m_time_in_seconds);
+
+		m_time_in_seconds += m_control_deltaT;
+	}
+
+	if (use_LQR)
+	{	
 		// Call the LQR control function
 		calculateControlOutput_viaLQR(request, output);
 	}
@@ -2756,12 +2769,11 @@ void computeResponse_for_Deepc(Controller::Request &request, Controller::Respons
 	    	m_y_data_Deepc(m_dataIndex_Deepc,4) = request.ownCrazyflie.pitch;
 	    	m_y_data_Deepc(m_dataIndex_Deepc,5) = request.ownCrazyflie.yaw;
 
-
 	    	// Reference data
-	    	m_r_data_Deepc(m_dataIndex_Deepc,0) = m_setpoint[0];
-	    	m_r_data_Deepc(m_dataIndex_Deepc,1) = m_setpoint[1];
-	    	m_r_data_Deepc(m_dataIndex_Deepc,2) = m_setpoint[2];
-	    	m_r_data_Deepc(m_dataIndex_Deepc,3) = m_setpoint[3];
+	    	m_r_data_Deepc(m_dataIndex_Deepc,0) = m_setpoint_for_controller[0];
+	    	m_r_data_Deepc(m_dataIndex_Deepc,1) = m_setpoint_for_controller[1];
+	    	m_r_data_Deepc(m_dataIndex_Deepc,2) = m_setpoint_for_controller[2];
+	    	m_r_data_Deepc(m_dataIndex_Deepc,3) = m_setpoint_for_controller[3];
 
 	    	m_dataIndex_Deepc++;
 	    }
