@@ -1202,7 +1202,7 @@ void update_uini_yini(Controller::Request &request, control_output &output)
 // Get u_data from file
 MatrixXf get_u_data()
 {
-	MatrixXf u_data_in = read_csv(d_dataFolder + "/u_data.csv");
+	MatrixXf u_data_in = read_csv(d_dataFolder + "/output/m_u_data.csv");
 	if (u_data_in.size() <= 0)
 	{
 		clear_setupDeepc_success_flag();
@@ -1224,7 +1224,7 @@ MatrixXf get_u_data()
 // Get y_data from file
 MatrixXf get_y_data()
 {
-	MatrixXf y_data_in = read_csv(d_dataFolder + "/y_data.csv");
+	MatrixXf y_data_in = read_csv(d_dataFolder + "/output/m_y_data.csv");
 	if (y_data_in.size() <= 0)
 	{	
 		clear_setupDeepc_success_flag();

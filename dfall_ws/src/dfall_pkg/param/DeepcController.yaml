@@ -113,12 +113,12 @@ Q : [40.0, 40.0, 40.0, 0.0, 0.0, 0.0, 0.0, 0.0, 40.0]
 R : [160.0, 4.0, 4.0, 2.0]
 
 # Terminal output cost matrix diagonal entries (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
-P : [657.21, 657.21, 355.26, 96.92, 96.92, 18.77, 629.60, 629.60, 244.50]
-#P : [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+#P : [657.21, 657.21, 355.26, 96.92, 96.92, 18.77, 629.60, 629.60, 244.50]
+P : [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
 # Regularization parameters
-#lambda2_g : 600.0
-lambda2_g : 0.001
+lambda2_g : 400.0
+#lambda2_g : 0.001
 lambda2_s : 100000000.0
 
 # Output constraints (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
@@ -133,7 +133,7 @@ input_max : [0.4791, 1.5708, 1.5708, 1.5708]
 solver : osqp
 opt_sparse : true
 opt_verbose : false
-opt_steady_state : true  # Available in sparse formulation only, ignored otherwise
+opt_steady_state : false  # Available in sparse formulation only, ignored otherwise
 
 # Parameters specific to Gurobi
 grb_LogToFile : false
