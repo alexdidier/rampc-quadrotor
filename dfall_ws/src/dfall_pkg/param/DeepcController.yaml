@@ -35,7 +35,7 @@ command_sixteenbit_max : 60000
 
 # The default setpoint, the ordering is (x,y,z,yaw),
 # with unit [meters,meters,meters,radians]
-default_setpoint : [0.0, 0.0, 0.4, 0.0]
+default_setpoint : [0.0, 0.0, 1.0, 0.0]
 
 # Boolean indiciating whether the "Debug Message" of this agent should be published or not
 shouldPublishDebugMessage : false
@@ -117,9 +117,10 @@ R : [160.0, 4.0, 4.0, 2.0]
 P : [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
 # Regularization parameters
-lambda2_g : 400.0
+lambda2_g : 500.0
+#lambda2_g : 75.0
 #lambda2_g : 0.001
-lambda2_s : 100000000.0
+lambda2_s : 750000000.0
 
 # Output constraints (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
 output_min : [-4.0, -4.0, 0.1, -100, -100, -100, -0.5236, -0.5236, -0.5236]

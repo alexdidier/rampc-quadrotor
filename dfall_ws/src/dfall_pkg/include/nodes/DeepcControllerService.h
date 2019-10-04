@@ -357,15 +357,20 @@ int m_dataIndex = 0;
 bool m_write_data = false;
 
 // Variables used for general data collection
+MatrixXf m_Deepc_active_setpoint = MatrixXf::Zero(4, 1);
 bool m_collect_data = false;
 MatrixXf m_u_data_lqr = MatrixXf::Zero(0,0);
 MatrixXf m_y_data_lqr = MatrixXf::Zero(0,0);
 MatrixXf m_r_data_lqr = MatrixXf::Zero(0,0);
 int m_dataIndex_lqr = 0;
 MatrixXf m_u_data_Deepc = MatrixXf::Zero(0,0);
+MatrixXf m_uf_data_Deepc = MatrixXf::Zero(0,0);
 MatrixXf m_y_data_Deepc = MatrixXf::Zero(0,0);
+MatrixXf m_yf_data_Deepc = MatrixXf::Zero(0,0);
 MatrixXf m_r_data_Deepc = MatrixXf::Zero(0,0);
+MatrixXf m_solveTime_data_Deepc = MatrixXf::Zero(0,0);
 int m_dataIndex_Deepc = 0;
+int m_num_hankels = 0;
 
 // Variables used for changing reference
 bool m_changing_ref_enable = false;
@@ -376,6 +381,7 @@ float m_z_sine_frequency_rad;
 // Variables shared between main and Deepc thread
 float s_cf_weight_in_newtons = m_cf_weight_in_newtons;
 MatrixXf s_setpoint = MatrixXf::Zero(4, 1);
+MatrixXf s_Deepc_active_setpoint = MatrixXf::Zero(4, 1);
 string s_dataFolder = m_dataFolder;
 string s_logFolder = m_dataFolder + yaml_logFolder;
 bool s_Deepc_measure_roll_pitch = true;
@@ -387,6 +393,8 @@ int s_Nyini;
 MatrixXf s_uini;
 MatrixXf s_yini;
 MatrixXf s_u_f;
+MatrixXf s_y_f;
+float s_solve_time;
 bool s_setupDeepc_success = false;
 // Variables for thread management
 mutex s_Deepc_mutex;
@@ -473,6 +481,8 @@ int d_r_gs_start_i;
 int d_num_stat_eq_constr;
 int d_num_dyn_eq_constr;
 MatrixXf d_u_f;
+MatrixXf d_y_f;
+float d_solve_time;
 // Gurobi optimization variables
 GRBEnv d_grb_env;
 GRBModel d_grb_model = GRBModel(d_grb_env);
@@ -521,6 +531,8 @@ MatrixXf m_yini;
 bool m_Deepc_solving_first_opt = false;
 int m_Deepc_cycles_since_solve = 0;
 MatrixXf m_u_f;
+MatrixXf m_y_f;
+float m_solve_time;
 
 // ROS Publisher for debugging variables
 ros::Publisher m_debugPublisher;

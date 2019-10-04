@@ -44,7 +44,7 @@ echo "source /opt/ros/kinetic/setup.bash" >> ~/.bashrc
 source /opt/ros/kinetic/setup.bash
 
 # Add the teacher's IP address to the /etc/hosts file
-sudo sh -c "echo '10.42.0.10 teacher' >> /etc/hosts"
+sudo sh -c "echo '10.42.0.10 dfallmaster' >> /etc/hosts"
 
 # Add a new file with the default agent ID
 sudo sh -c "echo $1 >> /etc/dfall_default_agent_id"

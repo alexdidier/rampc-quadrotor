@@ -127,6 +127,7 @@ void Deepc_thread_main()
 				{
 					s_Deepc_mutex.lock();
 		        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 96");
+		        	s_Deepc_active_setpoint = d_setpoint;
 		        	s_setpoint_changed = false;
 		        	s_Deepc_mutex.unlock();
 		        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 96");
@@ -144,6 +145,7 @@ void Deepc_thread_main()
 
 		        	s_Deepc_mutex.lock();
 		        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 96");
+		        	s_Deepc_active_setpoint = d_setpoint;
 		        	s_setpoint_changed = false;
 		        	s_Deepc_mutex.unlock();
 		        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 96");
@@ -153,6 +155,7 @@ void Deepc_thread_main()
         	{
         		s_Deepc_mutex.lock();
 	        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 96");
+	        	s_Deepc_active_setpoint = s_setpoint;
 	        	s_setpoint_changed = false;
 	        	s_Deepc_mutex.unlock();
 	        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 96");
@@ -981,24 +984,35 @@ void solve_Deepc_gurobi()
 
 		if (d_DeepcOpt_status == GRB_OPTIMAL)
 		{	
-			// With sparse formulation can get uf directly
+			// With sparse formulation can get uf and yf directly
 			if (d_opt_sparse)
 			{
 				for (d_i = 0; d_i < d_Nuf; d_i++)
 					d_u_f(d_i) = d_grb_vars[d_uf_start_i + d_i].get(GRB_DoubleAttr_X);
+
+				for (d_i = 0; d_i < d_Nyf + d_num_outputs; d_i++)
+					d_y_f(d_i) = d_grb_vars[d_yf_start_i + d_i].get(GRB_DoubleAttr_X);
 			}
-			// With dense formulation get uf through g
+			// With dense formulation get uf and y_f through g
 			else
 			{
 				for (d_i = 0; d_i < d_Ng; d_i++)
 					d_g(d_i) = d_grb_vars[d_i].get(GRB_DoubleAttr_X);
 
 				d_u_f = d_U_f * d_g;
+				d_y_f = d_Y_f * d_g;
 			}
+
+			if (d_opt_sparse || !d_grb_presolve_at_setup)
+				d_solve_time = d_grb_model.get(GRB_DoubleAttr_Runtime);
+			else
+				d_solve_time = d_grb_model_presolved->get(GRB_DoubleAttr_Runtime);
 
 			s_Deepc_mutex.lock();
 			// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 649");
 			s_u_f = d_u_f;
+			s_y_f = d_y_f;
+			s_solve_time = d_solve_time;
 			s_Deepc_mutex.unlock();
 			//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 649");
 
@@ -1010,15 +1024,11 @@ void solve_Deepc_gurobi()
 				ROS_INFO_STREAM("Yaw Rate: " << d_u_f(3));
 
 			if (d_opt_sparse || !d_grb_presolve_at_setup)
-			{
 				ROS_INFO_STREAM("Objective: " << d_grb_model.get(GRB_DoubleAttr_ObjVal));
-	    		ROS_INFO_STREAM("Runtime: " << d_grb_model.get(GRB_DoubleAttr_Runtime));
-			}
 			else
-			{
 				ROS_INFO_STREAM("Objective: " << d_grb_model_presolved->get(GRB_DoubleAttr_ObjVal));
-	    		ROS_INFO_STREAM("Runtime: " << d_grb_model_presolved->get(GRB_DoubleAttr_Runtime));
-			}
+
+			ROS_INFO_STREAM("Runtime: " << d_solve_time);
 		}
 		else
 		{
@@ -1084,22 +1094,32 @@ void solve_Deepc_osqp()
 
 		if (d_DeepcOpt_status > 0)
 		{	
-			// With sparse formulation can get uf directly
+			// With sparse formulation can get uf and yf directly
 			if (d_opt_sparse)
+			{
 				for (d_i = 0; d_i < d_Nuf; d_i++)
 					d_u_f(d_i) = d_osqp_work->solution->x[d_uf_start_i + d_i];
-			// With dense formulation get uf through g
+				
+				for (d_i = 0; d_i < d_Nyf + d_num_outputs; d_i++)
+					d_y_f(d_i) = d_osqp_work->solution->x[d_yf_start_i + d_i];
+			}
+			// With dense formulation get uf and yf through g
 			else
 			{
 				for (d_i = 0; d_i < d_Ng; d_i++)
 					d_g(d_i) = d_osqp_work->solution->x[d_i];
 
 				d_u_f = d_U_f * d_g;
+				d_y_f = d_Y_f * d_g;
 			}
+
+			d_solve_time = d_osqp_work->info->run_time;
 
 			s_Deepc_mutex.lock();
 			// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 649");
 			s_u_f = d_u_f;
+			s_y_f = d_y_f;
+			s_solve_time = d_solve_time;
 			s_Deepc_mutex.unlock();
 			//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 649");
 
@@ -1110,7 +1130,7 @@ void solve_Deepc_osqp()
 			if (d_Deepc_yaw_control)
 				ROS_INFO_STREAM("Yaw Rate: " << d_u_f(3));
 			ROS_INFO_STREAM("Objective: " << d_osqp_work->info->obj_val);
-			ROS_INFO_STREAM("Runtime: " << d_osqp_work->info->run_time);
+			ROS_INFO_STREAM("Runtime: " << d_solve_time);
 		}
 		else
 		{
@@ -1167,7 +1187,7 @@ void update_uini_yini(Controller::Request &request, control_output &output)
 		if (yaml_Deepc_yaw_control)
 			m_uini(u_shift + 3) = output.yawRate;
 
-		// Update uini
+		// Update yini
 		int y_shift = Nyini - num_outputs;
 		m_yini.topRows(y_shift) = m_yini.bottomRows(y_shift);
 		m_yini(y_shift) = request.ownCrazyflie.x;
@@ -1742,7 +1762,10 @@ void finish_Deepc_setup()
 	// Setup output variables
     d_g = MatrixXf::Zero(d_Ng, 1);
     if (d_opt_sparse)
+    {
     	d_u_f = MatrixXf::Zero(d_Nuf, 1);
+    	d_y_f = MatrixXf::Zero(d_Nyf + d_num_outputs, 1);
+    }
 
     // Setup successful flag
     d_setupDeepc_success = true;
@@ -2266,7 +2289,6 @@ void computeResponse_for_LQR(Controller::Request &request, Controller::Response 
 		m_rollRateExcEnable = false;
         m_pitchRateExcEnable = false;
         m_yawRateExcEnable = false;
-		m_dataIndex_lqr = 0;
 		// Set the change flag back to false
 		m_current_state_changed = false;
 
@@ -2284,6 +2306,26 @@ void computeResponse_for_LQR(Controller::Request &request, Controller::Response 
             	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
             else
             	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+            
+            // Make copies of Hankel matrix data if collecting data
+            if (m_collect_data)
+            {
+            	m_num_hankels++;
+
+            	ROS_INFO_STREAM("[DEEPC CONTROLLER] Making copy of input data to: " << m_outputFolder << "m_u_data_" << m_num_hankels << ".csv");
+	            if (write_csv(m_outputFolder + "m_u_data_" + to_string(m_num_hankels) + ".csv", m_u_data.transpose()))
+	            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+	            else
+	            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+
+	            ROS_INFO_STREAM("[DEEPC CONTROLLER] Making copy of output data to: " << m_outputFolder << "m_y_data_" << m_num_hankels << ".csv");
+	            if (write_csv(m_outputFolder + "m_y_data_" + to_string(m_num_hankels) + ".csv", m_y_data.transpose()))
+	            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+	            else
+	            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+            }
+
+            m_write_data = false;
 		}
 
 		// Publish the change
@@ -2623,7 +2665,6 @@ void computeResponse_for_Deepc(Controller::Request &request, Controller::Respons
 			Deepc_first_pass = true;
 		m_Deepc_solving_first_opt = false;
 		m_Deepc_cycles_since_solve = 0;
-		m_dataIndex_Deepc = 0;
 		// Set the change flag back to false
 		m_current_state_changed = false;
 
@@ -2641,6 +2682,26 @@ void computeResponse_for_Deepc(Controller::Request &request, Controller::Respons
             	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
             else
             	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+
+            // Make copies of Hankel matrix data if collecting data
+            if (m_collect_data)
+            {
+            	m_num_hankels++;
+
+            	ROS_INFO_STREAM("[DEEPC CONTROLLER] Making copy of input data to: " << m_outputFolder << "m_u_data_" << m_num_hankels << ".csv");
+	            if (write_csv(m_outputFolder + "m_u_data_" + to_string(m_num_hankels) + ".csv", m_u_data.transpose()))
+	            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+	            else
+	            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+
+	            ROS_INFO_STREAM("[DEEPC CONTROLLER] Making copy of output data to: " << m_outputFolder << "m_y_data_" << m_num_hankels << ".csv");
+	            if (write_csv(m_outputFolder + "m_y_data_" + to_string(m_num_hankels) + ".csv", m_y_data.transpose()))
+	            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+	            else
+	            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+            }
+
+            m_write_data = false;
 		}
 
 		// Publish the change
@@ -2657,6 +2718,9 @@ void computeResponse_for_Deepc(Controller::Request &request, Controller::Respons
 	bool setupDeepc_success = s_setupDeepc_success;
 	bool solveDeepc = s_solveDeepc;
 	m_u_f = s_u_f;
+	m_y_f = s_y_f;
+	m_solve_time = s_solve_time;
+	m_Deepc_active_setpoint = s_Deepc_active_setpoint;
 	s_Deepc_mutex.unlock();
 	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1460");
 
@@ -2761,6 +2825,9 @@ void computeResponse_for_Deepc(Controller::Request &request, Controller::Respons
 	    	m_u_data_Deepc(m_dataIndex_Deepc,2) = output.pitchRate;
 	    	m_u_data_Deepc(m_dataIndex_Deepc,3) = output.yawRate;
 
+	    	// Predicted input data
+	    	m_uf_data_Deepc.row(m_dataIndex_Deepc) = m_u_f.transpose();
+
 	    	// Output data
 	    	m_y_data_Deepc(m_dataIndex_Deepc,0) = request.ownCrazyflie.x;
 	    	m_y_data_Deepc(m_dataIndex_Deepc,1) = request.ownCrazyflie.y;
@@ -2769,11 +2836,14 @@ void computeResponse_for_Deepc(Controller::Request &request, Controller::Respons
 	    	m_y_data_Deepc(m_dataIndex_Deepc,4) = request.ownCrazyflie.pitch;
 	    	m_y_data_Deepc(m_dataIndex_Deepc,5) = request.ownCrazyflie.yaw;
 
+	    	// Predicted output data
+	    	m_yf_data_Deepc.row(m_dataIndex_Deepc) = m_y_f.transpose();
+
 	    	// Reference data
-	    	m_r_data_Deepc(m_dataIndex_Deepc,0) = m_setpoint_for_controller[0];
-	    	m_r_data_Deepc(m_dataIndex_Deepc,1) = m_setpoint_for_controller[1];
-	    	m_r_data_Deepc(m_dataIndex_Deepc,2) = m_setpoint_for_controller[2];
-	    	m_r_data_Deepc(m_dataIndex_Deepc,3) = m_setpoint_for_controller[3];
+	    	m_r_data_Deepc.row(m_dataIndex_Deepc) = m_Deepc_active_setpoint.transpose();
+
+	    	// Solve time data
+	    	m_solveTime_data_Deepc(m_dataIndex_Deepc) = m_solve_time;
 
 	    	m_dataIndex_Deepc++;
 	    }
@@ -2788,14 +2858,32 @@ void computeResponse_for_Deepc(Controller::Request &request, Controller::Respons
             else
             	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
 
+            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing predicted input data to: " << m_outputFolder << "m_uf_data_Deepc.csv");
+            if (write_csv(m_outputFolder + "m_uf_data_Deepc.csv", m_uf_data_Deepc.transpose()))
+            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            else
+            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+
             ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing output data to: " << m_outputFolder << "m_y_data_Deepc.csv");
             if (write_csv(m_outputFolder + "m_y_data_Deepc.csv", m_y_data_Deepc.transpose()))
             	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
             else
             	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
 
+            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing predicted output data to: " << m_outputFolder << "m_yf_data_Deepc.csv");
+            if (write_csv(m_outputFolder + "m_yf_data_Deepc.csv", m_yf_data_Deepc.transpose()))
+            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            else
+            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+
             ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing reference data to: " << m_outputFolder << "m_r_data_Deepc.csv");
             if (write_csv(m_outputFolder + "m_r_data_Deepc.csv", m_r_data_Deepc.transpose()))
+            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            else
+            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+
+            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing solve time data to: " << m_outputFolder << "m_solveTime_data_Deepc.csv");
+            if (write_csv(m_outputFolder + "m_solveTime_data_Deepc.csv", m_solveTime_data_Deepc.transpose()))
             	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
             else
             	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
@@ -3832,6 +3920,7 @@ void processCustomButton4(float float_data, int int_data, bool* bool_data)
 
 		m_dataIndex_lqr = 0;
 		m_dataIndex_Deepc = 0;
+		m_num_hankels = 0;
 		m_collect_data = true;
 	}
 	else
@@ -3873,17 +3962,29 @@ void processCustomButton4(float float_data, int int_data, bool* bool_data)
             else
             	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
 
+            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing predicted input data to: " << m_outputFolder << "m_uf_data_Deepc.csv");
+            if (write_csv(m_outputFolder + "m_uf_data_Deepc.csv", m_uf_data_Deepc.topRows(m_dataIndex_Deepc).transpose()))
+            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+
             ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing output data to: " << m_outputFolder << "m_y_data_Deepc.csv");
             if (write_csv(m_outputFolder + "m_y_data_Deepc.csv", m_y_data_Deepc.topRows(m_dataIndex_Deepc).transpose()))
             	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
             else
             	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
 
+            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing predicted output data to: " << m_outputFolder << "m_yf_data_Deepc.csv");
+            if (write_csv(m_outputFolder + "m_yf_data_Deepc.csv", m_yf_data_Deepc.topRows(m_dataIndex_Deepc).transpose()))
+            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+
             ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing reference data to: " << m_outputFolder << "m_r_data_Deepc.csv");
             if (write_csv(m_outputFolder + "m_r_data_Deepc.csv", m_r_data_Deepc.topRows(m_dataIndex_Deepc).transpose()))
             	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
             else
             	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+
+            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing solve time data to: " << m_outputFolder << "m_solveTime_data_Deepc.csv");
+            if (write_csv(m_outputFolder + "m_solveTime_data_Deepc.csv", m_solveTime_data_Deepc.topRows(m_dataIndex_Deepc).transpose()))
+            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
 		}
 
 		m_collect_data = false;
@@ -4175,12 +4276,26 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	{
 		m_u_data_lqr = MatrixXf::Zero(num_rows, 4);
 		m_u_data_Deepc = MatrixXf::Zero(num_rows, 4);
+		if (yaml_Deepc_yaw_control)
+			m_uf_data_Deepc = MatrixXf::Zero(num_rows, 4 * yaml_N);
+		else
+			m_uf_data_Deepc = MatrixXf::Zero(num_rows, 3 * yaml_N);
 
 		m_y_data_lqr = MatrixXf::Zero(num_rows, 6);
 		m_y_data_Deepc = MatrixXf::Zero(num_rows, 6);
+		if (yaml_Deepc_measure_roll_pitch && yaml_Deepc_yaw_control)
+			m_yf_data_Deepc = MatrixXf::Zero(num_rows, 6 * (yaml_N + 1));
+		else if(yaml_Deepc_measure_roll_pitch)
+			m_yf_data_Deepc = MatrixXf::Zero(num_rows, 5 * (yaml_N + 1));
+		else if(yaml_Deepc_yaw_control)
+			m_yf_data_Deepc = MatrixXf::Zero(num_rows, 4 * (yaml_N + 1));
+		else
+			m_yf_data_Deepc = MatrixXf::Zero(num_rows, 3 * (yaml_N + 1));
 
 		m_r_data_lqr = MatrixXf::Zero(num_rows, 4);
-		m_r_data_Deepc = MatrixXf::Zero(num_rows, 4);		
+		m_r_data_Deepc = MatrixXf::Zero(num_rows, 4);
+
+		m_solveTime_data_Deepc = MatrixXf::Zero(num_rows, 1);
 	}
 
 	// > Get absolute data folder location
@@ -4197,7 +4312,7 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	{
 		int exc_start_time_d = int(yaml_exc_start_time / m_control_deltaT);
 		m_u_data.setZero(exc_start_time_d + m_thrustExcSignal.size(), 4);
-		m_y_data.setZero(exc_start_time_d +m_thrustExcSignal.size(), 6);
+		m_y_data.setZero(exc_start_time_d + m_thrustExcSignal.size(), 6);
 	}
 	
 	m_rollRateExcSignal = read_csv(m_dataFolder + yaml_rollRateExcSignalFile);

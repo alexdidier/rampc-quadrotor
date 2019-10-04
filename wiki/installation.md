@@ -66,7 +66,7 @@ The second command installs the python package management system ``python-pip``.
 - Environment Setup: <br />
 Add a new line in the ``/etc/hosts`` file that links the teacher's IP with the domain name ``teacher``, create a file called ``/etc/dfall_default_agent_id`` that contains the agent id, and create a file called ``/etc/dfall_default_coord_id`` that contains the coordinator id.
 ```
-sudo sh -c "echo '10.42.0.10 teacher' >> /etc/hosts"
+sudo sh -c "echo '10.42.0.10 dfallmaster' >> /etc/hosts"
 ```
 
 ```
@@ -131,7 +131,7 @@ source ~/dfall_ws/src/dfall_pkg/launch/Config.sh
 ```
 must be replaced with
 ```
-export ROS_HOSTNAME=teacher
+export ROS_HOSTNAME=dfallmaster
 ```
 
 ### IP-Addresses
