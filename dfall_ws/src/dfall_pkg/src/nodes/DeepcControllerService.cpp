@@ -1461,6 +1461,14 @@ void get_lin_cost_vectors()
 	s_Deepc_mutex.lock();
 	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1225");
 	d_setpoint = s_setpoint;
+	
+	// START TEMPORARY CODE TO HARD-CODE SETPOINT 
+	//d_setpoint(0) = 1.0;	// x
+	//d_setpoint(1) = 1.0;	// y
+	//d_setpoint(2) = 2.0;	// z
+	//d_setpoint(3) = 0.0;	// yaw
+	// END TEMPORARY CODE TO HARD-CODE SETPOINT
+
 	s_Deepc_mutex.unlock();
 	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1225");
 
@@ -1544,6 +1552,14 @@ void update_lin_cost_vectors()
 	s_Deepc_mutex.lock();
 	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1312");
 	d_setpoint = s_setpoint;
+
+	// START TEMPORARY CODE TO HARD-CODE SETPOINT 
+	//d_setpoint(0) = 1.0;	// x
+	//d_setpoint(1) = 1.0;	// y
+	//d_setpoint(2) = 2.0;	// z
+	//d_setpoint(3) = 0.0;	// yaw
+	// END TEMPORARY CODE TO HARD-CODE SETPOINT
+
 	s_Deepc_mutex.unlock();
 	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1312");
 
