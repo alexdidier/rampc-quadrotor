@@ -117,7 +117,7 @@ R : [160.0, 4.0, 4.0, 2.0]
 P : [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
 # Regularization parameters
-lambda2_g : 500.0
+#lambda2_g : 500.0
 #lambda2_g : 75.0
 #lambda2_g : 0.001
 lambda2_s : 750000000.0
