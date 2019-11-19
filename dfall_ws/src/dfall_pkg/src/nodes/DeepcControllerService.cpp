@@ -41,6 +41,661 @@
 
 
 
+
+
+
+void setup_Deepc_mpc()
+{
+	try
+    {
+    	d_num_outputs = 3;
+
+    	s_Deepc_mutex.lock();
+		d_setpoint = s_setpoint;
+		s_Deepc_mutex.unlock();
+
+    	// COMPUTE THE NUMBER OF DECICION VARIABLES
+    	int num_inputs = 3;
+    	int num_states = 8;
+    	int num_input_by_state = num_inputs + num_states;
+    	int num_input_dec_vars = d_N     * num_inputs;
+    	int num_state_dec_vars = (d_N+1) * num_states;
+
+    	int num_mpc_dec_vars = num_input_dec_vars + num_state_dec_vars;
+
+
+    	// INFORM THE USER
+    	ROS_INFO_STREAM("[MPC CONTROLLER] now setting up with num input = " << num_input_dec_vars << ", num state = " << num_state_dec_vars << ", total num dec vars = " << num_mpc_dec_vars );
+
+    	// SPECIFY THE Q, R, P MATRICES
+		MatrixXf Q_cost_mat = MatrixXf::Zero(num_states, num_states);
+		Q_cost_mat(0,0) = 40.0f;
+		Q_cost_mat(1,1) = 40.0f;
+		Q_cost_mat(2,2) = 40.0f;
+		Q_cost_mat(3,3) = 0.1f;
+		Q_cost_mat(3,4) = 0.1f;
+		Q_cost_mat(5,5) = 0.1f;
+		Q_cost_mat(6,6) = 0.1f;
+		Q_cost_mat(7,7) = 0.1f;
+
+		MatrixXf R_cost_mat = MatrixXf::Zero(num_inputs, num_inputs);
+		R_cost_mat(0,0) = 160.0f;
+		R_cost_mat(1,1) = 4.0f;
+		R_cost_mat(2,2) = 4.0f;
+
+		MatrixXf P_cost_mat = MatrixXf::Zero(num_states, num_states);
+		P_cost_mat(0,0) = 661.21f;
+		P_cost_mat(1,1) = 661.21f;
+		P_cost_mat(2,2) = 382.33f;
+		P_cost_mat(3,3) = 100.92f;
+		P_cost_mat(4,4) = 100.92f;
+		P_cost_mat(5,5) = 26.93f;
+		P_cost_mat(6,6) = 633.60f;
+		P_cost_mat(7,7) = 633.60f;
+
+		P_cost_mat(3,0) =  202.82f;
+		P_cost_mat(0,3) =  202.82f;
+
+		P_cost_mat(7,0) =  317.06f;
+		P_cost_mat(0,7) =  317.06f;
+
+		P_cost_mat(1,4) =  202.82f;
+		P_cost_mat(4,1) =  202.82f;
+
+		P_cost_mat(1,6) = -317.06f;
+		P_cost_mat(6,1) = -317.06f;
+
+		P_cost_mat(2,5) =   64.00f;
+		P_cost_mat(5,2) =   64.00f;
+
+		P_cost_mat(3,7) =  201.77f;
+		P_cost_mat(7,3) =  201.77f;
+
+		P_cost_mat(4,6) =  -201.77f;
+		P_cost_mat(6,4) =  -201.77f;
+
+//       0       1       2       3       4       5       6       7
+// 0:  657.21    0.00   -0.00  202.82    0.00   -0.00    0.00  317.06
+// 1:    0.00  657.21   -0.00    0.00  202.82   -0.00 -317.06   -0.00
+// 2:   -0.00   -0.00  378.33   -0.00   -0.00   64.00    0.00   -0.00
+// 3:  202.82    0.00   -0.00   96.92   -0.00   -0.00    0.00  201.77
+// 4:    0.00  202.82   -0.00   -0.00   96.92   -0.00 -201.77   -0.00
+// 5:   -0.00   -0.00   64.00   -0.00   -0.00   22.93    0.00   -0.00
+// 6:    0.00 -317.06    0.00    0.00 -201.77    0.00  629.60    0.00
+// 7:  317.06   -0.00   -0.00  201.77   -0.00   -0.00    0.00  629.60
+
+
+    	// INITIALISE THE QUADRATIC COST MATRIX
+		MatrixXf osqp_P = MatrixXf::Zero(num_mpc_dec_vars, num_mpc_dec_vars);
+
+		// ADD THE Q AND R BLOCK DIAGONAL TERMS
+		// ROS_INFO("[MPC CONTROLLER] DEBUG 1");
+		for (int i = 0; i < d_N; i++)
+		{
+			osqp_P.block(i * num_input_by_state             , i * num_input_by_state             , num_states, num_states) = Q_cost_mat;
+			osqp_P.block(i * num_input_by_state + num_states, i * num_input_by_state + num_states, num_inputs, num_inputs) = R_cost_mat;
+		}
+		// ROS_INFO("[MPC CONTROLLER] DEBUG 2");
+
+		// ADD THE TERMINAL COST
+		//quad_cost_mat_yt = d_P;
+		// osqp_P.block(d_N * num_input_by_state, d_N * num_input_by_state, num_states, num_states) = P_cost_mat;
+		osqp_P.block(d_N * num_input_by_state, d_N * num_input_by_state, num_states, num_states) = Q_cost_mat;
+		// osqp_P.block(d_N * num_input_by_state, d_N * num_input_by_state, num_states, num_states) = 0.1 * MatrixXf::Identity(num_states, num_states);
+		// ROS_INFO("[MPC CONTROLLER] DEBUG 3");
+
+
+		// RESET THE LINEAR COST VECTOR TO ZERO
+		d_mpc_q = MatrixXf::Zero(d_num_opt_vars, 1);
+
+
+
+		// SPECIFY THE A, B LTI DYNAMICS MATRICES
+		MatrixXf A_dynamics = MatrixXf::Zero(num_states, num_states);
+		A_dynamics(0,0) = 1.0f;
+		A_dynamics(1,1) = 1.0f;
+		A_dynamics(2,2) = 1.0f;
+		A_dynamics(3,3) = 1.0f;
+		A_dynamics(4,4) = 1.0f;
+		A_dynamics(5,5) = 1.0f;
+		A_dynamics(6,6) = 1.0f;
+		A_dynamics(7,7) = 1.0f;
+
+		A_dynamics(0,3) = 0.04f;
+		A_dynamics(1,4) = 0.04f;
+		A_dynamics(2,5) = 0.04f;
+
+		A_dynamics(0,7) = 0.0078f;
+		A_dynamics(1,6) =-0.0078f;
+
+		A_dynamics(3,7) = 0.3924;
+		A_dynamics(4,6) =-0.3924;
+
+//     0         1         2         3         4         5         6         7
+// 0:  1.0000    0         0         0.0400    0         0         0         0.0078
+// 1:  0         1.0000    0         0         0.0400    0        -0.0078    0
+// 2:  0         0         1.0000    0         0         0.0400    0         0
+// 3:  0         0         0         1.0000    0         0         0         0.3924
+// 4:  0         0         0         0         1.0000    0        -0.3924    0
+// 5:  0         0         0         0         0         1.0000    0         0
+// 6:  0         0         0         0         0         0         1.0000    0
+// 7:  0         0         0         0         0         0         0         1.0000
+
+		MatrixXf B_dynamics = MatrixXf::Zero(num_states, num_inputs);
+		B_dynamics(0,2) = 0.0001f;
+		B_dynamics(1,1) =-0.0001f;
+
+		B_dynamics(2,0) = 0.0250f;
+		B_dynamics(5,0) = 1.2500f;
+
+		B_dynamics(3,2) = 0.0078;
+		B_dynamics(4,1) =-0.0078;
+
+		B_dynamics(6,1) = 0.0400;
+		B_dynamics(7,2) = 0.0400;
+
+//    0         1         2
+//0:  0         0         0.0001
+//1:  0        -0.0001    0
+//2:  0.0250    0         0
+//3:  0         0         0.0078
+//4:  0        -0.0078    0
+//5:  1.2500    0         0
+//6:  0         0.0400    0
+//7:  0         0         0.0400
+
+
+		// BUILD THE [A,B,-I] BLOCK FOR THE DYNAMICS CONSTRAIN
+		MatrixXf ABI_mat = MatrixXf::Zero(num_states,(num_states+num_inputs+num_states));
+		// ROS_INFO("[MPC CONTROLLER] DEBUG 4");
+		ABI_mat.block(0,0                 ,num_states,num_states) = A_dynamics;
+		// ROS_INFO("[MPC CONTROLLER] DEBUG 5");
+		ABI_mat.block(0,num_states        ,num_states,num_inputs) = B_dynamics;
+		// ROS_INFO("[MPC CONTROLLER] DEBUG 6");
+		ABI_mat.block(0,num_input_by_state,num_states,num_states) = -MatrixXf::Identity(num_states,num_states);
+		// ROS_INFO("[MPC CONTROLLER] DEBUG 7");
+
+
+		// INITIALISE THE EQUALITY CONSTRAINTS MATRIX
+		MatrixXf A_cons_eq_mat = MatrixXf::Zero(num_states*(d_N+1),num_mpc_dec_vars);
+
+		// FILL IN THE IDENTIY FOR SETTING THE INITAL STATE
+		A_cons_eq_mat.topLeftCorner(num_states,num_states) = MatrixXf::Identity(num_states,num_states);
+
+		// ROS_INFO("[MPC CONTROLLER] DEBUG 8");
+		// FILL IN ALL THE DYNAMINCS BLOCKS
+		for (int i = 0; i < d_N; i++)
+		{
+			A_cons_eq_mat.block((i+1) * num_states, i * num_input_by_state, num_states, (num_states+num_inputs+num_states)) = ABI_mat;
+		}
+		// ROS_INFO("[MPC CONTROLLER] DEBUG 9");
+
+		// INITIALISE THE RHS OF THE EQUALITY CONSTRAINTS
+		MatrixXf b_cons_eq_vec = MatrixXf::Zero(num_states*(d_N+1),1);
+
+
+		
+		// BULD THE CONSTRAINTS
+		int num_cons_ineq_per_time_step = 6;
+
+		// INITIALISE AND SPECIFY THE MATRX FOR ONE TIME STEP
+		MatrixXf A_cons_ineq_mat_for_one_time_step = MatrixXf::Zero(num_cons_ineq_per_time_step,num_input_by_state);
+
+		A_cons_ineq_mat_for_one_time_step.topLeftCorner(3,3)     = MatrixXf::Identity(3,3);
+		A_cons_ineq_mat_for_one_time_step.bottomRightCorner(3,3) = MatrixXf::Identity(3,3);
+
+		// INITIALISE AND SPECIFY THE VECTOR FOR ONE TIME STEP
+		MatrixXf l_cons_ineq_vec_for_one_time_step = MatrixXf::Zero(num_cons_ineq_per_time_step,1);
+		MatrixXf u_cons_ineq_vec_for_one_time_step = MatrixXf::Zero(num_cons_ineq_per_time_step,1);
+
+		l_cons_ineq_vec_for_one_time_step(0,0) = -4.0f - d_setpoint(0);
+		l_cons_ineq_vec_for_one_time_step(1,0) = -4.0f - d_setpoint(1);
+		l_cons_ineq_vec_for_one_time_step(2,0) =  0.1f - d_setpoint(2);
+
+		l_cons_ineq_vec_for_one_time_step(3,0) =  0.1597f - 0.028 * 9.81;
+		l_cons_ineq_vec_for_one_time_step(4,0) = -1.5708f;
+		l_cons_ineq_vec_for_one_time_step(5,0) = -1.5708f;
+
+		u_cons_ineq_vec_for_one_time_step(0,0) =  4.0f - d_setpoint(0);
+		u_cons_ineq_vec_for_one_time_step(1,0) =  4.0f - d_setpoint(1);
+		u_cons_ineq_vec_for_one_time_step(2,0) =  4.0f - d_setpoint(2);
+
+		u_cons_ineq_vec_for_one_time_step(3,0) =  0.4791f - 0.028 * 9.81;
+		u_cons_ineq_vec_for_one_time_step(4,0) =  1.5708f;
+		u_cons_ineq_vec_for_one_time_step(5,0) =  1.5708f;
+
+		// INITIALISE THE MATRX AND VECTORS FOR ALL TIME STEPS
+		MatrixXf A_cons_ineq_mat = MatrixXf::Zero((3+d_N*num_cons_ineq_per_time_step),num_mpc_dec_vars);
+		MatrixXf l_cons_ineq_vec = MatrixXf::Zero((3+d_N*num_cons_ineq_per_time_step),1);
+		MatrixXf u_cons_ineq_vec = MatrixXf::Zero((3+d_N*num_cons_ineq_per_time_step),1);
+
+		// ROS_INFO("[MPC CONTROLLER] DEBUG 10");
+		for (int i = 0; i < d_N; i++)
+		{
+			A_cons_ineq_mat.block(i * num_cons_ineq_per_time_step, i * num_input_by_state, num_cons_ineq_per_time_step, num_input_by_state) = A_cons_ineq_mat_for_one_time_step;
+
+			l_cons_ineq_vec.middleRows(i * num_cons_ineq_per_time_step, num_cons_ineq_per_time_step) = l_cons_ineq_vec_for_one_time_step;
+			u_cons_ineq_vec.middleRows(i * num_cons_ineq_per_time_step, num_cons_ineq_per_time_step) = u_cons_ineq_vec_for_one_time_step;
+		}
+		// ROS_INFO("[MPC CONTROLLER] DEBUG 11");
+
+
+		// OSQP CONSTRAINTS
+		// Concatenate all constraints in single matrix/vectors
+		MatrixXf osqp_A = MatrixXf::Zero(A_cons_eq_mat.rows() + A_cons_ineq_mat.rows(), num_mpc_dec_vars);
+		MatrixXf osqp_l = MatrixXf::Zero(A_cons_eq_mat.rows() + A_cons_ineq_mat.rows(), 1);
+		MatrixXf osqp_u = MatrixXf::Zero(A_cons_eq_mat.rows() + A_cons_ineq_mat.rows(), 1);
+		// ROS_INFO("[MPC CONTROLLER] DEBUG 12");
+		
+		osqp_A.topRows(A_cons_eq_mat.rows()) = A_cons_eq_mat;
+		// ROS_INFO("[MPC CONTROLLER] DEBUG 13");
+		osqp_l.topRows(A_cons_eq_mat.rows()) = b_cons_eq_vec;
+		osqp_u.topRows(A_cons_eq_mat.rows()) = b_cons_eq_vec;
+		// ROS_INFO("[MPC CONTROLLER] DEBUG 14");
+
+		osqp_A.bottomRows(A_cons_ineq_mat.rows()) = A_cons_ineq_mat;
+		// ROS_INFO("[MPC CONTROLLER] DEBUG 15");
+		osqp_l.bottomRows(A_cons_ineq_mat.rows()) = l_cons_ineq_vec;
+		osqp_u.bottomRows(A_cons_ineq_mat.rows()) = u_cons_ineq_vec;
+		// ROS_INFO("[MPC CONTROLLER] DEBUG 16");
+
+		// OSQP MODEL SETUP
+		// Follows 'Setup and solve' example (https://osqp.org/docs/examples/setup-and-solve.html)
+
+		osqp_extended_cleanup();
+
+		// Convert Eigen matrices to CSC format
+		csc* osqp_P_csc = eigen2csc(osqp_P);
+		csc* osqp_A_csc = eigen2csc(osqp_A);
+
+		// Convert Eigen vectors to c_float arrays
+		// One copy is used for initial setup, the other is used during runtime in update function
+		c_float* osqp_q_cfloat = (c_float*) c_malloc(d_mpc_q.rows() * sizeof(c_float));
+		c_float* osqp_l_cfloat = (c_float*) c_malloc(osqp_l.rows() * sizeof(c_float));
+		c_float* osqp_u_cfloat = (c_float*) c_malloc(osqp_u.rows() * sizeof(c_float));
+
+		d_mpc_q_new = (c_float*) c_malloc(d_mpc_q.rows() * sizeof(c_float));
+		d_mpc_l_new = (c_float*) c_malloc(osqp_l.rows() * sizeof(c_float));
+		d_mpc_u_new = (c_float*) c_malloc(osqp_u.rows() * sizeof(c_float));
+
+		Matrix<c_float, Dynamic, Dynamic>::Map(osqp_q_cfloat, d_mpc_q.rows(), d_mpc_q.cols()) = d_mpc_q.cast<c_float>();
+		Matrix<c_float, Dynamic, Dynamic>::Map(d_mpc_q_new, d_mpc_q.rows(), d_mpc_q.cols()) = d_mpc_q.cast<c_float>();
+
+		Matrix<c_float, Dynamic, Dynamic>::Map(osqp_l_cfloat, osqp_l.rows(), osqp_l.cols()) = osqp_l.cast<c_float>();
+		Matrix<c_float, Dynamic, Dynamic>::Map(d_mpc_l_new, osqp_l.rows(), osqp_l.cols()) = osqp_l.cast<c_float>();
+
+		Matrix<c_float, Dynamic, Dynamic>::Map(osqp_u_cfloat, osqp_u.rows(), osqp_u.cols()) = osqp_u.cast<c_float>();
+		Matrix<c_float, Dynamic, Dynamic>::Map(d_mpc_u_new, osqp_u.rows(), osqp_u.cols()) = osqp_u.cast<c_float>();
+
+		// Populate data
+	    OSQPData* osqp_data = (OSQPData*) c_malloc(sizeof(OSQPData));
+	    osqp_data->n = osqp_A.cols();
+	    osqp_data->m = osqp_A.rows();
+	    osqp_data->P = osqp_P_csc;
+	    osqp_data->q = osqp_q_cfloat;
+	    osqp_data->A = osqp_A_csc;
+	    osqp_data->l = osqp_l_cfloat;
+	    osqp_data->u = osqp_u_cfloat;
+
+		// Problem settings
+	    d_osqp_settings = (OSQPSettings*) c_malloc(sizeof(OSQPSettings));
+
+	    // Define Solver settings as default, and change settings as desired
+	    osqp_set_default_settings(d_osqp_settings);
+	    d_osqp_settings->verbose = d_opt_verbose;
+
+	    // Setup workspace
+	    d_osqp_work = osqp_setup(osqp_data, d_osqp_settings);
+
+	    // Clear data after setting up to allow subseqeuent setups
+	    osqp_cleanup_data(osqp_data);
+
+	    if (!d_osqp_work)
+	    {
+	    	clear_setupDeepc_success_flag();
+
+	    	ROS_INFO("[MPC CONTROLLER] Deepc optimization setup failed with OSQP");
+	    	ROS_INFO("[MPC CONTROLLER] Deepc must be (re-)setup");
+
+	    	return;
+	    }
+
+	    // Some steps to finish setup
+		//finish_Deepc_setup();
+		// Setup output variables
+    	d_u_f = MatrixXf::Zero(d_N * num_inputs, 1);
+    	d_y_f = MatrixXf::Zero((d_N+1) * d_num_outputs, 1);
+
+    	d_u_f(0) = 0.028 * 9.81;
+
+	    // Setup successful flag
+	    d_setupDeepc_success = true;
+
+	    s_Deepc_mutex.lock();
+	    // ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1285");
+		// s_num_inputs = num_inputs;
+		// s_num_outputs = d_num_outputs;
+		// s_Nuini = d_Tini * num_inputs;
+		// s_Nyini = d_Tini * d_num_outputs;
+		// s_uini = MatrixXf::Zero(s_Nuini, 1);
+		// s_yini = MatrixXf::Zero(s_Nyini, 1);
+		s_setupDeepc_success = d_setupDeepc_success;
+		s_Deepc_mutex.unlock();
+		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1294");
+
+	    // Inform the user
+	    ROS_INFO("[MPC CONTROLLER] Deepc optimization setup successful with OSQP");
+    }
+
+  	catch(exception& e)
+    {
+    	clear_setupDeepc_success_flag();
+
+	    ROS_INFO_STREAM("[MPC CONTROLLER] Deepc optimization setup exception with OSQP with standard error message: " << e.what());
+	    ROS_INFO("[MPC CONTROLLER] Deepc must be (re-)setup");
+  	}
+  	catch(...)
+  	{
+  		clear_setupDeepc_success_flag();
+
+    	ROS_INFO("[MPC CONTROLLER] Deepc optimization setup exception with OSQP");
+    	ROS_INFO("[MPC CONTROLLER] Deepc must be (re-)setup");
+  	}
+}
+
+
+
+
+
+void change_Deepc_setpoint_mpc()
+{
+	try
+	{
+		// No need to change the MPC optimization problem.
+		// Just shift the initial state given to MPC
+
+		s_Deepc_mutex.lock();
+		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1225");
+		d_setpoint = s_setpoint;
+		s_Deepc_mutex.unlock();
+		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1225");
+
+
+		int num_inputs = 3;
+    	int num_states = 8;
+    	int num_input_by_state = num_inputs + num_states;
+    	int num_input_dec_vars = d_N     * num_inputs;
+    	int num_state_dec_vars = (d_N+1) * num_states;
+
+    	int num_mpc_dec_vars = num_input_dec_vars + num_state_dec_vars;
+
+    	// COMPUTE THE NUMBER OF EQUALITY CONSTRAINTS
+    	int ineq_start = (d_N+1) * num_states;
+
+    	// BULD THE CONSTRAINTS
+		int num_cons_ineq_per_time_step = 6;
+
+		// Update equality constraint vectors
+		for (int t = 0; t < d_N; t++)
+		{
+			d_mpc_l_new[ineq_start + (t*num_cons_ineq_per_time_step) + 0] = -4.0f - d_setpoint(0);
+			d_mpc_u_new[ineq_start + (t*num_cons_ineq_per_time_step) + 0] =  4.0f - d_setpoint(0);
+
+			d_mpc_l_new[ineq_start + (t*num_cons_ineq_per_time_step) + 1] = -4.0f - d_setpoint(1);
+			d_mpc_u_new[ineq_start + (t*num_cons_ineq_per_time_step) + 1] =  4.0f - d_setpoint(1);
+
+			d_mpc_l_new[ineq_start + (t*num_cons_ineq_per_time_step) + 2] =  0.1f - d_setpoint(2);
+			d_mpc_u_new[ineq_start + (t*num_cons_ineq_per_time_step) + 2] =  4.0f - d_setpoint(2);
+		}
+
+	    // Inform the user
+	    ROS_INFO("[MPC CONTROLLER] MPC setpoint updated successfully");
+	}
+
+  	catch(exception& e)
+    {
+    	//clear_setupDeepc_success_flag();
+
+	    ROS_INFO_STREAM("[MPC CONTROLLER] MPC setpoint update exception with OSQP with standard error message: " << e.what());
+	    ROS_INFO("[MPC CONTROLLER] MPC must be (re-)setup");
+  	}
+  	catch(...)
+  	{
+  		//clear_setupDeepc_success_flag();
+
+  		ROS_INFO("[MPC CONTROLLER] MPC setpoint update exception with OSQP");
+  		ROS_INFO("[MPC CONTROLLER] MPC must be (re-)setup");
+  	}
+}
+
+
+
+void change_Deepc_setpoint_mpc_changing_ref()
+{
+	try
+	{
+		// DO NOTHING
+		// THIS IS FOR A TIME-VARYING SETPOINT, eg., FIGURE 8
+	}
+
+  	catch(exception& e)
+    {
+    	clear_setupDeepc_success_flag();
+
+	    ROS_INFO_STREAM("[MPC CONTROLLER] Deepc setpoint update exception with OSQP with standard error message: " << e.what());
+	    ROS_INFO("[MPC CONTROLLER] Deepc must be (re-)setup");
+  	}
+  	catch(...)
+  	{
+  		clear_setupDeepc_success_flag();
+
+  		ROS_INFO("[MPC CONTROLLER] Deepc setpoint update exception with OSQP");
+  		ROS_INFO("[MPC CONTROLLER] Deepc must be (re-)setup");
+  	}
+}
+
+
+
+
+void solve_Deepc_mpc()
+{
+	try
+	{
+		s_Deepc_mutex.lock();
+		d_current_state_estimate = s_current_state_estimate;
+		d_setpoint = s_setpoint;
+		s_Deepc_mutex.unlock();
+
+
+		int num_states = 8;
+		int num_inputs = 3;
+		int num_input_by_state = num_inputs + num_states;
+
+		// Update reference if reference is changing
+		if (d_changing_ref_enable)
+			change_Deepc_setpoint_mpc_changing_ref();
+
+
+		// Get the input that was applied at this time step
+		MatrixXf u_current = MatrixXf::Zero(num_inputs, 1);
+		u_current(0) = d_u_f(0) - 0.028 * 9.81;
+		u_current(1) = d_u_f(1);
+		u_current(2) = d_u_f(2);
+
+
+		
+		// SPECIFY THE A, B LTI DYNAMICS MATRICES
+		MatrixXf A_dynamics = MatrixXf::Zero(num_states, num_states);
+		A_dynamics(0,0) = 1.0f;
+		A_dynamics(1,1) = 1.0f;
+		A_dynamics(2,2) = 1.0f;
+		A_dynamics(3,3) = 1.0f;
+		A_dynamics(4,4) = 1.0f;
+		A_dynamics(5,5) = 1.0f;
+		A_dynamics(6,6) = 1.0f;
+		A_dynamics(7,7) = 1.0f;
+
+		A_dynamics(0,3) = 0.04f;
+		A_dynamics(1,4) = 0.04f;
+		A_dynamics(2,5) = 0.04f;
+
+		A_dynamics(0,7) = 0.0078f;
+		A_dynamics(1,6) =-0.0078f;
+
+		A_dynamics(3,7) = 0.3924;
+		A_dynamics(4,6) =-0.3924;
+
+//     0         1         2         3         4         5         6         7
+// 0:  1.0000    0         0         0.0400    0         0         0         0.0078
+// 1:  0         1.0000    0         0         0.0400    0        -0.0078    0
+// 2:  0         0         1.0000    0         0         0.0400    0         0
+// 3:  0         0         0         1.0000    0         0         0         0.3924
+// 4:  0         0         0         0         1.0000    0        -0.3924    0
+// 5:  0         0         0         0         0         1.0000    0         0
+// 6:  0         0         0         0         0         0         1.0000    0
+// 7:  0         0         0         0         0         0         0         1.0000
+
+		MatrixXf B_dynamics = MatrixXf::Zero(num_states, num_inputs);
+		B_dynamics(0,2) = 0.0001f;
+		B_dynamics(1,1) =-0.0001f;
+
+		B_dynamics(2,0) = 0.0250f;
+		B_dynamics(5,0) = 1.2500f;
+
+		B_dynamics(3,2) = 0.0078;
+		B_dynamics(4,1) =-0.0078;
+
+		B_dynamics(6,1) = 0.0400;
+		B_dynamics(7,2) = 0.0400;
+
+//    0         1         2
+//0:  0         0         0.0001
+//1:  0        -0.0001    0
+//2:  0.0250    0         0
+//3:  0         0         0.0078
+//4:  0        -0.0078    0
+//5:  1.2500    0         0
+//6:  0         0.0400    0
+//7:  0         0         0.0400
+
+
+		// ROS_INFO("[MPC CONTROLLER] DEBUG 1");
+
+		MatrixXf x_current = d_current_state_estimate;
+
+		// ROS_INFO_STREAM("[MPC CONTROLLER] u delta current (f,wx,wy) = ( " << u_current(0) << " , " << u_current(1) << " , " << u_current(2) << " )" );
+		// ROS_INFO_STREAM("[MPC CONTROLLER] current estimate (x,y,z)  = ( " << x_current(0) << " , " << x_current(1) << " , " << x_current(2) << " )" );
+		
+
+		// Subtract the setpoint from the (x,y,z) positions
+		x_current(0) = x_current(0) - d_setpoint(0);
+		x_current(1) = x_current(1) - d_setpoint(1);
+		x_current(2) = x_current(2) - d_setpoint(2);
+		// ROS_INFO("[MPC CONTROLLER] DEBUG 2");
+
+
+		// Compute the initial state as x_initial = A x_current + B * u_current
+		MatrixXf x_initial = A_dynamics * x_current + B_dynamics * u_current;
+
+
+		// ROS_INFO_STREAM("[MPC CONTROLLER] initial state (x,y,z)     = ( " << x_initial(0) << " , " << x_initial(1) << " , " << x_initial(2) << " )" );
+
+
+
+		// Update equality constraint vectors for the initial state
+
+		for (int i = 0; i < num_states; i++)
+		{
+			d_mpc_l_new[i] = x_initial(i);
+			d_mpc_u_new[i] = x_initial(i);
+		}
+		// ROS_INFO("[MPC CONTROLLER] DEBUG 3");
+		osqp_update_bounds(d_osqp_work, d_mpc_l_new, d_mpc_u_new);
+
+		// Solve optimization
+		osqp_solve(d_osqp_work);
+		d_DeepcOpt_status = d_osqp_work->info->status_val;
+
+		if (d_DeepcOpt_status > 0)
+		{	
+
+			// ROS_INFO_STREAM("[MPC CONTROLLER] d_mpc_l_new (x,y,z)         = ( " << d_mpc_l_new[0] << " , " << d_mpc_l_new[1] << " , " << d_mpc_l_new[2]  << " )" );
+			// ROS_INFO_STREAM("[MPC CONTROLLER] d_mpc_u_new (x,y,z)         = ( " << d_mpc_u_new[0] << " , " << d_mpc_u_new[1] << " , " << d_mpc_u_new[2]  << " )" );
+			// ROS_INFO_STREAM("[MPC CONTROLLER] OSQP initial l (x,y,z)      = ( " << d_osqp_work->data->l[0] << " , " << d_osqp_work->data->l[1] << " , " << d_osqp_work->data->l[2]  << " )" );
+			// ROS_INFO_STREAM("[MPC CONTROLLER] OSQP initial state (x,y,z)  = ( " << d_osqp_work->solution->x[0] << " , " << d_osqp_work->solution->x[1] << " , " << d_osqp_work->solution->x[2]  << " )" );
+			// ROS_INFO_STREAM("[MPC CONTROLLER] OSQP new input (f,wx,wy)    = ( " << d_osqp_work->solution->x[8] << " , " << d_osqp_work->solution->x[9] << " , " << d_osqp_work->solution->x[10] << " )" );
+
+
+			// With sparse formulation can get uf and yf directly
+			for (int t = 0; t < d_N; t++)
+			{
+				for (int i = 0; i < num_inputs; i++)
+				{
+					d_u_f((t*num_inputs + i)) = d_osqp_work->solution->x[t*num_input_by_state + num_states + i];
+					if (i == 0)
+						d_u_f((t*num_inputs + i)) += 0.028 * 9.81;
+				}
+			}
+			
+			for (int t = 0; t < d_N + 1; t++)
+			{
+				for (int i = 0; i < d_num_outputs; i++)
+				{
+					if (i<3)
+						d_y_f((t*d_num_outputs + i)) = d_osqp_work->solution->x[t*num_input_by_state + i] + d_setpoint(i);
+					else
+						d_y_f((t*d_num_outputs + i)) = d_osqp_work->solution->x[t*num_input_by_state + 3 + i];
+				}
+			}
+
+			d_solve_time = d_osqp_work->info->run_time;
+
+			s_Deepc_mutex.lock();
+			// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 649");
+			s_u_f = d_u_f;
+			s_y_f = d_y_f;
+			s_solve_time = d_solve_time;
+			s_Deepc_mutex.unlock();
+			//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 649");
+
+			ROS_INFO_STREAM("[MPC CONTROLLER] Deepc found optimal solution with OSQP status: " << d_osqp_work->info->status);
+			ROS_INFO_STREAM("Thrust: "     << d_u_f(0) );
+			ROS_INFO_STREAM("Roll Rate: "  << d_u_f(1) );
+			ROS_INFO_STREAM("Pitch Rate: " << d_u_f(2) );
+			//if (d_Deepc_yaw_control)
+			//	ROS_INFO_STREAM("Yaw Rate: " << d_u_f(3));
+			ROS_INFO_STREAM("Objective: " << d_osqp_work->info->obj_val);
+			ROS_INFO_STREAM("Runtime: " << d_solve_time);
+		}
+		else
+		{
+			ROS_INFO_STREAM("[MPC CONTROLLER] Deepc failed to find optimal solution with OSQP status: " << d_osqp_work->info->status);
+			s_Deepc_mutex.lock();
+			// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 649");
+			s_u_f = d_u_f;
+			s_y_f = d_y_f;
+			s_solve_time = 0.0;
+			s_Deepc_mutex.unlock();
+		}
+	}
+
+  	catch(exception& e)
+    {
+    	clear_setupDeepc_success_flag();
+
+	    ROS_INFO_STREAM("[MPC CONTROLLER] Deepc optimization exception with OSQP with standard error message: " << e.what());
+	    ROS_INFO("[MPC CONTROLLER] Deepc must be (re-)setup");
+  	}
+  	catch(...)
+  	{
+  		clear_setupDeepc_success_flag();
+
+    	ROS_INFO("[MPC CONTROLLER] Deepc optimization exception with OSQP");
+    	ROS_INFO("[MPC CONTROLLER] Deepc must be (re-)setup");
+  	}
+}
+
+
 //    ----------------------------------------------------------------------------------
 //    FFFFF  U   U  N   N   CCCC  TTTTT  III   OOO   N   N
 //    F      U   U  NN  N  C        T     I   O   O  NN  N
@@ -116,6 +771,13 @@ void Deepc_thread_main()
 						change_Deepc_setpoint_osqp();
 						break;
 
+					case DEEPC_CONTROLLER_SOLVER_MPC:
+						change_Deepc_setpoint_mpc();
+						s_Deepc_active_setpoint = d_setpoint;
+		        		s_setpoint_changed = false;
+		        		s_Deepc_mutex.unlock();
+						break;
+
 					case DEEPC_CONTROLLER_SOLVER_GUROBI:
 					default:
 						change_Deepc_setpoint_gurobi();
@@ -171,6 +833,10 @@ void Deepc_thread_main()
 					setup_Deepc_osqp();
 					break;
 
+				case DEEPC_CONTROLLER_SOLVER_MPC:
+					setup_Deepc_mpc();
+					break;
+
 				case DEEPC_CONTROLLER_SOLVER_GUROBI:
 				default:
 					setup_Deepc_gurobi();
@@ -191,6 +857,10 @@ void Deepc_thread_main()
 			{
 				case DEEPC_CONTROLLER_SOLVER_OSQP:
 					solve_Deepc_osqp();
+					break;
+
+				case DEEPC_CONTROLLER_SOLVER_MPC:
+					solve_Deepc_mpc();
 					break;
 
 				case DEEPC_CONTROLLER_SOLVER_GUROBI:
@@ -240,6 +910,8 @@ void change_Deepc_params()
 
 	if (s_yaml_solver == "osqp")
 		d_solver = DEEPC_CONTROLLER_SOLVER_OSQP;
+	else if (s_yaml_solver == "mpc")
+		d_solver = DEEPC_CONTROLLER_SOLVER_MPC;
 	else
 	{
 		// Default solver is Gurobi
@@ -482,6 +1154,7 @@ void change_Deepc_setpoint_osqp()
   		ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
   	}
 }
+
 
 void change_Deepc_setpoint_osqp_changing_ref()
 {
@@ -1163,6 +1836,7 @@ void update_uini_yini(Controller::Request &request, control_output &output)
 	// If Deepc was not setup yet don't do anything as uini and yini matrices are not setup yet
 	s_Deepc_mutex.lock();
 	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 741");
+	// ROS_INFO("[MPC CONTROLLER] DEBUG 17");
 	bool setupDeepc_success = s_setupDeepc_success;
 	m_uini = s_uini;
 	m_yini = s_yini;
@@ -1170,6 +1844,10 @@ void update_uini_yini(Controller::Request &request, control_output &output)
 	int num_outputs = s_num_outputs;
 	int Nuini = s_Nuini;
 	int Nyini = s_Nyini;
+	// ROS_INFO("[MPC CONTROLLER] DEBUG 18");
+	bool mpc_enabled = false;
+	if (s_yaml_solver == "mpc")
+		mpc_enabled = true;
 	s_Deepc_mutex.unlock();
 	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 750");
 
@@ -1178,33 +1856,68 @@ void update_uini_yini(Controller::Request &request, control_output &output)
 
 	try
 	{
-		// Update uini
-		int u_shift = Nuini - m_num_inputs;
-		m_uini.topRows(u_shift) = m_uini.bottomRows(u_shift);
-		m_uini(u_shift) = output.thrust;
-		m_uini(u_shift + 1) = output.rollRate;
-		m_uini(u_shift + 2) = output.pitchRate;
-		if (yaml_Deepc_yaw_control)
-			m_uini(u_shift + 3) = output.yawRate;
-
-		// Update yini
-		int y_shift = Nyini - num_outputs;
-		m_yini.topRows(y_shift) = m_yini.bottomRows(y_shift);
-		m_yini(y_shift) = request.ownCrazyflie.x;
-		m_yini(y_shift + 1) = request.ownCrazyflie.y;
-		m_yini(y_shift + 2) = request.ownCrazyflie.z;
-		if (yaml_Deepc_measure_roll_pitch)
+		if (!mpc_enabled)
 		{
-			m_yini(y_shift + 3) = request.ownCrazyflie.roll;
-			m_yini(y_shift + 4) = request.ownCrazyflie.pitch;
+			// ROS_INFO("[MPC CONTROLLER] DEBUG 19");
+			// Update uini
+			int u_shift = Nuini - m_num_inputs;
+			m_uini.topRows(u_shift) = m_uini.bottomRows(u_shift);
+			m_uini(u_shift) = output.thrust;
+			m_uini(u_shift + 1) = output.rollRate;
+			m_uini(u_shift + 2) = output.pitchRate;
+			if (yaml_Deepc_yaw_control)
+				m_uini(u_shift + 3) = output.yawRate;
+
+			// Update yini
+			int y_shift = Nyini - num_outputs;
+			m_yini.topRows(y_shift) = m_yini.bottomRows(y_shift);
+			m_yini(y_shift) = request.ownCrazyflie.x;
+			m_yini(y_shift + 1) = request.ownCrazyflie.y;
+			m_yini(y_shift + 2) = request.ownCrazyflie.z;
+			if (yaml_Deepc_measure_roll_pitch)
+			{
+				m_yini(y_shift + 3) = request.ownCrazyflie.roll;
+				m_yini(y_shift + 4) = request.ownCrazyflie.pitch;
+			}
+			if (yaml_Deepc_yaw_control)
+				m_yini(Nyini - 1) = request.ownCrazyflie.yaw;
 		}
-		if (yaml_Deepc_yaw_control)
-			m_yini(Nyini - 1) = request.ownCrazyflie.yaw;
+		else
+		{
+			// ROS_INFO("[MPC CONTROLLER] DEBUG 20");
+			// Update current_state_estimate
+			m_current_state_estimate(0) = request.ownCrazyflie.x;
+			m_current_state_estimate(1) = request.ownCrazyflie.y;
+			m_current_state_estimate(2) = request.ownCrazyflie.z;
+			// ROS_INFO("[MPC CONTROLLER] DEBUG 21");
+
+
+			m_current_state_estimate(3) = (request.ownCrazyflie.x - m_previous_xyz(0)) * yaml_control_frequency;
+			m_current_state_estimate(4) = (request.ownCrazyflie.y - m_previous_xyz(1)) * yaml_control_frequency;
+			m_current_state_estimate(5) = (request.ownCrazyflie.z - m_previous_xyz(2)) * yaml_control_frequency;
+			// ROS_INFO("[MPC CONTROLLER] DEBUG 22");
+
+
+			m_current_state_estimate(6) = request.ownCrazyflie.roll;
+			m_current_state_estimate(7) = request.ownCrazyflie.pitch;
+			// ROS_INFO("[MPC CONTROLLER] DEBUG 23");
+
+
+			for(int i = 0; i < 3; ++i)
+			{
+				m_previous_xyz(i) = m_current_state_estimate(i);
+			}
+			// ROS_INFO("[MPC CONTROLLER] DEBUG 24");
+
+		}
+
+
 
 		s_Deepc_mutex.lock();
 		//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 786");
 		s_uini = m_uini;
 		s_yini = m_yini;
+		s_current_state_estimate = m_current_state_estimate;
 		s_Deepc_mutex.unlock();
 		//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 786");
 	}
@@ -1461,14 +2174,6 @@ void get_lin_cost_vectors()
 	s_Deepc_mutex.lock();
 	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1225");
 	d_setpoint = s_setpoint;
-	
-	// START TEMPORARY CODE TO HARD-CODE SETPOINT 
-	//d_setpoint(0) = 1.0;	// x
-	//d_setpoint(1) = 1.0;	// y
-	//d_setpoint(2) = 2.0;	// z
-	//d_setpoint(3) = 0.0;	// yaw
-	// END TEMPORARY CODE TO HARD-CODE SETPOINT
-
 	s_Deepc_mutex.unlock();
 	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1225");
 
@@ -1552,14 +2257,6 @@ void update_lin_cost_vectors()
 	s_Deepc_mutex.lock();
 	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1312");
 	d_setpoint = s_setpoint;
-
-	// START TEMPORARY CODE TO HARD-CODE SETPOINT 
-	//d_setpoint(0) = 1.0;	// x
-	//d_setpoint(1) = 1.0;	// y
-	//d_setpoint(2) = 2.0;	// z
-	//d_setpoint(3) = 0.0;	// yaw
-	// END TEMPORARY CODE TO HARD-CODE SETPOINT
-
 	s_Deepc_mutex.unlock();
 	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1312");
 

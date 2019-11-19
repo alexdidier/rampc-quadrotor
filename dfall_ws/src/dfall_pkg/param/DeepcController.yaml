@@ -117,7 +117,7 @@ R : [160.0, 4.0, 4.0, 2.0]
 P : [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
 # Regularization parameters
-#lambda2_g : 500.0
+lambda2_g : 500.0
 #lambda2_g : 75.0
 #lambda2_g : 0.001
 lambda2_s : 750000000.0
@@ -131,7 +131,7 @@ input_min : [0.1597, -1.5708, -1.5708, -1.5708]
 input_max : [0.4791, 1.5708, 1.5708, 1.5708]
 
 # Optimization parameters
-solver : osqp
+solver : mpc
 opt_sparse : true
 opt_verbose : false
 opt_steady_state : false  # Available in sparse formulation only, ignored otherwise

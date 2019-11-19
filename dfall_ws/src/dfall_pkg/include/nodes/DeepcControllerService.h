@@ -569,6 +569,22 @@ ros::Publisher m_manoeuvreCompletePublisher;
 // each function is implemented before it is called from another function,
 // hence why the "main" function is at the bottom.
 
+
+// MPC VARIABLES
+MatrixXf d_mpc_q;
+c_float* d_mpc_q_new;
+c_float* d_mpc_l_new;
+c_float* d_mpc_u_new;
+MatrixXf m_previous_xyz = MatrixXf::Zero(3, 1);
+MatrixXf m_current_state_estimate = MatrixXf::Zero(8, 1);
+MatrixXf d_current_state_estimate = MatrixXf::Zero(8, 1);
+MatrixXf s_current_state_estimate = MatrixXf::Zero(8, 1);
+// MPC FUNCTIONS
+void change_Deepc_setpoint_mpc();
+void change_Deepc_setpoint_mpc_changing_ref();
+void setup_Deepc_mpc();
+void solve_Deepc_mpc();
+
 // DEEPC FUNCTIONS
 void Deepc_thread_main();
 void change_Deepc_params();
