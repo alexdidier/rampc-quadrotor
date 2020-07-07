@@ -250,6 +250,12 @@ void MainWindow::on_action_showHideController_deepc_changed()
     ui->customWidget_controller_tabs->showHideController_deepc_changed();
 }
 
+void MainWindow::on_action_showHideController_logging_changed()
+{
+    // Notify the UI elements of this change
+    //ui->customWidget_enableControllerLoadYamlBar->showHideController_logging_changed();
+    ui->customWidget_controller_tabs->showHideController_logging_changed();
+}
 
 void MainWindow::on_action_testMotors_triggered()
 {

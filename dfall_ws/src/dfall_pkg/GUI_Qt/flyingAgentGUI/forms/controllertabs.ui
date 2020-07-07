@@ -28,7 +28,7 @@
    <item row="0" column="0">
     <widget class="QTabWidget" name="controller_tabs_widget">
      <property name="currentIndex">
-      <number>4</number>
+      <number>5</number>
      </property>
      <property name="movable">
       <bool>true</bool>
@@ -83,6 +83,19 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="logging_tab">
+      <property name="accessibleName">
+       <string>Logging</string>
+      </property>
+      <attribute name="title">
+       <string>Logging</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_3">
+       <item row="0" column="0">
+        <widget class="LoggingTab" name="logging_tab_widget" native="true"/>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
   </layout>
@@ -116,6 +129,12 @@
    <class>DeepcControllerTab</class>
    <extends>QWidget</extends>
    <header>deepccontrollertab.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>LoggingTab</class>
+   <extends>QWidget</extends>
+   <header>loggingtab.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

@@ -101,6 +101,15 @@
 			>
 		</node>
 
+		<!-- LOGGING -->
+		<node
+			pkg    = "dfall_pkg"
+			name   = "Logging"
+			output = "screen"
+			type   = "Logging"
+			>
+		</node>
+
 		<!-- TEST MOTORS CONTROLLER -->
 		<node
 			pkg    = "dfall_pkg"

@@ -64,7 +64,7 @@
 #include "dfall_pkg/Controller.h"
 #include "dfall_pkg/CMQuery.h"
 #include "dfall_pkg/IntIntService.h"
-
+#include "dfall_pkg/LoggingService.h"
 // Include the shared definitions
 #include "nodes/Constants.h"
 #include "nodes/DefaultControllerConstants.h"
@@ -216,7 +216,8 @@ ros::ServiceClient m_deepcController;
 // The Test Mtoros controller specified in the FlyingAgentClientConfig.yaml
 ros::ServiceClient m_testMotorsController;
 
-
+// The logging service
+ros::ServiceClient m_logging;
 
 
 
@@ -329,6 +330,8 @@ int getControllerNominallySelected();
 void flyingStateOrControllerRequestCallback(const IntWithHeader & commandMsg);
 
 
+// The callback that logging was requested
+//void loggingRequestCallback(LoggingService::Request &request, LoggingService::Response &response);
 
 // THE CALLBACK THAT THE CRAZY RADIO STATUS CHANGED
 void crazyRadioStatusCallback(const std_msgs::Int32& msg);
@@ -343,7 +346,7 @@ void emergencyStopReceivedCallback(const IntWithHeader & msg);
 // THE SERVICE CALLBACK REQUESTING THE CURRENT FLYING STATE
 bool getCurrentFlyingStateServiceCallback(IntIntService::Request &request, IntIntService::Response &response);
 
-
+void loggingRequestCallback(const std_msgs::Int32 &msg);
 
 // FOR THE BATTERY STATE CALLBACK
 void batteryMonitorStateChangedCallback(std_msgs::Int32 msg);
@@ -365,6 +368,8 @@ void createControllerServiceClientFromParameterName( std::string paramter_name ,
 // > For creating an IntInt service client from the
 //   name of a YAML paramter
 void createIntIntServiceClientFromParameterName( std::string paramter_name , ros::ServiceClient& serviceClient );
+
+void createLoggingServiceClientFromParameterName( std::string paramter_name , ros::ServiceClient& serviceClient );
 // > Callback for the timer so that all services servers
 //   exists before we try to create the clients
 void timerCallback_for_createAllcontrollerServiceClients(const ros::TimerEvent&);

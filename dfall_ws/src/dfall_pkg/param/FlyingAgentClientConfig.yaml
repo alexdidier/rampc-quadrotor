@@ -5,6 +5,7 @@ studentController:  "StudentControllerService/StudentController"
 tuningController:   "TuningControllerService/TuningController"
 pickerController:   "PickerControllerService/PickerController"
 deepcController: "DeepcControllerService/DeepcController"
+logging: "Logging/LoggingService"
 
 testMotorsController: "TestMotorsControllerService/TestMotorsController"
 

@@ -132,6 +132,7 @@ private slots:
     void on_action_showHideController_picker_changed();
     void on_action_showHideController_tuning_changed();
     void on_action_showHideController_deepc_changed();
+    void on_action_showHideController_logging_changed();
 
     void on_action_testMotors_triggered();
 

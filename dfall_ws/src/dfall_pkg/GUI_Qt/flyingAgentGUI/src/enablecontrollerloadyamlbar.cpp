@@ -113,8 +113,13 @@ void EnableControllerLoadYamlBar::showHideController_deepc_changed()
     ui->enable_deepc_button   ->setHidden( !(ui->enable_deepc_button->isHidden()) );
     ui->load_yaml_deepc_button->setHidden( !(ui->load_yaml_deepc_button->isHidden()) );
 }
-
-
+/*
+void EnableControllerLoadYamlBar::showHideController_logging_changed()
+{
+    ui->enable_logging_button   ->setHidden( !(ui->enable_logging_button->isHidden()) );
+    ui->load_yaml_logging_button->setHidden( !(ui->load_yaml_logging_button->isHidden()) );
+}
+*/
 
 // TEST MOTORS
 

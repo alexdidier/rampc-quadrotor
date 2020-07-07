@@ -94,6 +94,7 @@ public:
     void showHideController_picker_changed();
     void showHideController_tuning_changed();
     void showHideController_deepc_changed();
+    void showHideController_logging_changed();
 
 
 public slots:
@@ -106,6 +107,9 @@ signals:
     void measuredPoseValueChanged(float x , float y , float z , float roll , float pitch , float yaw , bool occluded);
     void poseDataUnavailableSignal();
 
+
+private slots:
+    void on_logging_tab_widget_destroyed();
 
 private:
     Ui::ControllerTabs *ui;

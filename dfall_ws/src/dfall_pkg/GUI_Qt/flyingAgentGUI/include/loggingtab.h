@@ -25,9 +25,7 @@
 //
 //
 //    DESCRIPTION:
-//    The GUI bar for selecting which controller is active, and
-//    for request that paramters are loaded from the respective
-//    YAML files.
+//    The GUI for Logging
 //
 //    ----------------------------------------------------------------------------------
 
@@ -35,11 +33,14 @@
 
 
 
-#ifndef ENABLECONTROLLERLOADYAMLBAR_H
-#define ENABLECONTROLLERLOADYAMLBAR_H
+#ifndef LOGGINGTAB_H
+#define LOGGINGTAB_H
 
 #include <QWidget>
 #include <QMutex>
+#include <QVector>
+#include <QLineEdit>
+#include <QTextStream>
 
 #ifdef CATKIN_MAKE
 #include <ros/ros.h>
@@ -47,23 +48,24 @@
 #include <ros/package.h>
 
 // Include the standard message types
-#include "std_msgs/Int32.h"
-#include "std_msgs/Float32.h"
-#include <std_msgs/String.h>
+//#include "std_msgs/Int32.h"
+//#include "std_msgs/Float32.h"
+//#include <std_msgs/String.h>
 
 // Include the DFALL message types
-#include "dfall_pkg/IntWithHeader.h"
-#include "dfall_pkg/StringWithHeader.h"
+//#include "dfall_pkg/IntWithHeader.h"
+#include "dfall_pkg/SetpointWithHeader.h"
+#include "dfall_pkg/CustomButtonWithHeader.h"
 
 // Include the DFALL service types
-// #include "dfall_pkg/AreaBounds.h"
-// #include "dfall_pkg/CrazyflieContext.h"
-// #include "dfall_pkg/CMQuery.h"
+#include "dfall_pkg/GetSetpointService.h"
 
 // Include the shared definitions
 #include "nodes/Constants.h"
+#include "nodes/DeepcControllerConstants.h"
 
-// using namespace dfall_pkg;
+// SPECIFY THE PACKAGE NAMESPACE
+//using namespace dfall_pkg;
 
 #else
 // Include the shared definitions
@@ -76,54 +78,41 @@
 
 
 namespace Ui {
-class EnableControllerLoadYamlBar;
+class LoggingTab;
 }
 
-class EnableControllerLoadYamlBar : public QWidget
+class LoggingTab : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit EnableControllerLoadYamlBar(QWidget *parent = 0);
-    ~EnableControllerLoadYamlBar();
+    explicit LoggingTab(QWidget *parent = 0);
+    ~LoggingTab();
 
-    // PUBLIC METHODS FOR TOGGLING THE VISISBLE CONTROLLERS
-    void showHideController_default_changed();
-    void showHideController_student_changed();
-    void showHideController_picker_changed();
-    void showHideController_tuning_changed();
-    void showHideController_deepc_changed();
-    void showHideController_logging_changed();
-
-    void testMotors_triggered();
 
 
 public slots:
     void setAgentIDsToCoordinate(QVector<int> agentIDs , bool shouldCoordinateAll);
+    void setMeasuredPose(float x , float y , float z , float roll , float pitch , float yaw , bool occluded);
+    void poseDataUnavailableSlot();
+
 
 
 private slots:
+    
 
-    // ENABLE CONTROLLER BUTTONS ON-CLICK CALLBACK
-    void on_enable_default_button_clicked();
-    void on_enable_student_button_clicked();
-    void on_enable_picker_button_clicked();
-    void on_enable_tuning_button_clicked();
-    void on_enable_deepc_button_clicked();
-    //void on_enable_logging_button_clicked();
+ 
 
-    // LOAD YAML BUTTONS ON-CLICK CALLBACK
-    void on_load_yaml_default_button_clicked();
-    void on_load_yaml_student_button_clicked();
-    void on_load_yaml_picker_button_clicked();
-    void on_load_yaml_tuning_button_clicked();
-    void on_load_yaml_deepc_button_clicked();
-    //void on_load_yaml_logging_button_clicked();
+
+
+    void on_custom_button_1_clicked();
+
+
+
 
 
 private:
-    Ui::EnableControllerLoadYamlBar *ui;
-
+    Ui::LoggingTab *ui;
 
     // --------------------------------------------------- //
     // PRIVATE VARIABLES
@@ -140,29 +129,46 @@ private:
     bool m_shouldCoordinateAll = true;
     QMutex m_agentIDs_toCoordinate_mutex;
 
+    // Mutex for the current state label
+    QMutex m_label_current_state_mutex;
+
 
 #ifdef CATKIN_MAKE
-    // PUBLISHERS AND SUBSRIBERS
-    // > For {take-off,land,motors-off} and controller selection
-    ros::Publisher commandPublisher;
-    // > For requesting the loading of yaml files
-    ros::Publisher m_requestLoadYamlFilenamePublisher;
+    // PUBLISHER
+    // > For requesting the setpoint to be changed
+    ros::Publisher requestSetpointChangePublisher;
 
+    // SUBSCRIBER
+    // > For being notified when the setpoint is changed
+    ros::Subscriber setpointChangedSubscriber;
+
+    // PUBLISHER
+    // > For notifying that a custom button is pressed
+    ros::Publisher customButtonPublisher;
 #endif
+
+
 
     // --------------------------------------------------- //
     // PRIVATE FUNCTIONS
 
 #ifdef CATKIN_MAKE
+    // For receiving message that the setpoint was changed
+    void setpointChangedCallback(const dfall_pkg::SetpointWithHeader& newSetpoint);
+
+    // Publish a message when a custom button is pressed
+    void publish_custom_button_command(int button_index , QLineEdit * lineEdit_pointer);
+
     // Fill the header for a message
-    void fillIntMessageHeader( dfall_pkg::IntWithHeader & msg );
-    void fillStringMessageHeader( dfall_pkg::StringWithHeader & msg );
+    void fillSetpointMessageHeader( dfall_pkg::SetpointWithHeader & msg );
+    void fillCustomButtonMessageHeader( dfall_pkg::CustomButtonWithHeader & msg );
 
     // Get the paramters that specify the type and ID
     bool getTypeAndIDParameters();
 #endif
 
+    void publishSetpoint(float x, float y, float z, float yaw_degrees);
 
 };
 
-#endif // ENABLECONTROLLERLOADYAMLBAR_H
+#endif // LOGGINGTAB_H

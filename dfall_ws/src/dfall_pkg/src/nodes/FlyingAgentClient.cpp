@@ -230,6 +230,7 @@ void viconCallback(const ViconData& viconData)
 					}
 				}
 
+				
 				// Send the command to the CrazyRadio
 				// > IF SUCCESSFUL
 				if (isSuccessful_controllerCall)
@@ -244,6 +245,10 @@ void viconCallback(const ViconData& viconData)
 					// And change the state to motor-off
 					requestChangeFlyingStateTo(STATE_MOTORS_OFF);
 				}
+				LoggingService loggingCall;
+				loggingCall.request.ownCrazyflie=poseDataForThisAgent;
+				loggingCall.request.controlOutput=controllerCall.response.controlOutput;
+				m_logging.call(loggingCall);
 			}
 			else
 			{
@@ -280,6 +285,7 @@ void viconCallback(const ViconData& viconData)
 		sendZeroOutputCommandForMotors();
 
 	} // END OF: "if ( (m_poseDataIndex >= 0) and (m_controllers_avialble) )"
+
 
 }
 
@@ -980,9 +986,13 @@ int getControllerNominallySelected()
 
 
 
-
-
-
+/*
+	void loggingRequestCallback(const IntWithHeader &msg)
+	{
+		//m_logging.call(request,response);
+		ROS_INFO_STREAM("[FLYING AGENT CLIENT] Message successfully received.");
+	}
+*/
 
 
 //    ----------------------------------------------------------------------------------
@@ -1344,7 +1354,21 @@ void createIntIntServiceClientFromParameterName( std::string paramter_name , ros
     ROS_INFO_STREAM("[FLYING AGENT CLIENT] Loaded service: " << serviceClient.getService() <<  ", valid: " << serviceClient.isValid() << ", exists: " << serviceClient.exists() );
 }
 
+void createLoggingServiceClientFromParameterName( std::string paramter_name , ros::ServiceClient& serviceClient )
+{
+    ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
+    ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "FlyingAgentClientConfig");
 
+    std::string controllerName;
+    if(!nodeHandle.getParam(paramter_name, controllerName))
+    {
+        ROS_ERROR_STREAM("[FLYING AGENT CLIENT] Failed to get \"" << paramter_name << "\" paramter");
+        return;
+    }
+
+    serviceClient = ros::service::createClient<LoggingService>(controllerName, true);
+    ROS_INFO_STREAM("[FLYING AGENT CLIENT] Loaded service: " << serviceClient.getService() <<  ", valid: " << serviceClient.isValid() << ", exists: " << serviceClient.exists() );
+}
 
 void timerCallback_for_createAllcontrollerServiceClients(const ros::TimerEvent&)
 {
@@ -1365,6 +1389,7 @@ void timerCallback_for_createAllcontrollerServiceClients(const ros::TimerEvent&)
     // CONTROLLER TO PERFORM MANOEUVRES
     createIntIntServiceClientFromParameterName( "deepcController_requestManoeuvre" , m_deepcController_requestManoeuvre );
 
+    createLoggingServiceClientFromParameterName("logging", m_logging);
     // Check that at least the default controller is available
     // > Setting the flag accordingly
     if (m_defaultController)
@@ -1691,7 +1716,7 @@ int main(int argc, char* argv[])
 	// > for the coord GUI
 	ros::Subscriber commandSubscriber_to_coord = nodeHandle_to_coordinator.subscribe("FlyingAgentClient/Command", 1, flyingStateRequestCallback);
 
-
+	//ros::Subscriber loggingSubscriber = nodeHandle.subscribe("loggingActive",1,loggingRequestCallback);
 	// PUBLISHER FOR THE CRAZYRADIO COMMANDS
 	// i.e., {CONNECT,DISCONNECT}
 	// This topic lets us use the terminal to communicate with

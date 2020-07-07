@@ -82,6 +82,11 @@ ControllerTabs::ControllerTabs(QWidget *parent) :
             ui->deepc_controller_tab_widget , &DeepcControllerTab::setMeasuredPose
         );
 
+    QObject::connect(
+            this , &ControllerTabs::measuredPoseValueChanged ,
+            ui->logging_tab_widget , &LoggingTab::setMeasuredPose
+        );
+
 
 
     // CONNECT THE "MEASUREMENTS UNAVAILABLE" SIGNAL TO
@@ -111,6 +116,10 @@ ControllerTabs::ControllerTabs(QWidget *parent) :
             ui->deepc_controller_tab_widget , &DeepcControllerTab::poseDataUnavailableSlot
         );
 
+    QObject::connect(
+            this , &ControllerTabs::poseDataUnavailableSignal ,
+            ui->logging_tab_widget , &LoggingTab::poseDataUnavailableSlot
+        );
 
     // CONNECT TO THE COORDINATOR SIGNAL TO BE ALWAYS UPDATED
     // WITH THE LIST OF AGENT IDs TO COORDINATE
@@ -142,7 +151,11 @@ ControllerTabs::ControllerTabs(QWidget *parent) :
             ui->deepc_controller_tab_widget , &DeepcControllerTab::setAgentIDsToCoordinate
         );
 
-    
+    QObject::connect(
+            this , &ControllerTabs::agentIDsToCoordinateChanged ,
+            ui->logging_tab_widget , &LoggingTab::setAgentIDsToCoordinate
+        );
+
 
 
 
@@ -253,7 +266,10 @@ void ControllerTabs::showHideController_deepc_changed()
 }
 
 
-
+void ControllerTabs::showHideController_logging_changed()
+{
+    showHideController_toggle("Logging",ui->logging_tab);
+}
 
 
 
@@ -453,6 +469,7 @@ void ControllerTabs::setAllTabLabelsToNormalColouring()
     setTextColourOfTabLabel( m_tab_text_colour_normal , ui->picker_tab );
     setTextColourOfTabLabel( m_tab_text_colour_normal , ui->tuning_tab );
     setTextColourOfTabLabel( m_tab_text_colour_normal , ui->deepc_tab );
+    setTextColourOfTabLabel( m_tab_text_colour_normal , ui->logging_tab );
 }
 
 void ControllerTabs::setTextColourOfTabLabel(QColor color , QWidget * tab_widget)
@@ -645,3 +662,8 @@ bool ControllerTabs::getTypeAndIDParameters()
     return return_was_successful;
 }
 #endif
+
+void ControllerTabs::on_logging_tab_widget_destroyed()
+{
+
+}
