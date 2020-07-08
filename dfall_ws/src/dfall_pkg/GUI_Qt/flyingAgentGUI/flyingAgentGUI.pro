@@ -30,7 +30,8 @@ SOURCES += src/main.cpp\
     src/pickercontrollertab.cpp \
     src/deepccontrollertab.cpp \
     src/tuningcontrollertab.cpp \
-    src/loggingtab.cpp
+    src/loggingtab.cpp \
+    src/rampccontrollertab.cpp
 
 
 HEADERS  += include/mainwindow.h \
@@ -47,7 +48,8 @@ HEADERS  += include/mainwindow.h \
     include/deepccontrollertab.h \
     include/tuningcontrollertab.h \
     include/Constants_for_Qt_compile.h \
-    include/loggingtab.h
+    include/loggingtab.h \
+    include/rampccontrollertab.h
 
 
 
@@ -64,7 +66,8 @@ FORMS    += forms/mainwindow.ui \
     forms/pickercontrollertab.ui \
     forms/deepccontrollertab.ui \
     forms/tuningcontrollertab.ui \
-    forms/loggingtab.ui
+    forms/loggingtab.ui \
+    forms/rampccontrollertab.ui
 
 
 RESOURCES += \

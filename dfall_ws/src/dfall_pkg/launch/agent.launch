@@ -101,6 +101,15 @@
 			>
 		</node>
 
+		<!-- RAMPC CONTROLLER -->
+		<node
+			pkg    = "dfall_pkg"
+			name   = "RampcControllerService"
+			output = "screen"
+			type   = "RampcControllerService"
+			>
+		</node>
+
 		<!-- LOGGING -->
 		<node
 			pkg    = "dfall_pkg"

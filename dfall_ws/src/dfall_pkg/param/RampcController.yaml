@@ -1,0 +1,154 @@
+# ------------------------------------------------------
+# PARAMTERS FOR THE LANDING MANOEUVRE
+
+# Height change for the landing move-down
+landing_move_down_end_height_setpoint:  0.2
+landing_move_down_end_height_threshold: 0.05
+# The time for: landing move-down
+landing_move_down_time_max: 2.0
+
+# The thrust for landing spin motors
+landing_spin_motors_thrust: 10000.0
+# The time for: landing spin motors
+landing_spin_motors_time: 0
+
+# IMPORTANT NOTE: the times above should NOT be set
+# to zero because this will cause a divide by zero
+# crash.
+
+
+# ------------------------------------------------------
+# PARAMTERS THAT ARE STANDARD FOR A "CONTROLLER SERVICE"
+
+# Mass of the crazyflie, in grams
+mass : 28
+
+# Frequency of the controller, in hertz
+control_frequency : 25.0
+
+# Quadratic motor regression equation (a0, a1, a2)
+motorPoly : [5.484560e-4, 1.032633e-6, 2.130295e-11]
+
+# The min and max for saturating 16 bit thrust commands
+command_sixteenbit_min : 1000
+command_sixteenbit_max : 60000
+
+# The default setpoint, the ordering is (x,y,z,yaw),
+# with unit [meters,meters,meters,radians]
+default_setpoint : [0.0, 0.0, 1.0, 0.0]
+
+# Boolean indiciating whether the "Debug Message" of this agent should be published or not
+shouldPublishDebugMessage : false
+
+# Boolean indiciating whether the debugging ROS_INFO_STREAM should be displayed or not
+shouldDisplayDebugInfo : false
+
+# The LQR Controller parameters for rate mode
+# 25Hz Gains
+gainMatrixThrust_NineStateVector    :  [ 0.00, 0.00, 0.44, 0.00, 0.00, 0.16, 0.00, 0.00, 0.00]
+gainMatrixRollRate                  :  [ 0.00,-2.79, 0.00, 0.00, -1.83, 0.00, 5.91, 0.00, 0.00]
+gainMatrixPitchRate                 :  [ 2.79, 0.00, 0.00, 1.83, 0.00, 0.00, 0.00, 5.91, 0.00]
+#gainMatrixYawRate                   :  [ 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.97]
+gainMatrixYawRate                   :  [ 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 4.09]
+
+
+# 50 Hz Gains
+#gainMatrixThrust_NineStateVector    :  [ 0.00, 0.00, 0.47, 0.00, 0.00, 0.17, 0.00, 0.00, 0.00]
+#gainMatrixRollRate                  :  [ 0.00, -2.97, 0.00, 0.00, -1.92, 0.00, 6.09, 0.00, 0.00]
+#gainMatrixPitchRate                 :  [ 2.97, 0.00, 0.00, 1.92, 0.00, 0.00, 0.00, 6.09, 0.00]
+#gainMatrixYawRate                   :  [ -0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 3.06]
+
+# ------------------------------------------------------
+# PARAMTERS FOR DEEPC
+
+# Data collection max time, in minutes
+data_collection_max_time : 10
+
+# Data folder location, relative to HOME path
+dataFolder : /work/D-FaLL-System/Deepc_data/
+
+# CSV data files location, relative to dataFolder
+outputFolder : output/
+thrustExcSignalFile : thrust_exc_signal.csv
+rollRateExcSignalFile : rollRate_exc_signal.csv
+pitchRateExcSignalFile : pitchRate_exc_signal.csv
+yawRateExcSignalFile : yawRate_exc_signal.csv
+
+# Log files folder location, relative to dataFolder
+logFolder : log/
+
+# Thrust excitation magnitude, in grams
+thrustExcAmp : 10.0
+
+# Roll rate excitation magnitude, in deg/s
+rollRateExcAmp : 60.0
+
+# Pitch rate excitation magnitude, in deg/s
+pitchRateExcAmp : 60.0
+
+# Yaw rate excitation magnitude, in deg/s
+yawRateExcAmp : 60.0
+
+# Excitation start time, in s. Used to collect steady-state data before excitation
+exc_start_time : 0.0
+
+# EVERYTHING DEEPC
+
+# Flag that indicates whether to use roll and pitch angle measurements in Deepc
+Deepc_measure_roll_pitch : false
+
+# Flag that activates yaw control through Deepc
+Deepc_yaw_control : false
+
+# Tini in discrete time steps
+Tini : 6
+
+# Prediction horizon in discrete time steps
+N : 25
+
+# Output cost matrix diagonal entries (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
+Q : [40.0, 40.0, 40.0, 0.0, 0.0, 0.0, 0.0, 0.0, 40.0]
+
+# Input cost matrix diagonal entries (thrust, rollRate, pitchRate, yawRate)
+R : [160.0, 4.0, 4.0, 2.0]
+
+# Terminal output cost matrix diagonal entries (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
+#P : [657.21, 657.21, 355.26, 96.92, 96.92, 18.77, 629.60, 629.60, 244.50]
+P : [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+# Regularization parameters
+lambda2_g : 500.0
+#lambda2_g : 75.0
+#lambda2_g : 0.001
+lambda2_s : 750000000.0
+
+# Output constraints (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
+output_min : [-4.0, -4.0, 0.1, -100, -100, -100, -0.5236, -0.5236, -0.5236]
+output_max : [4.0, 4.0, 4.0, 100, 100, 100, 0.5236, 0.5236, 0.5236]
+
+# Input constraints (thurst, rollRate, pitchRate, yawRate)
+input_min : [0.1597, -1.5708, -1.5708, -1.5708]
+input_max : [0.4791, 1.5708, 1.5708, 1.5708]
+
+# Optimization parameters
+solver : mpc
+opt_sparse : true
+opt_verbose : false
+opt_steady_state : false  # Available in sparse formulation only, ignored otherwise
+
+# Parameters specific to Gurobi
+grb_LogToFile : false
+grb_presolve_at_setup : true
+
+# ------------------------------------------------------
+# PARAMTERS FOR CHANGING REFERENCE
+# This implements a 'Figure 8' in x and y and a sine in z
+
+# Figure 8 amplitude, in m
+figure_8_amplitude : 1
+# Figure 8 frequency, in Hz
+figure_8_frequency : 0.2
+# z sine amplitude, in m
+z_sine_amplitude : 0.3
+# z sine frequency, in Hz
+z_sine_frequency : 0.1

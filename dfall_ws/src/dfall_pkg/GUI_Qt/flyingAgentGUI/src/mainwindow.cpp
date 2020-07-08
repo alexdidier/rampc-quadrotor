@@ -249,6 +249,12 @@ void MainWindow::on_action_showHideController_deepc_changed()
     ui->customWidget_enableControllerLoadYamlBar->showHideController_deepc_changed();
     ui->customWidget_controller_tabs->showHideController_deepc_changed();
 }
+void MainWindow::on_action_showHideController_rampc_changed()
+{
+    // Notify the UI elements of this change
+    //ui->customWidget_enableControllerLoadYamlBar->showHideController_rampc_changed();
+    ui->customWidget_controller_tabs->showHideController_rampc_changed();
+}
 
 void MainWindow::on_action_showHideController_logging_changed()
 {

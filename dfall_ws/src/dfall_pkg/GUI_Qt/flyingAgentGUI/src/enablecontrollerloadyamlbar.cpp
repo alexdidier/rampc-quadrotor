@@ -113,6 +113,11 @@ void EnableControllerLoadYamlBar::showHideController_deepc_changed()
     ui->enable_deepc_button   ->setHidden( !(ui->enable_deepc_button->isHidden()) );
     ui->load_yaml_deepc_button->setHidden( !(ui->load_yaml_deepc_button->isHidden()) );
 }
+void EnableControllerLoadYamlBar::showHideController_rampc_changed()
+{
+    ui->enable_rampc_button   ->setHidden( !(ui->enable_rampc_button->isHidden()) );
+    ui->load_yaml_rampc_button->setHidden( !(ui->load_yaml_rampc_button->isHidden()) );
+}
 /*
 void EnableControllerLoadYamlBar::showHideController_logging_changed()
 {
@@ -194,6 +199,16 @@ void EnableControllerLoadYamlBar::on_enable_deepc_button_clicked()
 #endif
 }
 
+void EnableControllerLoadYamlBar::on_enable_rampc_button_clicked()
+{
+#ifdef CATKIN_MAKE
+    dfall_pkg::IntWithHeader msg;
+    fillIntMessageHeader(msg);
+    msg.data = CMD_USE_DEEPC_CONTROLLER;
+    this->commandPublisher.publish(msg);
+    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Enable RAMPC Controller");
+#endif
+}
 
 
 
@@ -282,7 +297,21 @@ void EnableControllerLoadYamlBar::on_load_yaml_deepc_button_clicked()
 #endif
 }
 
-
+void EnableControllerLoadYamlBar::on_load_yaml_rampc_button_clicked()
+{
+#ifdef CATKIN_MAKE
+    // Create a local variable for the message
+    dfall_pkg::StringWithHeader yaml_filename_msg;
+    // Set for whom this applies to
+    fillStringMessageHeader(yaml_filename_msg);
+    // Specify the data
+    yaml_filename_msg.data = "RampcController";
+    // Send the message
+    m_requestLoadYamlFilenamePublisher.publish(yaml_filename_msg);
+    // Inform the user that the menu item was selected
+    ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Load RAMPC Controller YAML was clicked.");
+#endif
+}
 
 
 

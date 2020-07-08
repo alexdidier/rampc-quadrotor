@@ -84,6 +84,11 @@ ControllerTabs::ControllerTabs(QWidget *parent) :
 
     QObject::connect(
             this , &ControllerTabs::measuredPoseValueChanged ,
+            ui->rampc_controller_tab_widget , &RampcControllerTab::setMeasuredPose
+        );
+
+    QObject::connect(
+            this , &ControllerTabs::measuredPoseValueChanged ,
             ui->logging_tab_widget , &LoggingTab::setMeasuredPose
         );
 
@@ -114,6 +119,11 @@ ControllerTabs::ControllerTabs(QWidget *parent) :
     QObject::connect(
             this , &ControllerTabs::poseDataUnavailableSignal ,
             ui->deepc_controller_tab_widget , &DeepcControllerTab::poseDataUnavailableSlot
+        );
+
+    QObject::connect(
+            this , &ControllerTabs::poseDataUnavailableSignal ,
+            ui->rampc_controller_tab_widget , &RampcControllerTab::poseDataUnavailableSlot
         );
 
     QObject::connect(
@@ -149,6 +159,11 @@ ControllerTabs::ControllerTabs(QWidget *parent) :
     QObject::connect(
             this , &ControllerTabs::agentIDsToCoordinateChanged ,
             ui->deepc_controller_tab_widget , &DeepcControllerTab::setAgentIDsToCoordinate
+        );
+
+    QObject::connect(
+            this , &ControllerTabs::agentIDsToCoordinateChanged ,
+            ui->rampc_controller_tab_widget , &RampcControllerTab::setAgentIDsToCoordinate
         );
 
     QObject::connect(
@@ -265,6 +280,10 @@ void ControllerTabs::showHideController_deepc_changed()
     showHideController_toggle("Deepc",ui->deepc_tab);
 }
 
+void ControllerTabs::showHideController_rampc_changed()
+{
+    showHideController_toggle("Rampc",ui->rampc_tab);
+}
 
 void ControllerTabs::showHideController_logging_changed()
 {
@@ -469,6 +488,7 @@ void ControllerTabs::setAllTabLabelsToNormalColouring()
     setTextColourOfTabLabel( m_tab_text_colour_normal , ui->picker_tab );
     setTextColourOfTabLabel( m_tab_text_colour_normal , ui->tuning_tab );
     setTextColourOfTabLabel( m_tab_text_colour_normal , ui->deepc_tab );
+    setTextColourOfTabLabel( m_tab_text_colour_normal , ui->rampc_tab );
     setTextColourOfTabLabel( m_tab_text_colour_normal , ui->logging_tab );
 }
 

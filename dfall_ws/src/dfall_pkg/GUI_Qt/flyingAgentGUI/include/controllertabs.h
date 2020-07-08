@@ -94,6 +94,7 @@ public:
     void showHideController_picker_changed();
     void showHideController_tuning_changed();
     void showHideController_deepc_changed();
+    void showHideController_rampc_changed();
     void showHideController_logging_changed();
 
 

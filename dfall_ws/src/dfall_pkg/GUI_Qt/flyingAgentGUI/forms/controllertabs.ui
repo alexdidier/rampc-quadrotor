@@ -83,6 +83,16 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="rampc_tab">
+      <attribute name="title">
+       <string>RAMPC</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_8">
+       <item row="0" column="0">
+        <widget class="RampcControllerTab" name="rampc_controller_tab_widget" native="true"/>
+       </item>
+      </layout>
+     </widget>
      <widget class="QWidget" name="logging_tab">
       <property name="accessibleName">
        <string>Logging</string>
@@ -135,6 +145,12 @@
    <class>LoggingTab</class>
    <extends>QWidget</extends>
    <header>loggingtab.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>RampcControllerTab</class>
+   <extends>QWidget</extends>
+   <header location="global">rampccontrollertab.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

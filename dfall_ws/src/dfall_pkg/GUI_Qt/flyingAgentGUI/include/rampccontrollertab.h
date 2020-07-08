@@ -25,7 +25,7 @@
 //
 //
 //    DESCRIPTION:
-//    The GUI for Logging
+//    The GUI for a RAMPC Controller for students build from
 //
 //    ----------------------------------------------------------------------------------
 
@@ -33,8 +33,8 @@
 
 
 
-#ifndef LOGGINGTAB_H
-#define LOGGINGTAB_H
+#ifndef RAMPCCONTROLLERTAB_H
+#define RAMPCCONTROLLERTAB_H
 
 #include <QWidget>
 #include <QMutex>
@@ -62,7 +62,7 @@
 
 // Include the shared definitions
 #include "nodes/Constants.h"
-#include "nodes/DeepcControllerConstants.h"
+#include "nodes/RampcControllerConstants.h"
 
 // SPECIFY THE PACKAGE NAMESPACE
 //using namespace dfall_pkg;
@@ -78,16 +78,16 @@
 
 
 namespace Ui {
-class LoggingTab;
+class RampcControllerTab;
 }
 
-class LoggingTab : public QWidget
+class RampcControllerTab : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit LoggingTab(QWidget *parent = 0);
-    ~LoggingTab();
+    explicit RampcControllerTab(QWidget *parent = 0);
+    ~RampcControllerTab();
 
 
 
@@ -99,7 +99,6 @@ public slots:
 
 
 private slots:
-/*
     void on_lineEdit_setpoint_new_x_returnPressed();
     void on_lineEdit_setpoint_new_y_returnPressed();
     void on_lineEdit_setpoint_new_z_returnPressed();
@@ -108,18 +107,18 @@ private slots:
     void on_set_setpoint_button_clicked();
 
     void on_default_setpoint_button_clicked();
-*/
+
     void on_custom_button_1_clicked();
-    //void on_custom_button_2_clicked();
-    //void on_custom_button_3_clicked();
-	//void on_custom_button_4_clicked();
-    //void on_custom_button_5_clicked();
+    void on_custom_button_2_clicked();
+    void on_custom_button_3_clicked();
+	void on_custom_button_4_clicked();
+    void on_custom_button_5_clicked();
 
 
 
 
 private:
-    Ui::LoggingTab *ui;
+    Ui::RampcControllerTab *ui;
 
     // --------------------------------------------------- //
     // PRIVATE VARIABLES
@@ -178,4 +177,4 @@ private:
 
 };
 
-#endif // LOGGINGTAB_H
+#endif // RAMPCCONTROLLERTAB_H

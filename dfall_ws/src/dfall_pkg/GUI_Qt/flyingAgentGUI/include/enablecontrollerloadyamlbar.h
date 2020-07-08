@@ -93,7 +93,8 @@ public:
     void showHideController_picker_changed();
     void showHideController_tuning_changed();
     void showHideController_deepc_changed();
-    void showHideController_logging_changed();
+    void showHideController_rampc_changed();
+    //void showHideController_logging_changed();
 
     void testMotors_triggered();
 
@@ -110,6 +111,7 @@ private slots:
     void on_enable_picker_button_clicked();
     void on_enable_tuning_button_clicked();
     void on_enable_deepc_button_clicked();
+    void on_enable_rampc_button_clicked();
     //void on_enable_logging_button_clicked();
 
     // LOAD YAML BUTTONS ON-CLICK CALLBACK
@@ -118,6 +120,7 @@ private slots:
     void on_load_yaml_picker_button_clicked();
     void on_load_yaml_tuning_button_clicked();
     void on_load_yaml_deepc_button_clicked();
+    void on_load_yaml_rampc_button_clicked();
     //void on_load_yaml_logging_button_clicked();
 
 
