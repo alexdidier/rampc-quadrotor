@@ -5,6 +5,7 @@ studentController:  "StudentControllerService/StudentController"
 tuningController:   "TuningControllerService/TuningController"
 pickerController:   "PickerControllerService/PickerController"
 deepcController: "DeepcControllerService/DeepcController"
+rampcController: "RampcControllerService/RampcController"
 logging: "Logging/LoggingService"
 
 testMotorsController: "TestMotorsControllerService/TestMotorsController"
@@ -16,6 +17,7 @@ defaultController_requestManoeuvre: "DefaultControllerService/RequestManoeuvre"
 # The name of the service advertised by the Default
 # Controller for requests manoeuvres to be performed
 deepcController_requestManoeuvre: "DeepcControllerService/RequestManoeuvre"
+rampcController_requestManoeuvre: "RampcControllerService/RequestManoeuvre"
 
 # Flag for whether to use angle for switching
 # to the Default Controller

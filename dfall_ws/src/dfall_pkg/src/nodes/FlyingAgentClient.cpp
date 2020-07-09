@@ -619,6 +619,22 @@ void requestChangeFlyingStateToTakeOff()
 						ROS_INFO("[FLYING AGENT CLIENT] Failed to notify Deepc controller of take-off.");
 					}
 				}
+				if(getInstantController() == RAMPC_CONTROLLER)
+				{
+					// Call the service offered by the rampc
+					// controller for take-off acknowledgement
+					dfall_pkg::IntIntService requestManoeurveCall;
+					requestManoeurveCall.request.data = RAMPC_CONTROLLER_REQUEST_TAKEOFF;
+					if(m_rampcController_requestManoeuvre.call(requestManoeurveCall))
+					{
+						ROS_INFO_STREAM("[FLYING AGENT CLIENT] Notified Rampc controller of take-off.");
+					}
+					else
+					{
+						// Inform the user
+						ROS_INFO("[FLYING AGENT CLIENT] Failed to notify Rampc controller of take-off.");
+					}
+				}
 			}
 		}
 		else
@@ -726,10 +742,35 @@ void requestChangeFlyingStateToLand()
 			// "motors off" state
 			else
 			{
+				if(getInstantController() == RAMPC_CONTROLLER)
+				{
+					// Call the service offered by the rampc
+					// controller for how long a landing will take
+					dfall_pkg::IntIntService requestManoeurveCall;
+					requestManoeurveCall.request.data = RAMPC_CONTROLLER_REQUEST_LANDING;
+					if(m_rampcController_requestManoeuvre.call(requestManoeurveCall))
+					{
+						// Extract the duration
+						float land_duration = float(requestManoeurveCall.response.data) / 1000.0;
+						// Start the timer
+						// > Stop any previous instance
+						m_timer_land_complete.stop();
+						// > Set the period again (second argument is reset)
+						m_timer_land_complete.setPeriod( ros::Duration(land_duration), true);
+						// > Start the timer
+						m_timer_land_complete.start();
+						// Inform the user
+						ROS_INFO_STREAM("[FLYING AGENT CLIENT] Changed state to STATE_LAND for a duration of " << land_duration << " seconds.");
+						// Update the class variable
+						m_flying_state = STATE_LAND;
+					}
+				}
+				else{
 				// Inform the user
 				ROS_INFO("[FLYING AGENT CLIENT] Changed state directly to STATE_MOTORS_OFF");
 				// Update the class variable
 				m_flying_state = STATE_MOTORS_OFF;
+				}
 			}
 		}
 	}
@@ -879,6 +920,36 @@ void deepcControllerManoeuvreCompleteCallback(const IntWithHeader & msg)
 
 
 
+void rampcControllerManoeuvreCompleteCallback(const IntWithHeader & msg)
+{
+	// Switch between the cases
+	switch (msg.data)
+	{
+		case RAMPC_CONTROLLER_LANDING_COMPLETE:
+		{
+			// Only change to flying if still in the take-off state
+			if (m_flying_state == STATE_LAND)
+			{
+				// Stop the timer
+				m_timer_land_complete.stop();
+				// Inform the user
+				ROS_INFO("[FLYING AGENT CLIENT] Land complete, changed state to STATE_MOTORS_OFF");
+				// Update the class variable
+				m_flying_state = STATE_MOTORS_OFF;
+				// Publish a message with the new flying state
+				std_msgs::Int32 flying_state_msg;
+				flying_state_msg.data = m_flying_state;
+				m_flyingStatePublisher.publish(flying_state_msg);
+			}
+			else
+			{
+				// Inform the user
+				ROS_INFO("[FLYING AGENT CLIENT] Received a landing complete message, BUT the agent is no longer in STATE_LAND.");
+			}
+			break;
+		}
+	}
+}
 
 
 
@@ -927,6 +998,9 @@ void setInstantController(int controller)
             break;
         case DEEPC_CONTROLLER:
             m_instant_controller_service_client = &m_deepcController;
+            break;
+        case RAMPC_CONTROLLER:
+            m_instant_controller_service_client = &m_rampcController;
             break;
         case TESTMOTORS_CONTROLLER:
             m_instant_controller_service_client = &m_defaultController;
@@ -1072,6 +1146,10 @@ void flyingStateRequestCallback(const IntWithHeader & msg) {
                 setControllerNominallySelected(DEEPC_CONTROLLER);
                 break;
 
+            case CMD_USE_RAMPC_CONTROLLER:
+                ROS_INFO("[FLYING AGENT CLIENT] USE_RAMPC_CONTROLLER Command received");
+                setControllerNominallySelected(RAMPC_CONTROLLER);
+                break;
 
             case CMD_CRAZYFLY_TAKE_OFF:
                 ROS_INFO("[FLYING AGENT CLIENT] TAKE_OFF Command received");
@@ -1378,6 +1456,7 @@ void timerCallback_for_createAllcontrollerServiceClients(const ros::TimerEvent&)
     createControllerServiceClientFromParameterName( "tuningController"   , m_tuningController );
     createControllerServiceClientFromParameterName( "pickerController"   , m_pickerController );
     createControllerServiceClientFromParameterName( "deepcController" , m_deepcController );
+    createControllerServiceClientFromParameterName( "rampcController" , m_rampcController );
 
     createControllerServiceClientFromParameterName( "testMotorsController" , m_testMotorsController );
 
@@ -1385,9 +1464,10 @@ void timerCallback_for_createAllcontrollerServiceClients(const ros::TimerEvent&)
     // CONTROLLER TO PERFORM MANOEUVRES
     createIntIntServiceClientFromParameterName( "defaultController_requestManoeuvre" , m_defaultController_requestManoeuvre );
 
-    // INITIALISE THE SERVICE FOR REQUESTING THE DEEPC
+    // INITIALISE THE SERVICE FOR REQUESTING THE DEEPC AND RAMPC
     // CONTROLLER TO PERFORM MANOEUVRES
     createIntIntServiceClientFromParameterName( "deepcController_requestManoeuvre" , m_deepcController_requestManoeuvre );
+    createIntIntServiceClientFromParameterName( "rampcController_requestManoeuvre" , m_rampcController_requestManoeuvre );
 
     createLoggingServiceClientFromParameterName("logging", m_logging);
     // Check that at least the default controller is available
@@ -1763,6 +1843,10 @@ int main(int argc, char* argv[])
 	std::string namespace_to_deepc_controller = m_namespace + "/DeepcControllerService";
 	ros::NodeHandle nodeHandle_to_deepc_controller(namespace_to_deepc_controller);
 	ros::Subscriber DeepcManoeuvreCompleteSubscriber = nodeHandle_to_deepc_controller.subscribe("ManoeuvreComplete", 1, deepcControllerManoeuvreCompleteCallback);
+
+	std::string namespace_to_rampc_controller = m_namespace + "/RampcControllerService";
+	ros::NodeHandle nodeHandle_to_rampc_controller(namespace_to_rampc_controller);
+	ros::Subscriber RampcManoeuvreCompleteSubscriber = nodeHandle_to_rampc_controller.subscribe("ManoeuvreComplete", 1, rampcControllerManoeuvreCompleteCallback);
 
 	// SERVICE SERVER FOR OTHERS TO GET THE CURRENT FLYING STATE
 	// Advertise the service that return the "m_flying_state"

@@ -74,6 +74,7 @@
 // Include the shared definitions
 #include "nodes/Constants.h"
 #include "nodes/RampcControllerConstants.h"
+//#include "nodes/DeepcControllerConstants.h"
 
 // Include other classes
 #include "classes/GetParamtersAndNamespaces.h"
@@ -161,7 +162,7 @@ string m_namespace_to_coordinator_parameter_service;
 // STATE MACHINE VARIABLES
 
 // The current state of the Deepc Controller
-int m_current_state = DEEPC_CONTROLLER_STATE_STANDBY;
+int m_current_state = RAMPC_CONTROLLER_STATE_STANDBY;
 
 // A flag for when the state is changed, this is used
 // so that a "one-off" operation can be performed
@@ -430,7 +431,7 @@ vector<float> d_input_min_vec = s_yaml_input_min;
 vector<float> d_input_max_vec = s_yaml_input_max;
 vector<float> d_output_min_vec = s_yaml_output_min;
 vector<float> d_output_max_vec = s_yaml_output_max;
-int d_solver = DEEPC_CONTROLLER_SOLVER_GUROBI;
+int d_solver = RAMPC_CONTROLLER_SOLVER_GUROBI;
 bool d_opt_sparse = s_yaml_opt_sparse;
 bool d_opt_verbose = s_yaml_opt_verbose;
 bool d_opt_steady_state = s_yaml_opt_steady_state;

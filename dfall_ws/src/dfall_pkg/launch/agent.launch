@@ -172,6 +172,11 @@
 				file    = "$(find dfall_pkg)/param/DeepcController.yaml"
 				ns      = "DeepcController"
 			/>
+			<rosparam
+				command = "load"
+				file    = "$(find dfall_pkg)/param/RampcController.yaml"
+				ns      = "RampcController"
+			/>
 		</node>
 
 

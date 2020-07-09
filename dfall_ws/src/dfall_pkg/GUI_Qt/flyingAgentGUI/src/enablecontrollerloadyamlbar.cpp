@@ -204,7 +204,7 @@ void EnableControllerLoadYamlBar::on_enable_rampc_button_clicked()
 #ifdef CATKIN_MAKE
     dfall_pkg::IntWithHeader msg;
     fillIntMessageHeader(msg);
-    msg.data = CMD_USE_DEEPC_CONTROLLER;
+    msg.data = CMD_USE_RAMPC_CONTROLLER;
     this->commandPublisher.publish(msg);
     ROS_INFO("[ENABLE CONTROLLER LOAD YAML GUI BAR] Enable RAMPC Controller");
 #endif

@@ -472,6 +472,13 @@ void ControllerTabs::setControllerEnabled(int new_controller)
             setTextColourOfTabLabel( m_tab_text_colour_highlight , ui->deepc_tab );
             break;
         }
+
+        case RAMPC_CONTROLLER:
+        {
+            setTextColourOfTabLabel( m_tab_text_colour_highlight , ui->rampc_tab );
+            break;
+        }
+
         default:
         {
             //ui->controller_enabled_label->setText("Unknown");

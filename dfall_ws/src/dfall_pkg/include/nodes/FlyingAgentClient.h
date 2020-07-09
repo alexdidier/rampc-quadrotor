@@ -69,7 +69,7 @@
 #include "nodes/Constants.h"
 #include "nodes/DefaultControllerConstants.h"
 #include "nodes/DeepcControllerConstants.h"
-
+#include "nodes/RampcControllerConstants.h"
 // Include other classes
 #include "classes/GetParamtersAndNamespaces.h"
 
@@ -174,6 +174,10 @@ ros::ServiceClient m_defaultController_requestManoeuvre;
 //   to perform a {take-off,landing} maneouvre
 ros::ServiceClient m_deepcController_requestManoeuvre;
 
+// > Service Clients for requesting the Deepc controller
+//   to perform a {take-off,landing} maneouvre
+ros::ServiceClient m_rampcController_requestManoeuvre;
+
 // > Timer that fire when the {take-off,landing} is complete
 ros::Timer m_timer_takeoff_complete;
 ros::Timer m_timer_land_complete;
@@ -212,6 +216,8 @@ ros::ServiceClient m_tuningController;
 ros::ServiceClient m_pickerController;
 // The Deepc controller specified in the FlyingAgentClientConfig.yaml
 ros::ServiceClient m_deepcController;
+// The RAMPC controller specified in the FlyingAgentClientConfig.yaml
+ros::ServiceClient m_rampcController;
 
 // The Test Mtoros controller specified in the FlyingAgentClientConfig.yaml
 ros::ServiceClient m_testMotorsController;

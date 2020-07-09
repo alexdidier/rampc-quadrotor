@@ -303,31 +303,31 @@ void RampcControllerTab::setpointChangedCallback(const dfall_pkg::SetpointWithHe
     m_label_current_state_mutex.lock();
     switch (current_state)
     {
-        case DEEPC_CONTROLLER_STATE_STANDBY:
+        case RAMPC_CONTROLLER_STATE_STANDBY:
             ui->label_current_state->setText("Standby");
             break;
 
-        case DEEPC_CONTROLLER_STATE_LQR:
+        case RAMPC_CONTROLLER_STATE_LQR:
             ui->label_current_state->setText("LQR");
             break;
 
-        case DEEPC_CONTROLLER_STATE_EXCITATION_LQR:
+        case RAMPC_CONTROLLER_STATE_EXCITATION_LQR:
             ui->label_current_state->setText("Excitation LQR");
             break;
 
-        case DEEPC_CONTROLLER_STATE_DEEPC:
-            ui->label_current_state->setText("Deepc");
+        case RAMPC_CONTROLLER_STATE_RAMPC:
+            ui->label_current_state->setText("Rampc");
             break;
 
-        case DEEPC_CONTROLLER_STATE_EXCITATION_DEEPC:
-            ui->label_current_state->setText("Excitation Deepc");
+        case RAMPC_CONTROLLER_STATE_EXCITATION_RAMPC:
+            ui->label_current_state->setText("Excitation Rampc");
             break;
 
-        case DEEPC_CONTROLLER_STATE_LANDING_MOVE_DOWN:
+        case RAMPC_CONTROLLER_STATE_LANDING_MOVE_DOWN:
             ui->label_current_state->setText("Landing, move down");
             break;
 
-        case DEEPC_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
+        case RAMPC_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
             ui->label_current_state->setText("Landing, spinning motors");
             break;
 

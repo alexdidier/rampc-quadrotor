@@ -372,7 +372,7 @@ void setup_Deepc_mpc()
 	    d_setupDeepc_success = true;
 
 	    s_Deepc_mutex.lock();
-	    // ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1285");
+	    // ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1285");
 		// s_num_inputs = num_inputs;
 		// s_num_outputs = d_num_outputs;
 		// s_Nuini = d_Tini * num_inputs;
@@ -381,7 +381,7 @@ void setup_Deepc_mpc()
 		// s_yini = MatrixXf::Zero(s_Nyini, 1);
 		s_setupDeepc_success = d_setupDeepc_success;
 		s_Deepc_mutex.unlock();
-		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1294");
+		// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1294");
 
 	    // Inform the user
 	    ROS_INFO("[MPC CONTROLLER] Deepc optimization setup successful with OSQP");
@@ -415,10 +415,10 @@ void change_Deepc_setpoint_mpc()
 		// Just shift the initial state given to MPC
 
 		s_Deepc_mutex.lock();
-		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1225");
+		// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1225");
 		d_setpoint = s_setpoint;
 		s_Deepc_mutex.unlock();
-		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1225");
+		// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1225");
 
 
 		int num_inputs = 3;
@@ -651,12 +651,12 @@ void solve_Deepc_mpc()
 			d_solve_time = d_osqp_work->info->run_time;
 
 			s_Deepc_mutex.lock();
-			// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 649");
+			// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 649");
 			s_u_f = d_u_f;
 			s_y_f = d_y_f;
 			s_solve_time = d_solve_time;
 			s_Deepc_mutex.unlock();
-			//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 649");
+			//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 649");
 
 			ROS_INFO_STREAM("[MPC CONTROLLER] Deepc found optimal solution with OSQP status: " << d_osqp_work->info->status);
 			ROS_INFO_STREAM("Thrust: "     << d_u_f(0) );
@@ -671,7 +671,7 @@ void solve_Deepc_mpc()
 		{
 			ROS_INFO_STREAM("[MPC CONTROLLER] Deepc failed to find optimal solution with OSQP status: " << d_osqp_work->info->status);
 			s_Deepc_mutex.lock();
-			// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 649");
+			// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 649");
 			s_u_f = d_u_f;
 			s_y_f = d_y_f;
 			s_solve_time = 0.0;
@@ -711,9 +711,9 @@ void solve_Deepc_mpc()
 //    ----------------------------------------------------------------------------------
 
 
-// DEEPC FUNCTIONS
+// RAMPC FUNCTIONS
 
-// DEEPC THREAD MAIN
+// RAMPC THREAD MAIN
 // Deepc operations run in seperate thread as they are time consuming
 void Deepc_thread_main()
 {
@@ -729,14 +729,14 @@ void Deepc_thread_main()
 	while (ros::ok())
 	{
 		s_Deepc_mutex.lock();
-		//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 72");
+		//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 72");
         params_changed = s_params_changed;
         setpoint_changed = s_setpoint_changed;
         setupDeepc = s_setupDeepc;
         solveDeepc = s_solveDeepc;
         d_changing_ref_enable = s_changing_ref_enable;
         s_Deepc_mutex.unlock();
-        //ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 72");
+        //ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 72");
 
         // Detect changing_ref_enable rising edge to reset time
         if (!changing_ref_enable_prev && d_changing_ref_enable)
@@ -754,10 +754,10 @@ void Deepc_thread_main()
         	change_Deepc_params();
         	
         	s_Deepc_mutex.lock();
-        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 85");
+        	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 85");
         	s_params_changed = false;
         	s_Deepc_mutex.unlock();
-        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 85");
+        	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 85");
         }
 
         if (setpoint_changed)
@@ -767,18 +767,18 @@ void Deepc_thread_main()
         		// Switch between the possible solvers
 				switch (d_solver)
 				{
-					case DEEPC_CONTROLLER_SOLVER_OSQP:
+					case RAMPC_CONTROLLER_SOLVER_OSQP:
 						change_Deepc_setpoint_osqp();
 						break;
 
-					case DEEPC_CONTROLLER_SOLVER_MPC:
+					case RAMPC_CONTROLLER_SOLVER_MPC:
 						change_Deepc_setpoint_mpc();
 						s_Deepc_active_setpoint = d_setpoint;
 		        		s_setpoint_changed = false;
 		        		s_Deepc_mutex.unlock();
 						break;
 
-					case DEEPC_CONTROLLER_SOLVER_GUROBI:
+					case RAMPC_CONTROLLER_SOLVER_GUROBI:
 					default:
 						change_Deepc_setpoint_gurobi();
 						break;
@@ -788,11 +788,11 @@ void Deepc_thread_main()
 				if (d_opt_sparse && d_opt_steady_state)
 				{
 					s_Deepc_mutex.lock();
-		        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 96");
+		        	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 96");
 		        	s_Deepc_active_setpoint = d_setpoint;
 		        	s_setpoint_changed = false;
 		        	s_Deepc_mutex.unlock();
-		        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 96");
+		        	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 96");
 				}
 				// Wait for gs inversion to complete before exiting this mode
 				else if (d_gs_inversion_complete)
@@ -800,27 +800,27 @@ void Deepc_thread_main()
 					d_gs_inversion_complete = false;
 
 					ds_Deepc_gs_inversion_mutex.lock();
-					//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 117");
+					//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 117");
 			        ds_gs_inversion_complete = d_gs_inversion_complete;
 			        ds_Deepc_gs_inversion_mutex.unlock();
-			        //ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 117");
+			        //ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 117");
 
 		        	s_Deepc_mutex.lock();
-		        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 96");
+		        	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 96");
 		        	s_Deepc_active_setpoint = d_setpoint;
 		        	s_setpoint_changed = false;
 		        	s_Deepc_mutex.unlock();
-		        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 96");
+		        	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 96");
 	        	}
         	}
         	else
         	{
         		s_Deepc_mutex.lock();
-	        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 96");
+	        	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 96");
 	        	s_Deepc_active_setpoint = s_setpoint;
 	        	s_setpoint_changed = false;
 	        	s_Deepc_mutex.unlock();
-	        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 96");
+	        	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 96");
         	}
         }
 
@@ -829,25 +829,25 @@ void Deepc_thread_main()
         	// Switch between the possible solvers
 			switch (d_solver)
 			{
-				case DEEPC_CONTROLLER_SOLVER_OSQP:
+				case RAMPC_CONTROLLER_SOLVER_OSQP:
 					setup_Deepc_osqp();
 					break;
 
-				case DEEPC_CONTROLLER_SOLVER_MPC:
+				case RAMPC_CONTROLLER_SOLVER_MPC:
 					setup_Deepc_mpc();
 					break;
 
-				case DEEPC_CONTROLLER_SOLVER_GUROBI:
+				case RAMPC_CONTROLLER_SOLVER_GUROBI:
 				default:
 					setup_Deepc_gurobi();
 					break;
 			}
 
         	s_Deepc_mutex.lock();
-        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 107");
+        	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 107");
         	s_setupDeepc = false;
         	s_Deepc_mutex.unlock();
-        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 107");
+        	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 107");
         }
 
         if (solveDeepc)
@@ -855,25 +855,25 @@ void Deepc_thread_main()
         	// Switch between the possible solvers
 			switch (d_solver)
 			{
-				case DEEPC_CONTROLLER_SOLVER_OSQP:
+				case RAMPC_CONTROLLER_SOLVER_OSQP:
 					solve_Deepc_osqp();
 					break;
 
-				case DEEPC_CONTROLLER_SOLVER_MPC:
+				case RAMPC_CONTROLLER_SOLVER_MPC:
 					solve_Deepc_mpc();
 					break;
 
-				case DEEPC_CONTROLLER_SOLVER_GUROBI:
+				case RAMPC_CONTROLLER_SOLVER_GUROBI:
 				default:
 					solve_Deepc_gurobi();
 					break;
 			}
 
 		  	s_Deepc_mutex.lock();
-		  	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 118");
+		  	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 118");
         	s_solveDeepc = false;
         	s_Deepc_mutex.unlock();
-        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 118");
+        	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 118");
         }
 	}
 
@@ -890,7 +890,7 @@ void Deepc_thread_main()
 void change_Deepc_params()
 {
 	s_Deepc_mutex.lock();
-	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 133");
+	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 133");
 	d_cf_weight_in_newtons = s_cf_weight_in_newtons;
 	d_dataFolder = s_dataFolder;
 	d_logFolder = s_logFolder;
@@ -909,13 +909,13 @@ void change_Deepc_params()
 	d_output_max_vec = s_yaml_output_max;
 
 	if (s_yaml_solver == "osqp")
-		d_solver = DEEPC_CONTROLLER_SOLVER_OSQP;
+		d_solver = RAMPC_CONTROLLER_SOLVER_OSQP;
 	else if (s_yaml_solver == "mpc")
-		d_solver = DEEPC_CONTROLLER_SOLVER_MPC;
+		d_solver = RAMPC_CONTROLLER_SOLVER_MPC;
 	else
 	{
 		// Default solver is Gurobi
-		d_solver = DEEPC_CONTROLLER_SOLVER_GUROBI;
+		d_solver = RAMPC_CONTROLLER_SOLVER_GUROBI;
 	}
 
 	d_opt_sparse = s_yaml_opt_sparse;
@@ -932,14 +932,14 @@ void change_Deepc_params()
 	d_z_sine_frequency_rad = s_z_sine_frequency_rad;
 	d_control_deltaT = s_control_deltaT;
 	s_Deepc_mutex.unlock();
-	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 133");
+	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 133");
 
 	// Deepc setup must be re-run after changes
 	clear_setupDeepc_success_flag();
 
 	// Inform the user
-	ROS_INFO("[DEEPC CONTROLLER] Deepc parameters change successful");
-	ROS_INFO("[DEEPC CONTROLLER] (Re-)setup Deepc to apply changes");
+	ROS_INFO("[RAMPC CONTROLLER] Deepc parameters change successful");
+	ROS_INFO("[RAMPC CONTROLLER] (Re-)setup Deepc to apply changes");
 }
 
 void change_Deepc_setpoint_gurobi()
@@ -965,7 +965,7 @@ void change_Deepc_setpoint_gurobi()
 				d_grb_dyn_constrs[d_r_gs_start_i + d_i].set(GRB_DoubleAttr_RHS, d_r_gs(d_i));
 
 		    // Inform the user
-		    ROS_INFO("[DEEPC CONTROLLER] Deepc setpoint update successful with Gurobi");
+		    ROS_INFO("[RAMPC CONTROLLER] Deepc setpoint update successful with Gurobi");
 		}
 		// Wait for gs inversion to complete before proceeding
 		else if (d_gs_inversion_complete)
@@ -997,7 +997,7 @@ void change_Deepc_setpoint_gurobi()
 		    	d_grb_model_presolved->setObjective(d_grb_quad_obj + d_grb_lin_obj_us + d_grb_lin_obj_r + d_grb_lin_obj_gs);
 
 		    // Inform the user
-		    ROS_INFO("[DEEPC CONTROLLER] Deepc setpoint update successful with Gurobi");
+		    ROS_INFO("[RAMPC CONTROLLER] Deepc setpoint update successful with Gurobi");
 	    }
 	}
 
@@ -1005,23 +1005,23 @@ void change_Deepc_setpoint_gurobi()
     {
     	clear_setupDeepc_success_flag();
 
-	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc setpoint update exception with Gurobi error code = " << e.getErrorCode());
-	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Error message: " << e.getMessage());
-	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Deepc setpoint update exception with Gurobi error code = " << e.getErrorCode());
+	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Error message: " << e.getMessage());
+	    ROS_INFO("[RAMPC CONTROLLER] Deepc must be (re-)setup");
   	}
   	catch(exception& e)
     {
     	clear_setupDeepc_success_flag();
 
-	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc setpoint update exception with Gurobi with standard error message: " << e.what());
-	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Deepc setpoint update exception with Gurobi with standard error message: " << e.what());
+	    ROS_INFO("[RAMPC CONTROLLER] Deepc must be (re-)setup");
   	}
   	catch(...)
   	{
   		clear_setupDeepc_success_flag();
 
-  		ROS_INFO("[DEEPC CONTROLLER] Deepc setpoint update exception with Gurobi");
-  		ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+  		ROS_INFO("[RAMPC CONTROLLER] Deepc setpoint update exception with Gurobi");
+  		ROS_INFO("[RAMPC CONTROLLER] Deepc must be (re-)setup");
   	}
 }
 
@@ -1067,23 +1067,23 @@ void change_Deepc_setpoint_gurobi_changing_ref()
     {
     	clear_setupDeepc_success_flag();
 
-	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc setpoint update exception with Gurobi error code = " << e.getErrorCode());
-	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Error message: " << e.getMessage());
-	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Deepc setpoint update exception with Gurobi error code = " << e.getErrorCode());
+	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Error message: " << e.getMessage());
+	    ROS_INFO("[RAMPC CONTROLLER] Deepc must be (re-)setup");
   	}
   	catch(exception& e)
     {
     	clear_setupDeepc_success_flag();
 
-	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc setpoint update exception with Gurobi with standard error message: " << e.what());
-	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Deepc setpoint update exception with Gurobi with standard error message: " << e.what());
+	    ROS_INFO("[RAMPC CONTROLLER] Deepc must be (re-)setup");
   	}
   	catch(...)
   	{
   		clear_setupDeepc_success_flag();
 
-  		ROS_INFO("[DEEPC CONTROLLER] Deepc setpoint update exception with Gurobi");
-  		ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+  		ROS_INFO("[RAMPC CONTROLLER] Deepc setpoint update exception with Gurobi");
+  		ROS_INFO("[RAMPC CONTROLLER] Deepc must be (re-)setup");
   	}
 }
 
@@ -1114,7 +1114,7 @@ void change_Deepc_setpoint_osqp()
 			}
 
 		    // Inform the user
-		    ROS_INFO("[DEEPC CONTROLLER] Deepc setpoint update successful with OSQP");
+		    ROS_INFO("[RAMPC CONTROLLER] Deepc setpoint update successful with OSQP");
 		}
 		// Wait for gs inversion to complete before proceeding
 		else if (d_gs_inversion_complete)
@@ -1135,7 +1135,7 @@ void change_Deepc_setpoint_osqp()
 			osqp_update_lin_cost(d_osqp_work, d_osqp_q_new);
 
 		    // Inform the user
-		    ROS_INFO("[DEEPC CONTROLLER] Deepc setpoint update successful with OSQP");
+		    ROS_INFO("[RAMPC CONTROLLER] Deepc setpoint update successful with OSQP");
 		}
 	}
 
@@ -1143,15 +1143,15 @@ void change_Deepc_setpoint_osqp()
     {
     	clear_setupDeepc_success_flag();
 
-	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc setpoint update exception with OSQP with standard error message: " << e.what());
-	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Deepc setpoint update exception with OSQP with standard error message: " << e.what());
+	    ROS_INFO("[RAMPC CONTROLLER] Deepc must be (re-)setup");
   	}
   	catch(...)
   	{
   		clear_setupDeepc_success_flag();
 
-  		ROS_INFO("[DEEPC CONTROLLER] Deepc setpoint update exception with OSQP");
-  		ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+  		ROS_INFO("[RAMPC CONTROLLER] Deepc setpoint update exception with OSQP");
+  		ROS_INFO("[RAMPC CONTROLLER] Deepc must be (re-)setup");
   	}
 }
 
@@ -1190,15 +1190,15 @@ void change_Deepc_setpoint_osqp_changing_ref()
     {
     	clear_setupDeepc_success_flag();
 
-	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc setpoint update exception with OSQP with standard error message: " << e.what());
-	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Deepc setpoint update exception with OSQP with standard error message: " << e.what());
+	    ROS_INFO("[RAMPC CONTROLLER] Deepc must be (re-)setup");
   	}
   	catch(...)
   	{
   		clear_setupDeepc_success_flag();
 
-  		ROS_INFO("[DEEPC CONTROLLER] Deepc setpoint update exception with OSQP");
-  		ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+  		ROS_INFO("[RAMPC CONTROLLER] Deepc setpoint update exception with OSQP");
+  		ROS_INFO("[RAMPC CONTROLLER] Deepc must be (re-)setup");
   	}
 }
 
@@ -1420,30 +1420,30 @@ void setup_Deepc_gurobi()
 		finish_Deepc_setup();
 
 	    // Inform the user
-	    ROS_INFO("[DEEPC CONTROLLER] Deepc optimization setup successful with Gurobi");
+	    ROS_INFO("[RAMPC CONTROLLER] Deepc optimization setup successful with Gurobi");
     }
     
     catch(GRBException e)
     {
     	clear_setupDeepc_success_flag();
 
-	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization setup exception with Gurobi error code = " << e.getErrorCode());
-	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Error message: " << e.getMessage());
-	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Deepc optimization setup exception with Gurobi error code = " << e.getErrorCode());
+	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Error message: " << e.getMessage());
+	    ROS_INFO("[RAMPC CONTROLLER] Deepc must be (re-)setup");
   	}
   	catch(exception& e)
     {
     	clear_setupDeepc_success_flag();
 
-	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization setup exception with Gurobi with standard error message: " << e.what());
-	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Deepc optimization setup exception with Gurobi with standard error message: " << e.what());
+	    ROS_INFO("[RAMPC CONTROLLER] Deepc must be (re-)setup");
   	}
   	catch(...)
   	{
   		clear_setupDeepc_success_flag();
 
-    	ROS_INFO("[DEEPC CONTROLLER] Deepc optimization setup exception with Gurobi");
-    	ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+    	ROS_INFO("[RAMPC CONTROLLER] Deepc optimization setup exception with Gurobi");
+    	ROS_INFO("[RAMPC CONTROLLER] Deepc must be (re-)setup");
   	}
 }
 
@@ -1592,8 +1592,8 @@ void setup_Deepc_osqp()
 	    {
 	    	clear_setupDeepc_success_flag();
 
-	    	ROS_INFO("[DEEPC CONTROLLER] Deepc optimization setup failed with OSQP");
-	    	ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+	    	ROS_INFO("[RAMPC CONTROLLER] Deepc optimization setup failed with OSQP");
+	    	ROS_INFO("[RAMPC CONTROLLER] Deepc must be (re-)setup");
 
 	    	return;
 	    }
@@ -1602,33 +1602,33 @@ void setup_Deepc_osqp()
 		finish_Deepc_setup();
 
 	    // Inform the user
-	    ROS_INFO("[DEEPC CONTROLLER] Deepc optimization setup successful with OSQP");
+	    ROS_INFO("[RAMPC CONTROLLER] Deepc optimization setup successful with OSQP");
     }
 
   	catch(exception& e)
     {
     	clear_setupDeepc_success_flag();
 
-	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization setup exception with OSQP with standard error message: " << e.what());
-	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Deepc optimization setup exception with OSQP with standard error message: " << e.what());
+	    ROS_INFO("[RAMPC CONTROLLER] Deepc must be (re-)setup");
   	}
   	catch(...)
   	{
   		clear_setupDeepc_success_flag();
 
-    	ROS_INFO("[DEEPC CONTROLLER] Deepc optimization setup exception with OSQP");
-    	ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+    	ROS_INFO("[RAMPC CONTROLLER] Deepc optimization setup exception with OSQP");
+    	ROS_INFO("[RAMPC CONTROLLER] Deepc must be (re-)setup");
   	}
 }
 
 void solve_Deepc_gurobi()
 {
 	s_Deepc_mutex.lock();
-	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 622");
+	//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 622");
 	d_uini = s_uini;
 	d_yini = s_yini;
 	s_Deepc_mutex.unlock();
-	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 622");
+	//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 622");
 
 	try
 	{
@@ -1682,14 +1682,14 @@ void solve_Deepc_gurobi()
 				d_solve_time = d_grb_model_presolved->get(GRB_DoubleAttr_Runtime);
 
 			s_Deepc_mutex.lock();
-			// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 649");
+			// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 649");
 			s_u_f = d_u_f;
 			s_y_f = d_y_f;
 			s_solve_time = d_solve_time;
 			s_Deepc_mutex.unlock();
-			//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 649");
+			//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 649");
 
-			ROS_INFO("[DEEPC CONTROLLER] Deepc found optimal solution with Gurobi:");
+			ROS_INFO("[RAMPC CONTROLLER] Deepc found optimal solution with Gurobi:");
 			ROS_INFO_STREAM("Thrust: " << d_u_f(0));
 			ROS_INFO_STREAM("Roll Rate: " << d_u_f(1));
 			ROS_INFO_STREAM("Pitch Rate: " << d_u_f(2));
@@ -1705,7 +1705,7 @@ void solve_Deepc_gurobi()
 		}
 		else
 		{
-			ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc failed to find optimal solution with Gurobi status code = " << d_DeepcOpt_status);
+			ROS_INFO_STREAM("[RAMPC CONTROLLER] Deepc failed to find optimal solution with Gurobi status code = " << d_DeepcOpt_status);
 		}
 	}
 
@@ -1713,34 +1713,34 @@ void solve_Deepc_gurobi()
     {
     	clear_setupDeepc_success_flag();
 
-	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization exception with Gurobi error code = " << e.getErrorCode());
-	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Error message: " << e.getMessage());
-	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Deepc optimization exception with Gurobi error code = " << e.getErrorCode());
+	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Error message: " << e.getMessage());
+	    ROS_INFO("[RAMPC CONTROLLER] Deepc must be (re-)setup");
   	}
   	catch(exception& e)
     {
     	clear_setupDeepc_success_flag();
 
-	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization exception with Gurobi with standard error message: " << e.what());
-	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Deepc optimization exception with Gurobi with standard error message: " << e.what());
+	    ROS_INFO("[RAMPC CONTROLLER] Deepc must be (re-)setup");
   	}
   	catch(...)
   	{
   		clear_setupDeepc_success_flag();
 
-    	ROS_INFO("[DEEPC CONTROLLER] Deepc optimization exception with Gurobi");
-    	ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+    	ROS_INFO("[RAMPC CONTROLLER] Deepc optimization exception with Gurobi");
+    	ROS_INFO("[RAMPC CONTROLLER] Deepc must be (re-)setup");
   	}
 }
 
 void solve_Deepc_osqp()
 {
 	s_Deepc_mutex.lock();
-	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 622");
+	//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 622");
 	d_uini = s_uini;
 	d_yini = s_yini;
 	s_Deepc_mutex.unlock();
-	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 622");
+	//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 622");
 
 	try
 	{
@@ -1789,14 +1789,14 @@ void solve_Deepc_osqp()
 			d_solve_time = d_osqp_work->info->run_time;
 
 			s_Deepc_mutex.lock();
-			// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 649");
+			// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 649");
 			s_u_f = d_u_f;
 			s_y_f = d_y_f;
 			s_solve_time = d_solve_time;
 			s_Deepc_mutex.unlock();
-			//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 649");
+			//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 649");
 
-			ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc found optimal solution with OSQP status: " << d_osqp_work->info->status);
+			ROS_INFO_STREAM("[RAMPC CONTROLLER] Deepc found optimal solution with OSQP status: " << d_osqp_work->info->status);
 			ROS_INFO_STREAM("Thrust: " << d_u_f(0));
 			ROS_INFO_STREAM("Roll Rate: " << d_u_f(1));
 			ROS_INFO_STREAM("Pitch Rate: " << d_u_f(2));
@@ -1807,7 +1807,7 @@ void solve_Deepc_osqp()
 		}
 		else
 		{
-			ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc failed to find optimal solution with OSQP status: " << d_osqp_work->info->status);
+			ROS_INFO_STREAM("[RAMPC CONTROLLER] Deepc failed to find optimal solution with OSQP status: " << d_osqp_work->info->status);
 		}
 	}
 
@@ -1815,19 +1815,19 @@ void solve_Deepc_osqp()
     {
     	clear_setupDeepc_success_flag();
 
-	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc optimization exception with OSQP with standard error message: " << e.what());
-	    ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Deepc optimization exception with OSQP with standard error message: " << e.what());
+	    ROS_INFO("[RAMPC CONTROLLER] Deepc must be (re-)setup");
   	}
   	catch(...)
   	{
   		clear_setupDeepc_success_flag();
 
-    	ROS_INFO("[DEEPC CONTROLLER] Deepc optimization exception with OSQP");
-    	ROS_INFO("[DEEPC CONTROLLER] Deepc must be (re-)setup");
+    	ROS_INFO("[RAMPC CONTROLLER] Deepc optimization exception with OSQP");
+    	ROS_INFO("[RAMPC CONTROLLER] Deepc must be (re-)setup");
   	}
 }
 
-// DEEPC HELPER FUNCTIONS
+// RAMPC HELPER FUNCTIONS
 
 // Update uini yini
 // This function is called by main thread
@@ -1835,7 +1835,7 @@ void update_uini_yini(Controller::Request &request, control_output &output)
 {
 	// If Deepc was not setup yet don't do anything as uini and yini matrices are not setup yet
 	s_Deepc_mutex.lock();
-	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 741");
+	//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 741");
 	// ROS_INFO("[MPC CONTROLLER] DEBUG 17");
 	bool setupDeepc_success = s_setupDeepc_success;
 	m_uini = s_uini;
@@ -1849,7 +1849,7 @@ void update_uini_yini(Controller::Request &request, control_output &output)
 	if (s_yaml_solver == "mpc")
 		mpc_enabled = true;
 	s_Deepc_mutex.unlock();
-	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 750");
+	//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 750");
 
 	if (!setupDeepc_success)
 		return;
@@ -1914,21 +1914,21 @@ void update_uini_yini(Controller::Request &request, control_output &output)
 
 
 		s_Deepc_mutex.lock();
-		//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 786");
+		//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 786");
 		s_uini = m_uini;
 		s_yini = m_yini;
 		s_current_state_estimate = m_current_state_estimate;
 		s_Deepc_mutex.unlock();
-		//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 786");
+		//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 786");
 	}
 
 	catch(exception& e)
     {
-	    ROS_INFO_STREAM("[DEEPC CONTROLLER] Update uini yini exception with standard error message: " << e.what());
+	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Update uini yini exception with standard error message: " << e.what());
   	}
   	catch(...)
   	{
-    	ROS_INFO("[DEEPC CONTROLLER] Update uini yini exception");
+    	ROS_INFO("[RAMPC CONTROLLER] Update uini yini exception");
   	}
 }
 
@@ -1940,7 +1940,7 @@ MatrixXf get_u_data()
 	{
 		clear_setupDeepc_success_flag();
 
-    	ROS_INFO("[DEEPC CONTROLLER] Failed to read u data file");
+    	ROS_INFO("[RAMPC CONTROLLER] Failed to read u data file");
 
 		return MatrixXf::Zero(0, 0);
 	}
@@ -1962,7 +1962,7 @@ MatrixXf get_y_data()
 	{	
 		clear_setupDeepc_success_flag();
 		
-		ROS_INFO("[DEEPC CONTROLLER] Failed to read y data file");
+		ROS_INFO("[RAMPC CONTROLLER] Failed to read y data file");
 
 		return MatrixXf::Zero(0, 0);
 	}
@@ -2172,10 +2172,10 @@ MatrixXf get_quad_cost_matrix()
 void get_lin_cost_vectors()
 {
 	s_Deepc_mutex.lock();
-	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1225");
+	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1225");
 	d_setpoint = s_setpoint;
 	s_Deepc_mutex.unlock();
-	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1225");
+	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1225");
 
 	// Reference
 	d_r = MatrixXf::Zero(d_num_outputs, 1);
@@ -2198,7 +2198,7 @@ void get_lin_cost_vectors()
 
 		d_lin_cost_vec_r -= d_Y_f.bottomRows(d_num_outputs).transpose() * d_P * d_r;
 	}
-	if (d_solver == DEEPC_CONTROLLER_SOLVER_GUROBI)
+	if (d_solver == RAMPC_CONTROLLER_SOLVER_GUROBI)
 		d_lin_cost_vec_r *= 2.0;
 
 	d_r_gs = d_r.replicate(d_Tini + d_N + 1, 1);
@@ -2240,7 +2240,7 @@ void get_lin_cost_vectors()
 		}
 	}
 
-	if (d_solver == DEEPC_CONTROLLER_SOLVER_GUROBI)
+	if (d_solver == RAMPC_CONTROLLER_SOLVER_GUROBI)
 	{
 		d_lin_cost_vec_gs *= 2.0;
 		d_lin_cost_vec_us *= 2.0;
@@ -2255,10 +2255,10 @@ void get_lin_cost_vectors()
 void update_lin_cost_vectors()
 {
 	s_Deepc_mutex.lock();
-	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1312");
+	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1312");
 	d_setpoint = s_setpoint;
 	s_Deepc_mutex.unlock();
-	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1312");
+	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1312");
 
     // Reference
 	d_r.topRows(3) = d_setpoint.topRows(3);
@@ -2279,7 +2279,7 @@ void update_lin_cost_vectors()
 
 		d_lin_cost_vec_r -= d_Y_f.bottomRows(d_num_outputs).transpose() * d_P * d_r;
 	}
-	if (d_solver == DEEPC_CONTROLLER_SOLVER_GUROBI)
+	if (d_solver == RAMPC_CONTROLLER_SOLVER_GUROBI)
 		d_lin_cost_vec_r *= 2.0;
 
 	d_r_gs = d_r.replicate(d_Tini + d_N + 1, 1);
@@ -2289,10 +2289,10 @@ void update_lin_cost_vectors()
 		return;
 
 	ds_Deepc_gs_inversion_mutex.lock();
-	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1327");
+	//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1327");
     d_gs_inversion_complete = ds_gs_inversion_complete;
     ds_Deepc_gs_inversion_mutex.unlock();
-    //ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1327");
+    //ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1327");
 
 	if (!d_get_gs)
 	{
@@ -2303,12 +2303,12 @@ void update_lin_cost_vectors()
 		d_get_gs = true;
 
 		ds_Deepc_gs_inversion_mutex.lock();
-		//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1320");
+		//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1320");
 		ds_A_gs = d_A_gs;
 		ds_b_gs = d_b_gs;
         ds_get_gs = d_get_gs;
         ds_Deepc_gs_inversion_mutex.unlock();
-        //ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1320");
+        //ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1320");
 	}
 
     if (d_gs_inversion_complete)
@@ -2316,15 +2316,15 @@ void update_lin_cost_vectors()
     	d_get_gs = false;
 
     	ds_Deepc_gs_inversion_mutex.lock();
-		//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1337");
+		//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1337");
 	    d_gs = ds_gs;
 	    ds_get_gs = d_get_gs;
 	    ds_Deepc_gs_inversion_mutex.unlock();
-	    //ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1337");
+	    //ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1337");
 
 	    d_lin_cost_vec_gs = -d_lambda2_g * d_gs;
 
-		if (d_solver == DEEPC_CONTROLLER_SOLVER_GUROBI)
+		if (d_solver == RAMPC_CONTROLLER_SOLVER_GUROBI)
 			d_lin_cost_vec_gs *= 2.0;
     }
 }
@@ -2362,7 +2362,7 @@ void update_lin_cost_vectors_changing_ref()
 
 		d_lin_cost_vec_r -= d_Y_f.bottomRows(d_num_outputs).transpose() * d_P * d_r;
 	}
-	if (d_solver == DEEPC_CONTROLLER_SOLVER_GUROBI)
+	if (d_solver == RAMPC_CONTROLLER_SOLVER_GUROBI)
 		d_lin_cost_vec_r *= 2.0;
 
 	d_r_gs = d_r.replicate(d_Tini + d_N + 1, 1);
@@ -2484,7 +2484,7 @@ void finish_Deepc_setup()
     d_setupDeepc_success = true;
 
     s_Deepc_mutex.lock();
-    // ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1285");
+    // ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1285");
 	s_num_inputs = d_num_inputs;
 	s_num_outputs = d_num_outputs;
 	s_Nuini = d_Nuini;
@@ -2493,7 +2493,7 @@ void finish_Deepc_setup()
 	s_yini = d_yini;
 	s_setupDeepc_success = d_setupDeepc_success;
 	s_Deepc_mutex.unlock();
-	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1294");
+	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1294");
 }
 
 // Clear setup Deepc success flag
@@ -2502,10 +2502,10 @@ void clear_setupDeepc_success_flag()
 {
 	d_setupDeepc_success = false;
 	s_Deepc_mutex.lock();
-	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 586");
+	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 586");
 	s_setupDeepc_success = d_setupDeepc_success;
 	s_Deepc_mutex.unlock();
-	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1294");
+	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1294");
 }
 
 // Gurobi cleanup
@@ -2629,13 +2629,13 @@ MatrixXf read_csv(const string& path)
 
 	catch(exception& e)
     {
-	    ROS_INFO_STREAM("[DEEPC CONTROLLER] CSV read exception with standard error message: " << e.what());
+	    ROS_INFO_STREAM("[RAMPC CONTROLLER] CSV read exception with standard error message: " << e.what());
 
 		return MatrixXf::Zero(0, 0);
   	}
   	catch(...)
   	{
-    	ROS_INFO("[DEEPC CONTROLLER] CSV read exception");
+    	ROS_INFO("[RAMPC CONTROLLER] CSV read exception");
 
 		return MatrixXf::Zero(0, 0);
   	}
@@ -2659,7 +2659,7 @@ bool write_csv(const string& path, const MatrixXf& M)
 	return true;
 }
 
-// DEEPC GS MATRIX INVERSION THREAD MAIN
+// RAMPC GS MATRIX INVERSION THREAD MAIN
 // Matrix inversion for steady state trajectory mapper gs takes long so it is performed in seperate thread
 void Deepc_gs_inversion_thread_main()
 {
@@ -2672,10 +2672,10 @@ void Deepc_gs_inversion_thread_main()
 	while (ros::ok())
 	{
 		ds_Deepc_gs_inversion_mutex.lock();
-		//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1593");
+		//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1593");
         get_gs = ds_get_gs;
         ds_Deepc_gs_inversion_mutex.unlock();
-        //ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1593");
+        //ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1593");
         
         if (!get_gs)
         	gs_inversion_complete = false;
@@ -2683,11 +2683,11 @@ void Deepc_gs_inversion_thread_main()
         if (get_gs && !gs_inversion_complete)
         {
         	ds_Deepc_gs_inversion_mutex.lock();
-			//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1593");
+			//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1593");
 	        A_gs = ds_A_gs;
 	        b_gs = ds_b_gs;
 	        ds_Deepc_gs_inversion_mutex.unlock();
-	        //ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1593");
+	        //ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1593");
 
 	        // This line is why this thread was created. It takes looong
         	gs = A_gs.bdcSvd(ComputeThinU | ComputeThinV).solve(b_gs);
@@ -2695,13 +2695,13 @@ void Deepc_gs_inversion_thread_main()
         	gs_inversion_complete = true;
 
         	ds_Deepc_gs_inversion_mutex.lock();
-        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1609");
+        	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1609");
         	ds_gs = gs;
         	ds_gs_inversion_complete = gs_inversion_complete;
         	ds_Deepc_gs_inversion_mutex.unlock();
-        	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1609");
+        	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1609");
 
-        	ROS_INFO("[DEEPC CONTROLLER] Deepc gs matrix inversion complete");
+        	ROS_INFO("[RAMPC CONTROLLER] Deepc gs matrix inversion complete");
         }
     }
 }
@@ -2730,24 +2730,24 @@ bool requestManoeuvreCallback(IntIntService::Request &request, IntIntService::Re
 	// Switch between the possible manoeuvres
 	switch (requestedManoeuvre)
 	{
-		case DEEPC_CONTROLLER_REQUEST_TAKEOFF:
+		case RAMPC_CONTROLLER_REQUEST_TAKEOFF:
 		{
 			// Inform the user
-			ROS_INFO("[DEEPC CONTROLLER] Received request to take off. Switch to state: LQR");
+			ROS_INFO("[RAMPC CONTROLLER] Received request to take off. Switch to state: LQR");
 			// Update the state accordingly
-			m_current_state = DEEPC_CONTROLLER_STATE_LQR;
+			m_current_state = RAMPC_CONTROLLER_STATE_LQR;
 			m_current_state_changed = true;
 			// Provide dummy response
 			response.data = 0;
 			break;
 		}
 
-		case DEEPC_CONTROLLER_REQUEST_LANDING:
+		case RAMPC_CONTROLLER_REQUEST_LANDING:
 		{
 			// Inform the user
-			ROS_INFO("[DEEPC CONTROLLER] Received request to perform landing manoeuvre. Switch to state: landing move down");
+			ROS_INFO("[RAMPC CONTROLLER] Received request to perform landing manoeuvre. Switch to state: landing move down");
 			// Update the state accordingly
-			m_current_state = DEEPC_CONTROLLER_STATE_LANDING_MOVE_DOWN;
+			m_current_state = RAMPC_CONTROLLER_STATE_LANDING_MOVE_DOWN;
 			m_current_state_changed = true;
 			// Fill in the response duration in milliseconds
 			response.data = int(
@@ -2762,9 +2762,9 @@ bool requestManoeuvreCallback(IntIntService::Request &request, IntIntService::Re
 		default:
 		{
 			// Inform the user
-			ROS_INFO("[DEEPC CONTROLLER] The requested manoeuvre is not recognised. Hence switching to standby state.");
+			ROS_INFO("[RAMPC CONTROLLER] The requested manoeuvre is not recognised. Hence switching to standby state.");
 			// Update the state to standby
-			m_current_state = DEEPC_CONTROLLER_STATE_STANDBY;
+			m_current_state = RAMPC_CONTROLLER_STATE_STANDBY;
 			m_current_state_changed = true;
 			// Fill in the response duration in milliseconds
 			response.data = 0;
@@ -2904,31 +2904,31 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 	// Switch between the possible states
 	switch (m_current_state)
 	{
-		case DEEPC_CONTROLLER_STATE_LQR:
+		case RAMPC_CONTROLLER_STATE_LQR:
 			computeResponse_for_LQR(request, response);
 			break;
 
-        case DEEPC_CONTROLLER_STATE_EXCITATION_LQR:
+        case RAMPC_CONTROLLER_STATE_EXCITATION_LQR:
             computeResponse_for_excitation_LQR(request, response);
             break;
 
-        case DEEPC_CONTROLLER_STATE_DEEPC:
+        case RAMPC_CONTROLLER_STATE_RAMPC:
             computeResponse_for_Deepc(request, response);
             break;
 
-        case DEEPC_CONTROLLER_STATE_EXCITATION_DEEPC:
+        case RAMPC_CONTROLLER_STATE_EXCITATION_RAMPC:
             computeResponse_for_excitation_Deepc(request, response);
             break;
 
-		case DEEPC_CONTROLLER_STATE_LANDING_MOVE_DOWN:
+		case RAMPC_CONTROLLER_STATE_LANDING_MOVE_DOWN:
 			computeResponse_for_landing_move_down(request, response);
 			break;
 
-		case DEEPC_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
+		case RAMPC_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
 			computeResponse_for_landing_spin_motors(request, response);
 			break;
 
-		case DEEPC_CONTROLLER_STATE_STANDBY:
+		case RAMPC_CONTROLLER_STATE_STANDBY:
 		default:
 			computeResponse_for_standby(request, response);
 			break;
@@ -2952,7 +2952,7 @@ void computeResponse_for_standby(Controller::Request &request, Controller::Respo
         // Publish the change
         publishCurrentSetpointAndState();
 		// Inform the user
-		ROS_INFO_STREAM("[DEEPC CONTROLLER] State \"standby\" started");
+		ROS_INFO_STREAM("[RAMPC CONTROLLER] State \"standby\" started");
 	}
 
 	// Create dummy control output variable
@@ -3008,34 +3008,34 @@ void computeResponse_for_LQR(Controller::Request &request, Controller::Response 
 		// If just coming from excitation state, write data collected
 		if (m_write_data)
 		{
-			ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing input data to: " << m_outputFolder << "m_u_data.csv");
+			ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing input data to: " << m_outputFolder << "m_u_data.csv");
             if (write_csv(m_outputFolder + "m_u_data.csv", m_u_data.transpose()))
-            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
             else
-            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
 
-            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing output data to: " << m_outputFolder << "m_y_data.csv");
+            ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing output data to: " << m_outputFolder << "m_y_data.csv");
             if (write_csv(m_outputFolder + "m_y_data.csv", m_y_data.transpose()))
-            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
             else
-            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
             
             // Make copies of Hankel matrix data if collecting data
             if (m_collect_data)
             {
             	m_num_hankels++;
 
-            	ROS_INFO_STREAM("[DEEPC CONTROLLER] Making copy of input data to: " << m_outputFolder << "m_u_data_" << m_num_hankels << ".csv");
+            	ROS_INFO_STREAM("[RAMPC CONTROLLER] Making copy of input data to: " << m_outputFolder << "m_u_data_" << m_num_hankels << ".csv");
 	            if (write_csv(m_outputFolder + "m_u_data_" + to_string(m_num_hankels) + ".csv", m_u_data.transpose()))
-	            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+	            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
 	            else
-	            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+	            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
 
-	            ROS_INFO_STREAM("[DEEPC CONTROLLER] Making copy of output data to: " << m_outputFolder << "m_y_data_" << m_num_hankels << ".csv");
+	            ROS_INFO_STREAM("[RAMPC CONTROLLER] Making copy of output data to: " << m_outputFolder << "m_y_data_" << m_num_hankels << ".csv");
 	            if (write_csv(m_outputFolder + "m_y_data_" + to_string(m_num_hankels) + ".csv", m_y_data.transpose()))
-	            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+	            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
 	            else
-	            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+	            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
             }
 
             m_write_data = false;
@@ -3044,7 +3044,7 @@ void computeResponse_for_LQR(Controller::Request &request, Controller::Response 
 		// Publish the change
 		publishCurrentSetpointAndState();
 		// Inform the user
-		ROS_INFO_STREAM("[DEEPC CONTROLLER] State \"LQR\" started");
+		ROS_INFO_STREAM("[RAMPC CONTROLLER] State \"LQR\" started");
 	}
 
 	m_setpoint_for_controller[0] = m_setpoint[0];
@@ -3117,25 +3117,25 @@ void computeResponse_for_LQR(Controller::Request &request, Controller::Response 
 	    else
 	    {
 	    	// Inform the user
-	    	ROS_INFO("[DEEPC CONTROLLER] LQR data collection timeout expired.");
+	    	ROS_INFO("[RAMPC CONTROLLER] LQR data collection timeout expired.");
 
-	    	ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing input data to: " << m_outputFolder << "m_u_data_lqr.csv");
+	    	ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing input data to: " << m_outputFolder << "m_u_data_lqr.csv");
             if (write_csv(m_outputFolder + "m_u_data_lqr.csv", m_u_data_lqr.transpose()))
-            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
             else
-            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
 
-            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing output data to: " << m_outputFolder << "m_y_data_lqr.csv");
+            ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing output data to: " << m_outputFolder << "m_y_data_lqr.csv");
             if (write_csv(m_outputFolder + "m_y_data_lqr.csv", m_y_data_lqr.transpose()))
-            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
             else
-            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
 
-            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing reference data to: " << m_outputFolder << "m_r_data_lqr.csv");
+            ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing reference data to: " << m_outputFolder << "m_r_data_lqr.csv");
             if (write_csv(m_outputFolder + "m_r_data_lqr.csv", m_r_data_lqr.transpose()))
-            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
             else
-            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
 
             m_collect_data = false;
 	    }
@@ -3177,7 +3177,7 @@ void computeResponse_for_excitation_LQR(Controller::Request &request, Controller
         // Publish the change
         publishCurrentSetpointAndState();
         // Inform the user
-        ROS_INFO_STREAM("[DEEPC CONTROLLER] State \"Excitation LQR\" started");
+        ROS_INFO_STREAM("[RAMPC CONTROLLER] State \"Excitation LQR\" started");
     }
 
     m_setpoint_for_controller[0] = m_setpoint[0];
@@ -3204,15 +3204,15 @@ void computeResponse_for_excitation_LQR(Controller::Request &request, Controller
         	if (m_rollRateExcEnable || m_pitchRateExcEnable || m_yawRateExcEnable)
             {
                 // Inform the user
-                ROS_INFO("[DEEPC CONTROLLER] Thrust excitation signal ended. State stays at: Excitation LQR");
+                ROS_INFO("[RAMPC CONTROLLER] Thrust excitation signal ended. State stays at: Excitation LQR");
                 m_thrustExcEnable = false;
             }
             else
             {
                 // Inform the user
-                ROS_INFO("[DEEPC CONTROLLER] Thrust excitation signal ended. Switch to state: LQR");
+                ROS_INFO("[RAMPC CONTROLLER] Thrust excitation signal ended. Switch to state: LQR");
                 // Update the state accordingly
-                m_current_state = DEEPC_CONTROLLER_STATE_LQR;
+                m_current_state = RAMPC_CONTROLLER_STATE_LQR;
                 m_current_state_changed = true;
                 m_write_data = true;
             }
@@ -3233,15 +3233,15 @@ void computeResponse_for_excitation_LQR(Controller::Request &request, Controller
         	if (m_thrustExcEnable || m_pitchRateExcEnable || m_yawRateExcEnable)
             {
                 // Inform the user
-                ROS_INFO("[DEEPC CONTROLLER] Roll rate excitation signal ended. State stays at: Excitation LQR");
+                ROS_INFO("[RAMPC CONTROLLER] Roll rate excitation signal ended. State stays at: Excitation LQR");
                 m_rollRateExcEnable = false;
             }
             else
             {
                 // Inform the user
-                ROS_INFO("[DEEPC CONTROLLER] Roll rate excitation signal ended. Switch to state: LQR");
+                ROS_INFO("[RAMPC CONTROLLER] Roll rate excitation signal ended. Switch to state: LQR");
                 // Update the state accordingly
-                m_current_state = DEEPC_CONTROLLER_STATE_LQR;
+                m_current_state = RAMPC_CONTROLLER_STATE_LQR;
                 m_current_state_changed = true;
                 m_write_data = true;
             }
@@ -3262,15 +3262,15 @@ void computeResponse_for_excitation_LQR(Controller::Request &request, Controller
         	if (m_thrustExcEnable || m_rollRateExcEnable || m_yawRateExcEnable)
             {
                 // Inform the user
-                ROS_INFO("[DEEPC CONTROLLER] Pitch rate excitation signal ended. State stays at: Excitation LQR");
+                ROS_INFO("[RAMPC CONTROLLER] Pitch rate excitation signal ended. State stays at: Excitation LQR");
                 m_pitchRateExcEnable = false;
             }
             else
             {
                 // Inform the user
-                ROS_INFO("[DEEPC CONTROLLER] Pitch rate excitation signal ended. Switch to state: LQR");
+                ROS_INFO("[RAMPC CONTROLLER] Pitch rate excitation signal ended. Switch to state: LQR");
                 // Update the state accordingly
-                m_current_state = DEEPC_CONTROLLER_STATE_LQR;
+                m_current_state = RAMPC_CONTROLLER_STATE_LQR;
                 m_current_state_changed = true;
                 m_write_data = true;
             }
@@ -3291,15 +3291,15 @@ void computeResponse_for_excitation_LQR(Controller::Request &request, Controller
         	if (m_thrustExcEnable || m_rollRateExcEnable || m_pitchRateExcEnable)
             {
                 // Inform the user
-                ROS_INFO("[DEEPC CONTROLLER] Yaw rate excitation signal ended. State stays at: Excitation LQR");
+                ROS_INFO("[RAMPC CONTROLLER] Yaw rate excitation signal ended. State stays at: Excitation LQR");
                 m_yawRateExcEnable = false;
             }
             else
             {
                 // Inform the user
-                ROS_INFO("[DEEPC CONTROLLER] Yaw rate excitation signal ended. Switch to state: LQR");
+                ROS_INFO("[RAMPC CONTROLLER] Yaw rate excitation signal ended. Switch to state: LQR");
                 // Update the state accordingly
-                m_current_state = DEEPC_CONTROLLER_STATE_LQR;
+                m_current_state = RAMPC_CONTROLLER_STATE_LQR;
                 m_current_state_changed = true;
                 m_write_data = true;
             }
@@ -3384,34 +3384,34 @@ void computeResponse_for_Deepc(Controller::Request &request, Controller::Respons
 		// If just coming from excitation state, write data collected
 		if (m_write_data)
 		{
-			ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing input data to: " << m_outputFolder << "m_u_data.csv");
+			ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing input data to: " << m_outputFolder << "m_u_data.csv");
             if (write_csv(m_outputFolder + "m_u_data.csv", m_u_data.transpose()))
-            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
             else
-            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
 
-            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing output data to: " << m_outputFolder << "m_y_data.csv");
+            ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing output data to: " << m_outputFolder << "m_y_data.csv");
             if (write_csv(m_outputFolder + "m_y_data.csv", m_y_data.transpose()))
-            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
             else
-            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
 
             // Make copies of Hankel matrix data if collecting data
             if (m_collect_data)
             {
             	m_num_hankels++;
 
-            	ROS_INFO_STREAM("[DEEPC CONTROLLER] Making copy of input data to: " << m_outputFolder << "m_u_data_" << m_num_hankels << ".csv");
+            	ROS_INFO_STREAM("[RAMPC CONTROLLER] Making copy of input data to: " << m_outputFolder << "m_u_data_" << m_num_hankels << ".csv");
 	            if (write_csv(m_outputFolder + "m_u_data_" + to_string(m_num_hankels) + ".csv", m_u_data.transpose()))
-	            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+	            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
 	            else
-	            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+	            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
 
-	            ROS_INFO_STREAM("[DEEPC CONTROLLER] Making copy of output data to: " << m_outputFolder << "m_y_data_" << m_num_hankels << ".csv");
+	            ROS_INFO_STREAM("[RAMPC CONTROLLER] Making copy of output data to: " << m_outputFolder << "m_y_data_" << m_num_hankels << ".csv");
 	            if (write_csv(m_outputFolder + "m_y_data_" + to_string(m_num_hankels) + ".csv", m_y_data.transpose()))
-	            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+	            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
 	            else
-	            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+	            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
             }
 
             m_write_data = false;
@@ -3420,14 +3420,14 @@ void computeResponse_for_Deepc(Controller::Request &request, Controller::Respons
 		// Publish the change
 		publishCurrentSetpointAndState();
 		// Inform the user
-		ROS_INFO_STREAM("[DEEPC CONTROLLER] State \"Deepc\" started");
+		ROS_INFO_STREAM("[RAMPC CONTROLLER] State \"Deepc\" started");
 	}
 
 	// Check if Deepc is not setup and exit Deepc control mode
 	// Deepc control is not allowed to start unless setup, but on exceptions setup success flag is reset
 	// Deepc must be (re-)setup in this case to allow restart
 	s_Deepc_mutex.lock();
-	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1460");
+	//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1460");
 	bool setupDeepc_success = s_setupDeepc_success;
 	bool solveDeepc = s_solveDeepc;
 	m_u_f = s_u_f;
@@ -3435,7 +3435,7 @@ void computeResponse_for_Deepc(Controller::Request &request, Controller::Respons
 	m_solve_time = s_solve_time;
 	m_Deepc_active_setpoint = s_Deepc_active_setpoint;
 	s_Deepc_mutex.unlock();
-	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1460");
+	//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1460");
 
 	bool use_LQR = false;
 	control_output output;
@@ -3443,9 +3443,9 @@ void computeResponse_for_Deepc(Controller::Request &request, Controller::Respons
 	if (!setupDeepc_success)
 	{
 		// Inform the user
-        ROS_INFO("[DEEPC CONTROLLER] Deepc control error. Deepc must be (re-)setup. Switch to state: LQR");
+        ROS_INFO("[RAMPC CONTROLLER] Deepc control error. Deepc must be (re-)setup. Switch to state: LQR");
         // Update the state accordingly
-        m_current_state = DEEPC_CONTROLLER_STATE_LQR;
+        m_current_state = RAMPC_CONTROLLER_STATE_LQR;
         m_current_state_changed = true;
         use_LQR = true;
 	}
@@ -3464,7 +3464,7 @@ void computeResponse_for_Deepc(Controller::Request &request, Controller::Respons
 	}
 	else if (!Deepc_first_pass)
 	{
-		ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc solving optimization took " << m_Deepc_cycles_since_solve + 1 << " cycles");
+		ROS_INFO_STREAM("[RAMPC CONTROLLER] Deepc solving optimization took " << m_Deepc_cycles_since_solve + 1 << " cycles");
 		m_Deepc_cycles_since_solve = 0;
 	}
 
@@ -3563,43 +3563,43 @@ void computeResponse_for_Deepc(Controller::Request &request, Controller::Respons
 	    else
 	    {
 	    	// Inform the user
-	    	ROS_INFO("[DEEPC CONTROLLER] Deepc data collection timeout expired.");
+	    	ROS_INFO("[RAMPC CONTROLLER] Deepc data collection timeout expired.");
 
-	    	ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing input data to: " << m_outputFolder << "m_u_data_Deepc.csv");
+	    	ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing input data to: " << m_outputFolder << "m_u_data_Deepc.csv");
             if (write_csv(m_outputFolder + "m_u_data_Deepc.csv", m_u_data_Deepc.transpose()))
-            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
             else
-            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
 
-            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing predicted input data to: " << m_outputFolder << "m_uf_data_Deepc.csv");
+            ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing predicted input data to: " << m_outputFolder << "m_uf_data_Deepc.csv");
             if (write_csv(m_outputFolder + "m_uf_data_Deepc.csv", m_uf_data_Deepc.transpose()))
-            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
             else
-            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
 
-            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing output data to: " << m_outputFolder << "m_y_data_Deepc.csv");
+            ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing output data to: " << m_outputFolder << "m_y_data_Deepc.csv");
             if (write_csv(m_outputFolder + "m_y_data_Deepc.csv", m_y_data_Deepc.transpose()))
-            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
             else
-            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
 
-            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing predicted output data to: " << m_outputFolder << "m_yf_data_Deepc.csv");
+            ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing predicted output data to: " << m_outputFolder << "m_yf_data_Deepc.csv");
             if (write_csv(m_outputFolder + "m_yf_data_Deepc.csv", m_yf_data_Deepc.transpose()))
-            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
             else
-            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
 
-            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing reference data to: " << m_outputFolder << "m_r_data_Deepc.csv");
+            ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing reference data to: " << m_outputFolder << "m_r_data_Deepc.csv");
             if (write_csv(m_outputFolder + "m_r_data_Deepc.csv", m_r_data_Deepc.transpose()))
-            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
             else
-            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
 
-            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing solve time data to: " << m_outputFolder << "m_solveTime_data_Deepc.csv");
+            ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing solve time data to: " << m_outputFolder << "m_solveTime_data_Deepc.csv");
             if (write_csv(m_outputFolder + "m_solveTime_data_Deepc.csv", m_solveTime_data_Deepc.transpose()))
-            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
             else
-            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
 
             m_collect_data = false;
 	    }
@@ -3625,10 +3625,10 @@ void computeResponse_for_Deepc(Controller::Request &request, Controller::Respons
 	{
 		// Set flag to solve Deepc optimization
 		s_Deepc_mutex.lock();
-		//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1520");
+		//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1520");
 		s_solveDeepc = true;
 		s_Deepc_mutex.unlock();
-		//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1520");
+		//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1520");
 	}
 
 	if (Deepc_first_pass)
@@ -3655,19 +3655,19 @@ void computeResponse_for_excitation_Deepc(Controller::Request &request, Controll
         // Publish the change
         publishCurrentSetpointAndState();
         // Inform the user
-        ROS_INFO_STREAM("[DEEPC CONTROLLER] State \"Excitation Deepc\" started");
+        ROS_INFO_STREAM("[RAMPC CONTROLLER] State \"Excitation Deepc\" started");
     }
 
     // Check if Deepc is not setup and exit Deepc control mode
 	// Deepc control is not allowed to start unless setup, but on exceptions setup success flag is reset
 	// Deepc must be (re-)setup in this case to allow restart
 	s_Deepc_mutex.lock();
-	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1460");
+	//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1460");
 	bool setupDeepc_success = s_setupDeepc_success;
 	bool solveDeepc = s_solveDeepc;
 	m_u_f = s_u_f;
 	s_Deepc_mutex.unlock();
-	//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1460");
+	//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1460");
 
 	bool use_LQR = false;
 	control_output output;
@@ -3675,9 +3675,9 @@ void computeResponse_for_excitation_Deepc(Controller::Request &request, Controll
 	if (!setupDeepc_success)
 	{
 		// Inform the user
-        ROS_INFO("[DEEPC CONTROLLER] Deepc control error. Deepc must be (re-)setup. Switch to state: LQR");
+        ROS_INFO("[RAMPC CONTROLLER] Deepc control error. Deepc must be (re-)setup. Switch to state: LQR");
         // Update the state accordingly
-        m_current_state = DEEPC_CONTROLLER_STATE_LQR;
+        m_current_state = RAMPC_CONTROLLER_STATE_LQR;
         m_current_state_changed = true;
         use_LQR = true;
 	}
@@ -3686,7 +3686,7 @@ void computeResponse_for_excitation_Deepc(Controller::Request &request, Controll
 		m_Deepc_cycles_since_solve++;
 	else
 	{
-		ROS_INFO_STREAM("[DEEPC CONTROLLER] Deepc solving optimization took " << m_Deepc_cycles_since_solve + 1 << " cycles");
+		ROS_INFO_STREAM("[RAMPC CONTROLLER] Deepc solving optimization took " << m_Deepc_cycles_since_solve + 1 << " cycles");
 		m_Deepc_cycles_since_solve = 0;
 	}
 
@@ -3732,15 +3732,15 @@ void computeResponse_for_excitation_Deepc(Controller::Request &request, Controll
         	if (m_rollRateExcEnable || m_pitchRateExcEnable || m_yawRateExcEnable)
             {
                 // Inform the user
-                ROS_INFO("[DEEPC CONTROLLER] Thrust excitation signal ended. State stays at: Excitation Deepc");
+                ROS_INFO("[RAMPC CONTROLLER] Thrust excitation signal ended. State stays at: Excitation Deepc");
                 m_thrustExcEnable = false;
             }
             else
             {
                 // Inform the user
-                ROS_INFO("[DEEPC CONTROLLER] Thrust excitation signal ended. Switch to state: LQR");
+                ROS_INFO("[RAMPC CONTROLLER] Thrust excitation signal ended. Switch to state: LQR");
                 // Update the state accordingly
-                m_current_state = DEEPC_CONTROLLER_STATE_LQR;
+                m_current_state = RAMPC_CONTROLLER_STATE_LQR;
                 m_current_state_changed = true;
                 m_write_data = true;
             }
@@ -3761,15 +3761,15 @@ void computeResponse_for_excitation_Deepc(Controller::Request &request, Controll
         	if (m_thrustExcEnable || m_pitchRateExcEnable || m_yawRateExcEnable)
             {
                 // Inform the user
-                ROS_INFO("[DEEPC CONTROLLER] Roll rate excitation signal ended. State stays at: Excitation Deepc");
+                ROS_INFO("[RAMPC CONTROLLER] Roll rate excitation signal ended. State stays at: Excitation Deepc");
                 m_rollRateExcEnable = false;
             }
             else
             {
                 // Inform the user
-                ROS_INFO("[DEEPC CONTROLLER] Roll rate excitation signal ended. Switch to state: LQR");
+                ROS_INFO("[RAMPC CONTROLLER] Roll rate excitation signal ended. Switch to state: LQR");
                 // Update the state accordingly
-                m_current_state = DEEPC_CONTROLLER_STATE_LQR;
+                m_current_state = RAMPC_CONTROLLER_STATE_LQR;
                 m_current_state_changed = true;
                 m_write_data = true;
             }
@@ -3790,15 +3790,15 @@ void computeResponse_for_excitation_Deepc(Controller::Request &request, Controll
         	if (m_thrustExcEnable || m_rollRateExcEnable || m_yawRateExcEnable)
             {
                 // Inform the user
-                ROS_INFO("[DEEPC CONTROLLER] Pitch rate excitation signal ended. State stays at: Excitation Deepc");
+                ROS_INFO("[RAMPC CONTROLLER] Pitch rate excitation signal ended. State stays at: Excitation Deepc");
                 m_pitchRateExcEnable = false;
             }
             else
             {
                 // Inform the user
-                ROS_INFO("[DEEPC CONTROLLER] Pitch rate excitation signal ended. Switch to state: LQR");
+                ROS_INFO("[RAMPC CONTROLLER] Pitch rate excitation signal ended. Switch to state: LQR");
                 // Update the state accordingly
-                m_current_state = DEEPC_CONTROLLER_STATE_LQR;
+                m_current_state = RAMPC_CONTROLLER_STATE_LQR;
                 m_current_state_changed = true;
                 m_write_data = true;
             }
@@ -3819,15 +3819,15 @@ void computeResponse_for_excitation_Deepc(Controller::Request &request, Controll
         	if (m_thrustExcEnable || m_rollRateExcEnable || m_pitchRateExcEnable)
             {
                 // Inform the user
-                ROS_INFO("[DEEPC CONTROLLER] Yaw rate excitation signal ended. State stays at: Excitation Deepc");
+                ROS_INFO("[RAMPC CONTROLLER] Yaw rate excitation signal ended. State stays at: Excitation Deepc");
                 m_yawRateExcEnable = false;
             }
             else
             {
                 // Inform the user
-                ROS_INFO("[DEEPC CONTROLLER] Yaw rate excitation signal ended. Switch to state: LQR");
+                ROS_INFO("[RAMPC CONTROLLER] Yaw rate excitation signal ended. Switch to state: LQR");
                 // Update the state accordingly
-                m_current_state = DEEPC_CONTROLLER_STATE_LQR;
+                m_current_state = RAMPC_CONTROLLER_STATE_LQR;
                 m_current_state_changed = true;
                 m_write_data = true;
             }
@@ -3895,10 +3895,10 @@ void computeResponse_for_excitation_Deepc(Controller::Request &request, Controll
 	{
 		// Set flag to solve Deepc optimization
 		s_Deepc_mutex.lock();
-		//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1520");
+		//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1520");
 		s_solveDeepc = true;
 		s_Deepc_mutex.unlock();
-		//ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1520");
+		//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1520");
 	}
 }
 
@@ -3920,16 +3920,16 @@ void computeResponse_for_landing_move_down(Controller::Request &request, Control
         // Publish the change
         publishCurrentSetpointAndState();
 		// Inform the user
-		ROS_INFO_STREAM("[DEEPC CONTROLLER] State \"landing move-down\" started with \"m_setpoint_for_controller\" (x,y,z,yaw) =  ( " << m_setpoint_for_controller[0] << ", " << m_setpoint_for_controller[1] << ", " << m_setpoint_for_controller[2] << ", " << m_setpoint_for_controller[3] << ")");
+		ROS_INFO_STREAM("[RAMPC CONTROLLER] State \"landing move-down\" started with \"m_setpoint_for_controller\" (x,y,z,yaw) =  ( " << m_setpoint_for_controller[0] << ", " << m_setpoint_for_controller[1] << ", " << m_setpoint_for_controller[2] << ", " << m_setpoint_for_controller[3] << ")");
 	}
 
 	// Check if within the threshold of zero
 	if (request.ownCrazyflie.z < yaml_landing_move_down_end_height_threshold)
 	{
 		// Inform the user
-		ROS_INFO("[DEEPC CONTROLLER] Switch to state: landing spin motors");
+		ROS_INFO("[RAMPC CONTROLLER] Switch to state: landing spin motors");
 		// Update the state accordingly
-		m_current_state = DEEPC_CONTROLLER_STATE_LANDING_SPIN_MOTORS;
+		m_current_state = RAMPC_CONTROLLER_STATE_LANDING_SPIN_MOTORS;
 		m_current_state_changed = true;
 	}
 
@@ -3939,7 +3939,7 @@ void computeResponse_for_landing_move_down(Controller::Request &request, Control
 		// Inform the user
 		ROS_INFO("[DEFAULT CONTROLLER] Did not reach the setpoint within the \"landing move down\" allowed time. Switch to state: landing spin motors");
 		// Update the state accordingly
-		m_current_state = DEEPC_CONTROLLER_STATE_LANDING_SPIN_MOTORS;
+		m_current_state = RAMPC_CONTROLLER_STATE_LANDING_SPIN_MOTORS;
 		m_current_state_changed = true;
 	}
 	
@@ -3999,20 +3999,20 @@ void computeResponse_for_landing_spin_motors(Controller::Request &request, Contr
         // Publish the change
         publishCurrentSetpointAndState();
 		// Inform the user
-		ROS_INFO_STREAM("[DEEPC CONTROLLER] state \"landing spin motors\" started");
+		ROS_INFO_STREAM("[RAMPC CONTROLLER] state \"landing spin motors\" started");
 	}
 
 	// Change to next state after specified time
 	if (m_time_in_seconds > 0.7 * yaml_landing_spin_motors_time)
 	{
 		// Inform the user
-		ROS_INFO("[DEEPC CONTROLLER] Publish message that landing is complete, and switch to state: standby");
+		ROS_INFO("[RAMPC CONTROLLER] Publish message that landing is complete, and switch to state: standby");
 		// Update the state accordingly
-		m_current_state = DEEPC_CONTROLLER_STATE_STANDBY;
+		m_current_state = RAMPC_CONTROLLER_STATE_STANDBY;
 		m_current_state_changed = true;
 		// Publish a message that the landing is complete
 		IntWithHeader msg;
-		msg.data = DEEPC_CONTROLLER_LANDING_COMPLETE;
+		msg.data = RAMPC_CONTROLLER_LANDING_COMPLETE;
 		m_manoeuvreCompletePublisher.publish(msg);
 		// Publish the change
 		publishCurrentSetpointAndState();
@@ -4303,14 +4303,14 @@ void setNewSetpoint(float x, float y, float z, float yaw)
 
 	// Tell Deepc thread that setpoint changed
 	s_Deepc_mutex.lock();
-	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 1927");
+	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1927");
 	for (int i = 0; i < 4; i++)
 	{
 		s_setpoint(i) = m_setpoint[i];
 	}
 	s_setpoint_changed = true;
 	s_Deepc_mutex.unlock();
-	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 1927");
+	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1927");
 
 	// Publish the change so that the network is updated
 	// (mainly the "flying agent GUI" is interested in
@@ -4389,7 +4389,7 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 			// > FOR CUSTOM BUTTON 1 - EXCITATION
 			case 1:
 				// Let the user know that this part of the code was triggered
-				ROS_INFO_STREAM("[DEEPC CONTROLLER] Button 1 received in controller, with message.float_data = " << float_data );
+				ROS_INFO_STREAM("[RAMPC CONTROLLER] Button 1 received in controller, with message.float_data = " << float_data );
 				// Code here to respond to custom button 1
 				processCustomButton1(float_data, int_data, bool_data);
 
@@ -4398,16 +4398,16 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 			// > FOR CUSTOM BUTTON 2 - SETUP GUROBI OPTIMIZATION
 			case 2:
 				// Let the user know that this part of the code was triggered
-				ROS_INFO_STREAM("[DEEPC CONTROLLER] Button 2 received in controller, with message.float_data = " << float_data );
+				ROS_INFO_STREAM("[RAMPC CONTROLLER] Button 2 received in controller, with message.float_data = " << float_data );
 				// Code here to respond to custom button 2
                 processCustomButton2(float_data, int_data, bool_data);
 
 				break;
 
-			// > FOR CUSTOM BUTTON 3 - DEEPC
+			// > FOR CUSTOM BUTTON 3 - RAMPC
 			case 3:
 				// Let the user know that this part of the code was triggered
-				ROS_INFO_STREAM("[DEEPC CONTROLLER] Button 3 received in controller, with message.float_data = " << float_data );
+				ROS_INFO_STREAM("[RAMPC CONTROLLER] Button 3 received in controller, with message.float_data = " << float_data );
 				// Code here to respond to custom button 3
                 processCustomButton3(float_data, int_data, bool_data);
 
@@ -4416,7 +4416,7 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 			// > FOR CUSTOM BUTTON 4 - COLLECT DATA
 			case 4:
 				// Let the user know that this part of the code was triggered
-				ROS_INFO_STREAM("[DEEPC CONTROLLER] Button 4 received in controller, with message.float_data = " << float_data );
+				ROS_INFO_STREAM("[RAMPC CONTROLLER] Button 4 received in controller, with message.float_data = " << float_data );
 				// Code here to respond to custom button 4
 				processCustomButton4(float_data, int_data, bool_data);
                 
@@ -4425,7 +4425,7 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 			// > FOR CUSTOM BUTTON 5 - CHANGING REFERENCE
 			case 5:
 				// Let the user know that this part of the code was triggered
-				ROS_INFO_STREAM("[DEEPC CONTROLLER] Button 5 received in controller, with message.float_data = " << float_data );
+				ROS_INFO_STREAM("[RAMPC CONTROLLER] Button 5 received in controller, with message.float_data = " << float_data );
 				// Code here to respond to custom button 5
 				processCustomButton5(float_data, int_data, bool_data);
                 
@@ -4433,7 +4433,7 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 
 			default:
 				// Let the user know that the command was not recognised
-				ROS_INFO_STREAM("[DEEPC CONTROLLER] A button clicked command was received in the controller but not recognised, message.button_index = " << custom_button_index << ", and message.float_data = " << float_data );
+				ROS_INFO_STREAM("[RAMPC CONTROLLER] A button clicked command was received in the controller but not recognised, message.button_index = " << custom_button_index << ", and message.float_data = " << float_data );
 				break;
 		}
 	}
@@ -4452,11 +4452,11 @@ void processCustomButton1(float float_data, int int_data, bool* bool_data)
     // Switch between the possible states
     switch (m_current_state)
     {
-        case DEEPC_CONTROLLER_STATE_LQR:
+        case RAMPC_CONTROLLER_STATE_LQR:
             // Inform the user
-            ROS_INFO("[DEEPC CONTROLLER] Received request to start excitation while in LQR. Switch to state: Excitation LQR");
+            ROS_INFO("[RAMPC CONTROLLER] Received request to start excitation while in LQR. Switch to state: Excitation LQR");
             // Update the state accordingly
-            m_current_state = DEEPC_CONTROLLER_STATE_EXCITATION_LQR;
+            m_current_state = RAMPC_CONTROLLER_STATE_EXCITATION_LQR;
             m_current_state_changed = true;
             if (!int_data)
             {
@@ -4465,48 +4465,48 @@ void processCustomButton1(float float_data, int int_data, bool* bool_data)
             	m_pitchRateExcEnable = true;
             	m_yawRateExcEnable = true;
             	// Inform the user
-            	ROS_INFO("[DEEPC CONTROLLER] Exciting all");
+            	ROS_INFO("[RAMPC CONTROLLER] Exciting all");
             }
             if (bool_data[0])
             {
             	m_thrustExcEnable = true;
             	// Inform the user
-            	ROS_INFO("[DEEPC CONTROLLER] Exciting thrust");
+            	ROS_INFO("[RAMPC CONTROLLER] Exciting thrust");
             }
             if (bool_data[1])
             {
             	m_rollRateExcEnable = true;
             	// Inform the user
-            	ROS_INFO("[DEEPC CONTROLLER] Exciting roll rate");
+            	ROS_INFO("[RAMPC CONTROLLER] Exciting roll rate");
             }
             if (bool_data[2])
             {
             	m_pitchRateExcEnable = true;
             	// Inform the user
-            	ROS_INFO("[DEEPC CONTROLLER] Exciting pitch rate");
+            	ROS_INFO("[RAMPC CONTROLLER] Exciting pitch rate");
             }
             if (bool_data[3])
             {
             	m_yawRateExcEnable = true;
             	// Inform the user
-            	ROS_INFO("[DEEPC CONTROLLER] Exciting yaw rate");
+            	ROS_INFO("[RAMPC CONTROLLER] Exciting yaw rate");
             }
             break;
 
-        case DEEPC_CONTROLLER_STATE_EXCITATION_LQR:
+        case RAMPC_CONTROLLER_STATE_EXCITATION_LQR:
             // Inform the user
-            ROS_INFO("[DEEPC CONTROLLER] Received request to stop excitation while in LQR. Switch to state: LQR");
+            ROS_INFO("[RAMPC CONTROLLER] Received request to stop excitation while in LQR. Switch to state: LQR");
             // Update the state accordingly
-            m_current_state = DEEPC_CONTROLLER_STATE_LQR;
+            m_current_state = RAMPC_CONTROLLER_STATE_LQR;
             m_current_state_changed = true;
             m_write_data = true;
             break;
 
-        case DEEPC_CONTROLLER_STATE_DEEPC:
+        case RAMPC_CONTROLLER_STATE_RAMPC:
             // Inform the user
-            ROS_INFO("[DEEPC CONTROLLER] Received request to start excitation while in Deepc. Switch to state: Excitation Deepc");
+            ROS_INFO("[RAMPC CONTROLLER] Received request to start excitation while in Deepc. Switch to state: Excitation Deepc");
             // Update the state accordingly
-            m_current_state = DEEPC_CONTROLLER_STATE_EXCITATION_DEEPC;
+            m_current_state = RAMPC_CONTROLLER_STATE_EXCITATION_RAMPC;
             m_current_state_changed = true;
             if (!int_data)
             {
@@ -4515,110 +4515,110 @@ void processCustomButton1(float float_data, int int_data, bool* bool_data)
             	m_pitchRateExcEnable = true;
             	m_yawRateExcEnable = true;
             	// Inform the user
-            	ROS_INFO("[DEEPC CONTROLLER] Exciting all");
+            	ROS_INFO("[RAMPC CONTROLLER] Exciting all");
             }
             if (bool_data[0])
             {
             	m_thrustExcEnable = true;
             	// Inform the user
-            	ROS_INFO("[DEEPC CONTROLLER] Exciting thrust");
+            	ROS_INFO("[RAMPC CONTROLLER] Exciting thrust");
             }
             if (bool_data[1])
             {
             	m_rollRateExcEnable = true;
             	// Inform the user
-            	ROS_INFO("[DEEPC CONTROLLER] Exciting roll rate");
+            	ROS_INFO("[RAMPC CONTROLLER] Exciting roll rate");
             }
             if (bool_data[2])
             {
             	m_pitchRateExcEnable = true;
             	// Inform the user
-            	ROS_INFO("[DEEPC CONTROLLER] Exciting pitch rate");
+            	ROS_INFO("[RAMPC CONTROLLER] Exciting pitch rate");
             }
             if (bool_data[3])
             {
             	m_yawRateExcEnable = true;
             	// Inform the user
-            	ROS_INFO("[DEEPC CONTROLLER] Exciting yaw rate");
+            	ROS_INFO("[RAMPC CONTROLLER] Exciting yaw rate");
             }
             break;
 
-        case DEEPC_CONTROLLER_STATE_EXCITATION_DEEPC:
+        case RAMPC_CONTROLLER_STATE_EXCITATION_RAMPC:
             // Inform the user
-            ROS_INFO("[DEEPC CONTROLLER] Received request to stop excitation while in Deepc. Switch to state: Deepc");
+            ROS_INFO("[RAMPC CONTROLLER] Received request to stop excitation while in Deepc. Switch to state: Deepc");
             // Update the state accordingly
-            m_current_state = DEEPC_CONTROLLER_STATE_DEEPC;
+            m_current_state = RAMPC_CONTROLLER_STATE_RAMPC;
             m_current_state_changed = true;
             m_write_data = true;
             break;
 
-        case DEEPC_CONTROLLER_STATE_LANDING_MOVE_DOWN:
-        case DEEPC_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
-        case DEEPC_CONTROLLER_STATE_STANDBY:
+        case RAMPC_CONTROLLER_STATE_LANDING_MOVE_DOWN:
+        case RAMPC_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
+        case RAMPC_CONTROLLER_STATE_STANDBY:
         default:
             // Inform the user
-            ROS_INFO("[DEEPC CONTROLLER] Received request to start excitation in invalid state. Request ignored");
+            ROS_INFO("[RAMPC CONTROLLER] Received request to start excitation in invalid state. Request ignored");
             break;
     }
 }
 
-// CUSTOM BUTTON 2 - SETUP DEEPC OPTIMIZATION
+// CUSTOM BUTTON 2 - SETUP RAMPC OPTIMIZATION
 void processCustomButton2(float float_data, int int_data, bool* bool_data)
 {
 	// Inform the user
-    ROS_INFO("[DEEPC CONTROLLER] Received request to setup Deepc optimization");
+    ROS_INFO("[RAMPC CONTROLLER] Received request to setup Deepc optimization");
 
     s_Deepc_mutex.lock();
-    // ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 2142");
+    // ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 2142");
     s_setupDeepc = true;
     s_Deepc_mutex.unlock();
-    // ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 2142");
+    // ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 2142");
 }
 
-// CUSTOM BUTTON 3 - DEEPC
+// CUSTOM BUTTON 3 - RAMPC
 void processCustomButton3(float float_data, int int_data, bool* bool_data)
 {	
 	s_Deepc_mutex.lock();
-	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 2152");
+	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 2152");
 	bool setupDeepc_success = s_setupDeepc_success;
 	s_Deepc_mutex.unlock();
-	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 2152");
+	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 2152");
 
     // Check if Deepc optimization was setup successfully
     if (!setupDeepc_success)
     {
     	// Inform the user
-        ROS_INFO("[DEEPC CONTROLLER] Received request to start Deepc but optimization is not setup successfully. Request ignored");
+        ROS_INFO("[RAMPC CONTROLLER] Received request to start Deepc but optimization is not setup successfully. Request ignored");
         return;
     }
 
     // Switch between the possible states
     switch (m_current_state)
     {
-        case DEEPC_CONTROLLER_STATE_LQR:
+        case RAMPC_CONTROLLER_STATE_LQR:
             // Inform the user
-            ROS_INFO("[DEEPC CONTROLLER] Received request to start Deepc. Switch to state: Deepc");
+            ROS_INFO("[RAMPC CONTROLLER] Received request to start Deepc. Switch to state: Deepc");
             // Update the state accordingly
-            m_current_state = DEEPC_CONTROLLER_STATE_DEEPC;
+            m_current_state = RAMPC_CONTROLLER_STATE_RAMPC;
             m_current_state_changed = true;
             break;
 
-        case DEEPC_CONTROLLER_STATE_DEEPC:
+        case RAMPC_CONTROLLER_STATE_RAMPC:
             // Inform the user
-            ROS_INFO("[DEEPC CONTROLLER] Received request to stop Deepc. Switch to state: LQR");
+            ROS_INFO("[RAMPC CONTROLLER] Received request to stop Deepc. Switch to state: LQR");
             // Update the state accordingly
-            m_current_state = DEEPC_CONTROLLER_STATE_LQR;
+            m_current_state = RAMPC_CONTROLLER_STATE_LQR;
             m_current_state_changed = true;
             break;
 
-        case DEEPC_CONTROLLER_STATE_EXCITATION_LQR:
-        case DEEPC_CONTROLLER_STATE_EXCITATION_DEEPC:
-        case DEEPC_CONTROLLER_STATE_LANDING_MOVE_DOWN:
-        case DEEPC_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
-        case DEEPC_CONTROLLER_STATE_STANDBY:
+        case RAMPC_CONTROLLER_STATE_EXCITATION_LQR:
+        case RAMPC_CONTROLLER_STATE_EXCITATION_RAMPC:
+        case RAMPC_CONTROLLER_STATE_LANDING_MOVE_DOWN:
+        case RAMPC_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
+        case RAMPC_CONTROLLER_STATE_STANDBY:
         default:
             // Inform the user
-            ROS_INFO("[DEEPC CONTROLLER] Received request to start Deepc in invalid state. Request ignored");
+            ROS_INFO("[RAMPC CONTROLLER] Received request to start Deepc in invalid state. Request ignored");
             break;
     }
 }
@@ -4629,7 +4629,7 @@ void processCustomButton4(float float_data, int int_data, bool* bool_data)
 	if (!m_collect_data)
 	{
 		// Inform the user
-        ROS_INFO("[DEEPC CONTROLLER] Received request to start data collection");
+        ROS_INFO("[RAMPC CONTROLLER] Received request to start data collection");
 
 		m_dataIndex_lqr = 0;
 		m_dataIndex_Deepc = 0;
@@ -4639,65 +4639,65 @@ void processCustomButton4(float float_data, int int_data, bool* bool_data)
 	else
 	{
 		// Inform the user
-        ROS_INFO("[DEEPC CONTROLLER] Received request to stop data collection");
+        ROS_INFO("[RAMPC CONTROLLER] Received request to stop data collection");
 
 		if (m_dataIndex_lqr > 0)
 		{
 			// Inform the user
-	    	ROS_INFO("[DEEPC CONTROLLER] LQR data found");
+	    	ROS_INFO("[RAMPC CONTROLLER] LQR data found");
 
-	    	ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing input data to: " << m_outputFolder << "m_u_data_lqr.csv");
+	    	ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing input data to: " << m_outputFolder << "m_u_data_lqr.csv");
             if (write_csv(m_outputFolder + "m_u_data_lqr.csv", m_u_data_lqr.topRows(m_dataIndex_lqr).transpose()))
-            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
             else
-            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
 
-            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing output data to: " << m_outputFolder << "m_y_data_lqr.csv");
+            ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing output data to: " << m_outputFolder << "m_y_data_lqr.csv");
             if (write_csv(m_outputFolder + "m_y_data_lqr.csv", m_y_data_lqr.topRows(m_dataIndex_lqr).transpose()))
-            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
             else
-            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
 
-            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing reference data to: " << m_outputFolder << "m_r_data_lqr.csv");
+            ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing reference data to: " << m_outputFolder << "m_r_data_lqr.csv");
             if (write_csv(m_outputFolder + "m_r_data_lqr.csv", m_r_data_lqr.topRows(m_dataIndex_lqr).transpose()))
-            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
             else
-            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
 		}
 		if (m_dataIndex_Deepc > 0)
 		{
 			// Inform the user
-	    	ROS_INFO("[DEEPC CONTROLLER] Deepc data found");
+	    	ROS_INFO("[RAMPC CONTROLLER] Deepc data found");
 
-	    	ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing input data to: " << m_outputFolder << "m_u_data_Deepc.csv");
+	    	ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing input data to: " << m_outputFolder << "m_u_data_Deepc.csv");
             if (write_csv(m_outputFolder + "m_u_data_Deepc.csv", m_u_data_Deepc.topRows(m_dataIndex_Deepc).transpose()))
-            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
             else
-            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
 
-            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing predicted input data to: " << m_outputFolder << "m_uf_data_Deepc.csv");
+            ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing predicted input data to: " << m_outputFolder << "m_uf_data_Deepc.csv");
             if (write_csv(m_outputFolder + "m_uf_data_Deepc.csv", m_uf_data_Deepc.topRows(m_dataIndex_Deepc).transpose()))
-            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
 
-            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing output data to: " << m_outputFolder << "m_y_data_Deepc.csv");
+            ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing output data to: " << m_outputFolder << "m_y_data_Deepc.csv");
             if (write_csv(m_outputFolder + "m_y_data_Deepc.csv", m_y_data_Deepc.topRows(m_dataIndex_Deepc).transpose()))
-            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
             else
-            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
 
-            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing predicted output data to: " << m_outputFolder << "m_yf_data_Deepc.csv");
+            ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing predicted output data to: " << m_outputFolder << "m_yf_data_Deepc.csv");
             if (write_csv(m_outputFolder + "m_yf_data_Deepc.csv", m_yf_data_Deepc.topRows(m_dataIndex_Deepc).transpose()))
-            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
 
-            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing reference data to: " << m_outputFolder << "m_r_data_Deepc.csv");
+            ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing reference data to: " << m_outputFolder << "m_r_data_Deepc.csv");
             if (write_csv(m_outputFolder + "m_r_data_Deepc.csv", m_r_data_Deepc.topRows(m_dataIndex_Deepc).transpose()))
-            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
             else
-            	ROS_INFO("[DEEPC CONTROLLER] Write file failed");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
 
-            ROS_INFO_STREAM("[DEEPC CONTROLLER] Writing solve time data to: " << m_outputFolder << "m_solveTime_data_Deepc.csv");
+            ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing solve time data to: " << m_outputFolder << "m_solveTime_data_Deepc.csv");
             if (write_csv(m_outputFolder + "m_solveTime_data_Deepc.csv", m_solveTime_data_Deepc.topRows(m_dataIndex_Deepc).transpose()))
-            	ROS_INFO("[DEEPC CONTROLLER] Write file successful");
+            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
 		}
 
 		m_collect_data = false;
@@ -4713,10 +4713,10 @@ void processCustomButton5(float float_data, int int_data, bool* bool_data)
 		m_changing_ref_enable = false;
 
 		s_Deepc_mutex.lock();
-		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 3876");
+		// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 3876");
 		s_changing_ref_enable = m_changing_ref_enable;
 		s_Deepc_mutex.unlock();
-		// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 3876");
+		// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 3876");
 
 		return;
 	}
@@ -4724,30 +4724,30 @@ void processCustomButton5(float float_data, int int_data, bool* bool_data)
     // Switch between the possible states
     switch (m_current_state)
     {
-        case DEEPC_CONTROLLER_STATE_LQR:
-        case DEEPC_CONTROLLER_STATE_DEEPC:
+        case RAMPC_CONTROLLER_STATE_LQR:
+        case RAMPC_CONTROLLER_STATE_RAMPC:
             // Inform the user
-            ROS_INFO("[DEEPC CONTROLLER] Received request to follow changing reference");
+            ROS_INFO("[RAMPC CONTROLLER] Received request to follow changing reference");
             // Reset time
             m_time_in_seconds = 0.0;
             // Set the flag
             m_changing_ref_enable = true;
 
             s_Deepc_mutex.lock();
-			// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 3896");
+			// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 3896");
 			s_changing_ref_enable = m_changing_ref_enable;
 			s_Deepc_mutex.unlock();
-			// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 3896");
+			// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 3896");
             break;
 
-        case DEEPC_CONTROLLER_STATE_EXCITATION_LQR:
-        case DEEPC_CONTROLLER_STATE_EXCITATION_DEEPC:
-        case DEEPC_CONTROLLER_STATE_LANDING_MOVE_DOWN:
-        case DEEPC_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
-        case DEEPC_CONTROLLER_STATE_STANDBY:
+        case RAMPC_CONTROLLER_STATE_EXCITATION_LQR:
+        case RAMPC_CONTROLLER_STATE_EXCITATION_RAMPC:
+        case RAMPC_CONTROLLER_STATE_LANDING_MOVE_DOWN:
+        case RAMPC_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
+        case RAMPC_CONTROLLER_STATE_STANDBY:
         default:
             // Inform the user
-            ROS_INFO("[DEEPC CONTROLLER] Received request to follow changing reference in invalid state. Request ignored");
+            ROS_INFO("[RAMPC CONTROLLER] Received request to follow changing reference in invalid state. Request ignored");
             break;
     }
 }
@@ -4786,21 +4786,21 @@ void isReadyDeepcControllerYamlCallback(const IntWithHeader & msg)
 			// > FOR FETCHING FROM THE AGENT'S OWN PARAMETER SERVICE
 			case LOAD_YAML_FROM_AGENT:
 			{
-				ROS_INFO("[DEEPC CONTROLLER] Now fetching the DeepcController YAML parameter values from this agent.");
+				ROS_INFO("[RAMPC CONTROLLER] Now fetching the DeepcController YAML parameter values from this agent.");
 				namespace_to_use = m_namespace_to_own_agent_parameter_service;
 				break;
 			}
 			// > FOR FETCHING FROM THE COORDINATOR'S PARAMETER SERVICE
 			case LOAD_YAML_FROM_COORDINATOR:
 			{
-				ROS_INFO("[DEEPC CONTROLLER] Now fetching the DeepcController YAML parameter values from this agent's coordinator.");
+				ROS_INFO("[RAMPC CONTROLLER] Now fetching the DeepcController YAML parameter values from this agent's coordinator.");
 				namespace_to_use = m_namespace_to_coordinator_parameter_service;
 				break;
 			}
 
 			default:
 			{
-				ROS_ERROR("[DEEPC CONTROLLER] Paramter service to load from was NOT recognised.");
+				ROS_ERROR("[RAMPC CONTROLLER] Paramter service to load from was NOT recognised.");
 				namespace_to_use = m_namespace_to_own_agent_parameter_service;
 				break;
 			}
@@ -4926,9 +4926,9 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	// z sine frequency, in Hz
 	yaml_z_sine_frequency = getParameterFloat(nodeHandle_for_paramaters, "z_sine_frequency");
 
-	// PARAMETERS ACCESSED BY DEEPC THREAD
+	// PARAMETERS ACCESSED BY RAMPC THREAD
 	s_Deepc_mutex.lock();
-	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 2352");
+	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 2352");
 	
 	// Deepc parameters
 	s_yaml_Tini = getParameterInt(nodeHandle_for_paramaters, "Tini");
@@ -4954,12 +4954,12 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	s_yaml_grb_presolve_at_setup = getParameterBool(nodeHandle_for_paramaters, "grb_presolve_at_setup");
 
 	s_Deepc_mutex.unlock();
-	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 2352");
+	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 2352");
 
 
 	// > DEBUGGING: Print out one of the parameters that was loaded to
 	//   debug if the fetching of parameters worked correctly
-	ROS_INFO_STREAM("[DEEPC CONTROLLER] DEBUGGING: the fetched DeepcController/mass = " << yaml_cf_mass_in_grams);
+	ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUGGING: the fetched DeepcController/mass = " << yaml_cf_mass_in_grams);
 
 
 	// PROCESS THE PARAMTERS
@@ -5020,7 +5020,7 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	// > Get the excitation signals from files
 	m_thrustExcSignal = read_csv(m_dataFolder + yaml_thrustExcSignalFile);
 	if (m_thrustExcSignal.size() <= 0)
-		ROS_INFO("[DEEPC CONTROLLER] Failed to read thrust excitation signal file");
+		ROS_INFO("[RAMPC CONTROLLER] Failed to read thrust excitation signal file");
 	else
 	{
 		int exc_start_time_d = int(yaml_exc_start_time / m_control_deltaT);
@@ -5030,15 +5030,15 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	
 	m_rollRateExcSignal = read_csv(m_dataFolder + yaml_rollRateExcSignalFile);
 	if (m_rollRateExcSignal.size() <= 0)
-		ROS_INFO("[DEEPC CONTROLLER] Failed to read roll rate excitation signal file");
+		ROS_INFO("[RAMPC CONTROLLER] Failed to read roll rate excitation signal file");
 	
 	m_pitchRateExcSignal = read_csv(m_dataFolder + yaml_pitchRateExcSignalFile);
 	if (m_pitchRateExcSignal.size() <= 0)
-		ROS_INFO("[DEEPC CONTROLLER] Failed to read pitch rate excitation signal file");
+		ROS_INFO("[RAMPC CONTROLLER] Failed to read pitch rate excitation signal file");
 	
 	m_yawRateExcSignal = read_csv(m_dataFolder + yaml_yawRateExcSignalFile);
 	if (m_yawRateExcSignal.size() <= 0)
-		ROS_INFO("[DEEPC CONTROLLER] Failed to read yaw rate excitation signal file");
+		ROS_INFO("[RAMPC CONTROLLER] Failed to read yaw rate excitation signal file");
 
 	// > Compute the Figure 8 frequency in units of rad/s
 	m_figure_8_frequency_rad = 2 * PI * yaml_figure_8_frequency;
@@ -5046,9 +5046,9 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	// > Compute the z sine frequency in units of rad/s
 	m_z_sine_frequency_rad = 2 * PI * yaml_z_sine_frequency;
 
-	// PARAMETERS ACCESSED BY DEEPC THREAD
+	// PARAMETERS ACCESSED BY RAMPC THREAD
 	s_Deepc_mutex.lock();
-	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Lock 2432");
+	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 2432");
 
 	// Share feed-forward with Deepc thread
 	s_cf_weight_in_newtons = m_cf_weight_in_newtons;
@@ -5079,13 +5079,13 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	s_params_changed = true;
 
 	s_Deepc_mutex.unlock();
-	// ROS_INFO("[DEEPC CONTROLLER] DEBUG Mutex Unlock 2433");
+	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 2433");
 
 	// Update setpoint to default
 	setNewSetpoint(yaml_default_setpoint[0], yaml_default_setpoint[1], yaml_default_setpoint[2], yaml_default_setpoint[3]);
 
 	// DEBUGGING: Print out one of the computed quantities
-	ROS_INFO_STREAM("[DEEPC CONTROLLER] DEBUGGING: thus the weight of this agent in [Newtons] = " << m_cf_weight_in_newtons);
+	ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUGGING: thus the weight of this agent in [Newtons] = " << m_cf_weight_in_newtons);
 }
 
 
