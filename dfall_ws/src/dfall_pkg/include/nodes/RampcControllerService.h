@@ -131,7 +131,7 @@ struct control_output
 	float yawRate;
 };
 
-
+double time_prev=0.0;
 //    ----------------------------------------------------------------------------------
 //    V   V    A    RRRR   III    A    BBBB   L      EEEEE   SSSS
 //    V   V   A A   R   R   I    A A   B   B  L      E      S
@@ -193,7 +193,7 @@ float yaml_landing_spin_motors_time = 1.5;
 float yaml_cf_mass_in_grams = 28.0;
 
 // > the frequency at which the controller is running
-float yaml_control_frequency = 25.0;
+float yaml_control_frequency = 200.0;
 float m_control_deltaT = 1.0 / yaml_control_frequency;
 
 // > the coefficients of the 16-bit command to thrust conversion
@@ -216,11 +216,21 @@ bool yaml_shouldPublishDebugMessage = false;
 bool yaml_shouldDisplayDebugInfo = false;
 
 // The LQR Controller parameters for "LQR_RATE_MODE"
-vector<float> yaml_gainMatrixThrust_NineStateVector  =  { 0.00, 0.00, 0.98, 0.00, 0.00, 0.25, 0.00, 0.00, 0.00};
-vector<float> yaml_gainMatrixRollRate                =  { 0.00,-6.20, 0.00, 0.00,-3.00, 0.00, 5.20, 0.00, 0.00};
-vector<float> yaml_gainMatrixPitchRate               =  { 6.20, 0.00, 0.00, 3.00, 0.00, 0.00, 0.00, 5.20, 0.00};
-vector<float> yaml_gainMatrixYawRate                 =  { 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.30};
+vector<float> yaml_gainMatrixThrust_NineStateVector  =  { 0.00, 0.00, 0.19, 0.00, 0.00, 0.08, 0.00, 0.00, 0.00};
+vector<float> yaml_gainMatrixRollRate                =  { 0.00,-1.71, 0.00, 0.00,-1.33, 0.00, 5.12, 0.00, 0.00};
+vector<float> yaml_gainMatrixPitchRate               =  { 1.71, 0.00, 0.00, 1.33, 0.00, 0.00, 0.00, 5.12, 0.00};
+vector<float> yaml_gainMatrixYawRate                 =  { 0.00, 0.00, 0.19, 0.00, 0.00, 0.08, 0.00, 0.00, 0.00};
 
+vector<float> yaml_gainMatrixThrust1_TwelveStateVector  =  { 0.0069, -0.0037, -0.4267, 0.0069, -0.0037, -0.1122, 0.0143, 0.0269, 0.0521, 0.0027, 0.0052, 0.0177};
+vector<float> yaml_gainMatrixThrust2_TwelveStateVector  =  { -0.0066, -0.0020, -0.4267, -0.0066, -0.0020, -0.1122, 0.0079, -0.0258, -0.0516, 0.0015, -0.0050, -0.0175};
+vector<float> yaml_gainMatrixThrust3_TwelveStateVector  =  { -0.0035, 0.0023, -0.4267, -0.0035, 0.0023, -0.1122, -0.0090, -0.0138, 0.0505, -0.0017, -0.0026, 0.0171};
+vector<float> yaml_gainMatrixThrust4_TwelveStateVector  =  { 0.0032, 0.0034, -0.4267, 0.0032, 0.0034, -0.1122, -0.0132, 0.0126, -0.0509, -0.0025, 0.0024, -0.0173};
+
+
+vector<float> yaml_gainMatrixThrust1_200Hz  =  { 0.1820,-0.0983,-4.0891,0.1368,-0.0739,-0.4841,0.2222,0.4117,1.1181,0.0327,0.0607,0.2137};
+vector<float> yaml_gainMatrixThrust2_200Hz  =  { -0.1743,-0.0596,-4.0891,-0.1310,-0.0448, -0.4841,0.1346,-0.3943,-1.1094,0.0198,-0.0581,-0.2120};
+vector<float> yaml_gainMatrixThrust3_200Hz  =  { -0.1050,0.0673,-4.0891,-0.0789,0.0505,-0.4841,-0.1520,-0.2372,1.0896,-0.0224,-0.0349,0.2082};
+vector<float> yaml_gainMatrixThrust4_200Hz  =  { 0.0973,0.0906,-4.0891,0.0731,0.0681,-0.4841,-0.2049,0.2198,-1.0983,-0.0302,0.0323,-0.2099};
 // Data collection max time, in minutes
 float yaml_data_collection_max_time;
 

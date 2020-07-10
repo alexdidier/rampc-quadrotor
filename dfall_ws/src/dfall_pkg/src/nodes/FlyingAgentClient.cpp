@@ -763,7 +763,7 @@ void requestChangeFlyingStateToLand()
 						ROS_INFO_STREAM("[FLYING AGENT CLIENT] Changed state to STATE_LAND for a duration of " << land_duration << " seconds.");
 						// Update the class variable
 						m_flying_state = STATE_LAND;
-					}
+					  }
 				}
 				else{
 				// Inform the user

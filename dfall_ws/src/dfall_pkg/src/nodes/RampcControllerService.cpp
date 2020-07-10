@@ -3053,6 +3053,7 @@ void computeResponse_for_LQR(Controller::Request &request, Controller::Response 
 	m_setpoint_for_controller[3] = m_setpoint[3];
 	
 	// Add 'Figure 8' (found here: "https://gamedev.stackexchange.com/questions/43691/how-can-i-move-an-object-in-an-infinity-or-figure-8-trajectory", as "Lemniscate of Bernoulli")
+	/*
 	if (m_changing_ref_enable)
 	{
 		float figure_8_scale = 2 / (3 - cos(2 * m_figure_8_frequency_rad * (m_time_in_seconds - PI/2))) * yaml_figure_8_amplitude;
@@ -3062,7 +3063,7 @@ void computeResponse_for_LQR(Controller::Request &request, Controller::Response 
 
 		m_time_in_seconds += m_control_deltaT;
 	}
-
+	*/
 	// Call the LQR control function
 	control_output output;
 	calculateControlOutput_viaLQR(request, output);
@@ -3080,12 +3081,12 @@ void computeResponse_for_LQR(Controller::Request &request, Controller::Response 
 	// . NOTE: The thrust is commanded per motor, so divide by 4.0
 	// > NOTE: The function "computeMotorPolyBackward" converts the input argument
 	//         from Newtons to the 16-bit command expected by the Crazyflie.
-	float thrust_request_per_motor = output.thrust / 4.0;
+	float thrust_request_per_motor = output.thrust/ 4.0;
 	response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrust_request_per_motor);
 	response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrust_request_per_motor);
 	response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrust_request_per_motor);
 	response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrust_request_per_motor);
-
+	
 	// Capture data
 	if (m_collect_data)
 	{
@@ -3143,11 +3144,11 @@ void computeResponse_for_LQR(Controller::Request &request, Controller::Response 
 
 	// DEBUG INFO
 	if (yaml_shouldDisplayDebugInfo)
-	{
-		ROS_INFO_STREAM("output.thrust = " << output.thrust);
+	{	
 		ROS_INFO_STREAM("controlOutput.roll = " << response.controlOutput.roll);
 		ROS_INFO_STREAM("controlOutput.pitch = " << response.controlOutput.pitch);
 		ROS_INFO_STREAM("controlOutput.yaw = " << response.controlOutput.yaw);
+		
 		ROS_INFO_STREAM("controlOutput.motorCmd1 = " << response.controlOutput.motorCmd1);
 		ROS_INFO_STREAM("controlOutput.motorCmd2 = " << response.controlOutput.motorCmd2);
 		ROS_INFO_STREAM("controlOutput.motorCmd3 = " << response.controlOutput.motorCmd3);
@@ -3876,7 +3877,7 @@ void computeResponse_for_excitation_Deepc(Controller::Request &request, Controll
     m_time_in_seconds += m_control_deltaT;
 
     // DEBUG INFO
-    if (yaml_shouldDisplayDebugInfo)
+    if (true)
     {
         ROS_INFO_STREAM("output.thrust = " << output.thrust);
         ROS_INFO_STREAM("controlOutput.roll = " << response.controlOutput.roll);
@@ -4095,6 +4096,9 @@ void calculateControlOutput_viaLQR(Controller::Request &request, control_output 
 	//   and by default does not perform any conversion. The equations to convert
 	//   the state error into the body frame should be implemented in that function
 	//   for successful completion of the classroom exercise
+	
+
+
 	float stateErrorBody[9];
 	convertIntoBodyFrame(stateErrorInertial, stateErrorBody, request.ownCrazyflie.yaw);
 
@@ -4103,6 +4107,7 @@ void calculateControlOutput_viaLQR(Controller::Request &request, control_output 
 	// > as we have already used previous error we can now update it update it
 	for(int i = 0; i < 9; ++i)
 	{
+		stateErrorBody[i]=stateErrorInertial[i];
 		m_previous_stateErrorInertial[i] = stateErrorInertial[i];
 	}
 
@@ -4110,7 +4115,7 @@ void calculateControlOutput_viaLQR(Controller::Request &request, control_output 
 	// PERFORM THE "u=-Kx" CONTROLLER COMPUTATIONS
 
 	// Initialize control output
-	output.thrust = 0;
+	output.thrust=0;
 	output.rollRate = 0;
 	output.pitchRate = 0;
 	output.yawRate = 0;
@@ -4132,8 +4137,9 @@ void calculateControlOutput_viaLQR(Controller::Request &request, control_output 
 	output.thrust += m_cf_weight_in_newtons;
 
 	// DEBUG INFO
-	if (yaml_shouldDisplayDebugInfo)
+	if (true)
 	{
+		/*
 		ROS_INFO_STREAM("x-coordinates: " << request.ownCrazyflie.x);
 		ROS_INFO_STREAM("y-coordinates: " << request.ownCrazyflie.y);
 		ROS_INFO_STREAM("z-coordinates: " << request.ownCrazyflie.z);
@@ -4141,6 +4147,13 @@ void calculateControlOutput_viaLQR(Controller::Request &request, control_output 
 		ROS_INFO_STREAM("pitch: " << request.ownCrazyflie.pitch);
 		ROS_INFO_STREAM("yaw: " << request.ownCrazyflie.yaw);
 		ROS_INFO_STREAM("Delta t: " << request.ownCrazyflie.acquiringTime);
+		*/
+		ROS_INFO_STREAM("Debug_info: " <<yaml_shouldDisplayDebugInfo);
+		ROS_INFO_STREAM("Control frequency: " <<yaml_control_frequency);
+		ROS_INFO_STREAM("Setpoint x: "<< m_setpoint[0]);
+		ROS_INFO_STREAM("Setpoint y: "<< m_setpoint[1]);
+		ROS_INFO_STREAM("Setpoint z: "<< m_setpoint[2]);
+		ROS_INFO_STREAM("Setpoint yaw: "<< m_setpoint[3]);
 	}
 }
 
@@ -4200,6 +4213,7 @@ void convertIntoBodyFrame(float stateInertial[9], float (&stateBody)[9], float y
 	stateBody[6] = stateInertial[6];
 	stateBody[7] = stateInertial[7];
 	stateBody[8] = stateInertial[8];
+
 }
 
 
@@ -4768,7 +4782,7 @@ void processCustomButton5(float float_data, int int_data, bool* bool_data)
 
 
 // CALLBACK NOTIFYING THAT THE YAML PARAMETERS ARE READY TO BE LOADED
-void isReadyDeepcControllerYamlCallback(const IntWithHeader & msg)
+void isReadyRampcControllerYamlCallback(const IntWithHeader & msg)
 {
 	// Check whether the message is relevant
 	bool isRevelant = checkMessageHeader( m_agentID , msg.shouldCheckForAgentID , msg.agentIDs );
@@ -4820,7 +4834,7 @@ void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 	// DeepcController.yaml
 
 	// Add the "DeepcController" namespace to the "nodeHandle"
-	ros::NodeHandle nodeHandle_for_paramaters(nodeHandle, "DeepcController");
+	ros::NodeHandle nodeHandle_for_paramaters(nodeHandle, "RampcController");
 
 	// GET THE PARAMETERS:
 
@@ -5181,8 +5195,8 @@ int main(int argc, char* argv[]) {
 
 	// The parameter service publishes messages with names of the form:
 	// /dfall/.../ParameterService/<filename with .yaml extension>
-	ros::Subscriber safeContoller_yamlReady_fromAgent = nodeHandle_to_own_agent_parameter_service.subscribe(  "RampcController", 1, isReadyDeepcControllerYamlCallback);
-	ros::Subscriber safeContoller_yamlReady_fromCoord = nodeHandle_to_coordinator_parameter_service.subscribe("RampcController", 1, isReadyDeepcControllerYamlCallback);
+	ros::Subscriber safeContoller_yamlReady_fromAgent = nodeHandle_to_own_agent_parameter_service.subscribe(  "RampcController", 1, isReadyRampcControllerYamlCallback);
+	ros::Subscriber safeContoller_yamlReady_fromCoord = nodeHandle_to_coordinator_parameter_service.subscribe("RampcController", 1, isReadyRampcControllerYamlCallback);
 
 
 
@@ -5219,7 +5233,7 @@ int main(int argc, char* argv[]) {
 	if(requestLoadYamlFilenameServiceClient.call(loadYamlFromFilenameCall))
 	{
 		// Nothing to do in this case.
-		// The "isReadyDeepcControllerYamlCallback" function
+		// The "isReadyRampcControllerYamlCallback" function
 		// will be called once the YAML file is loaded
 	}
 	else

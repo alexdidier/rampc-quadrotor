@@ -24,7 +24,7 @@ landing_spin_motors_time: 0
 mass : 28
 
 # Frequency of the controller, in hertz
-control_frequency : 25.0
+control_frequency : 200.0
 
 # Quadratic motor regression equation (a0, a1, a2)
 motorPoly : [5.484560e-4, 1.032633e-6, 2.130295e-11]
@@ -35,21 +35,21 @@ command_sixteenbit_max : 60000
 
 # The default setpoint, the ordering is (x,y,z,yaw),
 # with unit [meters,meters,meters,radians]
-default_setpoint : [0.0, 0.0, 1.0, 0.0]
+default_setpoint : [0.0, 0.0, 0.4, 0.0]
 
 # Boolean indiciating whether the "Debug Message" of this agent should be published or not
 shouldPublishDebugMessage : false
 
 # Boolean indiciating whether the debugging ROS_INFO_STREAM should be displayed or not
-shouldDisplayDebugInfo : false
+shouldDisplayDebugInfo : true
 
 # The LQR Controller parameters for rate mode
-# 25Hz Gains
-gainMatrixThrust_NineStateVector    :  [ 0.00, 0.00, 0.44, 0.00, 0.00, 0.16, 0.00, 0.00, 0.00]
-gainMatrixRollRate                  :  [ 0.00,-2.79, 0.00, 0.00, -1.83, 0.00, 5.91, 0.00, 0.00]
-gainMatrixPitchRate                 :  [ 2.79, 0.00, 0.00, 1.83, 0.00, 0.00, 0.00, 5.91, 0.00]
+# 200Hz Gains
+gainMatrixThrust_NineStateVector    :  [ 0.00, 0.00, 0.19, 0.00, 0.00, 0.08, 0.00, 0.00, 0.00]
+gainMatrixRollRate                  :  [ 0.00,-1.71, 0.00, 0.00,-1.33, 0.00, 5.12, 0.00, 0.00]
+gainMatrixPitchRate                 :  [1.71, 0.00, 0.00, 1.33, 0.00, 0.00, 0.00, 5.12, 0.00]
 #gainMatrixYawRate                   :  [ 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.97]
-gainMatrixYawRate                   :  [ 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 4.09]
+gainMatrixYawRate                   :  [ 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.84]
 
 
 # 50 Hz Gains
@@ -57,6 +57,20 @@ gainMatrixYawRate                   :  [ 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.0
 #gainMatrixRollRate                  :  [ 0.00, -2.97, 0.00, 0.00, -1.92, 0.00, 6.09, 0.00, 0.00]
 #gainMatrixPitchRate                 :  [ 2.97, 0.00, 0.00, 1.92, 0.00, 0.00, 0.00, 6.09, 0.00]
 #gainMatrixYawRate                   :  [ -0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 3.06]
+
+
+# 12 State LQR Gain
+
+gainMatrixThrust1_TwelveStateVector  :  [0.0069, -0.0037, -0.4267, 0.0069, -0.0037, -0.1122, 0.0143, 0.0269, 0.0521, 0.0027, 0.0052, 0.0177]
+gainMatrixThrust2_TwelveStateVector  :  [-0.0066, -0.0020, -0.4267, -0.0066, -0.0020, -0.1122, 0.0079, -0.0258, -0.0516, 0.0015, -0.0050, -0.0175]
+gainMatrixThrust3_TwelveStateVector  :  [ -0.0035, 0.0023, -0.4267, -0.0035, 0.0023, -0.1122, -0.0090, -0.0138, 0.0505, -0.0017, -0.0026, 0.0171]
+gainMatrixThrust4_TwelveStateVector  :  [ 0.0032, 0.0034, -0.4267, 0.0032, 0.0034, -0.1122, -0.0132, 0.0126, -0.0509, -0.0025, 0.0024, -0.0173]
+
+
+yaml_gainMatrixThrust1_200Hz  :  [ 0.1820,-0.0983,-4.0891,0.1368,-0.0739,-0.4841,0.2222,0.4117,1.1181,0.0327,0.0607,0.2137]
+yaml_gainMatrixThrust2_200Hz  :  [ -0.1743,-0.0596,-4.0891,-0.1310,-0.0448, -0.4841,0.1346,-0.3943,-1.1094,0.0198,-0.0581,-0.2120]
+yaml_gainMatrixThrust3_200Hz  :  [ -0.1050,0.0673,-4.0891,-0.0789,0.0505,-0.4841,-0.1520,-0.2372,1.0896,-0.0224,-0.0349,0.2082]
+yaml_gainMatrixThrust4_200Hz  :  [ 0.0973,0.0906,-4.0891,0.0731,0.0681,-0.4841,-0.2049,0.2198,-1.0983,-0.0302,0.0323,-0.2099]
 
 # ------------------------------------------------------
 # PARAMTERS FOR DEEPC
@@ -145,10 +159,10 @@ grb_presolve_at_setup : true
 # This implements a 'Figure 8' in x and y and a sine in z
 
 # Figure 8 amplitude, in m
-figure_8_amplitude : 1
+figure_8_amplitude : 0 #1
 # Figure 8 frequency, in Hz
-figure_8_frequency : 0.2
+figure_8_frequency : 0 #0.2
 # z sine amplitude, in m
-z_sine_amplitude : 0.3
+z_sine_amplitude : 0 #0.3
 # z sine frequency, in Hz
-z_sine_frequency : 0.1
+z_sine_frequency : 0 #0.1
