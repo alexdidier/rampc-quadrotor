@@ -41,7 +41,7 @@ default_setpoint : [0.0, 0.0, 0.4, 0.0]
 shouldPublishDebugMessage : false
 
 # Boolean indiciating whether the debugging ROS_INFO_STREAM should be displayed or not
-shouldDisplayDebugInfo : true
+shouldDisplayDebugInfo : false
 
 # The LQR Controller parameters for rate mode
 # 200Hz Gains
@@ -73,13 +73,13 @@ yaml_gainMatrixThrust3_200Hz  :  [ -0.1050,0.0673,-4.0891,-0.0789,0.0505,-0.4841
 yaml_gainMatrixThrust4_200Hz  :  [ 0.0973,0.0906,-4.0891,0.0731,0.0681,-0.4841,-0.2049,0.2198,-1.0983,-0.0302,0.0323,-0.2099]
 
 # ------------------------------------------------------
-# PARAMTERS FOR DEEPC
+# PARAMTERS FOR RAMPC
 
 # Data collection max time, in minutes
 data_collection_max_time : 10
 
 # Data folder location, relative to HOME path
-dataFolder : /work/D-FaLL-System/Deepc_data/
+dataFolder : /work/D-FaLL-System/Rampc_data/
 
 # CSV data files location, relative to dataFolder
 outputFolder : output/
@@ -106,29 +106,39 @@ yawRateExcAmp : 60.0
 # Excitation start time, in s. Used to collect steady-state data before excitation
 exc_start_time : 0.0
 
-# EVERYTHING DEEPC
+# EVERYTHING RAMPC
 
-# Flag that indicates whether to use roll and pitch angle measurements in Deepc
-Deepc_measure_roll_pitch : false
+# Flag that indicates whether to use roll and pitch angle measurements in Rampc
+Rampc_measure_roll_pitch : false
 
-# Flag that activates yaw control through Deepc
-Deepc_yaw_control : false
+# Flag that activates yaw control through Rampc
+Rampc_yaw_control : false
 
 # Tini in discrete time steps
 Tini : 6
 
 # Prediction horizon in discrete time steps
-N : 25
+N : 20
 
 # Output cost matrix diagonal entries (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
-Q : [40.0, 40.0, 40.0, 0.0, 0.0, 0.0, 0.0, 0.0, 40.0]
+Q : [1.0, 0.3, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
 # Input cost matrix diagonal entries (thrust, rollRate, pitchRate, yawRate)
-R : [160.0, 4.0, 4.0, 2.0]
+R : [0.4, 0.0, 0.0, 0.0]
 
 # Terminal output cost matrix diagonal entries (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
 #P : [657.21, 657.21, 355.26, 96.92, 96.92, 18.77, 629.60, 629.60, 244.50]
-P : [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+P : [272.9214, 31.7374, 5.6296, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+# Feedback controller
+K : [-1.6259, -0.4294]
+
+# State constraints: pos_max/min and v_max/min
+F : [0.7,-0.7, 10.0,-10.0]
+
+# Input constraints max/min  
+G : [0.6388,0.0]
+
 
 # Regularization parameters
 lambda2_g : 500.0
@@ -145,8 +155,8 @@ input_min : [0.1597, -1.5708, -1.5708, -1.5708]
 input_max : [0.4791, 1.5708, 1.5708, 1.5708]
 
 # Optimization parameters
-solver : mpc
-opt_sparse : true
+solver : osqp
+opt_sparse : false
 opt_verbose : false
 opt_steady_state : false  # Available in sparse formulation only, ignored otherwise
 

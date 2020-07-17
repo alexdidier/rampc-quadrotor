@@ -25,7 +25,7 @@
 //
 //
 //    DESCRIPTION:
-//    A Deepc Controller for students build from
+//    A Rampc Controller for students build from
 //
 //    ----------------------------------------------------------------------------------
 
@@ -74,7 +74,6 @@
 // Include the shared definitions
 #include "nodes/Constants.h"
 #include "nodes/RampcControllerConstants.h"
-//#include "nodes/DeepcControllerConstants.h"
 
 // Include other classes
 #include "classes/GetParamtersAndNamespaces.h"
@@ -96,6 +95,7 @@
 
 // Include OSQP optimization platform
 #include "osqp.h"
+#include <limits>
 
 // Namespacing the package
 using namespace dfall_pkg;
@@ -132,6 +132,8 @@ struct control_output
 };
 
 double time_prev=0.0;
+float Inf_max=numeric_limits<float>::max();
+float Inf_min=-numeric_limits<float>::max();
 //    ----------------------------------------------------------------------------------
 //    V   V    A    RRRR   III    A    BBBB   L      EEEEE   SSSS
 //    V   V   A A   R   R   I    A A   B   B  L      E      S
@@ -141,9 +143,9 @@ double time_prev=0.0;
 //    ----------------------------------------------------------------------------------
 
 // NOTE ABOUT THREAD MANAGEMENT
-// Variables starting with 's_' are shared between main and Deepc threads
+// Variables starting with 's_' are shared between main and Rampc threads
 // Mutex must be used before read/writing them
-// Variables starting with 'd_' are used by Deepc thread only
+// Variables starting with 'd_' are used by Rampc thread only
 // They are declared global for inter-function communication and/or for speed
 // All other variables are used by main thread only
 
@@ -161,7 +163,7 @@ string m_namespace_to_coordinator_parameter_service;
 
 // STATE MACHINE VARIABLES
 
-// The current state of the Deepc Controller
+// The current state of the Rampc Controller
 int m_current_state = RAMPC_CONTROLLER_STATE_STANDBY;
 
 // A flag for when the state is changed, this is used
@@ -238,7 +240,7 @@ float yaml_data_collection_max_time;
 const string HOME = getenv("HOME");
 
 // Data folder location, relative to HOME path
-string yaml_dataFolder = "/work/D-FaLL-System/Deepc_data/";
+string yaml_dataFolder = "/work/D-FaLL-System/Rampc_data/";
 
 // CSV output data folder location, relative to dataFolder
 string yaml_outputFolder = "output/";
@@ -267,22 +269,29 @@ float yaml_yawRateExcAmp_in_deg = 0.0;
 // Excitation start time, in s. Used to collect steady-state data before excitation
 float yaml_exc_start_time = 0.0;
 
-// Deepc parameters
-// Flag that indicates whether to use roll and pitch angle measurements in Deepc
-bool yaml_Deepc_measure_roll_pitch = true;
-// Flag that activates yaw control through Deepc
-bool yaml_Deepc_yaw_control = true;
+// Rampc parameters
+// Flag that indicates whether to use roll and pitch angle measurements in Rampc
+bool yaml_Rampc_measure_roll_pitch = true;
+// Flag that activates yaw control through Rampc
+bool yaml_Rampc_yaw_control = true;
 // Prediction horizon in discrete time steps
 int yaml_N = 25;
 int s_yaml_N = yaml_N;
 // Tini in discrete time steps
 int s_yaml_Tini = 3;
+float s_yaml_T_s=0.1;
 // Output cost matrix diagonal entries (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
-vector<float> s_yaml_Q = {40.0, 40.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0};
+vector<float> s_yaml_Q = {1, 0.05, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 // Input cost matrix diagonal entries (thurst, rollRate, pitchRate, yawRate)
-vector<float> s_yaml_R = {4.0, 4.0, 4.0, 1.0};
+vector<float> s_yaml_R = {0.01, 0, 0, 0};
 // Terminal output cost matrix diagonal entries (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
 vector<float> s_yaml_P = {657.21, 657.21, 8.88, 96.92, 96.92, 0.47, 629.60, 629.60, 84.21};
+// Feedback controller
+vector<float> s_yaml_K = {-1.6744,-0.4644};
+
+vector<float> s_yaml_F={0.7,-0.7, 10.0,-10.0};
+
+vector<float> s_yaml_G={0.6388,0.0};
 // Regularization parameters
 float s_yaml_lambda2_g = 0.0;
 float s_yaml_lambda2_s = 1.0e7;
@@ -294,7 +303,7 @@ vector<float> s_yaml_input_min = {0.0, -PI, -PI, -PI};
 vector<float> s_yaml_input_max = {0.6388, PI, PI, PI};
 
 // Optimization parameters
-string s_yaml_solver = "gurobi";
+string s_yaml_solver = "osqp";
 bool s_yaml_opt_sparse = true;
 bool s_yaml_opt_verbose = false;
 bool s_yaml_opt_steady_state = false;
@@ -368,19 +377,19 @@ int m_dataIndex = 0;
 bool m_write_data = false;
 
 // Variables used for general data collection
-MatrixXf m_Deepc_active_setpoint = MatrixXf::Zero(4, 1);
+MatrixXf m_Rampc_active_setpoint = MatrixXf::Zero(4, 1);
 bool m_collect_data = false;
 MatrixXf m_u_data_lqr = MatrixXf::Zero(0,0);
 MatrixXf m_y_data_lqr = MatrixXf::Zero(0,0);
 MatrixXf m_r_data_lqr = MatrixXf::Zero(0,0);
 int m_dataIndex_lqr = 0;
-MatrixXf m_u_data_Deepc = MatrixXf::Zero(0,0);
-MatrixXf m_uf_data_Deepc = MatrixXf::Zero(0,0);
-MatrixXf m_y_data_Deepc = MatrixXf::Zero(0,0);
-MatrixXf m_yf_data_Deepc = MatrixXf::Zero(0,0);
-MatrixXf m_r_data_Deepc = MatrixXf::Zero(0,0);
-MatrixXf m_solveTime_data_Deepc = MatrixXf::Zero(0,0);
-int m_dataIndex_Deepc = 0;
+MatrixXf m_u_data_Rampc = MatrixXf::Zero(0,0);
+MatrixXf m_uf_data_Rampc = MatrixXf::Zero(0,0);
+MatrixXf m_y_data_Rampc = MatrixXf::Zero(0,0);
+MatrixXf m_yf_data_Rampc = MatrixXf::Zero(0,0);
+MatrixXf m_r_data_Rampc = MatrixXf::Zero(0,0);
+MatrixXf m_solveTime_data_Rampc = MatrixXf::Zero(0,0);
+int m_dataIndex_Rampc = 0;
 int m_num_hankels = 0;
 
 // Variables used for changing reference
@@ -389,14 +398,14 @@ float m_figure_8_frequency_rad;
 float m_z_sine_frequency_rad;
 
 
-// Variables shared between main and Deepc thread
+// Variables shared between main and Rampc thread
 float s_cf_weight_in_newtons = m_cf_weight_in_newtons;
 MatrixXf s_setpoint = MatrixXf::Zero(4, 1);
-MatrixXf s_Deepc_active_setpoint = MatrixXf::Zero(4, 1);
+MatrixXf s_Rampc_active_setpoint = MatrixXf::Zero(4, 1);
 string s_dataFolder = m_dataFolder;
 string s_logFolder = m_dataFolder + yaml_logFolder;
-bool s_Deepc_measure_roll_pitch = true;
-bool s_Deepc_yaw_control = true;
+bool s_Rampc_measure_roll_pitch = true;
+bool s_Rampc_yaw_control = true;
 int s_num_inputs;
 int s_num_outputs;
 int s_Nuini;
@@ -406,14 +415,14 @@ MatrixXf s_yini;
 MatrixXf s_u_f;
 MatrixXf s_y_f;
 float s_solve_time;
-bool s_setupDeepc_success = false;
+bool s_setupRampc_success = false;
 // Variables for thread management
-mutex s_Deepc_mutex;
-// Flags for communication with Deepc thread
+mutex s_Rampc_mutex;
+// Flags for communication with Rampc thread
 bool s_params_changed = false;
 bool s_setpoint_changed = false;
-bool s_setupDeepc = false;
-bool s_solveDeepc = false;
+bool s_setupRampc = false;
+bool s_solveRampc = false;
 // Variables used for changing reference
 bool s_changing_ref_enable = m_changing_ref_enable;
 float s_figure_8_amplitude = yaml_figure_8_amplitude;
@@ -422,26 +431,29 @@ float s_z_sine_amplitude = yaml_z_sine_amplitude;
 float s_z_sine_frequency_rad = m_z_sine_frequency_rad;
 float s_control_deltaT = m_control_deltaT;
 
-// Global variables used by Deepc thread only
+// Global variables used by Rampc thread only
 // Declared as global for inter-function communication and/or speed
 float d_cf_weight_in_newtons = s_cf_weight_in_newtons;
 MatrixXf d_setpoint = s_setpoint;
 string d_dataFolder = s_dataFolder;
 string d_logFolder = s_logFolder;
-bool d_Deepc_measure_roll_pitch = s_Deepc_measure_roll_pitch;
-bool d_Deepc_yaw_control = s_Deepc_yaw_control;
+bool d_Rampc_measure_roll_pitch = s_Rampc_measure_roll_pitch;
+bool d_Rampc_yaw_control = s_Rampc_yaw_control;
 int d_Tini = s_yaml_Tini;
 int d_N = s_yaml_N;
 float d_lambda2_g = s_yaml_lambda2_g;
 float d_lambda2_s = s_yaml_lambda2_s;
+vector<float>d_K_vec  = s_yaml_K;
 vector<float> d_Q_vec = s_yaml_Q;
 vector<float> d_R_vec = s_yaml_R;
 vector<float> d_P_vec = s_yaml_P;
+vector<float> d_G_vec;
+vector<float> d_F_vec;
 vector<float> d_input_min_vec = s_yaml_input_min;
 vector<float> d_input_max_vec = s_yaml_input_max;
 vector<float> d_output_min_vec = s_yaml_output_min;
 vector<float> d_output_max_vec = s_yaml_output_max;
-int d_solver = RAMPC_CONTROLLER_SOLVER_GUROBI;
+int d_solver = RAMPC_CONTROLLER_SOLVER_OSQP;
 bool d_opt_sparse = s_yaml_opt_sparse;
 bool d_opt_verbose = s_yaml_opt_verbose;
 bool d_opt_steady_state = s_yaml_opt_steady_state;
@@ -454,21 +466,41 @@ int d_Ng;
 int d_Ns;
 int d_Nuf;
 int d_Nyf;
+int d_Nsf;
 int d_Nuini;
 int d_Nyini;
 int d_num_opt_vars;
+float d_T_s;
+float d_w_bar;
+float d_eta_k;
+float d_rho_theta_k;
+float d_theta_bar_k;
+float d_theta_hat_k;
+float d_delta_uss=0.0;
+MatrixXf d_e_l;
 MatrixXf d_U_p;
 MatrixXf d_U_f;
 MatrixXf d_Y_p;
 MatrixXf d_Y_f;
+MatrixXf d_K;
 MatrixXf d_Q;
 MatrixXf d_P;
 MatrixXf d_R;
+MatrixXf d_F;
+MatrixXf d_G;
+MatrixXf d_z;
 MatrixXf d_r;
 MatrixXf d_r_gs;
 MatrixXf d_A_gs;
 MatrixXf d_b_gs;
 MatrixXf d_gs;
+MatrixXf d_A;
+MatrixXf d_B_0;
+MatrixXf d_B_1;
+MatrixXf d_H_x;
+MatrixXf d_H_xf_x;
+MatrixXf d_H_xf_s;
+MatrixXf d_c;
 MatrixXf d_lin_cost_vec_gs;
 MatrixXf d_lin_cost_vec_us;
 MatrixXf d_lin_cost_vec_r;
@@ -479,8 +511,8 @@ MatrixXf d_output_max;
 MatrixXf d_g;
 MatrixXf d_uini;
 MatrixXf d_yini;
-bool d_setupDeepc_success = s_setupDeepc_success;
-int d_DeepcOpt_status = 0;
+bool d_setupRampc_success = s_setupRampc_success;
+int d_RampcOpt_status = 0;
 int d_i;
 int d_uf_start_i;
 int d_yf_start_i;
@@ -511,7 +543,7 @@ MatrixXf d_osqp_q;
 c_float* d_osqp_q_new;
 c_float* d_osqp_l_new;
 c_float* d_osqp_u_new;
-// Repeat variables for Deepc gs matrix inversion thread variables
+// Repeat variables for Rampc gs matrix inversion thread variables
 bool d_get_gs = false;
 bool d_gs_inversion_complete = false;
 // Variables used for changing reference
@@ -523,24 +555,24 @@ float d_z_sine_frequency_rad = s_z_sine_frequency_rad;
 float d_figure_8_scale;
 float d_time_in_seconds;
 float d_control_deltaT = s_control_deltaT;
-
-// Variables shared between Deepc thread and Deepc gs matrix inversion thread
+int d_col_num;
+// Variables shared between Rampc thread and Rampc gs matrix inversion thread
 MatrixXf ds_A_gs;
 MatrixXf ds_b_gs;
 MatrixXf ds_gs;
 // Variables for thread management
-mutex ds_Deepc_gs_inversion_mutex;
-// Flags for communication with Deepc thread
+mutex ds_Rampc_gs_inversion_mutex;
+// Flags for communication with Rampc thread
 bool ds_get_gs = false;
 bool ds_gs_inversion_complete = false;
 
-// Deepc related global variables used by main thread only
+// Rampc related global variables used by main thread only
 // Declared as global for speed
 int m_num_inputs = s_num_inputs;
 MatrixXf m_uini;
 MatrixXf m_yini;
-bool m_Deepc_solving_first_opt = false;
-int m_Deepc_cycles_since_solve = 0;
+bool m_Rampc_solving_first_opt = false;
+int m_Rampc_cycles_since_solve = 0;
 MatrixXf m_u_f;
 MatrixXf m_y_f;
 float m_solve_time;
@@ -591,24 +623,30 @@ MatrixXf m_current_state_estimate = MatrixXf::Zero(8, 1);
 MatrixXf d_current_state_estimate = MatrixXf::Zero(8, 1);
 MatrixXf s_current_state_estimate = MatrixXf::Zero(8, 1);
 // MPC FUNCTIONS
-void change_Deepc_setpoint_mpc();
-void change_Deepc_setpoint_mpc_changing_ref();
-void setup_Deepc_mpc();
-void solve_Deepc_mpc();
+void change_Rampc_setpoint_mpc();
+void change_Rampc_setpoint_mpc_changing_ref();
+void setup_Rampc_mpc();
+void solve_Rampc_mpc();
 
-// DEEPC FUNCTIONS
-void Deepc_thread_main();
-void change_Deepc_params();
-void change_Deepc_setpoint_gurobi();
-void change_Deepc_setpoint_gurobi_changing_ref();
-void change_Deepc_setpoint_osqp();
-void change_Deepc_setpoint_osqp_changing_ref();
-void setup_Deepc_gurobi();
-void setup_Deepc_osqp();
-void solve_Deepc_gurobi();
-void solve_Deepc_osqp();
+// RAMPC FUNCTIONS
+void Rampc_thread_main();
+void change_Rampc_params();
+void change_Rampc_setpoint_gurobi();
+void change_Rampc_setpoint_gurobi_changing_ref();
+void change_Rampc_setpoint_osqp();
+void change_Rampc_setpoint_osqp_changing_ref();
+void setup_Rampc_gurobi();
+void setup_Rampc_osqp();
+void solve_Rampc_gurobi();
+void solve_Rampc_osqp();
 
-// DEEPC HELPER FUNCTIONS
+// RAMPC HELPER FUNCTIONS
+// GET TUBE POLYTOPE
+void get_tube_params();
+// GET DYNAMICS MATRICES
+void get_dynamics_matrix();
+// GET CONTROL FEEDBACK
+void get_control_feedback();
 // UPDATE UINI YINI
 void update_uini_yini(Controller::Request &request, control_output &output);
 // GET U_DATA FROM FILE
@@ -616,13 +654,13 @@ MatrixXf get_u_data();
 // GET Y_DATA FROM FILE
 MatrixXf get_y_data();
 // GET VARIABLE LENGTHS
-void get_variable_lengths(const MatrixXf& u_data, const MatrixXf& y_data);
+void get_variable_lengths();
 // GET HANKEL MATICES
 void get_hankel_matrices(const MatrixXf& u_data, const MatrixXf& y_data);
 // GET COST MATRICES
 void get_cost_matrices();
 // GET INPUT/OUTPUT CONSTRAINT VECTORS
-void get_input_output_constr_vectors();
+void get_input_output_constr();
 // GET OPTIMIZATION QUADRATIC COST MATRIX
 MatrixXf get_quad_cost_matrix();
 // GET OPTIMIZATION LINEAR COST VECTORS
@@ -639,10 +677,10 @@ MatrixXf get_static_eq_constr_vector();
 MatrixXf get_dynamic_eq_constr_matrix();
 // GET DYNAMIC EQUALITY CONSTRAINTS VECTOR
 MatrixXf get_dynamic_eq_constr_vector();
-// SOME STEPS TO FINISH DEEPC SETUP
-void finish_Deepc_setup();
-// CLEAR SETUP DEEPC SUCCESS FLAG
-void clear_setupDeepc_success_flag();
+// SOME STEPS TO FINISH RAMPC SETUP
+void finish_Rampc_setup();
+// CLEAR SETUP RAMPC SUCCESS FLAG
+void clear_setupRampc_success_flag();
 // GUROBI CLEANUP
 void gurobi_cleanup();
 // OSQP CLEANUP FUNCTIONS
@@ -656,16 +694,16 @@ csc* eigen2csc(const MatrixXf& eigen_dense_mat);
 MatrixXf read_csv(const string& path);
 bool write_csv(const string& path, const MatrixXf& M);
 
-// DEEPC GS MATRIX INVERSION THREAD MAIN
-void Deepc_gs_inversion_thread_main();
+// RAMPC GS MATRIX INVERSION THREAD MAIN
+void Rampc_gs_inversion_thread_main();
 
 // CONTROLLER COMPUTATIONS
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response);
 void computeResponse_for_standby(Controller::Request &request, Controller::Response &response);
 void computeResponse_for_LQR(Controller::Request &request, Controller::Response &response);
 void computeResponse_for_excitation_LQR(Controller::Request &request, Controller::Response &response);
-void computeResponse_for_Deepc(Controller::Request &request, Controller::Response &response);
-void computeResponse_for_excitation_Deepc(Controller::Request &request, Controller::Response &response);
+void computeResponse_for_Rampc(Controller::Request &request, Controller::Response &response);
+void computeResponse_for_excitation_Rampc(Controller::Request &request, Controller::Response &response);
 void computeResponse_for_landing_move_down(Controller::Request &request, Controller::Response &response);
 void computeResponse_for_landing_spin_motors(Controller::Request &request, Controller::Response &response);
 void calculateControlOutput_viaLQR(Controller::Request &request, control_output &output);
@@ -698,5 +736,5 @@ void processCustomButton4(float float_data, int int_data, bool* bool_data);
 void processCustomButton5(float float_data, int int_data, bool* bool_data);
 
 // FOR LOADING THE YAML PARAMETERS
-void isReadyDeepcControllerYamlCallback(const IntWithHeader& msg);
-void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle);
+void isReadyRampcControllerYamlCallback(const IntWithHeader& msg);
+void fetchRampcControllerYamlParameters(ros::NodeHandle& nodeHandle);

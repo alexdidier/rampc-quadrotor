@@ -25,7 +25,7 @@
 //
 //
 //    DESCRIPTION:
-//    Constants that are used across the Deepc Controller
+//    Constants that are used across the Rampc Controller
 //    Service and the Flying Agent Client
 //
 //    ----------------------------------------------------------------------------------
