@@ -189,7 +189,9 @@ float yaml_landing_spin_motors_thrust = 10000;
 // The time for: landing spin motors
 float yaml_landing_spin_motors_time = 1.5;
 
-
+float s_yaml_reference_difference=0.3;
+float yaml_reference_difference=0.3;
+float d_reference_difference=0.3;
 // VARAIBLES FOR VALUES LOADED FROM THE YAML FILE
 // > the mass of the crazyflie, in [grams]
 float yaml_cf_mass_in_grams = 28.0;
@@ -275,7 +277,7 @@ bool yaml_Rampc_measure_roll_pitch = true;
 // Flag that activates yaw control through Rampc
 bool yaml_Rampc_yaw_control = true;
 // Prediction horizon in discrete time steps
-int yaml_N = 25;
+int yaml_N = 20;
 int s_yaml_N = yaml_N;
 // Tini in discrete time steps
 int s_yaml_Tini = 3;
@@ -469,6 +471,7 @@ int d_Nyf;
 int d_Nsf;
 int d_Nuini;
 int d_Nyini;
+int d_N_theta;
 int d_num_opt_vars;
 float d_T_s;
 float d_w_bar;
@@ -477,6 +480,8 @@ float d_rho_theta_k;
 float d_theta_bar_k;
 float d_theta_hat_k;
 float d_delta_uss=0.0;
+MatrixXf temp;
+MatrixXf d_z_setpoint_Rampc;
 MatrixXf d_e_l;
 MatrixXf d_U_p;
 MatrixXf d_U_f;
@@ -538,11 +543,17 @@ GRBLinExpr d_grb_lin_obj_gs = 0;
 GRBConstr* d_grb_dyn_constrs = 0;
 // OSQP optimization variables
 OSQPSettings* d_osqp_settings;
+OSQPSettings* d_osqp_theta_settings;
 OSQPWorkspace* d_osqp_work;
+OSQPWorkspace* d_osqp_theta_max_work;
+OSQPWorkspace* d_osqp_theta_min_work;
+MatrixXf d_osqp_P;
 MatrixXf d_osqp_q;
 c_float* d_osqp_q_new;
 c_float* d_osqp_l_new;
 c_float* d_osqp_u_new;
+c_float* d_osqp_theta_l_new;
+c_float* d_osqp_theta_u_new;
 // Repeat variables for Rampc gs matrix inversion thread variables
 bool d_get_gs = false;
 bool d_gs_inversion_complete = false;
@@ -641,6 +652,8 @@ void solve_Rampc_gurobi();
 void solve_Rampc_osqp();
 
 // RAMPC HELPER FUNCTIONS
+// SETUP THETA UPDATE
+void setup_theta_update_osqp();
 // GET TUBE POLYTOPE
 void get_tube_params();
 // GET DYNAMICS MATRICES
@@ -685,6 +698,7 @@ void clear_setupRampc_success_flag();
 void gurobi_cleanup();
 // OSQP CLEANUP FUNCTIONS
 void osqp_extended_cleanup();
+void osqp_theta_extended_cleanup();
 void osqp_cleanup_data(OSQPData* data);
 // DATA TO HANKEL
 MatrixXf data2hankel(const MatrixXf& data, int num_block_rows);

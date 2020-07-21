@@ -121,17 +121,17 @@ Tini : 6
 N : 20
 
 # Output cost matrix diagonal entries (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
-Q : [1.0, 0.3, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+Q : [1.0, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
 # Input cost matrix diagonal entries (thrust, rollRate, pitchRate, yawRate)
-R : [0.4, 0.0, 0.0, 0.0]
+R : [0.1, 0.0, 0.0, 0.0]
 
 # Terminal output cost matrix diagonal entries (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
 #P : [657.21, 657.21, 355.26, 96.92, 96.92, 18.77, 629.60, 629.60, 244.50]
-P : [272.9214, 31.7374, 5.6296, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+P : [144.6349, 16.7325, 2.9546, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0] #[272.9214, 31.7374, 5.6296, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
 # Feedback controller
-K : [-1.6259, -0.4294]
+K : [-1.6259, -0.4294] #[-393.8408,-6.5843] 
 
 # State constraints: pos_max/min and v_max/min
 F : [0.7,-0.7, 10.0,-10.0]
@@ -139,6 +139,8 @@ F : [0.7,-0.7, 10.0,-10.0]
 # Input constraints max/min  
 G : [0.6388,0.0]
 
+# Reference difference
+reference_difference : 0.3
 
 # Regularization parameters
 lambda2_g : 500.0
