@@ -118,13 +118,13 @@ Rampc_yaw_control : false
 Tini : 6
 
 # Prediction horizon in discrete time steps
-N : 20
+N : 30
 
 # Output cost matrix diagonal entries (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
-Q : [1.0, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+Q : [1.0, 0.3, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
 # Input cost matrix diagonal entries (thrust, rollRate, pitchRate, yawRate)
-R : [0.1, 0.0, 0.0, 0.0]
+R : [0.4, 0.0, 0.0, 0.0]
 
 # Terminal output cost matrix diagonal entries (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
 #P : [657.21, 657.21, 355.26, 96.92, 96.92, 18.77, 629.60, 629.60, 244.50]

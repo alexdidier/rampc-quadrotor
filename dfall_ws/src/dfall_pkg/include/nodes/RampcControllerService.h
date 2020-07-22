@@ -191,7 +191,7 @@ float yaml_landing_spin_motors_time = 1.5;
 
 float s_yaml_reference_difference=0.3;
 float yaml_reference_difference=0.3;
-float d_reference_difference=0.3;
+float d_reference_difference=0.4;
 // VARAIBLES FOR VALUES LOADED FROM THE YAML FILE
 // > the mass of the crazyflie, in [grams]
 float yaml_cf_mass_in_grams = 28.0;
@@ -277,7 +277,7 @@ bool yaml_Rampc_measure_roll_pitch = true;
 // Flag that activates yaw control through Rampc
 bool yaml_Rampc_yaw_control = true;
 // Prediction horizon in discrete time steps
-int yaml_N = 20;
+int yaml_N = 30;
 int s_yaml_N = yaml_N;
 // Tini in discrete time steps
 int s_yaml_Tini = 3;

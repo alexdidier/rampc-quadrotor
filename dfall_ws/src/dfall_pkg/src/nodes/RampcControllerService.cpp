@@ -1995,7 +1995,7 @@ void solve_Rampc_osqp()
 		// Update equality constraint vectors
 
 		//ROS_INFO_STREAM("[RAMPC CONTRLLER] Current height: "<<d_setpoint(2));
-		/*
+		
 		if (d_current_state_estimate(2,0)-d_setpoint(2)>d_reference_difference){
 			ROS_INFO_STREAM("[RAMPC CONTROLLER] Set setpoint difference to "<<d_reference_difference<<".");
 			d_osqp_l_new[0]=d_reference_difference;
@@ -2003,7 +2003,7 @@ void solve_Rampc_osqp()
 			d_osqp_l_new[2]=d_reference_difference;
 			d_osqp_u_new[2]=d_reference_difference;
 
-			d_z_setpoint_Rampc<< d_current_state_estimate(2,0)-d_reference_difference,
+			d_z_setpoint_Rampc<< d_current_state_estimate(2,0)-d_reference_difference-0.8,
 								 0.0;
 
 
@@ -2025,7 +2025,7 @@ void solve_Rampc_osqp()
 				d_osqp_u_new[2]=-d_reference_difference;
 
 
-				d_z_setpoint_Rampc<< d_current_state_estimate(2,0)+d_reference_difference,
+				d_z_setpoint_Rampc<< d_current_state_estimate(2,0)+d_reference_difference-0.8,
 								 0.0;
 
 
@@ -2046,18 +2046,18 @@ void solve_Rampc_osqp()
 				d_osqp_u_new[2]=d_current_state_estimate(2,0)-d_setpoint(2);
 			}
 		}
-		*/
+		
 		d_osqp_l_new[1]=d_current_state_estimate(5,0);
 		d_osqp_u_new[1]=d_current_state_estimate(5,0);
 		
 		d_osqp_l_new[3]=d_current_state_estimate(5,0);
 		d_osqp_u_new[3]=d_current_state_estimate(5,0);
-		
+		/*
 		d_osqp_l_new[0]=d_current_state_estimate(2,0)-d_setpoint(2);
 		d_osqp_u_new[0]=d_current_state_estimate(2,0)-d_setpoint(2);
 		d_osqp_l_new[2]=d_current_state_estimate(2,0)-d_setpoint(2);
 		d_osqp_u_new[2]=d_current_state_estimate(2,0)-d_setpoint(2);
-		
+		*/
 
 		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Delta_X: " << )
 
