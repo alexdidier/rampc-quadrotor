@@ -131,6 +131,10 @@ struct control_output
 	float yawRate;
 };
 
+
+double data_Time=ros::WallTime::now().toSec();
+double data_Time_prev=ros::WallTime::now().toSec();
+double data_duration=1000.0;
 double time_prev=0.0;
 float Inf_max=numeric_limits<float>::max();
 float Inf_min=-numeric_limits<float>::max();
@@ -189,9 +193,9 @@ float yaml_landing_spin_motors_thrust = 10000;
 // The time for: landing spin motors
 float yaml_landing_spin_motors_time = 1.5;
 
-float s_yaml_reference_difference=0.3;
-float yaml_reference_difference=0.3;
-float d_reference_difference=0.4;
+float s_yaml_reference_difference=0.5;
+float yaml_reference_difference=0.5;
+float d_reference_difference=0.5;
 // VARAIBLES FOR VALUES LOADED FROM THE YAML FILE
 // > the mass of the crazyflie, in [grams]
 float yaml_cf_mass_in_grams = 28.0;
@@ -278,6 +282,10 @@ bool yaml_Rampc_measure_roll_pitch = true;
 bool yaml_Rampc_yaw_control = true;
 // Prediction horizon in discrete time steps
 int yaml_N = 30;
+ofstream log_file1;
+ofstream log_file2;
+ofstream log_file3;
+ofstream log_file4;
 int s_yaml_N = yaml_N;
 // Tini in discrete time steps
 int s_yaml_Tini = 3;
@@ -425,6 +433,7 @@ bool s_params_changed = false;
 bool s_setpoint_changed = false;
 bool s_setupRampc = false;
 bool s_solveRampc = false;
+bool s_updateTheta=false;
 // Variables used for changing reference
 bool s_changing_ref_enable = m_changing_ref_enable;
 float s_figure_8_amplitude = yaml_figure_8_amplitude;
@@ -463,6 +472,7 @@ bool d_grb_LogToFile = s_yaml_grb_LogToFile;
 bool d_grb_presolve_at_setup = s_yaml_grb_presolve_at_setup;
 int d_num_inputs;
 int d_num_outputs;
+int d_num_theta;
 int d_num_block_rows;
 int d_Ng;
 int d_Ns;
@@ -480,6 +490,19 @@ float d_rho_theta_k;
 float d_theta_bar_k;
 float d_theta_hat_k;
 float d_delta_uss=0.0;
+float d_mu;
+MatrixXf d_current_input=MatrixXf::Zero(1,1);
+MatrixXf s_current_input=MatrixXf::Zero(1,1);
+MatrixXf m_current_input=MatrixXf::Zero(1,1);
+MatrixXf d_previous_input=MatrixXf::Zero(1,1);
+MatrixXf s_previous_input=MatrixXf::Zero(1,1);
+MatrixXf m_previous_input=MatrixXf::Zero(1,1);
+
+MatrixXf d_H_theta;
+MatrixXf d_h_theta;
+MatrixXf d_vertices_theta;
+MatrixXf d_n_bar;
+MatrixXf d_n_bar_prev;
 MatrixXf temp;
 MatrixXf d_z_setpoint_Rampc;
 MatrixXf d_e_l;
@@ -500,12 +523,18 @@ MatrixXf d_A_gs;
 MatrixXf d_b_gs;
 MatrixXf d_gs;
 MatrixXf d_A;
+MatrixXf d_A_update;
+MatrixXf d_A_const_update;
 MatrixXf d_B_0;
+MatrixXf d_B_0_update;
 MatrixXf d_B_1;
+MatrixXf d_B_1_update;
 MatrixXf d_H_x;
 MatrixXf d_H_xf_x;
 MatrixXf d_H_xf_s;
 MatrixXf d_c;
+MatrixXf d_H_w;
+MatrixXf d_h_w;
 MatrixXf d_lin_cost_vec_gs;
 MatrixXf d_lin_cost_vec_us;
 MatrixXf d_lin_cost_vec_r;
@@ -518,6 +547,8 @@ MatrixXf d_uini;
 MatrixXf d_yini;
 bool d_setupRampc_success = s_setupRampc_success;
 int d_RampcOpt_status = 0;
+int d_ThetaMinOpt_status = 0;
+int d_ThetaMaxOpt_status = 0;
 int d_i;
 int d_uf_start_i;
 int d_yf_start_i;
@@ -547,7 +578,12 @@ OSQPSettings* d_osqp_theta_settings;
 OSQPWorkspace* d_osqp_work;
 OSQPWorkspace* d_osqp_theta_max_work;
 OSQPWorkspace* d_osqp_theta_min_work;
-MatrixXf d_osqp_P;
+OSQPData* osqp_theta_max_data;
+OSQPData* osqp_theta_min_data;
+OSQPData* osqp_data;
+//MatrixXf osqp_A;
+MatrixXf d_osqp_A;
+MatrixXf d_osqp_theta_A;
 MatrixXf d_osqp_q;
 c_float* d_osqp_q_new;
 c_float* d_osqp_l_new;
@@ -633,6 +669,9 @@ MatrixXf m_previous_xyz = MatrixXf::Zero(3, 1);
 MatrixXf m_current_state_estimate = MatrixXf::Zero(8, 1);
 MatrixXf d_current_state_estimate = MatrixXf::Zero(8, 1);
 MatrixXf s_current_state_estimate = MatrixXf::Zero(8, 1);
+MatrixXf m_previous_state_estimate=MatrixXf::Zero(8,1);
+MatrixXf d_previous_state_estimate=MatrixXf::Zero(8,1);
+MatrixXf s_previous_state_estimate=MatrixXf::Zero(8,1);
 // MPC FUNCTIONS
 void change_Rampc_setpoint_mpc();
 void change_Rampc_setpoint_mpc_changing_ref();
@@ -652,6 +691,14 @@ void solve_Rampc_gurobi();
 void solve_Rampc_osqp();
 
 // RAMPC HELPER FUNCTIONS
+// UPDATE THETA HAT
+void update_theta_hat();
+// GET THETA POLYTOPE
+void get_Theta();
+// Get DISTURBANCE MATRIX
+void get_disturbance_matrix();
+// SOLVE THETA UPDATE
+void solve_theta_update_osqp();
 // SETUP THETA UPDATE
 void setup_theta_update_osqp();
 // GET TUBE POLYTOPE
