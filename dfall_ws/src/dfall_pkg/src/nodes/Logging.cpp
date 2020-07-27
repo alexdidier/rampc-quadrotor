@@ -150,6 +150,8 @@
 //
 //
 
+
+
 float computeMotorPoly(uint16_t motorCmd)
 {
 	// Compute the thrust in Newtons for logging purposes.
@@ -179,8 +181,18 @@ bool logStatesInputs(LoggingService::Request &request, LoggingService::Response 
 		float thrust2=computeMotorPoly(request.controlOutput.motorCmd2);
 		float thrust3=computeMotorPoly(request.controlOutput.motorCmd3);
 		float thrust4=computeMotorPoly(request.controlOutput.motorCmd4);
+
+		float totalthrust=thrust1+thrust2+thrust3+thrust4;
+
+
+		dfall_pkg::GetSetpointService Setpoint;
+        Setpoint.request.data = 0;
+        
+        getSetpoint.call(Setpoint);
 	//ROS_INFO_STREAM("[LOGGING] Current Position: x= "<<x);
-		log_file<< x<<","<<y<<","<<z<<" " << roll <<" " << pitch <<" "  << yaw <<" " <<thrust1<<" " <<thrust2<<" " <<thrust3<<" " << thrust4 <<" "<< log_CurrentT << std::endl;
+		log_file<< x<<","<<y<<","<<z<<" " << roll <<" " << pitch <<" "  << yaw <<" " <<thrust1<<" " <<thrust2<<" " <<thrust3<<" " << thrust4 <<" "<< totalthrust<< " "<< Setpoint.response.setpointWithHeader.x<<" "<< Setpoint.response.setpointWithHeader.y<<" "<< Setpoint.response.setpointWithHeader.z<<" "<< Setpoint.response.setpointWithHeader.yaw<<" "<< log_CurrentT << std::endl;
+		
+
 	}
 	// Return "true" to indicate that the logging was performed successfully
 	return true;
@@ -388,7 +400,32 @@ int main(int argc, char* argv[]) {
 	ros::ServiceServer getCurrentSetpointService = nodeHandle.advertiseService("GetCurrentSetpoint", getCurrentSetpointCallback);
 
 
+*/	
+/*
+    ros::NodeHandle nodeHandle_to_own_agent_parameter_service(m_namespace_to_own_agent_parameter_service);
+    ros::NodeHandle nodeHandle(nodeHandle_to_own_agent_parameter_service, "FlyingAgentClientConfig");
+
+    std::string controllerName;
+    if(!nodeHandle.getParam(paramter_name, controllerName))
+    {
+        ROS_ERROR_STREAM("[FLYING AGENT CLIENT] Failed to get \"" << paramter_name << "\" paramter");
+        return;
+    }
+
+    serviceClient = ros::service::createClient<LoggingService>(controllerName, true);
+    ROS_INFO_STREAM("[FLYING AGENT CLIENT] Loaded service: " << serviceClient.getService() <<  ", valid: " << serviceClient.isValid() << ", exists: " << serviceClient.exists() );
+}
 */
+
+
+    //getSetpoint = ros::service::createClient<GetSetpointService>("RampcControllerService/GetCurrentSetpoint", true);
+    //ROS_INFO_STREAM("[LOGGING] Loaded service: " << getSetpoint.getService() <<  ", valid: " << getSetpoint.isValid() << ", exists: " << getSetpoint.exists() );
+    	
+    	
+
+
+    //m_setpointSubscriber=nodeHandle.subscribe("SetpointChanged",1,changeSetpoint);
+    //getSetpoint=nodeHandle.serviceClient<GetSetpointService>();
     // Instantiate the local variable "service" to be a "ros::ServiceServer" type
     // variable that advertises the service called "Logging". This service has
     // the input-output behaviour defined in the "Controller.srv" file (located in the
@@ -415,7 +452,21 @@ int main(int argc, char* argv[]) {
 	log_file.open("/home/agent06/dfall/dfall-system/RAMPC_data/data.csv");
 	
 
-
+		std::string this_namespace = ros::this_node::getNamespace();
+		ros::NodeHandle nodeHandle_for_logging(this_namespace);
+    	getSetpoint = nodeHandle_for_logging.serviceClient<dfall_pkg::GetSetpointService>("RampcControllerService/GetCurrentSetpoint", false);
+        dfall_pkg::GetSetpointService getSetpointCall;
+        getSetpointCall.request.data = 0;
+        getSetpoint.waitForExistence(ros::Duration(7.0));
+        if(getSetpoint.call(getSetpointCall))
+        {
+            ROS_INFO_STREAM("[LOGGING] Setpoint successfully received.");
+        }
+        else
+        {
+            // Inform the user
+            ROS_INFO("[LOGGING] Failed to get setpoint from controller using the \"GetCurrentSetpoint\" service");
+        }
 	//m_loggingActive = nodeHandle.advertise<std_msgs::Int32>("loggingActive", 1);
 
 	// Instantiate the local variable "service" to be a "ros::ServiceServer"

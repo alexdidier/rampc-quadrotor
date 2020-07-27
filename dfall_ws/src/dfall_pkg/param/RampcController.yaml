@@ -21,7 +21,7 @@ landing_spin_motors_time: 0
 # PARAMTERS THAT ARE STANDARD FOR A "CONTROLLER SERVICE"
 
 # Mass of the crazyflie, in grams
-mass : 37
+mass :  29 #37
 
 # Frequency of the controller, in hertz
 control_frequency : 200.0
@@ -131,8 +131,8 @@ R : [0.4, 0.0, 0.0, 0.0]
 P : [144.6349, 16.7325, 2.9546, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0] #[272.9214, 31.7374, 5.6296, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
 # Feedback controller
-K : [-1.6259, -0.4294] #[-393.8408,-6.5843] 
-
+#K : [-1.6259, -0.4294] #[-393.8408,-6.5843] 
+K: [-1.6569, -0.4464]
 # State constraints: pos_max/min and v_max/min
 F : [0.7,-0.7, 10.0,-10.0]
 

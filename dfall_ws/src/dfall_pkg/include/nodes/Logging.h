@@ -546,7 +546,9 @@ ros::Publisher m_setpointChangedPublisher;
 // ROS Publisher to inform the flying agent client
 // when a requested manoeuvre is complete
 ros::Publisher m_manoeuvreCompletePublisher;
+ros::ServiceClient getSetpoint;
 
+//ros::Subscriber m_setpointSubscriber;
 ros::Publisher m_loggingActive;
 bool loggingActive=false;
 ofstream log_file;
@@ -683,7 +685,7 @@ void setNewSetpoint(float x, float y, float z, float yaw);
 bool getCurrentSetpointCallback(GetSetpointService::Request &request, GetSetpointService::Response &response);
 
 // PUBLISH THE CURRENT SETPOINT AND STATE
-void publishCurrentSetpointAndState();
+void publishCurrentSetpointAndState(const SetpointWithHeader::ConstPtr& msg);
 
 // CUSTOM COMMAND RECEIVED CALLBACK
 void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived);
@@ -693,6 +695,7 @@ void processCustomButton3(float float_data, int int_data, bool* bool_data);
 void processCustomButton4(float float_data, int int_data, bool* bool_data);
 void processCustomButton5(float float_data, int int_data, bool* bool_data);
 
+void changeSetpoint();
 // FOR LOADING THE YAML PARAMETERS
 void isReadyDeepcControllerYamlCallback(const IntWithHeader& msg);
 void fetchDeepcControllerYamlParameters(ros::NodeHandle& nodeHandle);

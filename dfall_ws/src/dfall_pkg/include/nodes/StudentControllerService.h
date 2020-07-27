@@ -189,12 +189,26 @@ float m_previous_stateErrorInertial[9];
 // with units [meters,meters,meters,radians]
 std::vector<float>  m_setpoint{0.0,0.0,0.4,0.0};
 
-
+/*
 // The LQR Controller parameters for "LQR_RATE_MODE"
 std::vector<float> m_gainMatrixRollRate    =  { 0.00,-1.71, 0.00, 0.00,-1.33, 0.00, 5.12, 0.00, 0.00};
 std::vector<float> m_gainMatrixPitchRate   =  { 1.71, 0.00, 0.00, 1.33, 0.00, 0.00, 0.00, 5.12, 0.00};
 std::vector<float> m_gainMatrixYawRate     =  { 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 2.84};
 std::vector<float> m_gainMatrixThrust      =  { 0.00, 0.00, 0.19, 0.00, 0.00, 0.08, 0.00, 0.00, 0.00};
+
+
+std::vector<float> m_gainMatrixThrust1    =  { -0.0068, 0.0036, 0.2968, -0.0068, 0.0036, 0.0873, -0.0142, -0.0267, -0.0508, -0.0027, -0.0051, -0.0173};
+std::vector<float> m_gainMatrixThrust2   =  { 0.0066, 0.0021, 0.2968, 0.0065, 0.0020, 0.0873, -0.0080, 0.0256, 0.0503, -0.0015, 0.0049, 0.0172};
+std::vector<float> m_gainMatrixThrust3    =  { 0.0036, 0.0021, 0.2968, 0.0036, -0.0023, 0.0873, 0.0091, 0.0139, -0.0492, 0.0017, 0.0027, -0.0168};
+std::vector<float> m_gainMatrixThrust4      =  { -0.0033, -0.0034, 0.2968, -0.0033, -0.0034, 0.0873, 0.0131, -0.0128, 0.0497, 0.0025, -0.0025, 0.0170};
+*/
+
+std::vector<float> m_gainMatrixThrust1   =  { -0.0140, 0.0075, 0.2968, -0.0109, 0.0058, 0.0873, -0.0186, -0.0350, -0.0328, -0.0030, -0.0056, -0.0155};
+std::vector<float> m_gainMatrixThrust2   =  { 0.0134, 0.0042, 0.2968, 0.0105, 0.0033, 0.0873, -0.0105, 0.0335, 0.0325, -0.0017, 0.0054, 0.0153};
+std::vector<float> m_gainMatrixThrust3   =  { 0.0074, -0.0048, 0.2968, 0.0057, -0.0037, 0.0873, 0.0120, 0.0183, -0.0317, 0.0019, 0.0029, -0.0150};
+std::vector<float> m_gainMatrixThrust4   =  { -0.0068, -0.0069, 0.2968, -0.0053, -0.0054, 0.0873, 0.0172, -0.0169, 0.0320, 0.0028, -0.0027, 0.0151};
+
+
 
 
 // ROS Publisher for debugging variables
@@ -234,7 +248,7 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 
 // TRANSFORMATION OF THE (x,y) INERTIAL FRAME ERROR
 // INTO AN (x,y) BODY FRAME ERROR
-void convertIntoBodyFrame(float stateInertial[9], float (&stateBody)[9], float yaw_measured);
+void convertIntoBodyFrame(float stateInertial[12], float (&stateBody)[12], float yaw_measured);
 
 // CONVERSION FROM THRUST IN NEWTONS TO 16-BIT COMMAND
 float computeMotorPolyBackward(float thrust);

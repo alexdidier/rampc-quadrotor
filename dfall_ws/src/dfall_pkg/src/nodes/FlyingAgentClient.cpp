@@ -1443,7 +1443,7 @@ void createLoggingServiceClientFromParameterName( std::string paramter_name , ro
         ROS_ERROR_STREAM("[FLYING AGENT CLIENT] Failed to get \"" << paramter_name << "\" paramter");
         return;
     }
-
+    ROS_INFO_STREAM("[FLYING AGENT CLIENT] CONTROLLER NAME: "<<controllerName);
     serviceClient = ros::service::createClient<LoggingService>(controllerName, true);
     ROS_INFO_STREAM("[FLYING AGENT CLIENT] Loaded service: " << serviceClient.getService() <<  ", valid: " << serviceClient.isValid() << ", exists: " << serviceClient.exists() );
 }

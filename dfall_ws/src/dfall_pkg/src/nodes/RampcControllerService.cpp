@@ -2677,7 +2677,7 @@ void setup_theta_update_osqp(){
 
 void get_tube_params(){
 
-	int H_x_size=8;
+	int H_x_size=10;
 	d_H_x=MatrixXf::Zero(H_x_size,d_num_outputs);
 	d_H_xf_x=MatrixXf::Zero(H_x_size,d_num_outputs);
 	d_H_xf_s=MatrixXf::Zero(H_x_size,1);
@@ -2685,24 +2685,7 @@ void get_tube_params(){
 	d_e_l=MatrixXf::Zero(2,1);
 
 
-
-
 	/*
-	d_H_x << 	-4.5984, -1.2755,
-				6.0957, 1.6908,
-				5.5192, 0.7645,
-				3.1222, 0.0996,
-				-7.3163, -1.0134,
-				-4.1389, -0.1321;
-
-	d_H_xf_x <<	-4.5984, -1.2755,
-				6.0957, 1.6908,
-				5.5192, 0.7645,
-				3.1222, 0.0996,
-				-7.3163, -1.0134,
-				-4.1389, -0.1321;
-	*/
-
 	d_H_x << 	-4.4652, -1.1794,
 				5.9192, 1.5634,
 				2.2426, -0.1519,
@@ -2711,40 +2694,44 @@ void get_tube_params(){
 				4.9847, 0.4500,
 				-6.9751, -0.6936,
 				-6.6078, -0.5966;
+	*/
+
+	d_H_x <<	-4.5506,	-1.2259,
+				6.0323,		1.6251,
+				1.5656,		-0.3367,
+				-2.0754,	0.4463,
+				6.0527,		0.6275,
+				5.1221,		0.3768,
+				-8.0235,	-0.8318,
+				-6.7899,	-0.4994,
+				-7.1644,	-1.0511,
+				-7.5888,	-0.9598;
 
 	d_H_xf_x=d_H_x;
 
 	d_H_xf_s=MatrixXf::Ones(H_x_size,1);
-	/*
-	d_H_xf_s << 1.0,
-				1.0,
-				1.0,
-				1.0,
-				1.0,
-				1.0;
-	*/
 
 	/*
-	d_c <<	0.5574,
-			0.4205,
-			0.1653,
-			0.2191,
-			1.0,
-			1.0;
-	*/
-
 	d_c <<	0.4868,
 			0.3672,
 			0.1523,
 			0.2019,
 			1.0,
 			1.0;
+	*/
+	d_c << 	0.4404,
+			0.3322,
+			0.1337,
+			0.1772,
+			1.0,
+			1.0;
 
-	d_w_bar=0.0714;
 
-	d_theta_bar_k=33.67;
+	d_w_bar=0.074;
+
+	d_theta_bar_k=32.032;
 	d_theta_hat_k=d_theta_bar_k;
-	d_eta_k=6.7340;
+	d_eta_k=10.01;
 	d_rho_theta_k=0.6;
 	d_e_l << 0.5,
 			 - 0.5;
@@ -6244,6 +6231,7 @@ int main(int argc, char* argv[]) {
 	// with the current setpoint of the controller. When a request is made
 	// of this service the "getCurrentSetpointCallback" function is called.
 	ros::ServiceServer getCurrentSetpointService = nodeHandle.advertiseService("GetCurrentSetpoint", getCurrentSetpointCallback);
+	ROS_INFO_STREAM("[RAMPC CONTROLLER] Advertised service: " << getCurrentSetpointService.getService());
 
 
 
