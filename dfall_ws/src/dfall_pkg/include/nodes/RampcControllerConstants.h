@@ -31,7 +31,9 @@
 //    ----------------------------------------------------------------------------------
 
 
-
+#ifndef M_PI
+#define M_PI 3.1415926
+#endif
 
 // TO REQUEST MANOEUVRES
 
@@ -62,3 +64,8 @@
 #define RAMPC_CONTROLLER_SOLVER_GUROBI	0
 #define RAMPC_CONTROLLER_SOLVER_OSQP	1
 #define RAMPC_CONTROLLER_SOLVER_MPC		2
+
+// EXPERIMENT
+#define RAMPC_CONTROLLER_EXPERIMENT_MASS 1
+#define RAMPC_CONTROLLER_EXPERIMENT_ALL_ROTORS 2
+#define RAMPC_CONTROLLER_EXPERIMENT_FULL_STATE 3

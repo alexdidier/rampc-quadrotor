@@ -493,14 +493,17 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 // This function WILL NEED TO BE edited for successful completion of the classroom exercise
 void convertIntoBodyFrame(float stateInertial[12], float (&stateBody)[12], float yaw_measured)
 {
+	float sinYaw = sin(yaw_measured);
+	float cosYaw = cos(yaw_measured);
+
 	// Fill in the (x,y,z) position estimates to be returned
-	stateBody[0] = stateInertial[0];
-	stateBody[1] = stateInertial[1];
+	stateBody[0] = stateInertial[0] * cosYaw  +  stateInertial[1] * sinYaw;
+	stateBody[1] = stateInertial[1] * cosYaw  -  stateInertial[0] * sinYaw;
 	stateBody[2] = stateInertial[2];
 
 	// Fill in the (x,y,z) velocity estimates to be returned
-	stateBody[3] = stateInertial[3];
-	stateBody[4] = stateInertial[4];
+	stateBody[3] = stateInertial[3] * cosYaw  +  stateInertial[4] * sinYaw;
+	stateBody[4] = stateInertial[4] * cosYaw  -  stateInertial[3] * sinYaw;
 	stateBody[5] = stateInertial[5];
 
 	// Fill in the (roll,pitch,yaw) estimates to be returned

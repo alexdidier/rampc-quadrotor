@@ -728,11 +728,20 @@ void Rampc_thread_main()
 	bool params_changed;
 	bool setpoint_changed;
 	bool setupRampc;
+	bool setupButtonPressed;
 	bool solveRampc;
 	bool changing_ref_enable_prev = false;
 	bool theta_changed;
 	bool updateTheta;
+	int experiment;
 
+
+	MatrixXf d_current_input=MatrixXf::Zero(d_num_inputs,1);
+	MatrixXf s_current_input=MatrixXf::Zero(d_num_inputs,1);
+	MatrixXf m_current_input=MatrixXf::Zero(d_num_inputs,1);
+	MatrixXf d_previous_input=MatrixXf::Zero(d_num_inputs,1);
+	MatrixXf s_previous_input=MatrixXf::Zero(d_num_inputs,1);
+	MatrixXf m_previous_input=MatrixXf::Zero(d_num_inputs,1);
 	// Create thread for gs matrix inversion
 	//boost::thread Rampc_gs_inversion_thread(Rampc_gs_inversion_thread_main);
 
@@ -741,12 +750,15 @@ void Rampc_thread_main()
 
 		s_Rampc_mutex.lock();
 		//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 72");
+		experiment=s_experiment;
         params_changed = s_params_changed;
         setpoint_changed = s_setpoint_changed;
         setupRampc = s_setupRampc;
+        setupButtonPressed=s_setupButtonPressed;
         solveRampc = s_solveRampc;
         updateTheta = s_updateTheta;
         d_changing_ref_enable = s_changing_ref_enable;
+        
         s_Rampc_mutex.unlock();
         //ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 72");
         //ROS_INFO_STREAM("[RAMPC CONTROLLER] Update Theta: "<<updateTheta);
@@ -772,10 +784,10 @@ void Rampc_thread_main()
         	change_Rampc_params();
         	
         	s_Rampc_mutex.lock();
-        	 ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 85");
+        	 //ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 85");
         	s_params_changed = false;
         	s_Rampc_mutex.unlock();
-        	 ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 85");
+        	 //ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 85");
         }
         //ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug Info 4.");
         if (setpoint_changed)
@@ -791,9 +803,33 @@ void Rampc_thread_main()
 						//change_Rampc_setpoint_osqp();
 						//MatrixXf d_z_setpoint_Rampc=MatrixXf::Zero(d_num_outputs,1);
 					
-						
-						d_z_setpoint_Rampc<< 	d_setpoint(2)-0.8,
+						switch(experiment){
+							case RAMPC_CONTROLLER_EXPERIMENT_MASS:
+								d_z_setpoint_Rampc<< 	d_setpoint(2)-0.8,
 														0.0;
+								break;
+
+							case RAMPC_CONTROLLER_EXPERIMENT_ALL_ROTORS:
+								d_z_setpoint_Rampc<< 	d_setpoint(2)-0.8,
+														0.0;
+								break;
+
+							case RAMPC_CONTROLLER_EXPERIMENT_FULL_STATE:
+								d_z_setpoint_Rampc<< 	d_setpoint(0),
+														d_setpoint(1),
+														d_setpoint(2)-0.8,
+														0.0,
+														0.0,
+														0.0,
+														0.0,
+														0.0,
+														d_setpoint(3),
+														0.0,
+														0.0,
+														0.0;
+								break;
+						}
+						
 					
 						
 						for(int i=0;i<d_N;i++){
@@ -874,7 +910,39 @@ void Rampc_thread_main()
 			switch (d_solver)
 			{
 				case RAMPC_CONTROLLER_SOLVER_OSQP:
-					setup_Rampc_osqp();
+					switch (experiment){
+						case RAMPC_CONTROLLER_EXPERIMENT_MASS:
+							setup_Rampc_osqp();
+							break;
+
+						case RAMPC_CONTROLLER_EXPERIMENT_ALL_ROTORS:
+							if(setupButtonPressed){
+								setup_Rampc_all_rotors_osqp();
+								setupButtonPressed=false;
+								s_Rampc_mutex.lock();
+								s_setupButtonPressed=false;
+								s_setupRampc=false;
+								s_Rampc_mutex.unlock();
+							}
+							break;	
+
+						case RAMPC_CONTROLLER_EXPERIMENT_FULL_STATE:
+							setup_Rampc_full_state_osqp();
+							break;
+
+						default:
+						if (setupButtonPressed){
+							ROS_INFO_STREAM("[RAMPC CONTROLLER] Please enter experiment number: 1 for mass, 2 for all rotors, 3 for full state.");
+							setupButtonPressed=false;
+							s_Rampc_mutex.lock();
+							s_setupButtonPressed=false;
+							s_setupRampc=false;
+							s_Rampc_mutex.unlock();
+						}
+							break;
+
+					}
+					//setup_Rampc_osqp();
 					break;
 
 				case RAMPC_CONTROLLER_SOLVER_MPC:
@@ -886,6 +954,7 @@ void Rampc_thread_main()
 					setup_Rampc_gurobi();
 					break;
 			}
+			if(d_osqp_work){
 			if(!(d_osqp_work->info->status_val==-7)){
 	 		   	ROS_INFO("[RAMPC CONTROLLER] Rampc optimization setup successful with OSQP");
 
@@ -894,6 +963,7 @@ void Rampc_thread_main()
         		s_setupRampc = false;
         		s_Rampc_mutex.unlock();
         		//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 107");
+        	}
         	}
         }
         //ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug Info 6.");
@@ -904,9 +974,32 @@ void Rampc_thread_main()
 			switch (d_solver)
 			{
 				case RAMPC_CONTROLLER_SOLVER_OSQP:
-					
-					solve_Rampc_osqp();
-					update_theta_hat();
+					switch(experiment){
+						case RAMPC_CONTROLLER_EXPERIMENT_MASS:
+							solve_Rampc_osqp();
+							update_theta_hat();
+							break;
+						case RAMPC_CONTROLLER_EXPERIMENT_ALL_ROTORS:
+							
+							solve_Rampc_osqp();
+
+							update_theta_hat();
+							break;
+
+						case RAMPC_CONTROLLER_EXPERIMENT_FULL_STATE:
+							ROS_INFO_STREAM("[RAMPC CONTROLLER] Solving RAMPC.");
+							solve_Rampc_full_state_osqp();
+	
+							ROS_INFO_STREAM("[RAMPC CONTROLLER] Updating Theta Hat.");
+							update_theta_hat_full_state();
+							break;
+
+						default:
+							ROS_INFO_STREAM("[RAMPC CONTROLLER] Please setup OSQP with experiment 1 for mass, 2 for all rotor failure.");
+							break;
+					}
+					//solve_Rampc_osqp();
+					//update_theta_hat();
 					break;
 
 				case RAMPC_CONTROLLER_SOLVER_MPC:
@@ -928,7 +1021,19 @@ void Rampc_thread_main()
         //ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug Info 7.");
         if (updateTheta){
         	//ROS_INFO_STREAM("[RAMPC CONTROLLER] Solve Theta Update.");
-        	solve_theta_update_osqp();
+        	switch(experiment){
+        		case RAMPC_CONTROLLER_EXPERIMENT_MASS:
+        			solve_theta_update_osqp();
+        			break;
+        		case RAMPC_CONTROLLER_EXPERIMENT_ALL_ROTORS:
+        			solve_theta_update_osqp_all_rotors();
+        			break;
+        		case RAMPC_CONTROLLER_EXPERIMENT_FULL_STATE:
+        			ROS_INFO_STREAM("[RAMPC CONTROLLER] Updating Theta Bar.");
+        			solve_theta_update_osqp_full_state();
+        		default:
+        			break;
+        	}
         	s_Rampc_mutex.lock();
         	//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG Mutex Lock 1119");
         	s_updateTheta=false;
@@ -972,6 +1077,7 @@ void change_Rampc_params()
 	d_output_min_vec = s_yaml_output_min;
 	d_output_max_vec = s_yaml_output_max;
 	d_reference_difference=s_yaml_reference_difference;
+	d_theta_update_num=s_yaml_theta_update_num;
 	if (s_yaml_solver == "osqp")
 		d_solver = RAMPC_CONTROLLER_SOLVER_OSQP;
 	else if (s_yaml_solver == "mpc")
@@ -1542,7 +1648,7 @@ void setup_Rampc_osqp()
 		//d_num_states=2;
 		get_cost_matrices();
 
-		
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 1");
 		// OSQP QUADRATIC COST MATRIX
 		MatrixXf d_osqp_P = get_quad_cost_matrix();
 		//d_osqp_P=d_osqp_P+0.01*MatrixXf::Identity(d_osqp_P.rows(),d_osqp_P.cols());
@@ -1553,6 +1659,393 @@ void setup_Rampc_osqp()
 		get_dynamics_matrix();
 
 		get_tube_params();
+
+		MatrixXf x_hat_0;
+		x_hat_0=MatrixXf::Zero(d_num_outputs,1);
+		x_hat_0(0,0)=-0.5;
+		
+
+		MatrixXf x_bar_0=MatrixXf::Zero(d_num_outputs,1);
+		x_bar_0=x_hat_0;
+		
+//ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 2");
+
+		// INITIAL STATE constraints
+		MatrixXf osqp_A_x_hat_ini=MatrixXf::Zero(d_num_outputs,d_col_num);
+		MatrixXf osqp_l_x_hat_ini=MatrixXf::Zero(d_num_outputs,1);
+		MatrixXf osqp_u_x_hat_ini=MatrixXf::Zero(d_num_outputs,1);
+
+		osqp_A_x_hat_ini.block(0,0,d_num_outputs,d_num_outputs)=MatrixXf::Identity(d_num_outputs,d_num_outputs);
+		osqp_l_x_hat_ini=x_hat_0;
+		osqp_u_x_hat_ini=x_hat_0;
+
+
+		MatrixXf osqp_A_x_bar_ini=MatrixXf::Zero(d_num_outputs,d_col_num);
+		MatrixXf osqp_l_x_bar_ini=MatrixXf::Zero(d_num_outputs,1);
+		MatrixXf osqp_u_x_bar_ini=MatrixXf::Zero(d_num_outputs,1);
+
+		osqp_A_x_bar_ini.block(0,d_num_outputs*(d_N+1),d_num_outputs,d_num_outputs)=MatrixXf::Identity(d_num_outputs,d_num_outputs);
+		osqp_l_x_bar_ini=x_bar_0;
+		osqp_u_x_bar_ini=x_bar_0;
+
+
+		MatrixXf osqp_A_s_ini=MatrixXf::Zero(1,d_col_num);
+		MatrixXf osqp_l_s_ini=MatrixXf::Zero(1,1);
+		MatrixXf osqp_u_s_ini=MatrixXf::Zero(1,1);
+
+		osqp_A_s_ini(0,d_num_outputs*(d_N+1)*2+d_num_inputs*d_N)=1.0;
+		osqp_l_s_ini(0,0)=0.0;
+		osqp_u_s_ini(0,0)=0.0;
+
+
+		MatrixXf osqp_A_hat_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,d_col_num);
+		MatrixXf osqp_l_hat_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,1);
+		MatrixXf osqp_u_hat_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,1);
+
+
+		MatrixXf dynamics_constr_A_hat_temp=d_A+(d_B_0+d_B_1*d_theta_hat_k)*d_K;
+		MatrixXf dynamics_constr_B_hat_temp=(d_B_0+d_B_1*d_theta_hat_k);
+		for(int i=0;i<d_N;i++){
+			osqp_A_hat_dynamics_constr.block(i*d_num_outputs,i*d_num_outputs,d_num_outputs,d_num_outputs)=dynamics_constr_A_hat_temp;
+			osqp_A_hat_dynamics_constr.block(i*d_num_outputs,i*d_num_outputs+d_num_outputs,d_num_outputs,d_num_outputs)=-MatrixXf::Identity(d_num_outputs,d_num_outputs);
+			osqp_A_hat_dynamics_constr.block(i*d_num_outputs,d_num_outputs*(d_N+1)*2+i*d_num_inputs,d_num_outputs,d_num_inputs)=dynamics_constr_B_hat_temp;
+			osqp_l_hat_dynamics_constr.block(i*d_num_outputs,0,d_num_outputs,1)=MatrixXf::Zero(d_num_outputs,1);
+			osqp_u_hat_dynamics_constr.block(i*d_num_outputs,0,d_num_outputs,1)=MatrixXf::Zero(d_num_outputs,1);
+		}
+
+
+
+		MatrixXf osqp_A_bar_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,d_col_num);
+		MatrixXf osqp_l_bar_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,1);
+		MatrixXf osqp_u_bar_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,1);
+
+		MatrixXf dynamics_constr_A_bar_temp=d_A+(d_B_0+d_B_1*d_theta_bar_k)*d_K;
+		MatrixXf dynamics_constr_B_bar_temp=(d_B_0+d_B_1*d_theta_bar_k);
+		for(int i=0;i<d_N;i++){
+			osqp_A_bar_dynamics_constr.block(i*d_num_outputs,d_num_outputs*(d_N+1)+i*d_num_outputs,d_num_outputs,d_num_outputs)=dynamics_constr_A_bar_temp;
+			osqp_A_bar_dynamics_constr.block(i*d_num_outputs,d_num_outputs*(d_N+1)+i*d_num_outputs+d_num_outputs,d_num_outputs,d_num_outputs)=-MatrixXf::Identity(d_num_outputs,d_num_outputs);
+			osqp_A_bar_dynamics_constr.block(i*d_num_outputs,d_num_outputs*(d_N+1)*2+i*d_num_inputs,d_num_outputs,d_num_inputs)=dynamics_constr_B_bar_temp;
+			osqp_l_bar_dynamics_constr.block(i*d_num_outputs,0,d_num_outputs,1)=MatrixXf::Zero(d_num_outputs,1);
+			osqp_u_bar_dynamics_constr.block(i*d_num_outputs,0,d_num_outputs,1)=MatrixXf::Zero(d_num_outputs,1);
+		}
+
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 21");
+
+
+		MatrixXf osqp_A_state_input_constr=MatrixXf::Zero(d_N*(d_num_outputs*2+d_num_inputs*2),d_col_num);
+		MatrixXf osqp_l_state_input_constr=MatrixXf::Zero(d_N*(d_num_outputs*2+d_num_inputs*2),1);
+		MatrixXf osqp_u_state_input_constr=MatrixXf::Zero(d_N*(d_num_outputs*2+d_num_inputs*2),1);
+		d_delta_uss=MatrixXf::Zero(d_num_inputs,1);
+	    d_z_setpoint_Rampc=MatrixXf::Zero(d_num_outputs,1);
+		d_z_setpoint_Rampc << 0.4-0.8,		
+							   0.0;
+		for(int i=0;i<d_N;i++){
+			for(int j=0;j<(d_num_outputs*2+d_num_inputs*2);j++){
+				osqp_A_state_input_constr.block(i*(d_num_outputs*2+d_num_inputs*2)+j,d_num_outputs*(d_N+1)+i*d_num_outputs,1,d_num_outputs)=d_F.row(j)+d_G.row(j)*d_K;
+				osqp_A_state_input_constr.block(i*(d_num_outputs*2+d_num_inputs*2)+j,d_num_outputs*(d_N+1)*2+i*d_num_inputs,1,d_num_inputs)=d_G.row(j);
+				osqp_A_state_input_constr.block(i*(d_num_outputs*2+d_num_inputs*2)+j,d_num_outputs*(d_N+1)*2+d_num_inputs*d_N+i,1,1)=d_c.row(j);
+				osqp_u_state_input_constr.block(i*(d_num_outputs*2+d_num_inputs*2)+j,0,1,1)=MatrixXf::Ones(1,1)-d_F.row(j)*d_z_setpoint_Rampc-d_G.row(j)*d_delta_uss;
+				osqp_l_state_input_constr(i*(d_num_outputs*2+d_num_inputs*2)+j,0)=Inf_min;
+			}
+		}
+
+		MatrixXf osqp_A_tube_constr=MatrixXf::Zero(d_N*d_H_x.rows()*d_e_l.rows(),d_col_num);
+		MatrixXf osqp_l_tube_constr=MatrixXf::Zero(d_N*d_H_x.rows()*d_e_l.rows(),1);
+		MatrixXf osqp_u_tube_constr=MatrixXf::Zero(d_N*d_H_x.rows()*d_e_l.rows(),1);
+		
+		for(int i=0;i<d_N;i++){
+			for(int j=0;j<d_H_x.rows();j++){
+				for(int l=0;l<d_e_l.rows();l++){
+					osqp_A_tube_constr.block(i*d_H_x.rows()*d_e_l.rows()+j*d_e_l.rows()+l,d_num_outputs*(d_N+1)+i*d_num_outputs,1,d_num_outputs)=-d_eta_k*d_H_x.row(j)*d_B_1*d_K*d_e_l(l,0);
+					osqp_A_tube_constr.block(i*d_H_x.rows()*d_e_l.rows()+j*d_e_l.rows()+l,d_num_outputs*(d_N+1)*2+i*d_num_inputs,1,d_num_inputs)=-d_eta_k*d_H_x.row(j)*d_B_1*d_e_l.row(l);
+					osqp_A_tube_constr(i*d_H_x.rows()*d_e_l.rows()+j*d_e_l.rows()+l,d_num_outputs*(d_N+1)*2+d_num_inputs*d_N+i)=-d_rho_theta_k;
+					osqp_A_tube_constr(i*d_H_x.rows()*d_e_l.rows()+j*d_e_l.rows()+l,d_num_outputs*(d_N+1)*2+d_num_inputs*d_N+i+1)=1.0;
+					osqp_u_tube_constr(i*d_H_x.rows()*d_e_l.rows()+j*d_e_l.rows()+l,0)=Inf_max;
+					osqp_l_tube_constr(i*d_H_x.rows()*d_e_l.rows()+j*d_e_l.rows()+l,0)=d_w_bar;
+				}
+			}
+		}
+		
+		
+
+		MatrixXf osqp_A_term_constr=MatrixXf::Zero(d_H_xf_x.rows(),d_col_num);
+		MatrixXf osqp_l_term_constr=MatrixXf::Zero(d_H_xf_x.rows(),1);
+		MatrixXf osqp_u_term_constr=MatrixXf::Zero(d_H_xf_x.rows(),1);
+
+		osqp_A_term_constr.block(0,d_num_outputs*(d_N+1)+d_num_outputs*d_N,d_H_xf_x.rows(),d_num_outputs)=d_H_xf_x;
+		osqp_A_term_constr.block(0,d_num_outputs*(d_N+1)+d_num_outputs*(d_N+1)+d_num_inputs*d_N+d_N,d_H_xf_x.rows(),1)=d_H_xf_s;
+		osqp_u_term_constr=MatrixXf::Ones(d_H_xf_x.rows(),1);
+		osqp_l_term_constr=Inf_min*MatrixXf::Ones(d_H_xf_x.rows(),1);
+
+
+
+
+
+
+		MatrixXf osqp_A=MatrixXf::Zero(osqp_A_x_hat_ini.rows()+osqp_A_x_bar_ini.rows()+osqp_A_s_ini.rows()+osqp_A_hat_dynamics_constr.rows()+osqp_A_bar_dynamics_constr.rows()+osqp_A_state_input_constr.rows()+osqp_A_tube_constr.rows()+osqp_A_term_constr.rows(),d_col_num);
+		MatrixXf osqp_u=MatrixXf::Zero(osqp_u_x_hat_ini.rows()+osqp_u_x_bar_ini.rows()+osqp_u_s_ini.rows()+osqp_u_hat_dynamics_constr.rows()+osqp_u_bar_dynamics_constr.rows()+osqp_u_state_input_constr.rows()+osqp_u_tube_constr.rows()+osqp_u_term_constr.rows(),1);
+		MatrixXf osqp_l=MatrixXf::Zero(osqp_l_x_hat_ini.rows()+osqp_l_x_bar_ini.rows()+osqp_l_s_ini.rows()+osqp_l_hat_dynamics_constr.rows()+osqp_l_bar_dynamics_constr.rows()+osqp_l_state_input_constr.rows()+osqp_l_tube_constr.rows()+osqp_l_term_constr.rows(),1);
+
+		osqp_A.topRows(osqp_A_x_hat_ini.rows())=osqp_A_x_hat_ini;
+		osqp_u.topRows(osqp_u_x_hat_ini.rows())=osqp_u_x_hat_ini;
+		osqp_l.topRows(osqp_l_x_hat_ini.rows())=osqp_l_x_hat_ini;
+
+		osqp_A.middleRows(osqp_A_x_hat_ini.rows(),osqp_A_x_bar_ini.rows())=osqp_A_x_bar_ini;
+		osqp_u.middleRows(osqp_u_x_hat_ini.rows(),osqp_u_x_bar_ini.rows())=osqp_u_x_bar_ini;
+		osqp_l.middleRows(osqp_l_x_hat_ini.rows(),osqp_l_x_bar_ini.rows())=osqp_l_x_bar_ini;
+
+		osqp_A.middleRows(osqp_A_x_hat_ini.rows()+osqp_A_x_bar_ini.rows(),osqp_A_s_ini.rows())=osqp_A_s_ini;
+		osqp_u.middleRows(osqp_u_x_hat_ini.rows()+osqp_u_x_bar_ini.rows(),osqp_u_s_ini.rows())=osqp_u_s_ini;
+		osqp_l.middleRows(osqp_l_x_hat_ini.rows()+osqp_l_x_bar_ini.rows(),osqp_l_s_ini.rows())=osqp_l_s_ini;
+
+		osqp_A.middleRows(osqp_A_x_hat_ini.rows()+osqp_A_x_bar_ini.rows()+osqp_A_s_ini.rows(),osqp_A_hat_dynamics_constr.rows())=osqp_A_hat_dynamics_constr;
+		osqp_u.middleRows(osqp_u_x_hat_ini.rows()+osqp_u_x_bar_ini.rows()+osqp_u_s_ini.rows(),osqp_u_hat_dynamics_constr.rows())=osqp_u_hat_dynamics_constr;
+		osqp_l.middleRows(osqp_l_x_hat_ini.rows()+osqp_l_x_bar_ini.rows()+osqp_l_s_ini.rows(),osqp_l_hat_dynamics_constr.rows())=osqp_l_hat_dynamics_constr;
+
+		osqp_A.middleRows(osqp_A_x_hat_ini.rows()+osqp_A_x_bar_ini.rows()+osqp_A_s_ini.rows()+osqp_A_hat_dynamics_constr.rows(),osqp_A_bar_dynamics_constr.rows())=osqp_A_bar_dynamics_constr;
+		osqp_u.middleRows(osqp_u_x_hat_ini.rows()+osqp_u_x_bar_ini.rows()+osqp_u_s_ini.rows()+osqp_u_hat_dynamics_constr.rows(),osqp_u_bar_dynamics_constr.rows())=osqp_u_bar_dynamics_constr;
+		osqp_l.middleRows(osqp_l_x_hat_ini.rows()+osqp_l_x_bar_ini.rows()+osqp_l_s_ini.rows()+osqp_l_hat_dynamics_constr.rows(),osqp_l_bar_dynamics_constr.rows())=osqp_l_bar_dynamics_constr;
+
+		osqp_A.middleRows(osqp_A_x_hat_ini.rows()+osqp_A_x_bar_ini.rows()+osqp_A_s_ini.rows()+osqp_A_hat_dynamics_constr.rows()+osqp_A_bar_dynamics_constr.rows(),osqp_A_state_input_constr.rows())=osqp_A_state_input_constr;
+		osqp_u.middleRows(osqp_u_x_hat_ini.rows()+osqp_u_x_bar_ini.rows()+osqp_u_s_ini.rows()+osqp_u_hat_dynamics_constr.rows()+osqp_u_bar_dynamics_constr.rows(),osqp_u_state_input_constr.rows())=osqp_u_state_input_constr;
+		osqp_l.middleRows(osqp_l_x_hat_ini.rows()+osqp_l_x_bar_ini.rows()+osqp_l_s_ini.rows()+osqp_l_hat_dynamics_constr.rows()+osqp_l_bar_dynamics_constr.rows(),osqp_l_state_input_constr.rows())=osqp_l_state_input_constr;
+
+		osqp_A.middleRows(osqp_A_x_hat_ini.rows()+osqp_A_x_bar_ini.rows()+osqp_A_s_ini.rows()+osqp_A_hat_dynamics_constr.rows()+osqp_A_bar_dynamics_constr.rows()+osqp_A_state_input_constr.rows(),osqp_A_tube_constr.rows())=osqp_A_tube_constr;
+		osqp_u.middleRows(osqp_u_x_hat_ini.rows()+osqp_u_x_bar_ini.rows()+osqp_u_s_ini.rows()+osqp_u_hat_dynamics_constr.rows()+osqp_u_bar_dynamics_constr.rows()+osqp_u_state_input_constr.rows(),osqp_u_tube_constr.rows())=osqp_u_tube_constr;
+		osqp_l.middleRows(osqp_l_x_hat_ini.rows()+osqp_l_x_bar_ini.rows()+osqp_l_s_ini.rows()+osqp_l_hat_dynamics_constr.rows()+osqp_l_bar_dynamics_constr.rows()+osqp_l_state_input_constr.rows(),osqp_l_tube_constr.rows())=osqp_l_tube_constr;
+
+		osqp_A.bottomRows(osqp_A_term_constr.rows()) = osqp_A_term_constr;
+		osqp_l.bottomRows(osqp_A_term_constr.rows()) = osqp_l_term_constr;
+		osqp_u.bottomRows(osqp_A_term_constr.rows()) = osqp_u_term_constr;
+
+
+
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 3");
+		/*
+		d_osqp_q = MatrixXf::Zero(d_num_opt_vars, 1);
+		if (d_opt_sparse)
+		{
+			d_osqp_q.topRows(d_Ng) = d_lin_cost_vec_gs;
+			d_osqp_q.middleRows(d_uf_start_i, d_Nuf) = d_lin_cost_vec_us;
+			d_osqp_q.middleRows(d_yf_start_i, d_Nyf + d_num_outputs) = d_lin_cost_vec_r;
+		}
+		else
+			d_osqp_q.topRows(d_Ng) = d_lin_cost_vec_us + d_lin_cost_vec_r + d_lin_cost_vec_gs;
+		*/
+
+		// OSQP LINEAR INEQUALITY CONSTRAINT MATRIX
+		/*
+		MatrixXf osqp_A_ineq = MatrixXf::Zero(d_Nuf + d_Nyf + d_num_outputs, d_num_opt_vars);
+		if (d_opt_sparse)
+			osqp_A_ineq.middleCols(d_uf_start_i, d_Nuf + d_Nyf + d_num_outputs) = MatrixXf::Identity(d_Nuf + d_Nyf + d_num_outputs, d_Nuf + d_Nyf + d_num_outputs);
+		else
+		{
+			osqp_A_ineq.topLeftCorner(d_Nuf, d_Ng) = d_U_f;
+			osqp_A_ineq.bottomLeftCorner(d_Nyf + d_num_outputs, d_Ng) = d_Y_f;
+		}
+
+		// OSQP LINEAR INEQUALITY CONSTRAINT VECTORS
+		MatrixXf osqp_l_ineq = MatrixXf::Zero(d_Nuf + d_Nyf + d_num_outputs, 1);
+		MatrixXf osqp_u_ineq = MatrixXf::Zero(d_Nuf + d_Nyf + d_num_outputs, 1);
+		osqp_l_ineq.topRows(d_Nuf) = d_input_min;
+		osqp_l_ineq.bottomRows(d_Nyf + d_num_outputs) = d_output_min;
+		osqp_u_ineq.topRows(d_Nuf) = d_input_max;
+		osqp_u_ineq.bottomRows(d_Nyf + d_num_outputs) = d_output_max;
+
+		// OSQP LINEAR EQUALITY CONSTRAINTS
+		// Static equality constraints ([uf; yf; yt]), and ([gs; us]) if optimizing over steady state gs & us
+		MatrixXf osqp_A_eq_stat = get_static_eq_constr_matrix();
+		MatrixXf osqp_l_eq_stat = get_static_eq_constr_vector();
+		MatrixXf osqp_u_eq_stat = osqp_l_eq_stat;
+
+		// Dynamic equality constraints that change every time ([uini; uini]), and ([gs; r]) if optimizing over steady state gs & us
+		MatrixXf osqp_A_eq_dyn = get_dynamic_eq_constr_matrix();
+		MatrixXf osqp_l_eq_dyn = get_dynamic_eq_constr_vector();
+		MatrixXf osqp_u_eq_dyn = osqp_l_eq_dyn;
+		d_uini_start_i = osqp_A_ineq.rows() + osqp_A_eq_stat.rows();
+		d_yini_start_i = d_uini_start_i + d_Nuini;
+		if (d_opt_sparse && d_opt_steady_state)
+			d_r_gs_start_i = d_yini_start_i + d_Nyini;
+
+		// OSQP CONSTRAINTS
+		// Concatenate all constraints in single matrix/vectors
+		MatrixXf osqp_A = MatrixXf::Zero(osqp_A_ineq.rows() + osqp_A_eq_stat.rows() + osqp_A_eq_dyn.rows(), d_num_opt_vars);
+		MatrixXf osqp_l = MatrixXf::Zero(osqp_A_ineq.rows() + osqp_A_eq_stat.rows() + osqp_A_eq_dyn.rows(), 1);
+		MatrixXf osqp_u = osqp_l;
+		
+		osqp_A.topRows(osqp_A_ineq.rows()) = osqp_A_ineq;
+		osqp_l.topRows(osqp_A_ineq.rows()) = osqp_l_ineq;
+		osqp_u.topRows(osqp_A_ineq.rows()) = osqp_u_ineq;
+
+		// Static equality constraints only present in sparse formulation
+		if (d_opt_sparse)
+		{
+			osqp_A.middleRows(osqp_A_ineq.rows(), osqp_A_eq_stat.rows()) = osqp_A_eq_stat;
+			osqp_l.middleRows(osqp_A_ineq.rows(), osqp_A_eq_stat.rows()) = osqp_l_eq_stat;
+			osqp_u.middleRows(osqp_A_ineq.rows(), osqp_A_eq_stat.rows()) = osqp_u_eq_stat;
+		}
+
+		osqp_A.bottomRows(osqp_A_eq_dyn.rows()) = osqp_A_eq_dyn;
+		osqp_l.bottomRows(osqp_A_eq_dyn.rows()) = osqp_l_eq_dyn;
+		osqp_u.bottomRows(osqp_A_eq_dyn.rows()) = osqp_u_eq_dyn;
+	*/
+		// OSQP MODEL SETUP
+		// Follows 'Setup and solve' example (https://osqp.org/docs/examples/setup-and-solve.html)
+		MatrixXf osqp_q=MatrixXf::Zero(d_col_num,1);
+
+		d_osqp_A=MatrixXf::Zero(osqp_A.rows(),osqp_A.cols());
+		//osqp_extended_cleanup();
+		
+		d_osqp_A=osqp_A;
+
+		/*
+		log_file1.open("/home/agent06/dfall/dfall-system/RAMPC_data/osqp_A.csv");
+		log_file1<<osqp_A;
+		log_file1.close();
+		log_file2.open("/home/agent06/dfall/dfall-system/RAMPC_data/d_osqp_A.csv");
+		log_file2<<d_osqp_A;
+		log_file2.close();
+		*/
+
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 4");
+
+
+		// Convert Eigen matrices to CSC format
+		csc* osqp_P_csc = eigen2csc(d_osqp_P);
+		csc* osqp_A_csc = eigen2csc(osqp_A);
+		
+
+		// Convert Eigen vectors to c_float arrays
+		// One copy is used for initial setup, the other is used during runtime in update function
+		c_float* osqp_q_cfloat = (c_float*) c_malloc(d_osqp_q.rows() * sizeof(c_float));
+		c_float* osqp_l_cfloat = (c_float*) c_malloc(osqp_l.rows() * sizeof(c_float));
+		c_float* osqp_u_cfloat = (c_float*) c_malloc(osqp_u.rows() * sizeof(c_float));
+		
+
+		d_osqp_q_new = (c_float*) c_malloc(d_osqp_q.rows() * sizeof(c_float));
+		d_osqp_l_new = (c_float*) c_malloc(osqp_l.rows() * sizeof(c_float));
+		d_osqp_u_new = (c_float*) c_malloc(osqp_u.rows() * sizeof(c_float));
+	
+
+		Matrix<c_float, Dynamic, Dynamic>::Map(osqp_q_cfloat, d_osqp_q.rows(), d_osqp_q.cols()) = d_osqp_q.cast<c_float>();
+		Matrix<c_float, Dynamic, Dynamic>::Map(d_osqp_q_new, d_osqp_q.rows(), d_osqp_q.cols()) = d_osqp_q.cast<c_float>();
+	
+
+		Matrix<c_float, Dynamic, Dynamic>::Map(osqp_l_cfloat, osqp_l.rows(), osqp_l.cols()) = osqp_l.cast<c_float>();
+		Matrix<c_float, Dynamic, Dynamic>::Map(d_osqp_l_new, osqp_l.rows(), osqp_l.cols()) = osqp_l.cast<c_float>();
+	
+
+		Matrix<c_float, Dynamic, Dynamic>::Map(osqp_u_cfloat, osqp_u.rows(), osqp_u.cols()) = osqp_u.cast<c_float>();
+		Matrix<c_float, Dynamic, Dynamic>::Map(d_osqp_u_new, osqp_u.rows(), osqp_u.cols()) = osqp_u.cast<c_float>();
+	
+
+		// Populate data
+	    osqp_data = (OSQPData*) c_malloc(sizeof(OSQPData));
+	    osqp_data->n = d_col_num;
+	    osqp_data->m = osqp_A.rows();
+	    osqp_data->P = osqp_P_csc;
+	    osqp_data->q = osqp_q_cfloat;
+	    osqp_data->A = osqp_A_csc;
+	    osqp_data->l = osqp_l_cfloat;
+	    osqp_data->u = osqp_u_cfloat;
+		
+
+		// Problem settings
+	    d_osqp_settings = (OSQPSettings*) c_malloc(sizeof(OSQPSettings));
+		
+
+	    // Define Solver settings as default, and change settings as desired
+	    osqp_set_default_settings(d_osqp_settings);
+	    d_osqp_settings->verbose = d_opt_verbose;
+		
+
+	    // Setup workspace
+	    d_osqp_work = osqp_setup(osqp_data, d_osqp_settings);
+		
+		
+	    osqp_solve(d_osqp_work);
+
+
+	    //d_RampcOpt_status = d_osqp_work->info->status_val;
+	    //float sol_u=d_osqp_work->solution->x[2*(d_N+1)*d_num_outputs]; 
+	    //ROS_INFO_STREAM("[RAMPC CONTROLLER] Status: "<< d_RampcOpt_status);
+	    //ROS_INFO_STREAM("[RAMPC CONTROLLER] Solution: "<< sol_u);
+
+
+	    // Clear data after setting up to allow subseqeuent setups
+	    //osqp_cleanup_data(osqp_data);
+		
+
+
+	    if (!d_osqp_work)
+	    {
+	    	clear_setupRampc_success_flag();
+
+	    	ROS_INFO("[RAMPC CONTROLLER] Rampc optimization setup failed with OSQP");
+	    	ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
+
+	    	return;
+	    }
+
+	    // Some steps to finish setup
+		finish_Rampc_setup();
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 5");
+		setup_theta_update_osqp();
+		
+
+	    // Inform the user
+    }
+
+  	catch(exception& e)
+    {
+    	clear_setupRampc_success_flag();
+
+	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Rampc optimization setup exception with OSQP with standard error message: " << e.what());
+	    ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
+  	}
+  	catch(...)
+  	{
+  		clear_setupRampc_success_flag();
+
+    	ROS_INFO("[RAMPC CONTROLLER] Rampc optimization setup exception with OSQP");
+    	ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
+  	}
+}
+
+
+
+
+void setup_Rampc_all_rotors_osqp()
+{
+	try
+    {
+    	
+		// Get u_data & y_data from files
+		//MatrixXf u_data = get_u_data();
+		//MatrixXf y_data = get_y_data();
+
+		// Get variable lengths
+		get_variable_lengths();
+		get_cost_matrices_all_rotors();
+		get_control_feedback_all_rotors();
+		// Get Hankel matrices
+		//get_hankel_matrices(u_data, y_data);
+		
+		// Get cost matrices
+		//d_num_inputs=1;
+		//d_num_states=2;
+		
+
+		
+		// OSQP QUADRATIC COST MATRIX
+		MatrixXf d_osqp_P = get_quad_cost_matrix();
+		//d_osqp_P=d_osqp_P+0.01*MatrixXf::Identity(d_osqp_P.rows(),d_osqp_P.cols());
+		
+		// Input/output constraint vectors
+		get_input_output_constr();
+		get_dynamics_matrix();
+
+		get_tube_params_all_rotors();
 
 		MatrixXf x_hat_0;
 		x_hat_0=MatrixXf::Zero(d_num_outputs,1);
@@ -1623,13 +2116,15 @@ void setup_Rampc_osqp()
 			osqp_u_bar_dynamics_constr.block(i*d_num_outputs,0,d_num_outputs,1)=MatrixXf::Zero(d_num_outputs,1);
 		}
 
-
 		MatrixXf osqp_A_state_input_constr=MatrixXf::Zero(d_N*(d_num_outputs*2+d_num_inputs*2),d_col_num);
 		MatrixXf osqp_l_state_input_constr=MatrixXf::Zero(d_N*(d_num_outputs*2+d_num_inputs*2),1);
 		MatrixXf osqp_u_state_input_constr=MatrixXf::Zero(d_N*(d_num_outputs*2+d_num_inputs*2),1);
+		d_delta_uss=MatrixXf::Zero(d_num_inputs,1);
 	    d_z_setpoint_Rampc=MatrixXf::Zero(d_num_outputs,1);
 		d_z_setpoint_Rampc << 0.4-0.8,		
 							   0.0;
+
+
 
 		for(int i=0;i<d_N;i++){
 			for(int j=0;j<(d_num_outputs*2+d_num_inputs*2);j++){
@@ -1640,7 +2135,6 @@ void setup_Rampc_osqp()
 				osqp_l_state_input_constr(i*(d_num_outputs*2+d_num_inputs*2)+j,0)=Inf_min;
 			}
 		}
-
 
 		MatrixXf osqp_A_tube_constr=MatrixXf::Zero(d_N*d_H_x.rows()*d_e_l.rows(),d_col_num);
 		MatrixXf osqp_l_tube_constr=MatrixXf::Zero(d_N*d_H_x.rows()*d_e_l.rows(),1);
@@ -1707,8 +2201,8 @@ void setup_Rampc_osqp()
 		osqp_l.middleRows(osqp_l_x_hat_ini.rows()+osqp_l_x_bar_ini.rows()+osqp_l_s_ini.rows()+osqp_l_hat_dynamics_constr.rows()+osqp_l_bar_dynamics_constr.rows()+osqp_l_state_input_constr.rows(),osqp_l_tube_constr.rows())=osqp_l_tube_constr;
 
 		osqp_A.bottomRows(osqp_A_term_constr.rows()) = osqp_A_term_constr;
-		osqp_l.bottomRows(osqp_A_term_constr.rows()) = osqp_l_term_constr;
-		osqp_u.bottomRows(osqp_A_term_constr.rows()) = osqp_u_term_constr;
+		osqp_u.bottomRows(osqp_u_term_constr.rows()) = osqp_u_term_constr;
+		osqp_l.bottomRows(osqp_l_term_constr.rows()) = osqp_l_term_constr;
 
 
 
@@ -1902,6 +2396,439 @@ void setup_Rampc_osqp()
     	ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
   	}
 }
+
+
+
+
+
+
+
+
+
+void setup_Rampc_full_state_osqp()
+{
+	try
+    {
+    	
+		// Get u_data & y_data from files
+		//MatrixXf u_data = get_u_data();
+		//MatrixXf y_data = get_y_data();
+    	//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG 1");
+		// Get variable lengths
+		get_variable_lengths_full_state();
+		get_cost_matrices_full_state();
+		get_control_feedback_full_state();
+		// Get Hankel matrices
+		//get_hankel_matrices(u_data, y_data);
+		
+		// Get cost matrices
+		//d_num_inputs=1;
+		//d_num_states=2;
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG 2");
+
+		
+		// OSQP QUADRATIC COST MATRIX
+		MatrixXf d_osqp_P = get_quad_cost_matrix_full_state();
+		//d_osqp_P=d_osqp_P+0.01*MatrixXf::Identity(d_osqp_P.rows(),d_osqp_P.cols());
+		
+		// Input/output constraint vectors
+		get_input_output_constr_full_state();
+		get_dynamics_matrix_full_state();
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG 3");
+		get_tube_params_full_state();
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG 4");
+		MatrixXf x_hat_0;
+		x_hat_0=MatrixXf::Zero(d_num_outputs,1);
+		x_hat_0(0,0)=-0.5;
+		
+
+		MatrixXf x_bar_0=MatrixXf::Zero(d_num_outputs,1);
+		x_bar_0=x_hat_0;
+		
+
+
+		// INITIAL STATE constraints
+		MatrixXf osqp_A_x_hat_ini=MatrixXf::Zero(d_num_outputs,d_col_num);
+		MatrixXf osqp_l_x_hat_ini=MatrixXf::Zero(d_num_outputs,1);
+		MatrixXf osqp_u_x_hat_ini=MatrixXf::Zero(d_num_outputs,1);
+
+		osqp_A_x_hat_ini.block(0,0,d_num_outputs,d_num_outputs)=MatrixXf::Identity(d_num_outputs,d_num_outputs);
+		osqp_l_x_hat_ini=x_hat_0;
+		osqp_u_x_hat_ini=x_hat_0;
+
+
+		MatrixXf osqp_A_x_bar_ini=MatrixXf::Zero(d_num_outputs,d_col_num);
+		MatrixXf osqp_l_x_bar_ini=MatrixXf::Zero(d_num_outputs,1);
+		MatrixXf osqp_u_x_bar_ini=MatrixXf::Zero(d_num_outputs,1);
+
+		osqp_A_x_bar_ini.block(0,d_num_outputs*(d_N+1),d_num_outputs,d_num_outputs)=MatrixXf::Identity(d_num_outputs,d_num_outputs);
+		osqp_l_x_bar_ini=x_bar_0;
+		osqp_u_x_bar_ini=x_bar_0;
+
+
+		MatrixXf osqp_A_s_ini=MatrixXf::Zero(1,d_col_num);
+		MatrixXf osqp_l_s_ini=MatrixXf::Zero(1,1);
+		MatrixXf osqp_u_s_ini=MatrixXf::Zero(1,1);
+
+		osqp_A_s_ini(0,d_num_outputs*(d_N+1)*2+d_num_inputs*d_N)=1.0;
+		osqp_l_s_ini(0,0)=0.0;
+		osqp_u_s_ini(0,0)=0.0;
+
+
+		MatrixXf osqp_A_hat_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,d_col_num);
+		MatrixXf osqp_l_hat_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,1);
+		MatrixXf osqp_u_hat_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,1);
+
+
+		MatrixXf dynamics_constr_A_hat_temp=d_A+(d_B_0+d_B_1*d_theta_hat_k)*d_K;
+		MatrixXf dynamics_constr_B_hat_temp=(d_B_0+d_B_1*d_theta_hat_k);
+		for(int i=0;i<d_N;i++){
+			osqp_A_hat_dynamics_constr.block(i*d_num_outputs,i*d_num_outputs,d_num_outputs,d_num_outputs)=dynamics_constr_A_hat_temp;
+			osqp_A_hat_dynamics_constr.block(i*d_num_outputs,i*d_num_outputs+d_num_outputs,d_num_outputs,d_num_outputs)=-MatrixXf::Identity(d_num_outputs,d_num_outputs);
+			osqp_A_hat_dynamics_constr.block(i*d_num_outputs,d_num_outputs*(d_N+1)*2+i*d_num_inputs,d_num_outputs,d_num_inputs)=dynamics_constr_B_hat_temp;
+			osqp_l_hat_dynamics_constr.block(i*d_num_outputs,0,d_num_outputs,1)=MatrixXf::Zero(d_num_outputs,1);
+			osqp_u_hat_dynamics_constr.block(i*d_num_outputs,0,d_num_outputs,1)=MatrixXf::Zero(d_num_outputs,1);
+		}
+
+
+
+		MatrixXf osqp_A_bar_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,d_col_num);
+		MatrixXf osqp_l_bar_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,1);
+		MatrixXf osqp_u_bar_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,1);
+
+		MatrixXf dynamics_constr_A_bar_temp=d_A+(d_B_0+d_B_1*d_theta_bar_k)*d_K;
+		MatrixXf dynamics_constr_B_bar_temp=(d_B_0+d_B_1*d_theta_bar_k);
+		for(int i=0;i<d_N;i++){
+			osqp_A_bar_dynamics_constr.block(i*d_num_outputs,d_num_outputs*(d_N+1)+i*d_num_outputs,d_num_outputs,d_num_outputs)=dynamics_constr_A_bar_temp;
+			osqp_A_bar_dynamics_constr.block(i*d_num_outputs,d_num_outputs*(d_N+1)+i*d_num_outputs+d_num_outputs,d_num_outputs,d_num_outputs)=-MatrixXf::Identity(d_num_outputs,d_num_outputs);
+			osqp_A_bar_dynamics_constr.block(i*d_num_outputs,d_num_outputs*(d_N+1)*2+i*d_num_inputs,d_num_outputs,d_num_inputs)=dynamics_constr_B_bar_temp;
+			osqp_l_bar_dynamics_constr.block(i*d_num_outputs,0,d_num_outputs,1)=MatrixXf::Zero(d_num_outputs,1);
+			osqp_u_bar_dynamics_constr.block(i*d_num_outputs,0,d_num_outputs,1)=MatrixXf::Zero(d_num_outputs,1);
+		}
+
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 5");
+		MatrixXf osqp_A_state_input_constr=MatrixXf::Zero(d_N*(d_num_outputs*2+d_num_inputs*2),d_col_num);
+		MatrixXf osqp_l_state_input_constr=MatrixXf::Zero(d_N*(d_num_outputs*2+d_num_inputs*2),1);
+		MatrixXf osqp_u_state_input_constr=MatrixXf::Zero(d_N*(d_num_outputs*2+d_num_inputs*2),1);
+		d_delta_uss=MatrixXf::Zero(d_num_inputs,1);
+	    d_z_setpoint_Rampc=MatrixXf::Zero(d_num_outputs,1);
+		d_z_setpoint_Rampc << 	0.0,
+								0.0,
+							   	0.4-0.8,		
+							   	0.0,
+							   	0.0,
+							   	0.0,
+							   	0.0,
+							   	0.0,
+							   	0.0,
+							   	0.0,
+							   	0.0,
+							   	0.0;
+
+		for(int i=0;i<d_N;i++){
+			for(int j=0;j<(d_num_outputs*2+d_num_inputs*2);j++){
+				osqp_A_state_input_constr.block(i*(d_num_outputs*2+d_num_inputs*2)+j,d_num_outputs*(d_N+1)+i*d_num_outputs,1,d_num_outputs)=d_F.row(j)+d_G.row(j)*d_K;
+				osqp_A_state_input_constr.block(i*(d_num_outputs*2+d_num_inputs*2)+j,d_num_outputs*(d_N+1)*2+i*d_num_inputs,1,d_num_inputs)=d_G.row(j);
+				osqp_A_state_input_constr.block(i*(d_num_outputs*2+d_num_inputs*2)+j,d_num_outputs*(d_N+1)*2+d_num_inputs*d_N+i,1,1)=d_c.row(j);
+				osqp_u_state_input_constr.block(i*(d_num_outputs*2+d_num_inputs*2)+j,0,1,1)=MatrixXf::Ones(1,1)-d_F.row(j)*d_z_setpoint_Rampc-d_G.row(j)*d_delta_uss;
+				osqp_l_state_input_constr(i*(d_num_outputs*2+d_num_inputs*2)+j,0)=Inf_min;
+			}
+		}
+
+
+//ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 6");
+		MatrixXf osqp_A_tube_constr=MatrixXf::Zero(d_N*d_H_x.rows()*d_e_l.rows(),d_col_num);
+		MatrixXf osqp_l_tube_constr=MatrixXf::Zero(d_N*d_H_x.rows()*d_e_l.rows(),1);
+		MatrixXf osqp_u_tube_constr=MatrixXf::Zero(d_N*d_H_x.rows()*d_e_l.rows(),1);
+
+		for(int i=0;i<d_N;i++){
+			for(int j=0;j<d_H_x.rows();j++){
+				for(int l=0;l<d_e_l.rows();l++){
+					osqp_A_tube_constr.block(i*d_H_x.rows()*d_e_l.rows()+j*d_e_l.rows()+l,d_num_outputs*(d_N+1)+i*d_num_outputs,1,d_num_outputs)=-d_eta_k*d_H_x.row(j)*d_B_1*d_K*d_e_l(l,0);
+					osqp_A_tube_constr.block(i*d_H_x.rows()*d_e_l.rows()+j*d_e_l.rows()+l,d_num_outputs*(d_N+1)*2+i*d_num_inputs,1,d_num_inputs)=-d_eta_k*d_H_x.row(j)*d_B_1*d_e_l(l,0);
+					osqp_A_tube_constr(i*d_H_x.rows()*d_e_l.rows()+j*d_e_l.rows()+l,d_num_outputs*(d_N+1)*2+d_num_inputs*d_N+i)=-d_rho_theta_k;
+					osqp_A_tube_constr(i*d_H_x.rows()*d_e_l.rows()+j*d_e_l.rows()+l,d_num_outputs*(d_N+1)*2+d_num_inputs*d_N+i+1)=1.0;
+					osqp_u_tube_constr(i*d_H_x.rows()*d_e_l.rows()+j*d_e_l.rows()+l,0)=Inf_max;
+					osqp_l_tube_constr(i*d_H_x.rows()*d_e_l.rows()+j*d_e_l.rows()+l,0)=d_w_bar;
+				}
+			}
+		}
+		
+//ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 7");
+		MatrixXf osqp_A_term_constr=MatrixXf::Zero(d_H_xf_x.rows(),d_col_num);
+		MatrixXf osqp_l_term_constr=MatrixXf::Zero(d_H_xf_x.rows(),1);
+		MatrixXf osqp_u_term_constr=MatrixXf::Zero(d_H_xf_x.rows(),1);
+
+		osqp_A_term_constr.block(0,d_num_outputs*(d_N+1)+d_num_outputs*d_N,d_H_xf_x.rows(),d_num_outputs)=d_H_xf_x;
+		osqp_A_term_constr.block(0,d_num_outputs*(d_N+1)+d_num_outputs*(d_N+1)+d_num_inputs*d_N+d_N,d_H_xf_x.rows(),1)=d_H_xf_s;
+		osqp_u_term_constr=MatrixXf::Ones(d_H_xf_x.rows(),1);
+		osqp_l_term_constr=Inf_min*MatrixXf::Ones(d_H_xf_x.rows(),1);
+
+
+
+
+
+//ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 8");
+		MatrixXf osqp_A=MatrixXf::Zero(osqp_A_x_hat_ini.rows()+osqp_A_x_bar_ini.rows()+osqp_A_s_ini.rows()+osqp_A_hat_dynamics_constr.rows()+osqp_A_bar_dynamics_constr.rows()+osqp_A_state_input_constr.rows()+osqp_A_tube_constr.rows()+osqp_A_term_constr.rows(),d_col_num);
+		MatrixXf osqp_u=MatrixXf::Zero(osqp_u_x_hat_ini.rows()+osqp_u_x_bar_ini.rows()+osqp_u_s_ini.rows()+osqp_u_hat_dynamics_constr.rows()+osqp_u_bar_dynamics_constr.rows()+osqp_u_state_input_constr.rows()+osqp_u_tube_constr.rows()+osqp_u_term_constr.rows(),1);
+		MatrixXf osqp_l=MatrixXf::Zero(osqp_l_x_hat_ini.rows()+osqp_l_x_bar_ini.rows()+osqp_l_s_ini.rows()+osqp_l_hat_dynamics_constr.rows()+osqp_l_bar_dynamics_constr.rows()+osqp_l_state_input_constr.rows()+osqp_l_tube_constr.rows()+osqp_l_term_constr.rows(),1);
+
+		osqp_A.topRows(osqp_A_x_hat_ini.rows())=osqp_A_x_hat_ini;
+		osqp_u.topRows(osqp_u_x_hat_ini.rows())=osqp_u_x_hat_ini;
+		osqp_l.topRows(osqp_l_x_hat_ini.rows())=osqp_l_x_hat_ini;
+
+		osqp_A.middleRows(osqp_A_x_hat_ini.rows(),osqp_A_x_bar_ini.rows())=osqp_A_x_bar_ini;
+		osqp_u.middleRows(osqp_u_x_hat_ini.rows(),osqp_u_x_bar_ini.rows())=osqp_u_x_bar_ini;
+		osqp_l.middleRows(osqp_l_x_hat_ini.rows(),osqp_l_x_bar_ini.rows())=osqp_l_x_bar_ini;
+
+		osqp_A.middleRows(osqp_A_x_hat_ini.rows()+osqp_A_x_bar_ini.rows(),osqp_A_s_ini.rows())=osqp_A_s_ini;
+		osqp_u.middleRows(osqp_u_x_hat_ini.rows()+osqp_u_x_bar_ini.rows(),osqp_u_s_ini.rows())=osqp_u_s_ini;
+		osqp_l.middleRows(osqp_l_x_hat_ini.rows()+osqp_l_x_bar_ini.rows(),osqp_l_s_ini.rows())=osqp_l_s_ini;
+
+		osqp_A.middleRows(osqp_A_x_hat_ini.rows()+osqp_A_x_bar_ini.rows()+osqp_A_s_ini.rows(),osqp_A_hat_dynamics_constr.rows())=osqp_A_hat_dynamics_constr;
+		osqp_u.middleRows(osqp_u_x_hat_ini.rows()+osqp_u_x_bar_ini.rows()+osqp_u_s_ini.rows(),osqp_u_hat_dynamics_constr.rows())=osqp_u_hat_dynamics_constr;
+		osqp_l.middleRows(osqp_l_x_hat_ini.rows()+osqp_l_x_bar_ini.rows()+osqp_l_s_ini.rows(),osqp_l_hat_dynamics_constr.rows())=osqp_l_hat_dynamics_constr;
+
+		osqp_A.middleRows(osqp_A_x_hat_ini.rows()+osqp_A_x_bar_ini.rows()+osqp_A_s_ini.rows()+osqp_A_hat_dynamics_constr.rows(),osqp_A_bar_dynamics_constr.rows())=osqp_A_bar_dynamics_constr;
+		osqp_u.middleRows(osqp_u_x_hat_ini.rows()+osqp_u_x_bar_ini.rows()+osqp_u_s_ini.rows()+osqp_u_hat_dynamics_constr.rows(),osqp_u_bar_dynamics_constr.rows())=osqp_u_bar_dynamics_constr;
+		osqp_l.middleRows(osqp_l_x_hat_ini.rows()+osqp_l_x_bar_ini.rows()+osqp_l_s_ini.rows()+osqp_l_hat_dynamics_constr.rows(),osqp_l_bar_dynamics_constr.rows())=osqp_l_bar_dynamics_constr;
+
+		osqp_A.middleRows(osqp_A_x_hat_ini.rows()+osqp_A_x_bar_ini.rows()+osqp_A_s_ini.rows()+osqp_A_hat_dynamics_constr.rows()+osqp_A_bar_dynamics_constr.rows(),osqp_A_state_input_constr.rows())=osqp_A_state_input_constr;
+		osqp_u.middleRows(osqp_u_x_hat_ini.rows()+osqp_u_x_bar_ini.rows()+osqp_u_s_ini.rows()+osqp_u_hat_dynamics_constr.rows()+osqp_u_bar_dynamics_constr.rows(),osqp_u_state_input_constr.rows())=osqp_u_state_input_constr;
+		osqp_l.middleRows(osqp_l_x_hat_ini.rows()+osqp_l_x_bar_ini.rows()+osqp_l_s_ini.rows()+osqp_l_hat_dynamics_constr.rows()+osqp_l_bar_dynamics_constr.rows(),osqp_l_state_input_constr.rows())=osqp_l_state_input_constr;
+
+		osqp_A.middleRows(osqp_A_x_hat_ini.rows()+osqp_A_x_bar_ini.rows()+osqp_A_s_ini.rows()+osqp_A_hat_dynamics_constr.rows()+osqp_A_bar_dynamics_constr.rows()+osqp_A_state_input_constr.rows(),osqp_A_tube_constr.rows())=osqp_A_tube_constr;
+		osqp_u.middleRows(osqp_u_x_hat_ini.rows()+osqp_u_x_bar_ini.rows()+osqp_u_s_ini.rows()+osqp_u_hat_dynamics_constr.rows()+osqp_u_bar_dynamics_constr.rows()+osqp_u_state_input_constr.rows(),osqp_u_tube_constr.rows())=osqp_u_tube_constr;
+		osqp_l.middleRows(osqp_l_x_hat_ini.rows()+osqp_l_x_bar_ini.rows()+osqp_l_s_ini.rows()+osqp_l_hat_dynamics_constr.rows()+osqp_l_bar_dynamics_constr.rows()+osqp_l_state_input_constr.rows(),osqp_l_tube_constr.rows())=osqp_l_tube_constr;
+
+		osqp_A.bottomRows(osqp_A_term_constr.rows()) = osqp_A_term_constr;
+		osqp_u.bottomRows(osqp_u_term_constr.rows()) = osqp_u_term_constr;
+		osqp_l.bottomRows(osqp_l_term_constr.rows()) = osqp_l_term_constr;
+
+
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG A rows: "<<osqp_A.rows());
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG ROWNUM: "<<d_num_outputs*2+1+2*d_N*d_num_outputs+d_N*d_F.rows()+d_N*d_H_x.rows()*2+d_H_x_f.rows());
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG: "<<d_num_outputs<<" "<< d_N << " "<< d_F.rows()<<" "<<d_H_x.rows()<<" "<<d_H_x_f.rows());
+
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 7");
+		/*
+		d_osqp_q = MatrixXf::Zero(d_num_opt_vars, 1);
+		if (d_opt_sparse)
+		{
+			d_osqp_q.topRows(d_Ng) = d_lin_cost_vec_gs;
+			d_osqp_q.middleRows(d_uf_start_i, d_Nuf) = d_lin_cost_vec_us;
+			d_osqp_q.middleRows(d_yf_start_i, d_Nyf + d_num_outputs) = d_lin_cost_vec_r;
+		}
+		else
+			d_osqp_q.topRows(d_Ng) = d_lin_cost_vec_us + d_lin_cost_vec_r + d_lin_cost_vec_gs;
+		*/
+
+		// OSQP LINEAR INEQUALITY CONSTRAINT MATRIX
+		/*
+		MatrixXf osqp_A_ineq = MatrixXf::Zero(d_Nuf + d_Nyf + d_num_outputs, d_num_opt_vars);
+		if (d_opt_sparse)
+			osqp_A_ineq.middleCols(d_uf_start_i, d_Nuf + d_Nyf + d_num_outputs) = MatrixXf::Identity(d_Nuf + d_Nyf + d_num_outputs, d_Nuf + d_Nyf + d_num_outputs);
+		else
+		{
+			osqp_A_ineq.topLeftCorner(d_Nuf, d_Ng) = d_U_f;
+			osqp_A_ineq.bottomLeftCorner(d_Nyf + d_num_outputs, d_Ng) = d_Y_f;
+		}
+
+		// OSQP LINEAR INEQUALITY CONSTRAINT VECTORS
+		MatrixXf osqp_l_ineq = MatrixXf::Zero(d_Nuf + d_Nyf + d_num_outputs, 1);
+		MatrixXf osqp_u_ineq = MatrixXf::Zero(d_Nuf + d_Nyf + d_num_outputs, 1);
+		osqp_l_ineq.topRows(d_Nuf) = d_input_min;
+		osqp_l_ineq.bottomRows(d_Nyf + d_num_outputs) = d_output_min;
+		osqp_u_ineq.topRows(d_Nuf) = d_input_max;
+		osqp_u_ineq.bottomRows(d_Nyf + d_num_outputs) = d_output_max;
+
+		// OSQP LINEAR EQUALITY CONSTRAINTS
+		// Static equality constraints ([uf; yf; yt]), and ([gs; us]) if optimizing over steady state gs & us
+		MatrixXf osqp_A_eq_stat = get_static_eq_constr_matrix();
+		MatrixXf osqp_l_eq_stat = get_static_eq_constr_vector();
+		MatrixXf osqp_u_eq_stat = osqp_l_eq_stat;
+
+		// Dynamic equality constraints that change every time ([uini; uini]), and ([gs; r]) if optimizing over steady state gs & us
+		MatrixXf osqp_A_eq_dyn = get_dynamic_eq_constr_matrix();
+		MatrixXf osqp_l_eq_dyn = get_dynamic_eq_constr_vector();
+		MatrixXf osqp_u_eq_dyn = osqp_l_eq_dyn;
+		d_uini_start_i = osqp_A_ineq.rows() + osqp_A_eq_stat.rows();
+		d_yini_start_i = d_uini_start_i + d _Nuini;
+		if (d_opt_sparse && d_opt_steady_state)
+			d_r_gs_start_i = d_yini_start_i + d_Nyini;
+
+		// OSQP CONSTRAINTS
+		// Concatenate all constraints in single matrix/vectors
+		MatrixXf osqp_A = MatrixXf::Zero(osqp_A_ineq.rows() + osqp_A_eq_stat.rows() + osqp_A_eq_dyn.rows(), d_num_opt_vars);
+		MatrixXf osqp_l = MatrixXf::Zero(osqp_A_ineq.rows() + osqp_A_eq_stat.rows() + osqp_A_eq_dyn.rows(), 1);
+		MatrixXf osqp_u = osqp_l;
+		
+		osqp_A.topRows(osqp_A_ineq.rows()) = osqp_A_ineq;
+		osqp_l.topRows(osqp_A_ineq.rows()) = osqp_l_ineq;
+		osqp_u.topRows(osqp_A_ineq.rows()) = osqp_u_ineq;
+
+		// Static equality constraints only present in sparse formulation
+		if (d_opt_sparse)
+		{
+			osqp_A.middleRows(osqp_A_ineq.rows(), osqp_A_eq_stat.rows()) = osqp_A_eq_stat;
+			osqp_l.middleRows(osqp_A_ineq.rows(), osqp_A_eq_stat.rows()) = osqp_l_eq_stat;
+			osqp_u.middleRows(osqp_A_ineq.rows(), osqp_A_eq_stat.rows()) = osqp_u_eq_stat;
+		}
+
+		osqp_A.bottomRows(osqp_A_eq_dyn.rows()) = osqp_A_eq_dyn;
+		osqp_l.bottomRows(osqp_A_eq_dyn.rows()) = osqp_l_eq_dyn;
+		osqp_u.bottomRows(osqp_A_eq_dyn.rows()) = osqp_u_eq_dyn;
+	*/
+		// OSQP MODEL SETUP
+		// Follows 'Setup and solve' example (https://osqp.org/docs/examples/setup-and-solve.html)
+		MatrixXf osqp_q=MatrixXf::Zero(d_col_num,1);
+
+		d_osqp_A=MatrixXf::Zero(osqp_A.rows(),osqp_A.cols());
+		//osqp_extended_cleanup();
+		
+		d_osqp_A=osqp_A;
+
+		
+		log_file1.open("/home/agent06/dfall/dfall-system/RAMPC_data/osqp_A.csv");
+		log_file1<<d_osqp_A;
+		log_file1.close();
+		log_file2.open("/home/agent06/dfall/dfall-system/RAMPC_data/osqp_P.csv");
+		log_file2<<d_osqp_P;
+		log_file2.close();
+		log_file3.open("/home/agent06/dfall/dfall-system/RAMPC_data/osqp_u.csv");
+		log_file3<<osqp_u;
+		log_file3.close();
+		log_file4.open("/home/agent06/dfall/dfall-system/RAMPC_data/osqp_l.csv");
+		log_file4<<osqp_l;
+		log_file4.close();
+		
+
+
+
+
+		// Convert Eigen matrices to CSC format
+		csc* osqp_P_csc = eigen2csc(d_osqp_P);
+		csc* osqp_A_csc = eigen2csc(osqp_A);
+		
+
+		// Convert Eigen vectors to c_float arrays
+		// One copy is used for initial setup, the other is used during runtime in update function
+		c_float* osqp_q_cfloat = (c_float*) c_malloc(d_osqp_q.rows() * sizeof(c_float));
+		c_float* osqp_l_cfloat = (c_float*) c_malloc(osqp_l.rows() * sizeof(c_float));
+		c_float* osqp_u_cfloat = (c_float*) c_malloc(osqp_u.rows() * sizeof(c_float));
+		
+
+		d_osqp_q_new = (c_float*) c_malloc(d_osqp_q.rows() * sizeof(c_float));
+		d_osqp_l_new = (c_float*) c_malloc(osqp_l.rows() * sizeof(c_float));
+		d_osqp_u_new = (c_float*) c_malloc(osqp_u.rows() * sizeof(c_float));
+	
+
+		Matrix<c_float, Dynamic, Dynamic>::Map(osqp_q_cfloat, d_osqp_q.rows(), d_osqp_q.cols()) = d_osqp_q.cast<c_float>();
+		Matrix<c_float, Dynamic, Dynamic>::Map(d_osqp_q_new, d_osqp_q.rows(), d_osqp_q.cols()) = d_osqp_q.cast<c_float>();
+	
+
+		Matrix<c_float, Dynamic, Dynamic>::Map(osqp_l_cfloat, osqp_l.rows(), osqp_l.cols()) = osqp_l.cast<c_float>();
+		Matrix<c_float, Dynamic, Dynamic>::Map(d_osqp_l_new, osqp_l.rows(), osqp_l.cols()) = osqp_l.cast<c_float>();
+	
+
+		Matrix<c_float, Dynamic, Dynamic>::Map(osqp_u_cfloat, osqp_u.rows(), osqp_u.cols()) = osqp_u.cast<c_float>();
+		Matrix<c_float, Dynamic, Dynamic>::Map(d_osqp_u_new, osqp_u.rows(), osqp_u.cols()) = osqp_u.cast<c_float>();
+	
+
+		// Populate data
+	    osqp_data = (OSQPData*) c_malloc(sizeof(OSQPData));
+	    osqp_data->n = d_col_num;
+	    osqp_data->m = osqp_A.rows();
+	    osqp_data->P = osqp_P_csc;
+	    osqp_data->q = osqp_q_cfloat;
+	    osqp_data->A = osqp_A_csc;
+	    osqp_data->l = osqp_l_cfloat;
+	    osqp_data->u = osqp_u_cfloat;
+		
+
+		// Problem settings
+	    d_osqp_settings = (OSQPSettings*) c_malloc(sizeof(OSQPSettings));
+		
+
+	    // Define Solver settings as default, and change settings as desired
+	    osqp_set_default_settings(d_osqp_settings);
+	    d_osqp_settings->verbose = d_opt_verbose;
+	    //d_osqp_settings->eps_abs=0.000001;
+	    //d_osqp_settings->eps_rel=0.000001;
+		
+
+	    // Setup workspace
+	    d_osqp_work = osqp_setup(osqp_data, d_osqp_settings);
+		
+		
+	    osqp_solve(d_osqp_work);
+
+	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug Solve Status: "<<d_osqp_work->info->status_val);
+	    for(int i=0;i<d_num_inputs;i++){
+	    	ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug input "<<i<<": "<<d_osqp_work->solution->x[d_uf_start_i+i]);
+		}
+
+	   // ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 8");
+	    //d_RampcOpt_status = d_osqp_work->info->status_val;
+	    //float sol_u=d_osqp_work->solution->x[2*(d_N+1)*d_num_outputs]; 
+	    //ROS_INFO_STREAM("[RAMPC CONTROLLER] Status: "<< d_RampcOpt_status);
+	    //ROS_INFO_STREAM("[RAMPC CONTROLLER] Solution: "<< sol_u);
+
+
+	    // Clear data after setting up to allow subseqeuent setups
+	    //osqp_cleanup_data(osqp_data);
+		
+
+
+	    if (!d_osqp_work)
+	    {
+	    	clear_setupRampc_success_flag();
+
+	    	ROS_INFO("[RAMPC CONTROLLER] Rampc optimization setup failed with OSQP");
+	    	ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
+
+	    	return;
+	    }
+
+	    // Some steps to finish setup
+		finish_Rampc_setup();
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 9");
+		setup_theta_update_full_state_osqp();
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 10");
+
+	    // Inform the user
+    }
+
+  	catch(exception& e)
+    {
+    	clear_setupRampc_success_flag();
+
+	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Rampc optimization setup exception with OSQP with standard error message: " << e.what());
+	    ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
+  	}
+  	catch(...)
+  	{
+  		clear_setupRampc_success_flag();
+
+    	ROS_INFO("[RAMPC CONTROLLER] Rampc optimization setup exception with OSQP");
+    	ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
+  	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void solve_Rampc_gurobi()
 {
@@ -2204,6 +3131,336 @@ void solve_Rampc_osqp()
   	}
 }
 
+
+void solve_Rampc_full_state_osqp()
+{
+	s_Rampc_mutex.lock();
+	//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 622");
+	//d_uini = s_uini;
+	//d_yini = s_yini;
+
+		d_current_state_estimate = s_current_state_estimate;
+		d_setpoint = s_setpoint;
+		d_previous_state_estimate=s_previous_state_estimate;
+		d_current_input=s_current_input;
+		d_previous_input=s_previous_input;
+		for(int i=0;i<9;i++){
+			d_previous_stateErrorInertial[i]=s_previous_stateErrorInertial[i];
+			d_current_stateErrorInertial[i]=s_current_stateErrorInertial[i];	
+		}
+		for (int i=9;i<12;i++){
+			//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG 321: "<<s_current_stateErrorInertial[i]);
+			d_current_stateErrorInertial[i]=s_current_stateErrorInertial[i];
+		}
+	s_Rampc_mutex.unlock();
+
+
+
+	//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 622");
+	try
+	{
+		// Update reference if reference is changing
+		//if (d_changing_ref_enable)
+		//	change_Rampc_setpoint_osqp_changing_ref();
+
+		// Update equality constraint vectors
+
+		//ROS_INFO_STREAM("[RAMPC CONTRLLER] Current height: "<<d_setpoint(2));
+		/*
+		if (d_current_state_estimate(2,0)-d_setpoint(2)>d_reference_difference){
+			//ROS_INFO_STREAM("[RAMPC CONTROLLER] Set setpoint difference to "<<d_reference_difference<<".");
+			d_osqp_l_new[0]=d_reference_difference;
+			d_osqp_u_new[0]=d_reference_difference;
+			d_osqp_l_new[2]=d_reference_difference;
+			d_osqp_u_new[2]=d_reference_difference;
+
+			d_z_setpoint_Rampc<< d_current_state_estimate(2,0)-d_reference_difference-0.8,
+								 0.0;
+
+
+
+			for(int i=0;i<d_N;i++){
+				for(int j=0;j<(d_num_outputs*2+d_num_inputs*2);j++){
+					temp=MatrixXf::Ones(1,1)-d_F.row(j)*d_z_setpoint_Rampc-d_G.row(j)*d_delta_uss;
+					d_osqp_u_new[d_num_outputs*2+1+d_N*d_num_outputs*2+i*(d_num_outputs*2+d_num_inputs*2)+j]=temp(0);
+				}
+			}
+
+		}
+		else{
+			if (d_current_state_estimate(2,0)-d_setpoint(2)<-d_reference_difference){
+				//ROS_INFO_STREAM("[RAMPC CONTROLLER] Set setpoint difference to "<<-d_reference_difference<<".");
+				d_osqp_l_new[0]=-d_reference_difference;
+				d_osqp_u_new[0]=-d_reference_difference;
+				d_osqp_l_new[2]=-d_reference_difference;
+				d_osqp_u_new[2]=-d_reference_difference;
+
+
+				d_z_setpoint_Rampc<< d_current_state_estimate(2,0)+d_reference_difference-0.8,
+								 0.0;
+
+
+
+				for(int i=0;i<d_N;i++){
+					for(int j=0;j<(d_num_outputs*2+d_num_inputs*2);j++){
+						temp=MatrixXf::Ones(1,1)-d_F.row(j)*d_z_setpoint_Rampc-d_G.row(j)*d_delta_uss;
+						d_osqp_u_new[d_num_outputs*2+1+d_N*d_num_outputs*2+i*(d_num_outputs*2+d_num_inputs*2)+j]=temp(0);
+					}
+				}
+
+			}
+			else{
+				//ROS_INFO_STREAM("[RAMPC CONTROLLER] Did not set setpoint difference.");
+				d_osqp_l_new[0]=d_current_state_estimate(2,0)-d_setpoint(2);
+				d_osqp_u_new[0]=d_current_state_estimate(2,0)-d_setpoint(2);
+				d_osqp_l_new[2]=d_current_state_estimate(2,0)-d_setpoint(2);
+				d_osqp_u_new[2]=d_current_state_estimate(2,0)-d_setpoint(2);
+			}
+		}
+		*/
+
+		/*
+	float stateErrorInertial[12];
+
+	// Fill in the (x,y,z) position error
+	stateErrorInertial[0] = d_current_state_estimate(0) - m_setpoint[0];
+	stateErrorInertial[1] = d_current_state_estimate(1) - m_setpoint[1];
+	stateErrorInertial[2] = d_current_state_estimate(2) - m_setpoint[2];
+
+	// Compute an estimate of the velocity
+	// > As simply the derivative between the current and previous position
+	stateErrorInertial[3] = (d_current_state_estimate(0) - m_previous_stateErrorInertial[0]) * yaml_control_frequency;
+	stateErrorInertial[4] = (d_current_state_estimate(1) - m_previous_stateErrorInertial[1]) * yaml_control_frequency;
+	stateErrorInertial[5] = (d_current_state_estimate(2) - m_previous_stateErrorInertial[2]) * yaml_control_frequency;
+
+	// Fill in the roll and pitch angle measurements directly
+	stateErrorInertial[6] = d_current_state_estimate(6);
+	stateErrorInertial[7] = d_current_state_estimate(7);
+
+
+	// Fill in the yaw angle error
+	// > This error should be "unwrapped" to be in the range
+	//   ( -pi , pi )
+	// > First, get the yaw error into a local variable
+	float yawError = d_current_state_estimate(8) - m_setpoint[3];
+	// > Second, "unwrap" the yaw error to the interval ( -pi , pi )
+	while(yawError > PI) {yawError -= 2 * PI;}
+	while(yawError < -PI) {yawError += 2 * PI;}
+	// > Third, put the "yawError" into the "stateError" variable
+	stateErrorInertial[8] = yawError;
+
+	stateErrorInertial[9]=(d_current_state_estimate(6) - m_previous_stateErrorInertial[6]) * yaml_control_frequency;
+	stateErrorInertial[10]=(d_current_state_estimate(7) - m_previous_stateErrorInertial[7]) * yaml_control_frequency;
+	stateErrorInertial[11]=(d_current_state_estimate(8) - m_previous_stateErrorInertial[8]) * yaml_control_frequency;
+
+
+	// SAVE THE STATE ERROR TO BE USED NEXT TIME THIS FUNCTION IS CALLED
+	// > as we have already used previous error we can now update it update it
+	for(int i = 0; i < 9; ++i)
+	{
+		m_previous_stateErrorInertial[i] = stateErrorInertial[i];
+	}
+
+
+
+	
+*/
+		ROS_INFO_STREAM("[RAMPC CONTROLLER] RAMPC State: ");
+		for(int i=0;i<d_num_outputs;i++){
+			d_osqp_l_new[i]=d_current_stateErrorInertial[i];
+			d_osqp_u_new[i]=d_current_stateErrorInertial[i];
+			d_osqp_l_new[i+d_num_outputs]=d_current_stateErrorInertial[i];
+			d_osqp_u_new[i+d_num_outputs]=d_current_stateErrorInertial[i];
+
+			ROS_INFO_STREAM(d_current_stateErrorInertial[i]);
+		}
+
+		/*
+		d_osqp_l_new[0]-=d_setpoint(0);
+		d_osqp_u_new[0]-=d_setpoint(0);
+		d_osqp_l_new[1]-=d_setpoint(1);
+		d_osqp_u_new[1]-=d_setpoint(1);
+		d_osqp_l_new[2]-=d_setpoint(2);
+		d_osqp_u_new[2]-=d_setpoint(2);
+		d_osqp_l_new[8]-=d_setpoint(3);
+		d_osqp_u_new[8]-=d_setpoint(3);
+
+
+		d_osqp_l_new[0+d_num_outputs]-=d_setpoint(0);
+		d_osqp_u_new[0+d_num_outputs]-=d_setpoint(0);
+		d_osqp_l_new[1+d_num_outputs]-=d_setpoint(1);
+		d_osqp_u_new[1+d_num_outputs]-=d_setpoint(1);
+		d_osqp_l_new[2+d_num_outputs]-=d_setpoint(2);
+		d_osqp_u_new[2+d_num_outputs]-=d_setpoint(2);
+		d_osqp_l_new[8+d_num_outputs]-=d_setpoint(3);
+		d_osqp_u_new[8+d_num_outputs]-=d_setpoint(3);
+		*/
+		/*
+		ROS_INFO_STREAM("[RAMPC CONTROLLER] STATE: ");
+		for(int i=0;i<d_num_outputs;i++){
+			ROS_INFO_STREAM(d_osqp_l_new[i]);
+		}
+		ROS_INFO_STREAM("[RAMPC CONTROLLER] PREVIOUS STATE: ");
+		for(int i=0;i<d_num_outputs;i++){
+			ROS_INFO_STREAM(d_previous_state_estimate(i));
+		}
+		*/
+		/*
+		d_osqp_l_new[1]=d_current_state_estimate(5,0);
+		d_osqp_u_new[1]=d_current_state_estimate(5,0);
+		
+		d_osqp_l_new[3]=d_current_state_estimate(5,0);
+		d_osqp_u_new[3]=d_current_state_estimate(5,0);
+		
+		d_osqp_l_new[0]=d_current_state_estimate(2,0)-d_setpoint(2);
+		d_osqp_u_new[0]=d_current_state_estimate(2,0)-d_setpoint(2);
+		d_osqp_l_new[2]=d_current_state_estimate(2,0)-d_setpoint(2);
+		d_osqp_u_new[2]=d_current_state_estimate(2,0)-d_setpoint(2);
+		*/
+
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Delta_X: " << )
+
+
+		/*
+
+		for (d_i = 0; d_i < d_Nuini; d_i++)
+		{
+			d_osqp_l_new[d_uini_start_i + d_i] = d_uini(d_i);
+			d_osqp_u_new[d_uini_start_i + d_i] = d_osqp_l_new[d_uini_start_i + d_i];
+		}
+		for (d_i = 0; d_i < d_Nyini; d_i++)
+		{
+			d_osqp_l_new[d_yini_start_i + d_i] = d_yini(d_i);
+			d_osqp_u_new[d_yini_start_i + d_i] = d_osqp_l_new[d_yini_start_i + d_i];
+		}
+		*/
+		osqp_update_bounds(d_osqp_work, d_osqp_l_new, d_osqp_u_new);
+
+		/*
+		log_file1.open("/home/agent06/dfall/dfall-system/RAMPC_data/osqp_A.csv");
+		log_file1<<d_osqp_A;
+		log_file1.close();
+		//log_file2.open("/home/agent06/dfall/dfall-system/RAMPC_data/osqp_P.csv");
+		//log_file2<<d_osqp_P;
+		//log_file2.close();
+		log_file3.open("/home/agent06/dfall/dfall-system/RAMPC_data/osqp_u.csv");
+		for(int i=0;i<d_osqp_A.rows();i++){
+		log_file3<<d_osqp_u_new[i]<<","<<std::endl;
+		}
+		log_file3.close();
+		log_file4.open("/home/agent06/dfall/dfall-system/RAMPC_data/osqp_l.csv");
+		for(int i=0;i<d_osqp_A.rows();i++){
+		log_file4<<d_osqp_l_new[i]<<","<<std::endl;
+		}
+		log_file4.close();
+		*/
+		// Solve optimization
+		osqp_solve(d_osqp_work);
+		d_RampcOpt_status = d_osqp_work->info->status_val;
+		if (d_RampcOpt_status > 0)
+		{	
+			MatrixXf pred_x=MatrixXf::Zero(d_num_outputs,1);
+			MatrixXf uplus=MatrixXf::Zero(d_num_inputs,1);
+			for(int d_i=0;d_i<d_N;d_i++){
+				for (int j=0;j<d_num_outputs;j++){
+					pred_x(j)=d_osqp_work->solution->x[d_Nyf+j+d_num_outputs*d_i];
+				}
+				MatrixXf u_plus=d_K*pred_x;
+				for(int d_j=0;d_j<d_num_inputs;d_j++){
+				d_u_f(d_i*d_num_inputs+d_j) = d_osqp_work->solution->x[d_uf_start_i + d_i*d_num_inputs+d_j]+u_plus(d_j)+d_cf_weight_in_newtons/4.0;
+				}
+				
+			}
+				ROS_INFO_STREAM("[RAMPC CONTROLLER] INPUT: ");
+
+				MatrixXf predxx=MatrixXf::Zero(d_num_outputs,1);
+				MatrixXf uuplus=MatrixXf::Zero(d_num_inputs,1);
+			for (int j=0;j<d_num_outputs;j++){
+					predxx(j)=d_osqp_work->solution->x[d_Nyf+j+d_num_outputs*0];
+				}
+				uuplus=d_K*predxx;
+			for(int d_j=0;d_j<d_num_inputs;d_j++){
+					ROS_INFO_STREAM(d_osqp_work->solution->x[d_uf_start_i + 0*d_num_inputs+d_j]+uuplus(d_j)+d_cf_weight_in_newtons/4.0);
+				}
+				ROS_INFO_STREAM("[RAMPC CONTROLLER] Solution:");
+
+				for(int d_j=0;d_j<d_num_inputs;d_j++){
+					ROS_INFO_STREAM(d_osqp_work->solution->x[d_uf_start_i + 0*d_num_inputs+d_j]);
+				}
+			// With sparse formulation can get uf and yf directly
+			/*
+			if (d_opt_sparse)
+			{
+				for (d_i = 0; d_i < d_Nuf; d_i++)
+					d_u_f(d_i) = d_osqp_work->solution->x[d_uf_start_i + d_i];
+				
+				for (d_i = 0; d_i < d_Nyf + d_num_outputs; d_i++)
+					d_y_f(d_i) = d_osqp_work->solution->x[d_yf_start_i + d_i];
+			}
+			// With dense formulation get uf and yf through g
+			else
+			{
+				for (d_i = 0; d_i < d_Ng; d_i++)
+					d_g(d_i) = d_osqp_work->solution->x[d_i];
+
+				d_u_f = d_U_f * d_g;
+				d_y_f = d_Y_f * d_g;
+			}
+			*/
+			d_solve_time = d_osqp_work->info->run_time;
+
+			s_Rampc_mutex.lock();
+			// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 649");
+			s_u_f = d_u_f;
+			s_y_f = d_y_f;
+			s_solve_time = d_solve_time;
+			s_Rampc_mutex.unlock();
+			//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 649");
+			
+			//ROS_INFO_STREAM("[RAMPC CONTROLLER] Rampc found optimal solution with OSQP status: " << d_osqp_work->info->status);
+			//ROS_INFO_STREAM("Thrust: " << d_u_f(0));
+			//ROS_INFO_STREAM("Roll Rate: " << d_u_f(1));
+			//ROS_INFO_STREAM("Pitch Rate: " << d_u_f(2));
+			//if (d_Rampc_yaw_control)
+			//	ROS_INFO_STREAM("Yaw Rate: " << d_u_f(3));
+			//ROS_INFO_STREAM("Objective: " << d_osqp_work->info->obj_val);
+			//ROS_INFO_STREAM("Runtime: " << d_solve_time);
+			
+		}
+		else
+		{
+			ROS_INFO_STREAM("[RAMPC CONTROLLER] Rampc failed to find optimal solution with OSQP status: " << d_osqp_work->info->status);
+			//ROS_INFO_STREAM("[RAMPC CONTROLLER] Current state estimate: " << d_current_state_estimate(2,0) << ", "<<d_current_state_estimate(5,0));
+			//ROS_INFO_STREAM("[RAMPC CONTROLLER] Current setpoint: " << d_setpoint(2));
+			
+		}
+	}
+
+  	catch(exception& e)
+    {
+    	clear_setupRampc_success_flag();
+
+	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Rampc optimization exception with OSQP with standard error message: " << e.what());
+	    ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
+  	}
+  	catch(...)
+  	{
+  		clear_setupRampc_success_flag();
+
+    	ROS_INFO("[RAMPC CONTROLLER] Rampc optimization exception with OSQP");
+    	ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
+  	}
+}
+
+
+
+
+
+
+
+
+
+
 // RAMPC HELPER FUNCTIONS
 
 // Update uini yini
@@ -2215,6 +3472,7 @@ void update_uini_yini(Controller::Request &request, control_output &output)
 	//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 741");
 	// ROS_INFO("[MPC CONTROLLER] DEBUG 17");
 	bool setupRampc_success = s_setupRampc_success;
+	int experiment=s_experiment;
 	m_uini = s_uini;
 	m_yini = s_yini;
 	m_num_inputs = s_num_inputs;
@@ -2284,10 +3542,35 @@ void update_uini_yini(Controller::Request &request, control_output &output)
 
 			m_current_state_estimate(6) = request.ownCrazyflie.roll;
 			m_current_state_estimate(7) = request.ownCrazyflie.pitch;
+			m_current_state_estimate(8) = request.ownCrazyflie.yaw;
+
+			m_current_state_estimate(9) = (request.ownCrazyflie.roll - m_previous_state_estimate(6)) * yaml_control_frequency;
+			m_current_state_estimate(10) = (request.ownCrazyflie.pitch - m_previous_state_estimate(7)) * yaml_control_frequency;
+			m_current_state_estimate(11) = (request.ownCrazyflie.yaw - m_previous_state_estimate(8)) * yaml_control_frequency;
 			//ROS_INFO("[MPC CONTROLLER] DEBUG 23");
 
-			m_previous_input=m_current_input;
-			m_current_input(0)=output.thrust;
+			switch(experiment){
+				case RAMPC_CONTROLLER_EXPERIMENT_MASS:
+					m_previous_input=m_current_input;
+					m_current_input(0)=output.thrust;
+					break;
+
+				case RAMPC_CONTROLLER_EXPERIMENT_ALL_ROTORS:
+					m_previous_input=m_current_input;
+					m_current_input(0)=output.thrust;
+					break;
+
+				case RAMPC_CONTROLLER_EXPERIMENT_FULL_STATE:
+					m_previous_input=m_current_input;
+					m_current_input(0)=output.thrust1;
+					m_current_input(1)=output.thrust2;
+					m_current_input(2)=output.thrust3;
+					m_current_input(3)=output.thrust4;
+					break;
+
+
+			}
+			
 
 			for(int i = 0; i < 3; ++i)
 			{
@@ -2354,6 +3637,40 @@ void update_theta_hat(){
 
 }
 
+void update_theta_hat_full_state(){
+	/*
+	MatrixXf previous_state_z=MatrixXf::Zero(d_num_outputs,1);
+	MatrixXf current_state_z=MatrixXf::Zero(d_num_outputs,1);
+	current_state_z=	d_current_state_estimate;
+						
+	previous_state_z =	d_previous_state_estimate;
+	
+	MatrixXf temp_hat=(d_B_1*(d_previous_input-0.25*d_cf_weight_in_newtons*MatrixXf::Ones(d_num_inputs,1))).transpose()*(current_state_z-(d_A*previous_state_z+(d_B_0+d_B_1*d_theta_hat_k)*(d_previous_input-0.25*d_cf_weight_in_newtons*MatrixXf::Ones(d_num_inputs,1))));
+	d_theta_hat_k+=d_mu*temp_hat(0,0);
+	if(d_theta_hat_k<d_vertices_theta(1,0)){
+		d_theta_hat_k=d_vertices_theta(1,0);
+	}
+	else{
+		if(d_theta_hat_k>d_vertices_theta(0,0)){
+			d_theta_hat_k=d_vertices_theta(0,0);
+		}
+	}
+	ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta hat: "<<d_theta_hat_k);
+	MatrixXf dynamics_constr_A_hat_temp=d_A+(d_B_0+d_B_1*d_theta_hat_k)*d_K;
+	MatrixXf dynamics_constr_B_hat_temp=(d_B_0+d_B_1*d_theta_hat_k);
+	for(int i=0;i<d_N;i++){
+			d_osqp_A.block(2*d_num_outputs+1+i*d_num_outputs,i*d_num_outputs,d_num_outputs,d_num_outputs)=dynamics_constr_A_hat_temp;
+			d_osqp_A.block(2*d_num_outputs+1+i*d_num_outputs,d_num_outputs*(d_N+1)*2+i*d_num_inputs,d_num_outputs,d_num_inputs)=dynamics_constr_B_hat_temp;
+	}
+
+	MatrixXf osqp_A_new=MatrixXf::Zero(d_osqp_A.rows(),d_osqp_A.cols());
+	osqp_A_new=d_osqp_A;
+	
+	csc* osqp_A_new_csc = eigen2csc(osqp_A_new);
+	//osqp_update_A(d_osqp_work,osqp_A_new_csc->x,OSQP_NULL,osqp_A_new_csc->nzmax);
+	*/
+}
+
 
 void solve_theta_update_osqp(){
 	//ROS_INFO_STREAM("[RAMPC CONTROLLER] Updating Theta.");
@@ -2410,105 +3727,513 @@ void solve_theta_update_osqp(){
 	d_ThetaMaxOpt_status = d_osqp_theta_max_work->info->status_val;
 	d_ThetaMinOpt_status = d_osqp_theta_min_work->info->status_val;
 	//ROS_INFO_STREAM("[RAMPC CONTROLLER] Status min: "<<d_ThetaMinOpt_status<<". Status max: "<<d_ThetaMaxOpt_status);
-
+	//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta update num: "<<d_theta_update_num);
 	if ((d_ThetaMaxOpt_status > 0) && (d_ThetaMinOpt_status > 0)){
-		float theta_max=d_osqp_theta_max_work->solution->x[0];
-		float theta_min=d_osqp_theta_min_work->solution->x[0];
-		
+		theta_max_buffer.push_back(d_osqp_theta_max_work->solution->x[0]);
+		theta_min_buffer.push_back(d_osqp_theta_min_work->solution->x[0]);
+		d_theta_update_it++;
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta update it: "<<d_theta_update_it);
+		if(d_theta_update_it>=d_theta_update_num){
+		float theta_max=*std::max_element(theta_max_buffer.begin(),theta_max_buffer.end());
+		float theta_min=*std::min_element(theta_min_buffer.begin(),theta_min_buffer.end());
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta_max vector: "<<theta_max_buffer);
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta_max : "<<theta_max);
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta_min vector: "<<theta_min_buffer);
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta_min : "<<theta_min);
+		//for(int i=0;i<theta_max_buffer.size();i++){
+		//	ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta max "<<i<<" : "<<theta_max_buffer[i]);
+		//}
+		theta_max_buffer.clear();
+		theta_min_buffer.clear();
+		d_theta_update_it=0;
 
 		float theta_bar_k1=(theta_max+theta_min)*0.5;
 		float eta_k1=theta_max-theta_min;
 		if ((eta_k1<d_eta_k) && (eta_k1>0.0)){
-		ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta min: "<<theta_min<<". Theta max: "<<theta_max);
-		ROS_INFO_STREAM("[RAMPC CONTROLLER] Eta: "<<d_eta_k);
-		if (theta_bar_k1>d_theta_bar_k+0.5*(d_eta_k-eta_k1)){
-			d_theta_bar_k=d_theta_bar_k+0.5*(d_eta_k-eta_k1);
-		}
-		else{
-			if (theta_bar_k1<d_theta_bar_k-0.5*(d_eta_k-eta_k1)){
-				d_theta_bar_k=d_theta_bar_k-0.5*(d_eta_k-eta_k1);
+			ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta min: "<<theta_min<<". Theta max: "<<theta_max);
+			ROS_INFO_STREAM("[RAMPC CONTROLLER] Eta: "<<d_eta_k);
+			if (theta_bar_k1>d_theta_bar_k+0.5*(d_eta_k-eta_k1)){
+				d_theta_bar_k=d_theta_bar_k+0.5*(d_eta_k-eta_k1);
 			}
-			else d_theta_bar_k=theta_bar_k1;
-		}
-		d_eta_k=eta_k1;
-		d_vertices_theta(0,0)=d_theta_bar_k+0.5*d_eta_k;
-		d_vertices_theta(1,0)=d_theta_bar_k-0.5*d_eta_k;
-		ROS_INFO_STREAM("[RAMPC CONTROLLER] Eta: "<<d_eta_k);
-		ROS_INFO_STREAM("[RAMPC CONTROLLER] Vertices Theta: "<<d_vertices_theta);
-		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta bar k: "<<d_theta_bar_k);
-		//update theta bar in osqp A in main optimisation
+			else{
+				if (theta_bar_k1<d_theta_bar_k-0.5*(d_eta_k-eta_k1)){
+					d_theta_bar_k=d_theta_bar_k-0.5*(d_eta_k-eta_k1);
+				}
+				else d_theta_bar_k=theta_bar_k1;
+			}
+			d_eta_k=eta_k1;
+			d_vertices_theta(0,0)=d_theta_bar_k+0.5*d_eta_k;
+			d_vertices_theta(1,0)=d_theta_bar_k-0.5*d_eta_k;
+			ROS_INFO_STREAM("[RAMPC CONTROLLER] Eta: "<<d_eta_k);
+			ROS_INFO_STREAM("[RAMPC CONTROLLER] Vertices Theta: "<<d_vertices_theta);
+			//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta bar k: "<<d_theta_bar_k);
 
 
 
-		//do this if vertices_theta/eta_k/theta_bar_k is different
+
+			MatrixXf dynamics_constr_A_bar_temp=d_A+(d_B_0+d_B_1*d_theta_bar_k)*d_K;
+			MatrixXf dynamics_constr_B_bar_temp=(d_B_0+d_B_1*d_theta_bar_k);
+			//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta update Debug 1.");
+			for(int i=0;i<d_N;i++){
+				d_osqp_A.block(2*d_num_outputs+1+d_N*d_num_outputs+i*d_num_outputs,d_num_outputs*(d_N+1)+i*d_num_outputs,d_num_outputs,d_num_outputs)=dynamics_constr_A_bar_temp;
+				d_osqp_A.block(2*d_num_outputs+1+d_N*d_num_outputs+i*d_num_outputs,d_num_outputs*(d_N+1)*2+i*d_num_inputs,d_num_outputs,d_num_inputs)=dynamics_constr_B_bar_temp;
+			}
 
 
-
-		MatrixXf dynamics_constr_A_bar_temp=d_A+(d_B_0+d_B_1*d_theta_bar_k)*d_K;
-		MatrixXf dynamics_constr_B_bar_temp=(d_B_0+d_B_1*d_theta_bar_k);
-		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta update Debug 1.");
-		for(int i=0;i<d_N;i++){
-			d_osqp_A.block(2*d_num_outputs+1+d_N*d_num_outputs+i*d_num_outputs,d_num_outputs*(d_N+1)+i*d_num_outputs,d_num_outputs,d_num_outputs)=dynamics_constr_A_bar_temp;
-			d_osqp_A.block(2*d_num_outputs+1+d_N*d_num_outputs+i*d_num_outputs,d_num_outputs*(d_N+1)*2+i*d_num_inputs,d_num_outputs,d_num_inputs)=dynamics_constr_B_bar_temp;
-		}
-
-
-		for(int i=0;i<d_N;i++){
-			for(int j=0;j<d_H_x.rows();j++){
-				for(int l=0;l<d_e_l.rows();l++){
-					d_osqp_A.block(2*d_num_outputs+1+d_N*d_num_outputs*2+d_N*(d_num_outputs*2+d_num_inputs*2)+i*d_H_x.rows()*d_e_l.rows()+j*d_e_l.rows()+l,d_num_outputs*(d_N+1)+i*d_num_outputs,1,d_num_outputs)=-d_eta_k*d_H_x.row(j)*d_B_1*d_K*d_e_l(l,0);
-					d_osqp_A.block(2*d_num_outputs+1+d_N*d_num_outputs*2+d_N*(d_num_outputs*2+d_num_inputs*2)+i*d_H_x.rows()*d_e_l.rows()+j*d_e_l.rows()+l,d_num_outputs*(d_N+1)*2+i*d_num_inputs,1,d_num_inputs)=-d_eta_k*d_H_x.row(j)*d_B_1*d_e_l.row(l);
+			for(int i=0;i<d_N;i++){
+				for(int j=0;j<d_H_x.rows();j++){
+					for(int l=0;l<d_e_l.rows();l++){
+						d_osqp_A.block(2*d_num_outputs+1+d_N*d_num_outputs*2+d_N*(d_num_outputs*2+d_num_inputs*2)+i*d_H_x.rows()*d_e_l.rows()+j*d_e_l.rows()+l,d_num_outputs*(d_N+1)+i*d_num_outputs,1,d_num_outputs)=-d_eta_k*d_H_x.row(j)*d_B_1*d_K*d_e_l(l,0);
+						d_osqp_A.block(2*d_num_outputs+1+d_N*d_num_outputs*2+d_N*(d_num_outputs*2+d_num_inputs*2)+i*d_H_x.rows()*d_e_l.rows()+j*d_e_l.rows()+l,d_num_outputs*(d_N+1)*2+i*d_num_inputs,1,d_num_inputs)=-d_eta_k*d_H_x.row(j)*d_B_1*d_e_l.row(l);
+					}
 				}
 			}
-		}
 		
 
-		
-		/*
-		//update main opt. data
-		osqp_data->A = osqp_A_new_csc;
-		osqp_data->l=d_osqp_l_new;
-		osqp_data->u=d_osqp_u_new;
-		//update steady state input and delta uss in opt.
 
+			
+			d_delta_uss(0)=d_delta_uss(0)+d_cf_weight_in_newtons-9.81/d_theta_bar_k;
+			d_cf_weight_in_newtons = 9.81/d_theta_bar_k;
 
-		// Resetup OSQP optisation problem
-		d_osqp_work = osqp_setup(osqp_data, d_osqp_settings);
-
-		if (!d_osqp_work){
-			ROS_INFO_STREAM("[RAMPC CONTROLLER] OSQP not properly set up.");
-		}
-
-		//Maybe update bounds causes error after setup -> solve first
-		osqp_solve(d_osqp_work);
-		*/
-
-		
-		d_delta_uss+=d_cf_weight_in_newtons-9.81/d_theta_bar_k;
-		d_cf_weight_in_newtons = 9.81/d_theta_bar_k;
-
-		for(int i=0;i<d_N;i++){
-			for(int j=0;j<(d_num_outputs*2+d_num_inputs*2);j++){
-				temp=MatrixXf::Ones(1,1)-d_F.row(j)*d_z_setpoint_Rampc-d_G.row(j)*d_delta_uss;
-				d_osqp_u_new[d_num_outputs*2+1+d_N*d_num_outputs*2+i*(d_num_outputs*2+d_num_inputs*2)+j]=temp(0);
+			for(int i=0;i<d_N;i++){
+				for(int j=0;j<(d_num_outputs*2+d_num_inputs*2);j++){
+					temp=MatrixXf::Ones(1,1)-d_F.row(j)*d_z_setpoint_Rampc-d_G.row(j)*d_delta_uss;
+					d_osqp_u_new[d_num_outputs*2+1+d_N*d_num_outputs*2+i*(d_num_outputs*2+d_num_inputs*2)+j]=temp(0);
+				}
 			}
-		}
 		
-		osqp_update_upper_bound(d_osqp_work,d_osqp_u_new);
+			//osqp_update_upper_bound(d_osqp_work,d_osqp_u_new);
 		
 
 
 
 		}
-
+		}
 	}
 
+}
+
+
+
+void solve_theta_update_osqp_all_rotors(){
+	//ROS_INFO_STREAM("[RAMPC CONTROLLER] Updating Theta.");
+	d_h_theta(0,0)=d_vertices_theta(0,0);
+	d_h_theta(1,0)=-d_vertices_theta(1,0);
+	MatrixXf Delta_k=MatrixXf::Zero(2*d_num_outputs,d_N_theta);
+	MatrixXf delta_k=MatrixXf::Zero(2*d_num_outputs,1);
+	MatrixXf previous_state_z=MatrixXf::Zero(d_num_outputs,1);
+	MatrixXf current_state_z=MatrixXf::Zero(d_num_outputs,1);
+	previous_state_z<< 	d_previous_state_estimate(2,0),
+						d_previous_state_estimate(5,0);
+	current_state_z<< 	d_current_state_estimate(2,0),
+						d_current_state_estimate(5,0);
+
+
+	Delta_k=-d_H_w*(d_B_1_update*d_previous_input);
+
+	delta_k=d_h_w+d_H_w*(d_A_const_update+d_A_update*previous_state_z+d_B_0_update*d_previous_input-current_state_z)+d_n_bar+d_n_bar_prev;
+	d_osqp_theta_A.block(0,0,d_num_outputs,d_N_theta)=d_H_theta;
+	d_osqp_theta_A.block(d_num_outputs,0,d_num_outputs,d_N_theta)=Delta_k.block(d_num_outputs,0,d_num_outputs,d_N_theta);
+	for(int i=0;i<2*d_N_theta;i++){
+		d_osqp_theta_u_new[i]=d_h_theta(i,0);
+	}
+	for(int i=0;i<d_num_outputs;i++){
+		d_osqp_theta_u_new[2*d_N_theta+i]=delta_k(d_num_outputs+i,0);
+	}
+
+	csc* osqp_theta_A_csc = eigen2csc(d_osqp_theta_A);
+	//osqp_update_A(d_osqp_theta_max_work, osqp_theta_A_csc);
+	//osqp_update_A(d_osqp_theta_min_work, osqp_theta_A_csc);
+
+	
+	//osqp_update_upper_bound(d_osqp_theta_max_work,d_osqp_u_new);
+	//osqp_update_upper_bound(d_osqp_theta_min_work,d_osqp_u_new);
+	osqp_update_A(d_osqp_theta_max_work,osqp_theta_A_csc->x,OSQP_NULL,osqp_theta_A_csc->nzmax);
+	osqp_update_upper_bound(d_osqp_theta_max_work,d_osqp_theta_u_new);
+	osqp_update_A(d_osqp_theta_min_work,osqp_theta_A_csc->x,OSQP_NULL,osqp_theta_A_csc->nzmax);
+	osqp_update_upper_bound(d_osqp_theta_min_work,d_osqp_theta_u_new);
+	/*
+	osqp_theta_max_data->A = osqp_theta_A_csc;
+	osqp_theta_max_data->u = d_osqp_theta_u_new;
+
+	osqp_theta_min_data->A = osqp_theta_A_csc;
+	osqp_theta_min_data->u = d_osqp_theta_u_new;
+
+
+	d_osqp_theta_max_work = osqp_setup(osqp_theta_max_data, d_osqp_theta_settings);
+	d_osqp_theta_min_work = osqp_setup(osqp_theta_min_data, d_osqp_theta_settings);
+	*/
+	osqp_solve(d_osqp_theta_max_work);
+	osqp_solve(d_osqp_theta_min_work);
+	d_ThetaMaxOpt_status = d_osqp_theta_max_work->info->status_val;
+	d_ThetaMinOpt_status = d_osqp_theta_min_work->info->status_val;
+	//ROS_INFO_STREAM("[RAMPC CONTROLLER] Status min: "<<d_ThetaMinOpt_status<<". Status max: "<<d_ThetaMaxOpt_status);
+	//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta update num: "<<d_theta_update_num);
+	if ((d_ThetaMaxOpt_status > 0) && (d_ThetaMinOpt_status > 0)){
+		theta_max_buffer.push_back(d_osqp_theta_max_work->solution->x[0]);
+		theta_min_buffer.push_back(d_osqp_theta_min_work->solution->x[0]);
+		d_theta_update_it++;
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta update it: "<<d_theta_update_it);
+		if(d_theta_update_it>=d_theta_update_num){
+		float theta_max=*std::max_element(theta_max_buffer.begin(),theta_max_buffer.end());
+		float theta_min=*std::min_element(theta_min_buffer.begin(),theta_min_buffer.end());
+
+		if (d_vertices_theta(1,0)*0.7<theta_abs_min){
+			d_eta_k=d_vertices_theta(0,0)-theta_abs_min;
+			d_theta_bar_k=(d_vertices_theta(0,0)+theta_abs_min)*0.5;
+		}
+		else{
+			d_eta_k=d_vertices_theta(0,0)-d_vertices_theta(1,0)*0.7;
+			d_theta_bar_k=(d_vertices_theta(0,0)+d_vertices_theta(1,0)*0.7)*0.5;
+		}
+
+		if(theta_min*0.7<theta_abs_min){
+			theta_min=theta_abs_min;
+		}
+		else{
+			theta_min=0.7*theta_min;
+		}
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta_max vector: "<<theta_max_buffer);
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta_max : "<<theta_max);
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta_min vector: "<<theta_min_buffer);
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta_min : "<<theta_min);
+		//for(int i=0;i<theta_max_buffer.size();i++){
+		//	ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta max "<<i<<" : "<<theta_max_buffer[i]);
+		//}
+		theta_max_buffer.clear();
+		theta_min_buffer.clear();
+		d_theta_update_it=0;
+
+		float theta_bar_k1=(theta_max+theta_min)*0.5;
+		float eta_k1=theta_max-theta_min;
+		if ((eta_k1<d_eta_k) && (eta_k1>0.0)){
+			ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta min: "<<theta_min<<". Theta max: "<<theta_max);
+			ROS_INFO_STREAM("[RAMPC CONTROLLER] Eta: "<<d_eta_k);
+			if (theta_bar_k1>d_theta_bar_k+0.5*(d_eta_k-eta_k1)){
+				d_theta_bar_k=d_theta_bar_k+0.5*(d_eta_k-eta_k1);
+			}
+			else{
+				if (theta_bar_k1<d_theta_bar_k-0.5*(d_eta_k-eta_k1)){
+					d_theta_bar_k=d_theta_bar_k-0.5*(d_eta_k-eta_k1);
+				}
+				else d_theta_bar_k=theta_bar_k1;
+			}
+			d_eta_k=eta_k1;
+			d_vertices_theta(0,0)=d_theta_bar_k+0.5*d_eta_k;
+			d_vertices_theta(1,0)=d_theta_bar_k-0.5*d_eta_k;
+			ROS_INFO_STREAM("[RAMPC CONTROLLER] Eta: "<<d_eta_k);
+			ROS_INFO_STREAM("[RAMPC CONTROLLER] Vertices Theta: "<<d_vertices_theta);
+			//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta bar k: "<<d_theta_bar_k);
 
 
 
 
+			MatrixXf dynamics_constr_A_bar_temp=d_A+(d_B_0+d_B_1*d_theta_bar_k)*d_K;
+			MatrixXf dynamics_constr_B_bar_temp=(d_B_0+d_B_1*d_theta_bar_k);
+			//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta update Debug 1.");
+			for(int i=0;i<d_N;i++){
+				d_osqp_A.block(2*d_num_outputs+1+d_N*d_num_outputs+i*d_num_outputs,d_num_outputs*(d_N+1)+i*d_num_outputs,d_num_outputs,d_num_outputs)=dynamics_constr_A_bar_temp;
+				d_osqp_A.block(2*d_num_outputs+1+d_N*d_num_outputs+i*d_num_outputs,d_num_outputs*(d_N+1)*2+i*d_num_inputs,d_num_outputs,d_num_inputs)=dynamics_constr_B_bar_temp;
+			}
+
+
+			for(int i=0;i<d_N;i++){
+				for(int j=0;j<d_H_x.rows();j++){
+					for(int l=0;l<d_e_l.rows();l++){
+						d_osqp_A.block(2*d_num_outputs+1+d_N*d_num_outputs*2+d_N*(d_num_outputs*2+d_num_inputs*2)+i*d_H_x.rows()*d_e_l.rows()+j*d_e_l.rows()+l,d_num_outputs*(d_N+1)+i*d_num_outputs,1,d_num_outputs)=-d_eta_k*d_H_x.row(j)*d_B_1*d_K*d_e_l(l,0);
+						d_osqp_A.block(2*d_num_outputs+1+d_N*d_num_outputs*2+d_N*(d_num_outputs*2+d_num_inputs*2)+i*d_H_x.rows()*d_e_l.rows()+j*d_e_l.rows()+l,d_num_outputs*(d_N+1)*2+i*d_num_inputs,1,d_num_inputs)=-d_eta_k*d_H_x.row(j)*d_B_1*d_e_l.row(l);
+					}
+				}
+			}
+		
+
+
+			
+			d_delta_uss(0)=d_delta_uss(0)+d_cf_weight_in_newtons-9.81/d_theta_bar_k;
+			d_cf_weight_in_newtons = 9.81/d_theta_bar_k;
+
+			for(int i=0;i<d_N;i++){
+				for(int j=0;j<(d_num_outputs*2+d_num_inputs*2);j++){
+					temp=MatrixXf::Ones(1,1)-d_F.row(j)*d_z_setpoint_Rampc-d_G.row(j)*d_delta_uss;
+					d_osqp_u_new[d_num_outputs*2+1+d_N*d_num_outputs*2+i*(d_num_outputs*2+d_num_inputs*2)+j]=temp(0);
+				}
+			}
+			
+			//osqp_update_upper_bound(d_osqp_work,d_osqp_u_new);
+
+
+
+		}
+		}
+	}
 
 }
+
+
+void solve_theta_update_osqp_full_state(){
+	/*
+	//ROS_INFO_STREAM("[RAMPC CONTROLLER] Updating Theta.");
+	//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG 1");
+	d_h_theta(0,0)=d_vertices_theta(0,0);
+	d_h_theta(1,0)=-d_vertices_theta(1,0);
+	MatrixXf Delta_k=MatrixXf::Zero(2*d_num_outputs,d_N_theta);
+	MatrixXf delta_k=MatrixXf::Zero(2*d_num_outputs,1);
+	MatrixXf previous_state_z=MatrixXf::Zero(d_num_outputs,1);
+	MatrixXf current_state_z=MatrixXf::Zero(d_num_outputs,1);
+	previous_state_z= 	d_previous_state_estimate;
+						
+	current_state_z=	d_current_state_estimate;
+					
+//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG 2");
+
+	Delta_k=-d_H_w*(d_B_1_update*d_previous_input);
+
+	//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG 3");
+
+	delta_k=d_h_w+d_H_w*(d_A_const_update+d_A_update*previous_state_z+d_B_0_update*d_previous_input-current_state_z)+d_n_bar+d_n_bar_prev;
+
+
+	//ROS_INFO_STREAM("[RAMPC CONTROLLER] DELTA K"<<Delta_k );
+	//ROS_INFO_STREAM("[RAMPC CONTROLLER] DELTA K"<<delta_k );
+	//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG 4");
+	d_osqp_theta_A.block(0,0,2*d_N_theta,d_N_theta)=d_H_theta;
+	//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG 5");
+	d_osqp_theta_A.block(d_num_outputs,0,2,d_N_theta)=Delta_k.block(10,0,2,d_N_theta);
+	//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG 6");
+	for(int i=0;i<2*d_N_theta;i++){
+		d_osqp_theta_u_new[i]=d_h_theta(i,0);
+	}
+	for(int i=0;i<2;i++){
+		d_osqp_theta_u_new[2*d_N_theta+i]=delta_k(10+i,0);
+	}
+//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG 3");
+	csc* osqp_theta_A_csc = eigen2csc(d_osqp_theta_A);
+	//osqp_update_A(d_osqp_theta_max_work, osqp_theta_A_csc);
+	//osqp_update_A(d_osqp_theta_min_work, osqp_theta_A_csc);
+
+	
+	//osqp_update_upper_bound(d_osqp_theta_max_work,d_osqp_u_new);
+	//osqp_update_upper_bound(d_osqp_theta_min_work,d_osqp_u_new);
+	osqp_update_A(d_osqp_theta_max_work,osqp_theta_A_csc->x,OSQP_NULL,osqp_theta_A_csc->nzmax);
+	osqp_update_upper_bound(d_osqp_theta_max_work,d_osqp_theta_u_new);
+	osqp_update_A(d_osqp_theta_min_work,osqp_theta_A_csc->x,OSQP_NULL,osqp_theta_A_csc->nzmax);
+	osqp_update_upper_bound(d_osqp_theta_min_work,d_osqp_theta_u_new);
+	/*
+	osqp_theta_max_data->A = osqp_theta_A_csc;
+	osqp_theta_max_data->u = d_osqp_theta_u_new;
+
+	osqp_theta_min_data->A = osqp_theta_A_csc;
+	osqp_theta_min_data->u = d_osqp_theta_u_new;
+
+
+	d_osqp_theta_max_work = osqp_setup(osqp_theta_max_data, d_osqp_theta_settings);
+	d_osqp_theta_min_work = osqp_setup(osqp_theta_min_data, d_osqp_theta_settings);
+	*/
+	//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG 5");
+	/*
+	osqp_solve(d_osqp_theta_max_work);
+	osqp_solve(d_osqp_theta_min_work);
+	d_ThetaMaxOpt_status = d_osqp_theta_max_work->info->status_val;
+	d_ThetaMinOpt_status = d_osqp_theta_min_work->info->status_val;
+	//ROS_INFO_STREAM("[RAMPC CONTROLLER] Status min: "<<d_ThetaMinOpt_status<<". Status max: "<<d_ThetaMaxOpt_status);
+	//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta update num: "<<d_theta_update_num);
+	if ((d_ThetaMaxOpt_status > 0) && (d_ThetaMinOpt_status > 0)){
+		theta_max_buffer.push_back(d_osqp_theta_max_work->solution->x[0]);
+		theta_min_buffer.push_back(d_osqp_theta_min_work->solution->x[0]);
+		d_theta_update_it++;
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta update it: "<<d_theta_update_it);
+		if(d_theta_update_it>=d_theta_update_num){
+		float theta_max=*std::max_element(theta_max_buffer.begin(),theta_max_buffer.end());
+		float theta_min=*std::min_element(theta_min_buffer.begin(),theta_min_buffer.end());
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta_max vector: "<<theta_max_buffer);
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta_max : "<<theta_max);
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta_min vector: "<<theta_min_buffer);
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta_min : "<<theta_min);
+		//for(int i=0;i<theta_max_buffer.size();i++){
+		//	ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta max "<<i<<" : "<<theta_max_buffer[i]);
+		//}
+		theta_max_buffer.clear();
+		theta_min_buffer.clear();
+		d_theta_update_it=0;
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG 6");
+		float theta_bar_k1=(theta_max+theta_min)*0.5;
+		float eta_k1=theta_max-theta_min;
+		if ((eta_k1<d_eta_k) && (eta_k1>0.0)){
+			ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta min: "<<theta_min<<". Theta max: "<<theta_max);
+			ROS_INFO_STREAM("[RAMPC CONTROLLER] Eta: "<<d_eta_k);
+			if (theta_bar_k1>d_theta_bar_k+0.5*(d_eta_k-eta_k1)){
+				d_theta_bar_k=d_theta_bar_k+0.5*(d_eta_k-eta_k1);
+			}
+			else{
+				if (theta_bar_k1<d_theta_bar_k-0.5*(d_eta_k-eta_k1)){
+					d_theta_bar_k=d_theta_bar_k-0.5*(d_eta_k-eta_k1);
+				}
+				else d_theta_bar_k=theta_bar_k1;
+			}
+			d_eta_k=eta_k1;
+			d_vertices_theta(0,0)=d_theta_bar_k+0.5*d_eta_k;
+			d_vertices_theta(1,0)=d_theta_bar_k-0.5*d_eta_k;
+			ROS_INFO_STREAM("[RAMPC CONTROLLER] Eta: "<<d_eta_k);
+			ROS_INFO_STREAM("[RAMPC CONTROLLER] Vertices Theta: "<<d_vertices_theta);
+			//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta bar k: "<<d_theta_bar_k);
+
+			//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG 7");
+
+
+			MatrixXf dynamics_constr_A_bar_temp=d_A+(d_B_0+d_B_1*d_theta_bar_k)*d_K;
+			MatrixXf dynamics_constr_B_bar_temp=(d_B_0+d_B_1*d_theta_bar_k);
+			//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta update Debug 1.");
+			for(int i=0;i<d_N;i++){
+				d_osqp_A.block(2*d_num_outputs+1+d_N*d_num_outputs+i*d_num_outputs,d_num_outputs*(d_N+1)+i*d_num_outputs,d_num_outputs,d_num_outputs)=dynamics_constr_A_bar_temp;
+				d_osqp_A.block(2*d_num_outputs+1+d_N*d_num_outputs+i*d_num_outputs,d_num_outputs*(d_N+1)*2+i*d_num_inputs,d_num_outputs,d_num_inputs)=dynamics_constr_B_bar_temp;
+			}
+
+
+			for(int i=0;i<d_N;i++){
+				for(int j=0;j<d_H_x.rows();j++){
+					for(int l=0;l<d_e_l.rows();l++){
+						d_osqp_A.block(2*d_num_outputs+1+d_N*d_num_outputs*2+d_N*(d_num_outputs*2+d_num_inputs*2)+i*d_H_x.rows()*d_e_l.rows()+j*d_e_l.rows()+l,d_num_outputs*(d_N+1)+i*d_num_outputs,1,d_num_outputs)=-d_eta_k*d_H_x.row(j)*d_B_1*d_K*d_e_l(l,0);
+						d_osqp_A.block(2*d_num_outputs+1+d_N*d_num_outputs*2+d_N*(d_num_outputs*2+d_num_inputs*2)+i*d_H_x.rows()*d_e_l.rows()+j*d_e_l.rows()+l,d_num_outputs*(d_N+1)*2+i*d_num_inputs,1,d_num_inputs)=-d_eta_k*d_H_x.row(j)*d_B_1*d_e_l.row(l);
+					}
+				}
+			}
+		
+			//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG 8");
+
+			for(int i=0;i<d_num_inputs;i++){
+				d_delta_uss(i)+=(d_cf_weight_in_newtons-9.81/d_theta_bar_k)/4.0;
+			}
+			d_cf_weight_in_newtons = 9.81/d_theta_bar_k;
+
+			for(int i=0;i<d_N;i++){
+				for(int j=0;j<(d_num_outputs*2+d_num_inputs*2);j++){
+					temp=MatrixXf::Ones(1,1)-d_F.row(j)*d_z_setpoint_Rampc-d_G.row(j)*d_delta_uss;
+					d_osqp_u_new[d_num_outputs*2+1+d_N*d_num_outputs*2+i*(d_num_outputs*2+d_num_inputs*2)+j]=temp(0);
+				}
+			}
+		
+			//osqp_update_upper_bound(d_osqp_work,d_osqp_u_new);
+		
+
+			//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG 9");
+
+		}
+		}
+	}
+	*/
+}
+
+
+
+void get_disturbance_matrix_full_state(){
+	d_H_w=MatrixXf::Zero(2*d_num_outputs,d_num_outputs);
+	d_h_w=MatrixXf::Zero(2*d_num_outputs,1);
+	d_n_bar=MatrixXf::Zero(2*d_num_outputs,1);
+	d_n_bar_prev=MatrixXf::Zero(2*d_num_outputs,1);
+
+	d_H_w << 	1.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	
+   -1.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	
+    0.0000000000,	    1.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	
+    0.0000000000,	   -1.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	  520.8132402299,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	 -520.8132402299,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    1.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	   -1.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    1.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	   -1.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	   26.0406620115,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	  -26.0406620115,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    1.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	   -1.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    1.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	   -1.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    1.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	   -1.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    1.0000000000,	    0.0000000000,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	   -1.0000000000,	    0.0000000000,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    1.0000000000,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	   -1.0000000000,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    1.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	   -1.0000000000;
+    d_h_w <<	0.0,
+    			0.0,
+    			0.0,
+    			0.0,
+    			1.0,
+    			1.0,
+    			0.0,
+    			0.0,
+    			0.0,
+    			0.0,
+    			1.0,
+    			1.0,
+    			0.0,
+    			0.0,
+    			0.0,
+    			0.0,
+    			0.0,
+    			0.0,
+    			0.0,
+    			0.0,
+    			0.0,
+    			0.0,
+    			0.0,
+    			0.0;
+
+
+
+	d_n_bar<<	0.010000,	
+        0.010000,	
+        0.010000,	
+        0.010000,	
+        5.208121,	
+        5.208121,	
+        0.020000,	
+        0.020000,	
+        0.020000,	
+        0.020000,	
+        0.520813,	
+        0.520813,	
+        0.004400,	
+        0.004400,	
+        0.004400,	
+        0.004400,	
+        0.004400,	
+        0.004400,	
+        0.020000,	
+        0.020000,	
+        0.020000,	
+        0.020000,	
+        0.020000,	
+        0.020000;
+	//d_n_bar=0.01*d_n_bar;
+	d_n_bar_prev<<	0.012000,	
+        0.012000,	
+        0.012000,	
+        0.012000,	
+        6.249722,	
+        6.249722,	
+        0.024316,	
+        0.024316,	
+        0.024316,	
+        0.024316,	
+        0.520813,	
+        0.520813,	
+        0.006400,	
+        0.006400,	
+        0.006400,	
+        0.006400,	
+        0.006400,	
+        0.006400,	
+        0.020000,	
+        0.020000,	
+        0.020000,	
+        0.020000,	
+        0.020000,	
+        0.020000;
+	//d_n_bar_prev=0.01*d_n_bar_prev;
+}
+
 
 void get_disturbance_matrix(){
 	d_H_w=MatrixXf::Zero(2*d_num_outputs,d_num_outputs);
@@ -2516,20 +4241,21 @@ void get_disturbance_matrix(){
 	d_n_bar=MatrixXf::Zero(2*d_num_outputs,1);
 	d_n_bar_prev=MatrixXf::Zero(2*d_num_outputs,1);
 
-	d_H_w << 	520.8132,	0.0,
-				-520.8132,	0.0,
-				0.0,		26.0407,
-				0.0,		-26.0407;	
+	d_H_w << 	2*520.8132,	0.0,
+				2*-520.8132,	0.0,
+				0.0,		2*26.0407,
+				0.0,		2*-26.0407;	
 
 	d_n_bar<<	5.2081,
 				5.2081,
 				0.5208,
 				0.5208;
-
+	d_n_bar=0.01*d_n_bar;
 	d_n_bar_prev<<	6.2497,
 					6.2497,
 					0.5208,
 					0.5208;
+	d_n_bar_prev=0.01*d_n_bar_prev;
 }
 
 void get_Theta(){
@@ -2542,7 +4268,7 @@ void get_Theta(){
 
 	d_vertices_theta<<	d_theta_bar_k+0.5*d_eta_k,
 						d_theta_bar_k-0.5*d_eta_k;
-
+	theta_abs_min=d_vertices_theta(1,0);
 	d_h_theta<<	d_theta_bar_k+0.5*d_eta_k,
 				-(d_theta_bar_k-0.5*d_eta_k);
 }
@@ -2672,7 +4398,129 @@ void setup_theta_update_osqp(){
 }
 
 
+void setup_theta_update_full_state_osqp(){
+	try{
+		get_disturbance_matrix_full_state();
+		get_Theta();
+		MatrixXf osqp_theta_P;
+		//d_osqp_theta_A;
+		MatrixXf osqp_theta_l;
+		MatrixXf osqp_theta_u;
+		MatrixXf osqp_theta_q_min;
+		MatrixXf osqp_theta_q_max;
+		osqp_theta_P=MatrixXf::Zero(d_N_theta,d_N_theta);
+		d_osqp_theta_A=MatrixXf::Ones(2*d_N_theta+d_num_outputs,d_N_theta);
+		osqp_theta_l=Inf_min*MatrixXf::Ones(2*d_N_theta+d_num_outputs,1);
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Lower bound: "<<osqp_theta_l);
+		osqp_theta_u=MatrixXf::Ones(2*d_N_theta+d_num_outputs,1);
+		osqp_theta_q_min=MatrixXf::Ones(d_N_theta,d_N_theta);
+		osqp_theta_q_max=-1*MatrixXf::Ones(d_N_theta,d_N_theta);
 
+		osqp_theta_extended_cleanup();
+		
+
+		// Convert Eigen matrices to CSC format
+		csc* osqp_theta_P_csc = eigen2csc(osqp_theta_P);
+		csc* osqp_theta_A_csc = eigen2csc(d_osqp_theta_A);
+		
+		// Convert Eigen vectors to c_float arrays
+		// One copy is used for initial setup, the other is used during runtime in update function
+		c_float* osqp_theta_q_min_cfloat = (c_float*) c_malloc(osqp_theta_q_min.rows() * sizeof(c_float));
+		c_float* osqp_theta_q_max_cfloat = (c_float*) c_malloc(osqp_theta_q_max.rows() * sizeof(c_float));
+		c_float* osqp_theta_l_cfloat = (c_float*) c_malloc(osqp_theta_l.rows() * sizeof(c_float));
+		c_float* osqp_theta_u_cfloat = (c_float*) c_malloc(osqp_theta_u.rows() * sizeof(c_float));
+		
+
+		//d_osqp_theta_q_new = (c_float*) c_malloc(d_osqp_theta_q.rows() * sizeof(c_float));
+		d_osqp_theta_l_new = (c_float*) c_malloc(osqp_theta_l.rows() * sizeof(c_float));
+		d_osqp_theta_u_new = (c_float*) c_malloc(osqp_theta_u.rows() * sizeof(c_float));
+	
+		Matrix<c_float, Dynamic, Dynamic>::Map(osqp_theta_q_max_cfloat, osqp_theta_q_max.rows(), osqp_theta_q_max.cols()) = osqp_theta_q_max.cast<c_float>();
+		Matrix<c_float, Dynamic, Dynamic>::Map(osqp_theta_q_min_cfloat, osqp_theta_q_min.rows(), osqp_theta_q_min.cols()) = osqp_theta_q_min.cast<c_float>();
+		//Matrix<c_float, Dynamic, Dynamic>::Map(d_osqp_theta_q_new, d_osqp_theta_q.rows(), d_osqp_theta_q.cols()) = d_osqp_theta_q.cast<c_float>();
+	
+
+		Matrix<c_float, Dynamic, Dynamic>::Map(osqp_theta_l_cfloat, osqp_theta_l.rows(), osqp_theta_l.cols()) = osqp_theta_l.cast<c_float>();
+		Matrix<c_float, Dynamic, Dynamic>::Map(d_osqp_theta_l_new, osqp_theta_l.rows(), osqp_theta_l.cols()) = osqp_theta_l.cast<c_float>();
+	
+
+		Matrix<c_float, Dynamic, Dynamic>::Map(osqp_theta_u_cfloat, osqp_theta_u.rows(), osqp_theta_u.cols()) = osqp_theta_u.cast<c_float>();
+		Matrix<c_float, Dynamic, Dynamic>::Map(d_osqp_theta_u_new, osqp_theta_u.rows(), osqp_theta_u.cols()) = osqp_theta_u.cast<c_float>();
+	
+		// Populate data
+	    osqp_theta_max_data = (OSQPData*) c_malloc(sizeof(OSQPData));
+	    osqp_theta_max_data->n = d_osqp_theta_A.cols();
+	    osqp_theta_max_data->m = d_osqp_theta_A.rows();
+	    osqp_theta_max_data->P = osqp_theta_P_csc;
+	    osqp_theta_max_data->q = osqp_theta_q_max_cfloat;
+	    osqp_theta_max_data->A = osqp_theta_A_csc;
+	    osqp_theta_max_data->l = osqp_theta_l_cfloat;
+	    osqp_theta_max_data->u = osqp_theta_u_cfloat;
+
+	    osqp_theta_min_data = (OSQPData*) c_malloc(sizeof(OSQPData));
+	    osqp_theta_min_data->n = d_osqp_theta_A.cols();
+	    osqp_theta_min_data->m = d_osqp_theta_A.rows();
+	    osqp_theta_min_data->P = osqp_theta_P_csc;
+	    osqp_theta_min_data->q = osqp_theta_q_min_cfloat;
+	    osqp_theta_min_data->A = osqp_theta_A_csc;
+	    osqp_theta_min_data->l = osqp_theta_l_cfloat;
+	    osqp_theta_min_data->u = osqp_theta_u_cfloat;
+		
+		// Problem settings
+	    d_osqp_theta_settings = (OSQPSettings*) c_malloc(sizeof(OSQPSettings));
+		
+
+	    // Define Solver settings as default, and change settings as desired
+	    osqp_set_default_settings(d_osqp_theta_settings);
+	    d_osqp_theta_settings->verbose = d_opt_verbose;
+		
+
+	    // Setup workspace
+	    d_osqp_theta_max_work = osqp_setup(osqp_theta_max_data, d_osqp_theta_settings);
+	    d_osqp_theta_min_work = osqp_setup(osqp_theta_min_data, d_osqp_theta_settings);
+		
+	    osqp_solve(d_osqp_theta_max_work);
+	    osqp_solve(d_osqp_theta_min_work);
+
+	    //d_RampcOpt_status = d_osqp_work->info->status_val;
+	    //float sol_u=d_osqp_work->solution->x[2*(d_N+1)*d_num_outputs]; 
+	    //ROS_INFO_STREAM("[RAMPC CONTROLLER] Status: "<< d_RampcOpt_status);
+	    //ROS_INFO_STREAM("[RAMPC CONTROLLER] Solution: "<< sol_u);
+
+	    // Clear data after setting up to allow subseqeuent setups
+	    //osqp_cleanup_data(osqp_theta_min_data);
+	    //c_free(osqp_theta_max_data->q);
+	    osqp_solve(d_osqp_theta_max_work);
+	    osqp_solve(d_osqp_theta_min_work);
+
+	    if ((!d_osqp_theta_max_work) || (!d_osqp_theta_min_work))
+	    {
+	    	clear_setupRampc_success_flag();
+
+	    	ROS_INFO("[RAMPC CONTROLLER] Rampc theta update setup failed with OSQP");
+	    	ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
+
+	    	return;
+	    }
+
+
+
+	}
+	catch(exception& e)
+    {
+    	clear_setupRampc_success_flag();
+
+	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Rampc optimization exception with OSQP with standard error message: " << e.what());
+	    ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
+  	}
+  	catch(...)
+  	{
+  		clear_setupRampc_success_flag();
+
+    	ROS_INFO("[RAMPC CONTROLLER] Rampc optimization exception with OSQP");
+    	ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
+  	}
+}
 
 
 void get_tube_params(){
@@ -2740,6 +4588,227 @@ void get_tube_params(){
 
 }
 
+void get_tube_params_all_rotors(){
+
+	int H_x_size=17;
+	d_H_x=MatrixXf::Zero(H_x_size,d_num_outputs);
+	d_H_xf_x=MatrixXf::Zero(H_x_size,d_num_outputs);
+	d_H_xf_s=MatrixXf::Zero(H_x_size,1);
+	d_c=MatrixXf::Zero(6,1);
+	d_e_l=MatrixXf::Zero(2,1);
+
+
+	/*
+	d_H_x << 	-4.4652, -1.1794,
+				5.9192, 1.5634,
+				2.2426, -0.1519,
+				-2.9729, 0.2013,
+				5.2618, 0.5232,
+				4.9847, 0.4500,
+				-6.9751, -0.6936,
+				-6.6078, -0.5966;
+	*/
+
+	d_H_x <<	-3.7183,	-1.3108,
+				4.9290,		1.7376,
+				-1.2007,	-0.9544,
+				1.5916,		1.2652,
+				1.2783,		-0.4797,
+				-1.6945,	0.6359,
+				5.2626,		0.7087,
+				3.3308,		0.0277,
+				-6.9762,	-0.9395,
+				-4.4153,	-0.0367,
+				5.2952,		0.9807,
+				4.5598,		0.4454,
+				4.6713,		0.4848,
+				-7.0193,	-1.3000,
+				-6.0445,	-0.5905,
+				-6.1924,	-0.6426,
+				-5.9503,	-1.4225;
+
+	d_H_xf_x=d_H_x;
+
+	d_H_xf_s=MatrixXf::Ones(H_x_size,1);
+
+	/*
+	d_c <<	0.4868,
+			0.3672,
+			0.1523,
+			0.2019,
+			1.0,
+			1.0;
+	*/
+	d_c << 	0.4438,
+			0.3348,
+			0.1041,
+			0.1380,
+			1.0,
+			1.0;
+
+
+	d_w_bar=0.0762;
+
+	d_theta_bar_k=26.6266;
+	d_theta_hat_k=d_theta_bar_k;
+	d_eta_k=20.8208;
+	d_rho_theta_k=0.7;
+	d_e_l << 0.5,
+			 - 0.5;
+	d_mu=1508.9;
+
+
+}
+
+
+void get_tube_params_full_state(){
+
+	int H_x_size=77;
+	d_H_x=MatrixXf::Zero(H_x_size,d_num_outputs);
+	d_H_xf_x=MatrixXf::Zero(H_x_size,d_num_outputs);
+	d_H_xf_s=MatrixXf::Zero(H_x_size,1);
+	d_c=MatrixXf::Zero(2*d_num_outputs+2*d_num_inputs,1);
+	d_e_l=MatrixXf::Zero(2,1);
+
+	//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG 1");
+
+	d_H_x <<	  0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.6366197724,	    0.0000000000,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	   -0.6366197724,	    0.0000000000,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.6366197724,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	   -0.6366197724,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.6366197724,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	   -0.6366197724,	
+    1.6214000205,	   -0.8611049583,	   -5.6479557467,	    0.7548127696,	   -0.4008661818,	   -1.5556472941,	    0.7277391015,	    1.3703133568,	    0.6705102128,	    0.0627093560,	    0.1180812174,	    0.2095340497,	
+   -1.5780264556,	    0.8380698089,	    5.4968690487,	   -0.7346210092,	    0.3901427359,	    1.5140326598,	   -0.7082715804,	   -1.3336565327,	   -0.6525736038,	   -0.0610318377,	   -0.1149224637,	   -0.2039288699,	
+   -1.5543828930,	   -0.4768633920,	   -5.6479557567,	   -0.7236149125,	   -0.2219797797,	   -1.5556472976,	    0.4029761932,	   -1.3136762365,	   -0.6645844040,	    0.0347235292,	   -0.1132008033,	   -0.2076822361,	
+    1.5128020823,	    0.4641069686,	    5.4968690583,	    0.7042577162,	    0.2160416681,	    1.5140326632,	   -0.3921963031,	    1.2785344943,	    0.6468063144,	   -0.0337946510,	    0.1101726040,	    0.2021265935,	
+   -0.8283588416,	    0.5438764945,	   -5.6479557468,	   -0.3855988011,	    0.2531762702,	   -1.5556472940,	   -0.4596114631,	   -0.7000081773,	    0.6498138195,	   -0.0396038541,	   -0.0603181990,	    0.2030664368,	
+    0.8061996732,	   -0.5293274245,	    5.4968690487,	    0.3752837682,	   -0.2464036310,	    1.5140326597,	    0.4473165406,	    0.6812824775,	   -0.6324308532,	    0.0385444238,	    0.0587046457,	   -0.1976342700,	
+    0.7613455092,	    0.7940873738,	   -5.6479557567,	    0.3544022474,	    0.3696681252,	   -1.5556472977,	   -0.6711017572,	    0.6433727648,	   -0.6557396854,	   -0.0578289275,	    0.0554378678,	   -0.2049182654,	
+   -0.7409789936,	   -0.7728449908,	    5.4968690583,	   -0.3449217437,	   -0.3597792488,	    1.5140326632,	    0.6531493240,	   -0.6261621011,	    0.6381981981,	    0.0562819640,	   -0.0539548667,	    0.1994365609,	
+    0.0000435485,	   43.9007041585,	    0.0000000004,	    0.0000160273,	   20.4364955903,	    0.0000000008,	  -37.1004486373,	    0.0000209797,	    0.0007975721,	   -2.1358857709,	    0.0000011721,	    0.0002492288,	
+   -0.0000435485,	  -43.9007041585,	   -0.0000000004,	   -0.0000160273,	  -20.4364955903,	   -0.0000000008,	   37.1004486373,	   -0.0000209797,	   -0.0007975721,	    2.1358857709,	   -0.0000011721,	   -0.0002492288,	
+  -43.8992594415,	   -0.0000632199,	    0.0000000013,	  -20.4359669609,	   -0.0000226841,	    0.0000000014,	    0.0000301906,	  -37.0997708150,	    0.0020528526,	    0.0000016038,	   -2.1358496944,	    0.0006414833,	
+   43.8992594415,	    0.0000632199,	   -0.0000000013,	   20.4359669609,	    0.0000226841,	   -0.0000000014,	   -0.0000301906,	   37.0997708150,	   -0.0020528526,	   -0.0000016038,	    2.1358496944,	   -0.0006414833,	
+    0.0005138150,	   -0.0002018315,	   -0.0000000338,	    0.0001100368,	   -0.0000428408,	   -0.0000000123,	    0.0000392696,	    0.0001020632,	   -4.4954430682,	   -0.0000005572,	   -0.0000011871,	   -0.3437903636,	
+   -0.0005138150,	    0.0002018315,	    0.0000000338,	   -0.0001100368,	    0.0000428408,	    0.0000000123,	   -0.0000392696,	   -0.0001020632,	    4.4954430682,	    0.0000005572,	    0.0000011871,	    0.3437903636,	
+   -5.4399984566,	    2.8891288516,	    7.6748673667,	   -2.2622032461,	    1.2014240010,	    1.1726046729,	   -1.7861970552,	   -3.3633138785,	   -0.3616326784,	   -0.0891026074,	   -0.1677754745,	   -0.0012583031,	
+   -5.4399976808,	    2.8891279353,	    3.0564546760,	   -2.2622029796,	    1.2014236809,	   -0.0994699553,	   -1.7861966311,	   -3.3633135293,	   -0.3616326901,	   -0.0891025862,	   -0.1677754575,	   -0.0012583062,	
+    5.2944747590,	   -2.8118426691,	   -7.4695593897,	    2.2016877544,	   -1.1692850833,	   -1.1412366920,	    1.7384150563,	    3.2733429206,	    0.3519587557,	    0.0867190514,	    0.1632873652,	    0.0012246426,	
+    5.2944740039,	   -2.8118417774,	   -2.9746924128,	    2.2016874951,	   -1.1692847717,	    0.0968090657,	    1.7384146436,	    3.2733425808,	    0.3519587670,	    0.0867190308,	    0.1632873487,	    0.0012246456,	
+    5.2151583706,	    1.5998102584,	    7.6748674109,	    2.1687050841,	    0.6652555435,	    1.1726046837,	   -0.9890475597,	    3.2243065910,	    0.3585704727,	   -0.0493363654,	    0.1608413296,	    0.0012889971,	
+    5.2151591464,	    1.5998093421,	    3.0564547097,	    2.1687053505,	    0.6652552233,	   -0.0994699475,	   -0.9890471357,	    3.2243069401,	    0.3585704610,	   -0.0493363442,	    0.1608413466,	    0.0012889940,	
+   -5.0756492998,	   -1.5570142344,	   -7.4695594327,	   -2.1106907325,	   -0.6474595005,	   -1.1412367025,	    0.9625898577,	   -3.1380541736,	   -0.3489784661,	    0.0480165837,	   -0.1565387135,	   -0.0012545155,	
+   -5.0756500549,	   -1.5570133427,	   -2.9746924455,	   -2.1106909918,	   -0.6474591889,	    0.0968090580,	    0.9625894450,	   -3.1380545134,	   -0.3489784547,	    0.0480165631,	   -0.1565387300,	   -0.0012545125,	
+    2.7789099550,	   -1.8246389163,	    7.6748673660,	    1.1555675736,	   -0.7587497799,	    1.1726046725,	    1.1280494330,	    1.7180100678,	   -0.3511595502,	    0.0562702563,	    0.0856981001,	   -0.0014348483,	
+    2.7789107308,	   -1.8246398325,	    3.0564546755,	    1.1555678400,	   -0.7587501001,	   -0.0994699557,	    1.1280498570,	    1.7180104169,	   -0.3511595619,	    0.0562702775,	    0.0856981171,	   -0.0014348514,	
+   -2.7045722037,	    1.7758285712,	   -7.4695593890,	   -1.1246553468,	    0.7384527018,	   -1.1412366916,	   -1.0978733353,	   -1.6720521177,	    0.3417657909,	   -0.0547649883,	   -0.0834056170,	    0.0013964651,	
+   -2.7045729588,	    1.7758294629,	   -2.9746924122,	   -1.1246556061,	    0.7384530134,	    0.0968090661,	   -1.0978737480,	   -1.6720524575,	    0.3417658022,	   -0.0547650089,	   -0.0834056335,	    0.0013964681,	
+   -2.5540807434,	   -2.6642869555,	    7.6748674113,	   -1.0620732116,	   -1.1079250561,	    1.1726046839,	    1.6471888832,	   -1.5790078015,	    0.3542219399,	    0.0821684009,	   -0.0787641997,	    0.0014041984,	
+   -2.5540799675,	   -2.6642878717,	    3.0564547100,	   -1.0620729452,	   -1.1079253762,	   -0.0994699473,	    1.6471893073,	   -1.5790074524,	    0.3542219282,	    0.0821684220,	   -0.0787641827,	    0.0014041954,	
+    2.4857573281,	    2.5930154483,	   -7.4695594331,	    1.0336620233,	    1.0782872993,	   -1.1412367027,	   -1.6031254485,	    1.5367682576,	   -0.3447462595,	   -0.0799703397,	    0.0766572032,	   -0.0013666352,	
+    2.4857565730,	    2.5930163400,	   -2.9746924458,	    1.0336617639,	    1.0782876109,	    0.0968090578,	   -1.6031258612,	    1.5367679178,	   -0.3447462481,	   -0.0799703603,	    0.0766571867,	   -0.0013666322,	
+   -0.0001541502,	  -74.1208451694,	   -0.0000000068,	   -0.0000573846,	  -27.1876813030,	   -0.0000000029,	   29.2257943748,	   -0.0000774831,	   -0.0031065074,	    0.9825773438,	   -0.0000043688,	   -0.0008378327,	
+    0.0001541502,	   74.1208451694,	    0.0000000068,	    0.0000573846,	   27.1876813030,	    0.0000000029,	  -29.2257943748,	    0.0000774831,	    0.0031065074,	   -0.9825773438,	    0.0000043688,	    0.0008378327,	
+   74.1159186676,	    0.0002171252,	   -0.0000000131,	   27.1858715778,	    0.0000792012,	   -0.0000000051,	   -0.0001073054,	   29.2234119550,	   -0.0079956526,	   -0.0000057300,	    0.9824482393,	   -0.0021564406,	
+  -74.1159186676,	   -0.0002171252,	    0.0000000131,	  -27.1858715778,	   -0.0000792012,	    0.0000000051,	    0.0001073054,	  -29.2234119550,	    0.0079956526,	    0.0000057300,	   -0.9824482393,	    0.0021564406,	
+    0.0006607460,	   -0.0002658142,	    0.0000000608,	    0.0002477156,	   -0.0000997911,	    0.0000000077,	    0.0001467583,	    0.0003640801,	   -5.0647550918,	    0.0000087152,	    0.0000216344,	   -0.5635852453,	
+   -0.0006607460,	    0.0002658142,	   -0.0000000608,	   -0.0002477156,	    0.0000997911,	   -0.0000000077,	   -0.0001467583,	   -0.0003640801,	    5.0647550918,	   -0.0000087152,	   -0.0000216344,	    0.5635852453,	
+    2.5025878157,	   -1.3292005196,	    6.1867264760,	    0.7087095454,	   -0.3764328434,	    0.6445763745,	    0.2513233176,	    0.4730857455,	   -0.5944883528,	    0.0012430116,	    0.0023316984,	   -0.0597965377,	
+    2.5025878653,	   -1.3292005782,	    5.8914196247,	    0.7087095624,	   -0.3764328639,	    0.5632383958,	    0.2513233447,	    0.4730857678,	   -0.5944883536,	    0.0012430130,	    0.0023316994,	   -0.0597965379,	
+   -2.4356418716,	    1.2936434921,	   -6.0212272906,	   -0.6897510779,	    0.3663630061,	   -0.6273335135,	   -0.2446002461,	   -0.4604303766,	    0.5785853808,	   -0.0012097602,	   -0.0022693238,	    0.0581969392,	
+   -2.4356419199,	    1.2936435492,	   -5.7338201006,	   -0.6897510945,	    0.3663630261,	   -0.5481713816,	   -0.2446002725,	   -0.4604303984,	    0.5785853815,	   -0.0012097615,	   -0.0022693249,	    0.0581969394,	
+   -2.3991744494,	   -0.7358554173,	    6.1867264465,	   -0.6794255175,	   -0.2083863610,	    0.6445763702,	    0.1390898104,	   -0.4535432179,	    0.5889721439,	    0.0006846931,	   -0.0022358891,	    0.0592084112,	
+   -2.3991743998,	   -0.7358554758,	    5.8914196186,	   -0.6794255005,	   -0.2083863815,	    0.5632383979,	    0.1390898375,	   -0.4535431955,	    0.5889721432,	    0.0006846944,	   -0.0022358880,	    0.0592084110,	
+    2.3349948356,	    0.7161708361,	   -5.7338200946,	    0.6612504014,	    0.2028119025,	   -0.5481713836,	   -0.1353690887,	    0.4414106033,	   -0.5732167336,	   -0.0006663784,	    0.0021760764,	   -0.0576245453,	
+   -1.2779471391,	    0.8392714889,	    6.1867264802,	   -0.3618738376,	    0.2376713563,	    0.6445763757,	   -0.1586335583,	   -0.2414535595,	   -0.5747869976,	   -0.0007805959,	   -0.0011807131,	   -0.0576433559,	
+   -1.2779470894,	    0.8392714303,	    5.8914196277,	   -0.3618738206,	    0.2376713358,	    0.5632383967,	   -0.1586335312,	   -0.2414535372,	   -0.5747869983,	   -0.0007805946,	   -0.0011807120,	   -0.0576433561,	
+    1.2437611747,	   -0.8168203997,	   -6.0212272947,	    0.3521934638,	   -0.2313134842,	   -0.6273335146,	    0.1543900016,	    0.2349945108,	    0.5594110503,	    0.0007597145,	    0.0011491282,	    0.0561013565,	
+    1.2437611265,	   -0.8168203427,	   -5.7338201035,	    0.3521934472,	   -0.2313134642,	   -0.5481713824,	    0.1543899752,	    0.2349944891,	    0.5594110511,	    0.0007597131,	    0.0011491271,	    0.0561013567,	
+    1.1745322641,	    1.2257853502,	    6.1867264444,	    0.3325893741,	    0.3471480487,	    0.6445763696,	   -0.2317797921,	    0.2219104809,	    0.5803032207,	   -0.0011471213,	    0.0010848761,	    0.0582314907,	
+    1.1745323137,	    1.2257852916,	    5.8914196171,	    0.3325893912,	    0.3471480282,	    0.5632383975,	   -0.2317797650,	    0.2219105032,	    0.5803032199,	   -0.0011471200,	    0.0010848771,	    0.0582314905,	
+   -1.1431127188,	   -1.1929947496,	   -6.0212272599,	   -0.3236923798,	   -0.3378615998,	   -0.6273335087,	    0.2255795234,	   -0.2159742230,	   -0.5647797107,	    0.0011164350,	   -0.0010558549,	   -0.0566737583,	
+   -1.1431127670,	   -1.1929946926,	   -5.7338200931,	   -0.3236923964,	   -0.3378615799,	   -0.5481713832,	    0.2255794970,	   -0.2159742447,	   -0.5647797100,	    0.0011164337,	   -0.0010558559,	   -0.0566737581,	
+    0.0001108759,	  -55.7771269226,	    0.0000000125,	    0.0000434996,	  -26.1239987589,	    0.0000000016,	   35.8996121893,	    0.0000638780,	    0.0019697625,	    1.5743779414,	    0.0000035539,	    0.0003193615,	
+   -0.0001108759,	   55.7771269226,	   -0.0000000137,	   -0.0000434996,	   26.1239987589,	   -0.0000000016,	  -35.8996121893,	   -0.0000638780,	   -0.0019697625,	   -1.5743779414,	   -0.0000035539,	   -0.0003193615,	
+   -0.0001108759,	   55.7771269226,	   -0.0000000210,	   -0.0000434996,	   26.1239987589,	   -0.0000000040,	  -35.8996121893,	   -0.0000638780,	   -0.0019697625,	   -1.5743779414,	   -0.0000035539,	   -0.0003193615,	
+   -0.0001108759,	   55.7771269226,	   -0.0000000125,	   -0.0000434996,	   26.1239987589,	   -0.0000000016,	  -35.8996121893,	   -0.0000638780,	   -0.0019697625,	   -1.5743779414,	   -0.0000035539,	   -0.0003193615,	
+   55.7800470659,	   -0.0001301399,	    0.0000000209,	   26.1251214041,	   -0.0000506145,	    0.0000000027,	    0.0000720509,	   35.9012521864,	    0.0050694657,	    0.0000038170,	    1.5744697000,	    0.0008218738,	
+  -55.7800470659,	    0.0001301399,	   -0.0000000231,	  -26.1251214041,	    0.0000506145,	   -0.0000000026,	   -0.0000720509,	  -35.9012521864,	   -0.0050694657,	   -0.0000038170,	   -1.5744697000,	   -0.0008218738,	
+    0.0000476841,	   15.6057522307,	    0.0000000056,	    0.0000165880,	   -2.2961786087,	    0.0000000035,	   10.7950105410,	    0.0000224137,	    0.0030002188,	    0.7011653312,	    0.0000016212,	    0.0007721837,	
+   -0.0000476841,	  -15.6057522307,	   -0.0000000112,	   -0.0000165880,	    2.2961786087,	   -0.0000000033,	  -10.7950105410,	   -0.0000224137,	   -0.0030002188,	   -0.7011653312,	   -0.0000016212,	   -0.0007721837,	
+  -15.6036393183,	   -0.0001102955,	    0.0000000084,	    2.2968982906,	   -0.0000396721,	    0.0000000056,	    0.0000551110,	   10.7959084380,	    0.0077225700,	    0.0000031678,	    0.7012200321,	    0.0019875783,	
+   15.6036393183,	    0.0001102955,	    0.0000000119,	   -2.2968982906,	    0.0000396721,	    0.0000000002,	   -0.0000551110,	  -10.7959084380,	   -0.0077225700,	   -0.0000031678,	   -0.7012200321,	   -0.0019875783,	
+   15.6036393183,	    0.0001102955,	   -0.0000000129,	   -2.2968982906,	    0.0000396721,	   -0.0000000036,	   -0.0000551110,	  -10.7959084380,	   -0.0077225700,	   -0.0000031678,	   -0.7012200321,	   -0.0019875783,	
+   15.6036393183,	    0.0001102955,	   -0.0000000207,	   -2.2968982906,	    0.0000396721,	   -0.0000000058,	   -0.0000551110,	  -10.7959084380,	   -0.0077225700,	   -0.0000031678,	   -0.7012200321,	   -0.0019875783,	
+    0.0000162664,	   74.3612923405,	   -0.0000000181,	    0.0000013374,	   21.2825038127,	   -0.0000000001,	  -19.1160498969,	   -0.0000067705,	    0.0004260883,	   -0.5532703780,	   -0.0000004140,	    0.0003575374,	
+   -0.0000162664,	  -74.3612923405,	    0.0000000073,	   -0.0000013374,	  -21.2825038127,	   -0.0000000009,	   19.1160498969,	    0.0000067705,	   -0.0004260883,	    0.5532703780,	    0.0000004140,	   -0.0003575374,	
+  -74.3599502661,	   -0.0000356402,	   -0.0000000297,	  -21.2821256130,	   -0.0000079300,	   -0.0000000002,	    0.0000054796,	  -19.1158176659,	    0.0010969815,	    0.0000003217,	   -0.5532645181,	    0.0009203320,	
+   74.3599502661,	    0.0000356402,	    0.0000000294,	   21.2821256130,	    0.0000079300,	    0.0000000000,	   -0.0000054796,	   19.1158176659,	   -0.0010969815,	   -0.0000003217,	    0.5532645181,	   -0.0009203320,	
+    0.0000181034,	   85.7824792499,	   -0.0000000160,	    0.0000043640,	   30.1035393972,	   -0.0000000023,	  -34.4139015966,	   -0.0000031441,	   -0.0025077280,	   -1.3297632245,	   -0.0000007586,	   -0.0003386632,	
+   -0.0000181034,	  -85.7824792499,	    0.0000000160,	   -0.0000043640,	  -30.1035393972,	    0.0000000023,	   34.4139015966,	    0.0000031441,	    0.0025077280,	    1.3297632245,	    0.0000007586,	    0.0003386632,	
+  -85.7819014784,	    0.0000174347,	   -0.0000000264,	  -30.1033327766,	    0.0000108227,	   -0.0000000038,	   -0.0000228307,	  -34.4138266351,	   -0.0064546171,	   -0.0000015606,	   -1.3297755338,	   -0.0008716628,	
+   85.7819014784,	   -0.0000174347,	    0.0000000264,	   30.1033327766,	   -0.0000108227,	    0.0000000038,	    0.0000228307,	   34.4138266351,	    0.0064546171,	    0.0000015606,	    1.3297755338,	    0.0008716628;	
+
+
+	d_H_xf_x=d_H_x;
+
+	d_H_xf_s=MatrixXf::Ones(H_x_size,1);
+
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG 2");
+
+
+	d_c << 	0.1892399988,	
+    0.1892421622,	
+    0.1890288952,	
+    0.1890280607,	
+    0.4102764145,	
+    0.4215527554,	
+    0.0709558415,	
+    0.0709555875,	
+    0.0708984918,	
+    0.0709007067,	
+    0.1682223150,	
+    0.1637222481,	
+    0.2239858231,	
+    0.2239871141,	
+    0.2240754428,	
+    0.2240769962,	
+    0.2180902965,	
+    0.2180912023,	
+    0.9999999800,	
+    0.9999999800,	
+    0.9999999800,	
+    0.9999999800,	
+    0.9999999800,	
+    0.9999999800,	
+    0.9999999801,	
+    0.9999999801,	
+    0.9999996001,	
+    0.9999999801,	
+    0.9999999801,	
+    0.9999996001,	
+    0.9999999801,	
+    0.9999996001;
+
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG 3");
+
+
+
+	d_w_bar=0.0664063671;
+
+	d_theta_bar_k=32.0320;
+	d_theta_hat_k=d_theta_bar_k;
+	d_eta_k=10.0100;
+	d_rho_theta_k=0.6;
+	d_e_l << 0.5,
+			 - 0.5;
+	d_mu=2014.9;
+
+
+}
+
+
 void get_dynamics_matrix(){
 	d_A=MatrixXf::Zero(d_num_outputs,d_num_outputs);
 	d_A_update=MatrixXf::Zero(d_num_outputs,d_num_outputs);
@@ -2771,6 +4840,100 @@ void get_dynamics_matrix(){
  	
 }
 
+
+void get_dynamics_matrix_full_state(){
+	d_A=MatrixXf::Zero(d_num_outputs,d_num_outputs);
+	d_A_update=MatrixXf::Zero(d_num_outputs,d_num_outputs);
+	d_A_const_update=MatrixXf::Zero(d_num_outputs,1);
+	d_B_0=MatrixXf::Zero(d_num_outputs,d_num_inputs);
+	d_B_0_update=MatrixXf::Zero(d_num_outputs,d_num_inputs);
+	d_B_1=MatrixXf::Zero(d_num_outputs,d_num_inputs);
+	d_B_1_update=MatrixXf::Zero(d_num_outputs,d_num_inputs);
+	MatrixXf d_A_quad=MatrixXf::Zero(d_num_outputs,d_num_outputs);
+	
+	//ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 22");
+
+	MatrixXf d_eye=MatrixXf::Zero(d_num_outputs,d_num_outputs);
+	d_A_quad<< 	0.000000,	        0.000000,	        0.000000,	        1.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	
+        0.000000,	        0.000000,	        0.000000,	        0.000000,	        1.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	
+        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        1.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	
+        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        9.810000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	
+        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	       -9.810000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	
+        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	
+        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        1.000000,	        0.000000,	        0.000000,	
+        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        1.000000,	        0.000000,	
+        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        1.000000,	
+        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	
+        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	
+        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000;
+	d_eye = MatrixXf::Identity(d_num_outputs,d_num_outputs);
+ 	d_A=d_eye+d_T_s*d_A_quad;
+ 	MatrixXf B_0=MatrixXf::Zero(d_num_outputs,d_num_inputs);
+ 	B_0 << 0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	
+    0.0000000000,	    0.0000000000,	    0.0000000000,	    0.0000000000,	
+ -1906.733735718,	 -2028.460977411,	  1923.291292942,	  2011.903420188,	
+ -1042.955644235,	  1148.125328705,	  1067.455517955,	 -1172.625202425,	
+   -92.612151424,	   182.975608751,	  -316.684540780,	   226.321083453;
+ 	d_B_0=d_T_s*B_0;
+//ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 23");
+ 	MatrixXf B_1=MatrixXf::Zero(d_num_outputs,d_num_inputs);
+ 	B_1 << 0.000000,	        0.000000,	        0.000000,	        0.000000,	
+        0.000000,	        0.000000,	        0.000000,	        0.000000,	
+        0.000000,	        0.000000,	        0.000000,	        0.000000,	
+        0.000000,	        0.000000,	        0.000000,	        0.000000,	
+        0.000000,	        0.000000,	        0.000000,	        0.000000,	
+        1.000000,	        1.000000,	        1.000000,	        1.000000,	
+        0.000000,	        0.000000,	        0.000000,	        0.000000,	
+        0.000000,	        0.000000,	        0.000000,	        0.000000,	
+        0.000000,	        0.000000,	        0.000000,	        0.000000,	
+    	0.000000,	    	0.000000,	     	0.000000,	     	0.000000,	
+    	0.000000,	     	0.000000,	     	0.000000,	    	0.000000,	
+      	0.000000,	      	0.000000,	     	0.000000,	      	0.000000;
+      //ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 26");
+ 	d_B_1=d_T_s*B_1;
+ 	float d_T_update=1.0/yaml_control_frequency;
+ 	d_A_const_update <<	0.0,
+ 						0.0,
+ 						0.0,
+ 						0.0,
+ 						0.0,
+ 						-9.81*d_T_update,
+ 						0.0,
+ 						0.0,
+ 						0.0,
+ 						0.0,
+ 						0.0,
+ 						0.0;
+
+
+ 	//ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 25");
+ 	MatrixXf d_A_quad_update=MatrixXf::Zero(d_num_outputs,d_num_outputs);
+	d_A_quad_update<< 	0.000000,	        0.000000,	        0.000000,	        1.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	
+        0.000000,	        0.000000,	        0.000000,	        0.000000,	        1.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	
+        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        1.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	
+        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	
+        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	
+        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	
+        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        1.000000,	        0.000000,	        0.000000,	
+        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        1.000000,	        0.000000,	
+        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        1.000000,	
+        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	
+        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	
+        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000,	        0.000000;
+        //ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 24");
+ 	d_A_update=d_eye+d_T_update*d_A_quad_update;
+ 	d_B_0_update=d_T_update*B_0;
+ 	d_B_1_update=d_T_update*B_1;
+
+ 	
+}
 
 // Get u_data from file
 MatrixXf get_u_data()
@@ -2829,7 +4992,7 @@ void get_variable_lengths()
 {
 
 	d_T_s=0.1; //yaml_control_frequency;
-	ROS_INFO_STREAM("[RAMPC CONTROLLER] delta T: "<<d_T_s);
+	//ROS_INFO_STREAM("[RAMPC CONTROLLER] delta T: "<<d_T_s);
 	// Number of inputs m
 	//d_num_inputs = u_data.rows();
 	d_num_inputs=1;
@@ -2885,7 +5048,94 @@ void get_variable_lengths()
 		}
 	}
 	*/
+	s_Rampc_mutex.lock();
+ 	d_current_input=MatrixXf::Zero(d_num_inputs,1);
+ 	s_current_input=MatrixXf::Zero(d_num_inputs,1);
+ 	m_current_input=MatrixXf::Zero(d_num_inputs,1);
+ 	d_previous_input=MatrixXf::Zero(d_num_inputs,1);
+ 	s_previous_input=MatrixXf::Zero(d_num_inputs,1);
+ 	m_previous_input=MatrixXf::Zero(d_num_inputs,1);
+ 	s_Rampc_mutex.unlock();
 }
+
+
+
+void get_variable_lengths_full_state()
+{
+
+	d_T_s=0.1; //yaml_control_frequency;
+	//ROS_INFO_STREAM("[RAMPC CONTROLLER] delta T: "<<d_T_s);
+	// Number of inputs m
+	//d_num_inputs = u_data.rows();
+	d_num_inputs=4;
+	// Number of outputs p
+	//d_num_outputs = y_data.rows();
+	d_num_outputs=12;
+	//d_num_theta=1;
+	// Number of block rows for Hankel matrices
+	//d_num_block_rows = d_Tini + d_N + 1;
+	// Previous inputs vector (uini) length
+	d_Nuini = d_num_inputs * d_Tini;
+	// Previous outputs vector (yini) length
+	d_Nyini = d_num_outputs * d_Tini;
+
+	d_uini = MatrixXf::Zero(d_Nuini, 1);
+    d_yini = MatrixXf::Zero(d_Nyini, 1);
+
+    d_N_theta=1;
+	// Trajectory mapper g vector size
+	//d_Ng = u_data.cols() - d_num_block_rows + 1;
+	// Slack variable length
+	//d_Ns = d_Nyini;
+	// Future inputs vector (uf) length
+	d_Nuf = d_num_inputs * d_N;
+	// Future output vector (yf) length 
+	d_Nyf = d_num_outputs * (d_N+1);
+	//Number of tube dilation coefficients
+	d_Nsf= d_N+1;
+	// Optimization decision vector size
+	// Optimization variables in all formulations: [g; slack]
+	d_num_opt_vars = 2*d_Nyf+d_Nuf+d_Nsf;
+
+	// NUMBER OF DECISION VARIABLES
+		d_col_num=d_num_outputs*(d_N+1)+d_num_outputs*(d_N+1)+d_num_inputs*d_N+(d_N+1);
+
+		d_uf_start_i=d_Nyf*2;
+	/*
+	// In sparse formulation, add [uf; yf; yt], where yt is terminal output
+	if (d_opt_sparse)
+	{
+		d_num_opt_vars += d_Nuf + d_Nyf + d_num_outputs;
+
+		d_uf_start_i = d_Ng + d_Ns;
+    	d_yf_start_i = d_uf_start_i + d_Nuf;
+
+		// If optimizing over steady state values, add [gs; us]. This is available in sparse formulation only
+		if (d_opt_steady_state)
+		{
+			d_num_opt_vars += d_Ng + d_num_inputs;
+
+			d_gs_start_i = d_yf_start_i + d_Nyf + d_num_outputs;
+			d_us_start_i = d_gs_start_i + d_Ng;
+		}
+	}
+	*/
+	
+ 	s_Rampc_mutex.lock();
+ 	d_current_input=MatrixXf::Zero(d_num_inputs,1);
+ 	s_current_input=MatrixXf::Zero(d_num_inputs,1);
+ 	m_current_input=MatrixXf::Zero(d_num_inputs,1);
+ 	d_previous_input=MatrixXf::Zero(d_num_inputs,1);
+ 	s_previous_input=MatrixXf::Zero(d_num_inputs,1);
+ 	m_previous_input=MatrixXf::Zero(d_num_inputs,1);
+ 	s_Rampc_mutex.unlock();
+}
+
+
+
+
+
+
 
 // Get Hankel matrices
 void get_hankel_matrices(const MatrixXf& u_data, const MatrixXf& y_data)
@@ -2931,6 +5181,139 @@ void get_cost_matrices()
 	for (int i = 0; i < d_num_inputs; i++)
 		d_R(i,i) = d_R_vec[i];
 }
+
+
+void get_cost_matrices_all_rotors()
+{
+	// Output cost and terminal output cost matrix
+	d_Q = MatrixXf::Zero(d_num_outputs, d_num_outputs);
+	d_P = MatrixXf::Zero(d_num_outputs, d_num_outputs);
+	/*
+	for (int i = 0; i < 2; i++)
+	{
+		d_Q(i,i) = d_Q_vec[i];
+		//d_P(i,i) = d_P_vec[i];
+	}
+	*/
+	d_Q<<	1.0, 0.0,
+			0.0, 0.3;
+
+	/*
+	d_P(0,0)=d_P_vec[0];
+	d_P(0,1)=d_P_vec[1];
+	d_P(1,0)=d_P_vec[1];
+	d_P(1,1)=d_P_vec[2];
+	*/
+	/*
+	if (d_Rampc_measure_roll_pitch)
+		for (int i = 3; i < 5; i++)
+		{
+			d_Q(i,i) = d_Q_vec[i+3];
+			d_P(i,i) = d_P_vec[i+3];
+		}
+	if (d_Rampc_yaw_control)
+	{
+		d_Q(d_num_outputs-1,d_num_outputs-1) = d_Q_vec[8];
+		d_P(d_num_outputs-1,d_num_outputs-1) = d_P_vec[8];
+	}
+	*/
+	// Input cost matrix
+			
+	d_R = MatrixXf::Zero(d_num_inputs, d_num_inputs);
+	/*
+	for (int i = 0; i < d_num_inputs; i++)
+		d_R(i,i) = d_R_vec[i];
+		*/
+	d_R<< 0.4;
+
+	d_P << 	76.2148, 12.5032,
+			12.5032, 3.3180;
+}
+
+
+
+void get_cost_matrices_full_state()
+{
+	// Output cost and terminal output cost matrix
+	d_Q = MatrixXf::Zero(d_num_outputs, d_num_outputs);
+	d_P = MatrixXf::Zero(d_num_outputs, d_num_outputs);
+	/*
+	for (int i = 0; i < 2; i++)
+	{
+		d_Q(i,i) = d_Q_vec[i];
+		//d_P(i,i) = d_P_vec[i];
+	}
+	*/
+	d_Q(0,0)=0.9;
+	d_Q(1,1)=0.9;
+	d_Q(2,2)=1.0;
+	d_Q(3,3)=0.3;
+	d_Q(4,4)=0.3;
+	d_Q(5,5)=0.3;
+	d_Q(6,6)=0.05;
+	d_Q(7,7)=0.05;
+	d_Q(8,8)=0.1;
+	d_Q(9,9)=0.02;
+	d_Q(10,10)=0.02;
+	d_Q(11,11)=0.02;
+			
+
+	/*
+	d_P(0,0)=d_P_vec[0];
+	d_P(0,1)=d_P_vec[1];
+	d_P(1,0)=d_P_vec[1];
+	d_P(1,1)=d_P_vec[2];
+	*/
+	/*
+	if (d_Rampc_measure_roll_pitch)
+		for (int i = 3; i < 5; i++)
+		{
+			d_Q(i,i) = d_Q_vec[i+3];
+			d_P(i,i) = d_P_vec[i+3];
+		}
+	if (d_Rampc_yaw_control)
+	{
+		d_Q(d_num_outputs-1,d_num_outputs-1) = d_Q_vec[8];
+		d_P(d_num_outputs-1,d_num_outputs-1) = d_P_vec[8];
+	}
+	*/
+	// Input cost matrix
+			
+	d_R = MatrixXf::Zero(d_num_inputs, d_num_inputs);
+	/*
+	for (int i = 0; i < d_num_inputs; i++)
+		d_R(i,i) = d_R_vec[i]; 
+		*/
+	d_R(0,0)=0.4;
+	d_R(1,1)=0.4;
+	d_R(2,2)=0.4;
+	d_R(3,3)=0.4;
+
+	d_P << 	54229.2279187030,	    0.0992039942,	   -0.0000129899,	17159.2068949463,	    0.0239649948,	   -0.0000020037,	   -0.0229258231,	20437.1514332923,	   -0.0005057228,	   -0.0004538410,	  852.9362829798,	   -0.0000638293,	
+    0.0992039942,	54232.1430739114,	    0.0000191476,	    0.0253572109,	17159.9226388950,	    0.0000028774,	-20437.8457202665,	    0.0264007607,	    0.0001517089,	 -852.9553803628,	    0.0008154779,	    0.0000175069,	
+   -0.0000129899,	    0.0000191476,	  177.5427490627,	   -0.0000014998,	    0.0000029058,	   20.5585998629,	   -0.0000008279,	    0.0000004392,	   -0.0000001166,	    0.0000002101,	    0.0000002211,	   -0.0000000423,	
+17159.2068949464,	    0.0253572109,	   -0.0000014998,	 5738.3524446442,	    0.0055302742,	   -0.0000002668,	   -0.0046151401,	 7079.3576625229,	    0.0000396724,	   -0.0000116423,	  311.7685346154,	    0.0000183803,	
+    0.0239649948,	17159.9226388951,	    0.0000029058,	    0.0055302742,	 5738.5132569047,	    0.0000004849,	-7079.4946156913,	    0.0051329842,	   -0.0000283631,	 -311.7707478024,	    0.0001047917,	   -0.0000093300,	
+   -0.0000020037,	    0.0000028774,	   20.5585998629,	   -0.0000002668,	    0.0000004849,	    3.6067060346,	   -0.0000001780,	    0.0000000361,	   -0.0000000384,	    0.0000000343,	    0.0000000375,	   -0.0000000108,	
+   -0.0229258231,	-20437.8457202666,	   -0.0000008279,	   -0.0046151401,	-7079.4946156913,	   -0.0000001780,	 9029.4386820912,	   -0.0034546041,	    0.0001293783,	  414.9884992086,	    0.0000092942,	    0.0000305088,	
+20437.1514332924,	    0.0264007607,	    0.0000004392,	 7079.3576625229,	    0.0051329842,	    0.0000000361,	   -0.0034546041,	 9029.3496230294,	    0.0002894366,	    0.0001015612,	  414.9896571827,	    0.0000707823,	
+   -0.0005057228,	    0.0001517089,	   -0.0000001166,	    0.0000396724,	   -0.0000283631,	   -0.0000000384,	    0.0001293783,	    0.0002894366,	   46.1124071511,	    0.0000143645,	    0.0000351194,	    7.2050530475,	
+   -0.0004538410,	 -852.9553803629,	    0.0000002101,	   -0.0000116423,	 -311.7707478024,	    0.0000000343,	  414.9884992086,	    0.0001015612,	    0.0000143645,	   20.6151070161,	    0.0000132845,	    0.0000033051,	
+  852.9362829799,	    0.0008154779,	    0.0000002211,	  311.7685346154,	    0.0001047917,	    0.0000000375,	    0.0000092942,	  414.9896571827,	    0.0000351194,	    0.0000132845,	   20.6154294897,	    0.0000081312,	
+   -0.0000638293,	    0.0000175069,	   -0.0000000423,	    0.0000183803,	   -0.0000093300,	   -0.0000000108,	    0.0000305088,	    0.0000707823,	    7.2050530475,	    0.0000033051,	    0.0000081312,	    1.5310726537;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Get input/output constraint vectors
 void get_input_output_constr()
@@ -2986,11 +5369,92 @@ void get_input_output_constr()
 	*/
 }
 
+
+void get_input_output_constr_full_state()
+{
+	d_F=MatrixXf::Zero(d_num_outputs*2+d_num_inputs*2,d_num_outputs);
+	d_G=MatrixXf::Zero(d_num_outputs*2+d_num_inputs*2,d_num_inputs);
+	d_z=MatrixXf::Zero(d_num_outputs*2+d_num_inputs*2,1);
+	vector<float> d_F_v={0.7,-0.7,0.7,-0.7,0.7,-0.7,10.0,-10.0,10.0,-10.0,10.0,-10.0,M_PI*0.5,-M_PI*0.5,M_PI*0.5,-M_PI*0.5,M_PI*0.5,-M_PI*0.5,M_PI*0.5,-M_PI*0.5,M_PI*0.5,-M_PI*0.5,M_PI*0.5,-M_PI*0.5};
+	for(int i=0;i<d_num_outputs;i++){
+		d_F(2*i,i)=1.0/d_F_v[2*i];
+		d_F(2*i+1,i)=1.0/d_F_v[2*i+1];
+	}
+
+
+	vector<float> d_G_v={0.1597,0.0,0.1597,0.0,0.1597,0.0,0.1597,0.0};
+	for(int i=0;i<d_num_inputs;i++){
+		d_G(2*i+2*d_num_outputs,i)=1.0/(d_G_v[2*i]-m_cf_weight_in_newtons/4.0);
+		d_G(2*i+1+2*d_num_outputs,i)=1.0/(d_G_v[2*i+1]-m_cf_weight_in_newtons/4.0);
+	}
+	for(int i=0;i<d_num_outputs*2+d_num_inputs*2;i++){
+		d_z(i,0)=1;
+	}
+	/*
+	// Input constraints
+	MatrixXf input_min = MatrixXf::Zero(d_num_inputs, 1);
+	MatrixXf input_max = MatrixXf::Zero(d_num_inputs, 1);
+	for (int i = 0; i < d_num_inputs; i++)
+	{
+		input_min(i) = d_input_min_vec[i];
+		input_max(i) = d_input_max_vec[i];
+	}
+	d_input_min = input_min.replicate(d_N, 1);
+	d_input_max = input_max.replicate(d_N, 1);
+
+	// Output constraints
+	MatrixXf output_min = MatrixXf::Zero(d_num_outputs, 1);
+	MatrixXf output_max = MatrixXf::Zero(d_num_outputs, 1);
+	for (int i = 0; i < 3; i++)
+	{
+		output_min(i) = d_output_min_vec[i];
+		output_max(i) = d_output_max_vec[i];
+	}
+	if (d_Rampc_measure_roll_pitch)
+		for (int i = 3; i < 5; i++)
+		{
+			output_min(i) = d_output_min_vec[i+3];
+			output_max(i) = d_output_max_vec[i+3];
+		}
+	if (d_Rampc_yaw_control)
+	{
+		output_min(d_num_outputs-1) = d_output_min_vec[8];
+		output_max(d_num_outputs-1) = d_output_max_vec[8];
+	}
+	d_output_min = output_min.replicate(d_N + 1, 1);
+	d_output_max = output_max.replicate(d_N + 1, 1);
+	*/
+}
+
 void get_control_feedback(){
 	d_K = MatrixXf::Zero(d_num_inputs,d_num_outputs);
 	for(int i=0;i<d_K_vec.size();i++){
 		d_K(0,i)=d_K_vec[i];
 	}
+}
+
+void get_control_feedback_all_rotors(){
+	d_K = MatrixXf::Zero(d_num_inputs,d_num_outputs);
+	/*
+	for(int i=0;i<d_K_vec.size();i++){
+		d_K(0,i)=d_K_vec[i];
+	}
+	*/
+	d_K << -1.3539, -0.4773;
+
+}
+
+void get_control_feedback_full_state(){
+	d_K = MatrixXf::Zero(d_num_inputs,d_num_outputs);
+	/*
+	for(int i=0;i<d_K_vec.size();i++){
+		d_K(0,i)=d_K_vec[i];
+	}
+	*/
+	d_K << 0.1277136261,	   -0.0678270848,	   -0.4448753543,	    0.0594547148,	   -0.0315752270,	   -0.1225344482,	    0.0573221897,	    0.1079361573,	    0.0528144132,	    0.0049394592,	    0.0093009623,	    0.0165044733,	
+   -0.1224348545,	   -0.0375613372,	   -0.4448753551,	   -0.0569973376,	   -0.0174847923,	   -0.1225344485,	    0.0317414273,	   -0.1034749930,	   -0.0523476520,	    0.0027350856,	   -0.0089165443,	   -0.0163586105,	
+   -0.0652477551,	    0.0428397918,	   -0.4448753543,	   -0.0303726536,	    0.0199420619,	   -0.1225344482,	   -0.0362024459,	   -0.0551378941,	    0.0511842100,	   -0.0031194966,	   -0.0047511137,	    0.0159950356,	
+    0.0599692824,	    0.0625482772,	   -0.4448753551,	    0.0279153790,	    0.0291178341,	   -0.1225344485,	   -0.0528610077,	    0.0506768642,	   -0.0516509757,	   -0.0045550400,	    0.0043667022,	   -0.0161408995;
 }
 
 // Get optimization quadratic cost matrix
@@ -3077,6 +5541,88 @@ MatrixXf get_quad_cost_matrix()
 	return quad_cost_mat;
 }
 
+
+
+MatrixXf get_quad_cost_matrix_full_state()
+{
+
+	MatrixXf quad_cost_mat_xf = d_Q+d_K.transpose()*d_R*d_K;
+	MatrixXf quad_cost_mat_uxf = d_K.transpose()*d_R;
+	MatrixXf quad_cost_mat_xuf = d_R*d_K;
+	MatrixXf quad_cost_mat_uf = d_R;
+
+
+
+
+
+	/*
+	MatrixXf quad_cost_mat_g = d_lambda2_g * MatrixXf::Identity(d_Ng, d_Ng);
+	MatrixXf quad_cost_mat_s = d_lambda2_s * MatrixXf::Identity(d_Ns, d_Ns);
+	MatrixXf quad_cost_mat_uf;
+	MatrixXf quad_cost_mat_yf;
+	MatrixXf quad_cost_mat_yt;
+	*/
+	MatrixXf quad_cost_mat = MatrixXf::Zero(d_col_num, d_col_num);
+
+
+	for(int i=0;i<d_N;i++){
+		quad_cost_mat.block(i*d_num_outputs,i*d_num_outputs,d_num_outputs,d_num_outputs)=quad_cost_mat_xf;
+		quad_cost_mat.block(i*d_num_outputs,2*(d_N+1)*d_num_outputs+d_num_inputs*i,d_num_outputs,d_num_inputs)=quad_cost_mat_uxf;
+		quad_cost_mat.block(2*(d_N+1)*d_num_outputs+i*d_num_inputs,i*d_num_outputs,d_num_inputs,d_num_outputs)=quad_cost_mat_xuf;
+		quad_cost_mat.block(2*(d_N+1)*d_num_outputs+i*d_num_inputs,2*(d_N+1)*d_num_outputs+i*d_num_inputs,d_num_inputs,d_num_inputs)=quad_cost_mat_uf;
+	}
+
+	quad_cost_mat.block(d_N*d_num_outputs,d_N*d_num_outputs,d_num_outputs,d_num_outputs)=d_P;	
+
+	quad_cost_mat=2*quad_cost_mat;
+	/*
+	if (d_opt_sparse)
+	{
+		quad_cost_mat_uf = MatrixXf::Zero(d_Nuf, d_Nuf);
+		quad_cost_mat_yf = MatrixXf::Zero(d_Nyf, d_Nyf);
+		quad_cost_mat_yt = d_P;
+		for (int i = 0; i < d_N; i++)
+		{
+			quad_cost_mat_uf.block(i * d_num_inputs, i * d_num_inputs, d_num_inputs, d_num_inputs) = d_R;
+			quad_cost_mat_yf.block(i * d_num_outputs, i * d_num_outputs, d_num_outputs, d_num_outputs) = d_Q;
+		}
+	}
+	else
+	{
+		for (int i = 0; i < d_N; i++)
+		{
+			quad_cost_mat_g += d_U_f.middleRows(i * d_num_inputs, d_num_inputs).transpose() * d_R * d_U_f.middleRows(i * d_num_inputs, d_num_inputs);
+			quad_cost_mat_g += d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_Q * d_Y_f.middleRows(i * d_num_outputs, d_num_outputs);
+		}
+		quad_cost_mat_g += d_Y_f.bottomRows(d_num_outputs).transpose() * d_P * d_Y_f.bottomRows(d_num_outputs);
+	}
+	quad_cost_mat.topLeftCorner(d_Ng, d_Ng) = quad_cost_mat_g;
+	quad_cost_mat.block(d_Ng, d_Ng, d_Ns, d_Ns) = quad_cost_mat_s;
+	if (d_opt_sparse)
+	{
+		quad_cost_mat.block(d_Ng + d_Ns, d_Ng + d_Ns, d_Nuf, d_Nuf) = quad_cost_mat_uf;
+		quad_cost_mat.block(d_Ng + d_Ns + d_Nuf, d_Ng + d_Ns + d_Nuf, d_Nyf, d_Nyf) = quad_cost_mat_yf;
+		quad_cost_mat.block(d_Ng + d_Ns + d_Nuf + d_Nyf, d_Ng + d_Ns + d_Nuf + d_Nyf, d_num_outputs, d_num_outputs) = quad_cost_mat_yt;
+
+		if (d_opt_steady_state)
+		{
+			MatrixXf quad_cost_mat_gs = quad_cost_mat_g + MatrixXf::Identity(d_Ng, d_Ng);
+			MatrixXf quad_cost_mat_g_gs = -quad_cost_mat_g;
+			MatrixXf quad_cost_mat_us = d_N * d_R;
+			MatrixXf quad_cost_mat_uf_us = -d_R.replicate(d_N, 1);
+
+			quad_cost_mat.block(d_gs_start_i, d_gs_start_i, d_Ng, d_Ng) = quad_cost_mat_gs;
+			quad_cost_mat.block(0, d_gs_start_i, d_Ng, d_Ng) = quad_cost_mat_g_gs;
+			quad_cost_mat.block(d_gs_start_i, 0, d_Ng, d_Ng) = quad_cost_mat_g_gs.transpose();
+			
+			quad_cost_mat.bottomRightCorner(d_num_inputs, d_num_inputs) = quad_cost_mat_us;
+			quad_cost_mat.block(d_uf_start_i, d_us_start_i, d_Nuf, d_num_inputs) = quad_cost_mat_uf_us;
+			quad_cost_mat.block(d_us_start_i, d_uf_start_i, d_num_inputs, d_Nuf) = quad_cost_mat_uf_us.transpose();
+		}
+	}
+	*/
+	return quad_cost_mat;
+}
 // Get optimization linear cost vectors
 // Gurobi refers to this as 'c'. It is multiplied by 2 since Gurobi minimizes (x^T * Q * x + c^t * x)
 // OSQP refers to this as 'q'. It is not multiplied by 2 since OSQP minimizes (1/2 * x^T * P * x + q^t * x)
@@ -3963,6 +6509,11 @@ void computeResponse_for_LQR(Controller::Request &request, Controller::Response 
 		// Inform the user
 		ROS_INFO_STREAM("[RAMPC CONTROLLER] State \"LQR\" started");
 	}
+	s_Rampc_mutex.lock();
+	//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1460");
+	m_setupRampc_success = s_setupRampc_success;
+	s_Rampc_mutex.unlock();
+
 
 	m_setpoint_for_controller[0] = m_setpoint[0];
 	m_setpoint_for_controller[1] = m_setpoint[1];
@@ -4290,8 +6841,8 @@ void computeResponse_for_Rampc(Controller::Request &request, Controller::Respons
 	if (m_current_state_changed)
 	{
 		// PERFORM "ONE-OFF" OPERATIONS HERE
-		for (int i = 0; i < 9; i++)
-			m_previous_stateErrorInertial[i] = 0.0;
+		//for (int i = 0; i < 9; i++)
+			//m_previous_stateErrorInertial[i] = 0.0;
 		if (!m_write_data)
 			Rampc_first_pass = true;
 		m_Rampc_solving_first_opt = false;
@@ -4344,11 +6895,13 @@ void computeResponse_for_Rampc(Controller::Request &request, Controller::Respons
 	// Check if Rampc is not setup and exit Rampc control mode
 	// Rampc control is not allowed to start unless setup, but on exceptions setup success flag is reset
 	// Rampc must be (re-)setup in this case to allow restart
+
 	s_Rampc_mutex.lock();
 	//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1460");
 	bool setupRampc_success = s_setupRampc_success;
 	bool solveRampc = s_solveRampc;
 	bool updateTheta = s_updateTheta;
+	int experiment=s_experiment;
 	m_u_f = s_u_f;
 	m_y_f = s_y_f;
 	m_solve_time = s_solve_time;
@@ -4411,13 +6964,24 @@ void computeResponse_for_Rampc(Controller::Request &request, Controller::Respons
 		calculateControlOutput_viaLQR(request, output);
 	}
 	else
-	{
+	{	
 		calculateControlOutput_viaLQR(request, output);
+		switch (experiment){
+		case RAMPC_CONTROLLER_EXPERIMENT_MASS:
+		case RAMPC_CONTROLLER_EXPERIMENT_ALL_ROTORS:
+		
 		//ROS_INFO_STREAM("[RAMPC CONTROLLER] LQR thrust output: "<<output.thrust);
 		//ROS_INFO_STREAM("[RAMPC CONTROLLER] index number: "<<input_number * m_num_inputs);
-		int input_number= m_Rampc_cycles_since_solve/20;
+		input_number= m_Rampc_cycles_since_solve/20;
 		//ROS_INFO_STREAM("[RAMPC CONTROLLER] cycle: "<< m_Rampc_cycles_since_solve<< "; index number: "<<input_number * m_num_inputs);
 		output.thrust = m_u_f(input_number * m_num_inputs);
+		if (experiment==2){
+			rotorFailureTime=ros::WallTime::now().toSec();
+			rotorFailureDuration=rotorFailureTime-rotorFailureTimeStart;
+			if(rotorFailureDuration>20.0){
+				output.thrust=output.thrust*0.7;
+			}
+		}
 		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Actual output: "<<output.thrust);
 		//ROS_INFO_STREAM("[RAMPC CONTROLLER] RAMPC thrust output: "<<output.thrust);
 		//output.rollRate = m_u_f(m_Rampc_cycles_since_solve * m_num_inputs + 1);
@@ -4432,27 +6996,66 @@ void computeResponse_for_Rampc(Controller::Request &request, Controller::Respons
 		//	output.yawRate = -yaml_gainMatrixYawRate[8] * yawError;
 		//}
 		
+	
+
+		// PREPARE AND RETURN THE VARIABLE "response"
+		// Specify that using a "rate type" of command
+
+		response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
+
+
+
+
+		// Put the computed body rate commands into the "response" variable
+		response.controlOutput.roll = output.rollRate;
+		response.controlOutput.pitch = output.pitchRate;
+		response.controlOutput.yaw = output.yawRate;
+
+		// Put the thrust commands into the "response" variable.
+		// . NOTE: The thrust is commanded per motor, so divide by 4.0
+		// > NOTE: The function "computeMotorPolyBackward" converts the input argument
+		//         from Newtons to the 16-bit command expected by the Crazyflie.
+		thrust_request_per_motor = output.thrust / 4.0;
+		response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrust_request_per_motor);
+		response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrust_request_per_motor);
+		response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrust_request_per_motor);
+		response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrust_request_per_motor);
+		break;
+
+	case RAMPC_CONTROLLER_EXPERIMENT_FULL_STATE:
+		input_number= m_Rampc_cycles_since_solve/20;
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] cycle: "<< m_Rampc_cycles_since_solve<< "; index number: "<<input_number * m_num_inputs);
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug"<<m_num_inputs);
+		output.thrust1 = m_u_f(input_number * m_num_inputs+0);
+		output.thrust2 = m_u_f(input_number * m_num_inputs+1);
+		output.thrust3 = m_u_f(input_number * m_num_inputs+2);
+		output.thrust4 = m_u_f(input_number * m_num_inputs+3);
+		ROS_INFO_STREAM("[RAMPC CONTROLLER] QUAD INPUT: ");
+		ROS_INFO_STREAM(output.thrust1);
+		ROS_INFO_STREAM(output.thrust2);
+		ROS_INFO_STREAM(output.thrust3);
+		ROS_INFO_STREAM(output.thrust4);
+		
+		response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTORS;
+		
+		response.controlOutput.motorCmd1 = computeMotorPolyBackward(output.thrust1);
+		response.controlOutput.motorCmd2 = computeMotorPolyBackward(output.thrust2);
+		response.controlOutput.motorCmd3 = computeMotorPolyBackward(output.thrust3);
+		response.controlOutput.motorCmd4 = computeMotorPolyBackward(output.thrust4);
+
+		response.controlOutput.roll = 0.0;
+		response.controlOutput.pitch = 0.0;
+		response.controlOutput.yaw = 0.0;
+
+
+
+	break;
+
+
+
+
 	}
-
-	// PREPARE AND RETURN THE VARIABLE "response"
-	// Specify that using a "rate type" of command
-	response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
-
-	// Put the computed body rate commands into the "response" variable
-	response.controlOutput.roll = output.rollRate;
-	response.controlOutput.pitch = output.pitchRate;
-	response.controlOutput.yaw = output.yawRate;
-
-	// Put the thrust commands into the "response" variable.
-	// . NOTE: The thrust is commanded per motor, so divide by 4.0
-	// > NOTE: The function "computeMotorPolyBackward" converts the input argument
-	//         from Newtons to the 16-bit command expected by the Crazyflie.
-	float thrust_request_per_motor = output.thrust / 4.0;
-	response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrust_request_per_motor);
-	response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrust_request_per_motor);
-	response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrust_request_per_motor);
-	response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrust_request_per_motor);
-
+	}
 	// Capture data
 	if (m_collect_data && !use_LQR)
 	{
@@ -5022,7 +7625,10 @@ void calculateControlOutput_viaLQR(Controller::Request &request, control_output 
 	// > Third, put the "yawError" into the "stateError" variable
 	stateErrorInertial[8] = yawError;
 
-
+	float angle_vel_Error[3];
+	angle_vel_Error[0]=(stateErrorInertial[6] - m_previous_stateErrorInertial[6]) * yaml_control_frequency;
+	angle_vel_Error[1]=(stateErrorInertial[7] - m_previous_stateErrorInertial[7]) * yaml_control_frequency;
+	angle_vel_Error[2]=(stateErrorInertial[8] - m_previous_stateErrorInertial[8]) * yaml_control_frequency;
 	// CONVERSION INTO BODY FRAME
 	// Conver the state erorr from the Inertial frame into the Body frame
 	// > Note: the function "convertIntoBodyFrame" is implemented in this file
@@ -5038,13 +7644,27 @@ void calculateControlOutput_viaLQR(Controller::Request &request, control_output 
 
 	// SAVE THE STATE ERROR TO BE USED NEXT TIME THIS FUNCTION IS CALLED
 	// > as we have already used previous error we can now update it update it
+	//ROS_INFO_STREAM("[RAMPC CONTROLLER] PREVIOUS LQR STATE: ");
 	for(int i = 0; i < 9; ++i)
 	{
+		//ROS_INFO_STREAM(m_previous_stateErrorInertial[i]);
 		stateErrorBody[i]=stateErrorInertial[i];
 		m_previous_stateErrorInertial[i] = stateErrorInertial[i];
 	}
 
-
+	s_Rampc_mutex.lock();
+	//ROS_INFO_STREAM("[RAMPC CONTROLLER] LQR STATE: ");
+	for(int i=0;i<9;i++){
+	s_previous_stateErrorInertial[i]=m_previous_stateErrorInertial[i];
+	s_current_stateErrorInertial[i]=stateErrorInertial[i];
+	//ROS_INFO_STREAM(s_current_stateErrorInertial[i]);
+	}
+	for(int i=9;i<12;i++){
+	//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG 123: "<<stateErrorInertial[i-3]<<" "<<m_previous_stateErrorInertial[i-3]);
+	s_current_stateErrorInertial[i]=angle_vel_Error[i-9];
+	//ROS_INFO_STREAM(s_current_stateErrorInertial[i]);
+	}
+	s_Rampc_mutex.unlock();
 	// PERFORM THE "u=-Kx" CONTROLLER COMPUTATIONS
 
 	// Initialize control output
@@ -5252,14 +7872,14 @@ void setNewSetpoint(float x, float y, float z, float yaw)
 
 	// Tell Rampc thread that setpoint changed
 	s_Rampc_mutex.lock();
-	ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1927");
+	//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1927");
 	for (int i = 0; i < 4; i++)
 	{
 		s_setpoint(i) = m_setpoint[i];
 	}
 	s_setpoint_changed = true;
 	s_Rampc_mutex.unlock();
-	 ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1927");
+	 //ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1927");
 
 	// Publish the change so that the network is updated
 	// (mainly the "flying agent GUI" is interested in
@@ -5519,6 +8139,8 @@ void processCustomButton2(float float_data, int int_data, bool* bool_data)
 
     s_Rampc_mutex.lock();
     // ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 2142");
+    s_setupButtonPressed=true;
+    s_experiment = int_data;
     s_setupRampc = true;
     s_Rampc_mutex.unlock();
     // ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 2142");
@@ -5530,6 +8152,7 @@ void processCustomButton3(float float_data, int int_data, bool* bool_data)
 	s_Rampc_mutex.lock();
 	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 2152");
 	bool setupRampc_success = s_setupRampc_success;
+	int experiment=s_experiment;
 	s_Rampc_mutex.unlock();
 	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 2152");
 
@@ -5550,6 +8173,9 @@ void processCustomButton3(float float_data, int int_data, bool* bool_data)
             // Update the state accordingly
             m_current_state = RAMPC_CONTROLLER_STATE_RAMPC;
             m_current_state_changed = true;
+            if(experiment==RAMPC_CONTROLLER_EXPERIMENT_ALL_ROTORS){
+            	rotorFailureTimeStart=ros::WallTime::now().toSec();
+            }
             break;
 
         case RAMPC_CONTROLLER_STATE_RAMPC:
@@ -5877,6 +8503,7 @@ void fetchRampcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 
 	yaml_reference_difference=getParameterFloat(nodeHandle_for_paramaters, "reference_difference");
 
+	yaml_theta_update_num=getParameterInt(nodeHandle_for_paramaters, "theta_update_num");
 	// PARAMETERS ACCESSED BY RAMPC THREAD
 	s_Rampc_mutex.lock();
 	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 2352");
@@ -6025,6 +8652,7 @@ void fetchRampcControllerYamlParameters(ros::NodeHandle& nodeHandle)
 
 
 	s_yaml_reference_difference=yaml_reference_difference;
+	s_yaml_theta_update_num=yaml_theta_update_num;
 	// Share changing reference parameters
 	s_figure_8_amplitude = yaml_figure_8_amplitude;
 	s_figure_8_frequency_rad = m_figure_8_frequency_rad;

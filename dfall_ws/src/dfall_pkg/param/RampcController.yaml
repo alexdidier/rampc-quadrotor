@@ -21,7 +21,7 @@ landing_spin_motors_time: 0
 # PARAMTERS THAT ARE STANDARD FOR A "CONTROLLER SERVICE"
 
 # Mass of the crazyflie, in grams
-mass :  29 #37
+mass : 37
 
 # Frequency of the controller, in hertz
 control_frequency : 200.0
@@ -118,7 +118,7 @@ Rampc_yaw_control : false
 Tini : 6
 
 # Prediction horizon in discrete time steps
-N : 30
+N : 10
 
 # Output cost matrix diagonal entries (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
 Q : [1.0, 0.3, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
@@ -141,6 +141,9 @@ G : [0.6388,0.0]
 
 # Reference difference
 reference_difference : 0.5
+
+# Number of iterations for theta update
+theta_update_num: 5
 
 # Regularization parameters
 lambda2_g : 500.0

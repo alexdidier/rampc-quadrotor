@@ -124,20 +124,26 @@ using namespace Eigen;
 
 // Control output structure
 struct control_output
-{
+{	
+	float thrust1;
+	float thrust2;
+	float thrust3;
+	float thrust4;
 	float thrust;
 	float rollRate;
 	float pitchRate;
 	float yawRate;
 };
 
-
+double rotorFailureTimeStart=ros::WallTime::now().toSec();
+double rotorFailureTime=ros::WallTime::now().toSec();
+double rotorFailureDuration=0.0;
 double data_Time=ros::WallTime::now().toSec();
 double data_Time_prev=ros::WallTime::now().toSec();
 double data_duration=1000.0;
 double time_prev=0.0;
-float Inf_max=numeric_limits<float>::max();
-float Inf_min=-numeric_limits<float>::max();
+float Inf_max=10000000.0;//numeric_limits<float>::max();
+float Inf_min=-10000000.0;//-numeric_limits<float>::max();
 //    ----------------------------------------------------------------------------------
 //    V   V    A    RRRR   III    A    BBBB   L      EEEEE   SSSS
 //    V   V   A A   R   R   I    A A   B   B  L      E      S
@@ -192,6 +198,13 @@ float yaml_landing_move_down_time_max = 5.0;
 float yaml_landing_spin_motors_thrust = 10000;
 // The time for: landing spin motors
 float yaml_landing_spin_motors_time = 1.5;
+
+int s_yaml_theta_update_num=2;
+int yaml_theta_update_num=2;
+int d_theta_update_num=2;
+int d_theta_update_it=0;
+vector<float> theta_max_buffer;
+vector<float> theta_min_buffer;
 
 float s_yaml_reference_difference=0.5;
 float yaml_reference_difference=0.5;
@@ -281,7 +294,7 @@ bool yaml_Rampc_measure_roll_pitch = true;
 // Flag that activates yaw control through Rampc
 bool yaml_Rampc_yaw_control = true;
 // Prediction horizon in discrete time steps
-int yaml_N = 30;
+int yaml_N = 20;
 ofstream log_file1;
 ofstream log_file2;
 ofstream log_file3;
@@ -337,7 +350,11 @@ float m_cf_weight_in_newtons = 0.0;
 
 // The location error of the Crazyflie at the "previous" time step
 float m_previous_stateErrorInertial[9];
+float s_previous_stateErrorInertial[9]={0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
+float d_previous_stateErrorInertial[9]={0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
 
+float s_current_stateErrorInertial[9]={0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
+float d_current_stateErrorInertial[9]={0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
 // The setpoint to be tracked, the ordering is (x,y,z,yaw),
 // with units [meters,meters,meters,radians]
 float  m_setpoint[4] = {0.0,0.0,0.4,0.0};
@@ -385,7 +402,7 @@ MatrixXf m_u_data;
 MatrixXf m_y_data;
 int m_dataIndex = 0;
 bool m_write_data = false;
-
+float input_scaling=100.0;
 // Variables used for general data collection
 MatrixXf m_Rampc_active_setpoint = MatrixXf::Zero(4, 1);
 bool m_collect_data = false;
@@ -426,6 +443,7 @@ MatrixXf s_u_f;
 MatrixXf s_y_f;
 float s_solve_time;
 bool s_setupRampc_success = false;
+bool m_setupRampc_success = false;
 // Variables for thread management
 mutex s_Rampc_mutex;
 // Flags for communication with Rampc thread
@@ -434,6 +452,8 @@ bool s_setpoint_changed = false;
 bool s_setupRampc = false;
 bool s_solveRampc = false;
 bool s_updateTheta=false;
+bool s_setupButtonPressed=false;
+int s_experiment=0;
 // Variables used for changing reference
 bool s_changing_ref_enable = m_changing_ref_enable;
 float s_figure_8_amplitude = yaml_figure_8_amplitude;
@@ -489,14 +509,14 @@ float d_eta_k;
 float d_rho_theta_k;
 float d_theta_bar_k;
 float d_theta_hat_k;
-float d_delta_uss=0.0;
+MatrixXf d_delta_uss;
 float d_mu;
-MatrixXf d_current_input=MatrixXf::Zero(1,1);
-MatrixXf s_current_input=MatrixXf::Zero(1,1);
-MatrixXf m_current_input=MatrixXf::Zero(1,1);
-MatrixXf d_previous_input=MatrixXf::Zero(1,1);
-MatrixXf s_previous_input=MatrixXf::Zero(1,1);
-MatrixXf m_previous_input=MatrixXf::Zero(1,1);
+MatrixXf d_current_input;
+MatrixXf s_current_input;
+MatrixXf m_current_input;
+MatrixXf d_previous_input;
+MatrixXf s_previous_input;
+MatrixXf m_previous_input;
 
 MatrixXf d_H_theta;
 MatrixXf d_h_theta;
@@ -602,6 +622,7 @@ float d_z_sine_frequency_rad = s_z_sine_frequency_rad;
 float d_figure_8_scale;
 float d_time_in_seconds;
 float d_control_deltaT = s_control_deltaT;
+float theta_abs_min=0.0;
 int d_col_num;
 // Variables shared between Rampc thread and Rampc gs matrix inversion thread
 MatrixXf ds_A_gs;
@@ -615,6 +636,8 @@ bool ds_gs_inversion_complete = false;
 
 // Rampc related global variables used by main thread only
 // Declared as global for speed
+int input_number=0;
+float thrust_request_per_motor=0.0;
 int m_num_inputs = s_num_inputs;
 MatrixXf m_uini;
 MatrixXf m_yini;
@@ -666,12 +689,12 @@ c_float* d_mpc_q_new;
 c_float* d_mpc_l_new;
 c_float* d_mpc_u_new;
 MatrixXf m_previous_xyz = MatrixXf::Zero(3, 1);
-MatrixXf m_current_state_estimate = MatrixXf::Zero(8, 1);
-MatrixXf d_current_state_estimate = MatrixXf::Zero(8, 1);
-MatrixXf s_current_state_estimate = MatrixXf::Zero(8, 1);
-MatrixXf m_previous_state_estimate=MatrixXf::Zero(8,1);
-MatrixXf d_previous_state_estimate=MatrixXf::Zero(8,1);
-MatrixXf s_previous_state_estimate=MatrixXf::Zero(8,1);
+MatrixXf m_current_state_estimate = MatrixXf::Zero(12, 1);
+MatrixXf d_current_state_estimate = MatrixXf::Zero(12, 1);
+MatrixXf s_current_state_estimate = MatrixXf::Zero(12, 1);
+MatrixXf m_previous_state_estimate=MatrixXf::Zero(12,1);
+MatrixXf d_previous_state_estimate=MatrixXf::Zero(12,1);
+MatrixXf s_previous_state_estimate=MatrixXf::Zero(12,1);
 // MPC FUNCTIONS
 void change_Rampc_setpoint_mpc();
 void change_Rampc_setpoint_mpc_changing_ref();
@@ -687,26 +710,47 @@ void change_Rampc_setpoint_osqp();
 void change_Rampc_setpoint_osqp_changing_ref();
 void setup_Rampc_gurobi();
 void setup_Rampc_osqp();
+void setup_Rampc_all_rotors_osqp();
+void setup_Rampc_full_state_osqp();
 void solve_Rampc_gurobi();
 void solve_Rampc_osqp();
+void solve_Rampc_full_state_osqp();
 
 // RAMPC HELPER FUNCTIONS
 // UPDATE THETA HAT
 void update_theta_hat();
+// UPDATE THETA HAT
+void update_theta_hat_full_state();
 // GET THETA POLYTOPE
 void get_Theta();
 // Get DISTURBANCE MATRIX
 void get_disturbance_matrix();
 // SOLVE THETA UPDATE
 void solve_theta_update_osqp();
+// SOLVE THETA UPDATE
+void solve_theta_update_osqp_all_rotors();
+// SOLVE THETA UPDATE
+void solve_theta_update_osqp_full_state();
 // SETUP THETA UPDATE
 void setup_theta_update_osqp();
+// SETUP THETA UPDATE
+void setup_theta_update_full_state_osqp();
 // GET TUBE POLYTOPE
 void get_tube_params();
+// GET TUBE POLYTOPE
+void get_tube_params_all_rotors();
+// GET TUBE POLYTOPE
+void get_tube_params_full_state();
 // GET DYNAMICS MATRICES
 void get_dynamics_matrix();
+// GET DYNAMICS MATRICES
+void get_dynamics_matrix_full_state();
 // GET CONTROL FEEDBACK
 void get_control_feedback();
+// GET CONTROL FEEDBACK
+void get_control_feedback_all_rotors();
+// GET CONTROL FEEDBACK
+void get_control_feedback_full_state();
 // UPDATE UINI YINI
 void update_uini_yini(Controller::Request &request, control_output &output);
 // GET U_DATA FROM FILE
@@ -715,14 +759,24 @@ MatrixXf get_u_data();
 MatrixXf get_y_data();
 // GET VARIABLE LENGTHS
 void get_variable_lengths();
+// GET VARIABLE LENGTHS
+void get_variable_lengths_full_state();
 // GET HANKEL MATICES
 void get_hankel_matrices(const MatrixXf& u_data, const MatrixXf& y_data);
 // GET COST MATRICES
 void get_cost_matrices();
+// GET COST MATRICES
+void get_cost_matrices_all_rotors();
+// GET COST MATRICES
+void get_cost_matrices_full_state();
 // GET INPUT/OUTPUT CONSTRAINT VECTORS
 void get_input_output_constr();
+// GET INPUT/OUTPUT CONSTRAINT VECTORS
+void get_input_output_constr_full_state();
 // GET OPTIMIZATION QUADRATIC COST MATRIX
 MatrixXf get_quad_cost_matrix();
+// GET OPTIMIZATION QUADRATIC COST MATRIX
+MatrixXf get_quad_cost_matrix_full_state();
 // GET OPTIMIZATION LINEAR COST VECTORS
 void get_lin_cost_vectors();
 // UPDATE OPTIMIZATION LINEAR COST VECTORS
