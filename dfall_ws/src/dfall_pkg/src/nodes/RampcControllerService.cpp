@@ -25,7 +25,7 @@
 //
 //
 //    DESCRIPTION:
-//    A RAMPC Controller
+//    A RAMPC Controller built from the Framework of the DeePC controller.
 //
 //    ----------------------------------------------------------------------------------
 
@@ -40,668 +40,6 @@
 
 
 
-
-
-
-
-void setup_Rampc_mpc()
-{	
-	/*
-	try
-    {
-    	d_num_outputs = 3;
-
-    	s_Rampc_mutex.lock();
-		d_setpoint = s_setpoint;
-		s_Rampc_mutex.unlock();
-
-    	// COMPUTE THE NUMBER OF DECICION VARIABLES
-    	int num_inputs = 3;
-    	int num_states = 8;
-    	int num_input_by_state = num_inputs + num_states;
-    	int num_input_dec_vars = d_N     * num_inputs;
-    	int num_state_dec_vars = (d_N+1) * num_states;
-
-    	int num_mpc_dec_vars = num_input_dec_vars + num_state_dec_vars;
-
-
-    	// INFORM THE USER
-    	ROS_INFO_STREAM("[MPC CONTROLLER] now setting up with num input = " << num_input_dec_vars << ", num state = " << num_state_dec_vars << ", total num dec vars = " << num_mpc_dec_vars );
-
-    	// SPECIFY THE Q, R, P MATRICES
-		MatrixXf Q_cost_mat = MatrixXf::Zero(num_states, num_states);
-		Q_cost_mat(0,0) = 40.0f;
-		Q_cost_mat(1,1) = 40.0f;
-		Q_cost_mat(2,2) = 40.0f;
-		Q_cost_mat(3,3) = 0.1f;
-		Q_cost_mat(3,4) = 0.1f;
-		Q_cost_mat(5,5) = 0.1f;
-		Q_cost_mat(6,6) = 0.1f;
-		Q_cost_mat(7,7) = 0.1f;
-
-		MatrixXf R_cost_mat = MatrixXf::Zero(num_inputs, num_inputs);
-		R_cost_mat(0,0) = 160.0f;
-		R_cost_mat(1,1) = 4.0f;
-		R_cost_mat(2,2) = 4.0f;
-
-		MatrixXf P_cost_mat = MatrixXf::Zero(num_states, num_states);
-		P_cost_mat(0,0) = 661.21f;
-		P_cost_mat(1,1) = 661.21f;
-		P_cost_mat(2,2) = 382.33f;
-		P_cost_mat(3,3) = 100.92f;
-		P_cost_mat(4,4) = 100.92f;
-		P_cost_mat(5,5) = 26.93f;
-		P_cost_mat(6,6) = 633.60f;
-		P_cost_mat(7,7) = 633.60f;
-
-		P_cost_mat(3,0) =  202.82f;
-		P_cost_mat(0,3) =  202.82f;
-
-		P_cost_mat(7,0) =  317.06f;
-		P_cost_mat(0,7) =  317.06f;
-
-		P_cost_mat(1,4) =  202.82f;
-		P_cost_mat(4,1) =  202.82f;
-
-		P_cost_mat(1,6) = -317.06f;
-		P_cost_mat(6,1) = -317.06f;
-
-		P_cost_mat(2,5) =   64.00f;
-		P_cost_mat(5,2) =   64.00f;
-
-		P_cost_mat(3,7) =  201.77f;
-		P_cost_mat(7,3) =  201.77f;
-
-		P_cost_mat(4,6) =  -201.77f;
-		P_cost_mat(6,4) =  -201.77f;
-
-//       0       1       2       3       4       5       6       7
-// 0:  657.21    0.00   -0.00  202.82    0.00   -0.00    0.00  317.06
-// 1:    0.00  657.21   -0.00    0.00  202.82   -0.00 -317.06   -0.00
-// 2:   -0.00   -0.00  378.33   -0.00   -0.00   64.00    0.00   -0.00
-// 3:  202.82    0.00   -0.00   96.92   -0.00   -0.00    0.00  201.77
-// 4:    0.00  202.82   -0.00   -0.00   96.92   -0.00 -201.77   -0.00
-// 5:   -0.00   -0.00   64.00   -0.00   -0.00   22.93    0.00   -0.00
-// 6:    0.00 -317.06    0.00    0.00 -201.77    0.00  629.60    0.00
-// 7:  317.06   -0.00   -0.00  201.77   -0.00   -0.00    0.00  629.60
-
-
-    	// INITIALISE THE QUADRATIC COST MATRIX
-		MatrixXf osqp_P = MatrixXf::Zero(num_mpc_dec_vars, num_mpc_dec_vars);
-
-		// ADD THE Q AND R BLOCK DIAGONAL TERMS
-		// ROS_INFO("[MPC CONTROLLER] DEBUG 1");
-		for (int i = 0; i < d_N; i++)
-		{
-			osqp_P.block(i * num_input_by_state             , i * num_input_by_state             , num_states, num_states) = Q_cost_mat;
-			osqp_P.block(i * num_input_by_state + num_states, i * num_input_by_state + num_states, num_inputs, num_inputs) = R_cost_mat;
-		}
-		// ROS_INFO("[MPC CONTROLLER] DEBUG 2");
-
-		// ADD THE TERMINAL COST
-		//quad_cost_mat_yt = d_P;
-		// osqp_P.block(d_N * num_input_by_state, d_N * num_input_by_state, num_states, num_states) = P_cost_mat;
-		osqp_P.block(d_N * num_input_by_state, d_N * num_input_by_state, num_states, num_states) = Q_cost_mat;
-		// osqp_P.block(d_N * num_input_by_state, d_N * num_input_by_state, num_states, num_states) = 0.1 * MatrixXf::Identity(num_states, num_states);
-		// ROS_INFO("[MPC CONTROLLER] DEBUG 3");
-
-
-		// RESET THE LINEAR COST VECTOR TO ZERO
-		d_mpc_q = MatrixXf::Zero(d_num_opt_vars, 1);
-
-
-
-		// SPECIFY THE A, B LTI DYNAMICS MATRICES
-		MatrixXf A_dynamics = MatrixXf::Zero(num_states, num_states);
-		A_dynamics(0,0) = 1.0f;
-		A_dynamics(1,1) = 1.0f;
-		A_dynamics(2,2) = 1.0f;
-		A_dynamics(3,3) = 1.0f;
-		A_dynamics(4,4) = 1.0f;
-		A_dynamics(5,5) = 1.0f;
-		A_dynamics(6,6) = 1.0f;
-		A_dynamics(7,7) = 1.0f;
-
-		A_dynamics(0,3) = 0.04f;
-		A_dynamics(1,4) = 0.04f;
-		A_dynamics(2,5) = 0.04f;
-
-		A_dynamics(0,7) = 0.0078f;
-		A_dynamics(1,6) =-0.0078f;
-
-		A_dynamics(3,7) = 0.3924;
-		A_dynamics(4,6) =-0.3924;
-
-//     0         1         2         3         4         5         6         7
-// 0:  1.0000    0         0         0.0400    0         0         0         0.0078
-// 1:  0         1.0000    0         0         0.0400    0        -0.0078    0
-// 2:  0         0         1.0000    0         0         0.0400    0         0
-// 3:  0         0         0         1.0000    0         0         0         0.3924
-// 4:  0         0         0         0         1.0000    0        -0.3924    0
-// 5:  0         0         0         0         0         1.0000    0         0
-// 6:  0         0         0         0         0         0         1.0000    0
-// 7:  0         0         0         0         0         0         0         1.0000
-
-		MatrixXf B_dynamics = MatrixXf::Zero(num_states, num_inputs);
-		B_dynamics(0,2) = 0.0001f;
-		B_dynamics(1,1) =-0.0001f;
-
-		B_dynamics(2,0) = 0.0250f;
-		B_dynamics(5,0) = 1.2500f;
-
-		B_dynamics(3,2) = 0.0078;
-		B_dynamics(4,1) =-0.0078;
-
-		B_dynamics(6,1) = 0.0400;
-		B_dynamics(7,2) = 0.0400;
-
-//    0         1         2
-//0:  0         0         0.0001
-//1:  0        -0.0001    0
-//2:  0.0250    0         0
-//3:  0         0         0.0078
-//4:  0        -0.0078    0
-//5:  1.2500    0         0
-//6:  0         0.0400    0
-//7:  0         0         0.0400
-
-
-		// BUILD THE [A,B,-I] BLOCK FOR THE DYNAMICS CONSTRAIN
-		MatrixXf ABI_mat = MatrixXf::Zero(num_states,(num_states+num_inputs+num_states));
-		// ROS_INFO("[MPC CONTROLLER] DEBUG 4");
-		ABI_mat.block(0,0                 ,num_states,num_states) = A_dynamics;
-		// ROS_INFO("[MPC CONTROLLER] DEBUG 5");
-		ABI_mat.block(0,num_states        ,num_states,num_inputs) = B_dynamics;
-		// ROS_INFO("[MPC CONTROLLER] DEBUG 6");
-		ABI_mat.block(0,num_input_by_state,num_states,num_states) = -MatrixXf::Identity(num_states,num_states);
-		// ROS_INFO("[MPC CONTROLLER] DEBUG 7");
-
-
-		// INITIALISE THE EQUALITY CONSTRAINTS MATRIX
-		MatrixXf A_cons_eq_mat = MatrixXf::Zero(num_states*(d_N+1),num_mpc_dec_vars);
-
-		// FILL IN THE IDENTIY FOR SETTING THE INITAL STATE
-		A_cons_eq_mat.topLeftCorner(num_states,num_states) = MatrixXf::Identity(num_states,num_states);
-
-		// ROS_INFO("[MPC CONTROLLER] DEBUG 8");
-		// FILL IN ALL THE DYNAMINCS BLOCKS
-		for (int i = 0; i < d_N; i++)
-		{
-			A_cons_eq_mat.block((i+1) * num_states, i * num_input_by_state, num_states, (num_states+num_inputs+num_states)) = ABI_mat;
-		}
-		// ROS_INFO("[MPC CONTROLLER] DEBUG 9");
-
-		// INITIALISE THE RHS OF THE EQUALITY CONSTRAINTS
-		MatrixXf b_cons_eq_vec = MatrixXf::Zero(num_states*(d_N+1),1);
-
-
-		
-		// BULD THE CONSTRAINTS
-		int num_cons_ineq_per_time_step = 6;
-
-		// INITIALISE AND SPECIFY THE MATRX FOR ONE TIME STEP
-		MatrixXf A_cons_ineq_mat_for_one_time_step = MatrixXf::Zero(num_cons_ineq_per_time_step,num_input_by_state);
-
-		A_cons_ineq_mat_for_one_time_step.topLeftCorner(3,3)     = MatrixXf::Identity(3,3);
-		A_cons_ineq_mat_for_one_time_step.bottomRightCorner(3,3) = MatrixXf::Identity(3,3);
-
-		// INITIALISE AND SPECIFY THE VECTOR FOR ONE TIME STEP
-		MatrixXf l_cons_ineq_vec_for_one_time_step = MatrixXf::Zero(num_cons_ineq_per_time_step,1);
-		MatrixXf u_cons_ineq_vec_for_one_time_step = MatrixXf::Zero(num_cons_ineq_per_time_step,1);
-
-		l_cons_ineq_vec_for_one_time_step(0,0) = -4.0f - d_setpoint(0);
-		l_cons_ineq_vec_for_one_time_step(1,0) = -4.0f - d_setpoint(1);
-		l_cons_ineq_vec_for_one_time_step(2,0) =  0.1f - d_setpoint(2);
-
-		l_cons_ineq_vec_for_one_time_step(3,0) =  0.1597f - 0.028 * 9.81;
-		l_cons_ineq_vec_for_one_time_step(4,0) = -1.5708f;
-		l_cons_ineq_vec_for_one_time_step(5,0) = -1.5708f;
-
-		u_cons_ineq_vec_for_one_time_step(0,0) =  4.0f - d_setpoint(0);
-		u_cons_ineq_vec_for_one_time_step(1,0) =  4.0f - d_setpoint(1);
-		u_cons_ineq_vec_for_one_time_step(2,0) =  4.0f - d_setpoint(2);
-
-		u_cons_ineq_vec_for_one_time_step(3,0) =  0.4791f - 0.028 * 9.81;
-		u_cons_ineq_vec_for_one_time_step(4,0) =  1.5708f;
-		u_cons_ineq_vec_for_one_time_step(5,0) =  1.5708f;
-
-		// INITIALISE THE MATRX AND VECTORS FOR ALL TIME STEPS
-		MatrixXf A_cons_ineq_mat = MatrixXf::Zero((3+d_N*num_cons_ineq_per_time_step),num_mpc_dec_vars);
-		MatrixXf l_cons_ineq_vec = MatrixXf::Zero((3+d_N*num_cons_ineq_per_time_step),1);
-		MatrixXf u_cons_ineq_vec = MatrixXf::Zero((3+d_N*num_cons_ineq_per_time_step),1);
-
-		// ROS_INFO("[MPC CONTROLLER] DEBUG 10");
-		for (int i = 0; i < d_N; i++)
-		{
-			A_cons_ineq_mat.block(i * num_cons_ineq_per_time_step, i * num_input_by_state, num_cons_ineq_per_time_step, num_input_by_state) = A_cons_ineq_mat_for_one_time_step;
-
-			l_cons_ineq_vec.middleRows(i * num_cons_ineq_per_time_step, num_cons_ineq_per_time_step) = l_cons_ineq_vec_for_one_time_step;
-			u_cons_ineq_vec.middleRows(i * num_cons_ineq_per_time_step, num_cons_ineq_per_time_step) = u_cons_ineq_vec_for_one_time_step;
-		}
-		// ROS_INFO("[MPC CONTROLLER] DEBUG 11");
-
-
-		// OSQP CONSTRAINTS
-		// Concatenate all constraints in single matrix/vectors
-		osqp_A = MatrixXf::Zero(A_cons_eq_mat.rows() + A_cons_ineq_mat.rows(), num_mpc_dec_vars);
-		MatrixXf osqp_l = MatrixXf::Zero(A_cons_eq_mat.rows() + A_cons_ineq_mat.rows(), 1);
-		MatrixXf osqp_u = MatrixXf::Zero(A_cons_eq_mat.rows() + A_cons_ineq_mat.rows(), 1);
-		// ROS_INFO("[MPC CONTROLLER] DEBUG 12");
-		
-		osqp_A.topRows(A_cons_eq_mat.rows()) = A_cons_eq_mat;
-		// ROS_INFO("[MPC CONTROLLER] DEBUG 13");
-		osqp_l.topRows(A_cons_eq_mat.rows()) = b_cons_eq_vec;
-		osqp_u.topRows(A_cons_eq_mat.rows()) = b_cons_eq_vec;
-		// ROS_INFO("[MPC CONTROLLER] DEBUG 14");
-
-		osqp_A.bottomRows(A_cons_ineq_mat.rows()) = A_cons_ineq_mat;
-		// ROS_INFO("[MPC CONTROLLER] DEBUG 15");
-		osqp_l.bottomRows(A_cons_ineq_mat.rows()) = l_cons_ineq_vec;
-		osqp_u.bottomRows(A_cons_ineq_mat.rows()) = u_cons_ineq_vec;
-		// ROS_INFO("[MPC CONTROLLER] DEBUG 16");
-
-		// OSQP MODEL SETUP
-		// Follows 'Setup and solve' example (https://osqp.org/docs/examples/setup-and-solve.html)
-
-		osqp_extended_cleanup();
-
-		// Convert Eigen matrices to CSC format
-		csc* osqp_P_csc = eigen2csc(osqp_P);
-		csc* osqp_A_csc = eigen2csc(osqp_A);
-
-		// Convert Eigen vectors to c_float arrays
-		// One copy is used for initial setup, the other is used during runtime in update function
-		//c_float* osqp_q_cfloat = (c_float*) c_malloc(d_mpc_q.rows() * sizeof(c_float));
-		c_float* osqp_l_cfloat = (c_float*) c_malloc(osqp_l.rows() * sizeof(c_float));
-		c_float* osqp_u_cfloat = (c_float*) c_malloc(osqp_u.rows() * sizeof(c_float));
-
-		//d_mpc_q_new = (c_float*) c_malloc(d_mpc_q.rows() * sizeof(c_float));
-		d_mpc_l_new = (c_float*) c_malloc(osqp_l.rows() * sizeof(c_float));
-		d_mpc_u_new = (c_float*) c_malloc(osqp_u.rows() * sizeof(c_float));
-
-		//Matrix<c_float, Dynamic, Dynamic>::Map(osqp_q_cfloat, d_mpc_q.rows(), d_mpc_q.cols()) = d_mpc_q.cast<c_float>();
-		//Matrix<c_float, Dynamic, Dynamic>::Map(d_mpc_q_new, d_mpc_q.rows(), d_mpc_q.cols()) = d_mpc_q.cast<c_float>();
-
-		Matrix<c_float, Dynamic, Dynamic>::Map(osqp_l_cfloat, osqp_l.rows(), osqp_l.cols()) = osqp_l.cast<c_float>();
-		Matrix<c_float, Dynamic, Dynamic>::Map(d_mpc_l_new, osqp_l.rows(), osqp_l.cols()) = osqp_l.cast<c_float>();
-
-		Matrix<c_float, Dynamic, Dynamic>::Map(osqp_u_cfloat, osqp_u.rows(), osqp_u.cols()) = osqp_u.cast<c_float>();
-		Matrix<c_float, Dynamic, Dynamic>::Map(d_mpc_u_new, osqp_u.rows(), osqp_u.cols()) = osqp_u.cast<c_float>();
-
-		// Populate data
-	    OSQPData* osqp_data = (OSQPData*) c_malloc(sizeof(OSQPData));
-	    osqp_data->n = osqp_A.cols();
-	    osqp_data->m = osqp_A.rows();
-	    osqp_data->P = osqp_P_csc;
-	    //osqp_data->q = osqp_q_cfloat;
-	    osqp_data->A = osqp_A_csc;
-	    osqp_data->l = osqp_l_cfloat;
-	    osqp_data->u = osqp_u_cfloat;
-
-		// Problem settings
-	    d_osqp_settings = (OSQPSettings*) c_malloc(sizeof(OSQPSettings));
-
-	    // Define Solver settings as default, and change settings as desired
-	    osqp_set_default_settings(d_osqp_settings);
-	    d_osqp_settings->verbose = d_opt_verbose;
-
-	    // Setup workspace
-	    d_osqp_work = osqp_setup(osqp_data, d_osqp_settings);
-
-	    // Clear data after setting up to allow subseqeuent setups
-	    osqp_cleanup_data(osqp_data);
-
-	    if (!d_osqp_work)
-	    {
-	    	clear_setupRampc_success_flag();
-
-	    	ROS_INFO("[MPC CONTROLLER] Rampc optimization setup failed with OSQP");
-	    	ROS_INFO("[MPC CONTROLLER] Rampc must be (re-)setup");
-
-	    	return;
-	    }
-
-	    // Some steps to finish setup
-		//finish_Rampc_setup();
-		// Setup output variables
-    	d_u_f = MatrixXf::Zero(d_N * num_inputs, 1);
-    	d_y_f = MatrixXf::Zero((d_N+1) * d_num_outputs, 1);
-
-    	d_u_f(0) = 0.028 * 9.81;
-
-	    // Setup successful flag
-	    d_setupRampc_success = true;
-
-	    s_Rampc_mutex.lock();
-	    // ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1285");
-		// s_num_inputs = num_inputs;
-		// s_num_outputs = d_num_outputs;
-		// s_Nuini = d_Tini * num_inputs;
-		// s_Nyini = d_Tini * d_num_outputs;
-		// s_uini = MatrixXf::Zero(s_Nuini, 1);
-		// s_yini = MatrixXf::Zero(s_Nyini, 1);
-		s_setupRampc_success = d_setupRampc_success;
-		s_Rampc_mutex.unlock();
-		// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1294");
-
-	    // Inform the user
-	    ROS_INFO("[RAMPC CONTROLLER] Rampc optimization setup successful with OSQP");
-    }
-
-  	catch(exception& e)
-    {
-    	clear_setupRampc_success_flag();
-
-	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Rampc optimization setup exception with OSQP with standard error message: " << e.what());
-	    ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
-  	}
-  	catch(...)
-  	{
-  		clear_setupRampc_success_flag();
-
-    	ROS_INFO("[RAMPC CONTROLLER] Rampc optimization setup exception with OSQP");
-    	ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
-  	}
-  	*/
-}
-
-
-
-
-
-void change_Rampc_setpoint_mpc()
-{
-	/*
-	try
-	{
-		// No need to change the MPC optimization problem.
-		// Just shift the initial state given to MPC
-
-		s_Rampc_mutex.lock();
-		// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1225");
-		d_setpoint = s_setpoint;
-		s_Rampc_mutex.unlock();
-		// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1225");
-
-
-		int num_inputs = 3;
-    	int num_states = 8;
-    	int num_input_by_state = num_inputs + num_states;
-    	int num_input_dec_vars = d_N     * num_inputs;
-    	int num_state_dec_vars = (d_N+1) * num_states;
-
-    	int num_mpc_dec_vars = num_input_dec_vars + num_state_dec_vars;
-
-    	// COMPUTE THE NUMBER OF EQUALITY CONSTRAINTS
-    	int ineq_start = (d_N+1) * num_states;
-
-    	// BULD THE CONSTRAINTS
-		int num_cons_ineq_per_time_step = 6;
-
-		// Update equality constraint vectors
-		for (int t = 0; t < d_N; t++)
-		{
-			d_mpc_l_new[ineq_start + (t*num_cons_ineq_per_time_step) + 0] = -4.0f - d_setpoint(0);
-			d_mpc_u_new[ineq_start + (t*num_cons_ineq_per_time_step) + 0] =  4.0f - d_setpoint(0);
-
-			d_mpc_l_new[ineq_start + (t*num_cons_ineq_per_time_step) + 1] = -4.0f - d_setpoint(1);
-			d_mpc_u_new[ineq_start + (t*num_cons_ineq_per_time_step) + 1] =  4.0f - d_setpoint(1);
-
-			d_mpc_l_new[ineq_start + (t*num_cons_ineq_per_time_step) + 2] =  0.1f - d_setpoint(2);
-			d_mpc_u_new[ineq_start + (t*num_cons_ineq_per_time_step) + 2] =  4.0f - d_setpoint(2);
-		}
-
-	    // Inform the user
-	    ROS_INFO("[MPC CONTROLLER] MPC setpoint updated successfully");
-	}
-
-  	catch(exception& e)
-    {
-    	//clear_setupRampc_success_flag();
-
-	    ROS_INFO_STREAM("[MPC CONTROLLER] MPC setpoint update exception with OSQP with standard error message: " << e.what());
-	    ROS_INFO("[MPC CONTROLLER] MPC must be (re-)setup");
-  	}
-  	catch(...)
-  	{
-  		//clear_setupRampc_success_flag();
-
-  		ROS_INFO("[MPC CONTROLLER] MPC setpoint update exception with OSQP");
-  		ROS_INFO("[MPC CONTROLLER] MPC must be (re-)setup");
-  	}
-  	*/
-}
-
-
-
-void change_Rampc_setpoint_mpc_changing_ref()
-{
-	/*
-	try
-	{
-		// DO NOTHING
-		// THIS IS FOR A TIME-VARYING SETPOINT, eg., FIGURE 8
-	}
-
-  	catch(exception& e)
-    {
-    	clear_setupRampc_success_flag();
-
-	    ROS_INFO_STREAM("[MPC CONTROLLER] Rampc setpoint update exception with OSQP with standard error message: " << e.what());
-	    ROS_INFO("[MPC CONTROLLER] Rampc must be (re-)setup");
-  	}
-  	catch(...)
-  	{
-  		clear_setupRampc_success_flag();
-
-  		ROS_INFO("[MPC CONTROLLER] Rampc setpoint update exception with OSQP");
-  		ROS_INFO("[MPC CONTROLLER] Rampc must be (re-)setup");
-  	}
-  	*/
-}
-
-
-
-
-void solve_Rampc_mpc()
-{
-	/*
-	try
-	{
-		s_Rampc_mutex.lock();
-		d_current_state_estimate = s_current_state_estimate;
-		d_setpoint = s_setpoint;
-		s_Rampc_mutex.unlock();
-
-
-		int num_states = 8;
-		int num_inputs = 3;
-		int num_input_by_state = num_inputs + num_states;
-
-		// Update reference if reference is changing
-		if (d_changing_ref_enable)
-			change_Rampc_setpoint_mpc_changing_ref();
-
-
-		// Get the input that was applied at this time step
-		MatrixXf u_current = MatrixXf::Zero(num_inputs, 1);
-		u_current(0) = d_u_f(0) - 0.028 * 9.81;
-		u_current(1) = d_u_f(1);
-		u_current(2) = d_u_f(2);
-
-
-		
-		// SPECIFY THE A, B LTI DYNAMICS MATRICES
-		MatrixXf A_dynamics = MatrixXf::Zero(num_states, num_states);
-		A_dynamics(0,0) = 1.0f;
-		A_dynamics(1,1) = 1.0f;
-		A_dynamics(2,2) = 1.0f;
-		A_dynamics(3,3) = 1.0f;
-		A_dynamics(4,4) = 1.0f;
-		A_dynamics(5,5) = 1.0f;
-		A_dynamics(6,6) = 1.0f;
-		A_dynamics(7,7) = 1.0f;
-
-		A_dynamics(0,3) = 0.04f;
-		A_dynamics(1,4) = 0.04f;
-		A_dynamics(2,5) = 0.04f;
-
-		A_dynamics(0,7) = 0.0078f;
-		A_dynamics(1,6) =-0.0078f;
-
-		A_dynamics(3,7) = 0.3924;
-		A_dynamics(4,6) =-0.3924;
-
-//     0         1         2         3         4         5         6         7
-// 0:  1.0000    0         0         0.0400    0         0         0         0.0078
-// 1:  0         1.0000    0         0         0.0400    0        -0.0078    0
-// 2:  0         0         1.0000    0         0         0.0400    0         0
-// 3:  0         0         0         1.0000    0         0         0         0.3924
-// 4:  0         0         0         0         1.0000    0        -0.3924    0
-// 5:  0         0         0         0         0         1.0000    0         0
-// 6:  0         0         0         0         0         0         1.0000    0
-// 7:  0         0         0         0         0         0         0         1.0000
-
-		MatrixXf B_dynamics = MatrixXf::Zero(num_states, num_inputs);
-		B_dynamics(0,2) = 0.0001f;
-		B_dynamics(1,1) =-0.0001f;
-
-		B_dynamics(2,0) = 0.0250f;
-		B_dynamics(5,0) = 1.2500f;
-
-		B_dynamics(3,2) = 0.0078;
-		B_dynamics(4,1) =-0.0078;
-
-		B_dynamics(6,1) = 0.0400;
-		B_dynamics(7,2) = 0.0400;
-
-//    0         1         2
-//0:  0         0         0.0001
-//1:  0        -0.0001    0
-//2:  0.0250    0         0
-//3:  0         0         0.0078
-//4:  0        -0.0078    0
-//5:  1.2500    0         0
-//6:  0         0.0400    0
-//7:  0         0         0.0400
-
-
-		// ROS_INFO("[MPC CONTROLLER] DEBUG 1");
-
-		MatrixXf x_current = d_current_state_estimate;
-
-		// ROS_INFO_STREAM("[MPC CONTROLLER] u delta current (f,wx,wy) = ( " << u_current(0) << " , " << u_current(1) << " , " << u_current(2) << " )" );
-		// ROS_INFO_STREAM("[MPC CONTROLLER] current estimate (x,y,z)  = ( " << x_current(0) << " , " << x_current(1) << " , " << x_current(2) << " )" );
-		
-
-		// Subtract the setpoint from the (x,y,z) positions
-		x_current(0) = x_current(0) - d_setpoint(0);
-		x_current(1) = x_current(1) - d_setpoint(1);
-		x_current(2) = x_current(2) - d_setpoint(2);
-		// ROS_INFO("[MPC CONTROLLER] DEBUG 2");
-
-
-		// Compute the initial state as x_initial = A x_current + B * u_current
-		MatrixXf x_initial = A_dynamics * x_current + B_dynamics * u_current;
-
-
-		// ROS_INFO_STREAM("[MPC CONTROLLER] initial state (x,y,z)     = ( " << x_initial(0) << " , " << x_initial(1) << " , " << x_initial(2) << " )" );
-
-
-
-		// Update equality constraint vectors for the initial state
-
-		for (int i = 0; i < num_states; i++)
-		{
-			d_mpc_l_new[i] = x_initial(i);
-			d_mpc_u_new[i] = x_initial(i);
-		}
-		// ROS_INFO("[MPC CONTROLLER] DEBUG 3");
-		osqp_update_bounds(d_osqp_work, d_mpc_l_new, d_mpc_u_new);
-
-		// Solve optimization
-		osqp_solve(d_osqp_work);
-		d_RampcOpt_status = d_osqp_work->info->status_val;
-
-		if (d_RampcOpt_status > 0)
-		{	
-
-			// ROS_INFO_STREAM("[MPC CONTROLLER] d_mpc_l_new (x,y,z)         = ( " << d_mpc_l_new[0] << " , " << d_mpc_l_new[1] << " , " << d_mpc_l_new[2]  << " )" );
-			// ROS_INFO_STREAM("[MPC CONTROLLER] d_mpc_u_new (x,y,z)         = ( " << d_mpc_u_new[0] << " , " << d_mpc_u_new[1] << " , " << d_mpc_u_new[2]  << " )" );
-			// ROS_INFO_STREAM("[MPC CONTROLLER] OSQP initial l (x,y,z)      = ( " << d_osqp_work->data->l[0] << " , " << d_osqp_work->data->l[1] << " , " << d_osqp_work->data->l[2]  << " )" );
-			// ROS_INFO_STREAM("[MPC CONTROLLER] OSQP initial state (x,y,z)  = ( " << d_osqp_work->solution->x[0] << " , " << d_osqp_work->solution->x[1] << " , " << d_osqp_work->solution->x[2]  << " )" );
-			// ROS_INFO_STREAM("[MPC CONTROLLER] OSQP new input (f,wx,wy)    = ( " << d_osqp_work->solution->x[8] << " , " << d_osqp_work->solution->x[9] << " , " << d_osqp_work->solution->x[10] << " )" );
-
-
-			// With sparse formulation can get uf and yf directly
-			for (int t = 0; t < d_N; t++)
-			{
-				for (int i = 0; i < num_inputs; i++)
-				{
-					d_u_f((t*num_inputs + i)) = d_osqp_work->solution->x[t*num_input_by_state + num_states + i];
-					if (i == 0)
-						d_u_f((t*num_inputs + i)) += 0.028 * 9.81;
-				}
-			}
-			
-			for (int t = 0; t < d_N + 1; t++)
-			{
-				for (int i = 0; i < d_num_outputs; i++)
-				{
-					if (i<3)
-						d_y_f((t*d_num_outputs + i)) = d_osqp_work->solution->x[t*num_input_by_state + i] + d_setpoint(i);
-					else
-						d_y_f((t*d_num_outputs + i)) = d_osqp_work->solution->x[t*num_input_by_state + 3 + i];
-				}
-			}
-
-			d_solve_time = d_osqp_work->info->run_time;
-
-			s_Rampc_mutex.lock();
-			// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 649");
-			s_u_f = d_u_f;
-			s_y_f = d_y_f;
-			s_solve_time = d_solve_time;
-			s_Rampc_mutex.unlock();
-			//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 649");
-
-			ROS_INFO_STREAM("[MPC CONTROLLER] Rampc found optimal solution with OSQP status: " << d_osqp_work->info->status);
-			ROS_INFO_STREAM("Thrust: "     << d_u_f(0) );
-			ROS_INFO_STREAM("Roll Rate: "  << d_u_f(1) );
-			ROS_INFO_STREAM("Pitch Rate: " << d_u_f(2) );
-			//if (d_Rampc_yaw_control)
-			//	ROS_INFO_STREAM("Yaw Rate: " << d_u_f(3));
-			ROS_INFO_STREAM("Objective: " << d_osqp_work->info->obj_val);
-			ROS_INFO_STREAM("Runtime: " << d_solve_time);
-		}
-		else
-		{
-			ROS_INFO_STREAM("[MPC CONTROLLER] Rampc failed to find optimal solution with OSQP status: " << d_osqp_work->info->status);
-			s_Rampc_mutex.lock();
-			// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 649");
-			s_u_f = d_u_f;
-			s_y_f = d_y_f;
-			s_solve_time = 0.0;
-			s_Rampc_mutex.unlock();
-		}
-	}
-
-  	catch(exception& e)
-    {
-    	clear_setupRampc_success_flag();
-
-	    ROS_INFO_STREAM("[MPC CONTROLLER] Rampc optimization exception with OSQP with standard error message: " << e.what());
-	    ROS_INFO("[MPC CONTROLLER] Rampc must be (re-)setup");
-  	}
-  	catch(...)
-  	{
-  		clear_setupRampc_success_flag();
-
-    	ROS_INFO("[MPC CONTROLLER] Rampc optimization exception with OSQP");
-    	ROS_INFO("[MPC CONTROLLER] Rampc must be (re-)setup");
-  	}
-  	*/
-}
 
 
 //    ----------------------------------------------------------------------------------
@@ -725,6 +63,7 @@ void solve_Rampc_mpc()
 // Rampc operations run in seperate thread as they are time consuming
 void Rampc_thread_main()
 {
+	// bools for the main thread
 	bool params_changed;
 	bool setpoint_changed;
 	bool setupRampc;
@@ -735,19 +74,18 @@ void Rampc_thread_main()
 	bool updateTheta;
 	int experiment;
 
-
+	// current and past input definitions for parameter update
 	MatrixXf d_current_input=MatrixXf::Zero(d_num_inputs,1);
 	MatrixXf s_current_input=MatrixXf::Zero(d_num_inputs,1);
 	MatrixXf m_current_input=MatrixXf::Zero(d_num_inputs,1);
 	MatrixXf d_previous_input=MatrixXf::Zero(d_num_inputs,1);
 	MatrixXf s_previous_input=MatrixXf::Zero(d_num_inputs,1);
 	MatrixXf m_previous_input=MatrixXf::Zero(d_num_inputs,1);
-	// Create thread for gs matrix inversion
-	//boost::thread Rampc_gs_inversion_thread(Rampc_gs_inversion_thread_main);
+	
 
 	while (ros::ok())
 	{
-
+		// Get relevant bools at every iteration
 		s_Rampc_mutex.lock();
 		//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 72");
 		experiment=s_experiment;
@@ -763,24 +101,13 @@ void Rampc_thread_main()
         //ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 72");
         //ROS_INFO_STREAM("[RAMPC CONTROLLER] Update Theta: "<<updateTheta);
 
-        // Detect changing_ref_enable rising edge to reset time
-        if (!changing_ref_enable_prev && d_changing_ref_enable){
-        	//ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug Info 1.");
-        	d_time_in_seconds = 0.0;
-        }
-        
-        // Detect changing_ref_enable falling edge to reset setpoint to before it was enabled
-        if (changing_ref_enable_prev && !d_changing_ref_enable){
-        	//ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug Info 2.");
-        	setpoint_changed = true;
-        }
 
-        changing_ref_enable_prev = d_changing_ref_enable;
-        //ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug Info 3.");
 
         if (params_changed)
         {
         	ROS_INFO_STREAM("[RAMPC CONTROLLER] Params Changed.");
+
+        	// Change YAML parameters
         	change_Rampc_params();
         	
         	s_Rampc_mutex.lock();
@@ -805,16 +132,20 @@ void Rampc_thread_main()
 					
 						switch(experiment){
 							case RAMPC_CONTROLLER_EXPERIMENT_MASS:
+								// Change decoupled setpoint
+								// 0.8m offset in z direction to change from -0.7 to 0.7m to 0.1 to 1.5m
 								d_z_setpoint_Rampc<< 	d_setpoint(2)-0.8,
 														0.0;
 								break;
 
 							case RAMPC_CONTROLLER_EXPERIMENT_ALL_ROTORS:
+								// Change decoupled setpoint
 								d_z_setpoint_Rampc<< 	d_setpoint(2)-0.8,
 														0.0;
 								break;
 
 							case RAMPC_CONTROLLER_EXPERIMENT_FULL_STATE:
+								// Change full state setpoint
 								d_z_setpoint_Rampc<< 	d_setpoint(0),
 														d_setpoint(1),
 														d_setpoint(2)-0.8,
@@ -830,7 +161,7 @@ void Rampc_thread_main()
 								break;
 						}
 						
-					
+						// Change setpoint in upper bound
 						
 						for(int i=0;i<d_N;i++){
 							for(int j=0;j<(d_num_outputs*2+d_num_inputs*2);j++){
@@ -848,52 +179,16 @@ void Rampc_thread_main()
 	        			//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 96");
 						break;
 
-					case RAMPC_CONTROLLER_SOLVER_MPC:
-						change_Rampc_setpoint_mpc();
-						s_Rampc_active_setpoint = d_setpoint;
-		        		s_setpoint_changed = false;
-		        		s_Rampc_mutex.unlock();
-						break;
+					
 
-					case RAMPC_CONTROLLER_SOLVER_GUROBI:
+					
 					default:
-						change_Rampc_setpoint_gurobi();
 						break;
 				}
-	        	/*
-				// If optimizing over steady state gs & us, no need to perform gs inversion logic
-				//if (d_opt_sparse && d_opt_steady_state)
-				//{
-					s_Rampc_mutex.lock();
-		        	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 96");
-		        	s_Rampc_active_setpoint = d_setpoint;
-		        	s_setpoint_changed = false;
-		        	s_Rampc_mutex.unlock();
-		        	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 96");
-				//}
-				// Wait for gs inversion to complete before exiting this mode
-		        	/*
-				else if (d_gs_inversion_complete)
-				{
-					d_gs_inversion_complete = false;
-
-					ds_Rampc_gs_inversion_mutex.lock();
-					//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 117");
-			        ds_gs_inversion_complete = d_gs_inversion_complete;
-			        ds_Rampc_gs_inversion_mutex.unlock();
-			        //ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 117");
-
-		        	s_Rampc_mutex.lock();
-		        	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 96");
-		        	s_Rampc_active_setpoint = d_setpoint;
-		        	s_setpoint_changed = false;
-		        	s_Rampc_mutex.unlock();
-		        	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 96");
-	        	}
-	        	*/
+	        	
         	}
         	else
-        	{
+        	{	
            		s_Rampc_mutex.lock();
 	        	 //ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 96");
 	        	s_Rampc_active_setpoint = s_setpoint;
@@ -909,6 +204,7 @@ void Rampc_thread_main()
         	// Switch between the possible solvers
 			switch (d_solver)
 			{
+				// Setup RAMPC. Experiment 1 for the mass 2 for rotor failure and 3 for the full state
 				case RAMPC_CONTROLLER_SOLVER_OSQP:
 					switch (experiment){
 						case RAMPC_CONTROLLER_EXPERIMENT_MASS:
@@ -945,16 +241,14 @@ void Rampc_thread_main()
 					//setup_Rampc_osqp();
 					break;
 
-				case RAMPC_CONTROLLER_SOLVER_MPC:
-					setup_Rampc_mpc();
-					break;
 
-				case RAMPC_CONTROLLER_SOLVER_GUROBI:
+				
 				default:
-					setup_Rampc_gurobi();
+					
 					break;
 			}
 			if(d_osqp_work){
+				// Sometimes OSQP thinks the problem is non-convex if this happens we retry the setup
 			if(!(d_osqp_work->info->status_val==-7)){
 	 		   	ROS_INFO("[RAMPC CONTROLLER] Rampc optimization setup successful with OSQP");
 
@@ -976,6 +270,8 @@ void Rampc_thread_main()
 				case RAMPC_CONTROLLER_SOLVER_OSQP:
 					switch(experiment){
 						case RAMPC_CONTROLLER_EXPERIMENT_MASS:
+
+							// first solve the optimisation then update theta to reduce time delay
 							solve_Rampc_osqp();
 							update_theta_hat();
 							break;
@@ -1002,13 +298,10 @@ void Rampc_thread_main()
 					//update_theta_hat();
 					break;
 
-				case RAMPC_CONTROLLER_SOLVER_MPC:
-					solve_Rampc_mpc();
-					break;
 
-				case RAMPC_CONTROLLER_SOLVER_GUROBI:
+				
 				default:
-					solve_Rampc_gurobi();
+					
 					break;
 			}
 
@@ -1020,6 +313,7 @@ void Rampc_thread_main()
         }
         //ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug Info 7.");
         if (updateTheta){
+        	// Update hyperboxes
         	//ROS_INFO_STREAM("[RAMPC CONTROLLER] Solve Theta Update.");
         	switch(experiment){
         		case RAMPC_CONTROLLER_EXPERIMENT_MASS:
@@ -1044,7 +338,6 @@ void Rampc_thread_main()
 	}
 
 	// Cleanup for memory allocation etc.
-	gurobi_cleanup();
 	osqp_extended_cleanup();
 
 	// Wait for gs matrix inversion thread to finish
@@ -1055,6 +348,7 @@ void Rampc_thread_main()
 
 void change_Rampc_params()
 {
+	// Change the parameters in the yaml file
 	s_Rampc_mutex.lock();
 	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 133");
 	d_cf_weight_in_newtons = s_cf_weight_in_newtons;
@@ -1080,12 +374,10 @@ void change_Rampc_params()
 	d_theta_update_num=s_yaml_theta_update_num;
 	if (s_yaml_solver == "osqp")
 		d_solver = RAMPC_CONTROLLER_SOLVER_OSQP;
-	else if (s_yaml_solver == "mpc")
-		d_solver = RAMPC_CONTROLLER_SOLVER_MPC;
 	else
 	{
-		// Default solver is Gurobi
-		d_solver = RAMPC_CONTROLLER_SOLVER_GUROBI;
+		// Default solver is OSQP
+		d_solver = RAMPC_CONTROLLER_SOLVER_OSQP;
 	}
 
 	d_opt_sparse = s_yaml_opt_sparse;
@@ -1112,540 +404,22 @@ void change_Rampc_params()
 	ROS_INFO("[RAMPC CONTROLLER] (Re-)setup Rampc to apply changes");
 }
 
-void change_Rampc_setpoint_gurobi()
-{
-	try
-	{
-		// Update linear cost vectors
-		update_lin_cost_vectors();
 
-		// If optimizing over steady state gs & us, no need to perform gs inversion logic
-		if (d_opt_sparse && d_opt_steady_state)
-		{
-			// Update linear objective terms
-		    d_grb_lin_obj_r = 0;
-		    for (d_i = 0; d_i < d_Nyf + d_num_outputs; d_i++)
-		    	d_grb_lin_obj_r += d_lin_cost_vec_r(d_i) * d_grb_vars[d_yf_start_i + d_i];
 
-		    // Update objective
-		    d_grb_model.setObjective(d_grb_quad_obj + d_grb_lin_obj_us + d_grb_lin_obj_r + d_grb_lin_obj_gs);
-
-			// Update equality constraints RHS
-			for (d_i = 0; d_i < d_Nyini + d_Nyf + d_num_outputs; d_i++)
-				d_grb_dyn_constrs[d_r_gs_start_i + d_i].set(GRB_DoubleAttr_RHS, d_r_gs(d_i));
-
-		    // Inform the user
-		    ROS_INFO("[RAMPC CONTROLLER] Rampc setpoint update successful with Gurobi");
-		}
-		// Wait for gs inversion to complete before proceeding
-		else if (d_gs_inversion_complete)
-		{
-			// Update linear objective terms
-		    d_grb_lin_obj_r = 0;
-		    d_grb_lin_obj_gs = 0;
-		    if (d_opt_sparse)
-		    {
-		    	for (d_i = 0; d_i < d_Ng; d_i++)
-			    	d_grb_lin_obj_gs += d_lin_cost_vec_gs(d_i) * d_grb_vars[d_i];
-			    for (d_i = 0; d_i < d_Nyf + d_num_outputs; d_i++)
-			    	d_grb_lin_obj_r += d_lin_cost_vec_r(d_i) * d_grb_vars[d_yf_start_i + d_i];
-		    }
-		    else
-		    {
-		    	for (d_i = 0; d_i < d_Ng; d_i++)
-			    {
-			    	d_grb_lin_obj_r += d_lin_cost_vec_r(d_i) * d_grb_vars[d_i];
-			    	d_grb_lin_obj_gs += d_lin_cost_vec_gs(d_i) * d_grb_vars[d_i];
-			    }
-		    }
-
-		    // Update objective
-		    // It was observed that objective of pre-solved model is same as original model
-		    if (d_opt_sparse || !d_grb_presolve_at_setup)
-		    	d_grb_model.setObjective(d_grb_quad_obj + d_grb_lin_obj_us + d_grb_lin_obj_r + d_grb_lin_obj_gs);
-		    else
-		    	d_grb_model_presolved->setObjective(d_grb_quad_obj + d_grb_lin_obj_us + d_grb_lin_obj_r + d_grb_lin_obj_gs);
-
-		    // Inform the user
-		    ROS_INFO("[RAMPC CONTROLLER] Rampc setpoint update successful with Gurobi");
-	    }
-	}
-
-	catch(GRBException e)
-    {
-    	clear_setupRampc_success_flag();
-
-	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Rampc setpoint update exception with Gurobi error code = " << e.getErrorCode());
-	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Error message: " << e.getMessage());
-	    ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
-  	}
-  	catch(exception& e)
-    {
-    	clear_setupRampc_success_flag();
-
-	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Rampc setpoint update exception with Gurobi with standard error message: " << e.what());
-	    ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
-  	}
-  	catch(...)
-  	{
-  		clear_setupRampc_success_flag();
-
-  		ROS_INFO("[RAMPC CONTROLLER] Rampc setpoint update exception with Gurobi");
-  		ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
-  	}
-}
-
-void change_Rampc_setpoint_gurobi_changing_ref()
-{
-	try
-	{
-		// Update linear cost vectors
-		update_lin_cost_vectors_changing_ref();
-
-		// Update linear cost vector, depending on optimization formulation
-		d_grb_lin_obj_r = 0;
-		if (d_opt_sparse)
-		{
-			// Update linear objective terms
-		    for (d_i = 0; d_i < d_Nyf + d_num_outputs; d_i++)
-		    	d_grb_lin_obj_r += d_lin_cost_vec_r(d_i) * d_grb_vars[d_yf_start_i + d_i];
-
-		    // Update equality constraint RHS if optimizing over gs
-			if (d_opt_steady_state)
-				for (d_i = 0; d_i < d_Nyini + d_Nyf + d_num_outputs; d_i++)
-					d_grb_dyn_constrs[d_r_gs_start_i + d_i].set(GRB_DoubleAttr_RHS, d_r_gs(d_i));
-		}
-		else
-		{
-			// Update linear objective terms
-	    	for (d_i = 0; d_i < d_Ng; d_i++)
-		    {
-		    	d_grb_lin_obj_r += d_lin_cost_vec_r(d_i) * d_grb_vars[d_i];
-		    	d_grb_lin_obj_gs += d_lin_cost_vec_gs(d_i) * d_grb_vars[d_i];
-		    }
-		}
-
-	    // Update objective
-	    // It was observed that objective of pre-solved model is same as original model
-	    if (d_opt_sparse || !d_grb_presolve_at_setup)
-	    	d_grb_model.setObjective(d_grb_quad_obj + d_grb_lin_obj_us + d_grb_lin_obj_r + d_grb_lin_obj_gs);
-	    else
-	    	d_grb_model_presolved->setObjective(d_grb_quad_obj + d_grb_lin_obj_us + d_grb_lin_obj_r + d_grb_lin_obj_gs);
-	}
-
-	catch(GRBException e)
-    {
-    	clear_setupRampc_success_flag();
-
-	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Rampc setpoint update exception with Gurobi error code = " << e.getErrorCode());
-	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Error message: " << e.getMessage());
-	    ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
-  	}
-  	catch(exception& e)
-    {
-    	clear_setupRampc_success_flag();
-
-	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Rampc setpoint update exception with Gurobi with standard error message: " << e.what());
-	    ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
-  	}
-  	catch(...)
-  	{
-  		clear_setupRampc_success_flag();
-
-  		ROS_INFO("[RAMPC CONTROLLER] Rampc setpoint update exception with Gurobi");
-  		ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
-  	}
-}
-
-void change_Rampc_setpoint_osqp()
-{
-	try
-	{	
-
-
-
-
-
-		/*
-		// Update linear cost vector
-		update_lin_cost_vectors();
-
-		// If optimizing over steady state gs & us, no need to perform gs inversion logic
-		if (d_opt_sparse && d_opt_steady_state)
-		{
-			// Update linear cost vector
-			d_osqp_q.middleRows(d_yf_start_i, d_Nyf + d_num_outputs) = d_lin_cost_vec_r;
-
-			// Convert Eigen vector to c_float array
-			Matrix<c_float, Dynamic, Dynamic>::Map(d_osqp_q_new, d_osqp_q.rows(), d_osqp_q.cols()) = d_osqp_q.cast<c_float>();
-
-			// Update OSQP linear cost
-			osqp_update_lin_cost(d_osqp_work, d_osqp_q_new);
-
-			// Update equality constraint vectors
-			for (d_i = 0; d_i < d_Nyini + d_Nyf + d_num_outputs; d_i++)
-			{
-				d_osqp_l_new[d_r_gs_start_i + d_i] = d_r_gs(d_i);
-				d_osqp_u_new[d_r_gs_start_i + d_i] = d_osqp_l_new[d_r_gs_start_i + d_i];
-			}
-
-		    // Inform the user
-		    ROS_INFO("[RAMPC CONTROLLER] Rampc setpoint update successful with OSQP");
-		}
-		// Wait for gs inversion to complete before proceeding
-		else if (d_gs_inversion_complete)
-		{
-			// Update linear cost vector
-			if (d_opt_sparse)
-			{
-				d_osqp_q.topRows(d_Ng) = d_lin_cost_vec_gs;
-				d_osqp_q.bottomRows(d_Nyf + d_num_outputs) = d_lin_cost_vec_r;
-			}
-			else
-				d_osqp_q.topRows(d_Ng) = d_lin_cost_vec_us + d_lin_cost_vec_r + d_lin_cost_vec_gs;
-
-			// Convert Eigen vector to c_float array
-			Matrix<c_float, Dynamic, Dynamic>::Map(d_osqp_q_new, d_osqp_q.rows(), d_osqp_q.cols()) = d_osqp_q.cast<c_float>();
-
-			// Update OSQP linear cost
-			osqp_update_lin_cost(d_osqp_work, d_osqp_q_new);
-
-		    // Inform the user
-		    ROS_INFO("[RAMPC CONTROLLER] Rampc setpoint update successful with OSQP");
-		 */
-		//}
-
-	}
-
-  	catch(exception& e)
-    {
-    	clear_setupRampc_success_flag();
-
-	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Rampc setpoint update exception with OSQP with standard error message: " << e.what());
-	    ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
-  	}
-  	catch(...)
-  	{
-  		clear_setupRampc_success_flag();
-
-  		ROS_INFO("[RAMPC CONTROLLER] Rampc setpoint update exception with OSQP");
-  		ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
-  	}
-}
-
-
-void change_Rampc_setpoint_osqp_changing_ref()
-{
-	try
-	{
-		// Update linear cost vector
-		update_lin_cost_vectors_changing_ref();
-
-		// Update linear cost vector, depending on optimization formulation
-		if (d_opt_sparse)
-		{
-			d_osqp_q.middleRows(d_yf_start_i, d_Nyf + d_num_outputs) = d_lin_cost_vec_r;
-
-			// Update equality constraint vectors if optimizing over gs
-			if (d_opt_steady_state)
-				for (d_i = 0; d_i < d_Nyini + d_Nyf + d_num_outputs; d_i++)
-				{
-					d_osqp_l_new[d_r_gs_start_i + d_i] = d_r_gs(d_i);
-					d_osqp_u_new[d_r_gs_start_i + d_i] = d_osqp_l_new[d_r_gs_start_i + d_i];
-				}
-		}
-		else
-			d_osqp_q.topRows(d_Ng) = d_lin_cost_vec_us + d_lin_cost_vec_r + d_lin_cost_vec_gs;
-
-		// Convert Eigen vector to c_float array
-		Matrix<c_float, Dynamic, Dynamic>::Map(d_osqp_q_new, d_osqp_q.rows(), d_osqp_q.cols()) = d_osqp_q.cast<c_float>();
-
-		// Update OSQP linear cost
-		osqp_update_lin_cost(d_osqp_work, d_osqp_q_new);
-	}
-
-  	catch(exception& e)
-    {
-    	clear_setupRampc_success_flag();
-
-	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Rampc setpoint update exception with OSQP with standard error message: " << e.what());
-	    ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
-  	}
-  	catch(...)
-  	{
-  		clear_setupRampc_success_flag();
-
-  		ROS_INFO("[RAMPC CONTROLLER] Rampc setpoint update exception with OSQP");
-  		ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
-  	}
-}
-
-void setup_Rampc_gurobi()
-{
-	/*
-	try
-    {
-		// Get u_data & y_data from files
-		MatrixXf u_data = get_u_data();
-		MatrixXf y_data = get_y_data();
-
-		// Get variable lengths
-		get_variable_lengths(u_data, y_data);
-
-		// Get Hankel matrices
-		get_hankel_matrices(u_data, y_data);
-
-		// Get cost matrices
-		get_cost_matrices();
-
-		// Input/output constraint vectors
-		get_input_output_constr_vectors();
-
-		// GUROBI QUADRATIC COST MATRIX
-		MatrixXf grb_Q = get_quad_cost_matrix();
-
-		// GUROBI LINEAR COST VECTORS
-		get_lin_cost_vectors();
-
-		// GUROBI LINEAR INEQUALITY CONSTRAINT MATRIX
-		// Only used in 'dense' formulation
-		MatrixXf grb_A_g;
-		if (d_opt_sparse)
-			grb_A_g = MatrixXf::Zero(0, 0);
-		else
-		{
-			grb_A_g = MatrixXf::Zero(2 * (d_Nuf + d_Nyf + d_num_outputs), d_Ng);
-			grb_A_g.topRows(d_Nuf) = -d_U_f;
-			grb_A_g.middleRows(d_Nuf, d_Nuf) = d_U_f;
-			grb_A_g.middleRows(2 * d_Nuf, d_Nyf + d_num_outputs) = -d_Y_f;
-			grb_A_g.bottomRows(d_Nyf + d_num_outputs) = d_Y_f;
-		}
-
-		// GUROBI LINEAR INEQUALITY CONSTRAINT VECTOR
-		// Only used in 'dense' formulation
-		MatrixXf grb_b_g;
-		if (d_opt_sparse)
-			grb_b_g = MatrixXf::Zero(0, 0);
-		else
-		{
-			grb_b_g = MatrixXf::Zero(2 * (d_Nuf + d_Nyf + d_num_outputs), 1);
-			grb_b_g.topRows(d_Nuf) = -d_input_min;
-			grb_b_g.middleRows(d_Nuf, d_Nuf) = d_input_max;
-			grb_b_g.middleRows(2 * d_Nuf, d_Nyf + d_num_outputs) = -d_output_min;
-			grb_b_g.bottomRows(d_Nyf + d_num_outputs) = d_output_max;
-		}
-
-		// GUROBI BOUNDS VECTOR
-		MatrixXf lb = -GRB_INFINITY * MatrixXf::Ones(d_num_opt_vars, 1);
-		MatrixXf ub = GRB_INFINITY * MatrixXf::Ones(d_num_opt_vars, 1);
-		if (d_opt_sparse)
-		{
-			lb.middleRows(d_uf_start_i, d_Nuf) = d_input_min;
-			lb.middleRows(d_yf_start_i, d_Nyf + d_num_outputs) = d_output_min;
-
-			ub.middleRows(d_uf_start_i, d_Nuf) = d_input_max;
-			ub.middleRows(d_yf_start_i, d_Nyf + d_num_outputs) = d_output_max;
-		}
-
-		// GUROBI LINEAR EQUALITY CONSTRAINTS
-		// Static equality constraints ([uf; yf; yt]), and ([gs; us]) if optimizing over steady state gs & us
-		MatrixXf grb_A_eq_stat = get_static_eq_constr_matrix();
-		MatrixXf grb_b_eq_stat = get_static_eq_constr_vector();
-		
-		// Dynamic equality constraints that change every time ([uini; uini]), and ([gs; r]) if optimizing over steady state gs & us
-		MatrixXf grb_A_eq_dyn = get_dynamic_eq_constr_matrix();
-		MatrixXf grb_b_eq_dyn = get_dynamic_eq_constr_vector();
-		if (d_opt_sparse && d_opt_steady_state)
-			d_r_gs_start_i = d_Nuini + d_Nyini;
-
-		// GUROBI MODEL SETUP
-		// Follows 'dense_c++.cpp' example (https://www.gurobi.com/documentation/8.1/examples/dense_cpp_cpp.html)
-    	// (Re-)Configure environment
-	    d_grb_env.set(GRB_StringParam_LogFile, d_logFolder + "gurobi.log");
-	    d_grb_env.start();
-
-	    // Clear variables if previously created
-	    int num_vars = d_grb_model.get(GRB_IntAttr_NumVars);
-	    d_grb_vars = d_grb_model.getVars();
-	    for (int i = 0; i < num_vars; i++)
-	    	d_grb_model.remove(d_grb_vars[i]);
-	    d_grb_model.update();
-	    delete[] d_grb_vars;
-
-	    // Create variables
-	    double grb_lb[d_num_opt_vars];
-	    double grb_ub[d_num_opt_vars];
-	    for (int i = 0; i < d_num_opt_vars; i++)
-	    {
-	    	grb_lb[i] = lb(i);
-	    	grb_ub[i] = ub(i);
-	    }
-	    d_grb_vars = d_grb_model.addVars(grb_lb, grb_ub, NULL, NULL, NULL, d_num_opt_vars);
-
-	    // Set quadratic objective term
-	    d_grb_quad_obj = 0;
-	    for (int i = 0; i < d_num_opt_vars; i++)
-	    	for (int j = 0; j < d_num_opt_vars; j++)
-	    		d_grb_quad_obj += grb_Q(i,j) * d_grb_vars[i] * d_grb_vars[j];
-
-	    // Set linear objective term
-	    d_grb_lin_obj_us = 0;
-	    d_grb_lin_obj_r = 0;
-	    d_grb_lin_obj_gs = 0;
-	    if (d_opt_sparse)
-	    {
-	    	for (int i = 0; i < d_Ng; i++)
-		    	d_grb_lin_obj_gs += d_lin_cost_vec_gs(i) * d_grb_vars[i];
-		    for (int i = 0; i < d_Nuf; i++)
-		    	d_grb_lin_obj_us += d_lin_cost_vec_us(i) * d_grb_vars[d_uf_start_i + i];
-		    for (int i = 0; i < d_Nyf + d_num_outputs; i++)
-		    	d_grb_lin_obj_r += d_lin_cost_vec_r(i) * d_grb_vars[d_yf_start_i + i];
-	    }
-	    else
-	    {
-	    	for (int i = 0; i < d_Ng; i++)
-		    {
-		    	d_grb_lin_obj_us += d_lin_cost_vec_us(i) * d_grb_vars[i];
-		    	d_grb_lin_obj_r += d_lin_cost_vec_r(i) * d_grb_vars[i];
-		    	d_grb_lin_obj_gs += d_lin_cost_vec_gs(i) * d_grb_vars[i];
-		    }
-	    }
-	    
-	    // Set objective
-	    d_grb_model.setObjective(d_grb_quad_obj + d_grb_lin_obj_us + d_grb_lin_obj_r + d_grb_lin_obj_gs);
-
-	    // Clear constraints if previously created
-	    int num_constrs = d_grb_model.get(GRB_IntAttr_NumConstrs);
-    	GRBConstr* grb_constrs = d_grb_model.getConstrs();
-    	for (int i = 0; i < num_constrs; i++)
-    		d_grb_model.remove(grb_constrs[i]);
-    	d_grb_model.update();
-    	delete[] grb_constrs;
-    	delete[] d_grb_dyn_constrs;
-
-	    // Add inequality constraints
-	    // Note that grb_A_g is empty when using sparse formulation and for loop below does not run
-	    for (int i = 0; i < grb_A_g.rows(); i++)
-	    {
-	    	GRBLinExpr lhs = 0;
-	    	for (int j = 0; j < d_Ng; j++)
-	    		lhs += grb_A_g(i,j) * d_grb_vars[j];
-	    	d_grb_model.addConstr(lhs, '<', grb_b_g(i));
-	    }
-
-	    // Add static equality constraints
-	    // Note that grb_A_eq_stat is empty when using dense formulation and for loop below does not run
-	    for (int i = 0; i < grb_A_eq_stat.rows(); i++)
-	    {
-	    	GRBLinExpr lhs = 0;
-	    	for (int j = 0; j < d_num_opt_vars; j++)
-	    		lhs += grb_A_eq_stat(i,j) * d_grb_vars[j];
-	    	d_grb_model.addConstr(lhs, '=', grb_b_eq_stat(i));
-	    }
-
-	    // Add dynamic equality constraints and store in memory for quick change
-	    d_grb_dyn_constrs = new GRBConstr[d_num_dyn_eq_constr];
-	    for (int i = 0; i < d_num_dyn_eq_constr; i++)
-	    {
-	    	GRBLinExpr lhs = 0;
-	    	for (int j = 0; j < d_num_opt_vars; j++)
-	    		lhs += grb_A_eq_dyn(i,j) * d_grb_vars[j];
-	    	d_grb_dyn_constrs[i] = d_grb_model.addConstr(lhs, '=', grb_b_eq_dyn(i));
-	    }
-
-	    // Set model parameters
-	    if (d_grb_LogToFile)
-			d_grb_model.set(GRB_StringParam_LogFile, d_logFolder + "gurobi.log");
-		else
-			d_grb_model.set(GRB_StringParam_LogFile, "");
-		d_grb_model.set(GRB_IntParam_LogToConsole, d_opt_verbose);
-		// Setting Aggregate to 0 was found to speed up optimization using Gurobi auto-tune
-	    // This is only relevant when Presolve is on (dense formulation)
-	    d_grb_model.set(GRB_IntParam_Aggregate, 0);
-	    // Skip Presolve when using sparse model, as it returns same model (presolving sparsifies)
-	    if (d_opt_sparse)
-	    	d_grb_model.set(GRB_IntParam_Presolve, 0);
-	    else
-	    	d_grb_model.set(GRB_IntParam_Presolve, -1);
-	    
-
-	    // Presolve - only applicable for dense formulation
-	    if (!d_opt_sparse && d_grb_presolve_at_setup)
-	    {
-		    static GRBModel grb_model_presolved = d_grb_model.presolve();
-		    
-		    // Update variables to presolved model variables
-		    d_grb_vars = grb_model_presolved.getVars();
-
-		    // Update dynamic equality constraints to presolved model constraints. They are last set of constraints in presolved model
-		    num_constrs = grb_model_presolved.get(GRB_IntAttr_NumConstrs);
-		    GRBConstr* grb_constrs_presolved = grb_model_presolved.getConstrs();
-		    int j = 0;
-	    	for (int i = num_constrs - d_num_dyn_eq_constr; i < num_constrs; i++)
-	    	{
-	    		d_grb_dyn_constrs[j] = grb_constrs_presolved[i];
-	    		j++;
-	    	}
-	    	delete[] grb_constrs_presolved;
-
-	    	// Set Presolve parameter of presolved model to 0 to avoid re-presolving
-		    grb_model_presolved.set(GRB_IntParam_Presolve, 0);
-
-		    // Global variable is pointer to model
-		    d_grb_model_presolved = &grb_model_presolved;
-		}
-
-	    // Some steps to finish setup
-		finish_Rampc_setup();
-
-	    // Inform the user
-	    ROS_INFO("[RAMPC CONTROLLER] Rampc optimization setup successful with Gurobi");
-    }
-    
-    catch(GRBException e)
-    {
-    	clear_setupRampc_success_flag();
-
-	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Rampc optimization setup exception with Gurobi error code = " << e.getErrorCode());
-	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Error message: " << e.getMessage());
-	    ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
-  	}
-  	catch(exception& e)
-    {
-    	clear_setupRampc_success_flag();
-
-	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Rampc optimization setup exception with Gurobi with standard error message: " << e.what());
-	    ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
-  	}
-  	catch(...)
-  	{
-  		clear_setupRampc_success_flag();
-
-    	ROS_INFO("[RAMPC CONTROLLER] Rampc optimization setup exception with Gurobi");
-    	ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
-  	}
-  	*/
-}
 
 void setup_Rampc_osqp()
 {
 	try
     {
     	
-		// Get u_data & y_data from files
-		//MatrixXf u_data = get_u_data();
-		//MatrixXf y_data = get_y_data();
 
-		// Get variable lengths
+		// Get variables lengths of state and input
 		get_variable_lengths();
+
+		// Feedback matrix
 		get_control_feedback();
 	
-		// Get Hankel matrices
-		//get_hankel_matrices(u_data, y_data);
-		
-		// Get cost matrices
-		//d_num_inputs=1;
-		//d_num_states=2;
+		// Cost matrices
 		get_cost_matrices();
 
 		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 1");
@@ -1656,10 +430,13 @@ void setup_Rampc_osqp()
 		
 		// Input/output constraint vectors
 		get_input_output_constr();
+		// Dynamics Matrices
 		get_dynamics_matrix();
 
+		// Parameters for the tube
 		get_tube_params();
 
+		// Initial point for setup
 		MatrixXf x_hat_0;
 		x_hat_0=MatrixXf::Zero(d_num_outputs,1);
 		x_hat_0(0,0)=-0.5;
@@ -1668,7 +445,6 @@ void setup_Rampc_osqp()
 		MatrixXf x_bar_0=MatrixXf::Zero(d_num_outputs,1);
 		x_bar_0=x_hat_0;
 		
-//ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 2");
 
 		// INITIAL STATE constraints
 		MatrixXf osqp_A_x_hat_ini=MatrixXf::Zero(d_num_outputs,d_col_num);
@@ -1688,7 +464,7 @@ void setup_Rampc_osqp()
 		osqp_l_x_bar_ini=x_bar_0;
 		osqp_u_x_bar_ini=x_bar_0;
 
-
+		// Initial dilation constraint
 		MatrixXf osqp_A_s_ini=MatrixXf::Zero(1,d_col_num);
 		MatrixXf osqp_l_s_ini=MatrixXf::Zero(1,1);
 		MatrixXf osqp_u_s_ini=MatrixXf::Zero(1,1);
@@ -1698,6 +474,7 @@ void setup_Rampc_osqp()
 		osqp_u_s_ini(0,0)=0.0;
 
 
+		// Dynamics constraints for x_hat
 		MatrixXf osqp_A_hat_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,d_col_num);
 		MatrixXf osqp_l_hat_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,1);
 		MatrixXf osqp_u_hat_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,1);
@@ -1714,7 +491,7 @@ void setup_Rampc_osqp()
 		}
 
 
-
+		// Dynamics constraints for x_bar
 		MatrixXf osqp_A_bar_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,d_col_num);
 		MatrixXf osqp_l_bar_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,1);
 		MatrixXf osqp_u_bar_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,1);
@@ -1729,9 +506,8 @@ void setup_Rampc_osqp()
 			osqp_u_bar_dynamics_constr.block(i*d_num_outputs,0,d_num_outputs,1)=MatrixXf::Zero(d_num_outputs,1);
 		}
 
-		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 21");
 
-
+		// State and input constraints
 		MatrixXf osqp_A_state_input_constr=MatrixXf::Zero(d_N*(d_num_outputs*2+d_num_inputs*2),d_col_num);
 		MatrixXf osqp_l_state_input_constr=MatrixXf::Zero(d_N*(d_num_outputs*2+d_num_inputs*2),1);
 		MatrixXf osqp_u_state_input_constr=MatrixXf::Zero(d_N*(d_num_outputs*2+d_num_inputs*2),1);
@@ -1749,6 +525,7 @@ void setup_Rampc_osqp()
 			}
 		}
 
+		// Tube inclusion constraints
 		MatrixXf osqp_A_tube_constr=MatrixXf::Zero(d_N*d_H_x.rows()*d_e_l.rows(),d_col_num);
 		MatrixXf osqp_l_tube_constr=MatrixXf::Zero(d_N*d_H_x.rows()*d_e_l.rows(),1);
 		MatrixXf osqp_u_tube_constr=MatrixXf::Zero(d_N*d_H_x.rows()*d_e_l.rows(),1);
@@ -1767,7 +544,7 @@ void setup_Rampc_osqp()
 		}
 		
 		
-
+		// Terminal constraints
 		MatrixXf osqp_A_term_constr=MatrixXf::Zero(d_H_xf_x.rows(),d_col_num);
 		MatrixXf osqp_l_term_constr=MatrixXf::Zero(d_H_xf_x.rows(),1);
 		MatrixXf osqp_u_term_constr=MatrixXf::Zero(d_H_xf_x.rows(),1);
@@ -1779,7 +556,7 @@ void setup_Rampc_osqp()
 
 
 
-
+		// Concatenate all matrices
 
 
 		MatrixXf osqp_A=MatrixXf::Zero(osqp_A_x_hat_ini.rows()+osqp_A_x_bar_ini.rows()+osqp_A_s_ini.rows()+osqp_A_hat_dynamics_constr.rows()+osqp_A_bar_dynamics_constr.rows()+osqp_A_state_input_constr.rows()+osqp_A_tube_constr.rows()+osqp_A_term_constr.rows(),d_col_num);
@@ -1820,77 +597,11 @@ void setup_Rampc_osqp()
 
 
 
-		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 3");
-		/*
-		d_osqp_q = MatrixXf::Zero(d_num_opt_vars, 1);
-		if (d_opt_sparse)
-		{
-			d_osqp_q.topRows(d_Ng) = d_lin_cost_vec_gs;
-			d_osqp_q.middleRows(d_uf_start_i, d_Nuf) = d_lin_cost_vec_us;
-			d_osqp_q.middleRows(d_yf_start_i, d_Nyf + d_num_outputs) = d_lin_cost_vec_r;
-		}
-		else
-			d_osqp_q.topRows(d_Ng) = d_lin_cost_vec_us + d_lin_cost_vec_r + d_lin_cost_vec_gs;
-		*/
-
-		// OSQP LINEAR INEQUALITY CONSTRAINT MATRIX
-		/*
-		MatrixXf osqp_A_ineq = MatrixXf::Zero(d_Nuf + d_Nyf + d_num_outputs, d_num_opt_vars);
-		if (d_opt_sparse)
-			osqp_A_ineq.middleCols(d_uf_start_i, d_Nuf + d_Nyf + d_num_outputs) = MatrixXf::Identity(d_Nuf + d_Nyf + d_num_outputs, d_Nuf + d_Nyf + d_num_outputs);
-		else
-		{
-			osqp_A_ineq.topLeftCorner(d_Nuf, d_Ng) = d_U_f;
-			osqp_A_ineq.bottomLeftCorner(d_Nyf + d_num_outputs, d_Ng) = d_Y_f;
-		}
-
-		// OSQP LINEAR INEQUALITY CONSTRAINT VECTORS
-		MatrixXf osqp_l_ineq = MatrixXf::Zero(d_Nuf + d_Nyf + d_num_outputs, 1);
-		MatrixXf osqp_u_ineq = MatrixXf::Zero(d_Nuf + d_Nyf + d_num_outputs, 1);
-		osqp_l_ineq.topRows(d_Nuf) = d_input_min;
-		osqp_l_ineq.bottomRows(d_Nyf + d_num_outputs) = d_output_min;
-		osqp_u_ineq.topRows(d_Nuf) = d_input_max;
-		osqp_u_ineq.bottomRows(d_Nyf + d_num_outputs) = d_output_max;
-
-		// OSQP LINEAR EQUALITY CONSTRAINTS
-		// Static equality constraints ([uf; yf; yt]), and ([gs; us]) if optimizing over steady state gs & us
-		MatrixXf osqp_A_eq_stat = get_static_eq_constr_matrix();
-		MatrixXf osqp_l_eq_stat = get_static_eq_constr_vector();
-		MatrixXf osqp_u_eq_stat = osqp_l_eq_stat;
-
-		// Dynamic equality constraints that change every time ([uini; uini]), and ([gs; r]) if optimizing over steady state gs & us
-		MatrixXf osqp_A_eq_dyn = get_dynamic_eq_constr_matrix();
-		MatrixXf osqp_l_eq_dyn = get_dynamic_eq_constr_vector();
-		MatrixXf osqp_u_eq_dyn = osqp_l_eq_dyn;
-		d_uini_start_i = osqp_A_ineq.rows() + osqp_A_eq_stat.rows();
-		d_yini_start_i = d_uini_start_i + d_Nuini;
-		if (d_opt_sparse && d_opt_steady_state)
-			d_r_gs_start_i = d_yini_start_i + d_Nyini;
-
-		// OSQP CONSTRAINTS
-		// Concatenate all constraints in single matrix/vectors
-		MatrixXf osqp_A = MatrixXf::Zero(osqp_A_ineq.rows() + osqp_A_eq_stat.rows() + osqp_A_eq_dyn.rows(), d_num_opt_vars);
-		MatrixXf osqp_l = MatrixXf::Zero(osqp_A_ineq.rows() + osqp_A_eq_stat.rows() + osqp_A_eq_dyn.rows(), 1);
-		MatrixXf osqp_u = osqp_l;
 		
-		osqp_A.topRows(osqp_A_ineq.rows()) = osqp_A_ineq;
-		osqp_l.topRows(osqp_A_ineq.rows()) = osqp_l_ineq;
-		osqp_u.topRows(osqp_A_ineq.rows()) = osqp_u_ineq;
-
-		// Static equality constraints only present in sparse formulation
-		if (d_opt_sparse)
-		{
-			osqp_A.middleRows(osqp_A_ineq.rows(), osqp_A_eq_stat.rows()) = osqp_A_eq_stat;
-			osqp_l.middleRows(osqp_A_ineq.rows(), osqp_A_eq_stat.rows()) = osqp_l_eq_stat;
-			osqp_u.middleRows(osqp_A_ineq.rows(), osqp_A_eq_stat.rows()) = osqp_u_eq_stat;
-		}
-
-		osqp_A.bottomRows(osqp_A_eq_dyn.rows()) = osqp_A_eq_dyn;
-		osqp_l.bottomRows(osqp_A_eq_dyn.rows()) = osqp_l_eq_dyn;
-		osqp_u.bottomRows(osqp_A_eq_dyn.rows()) = osqp_u_eq_dyn;
-	*/
 		// OSQP MODEL SETUP
 		// Follows 'Setup and solve' example (https://osqp.org/docs/examples/setup-and-solve.html)
+
+		// q is 0 for our example
 		MatrixXf osqp_q=MatrixXf::Zero(d_col_num,1);
 
 		d_osqp_A=MatrixXf::Zero(osqp_A.rows(),osqp_A.cols());
@@ -1898,16 +609,6 @@ void setup_Rampc_osqp()
 		
 		d_osqp_A=osqp_A;
 
-		/*
-		log_file1.open("/home/agent06/dfall/dfall-system/RAMPC_data/osqp_A.csv");
-		log_file1<<osqp_A;
-		log_file1.close();
-		log_file2.open("/home/agent06/dfall/dfall-system/RAMPC_data/d_osqp_A.csv");
-		log_file2<<d_osqp_A;
-		log_file2.close();
-		*/
-
-		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 4");
 
 
 		// Convert Eigen matrices to CSC format
@@ -1966,10 +667,7 @@ void setup_Rampc_osqp()
 	    osqp_solve(d_osqp_work);
 
 
-	    //d_RampcOpt_status = d_osqp_work->info->status_val;
-	    //float sol_u=d_osqp_work->solution->x[2*(d_N+1)*d_num_outputs]; 
-	    //ROS_INFO_STREAM("[RAMPC CONTROLLER] Status: "<< d_RampcOpt_status);
-	    //ROS_INFO_STREAM("[RAMPC CONTROLLER] Solution: "<< sol_u);
+
 
 
 	    // Clear data after setting up to allow subseqeuent setups
@@ -2019,21 +717,13 @@ void setup_Rampc_all_rotors_osqp()
 {
 	try
     {
-    	
-		// Get u_data & y_data from files
-		//MatrixXf u_data = get_u_data();
-		//MatrixXf y_data = get_y_data();
+    	// Setup similar to setup_Rampc_osqp with different bounds for the parameters
 
 		// Get variable lengths
 		get_variable_lengths();
 		get_cost_matrices_all_rotors();
 		get_control_feedback_all_rotors();
-		// Get Hankel matrices
-		//get_hankel_matrices(u_data, y_data);
-		
-		// Get cost matrices
-		//d_num_inputs=1;
-		//d_num_states=2;
+
 		
 
 		
@@ -2084,7 +774,7 @@ void setup_Rampc_all_rotors_osqp()
 		osqp_l_s_ini(0,0)=0.0;
 		osqp_u_s_ini(0,0)=0.0;
 
-
+		// Dynamics constraints for x_hat
 		MatrixXf osqp_A_hat_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,d_col_num);
 		MatrixXf osqp_l_hat_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,1);
 		MatrixXf osqp_u_hat_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,1);
@@ -2101,7 +791,7 @@ void setup_Rampc_all_rotors_osqp()
 		}
 
 
-
+		// dynamics constraints for x_bar
 		MatrixXf osqp_A_bar_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,d_col_num);
 		MatrixXf osqp_l_bar_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,1);
 		MatrixXf osqp_u_bar_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,1);
@@ -2116,6 +806,7 @@ void setup_Rampc_all_rotors_osqp()
 			osqp_u_bar_dynamics_constr.block(i*d_num_outputs,0,d_num_outputs,1)=MatrixXf::Zero(d_num_outputs,1);
 		}
 
+		// State and input constraints
 		MatrixXf osqp_A_state_input_constr=MatrixXf::Zero(d_N*(d_num_outputs*2+d_num_inputs*2),d_col_num);
 		MatrixXf osqp_l_state_input_constr=MatrixXf::Zero(d_N*(d_num_outputs*2+d_num_inputs*2),1);
 		MatrixXf osqp_u_state_input_constr=MatrixXf::Zero(d_N*(d_num_outputs*2+d_num_inputs*2),1);
@@ -2136,6 +827,7 @@ void setup_Rampc_all_rotors_osqp()
 			}
 		}
 
+		// Tube inclusion constraints
 		MatrixXf osqp_A_tube_constr=MatrixXf::Zero(d_N*d_H_x.rows()*d_e_l.rows(),d_col_num);
 		MatrixXf osqp_l_tube_constr=MatrixXf::Zero(d_N*d_H_x.rows()*d_e_l.rows(),1);
 		MatrixXf osqp_u_tube_constr=MatrixXf::Zero(d_N*d_H_x.rows()*d_e_l.rows(),1);
@@ -2153,7 +845,7 @@ void setup_Rampc_all_rotors_osqp()
 			}
 		}
 		
-
+		// Terminal constraints
 		MatrixXf osqp_A_term_constr=MatrixXf::Zero(d_H_xf_x.rows(),d_col_num);
 		MatrixXf osqp_l_term_constr=MatrixXf::Zero(d_H_xf_x.rows(),1);
 		MatrixXf osqp_u_term_constr=MatrixXf::Zero(d_H_xf_x.rows(),1);
@@ -2166,7 +858,7 @@ void setup_Rampc_all_rotors_osqp()
 
 
 
-
+		// Concatenate matrices
 
 		MatrixXf osqp_A=MatrixXf::Zero(osqp_A_x_hat_ini.rows()+osqp_A_x_bar_ini.rows()+osqp_A_s_ini.rows()+osqp_A_hat_dynamics_constr.rows()+osqp_A_bar_dynamics_constr.rows()+osqp_A_state_input_constr.rows()+osqp_A_tube_constr.rows()+osqp_A_term_constr.rows(),d_col_num);
 		MatrixXf osqp_u=MatrixXf::Zero(osqp_u_x_hat_ini.rows()+osqp_u_x_bar_ini.rows()+osqp_u_s_ini.rows()+osqp_u_hat_dynamics_constr.rows()+osqp_u_bar_dynamics_constr.rows()+osqp_u_state_input_constr.rows()+osqp_u_tube_constr.rows()+osqp_u_term_constr.rows(),1);
@@ -2207,74 +899,6 @@ void setup_Rampc_all_rotors_osqp()
 
 
 
-		/*
-		d_osqp_q = MatrixXf::Zero(d_num_opt_vars, 1);
-		if (d_opt_sparse)
-		{
-			d_osqp_q.topRows(d_Ng) = d_lin_cost_vec_gs;
-			d_osqp_q.middleRows(d_uf_start_i, d_Nuf) = d_lin_cost_vec_us;
-			d_osqp_q.middleRows(d_yf_start_i, d_Nyf + d_num_outputs) = d_lin_cost_vec_r;
-		}
-		else
-			d_osqp_q.topRows(d_Ng) = d_lin_cost_vec_us + d_lin_cost_vec_r + d_lin_cost_vec_gs;
-		*/
-
-		// OSQP LINEAR INEQUALITY CONSTRAINT MATRIX
-		/*
-		MatrixXf osqp_A_ineq = MatrixXf::Zero(d_Nuf + d_Nyf + d_num_outputs, d_num_opt_vars);
-		if (d_opt_sparse)
-			osqp_A_ineq.middleCols(d_uf_start_i, d_Nuf + d_Nyf + d_num_outputs) = MatrixXf::Identity(d_Nuf + d_Nyf + d_num_outputs, d_Nuf + d_Nyf + d_num_outputs);
-		else
-		{
-			osqp_A_ineq.topLeftCorner(d_Nuf, d_Ng) = d_U_f;
-			osqp_A_ineq.bottomLeftCorner(d_Nyf + d_num_outputs, d_Ng) = d_Y_f;
-		}
-
-		// OSQP LINEAR INEQUALITY CONSTRAINT VECTORS
-		MatrixXf osqp_l_ineq = MatrixXf::Zero(d_Nuf + d_Nyf + d_num_outputs, 1);
-		MatrixXf osqp_u_ineq = MatrixXf::Zero(d_Nuf + d_Nyf + d_num_outputs, 1);
-		osqp_l_ineq.topRows(d_Nuf) = d_input_min;
-		osqp_l_ineq.bottomRows(d_Nyf + d_num_outputs) = d_output_min;
-		osqp_u_ineq.topRows(d_Nuf) = d_input_max;
-		osqp_u_ineq.bottomRows(d_Nyf + d_num_outputs) = d_output_max;
-
-		// OSQP LINEAR EQUALITY CONSTRAINTS
-		// Static equality constraints ([uf; yf; yt]), and ([gs; us]) if optimizing over steady state gs & us
-		MatrixXf osqp_A_eq_stat = get_static_eq_constr_matrix();
-		MatrixXf osqp_l_eq_stat = get_static_eq_constr_vector();
-		MatrixXf osqp_u_eq_stat = osqp_l_eq_stat;
-
-		// Dynamic equality constraints that change every time ([uini; uini]), and ([gs; r]) if optimizing over steady state gs & us
-		MatrixXf osqp_A_eq_dyn = get_dynamic_eq_constr_matrix();
-		MatrixXf osqp_l_eq_dyn = get_dynamic_eq_constr_vector();
-		MatrixXf osqp_u_eq_dyn = osqp_l_eq_dyn;
-		d_uini_start_i = osqp_A_ineq.rows() + osqp_A_eq_stat.rows();
-		d_yini_start_i = d_uini_start_i + d_Nuini;
-		if (d_opt_sparse && d_opt_steady_state)
-			d_r_gs_start_i = d_yini_start_i + d_Nyini;
-
-		// OSQP CONSTRAINTS
-		// Concatenate all constraints in single matrix/vectors
-		MatrixXf osqp_A = MatrixXf::Zero(osqp_A_ineq.rows() + osqp_A_eq_stat.rows() + osqp_A_eq_dyn.rows(), d_num_opt_vars);
-		MatrixXf osqp_l = MatrixXf::Zero(osqp_A_ineq.rows() + osqp_A_eq_stat.rows() + osqp_A_eq_dyn.rows(), 1);
-		MatrixXf osqp_u = osqp_l;
-		
-		osqp_A.topRows(osqp_A_ineq.rows()) = osqp_A_ineq;
-		osqp_l.topRows(osqp_A_ineq.rows()) = osqp_l_ineq;
-		osqp_u.topRows(osqp_A_ineq.rows()) = osqp_u_ineq;
-
-		// Static equality constraints only present in sparse formulation
-		if (d_opt_sparse)
-		{
-			osqp_A.middleRows(osqp_A_ineq.rows(), osqp_A_eq_stat.rows()) = osqp_A_eq_stat;
-			osqp_l.middleRows(osqp_A_ineq.rows(), osqp_A_eq_stat.rows()) = osqp_l_eq_stat;
-			osqp_u.middleRows(osqp_A_ineq.rows(), osqp_A_eq_stat.rows()) = osqp_u_eq_stat;
-		}
-
-		osqp_A.bottomRows(osqp_A_eq_dyn.rows()) = osqp_A_eq_dyn;
-		osqp_l.bottomRows(osqp_A_eq_dyn.rows()) = osqp_l_eq_dyn;
-		osqp_u.bottomRows(osqp_A_eq_dyn.rows()) = osqp_u_eq_dyn;
-	*/
 		// OSQP MODEL SETUP
 		// Follows 'Setup and solve' example (https://osqp.org/docs/examples/setup-and-solve.html)
 		MatrixXf osqp_q=MatrixXf::Zero(d_col_num,1);
@@ -2283,16 +907,6 @@ void setup_Rampc_all_rotors_osqp()
 		//osqp_extended_cleanup();
 		
 		d_osqp_A=osqp_A;
-
-		/*
-		log_file1.open("/home/agent06/dfall/dfall-system/RAMPC_data/osqp_A.csv");
-		log_file1<<osqp_A;
-		log_file1.close();
-		log_file2.open("/home/agent06/dfall/dfall-system/RAMPC_data/d_osqp_A.csv");
-		log_file2<<d_osqp_A;
-		log_file2.close();
-		*/
-
 
 
 
@@ -2351,11 +965,6 @@ void setup_Rampc_all_rotors_osqp()
 		
 	    osqp_solve(d_osqp_work);
 
-
-	    //d_RampcOpt_status = d_osqp_work->info->status_val;
-	    //float sol_u=d_osqp_work->solution->x[2*(d_N+1)*d_num_outputs]; 
-	    //ROS_INFO_STREAM("[RAMPC CONTROLLER] Status: "<< d_RampcOpt_status);
-	    //ROS_INFO_STREAM("[RAMPC CONTROLLER] Solution: "<< sol_u);
 
 
 	    // Clear data after setting up to allow subseqeuent setups
@@ -2410,33 +1019,26 @@ void setup_Rampc_full_state_osqp()
 	try
     {
     	
-		// Get u_data & y_data from files
-		//MatrixXf u_data = get_u_data();
-		//MatrixXf y_data = get_y_data();
-    	//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG 1");
+		// Setup for the full state model, similar to setup_Rampc_osqp but for 12 states
+
 		// Get variable lengths
 		get_variable_lengths_full_state();
 		get_cost_matrices_full_state();
 		get_control_feedback_full_state();
-		// Get Hankel matrices
-		//get_hankel_matrices(u_data, y_data);
+
 		
-		// Get cost matrices
-		//d_num_inputs=1;
-		//d_num_states=2;
-		//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG 2");
 
 		
 		// OSQP QUADRATIC COST MATRIX
 		MatrixXf d_osqp_P = get_quad_cost_matrix_full_state();
-		//d_osqp_P=d_osqp_P+0.01*MatrixXf::Identity(d_osqp_P.rows(),d_osqp_P.cols());
 		
 		// Input/output constraint vectors
 		get_input_output_constr_full_state();
 		get_dynamics_matrix_full_state();
-		//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG 3");
 		get_tube_params_full_state();
-		//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG 4");
+
+
+
 		MatrixXf x_hat_0;
 		x_hat_0=MatrixXf::Zero(d_num_outputs,1);
 		x_hat_0(0,0)=-0.5;
@@ -2474,7 +1076,7 @@ void setup_Rampc_full_state_osqp()
 		osqp_l_s_ini(0,0)=0.0;
 		osqp_u_s_ini(0,0)=0.0;
 
-
+		// Dynamics constraints for x_hat
 		MatrixXf osqp_A_hat_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,d_col_num);
 		MatrixXf osqp_l_hat_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,1);
 		MatrixXf osqp_u_hat_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,1);
@@ -2491,7 +1093,7 @@ void setup_Rampc_full_state_osqp()
 		}
 
 
-
+		// Dynamics constraints for x_bar
 		MatrixXf osqp_A_bar_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,d_col_num);
 		MatrixXf osqp_l_bar_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,1);
 		MatrixXf osqp_u_bar_dynamics_constr=MatrixXf::Zero(d_num_outputs*d_N,1);
@@ -2506,7 +1108,7 @@ void setup_Rampc_full_state_osqp()
 			osqp_u_bar_dynamics_constr.block(i*d_num_outputs,0,d_num_outputs,1)=MatrixXf::Zero(d_num_outputs,1);
 		}
 
-		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 5");
+		// State and input constraints
 		MatrixXf osqp_A_state_input_constr=MatrixXf::Zero(d_N*(d_num_outputs*2+d_num_inputs*2),d_col_num);
 		MatrixXf osqp_l_state_input_constr=MatrixXf::Zero(d_N*(d_num_outputs*2+d_num_inputs*2),1);
 		MatrixXf osqp_u_state_input_constr=MatrixXf::Zero(d_N*(d_num_outputs*2+d_num_inputs*2),1);
@@ -2536,7 +1138,7 @@ void setup_Rampc_full_state_osqp()
 		}
 
 
-//ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 6");
+		// Tube inclusion constraints
 		MatrixXf osqp_A_tube_constr=MatrixXf::Zero(d_N*d_H_x.rows()*d_e_l.rows(),d_col_num);
 		MatrixXf osqp_l_tube_constr=MatrixXf::Zero(d_N*d_H_x.rows()*d_e_l.rows(),1);
 		MatrixXf osqp_u_tube_constr=MatrixXf::Zero(d_N*d_H_x.rows()*d_e_l.rows(),1);
@@ -2554,7 +1156,7 @@ void setup_Rampc_full_state_osqp()
 			}
 		}
 		
-//ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 7");
+		// Terminal constraints
 		MatrixXf osqp_A_term_constr=MatrixXf::Zero(d_H_xf_x.rows(),d_col_num);
 		MatrixXf osqp_l_term_constr=MatrixXf::Zero(d_H_xf_x.rows(),1);
 		MatrixXf osqp_u_term_constr=MatrixXf::Zero(d_H_xf_x.rows(),1);
@@ -2567,8 +1169,7 @@ void setup_Rampc_full_state_osqp()
 
 
 
-
-//ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 8");
+		// Concatenate matrices
 		MatrixXf osqp_A=MatrixXf::Zero(osqp_A_x_hat_ini.rows()+osqp_A_x_bar_ini.rows()+osqp_A_s_ini.rows()+osqp_A_hat_dynamics_constr.rows()+osqp_A_bar_dynamics_constr.rows()+osqp_A_state_input_constr.rows()+osqp_A_tube_constr.rows()+osqp_A_term_constr.rows(),d_col_num);
 		MatrixXf osqp_u=MatrixXf::Zero(osqp_u_x_hat_ini.rows()+osqp_u_x_bar_ini.rows()+osqp_u_s_ini.rows()+osqp_u_hat_dynamics_constr.rows()+osqp_u_bar_dynamics_constr.rows()+osqp_u_state_input_constr.rows()+osqp_u_tube_constr.rows()+osqp_u_term_constr.rows(),1);
 		MatrixXf osqp_l=MatrixXf::Zero(osqp_l_x_hat_ini.rows()+osqp_l_x_bar_ini.rows()+osqp_l_s_ini.rows()+osqp_l_hat_dynamics_constr.rows()+osqp_l_bar_dynamics_constr.rows()+osqp_l_state_input_constr.rows()+osqp_l_tube_constr.rows()+osqp_l_term_constr.rows(),1);
@@ -2606,79 +1207,7 @@ void setup_Rampc_full_state_osqp()
 		osqp_l.bottomRows(osqp_l_term_constr.rows()) = osqp_l_term_constr;
 
 
-		//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG A rows: "<<osqp_A.rows());
-		//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG ROWNUM: "<<d_num_outputs*2+1+2*d_N*d_num_outputs+d_N*d_F.rows()+d_N*d_H_x.rows()*2+d_H_x_f.rows());
-		//ROS_INFO_STREAM("[RAMPC CONTROLLER] DEBUG: "<<d_num_outputs<<" "<< d_N << " "<< d_F.rows()<<" "<<d_H_x.rows()<<" "<<d_H_x_f.rows());
-
-		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 7");
-		/*
-		d_osqp_q = MatrixXf::Zero(d_num_opt_vars, 1);
-		if (d_opt_sparse)
-		{
-			d_osqp_q.topRows(d_Ng) = d_lin_cost_vec_gs;
-			d_osqp_q.middleRows(d_uf_start_i, d_Nuf) = d_lin_cost_vec_us;
-			d_osqp_q.middleRows(d_yf_start_i, d_Nyf + d_num_outputs) = d_lin_cost_vec_r;
-		}
-		else
-			d_osqp_q.topRows(d_Ng) = d_lin_cost_vec_us + d_lin_cost_vec_r + d_lin_cost_vec_gs;
-		*/
-
-		// OSQP LINEAR INEQUALITY CONSTRAINT MATRIX
-		/*
-		MatrixXf osqp_A_ineq = MatrixXf::Zero(d_Nuf + d_Nyf + d_num_outputs, d_num_opt_vars);
-		if (d_opt_sparse)
-			osqp_A_ineq.middleCols(d_uf_start_i, d_Nuf + d_Nyf + d_num_outputs) = MatrixXf::Identity(d_Nuf + d_Nyf + d_num_outputs, d_Nuf + d_Nyf + d_num_outputs);
-		else
-		{
-			osqp_A_ineq.topLeftCorner(d_Nuf, d_Ng) = d_U_f;
-			osqp_A_ineq.bottomLeftCorner(d_Nyf + d_num_outputs, d_Ng) = d_Y_f;
-		}
-
-		// OSQP LINEAR INEQUALITY CONSTRAINT VECTORS
-		MatrixXf osqp_l_ineq = MatrixXf::Zero(d_Nuf + d_Nyf + d_num_outputs, 1);
-		MatrixXf osqp_u_ineq = MatrixXf::Zero(d_Nuf + d_Nyf + d_num_outputs, 1);
-		osqp_l_ineq.topRows(d_Nuf) = d_input_min;
-		osqp_l_ineq.bottomRows(d_Nyf + d_num_outputs) = d_output_min;
-		osqp_u_ineq.topRows(d_Nuf) = d_input_max;
-		osqp_u_ineq.bottomRows(d_Nyf + d_num_outputs) = d_output_max;
-
-		// OSQP LINEAR EQUALITY CONSTRAINTS
-		// Static equality constraints ([uf; yf; yt]), and ([gs; us]) if optimizing over steady state gs & us
-		MatrixXf osqp_A_eq_stat = get_static_eq_constr_matrix();
-		MatrixXf osqp_l_eq_stat = get_static_eq_constr_vector();
-		MatrixXf osqp_u_eq_stat = osqp_l_eq_stat;
-
-		// Dynamic equality constraints that change every time ([uini; uini]), and ([gs; r]) if optimizing over steady state gs & us
-		MatrixXf osqp_A_eq_dyn = get_dynamic_eq_constr_matrix();
-		MatrixXf osqp_l_eq_dyn = get_dynamic_eq_constr_vector();
-		MatrixXf osqp_u_eq_dyn = osqp_l_eq_dyn;
-		d_uini_start_i = osqp_A_ineq.rows() + osqp_A_eq_stat.rows();
-		d_yini_start_i = d_uini_start_i + d _Nuini;
-		if (d_opt_sparse && d_opt_steady_state)
-			d_r_gs_start_i = d_yini_start_i + d_Nyini;
-
-		// OSQP CONSTRAINTS
-		// Concatenate all constraints in single matrix/vectors
-		MatrixXf osqp_A = MatrixXf::Zero(osqp_A_ineq.rows() + osqp_A_eq_stat.rows() + osqp_A_eq_dyn.rows(), d_num_opt_vars);
-		MatrixXf osqp_l = MatrixXf::Zero(osqp_A_ineq.rows() + osqp_A_eq_stat.rows() + osqp_A_eq_dyn.rows(), 1);
-		MatrixXf osqp_u = osqp_l;
 		
-		osqp_A.topRows(osqp_A_ineq.rows()) = osqp_A_ineq;
-		osqp_l.topRows(osqp_A_ineq.rows()) = osqp_l_ineq;
-		osqp_u.topRows(osqp_A_ineq.rows()) = osqp_u_ineq;
-
-		// Static equality constraints only present in sparse formulation
-		if (d_opt_sparse)
-		{
-			osqp_A.middleRows(osqp_A_ineq.rows(), osqp_A_eq_stat.rows()) = osqp_A_eq_stat;
-			osqp_l.middleRows(osqp_A_ineq.rows(), osqp_A_eq_stat.rows()) = osqp_l_eq_stat;
-			osqp_u.middleRows(osqp_A_ineq.rows(), osqp_A_eq_stat.rows()) = osqp_u_eq_stat;
-		}
-
-		osqp_A.bottomRows(osqp_A_eq_dyn.rows()) = osqp_A_eq_dyn;
-		osqp_l.bottomRows(osqp_A_eq_dyn.rows()) = osqp_l_eq_dyn;
-		osqp_u.bottomRows(osqp_A_eq_dyn.rows()) = osqp_u_eq_dyn;
-	*/
 		// OSQP MODEL SETUP
 		// Follows 'Setup and solve' example (https://osqp.org/docs/examples/setup-and-solve.html)
 		MatrixXf osqp_q=MatrixXf::Zero(d_col_num,1);
@@ -2688,21 +1217,8 @@ void setup_Rampc_full_state_osqp()
 		
 		d_osqp_A=osqp_A;
 
-		
-		log_file1.open("/home/agent06/dfall/dfall-system/RAMPC_data/osqp_A.csv");
-		log_file1<<d_osqp_A;
-		log_file1.close();
-		log_file2.open("/home/agent06/dfall/dfall-system/RAMPC_data/osqp_P.csv");
-		log_file2<<d_osqp_P;
-		log_file2.close();
-		log_file3.open("/home/agent06/dfall/dfall-system/RAMPC_data/osqp_u.csv");
-		log_file3<<osqp_u;
-		log_file3.close();
-		log_file4.open("/home/agent06/dfall/dfall-system/RAMPC_data/osqp_l.csv");
-		log_file4<<osqp_l;
-		log_file4.close();
-		
 
+	
 
 
 
@@ -2768,11 +1284,6 @@ void setup_Rampc_full_state_osqp()
 	    	ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug input "<<i<<": "<<d_osqp_work->solution->x[d_uf_start_i+i]);
 		}
 
-	   // ROS_INFO_STREAM("[RAMPC CONTROLLER] Debug 8");
-	    //d_RampcOpt_status = d_osqp_work->info->status_val;
-	    //float sol_u=d_osqp_work->solution->x[2*(d_N+1)*d_num_outputs]; 
-	    //ROS_INFO_STREAM("[RAMPC CONTROLLER] Status: "<< d_RampcOpt_status);
-	    //ROS_INFO_STREAM("[RAMPC CONTROLLER] Solution: "<< sol_u);
 
 
 	    // Clear data after setting up to allow subseqeuent setups
@@ -2820,135 +1331,12 @@ void setup_Rampc_full_state_osqp()
 
 
 
-
-
-
-
-
-
-
-
-
-
-void solve_Rampc_gurobi()
-{
-	s_Rampc_mutex.lock();
-	//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 622");
-	d_uini = s_uini;
-	d_yini = s_yini;
-	s_Rampc_mutex.unlock();
-	//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 622");
-
-	try
-	{
-		// Update reference if reference is changing
-		if (d_changing_ref_enable)
-			change_Rampc_setpoint_gurobi_changing_ref();
-
-		// Update equality constraints RHS
-		for (d_i = 0; d_i < d_Nuini; d_i++)
-			d_grb_dyn_constrs[d_i].set(GRB_DoubleAttr_RHS, d_uini(d_i));
-		for (d_i = 0; d_i < d_Nyini; d_i++)
-			d_grb_dyn_constrs[d_Nuini + d_i].set(GRB_DoubleAttr_RHS, d_yini(d_i));
-
-		// Solve optimization - presolve only applies if using dense formulation
-		if (d_opt_sparse || !d_grb_presolve_at_setup)
-		{
-			d_grb_model.optimize();
-			d_RampcOpt_status = d_grb_model.get(GRB_IntAttr_Status);
-		}
-		else
-		{
-			d_grb_model_presolved->optimize();
-			d_RampcOpt_status = d_grb_model_presolved->get(GRB_IntAttr_Status);
-		}
-		
-
-		if (d_RampcOpt_status == GRB_OPTIMAL)
-		{	
-			// With sparse formulation can get uf and yf directly
-			if (d_opt_sparse)
-			{
-				for (d_i = 0; d_i < d_Nuf; d_i++)
-					d_u_f(d_i) = d_grb_vars[d_uf_start_i + d_i].get(GRB_DoubleAttr_X);
-
-				for (d_i = 0; d_i < d_Nyf + d_num_outputs; d_i++)
-					d_y_f(d_i) = d_grb_vars[d_yf_start_i + d_i].get(GRB_DoubleAttr_X);
-			}
-			// With dense formulation get uf and y_f through g
-			else
-			{
-				for (d_i = 0; d_i < d_Ng; d_i++)
-					d_g(d_i) = d_grb_vars[d_i].get(GRB_DoubleAttr_X);
-
-				d_u_f = d_U_f * d_g;
-				d_y_f = d_Y_f * d_g;
-			}
-
-			if (d_opt_sparse || !d_grb_presolve_at_setup)
-				d_solve_time = d_grb_model.get(GRB_DoubleAttr_Runtime);
-			else
-				d_solve_time = d_grb_model_presolved->get(GRB_DoubleAttr_Runtime);
-
-			s_Rampc_mutex.lock();
-			// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 649");
-			s_u_f = d_u_f;
-			s_y_f = d_y_f;
-			s_solve_time = d_solve_time;
-			s_Rampc_mutex.unlock();
-			//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 649");
-
-			ROS_INFO("[RAMPC CONTROLLER] Rampc found optimal solution with Gurobi:");
-			ROS_INFO_STREAM("Thrust: " << d_u_f(0));
-			ROS_INFO_STREAM("Roll Rate: " << d_u_f(1));
-			ROS_INFO_STREAM("Pitch Rate: " << d_u_f(2));
-			if (d_Rampc_yaw_control)
-				ROS_INFO_STREAM("Yaw Rate: " << d_u_f(3));
-
-			if (d_opt_sparse || !d_grb_presolve_at_setup)
-				ROS_INFO_STREAM("Objective: " << d_grb_model.get(GRB_DoubleAttr_ObjVal));
-			else
-				ROS_INFO_STREAM("Objective: " << d_grb_model_presolved->get(GRB_DoubleAttr_ObjVal));
-
-			ROS_INFO_STREAM("Runtime: " << d_solve_time);
-		}
-		else
-		{
-			ROS_INFO_STREAM("[RAMPC CONTROLLER] Rampc failed to find optimal solution with Gurobi status code = " << d_RampcOpt_status);
-		}
-	}
-
-	catch(GRBException e)
-    {
-    	clear_setupRampc_success_flag();
-
-	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Rampc optimization exception with Gurobi error code = " << e.getErrorCode());
-	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Error message: " << e.getMessage());
-	    ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
-  	}
-  	catch(exception& e)
-    {
-    	clear_setupRampc_success_flag();
-
-	    ROS_INFO_STREAM("[RAMPC CONTROLLER] Rampc optimization exception with Gurobi with standard error message: " << e.what());
-	    ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
-  	}
-  	catch(...)
-  	{
-  		clear_setupRampc_success_flag();
-
-    	ROS_INFO("[RAMPC CONTROLLER] Rampc optimization exception with Gurobi");
-    	ROS_INFO("[RAMPC CONTROLLER] Rampc must be (re-)setup");
-  	}
-}
-
 void solve_Rampc_osqp()
 {
 	s_Rampc_mutex.lock();
 	//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 622");
-	//d_uini = s_uini;
-	//d_yini = s_yini;
 
+	// Get state estimates
 		d_current_state_estimate = s_current_state_estimate;
 		d_setpoint = s_setpoint;
 		d_previous_state_estimate=s_previous_state_estimate;
@@ -2959,13 +1347,8 @@ void solve_Rampc_osqp()
 
 	try
 	{
-		// Update reference if reference is changing
-		//if (d_changing_ref_enable)
-		//	change_Rampc_setpoint_osqp_changing_ref();
-
-		// Update equality constraint vectors
-
-		//ROS_INFO_STREAM("[RAMPC CONTRLLER] Current height: "<<d_setpoint(2));
+		
+		// If reference difference is too big we may experience infeasibility due to the time horizon, thus we set the reference to a max value
 		
 		if (d_current_state_estimate(2,0)-d_setpoint(2)>d_reference_difference){
 			//ROS_INFO_STREAM("[RAMPC CONTROLLER] Set setpoint difference to "<<d_reference_difference<<".");
@@ -3023,29 +1406,8 @@ void solve_Rampc_osqp()
 		
 		d_osqp_l_new[3]=d_current_state_estimate(5,0);
 		d_osqp_u_new[3]=d_current_state_estimate(5,0);
-		/*
-		d_osqp_l_new[0]=d_current_state_estimate(2,0)-d_setpoint(2);
-		d_osqp_u_new[0]=d_current_state_estimate(2,0)-d_setpoint(2);
-		d_osqp_l_new[2]=d_current_state_estimate(2,0)-d_setpoint(2);
-		d_osqp_u_new[2]=d_current_state_estimate(2,0)-d_setpoint(2);
-		*/
-
-		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Delta_X: " << )
-
-
-		/*
-
-		for (d_i = 0; d_i < d_Nuini; d_i++)
-		{
-			d_osqp_l_new[d_uini_start_i + d_i] = d_uini(d_i);
-			d_osqp_u_new[d_uini_start_i + d_i] = d_osqp_l_new[d_uini_start_i + d_i];
-		}
-		for (d_i = 0; d_i < d_Nyini; d_i++)
-		{
-			d_osqp_l_new[d_yini_start_i + d_i] = d_yini(d_i);
-			d_osqp_u_new[d_yini_start_i + d_i] = d_osqp_l_new[d_yini_start_i + d_i];
-		}
-		*/
+		
+		// update bounds in the osqp problem
 		osqp_update_bounds(d_osqp_work, d_osqp_l_new, d_osqp_u_new);
 
 
@@ -3060,50 +1422,25 @@ void solve_Rampc_osqp()
 		{	
 			MatrixXf pred_x=MatrixXf::Zero(2,1);
 			MatrixXf uplus=MatrixXf::Zero(1,1);
+			// get future inputs
 			for(int d_i=0;d_i<d_Nuf;d_i++){
 				pred_x << d_osqp_work->solution->x[d_Nyf+d_num_outputs*d_i],
 							 d_osqp_work->solution->x[d_Nyf+1+d_num_outputs*d_i];
 				MatrixXf u_plus=d_K*pred_x;
 				d_u_f(d_i) = d_osqp_work->solution->x[d_uf_start_i + d_i]+u_plus(0)+d_cf_weight_in_newtons;
 			}
-			// With sparse formulation can get uf and yf directly
-			/*
-			if (d_opt_sparse)
-			{
-				for (d_i = 0; d_i < d_Nuf; d_i++)
-					d_u_f(d_i) = d_osqp_work->solution->x[d_uf_start_i + d_i];
-				
-				for (d_i = 0; d_i < d_Nyf + d_num_outputs; d_i++)
-					d_y_f(d_i) = d_osqp_work->solution->x[d_yf_start_i + d_i];
-			}
-			// With dense formulation get uf and yf through g
-			else
-			{
-				for (d_i = 0; d_i < d_Ng; d_i++)
-					d_g(d_i) = d_osqp_work->solution->x[d_i];
+			
 
-				d_u_f = d_U_f * d_g;
-				d_y_f = d_Y_f * d_g;
-			}
-			*/
 			d_solve_time = d_osqp_work->info->run_time;
 
 			s_Rampc_mutex.lock();
-			// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 649");
+			
+
 			s_u_f = d_u_f;
 			s_y_f = d_y_f;
 			s_solve_time = d_solve_time;
 			s_Rampc_mutex.unlock();
-			//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 649");
-			
-			//ROS_INFO_STREAM("[RAMPC CONTROLLER] Rampc found optimal solution with OSQP status: " << d_osqp_work->info->status);
-			//ROS_INFO_STREAM("Thrust: " << d_u_f(0));
-			//ROS_INFO_STREAM("Roll Rate: " << d_u_f(1));
-			//ROS_INFO_STREAM("Pitch Rate: " << d_u_f(2));
-			//if (d_Rampc_yaw_control)
-			//	ROS_INFO_STREAM("Yaw Rate: " << d_u_f(3));
-			//ROS_INFO_STREAM("Objective: " << d_osqp_work->info->obj_val);
-			//ROS_INFO_STREAM("Runtime: " << d_solve_time);
+
 			
 		}
 		else
@@ -3135,9 +1472,7 @@ void solve_Rampc_osqp()
 void solve_Rampc_full_state_osqp()
 {
 	s_Rampc_mutex.lock();
-	//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 622");
-	//d_uini = s_uini;
-	//d_yini = s_yini;
+
 
 		d_current_state_estimate = s_current_state_estimate;
 		d_setpoint = s_setpoint;
@@ -3156,7 +1491,7 @@ void solve_Rampc_full_state_osqp()
 
 
 
-	//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 622");
+
 	try
 	{
 		// Update reference if reference is changing
@@ -3265,7 +1600,9 @@ void solve_Rampc_full_state_osqp()
 
 	
 */
-		ROS_INFO_STREAM("[RAMPC CONTROLLER] RAMPC State: ");
+
+		// Set initial state
+		//ROS_INFO_STREAM("[RAMPC CONTROLLER] RAMPC State: ");
 		for(int i=0;i<d_num_outputs;i++){
 			d_osqp_l_new[i]=d_current_stateErrorInertial[i];
 			d_osqp_u_new[i]=d_current_stateErrorInertial[i];
@@ -3320,40 +1657,9 @@ void solve_Rampc_full_state_osqp()
 
 		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Delta_X: " << )
 
-
-		/*
-
-		for (d_i = 0; d_i < d_Nuini; d_i++)
-		{
-			d_osqp_l_new[d_uini_start_i + d_i] = d_uini(d_i);
-			d_osqp_u_new[d_uini_start_i + d_i] = d_osqp_l_new[d_uini_start_i + d_i];
-		}
-		for (d_i = 0; d_i < d_Nyini; d_i++)
-		{
-			d_osqp_l_new[d_yini_start_i + d_i] = d_yini(d_i);
-			d_osqp_u_new[d_yini_start_i + d_i] = d_osqp_l_new[d_yini_start_i + d_i];
-		}
-		*/
+		// update bounds
 		osqp_update_bounds(d_osqp_work, d_osqp_l_new, d_osqp_u_new);
 
-		/*
-		log_file1.open("/home/agent06/dfall/dfall-system/RAMPC_data/osqp_A.csv");
-		log_file1<<d_osqp_A;
-		log_file1.close();
-		//log_file2.open("/home/agent06/dfall/dfall-system/RAMPC_data/osqp_P.csv");
-		//log_file2<<d_osqp_P;
-		//log_file2.close();
-		log_file3.open("/home/agent06/dfall/dfall-system/RAMPC_data/osqp_u.csv");
-		for(int i=0;i<d_osqp_A.rows();i++){
-		log_file3<<d_osqp_u_new[i]<<","<<std::endl;
-		}
-		log_file3.close();
-		log_file4.open("/home/agent06/dfall/dfall-system/RAMPC_data/osqp_l.csv");
-		for(int i=0;i<d_osqp_A.rows();i++){
-		log_file4<<d_osqp_l_new[i]<<","<<std::endl;
-		}
-		log_file4.close();
-		*/
 		// Solve optimization
 		osqp_solve(d_osqp_work);
 		d_RampcOpt_status = d_osqp_work->info->status_val;
@@ -3361,6 +1667,7 @@ void solve_Rampc_full_state_osqp()
 		{	
 			MatrixXf pred_x=MatrixXf::Zero(d_num_outputs,1);
 			MatrixXf uplus=MatrixXf::Zero(d_num_inputs,1);
+			// Get inputs
 			for(int d_i=0;d_i<d_N;d_i++){
 				for (int j=0;j<d_num_outputs;j++){
 					pred_x(j)=d_osqp_work->solution->x[d_Nyf+j+d_num_outputs*d_i];
@@ -3387,26 +1694,7 @@ void solve_Rampc_full_state_osqp()
 				for(int d_j=0;d_j<d_num_inputs;d_j++){
 					ROS_INFO_STREAM(d_osqp_work->solution->x[d_uf_start_i + 0*d_num_inputs+d_j]);
 				}
-			// With sparse formulation can get uf and yf directly
-			/*
-			if (d_opt_sparse)
-			{
-				for (d_i = 0; d_i < d_Nuf; d_i++)
-					d_u_f(d_i) = d_osqp_work->solution->x[d_uf_start_i + d_i];
-				
-				for (d_i = 0; d_i < d_Nyf + d_num_outputs; d_i++)
-					d_y_f(d_i) = d_osqp_work->solution->x[d_yf_start_i + d_i];
-			}
-			// With dense formulation get uf and yf through g
-			else
-			{
-				for (d_i = 0; d_i < d_Ng; d_i++)
-					d_g(d_i) = d_osqp_work->solution->x[d_i];
-
-				d_u_f = d_U_f * d_g;
-				d_y_f = d_Y_f * d_g;
-			}
-			*/
+			
 			d_solve_time = d_osqp_work->info->run_time;
 
 			s_Rampc_mutex.lock();
@@ -3491,42 +1779,11 @@ void update_uini_yini(Controller::Request &request, control_output &output)
 
 	try
 	{
-		//if (!mpc_enabled)
-		//{	
-			
-			//ROS_INFO("[MPC CONTROLLER] DEBUG 19");
-			/*
-			// Update uini
-
-			int u_shift = Nuini - m_num_inputs;
-			m_uini.topRows(u_shift) = m_uini.bottomRows(u_shift);
-			m_uini(u_shift) = output.thrust;
-			m_uini(u_shift + 1) = output.rollRate;
-			m_uini(u_shift + 2) = output.pitchRate;
-			if (yaml_Rampc_yaw_control)
-				m_uini(u_shift + 3) = output.yawRate;
-
-			// Update yini
-			int y_shift = Nyini - num_outputs;
-			m_yini.topRows(y_shift) = m_yini.bottomRows(y_shift);
-			m_yini(y_shift) = request.ownCrazyflie.x;
-			m_yini(y_shift + 1) = request.ownCrazyflie.y;
-			m_yini(y_shift + 2) = request.ownCrazyflie.z;
-			if (yaml_Rampc_measure_roll_pitch)
-			{
-				m_yini(y_shift + 3) = request.ownCrazyflie.roll;
-				m_yini(y_shift + 4) = request.ownCrazyflie.pitch;
-			}
-			if (yaml_Rampc_yaw_control)
-				m_yini(Nyini - 1) = request.ownCrazyflie.yaw;
-				*/
-		//}
-		//else
 		
+			// Update current and previous state
 
 			m_previous_state_estimate=m_current_state_estimate;
-		//{
-			 //ROS_INFO_STREAM("[MPC CONTROLLER] DEBUG 20");
+	
 			// Update current_state_estimate
 			m_current_state_estimate(0) = request.ownCrazyflie.x;
 			m_current_state_estimate(1) = request.ownCrazyflie.y;
@@ -3604,15 +1861,21 @@ void update_uini_yini(Controller::Request &request, control_output &output)
   	}
 }
 
+
 void update_theta_hat(){
+	// Get current and previous state
 	MatrixXf previous_state_z=MatrixXf::Zero(d_num_outputs,1);
 	MatrixXf current_state_z=MatrixXf::Zero(d_num_outputs,1);
 	current_state_z<< 	d_current_state_estimate(2,0),
 						d_current_state_estimate(5,0);
 	previous_state_z<< 	d_previous_state_estimate(2,0),
 						d_previous_state_estimate(5,0);
+
+	// Update formula for theta_tilde
 	MatrixXf temp_hat=(d_B_1*(d_previous_input-d_cf_weight_in_newtons*MatrixXf::Ones(1,1))).transpose()*(current_state_z-(d_A*previous_state_z+(d_B_0+d_B_1*d_theta_hat_k)*(d_previous_input-d_cf_weight_in_newtons*MatrixXf::Ones(1,1))));
 	d_theta_hat_k+=d_mu*temp_hat(0,0);
+
+	// project onto Theta_k
 	if(d_theta_hat_k<d_vertices_theta(1,0)){
 		d_theta_hat_k=d_vertices_theta(1,0);
 	}
@@ -3622,6 +1885,8 @@ void update_theta_hat(){
 		}
 	}
 	//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta hat: "<<d_theta_hat_k);
+
+	// Update the A matrix
 	MatrixXf dynamics_constr_A_hat_temp=d_A+(d_B_0+d_B_1*d_theta_hat_k)*d_K;
 	MatrixXf dynamics_constr_B_hat_temp=(d_B_0+d_B_1*d_theta_hat_k);
 	for(int i=0;i<d_N;i++){
@@ -3674,6 +1939,8 @@ void update_theta_hat_full_state(){
 
 void solve_theta_update_osqp(){
 	//ROS_INFO_STREAM("[RAMPC CONTROLLER] Updating Theta.");
+
+	// Get previous and current state
 	d_h_theta(0,0)=d_vertices_theta(0,0);
 	d_h_theta(1,0)=-d_vertices_theta(1,0);
 	MatrixXf Delta_k=MatrixXf::Zero(2*d_num_outputs,d_N_theta);
@@ -3685,10 +1952,12 @@ void solve_theta_update_osqp(){
 	current_state_z<< 	d_current_state_estimate(2,0),
 						d_current_state_estimate(5,0);
 
-
+	// non-falsified parameter set
 	Delta_k=-d_H_w*(d_B_1_update*d_previous_input);
 
 	delta_k=d_h_w+d_H_w*(d_A_const_update+d_A_update*previous_state_z+d_B_0_update*d_previous_input-current_state_z)+d_n_bar+d_n_bar_prev;
+
+	// Update constraints for theta_min and theta_max LPs
 	d_osqp_theta_A.block(0,0,d_num_outputs,d_N_theta)=d_H_theta;
 	d_osqp_theta_A.block(d_num_outputs,0,d_num_outputs,d_N_theta)=Delta_k.block(d_num_outputs,0,d_num_outputs,d_N_theta);
 	for(int i=0;i<2*d_N_theta;i++){
@@ -3722,17 +1991,25 @@ void solve_theta_update_osqp(){
 	d_osqp_theta_max_work = osqp_setup(osqp_theta_max_data, d_osqp_theta_settings);
 	d_osqp_theta_min_work = osqp_setup(osqp_theta_min_data, d_osqp_theta_settings);
 	*/
+
+	// solve the LPs
 	osqp_solve(d_osqp_theta_max_work);
 	osqp_solve(d_osqp_theta_min_work);
+
+
 	d_ThetaMaxOpt_status = d_osqp_theta_max_work->info->status_val;
 	d_ThetaMinOpt_status = d_osqp_theta_min_work->info->status_val;
 	//ROS_INFO_STREAM("[RAMPC CONTROLLER] Status min: "<<d_ThetaMinOpt_status<<". Status max: "<<d_ThetaMaxOpt_status);
 	//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta update num: "<<d_theta_update_num);
+
+
 	if ((d_ThetaMaxOpt_status > 0) && (d_ThetaMinOpt_status > 0)){
+		// update every d_theta_update_num by using the convex hull of the union 
 		theta_max_buffer.push_back(d_osqp_theta_max_work->solution->x[0]);
 		theta_min_buffer.push_back(d_osqp_theta_min_work->solution->x[0]);
 		d_theta_update_it++;
 		//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta update it: "<<d_theta_update_it);
+
 		if(d_theta_update_it>=d_theta_update_num){
 		float theta_max=*std::max_element(theta_max_buffer.begin(),theta_max_buffer.end());
 		float theta_min=*std::min_element(theta_min_buffer.begin(),theta_min_buffer.end());
@@ -3747,6 +2024,7 @@ void solve_theta_update_osqp(){
 		theta_min_buffer.clear();
 		d_theta_update_it=0;
 
+		// Update theta_bar_k and eta_k
 		float theta_bar_k1=(theta_max+theta_min)*0.5;
 		float eta_k1=theta_max-theta_min;
 		if ((eta_k1<d_eta_k) && (eta_k1>0.0)){
@@ -3770,7 +2048,7 @@ void solve_theta_update_osqp(){
 
 
 
-
+			// Update the constraints for the main optimisation
 			MatrixXf dynamics_constr_A_bar_temp=d_A+(d_B_0+d_B_1*d_theta_bar_k)*d_K;
 			MatrixXf dynamics_constr_B_bar_temp=(d_B_0+d_B_1*d_theta_bar_k);
 			//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta update Debug 1.");
@@ -3791,7 +2069,7 @@ void solve_theta_update_osqp(){
 		
 
 
-			
+			// Update the steady state input
 			d_delta_uss(0)=d_delta_uss(0)+d_cf_weight_in_newtons-9.81/d_theta_bar_k;
 			d_cf_weight_in_newtons = 9.81/d_theta_bar_k;
 
@@ -3816,7 +2094,11 @@ void solve_theta_update_osqp(){
 
 
 void solve_theta_update_osqp_all_rotors(){
+
+
 	//ROS_INFO_STREAM("[RAMPC CONTROLLER] Updating Theta.");
+
+	// Get current and previous state
 	d_h_theta(0,0)=d_vertices_theta(0,0);
 	d_h_theta(1,0)=-d_vertices_theta(1,0);
 	MatrixXf Delta_k=MatrixXf::Zero(2*d_num_outputs,d_N_theta);
@@ -3829,9 +2111,12 @@ void solve_theta_update_osqp_all_rotors(){
 						d_current_state_estimate(5,0);
 
 
+	// non-falsified parameter set
 	Delta_k=-d_H_w*(d_B_1_update*d_previous_input);
 
 	delta_k=d_h_w+d_H_w*(d_A_const_update+d_A_update*previous_state_z+d_B_0_update*d_previous_input-current_state_z)+d_n_bar+d_n_bar_prev;
+
+	// Update constraints for theta_min and theta_max constraints
 	d_osqp_theta_A.block(0,0,d_num_outputs,d_N_theta)=d_H_theta;
 	d_osqp_theta_A.block(d_num_outputs,0,d_num_outputs,d_N_theta)=Delta_k.block(d_num_outputs,0,d_num_outputs,d_N_theta);
 	for(int i=0;i<2*d_N_theta;i++){
@@ -3870,6 +2155,7 @@ void solve_theta_update_osqp_all_rotors(){
 	//ROS_INFO_STREAM("[RAMPC CONTROLLER] Status min: "<<d_ThetaMinOpt_status<<". Status max: "<<d_ThetaMaxOpt_status);
 	//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta update num: "<<d_theta_update_num);
 	if ((d_ThetaMaxOpt_status > 0) && (d_ThetaMinOpt_status > 0)){
+		// Update theta_bar every d_theta_update_num time steps with the convex hull of the union of the Delta_k sets
 		theta_max_buffer.push_back(d_osqp_theta_max_work->solution->x[0]);
 		theta_min_buffer.push_back(d_osqp_theta_min_work->solution->x[0]);
 		d_theta_update_it++;
@@ -3904,6 +2190,7 @@ void solve_theta_update_osqp_all_rotors(){
 		theta_min_buffer.clear();
 		d_theta_update_it=0;
 
+		// Update theta_bar and eta
 		float theta_bar_k1=(theta_max+theta_min)*0.5;
 		float eta_k1=theta_max-theta_min;
 		if ((eta_k1<d_eta_k) && (eta_k1>0.0)){
@@ -3927,7 +2214,7 @@ void solve_theta_update_osqp_all_rotors(){
 
 
 
-
+			// Update constraints
 			MatrixXf dynamics_constr_A_bar_temp=d_A+(d_B_0+d_B_1*d_theta_bar_k)*d_K;
 			MatrixXf dynamics_constr_B_bar_temp=(d_B_0+d_B_1*d_theta_bar_k);
 			//ROS_INFO_STREAM("[RAMPC CONTROLLER] Theta update Debug 1.");
@@ -3948,7 +2235,7 @@ void solve_theta_update_osqp_all_rotors(){
 		
 
 
-			
+			// Update steady-state input
 			d_delta_uss(0)=d_delta_uss(0)+d_cf_weight_in_newtons-9.81/d_theta_bar_k;
 			d_cf_weight_in_newtons = 9.81/d_theta_bar_k;
 
@@ -4126,6 +2413,8 @@ void solve_theta_update_osqp_full_state(){
 
 
 void get_disturbance_matrix_full_state(){
+	// Disturbance and noise matrices
+
 	d_H_w=MatrixXf::Zero(2*d_num_outputs,d_num_outputs);
 	d_h_w=MatrixXf::Zero(2*d_num_outputs,1);
 	d_n_bar=MatrixXf::Zero(2*d_num_outputs,1);
@@ -4236,6 +2525,7 @@ void get_disturbance_matrix_full_state(){
 
 
 void get_disturbance_matrix(){
+	// Get disturbance and noise matrices
 	d_H_w=MatrixXf::Zero(2*d_num_outputs,d_num_outputs);
 	d_h_w=MatrixXf::Ones(2*d_num_outputs,1);
 	d_n_bar=MatrixXf::Zero(2*d_num_outputs,1);
@@ -4259,6 +2549,7 @@ void get_disturbance_matrix(){
 }
 
 void get_Theta(){
+	// Initial Polytope Theta_0
 	d_H_theta=MatrixXf::Zero(2*d_N_theta,d_N_theta);
 	d_h_theta=MatrixXf::Zero(2*d_N_theta,1);
 	d_vertices_theta=MatrixXf::Zero(2*d_N_theta,1);
@@ -4275,6 +2566,7 @@ void get_Theta(){
 
 void setup_theta_update_osqp(){
 	try{
+		// Get relevant matrices for the Theta update LPs
 		get_disturbance_matrix();
 		get_Theta();
 		MatrixXf osqp_theta_P;
@@ -4400,6 +2692,7 @@ void setup_theta_update_osqp(){
 
 void setup_theta_update_full_state_osqp(){
 	try{
+		// Get relevant matrices for the Theta update LPs
 		get_disturbance_matrix_full_state();
 		get_Theta();
 		MatrixXf osqp_theta_P;
@@ -4524,7 +2817,7 @@ void setup_theta_update_full_state_osqp(){
 
 
 void get_tube_params(){
-
+	// Matrices for the tube polytopes
 	int H_x_size=10;
 	d_H_x=MatrixXf::Zero(H_x_size,d_num_outputs);
 	d_H_xf_x=MatrixXf::Zero(H_x_size,d_num_outputs);
@@ -4589,7 +2882,7 @@ void get_tube_params(){
 }
 
 void get_tube_params_all_rotors(){
-
+	// Matrices for the tube polytopes
 	int H_x_size=17;
 	d_H_x=MatrixXf::Zero(H_x_size,d_num_outputs);
 	d_H_xf_x=MatrixXf::Zero(H_x_size,d_num_outputs);
@@ -4662,7 +2955,7 @@ void get_tube_params_all_rotors(){
 
 
 void get_tube_params_full_state(){
-
+	// matrices for the tube polytopes
 	int H_x_size=77;
 	d_H_x=MatrixXf::Zero(H_x_size,d_num_outputs);
 	d_H_xf_x=MatrixXf::Zero(H_x_size,d_num_outputs);
@@ -4810,6 +3103,7 @@ void get_tube_params_full_state(){
 
 
 void get_dynamics_matrix(){
+	// Dynamics Matrices for theta update and constraints
 	d_A=MatrixXf::Zero(d_num_outputs,d_num_outputs);
 	d_A_update=MatrixXf::Zero(d_num_outputs,d_num_outputs);
 	d_A_const_update=MatrixXf::Zero(d_num_outputs,1);
@@ -4842,6 +3136,7 @@ void get_dynamics_matrix(){
 
 
 void get_dynamics_matrix_full_state(){
+	// Full state dynamics matrices for constraints and theta update
 	d_A=MatrixXf::Zero(d_num_outputs,d_num_outputs);
 	d_A_update=MatrixXf::Zero(d_num_outputs,d_num_outputs);
 	d_A_const_update=MatrixXf::Zero(d_num_outputs,1);
@@ -4935,86 +3230,31 @@ void get_dynamics_matrix_full_state(){
  	
 }
 
-// Get u_data from file
-MatrixXf get_u_data()
-{
-	MatrixXf u_data_in = read_csv(d_dataFolder + "/output/m_u_data.csv");
-	if (u_data_in.size() <= 0)
-	{
-		clear_setupRampc_success_flag();
 
-    	ROS_INFO("[RAMPC CONTROLLER] Failed to read u data file");
 
-		return MatrixXf::Zero(0, 0);
-	}
-
-	MatrixXf u_data;
-	if (d_Rampc_yaw_control)
-		u_data = u_data_in;
-	else
-		u_data = u_data_in.topRows(3);
-
-	return u_data;
-}
-
-// Get y_data from file
-MatrixXf get_y_data()
-{
-	MatrixXf y_data_in = read_csv(d_dataFolder + "/output/m_y_data.csv");
-	if (y_data_in.size() <= 0)
-	{	
-		clear_setupRampc_success_flag();
-		
-		ROS_INFO("[RAMPC CONTROLLER] Failed to read y data file");
-
-		return MatrixXf::Zero(0, 0);
-	}
-
-	MatrixXf y_data;
-	if (d_Rampc_measure_roll_pitch && d_Rampc_yaw_control)
-		y_data = y_data_in;
-	else if (d_Rampc_measure_roll_pitch)
-		y_data = y_data_in.topRows(5);
-	else if (d_Rampc_yaw_control)
-	{
-		y_data = MatrixXf::Zero(4, y_data_in.cols());
-		y_data.topRows(3) = y_data_in.topRows(3);
-		y_data.bottomRows(1) = y_data_in.bottomRows(1);
-	}
-	else
-		y_data = y_data_in.topRows(3);
-
-	return y_data;
-}
 
 // Get variable lengths
 void get_variable_lengths()
 {
 
-	d_T_s=0.1; //yaml_control_frequency;
-	//ROS_INFO_STREAM("[RAMPC CONTROLLER] delta T: "<<d_T_s);
-	// Number of inputs m
-	//d_num_inputs = u_data.rows();
+	d_T_s=0.1; //time step
+
+	// Input and output lengts
 	d_num_inputs=1;
-	// Number of outputs p
-	//d_num_outputs = y_data.rows();
+	
+
 	d_num_outputs=2;
-	//d_num_theta=1;
-	// Number of block rows for Hankel matrices
-	//d_num_block_rows = d_Tini + d_N + 1;
-	// Previous inputs vector (uini) length
+	
 	d_Nuini = d_num_inputs * d_Tini;
-	// Previous outputs vector (yini) length
+	
 	d_Nyini = d_num_outputs * d_Tini;
 
 	d_uini = MatrixXf::Zero(d_Nuini, 1);
     d_yini = MatrixXf::Zero(d_Nyini, 1);
 
+    // Number of parameters
     d_N_theta=1;
-	// Trajectory mapper g vector size
-	//d_Ng = u_data.cols() - d_num_block_rows + 1;
-	// Slack variable length
-	//d_Ns = d_Nyini;
+	
 	// Future inputs vector (uf) length
 	d_Nuf = d_num_inputs * d_N;
 	// Future output vector (yf) length 
@@ -5022,32 +3262,13 @@ void get_variable_lengths()
 	//Number of tube dilation coefficients
 	d_Nsf= d_N+1;
 	// Optimization decision vector size
-	// Optimization variables in all formulations: [g; slack]
 	d_num_opt_vars = 2*d_Nyf+d_Nuf+d_Nsf;
 
 	// NUMBER OF DECISION VARIABLES
 		d_col_num=d_num_outputs*(d_N+1)+d_num_outputs*(d_N+1)+d_num_inputs*d_N+(d_N+1);
 
 		d_uf_start_i=d_Nyf*2;
-	/*
-	// In sparse formulation, add [uf; yf; yt], where yt is terminal output
-	if (d_opt_sparse)
-	{
-		d_num_opt_vars += d_Nuf + d_Nyf + d_num_outputs;
 
-		d_uf_start_i = d_Ng + d_Ns;
-    	d_yf_start_i = d_uf_start_i + d_Nuf;
-
-		// If optimizing over steady state values, add [gs; us]. This is available in sparse formulation only
-		if (d_opt_steady_state)
-		{
-			d_num_opt_vars += d_Ng + d_num_inputs;
-
-			d_gs_start_i = d_yf_start_i + d_Nyf + d_num_outputs;
-			d_us_start_i = d_gs_start_i + d_Ng;
-		}
-	}
-	*/
 	s_Rampc_mutex.lock();
  	d_current_input=MatrixXf::Zero(d_num_inputs,1);
  	s_current_input=MatrixXf::Zero(d_num_inputs,1);
@@ -5063,13 +3284,11 @@ void get_variable_lengths()
 void get_variable_lengths_full_state()
 {
 
-	d_T_s=0.1; //yaml_control_frequency;
-	//ROS_INFO_STREAM("[RAMPC CONTROLLER] delta T: "<<d_T_s);
-	// Number of inputs m
-	//d_num_inputs = u_data.rows();
+	d_T_s=0.1; //time step
+
+	// number of inputs and outputs
 	d_num_inputs=4;
-	// Number of outputs p
-	//d_num_outputs = y_data.rows();
+	
 	d_num_outputs=12;
 	//d_num_theta=1;
 	// Number of block rows for Hankel matrices
@@ -5082,6 +3301,7 @@ void get_variable_lengths_full_state()
 	d_uini = MatrixXf::Zero(d_Nuini, 1);
     d_yini = MatrixXf::Zero(d_Nyini, 1);
 
+    // Number of uncertain parameters
     d_N_theta=1;
 	// Trajectory mapper g vector size
 	//d_Ng = u_data.cols() - d_num_block_rows + 1;
@@ -5101,25 +3321,7 @@ void get_variable_lengths_full_state()
 		d_col_num=d_num_outputs*(d_N+1)+d_num_outputs*(d_N+1)+d_num_inputs*d_N+(d_N+1);
 
 		d_uf_start_i=d_Nyf*2;
-	/*
-	// In sparse formulation, add [uf; yf; yt], where yt is terminal output
-	if (d_opt_sparse)
-	{
-		d_num_opt_vars += d_Nuf + d_Nyf + d_num_outputs;
 
-		d_uf_start_i = d_Ng + d_Ns;
-    	d_yf_start_i = d_uf_start_i + d_Nuf;
-
-		// If optimizing over steady state values, add [gs; us]. This is available in sparse formulation only
-		if (d_opt_steady_state)
-		{
-			d_num_opt_vars += d_Ng + d_num_inputs;
-
-			d_gs_start_i = d_yf_start_i + d_Nyf + d_num_outputs;
-			d_us_start_i = d_gs_start_i + d_Ng;
-		}
-	}
-	*/
 	
  	s_Rampc_mutex.lock();
  	d_current_input=MatrixXf::Zero(d_num_inputs,1);
@@ -5136,17 +3338,6 @@ void get_variable_lengths_full_state()
 
 
 
-
-// Get Hankel matrices
-void get_hankel_matrices(const MatrixXf& u_data, const MatrixXf& y_data)
-{
-	MatrixXf H_u = data2hankel(u_data, d_num_block_rows);
-	MatrixXf H_y = data2hankel(y_data, d_num_block_rows);
-	d_U_p = H_u.topRows(d_Nuini);
-	d_U_f = H_u.middleRows(d_Nuini, d_Nuf);
-	d_Y_p = H_y.topRows(d_Nyini);
-	d_Y_f = H_y.bottomRows(d_Nyf + d_num_outputs);
-}
 
 // Get cost matrices
 void get_cost_matrices()
@@ -5308,16 +3499,10 @@ void get_cost_matrices_full_state()
 
 
 
-
-
-
-
-
-
-
 // Get input/output constraint vectors
 void get_input_output_constr()
 {
+	// State and input constraints
 	d_F=MatrixXf::Zero(d_num_outputs*2+d_num_inputs*2,d_num_outputs);
 	d_G=MatrixXf::Zero(d_num_outputs*2+d_num_inputs*2,d_num_inputs);
 	d_z=MatrixXf::Zero(d_num_outputs*2+d_num_inputs,1);
@@ -5333,45 +3518,13 @@ void get_input_output_constr()
 	for(int i=0;i<d_num_outputs*2+d_num_inputs;i++){
 		d_z(i,0)=1;
 	}
-	/*
-	// Input constraints
-	MatrixXf input_min = MatrixXf::Zero(d_num_inputs, 1);
-	MatrixXf input_max = MatrixXf::Zero(d_num_inputs, 1);
-	for (int i = 0; i < d_num_inputs; i++)
-	{
-		input_min(i) = d_input_min_vec[i];
-		input_max(i) = d_input_max_vec[i];
-	}
-	d_input_min = input_min.replicate(d_N, 1);
-	d_input_max = input_max.replicate(d_N, 1);
-
-	// Output constraints
-	MatrixXf output_min = MatrixXf::Zero(d_num_outputs, 1);
-	MatrixXf output_max = MatrixXf::Zero(d_num_outputs, 1);
-	for (int i = 0; i < 3; i++)
-	{
-		output_min(i) = d_output_min_vec[i];
-		output_max(i) = d_output_max_vec[i];
-	}
-	if (d_Rampc_measure_roll_pitch)
-		for (int i = 3; i < 5; i++)
-		{
-			output_min(i) = d_output_min_vec[i+3];
-			output_max(i) = d_output_max_vec[i+3];
-		}
-	if (d_Rampc_yaw_control)
-	{
-		output_min(d_num_outputs-1) = d_output_min_vec[8];
-		output_max(d_num_outputs-1) = d_output_max_vec[8];
-	}
-	d_output_min = output_min.replicate(d_N + 1, 1);
-	d_output_max = output_max.replicate(d_N + 1, 1);
-	*/
+	
 }
 
 
 void get_input_output_constr_full_state()
 {
+	// state and input constraints
 	d_F=MatrixXf::Zero(d_num_outputs*2+d_num_inputs*2,d_num_outputs);
 	d_G=MatrixXf::Zero(d_num_outputs*2+d_num_inputs*2,d_num_inputs);
 	d_z=MatrixXf::Zero(d_num_outputs*2+d_num_inputs*2,1);
@@ -5390,43 +3543,11 @@ void get_input_output_constr_full_state()
 	for(int i=0;i<d_num_outputs*2+d_num_inputs*2;i++){
 		d_z(i,0)=1;
 	}
-	/*
-	// Input constraints
-	MatrixXf input_min = MatrixXf::Zero(d_num_inputs, 1);
-	MatrixXf input_max = MatrixXf::Zero(d_num_inputs, 1);
-	for (int i = 0; i < d_num_inputs; i++)
-	{
-		input_min(i) = d_input_min_vec[i];
-		input_max(i) = d_input_max_vec[i];
-	}
-	d_input_min = input_min.replicate(d_N, 1);
-	d_input_max = input_max.replicate(d_N, 1);
-
-	// Output constraints
-	MatrixXf output_min = MatrixXf::Zero(d_num_outputs, 1);
-	MatrixXf output_max = MatrixXf::Zero(d_num_outputs, 1);
-	for (int i = 0; i < 3; i++)
-	{
-		output_min(i) = d_output_min_vec[i];
-		output_max(i) = d_output_max_vec[i];
-	}
-	if (d_Rampc_measure_roll_pitch)
-		for (int i = 3; i < 5; i++)
-		{
-			output_min(i) = d_output_min_vec[i+3];
-			output_max(i) = d_output_max_vec[i+3];
-		}
-	if (d_Rampc_yaw_control)
-	{
-		output_min(d_num_outputs-1) = d_output_min_vec[8];
-		output_max(d_num_outputs-1) = d_output_max_vec[8];
-	}
-	d_output_min = output_min.replicate(d_N + 1, 1);
-	d_output_max = output_max.replicate(d_N + 1, 1);
-	*/
+	
 }
 
 void get_control_feedback(){
+	// prestabilisation feedback
 	d_K = MatrixXf::Zero(d_num_inputs,d_num_outputs);
 	for(int i=0;i<d_K_vec.size();i++){
 		d_K(0,i)=d_K_vec[i];
@@ -5434,6 +3555,7 @@ void get_control_feedback(){
 }
 
 void get_control_feedback_all_rotors(){
+	// prestabilisation feedback
 	d_K = MatrixXf::Zero(d_num_inputs,d_num_outputs);
 	/*
 	for(int i=0;i<d_K_vec.size();i++){
@@ -5445,6 +3567,7 @@ void get_control_feedback_all_rotors(){
 }
 
 void get_control_feedback_full_state(){
+	// prestabilisation feedback
 	d_K = MatrixXf::Zero(d_num_inputs,d_num_outputs);
 	/*
 	for(int i=0;i<d_K_vec.size();i++){
@@ -5458,11 +3581,10 @@ void get_control_feedback_full_state(){
 }
 
 // Get optimization quadratic cost matrix
-// Gurobi refers to this matrix as 'Q'
 // OSQP refers to this matrix as 'P'
 MatrixXf get_quad_cost_matrix()
-{
-
+{	
+	// Construct the cost matrix for the RAMPC problem
 	MatrixXf quad_cost_mat_xf = d_Q+d_K.transpose()*d_R*d_K;
 	MatrixXf quad_cost_mat_uxf = d_K.transpose()*d_R;
 	MatrixXf quad_cost_mat_xuf = d_R*d_K;
@@ -5471,14 +3593,6 @@ MatrixXf get_quad_cost_matrix()
 
 
 
-
-	/*
-	MatrixXf quad_cost_mat_g = d_lambda2_g * MatrixXf::Identity(d_Ng, d_Ng);
-	MatrixXf quad_cost_mat_s = d_lambda2_s * MatrixXf::Identity(d_Ns, d_Ns);
-	MatrixXf quad_cost_mat_uf;
-	MatrixXf quad_cost_mat_yf;
-	MatrixXf quad_cost_mat_yt;
-	*/
 	MatrixXf quad_cost_mat = MatrixXf::Zero(d_col_num, d_col_num);
 
 
@@ -5492,52 +3606,7 @@ MatrixXf get_quad_cost_matrix()
 	quad_cost_mat.block(d_N*d_num_outputs,d_N*d_num_outputs,d_num_outputs,d_num_outputs)=d_P;	
 
 	quad_cost_mat=2*quad_cost_mat;
-	/*
-	if (d_opt_sparse)
-	{
-		quad_cost_mat_uf = MatrixXf::Zero(d_Nuf, d_Nuf);
-		quad_cost_mat_yf = MatrixXf::Zero(d_Nyf, d_Nyf);
-		quad_cost_mat_yt = d_P;
-		for (int i = 0; i < d_N; i++)
-		{
-			quad_cost_mat_uf.block(i * d_num_inputs, i * d_num_inputs, d_num_inputs, d_num_inputs) = d_R;
-			quad_cost_mat_yf.block(i * d_num_outputs, i * d_num_outputs, d_num_outputs, d_num_outputs) = d_Q;
-		}
-	}
-	else
-	{
-		for (int i = 0; i < d_N; i++)
-		{
-			quad_cost_mat_g += d_U_f.middleRows(i * d_num_inputs, d_num_inputs).transpose() * d_R * d_U_f.middleRows(i * d_num_inputs, d_num_inputs);
-			quad_cost_mat_g += d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_Q * d_Y_f.middleRows(i * d_num_outputs, d_num_outputs);
-		}
-		quad_cost_mat_g += d_Y_f.bottomRows(d_num_outputs).transpose() * d_P * d_Y_f.bottomRows(d_num_outputs);
-	}
-	quad_cost_mat.topLeftCorner(d_Ng, d_Ng) = quad_cost_mat_g;
-	quad_cost_mat.block(d_Ng, d_Ng, d_Ns, d_Ns) = quad_cost_mat_s;
-	if (d_opt_sparse)
-	{
-		quad_cost_mat.block(d_Ng + d_Ns, d_Ng + d_Ns, d_Nuf, d_Nuf) = quad_cost_mat_uf;
-		quad_cost_mat.block(d_Ng + d_Ns + d_Nuf, d_Ng + d_Ns + d_Nuf, d_Nyf, d_Nyf) = quad_cost_mat_yf;
-		quad_cost_mat.block(d_Ng + d_Ns + d_Nuf + d_Nyf, d_Ng + d_Ns + d_Nuf + d_Nyf, d_num_outputs, d_num_outputs) = quad_cost_mat_yt;
-
-		if (d_opt_steady_state)
-		{
-			MatrixXf quad_cost_mat_gs = quad_cost_mat_g + MatrixXf::Identity(d_Ng, d_Ng);
-			MatrixXf quad_cost_mat_g_gs = -quad_cost_mat_g;
-			MatrixXf quad_cost_mat_us = d_N * d_R;
-			MatrixXf quad_cost_mat_uf_us = -d_R.replicate(d_N, 1);
-
-			quad_cost_mat.block(d_gs_start_i, d_gs_start_i, d_Ng, d_Ng) = quad_cost_mat_gs;
-			quad_cost_mat.block(0, d_gs_start_i, d_Ng, d_Ng) = quad_cost_mat_g_gs;
-			quad_cost_mat.block(d_gs_start_i, 0, d_Ng, d_Ng) = quad_cost_mat_g_gs.transpose();
-			
-			quad_cost_mat.bottomRightCorner(d_num_inputs, d_num_inputs) = quad_cost_mat_us;
-			quad_cost_mat.block(d_uf_start_i, d_us_start_i, d_Nuf, d_num_inputs) = quad_cost_mat_uf_us;
-			quad_cost_mat.block(d_us_start_i, d_uf_start_i, d_num_inputs, d_Nuf) = quad_cost_mat_uf_us.transpose();
-		}
-	}
-	*/
+	
 	return quad_cost_mat;
 }
 
@@ -5545,7 +3614,7 @@ MatrixXf get_quad_cost_matrix()
 
 MatrixXf get_quad_cost_matrix_full_state()
 {
-
+	// Construct the cost function for the RAMPC optimisation
 	MatrixXf quad_cost_mat_xf = d_Q+d_K.transpose()*d_R*d_K;
 	MatrixXf quad_cost_mat_uxf = d_K.transpose()*d_R;
 	MatrixXf quad_cost_mat_xuf = d_R*d_K;
@@ -5554,14 +3623,6 @@ MatrixXf get_quad_cost_matrix_full_state()
 
 
 
-
-	/*
-	MatrixXf quad_cost_mat_g = d_lambda2_g * MatrixXf::Identity(d_Ng, d_Ng);
-	MatrixXf quad_cost_mat_s = d_lambda2_s * MatrixXf::Identity(d_Ns, d_Ns);
-	MatrixXf quad_cost_mat_uf;
-	MatrixXf quad_cost_mat_yf;
-	MatrixXf quad_cost_mat_yt;
-	*/
 	MatrixXf quad_cost_mat = MatrixXf::Zero(d_col_num, d_col_num);
 
 
@@ -5575,356 +3636,11 @@ MatrixXf get_quad_cost_matrix_full_state()
 	quad_cost_mat.block(d_N*d_num_outputs,d_N*d_num_outputs,d_num_outputs,d_num_outputs)=d_P;	
 
 	quad_cost_mat=2*quad_cost_mat;
-	/*
-	if (d_opt_sparse)
-	{
-		quad_cost_mat_uf = MatrixXf::Zero(d_Nuf, d_Nuf);
-		quad_cost_mat_yf = MatrixXf::Zero(d_Nyf, d_Nyf);
-		quad_cost_mat_yt = d_P;
-		for (int i = 0; i < d_N; i++)
-		{
-			quad_cost_mat_uf.block(i * d_num_inputs, i * d_num_inputs, d_num_inputs, d_num_inputs) = d_R;
-			quad_cost_mat_yf.block(i * d_num_outputs, i * d_num_outputs, d_num_outputs, d_num_outputs) = d_Q;
-		}
-	}
-	else
-	{
-		for (int i = 0; i < d_N; i++)
-		{
-			quad_cost_mat_g += d_U_f.middleRows(i * d_num_inputs, d_num_inputs).transpose() * d_R * d_U_f.middleRows(i * d_num_inputs, d_num_inputs);
-			quad_cost_mat_g += d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_Q * d_Y_f.middleRows(i * d_num_outputs, d_num_outputs);
-		}
-		quad_cost_mat_g += d_Y_f.bottomRows(d_num_outputs).transpose() * d_P * d_Y_f.bottomRows(d_num_outputs);
-	}
-	quad_cost_mat.topLeftCorner(d_Ng, d_Ng) = quad_cost_mat_g;
-	quad_cost_mat.block(d_Ng, d_Ng, d_Ns, d_Ns) = quad_cost_mat_s;
-	if (d_opt_sparse)
-	{
-		quad_cost_mat.block(d_Ng + d_Ns, d_Ng + d_Ns, d_Nuf, d_Nuf) = quad_cost_mat_uf;
-		quad_cost_mat.block(d_Ng + d_Ns + d_Nuf, d_Ng + d_Ns + d_Nuf, d_Nyf, d_Nyf) = quad_cost_mat_yf;
-		quad_cost_mat.block(d_Ng + d_Ns + d_Nuf + d_Nyf, d_Ng + d_Ns + d_Nuf + d_Nyf, d_num_outputs, d_num_outputs) = quad_cost_mat_yt;
-
-		if (d_opt_steady_state)
-		{
-			MatrixXf quad_cost_mat_gs = quad_cost_mat_g + MatrixXf::Identity(d_Ng, d_Ng);
-			MatrixXf quad_cost_mat_g_gs = -quad_cost_mat_g;
-			MatrixXf quad_cost_mat_us = d_N * d_R;
-			MatrixXf quad_cost_mat_uf_us = -d_R.replicate(d_N, 1);
-
-			quad_cost_mat.block(d_gs_start_i, d_gs_start_i, d_Ng, d_Ng) = quad_cost_mat_gs;
-			quad_cost_mat.block(0, d_gs_start_i, d_Ng, d_Ng) = quad_cost_mat_g_gs;
-			quad_cost_mat.block(d_gs_start_i, 0, d_Ng, d_Ng) = quad_cost_mat_g_gs.transpose();
-			
-			quad_cost_mat.bottomRightCorner(d_num_inputs, d_num_inputs) = quad_cost_mat_us;
-			quad_cost_mat.block(d_uf_start_i, d_us_start_i, d_Nuf, d_num_inputs) = quad_cost_mat_uf_us;
-			quad_cost_mat.block(d_us_start_i, d_uf_start_i, d_num_inputs, d_Nuf) = quad_cost_mat_uf_us.transpose();
-		}
-	}
-	*/
+	
 	return quad_cost_mat;
 }
-// Get optimization linear cost vectors
-// Gurobi refers to this as 'c'. It is multiplied by 2 since Gurobi minimizes (x^T * Q * x + c^t * x)
-// OSQP refers to this as 'q'. It is not multiplied by 2 since OSQP minimizes (1/2 * x^T * P * x + q^t * x)
-void get_lin_cost_vectors()
-{
-	s_Rampc_mutex.lock();
-	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1225");
-	d_setpoint = s_setpoint;
-	s_Rampc_mutex.unlock();
-	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1225");
 
-	// Reference
-	d_r = MatrixXf::Zero(d_num_outputs, 1);
-	d_r.topRows(3) = d_setpoint.topRows(3);
-	if (d_Rampc_yaw_control)
-		d_r.bottomRows(1) = d_setpoint.bottomRows(1);
 
-	if (d_opt_sparse)
-	{
-		d_lin_cost_vec_r = MatrixXf::Zero(d_Nyf + d_num_outputs, 1);
-		d_lin_cost_vec_r.topRows(d_Nyf) = (-d_Q * d_r).replicate(d_N, 1);
-		d_lin_cost_vec_r.bottomRows(d_num_outputs) = -d_P * d_r;
-	}
-	else
-	{
-		d_lin_cost_vec_r = MatrixXf::Zero(d_Ng, 1);
-
-		for (int i = 0; i < d_N; i++)
-			d_lin_cost_vec_r -= d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_Q * d_r;
-
-		d_lin_cost_vec_r -= d_Y_f.bottomRows(d_num_outputs).transpose() * d_P * d_r;
-	}
-	if (d_solver == RAMPC_CONTROLLER_SOLVER_GUROBI)
-		d_lin_cost_vec_r *= 2.0;
-
-	d_r_gs = d_r.replicate(d_Tini + d_N + 1, 1);
-
-	// Steady state input us and trajectory mapper gs
-	// Only execute this if not optimizing over gs & us
-	if (d_opt_sparse && d_opt_steady_state)
-	{
-		d_lin_cost_vec_gs = MatrixXf::Zero(d_Ng, 1);
-		d_lin_cost_vec_us = MatrixXf::Zero(d_Nuf, 1);
-	}
-	else
-	{
-		// Steady state input
-		MatrixXf us = MatrixXf::Zero(d_num_inputs, 1);
-		us(0) = d_cf_weight_in_newtons;
-
-		// Steady state trajectory mapper
-		MatrixXf u_gs = us.replicate(d_Tini + d_N, 1);
-		d_A_gs = MatrixXf::Zero(d_U_p.rows() + d_U_f.rows() + d_Y_p.rows() + d_Y_f.rows(), d_Ng);
-		d_b_gs = MatrixXf::Zero(d_A_gs.rows(), 1);
-		d_A_gs.topRows(d_U_p.rows()) = d_U_p;
-		d_A_gs.middleRows(d_U_p.rows(), d_U_f.rows()) = d_U_f;
-		d_A_gs.middleRows(d_U_p.rows() + d_U_f.rows(), d_Y_p.rows()) = d_Y_p;
-		d_A_gs.bottomRows(d_Y_f.rows()) = d_Y_f;
-		d_b_gs.topRows(u_gs.rows()) = u_gs;
-		d_b_gs.bottomRows(d_r_gs.rows()) = d_r_gs;
-		d_gs = d_A_gs.bdcSvd(ComputeThinU | ComputeThinV).solve(d_b_gs);
-
-		d_lin_cost_vec_gs = -d_lambda2_g * d_gs;
-		if (d_opt_sparse)
-			d_lin_cost_vec_us = (-d_R * us).replicate(d_N, 1);
-		else
-		{
-			d_lin_cost_vec_us = MatrixXf::Zero(d_Ng, 1);
-
-			for (int i = 0; i < d_N; i++)
-				d_lin_cost_vec_us -= d_U_f.middleRows(i * d_num_inputs, d_num_inputs).transpose() * d_R * us;
-		}
-	}
-
-	if (d_solver == RAMPC_CONTROLLER_SOLVER_GUROBI)
-	{
-		d_lin_cost_vec_gs *= 2.0;
-		d_lin_cost_vec_us *= 2.0;
-	}
-}
-
-// Update optimization linear cost vectors
-// Used during runtime to update objective on reference r and steady-state trajectory mapper gs
-// us is hovering steady state input and is constant so does not get updated
-// Gurobi refers to this as 'c'. It is multiplied by 2 since Gurobi minimizes (x^T * Q * x + c^t * x)
-// OSQP refers to this as 'q'. It is not multiplied by 2 since OSQP minimizes (1/2 * x^T * P * x + q^t * x)
-void update_lin_cost_vectors()
-{
-	s_Rampc_mutex.lock();
-	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1312");
-	d_setpoint = s_setpoint;
-	s_Rampc_mutex.unlock();
-	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1312");
-
-    // Reference
-	d_r.topRows(3) = d_setpoint.topRows(3);
-	if (d_Rampc_yaw_control)
-		d_r.bottomRows(1) = d_setpoint.bottomRows(1);
-
-	if (d_opt_sparse)
-	{
-		d_lin_cost_vec_r.topRows(d_Nyf) = (-d_Q * d_r).replicate(d_N, 1);
-		d_lin_cost_vec_r.bottomRows(d_num_outputs) = -d_P * d_r;
-	}
-	else
-	{
-		d_lin_cost_vec_r = MatrixXf::Zero(d_Ng, 1);
-
-		for (int i = 0; i < d_N; i++)
-			d_lin_cost_vec_r -= d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_Q * d_r;
-
-		d_lin_cost_vec_r -= d_Y_f.bottomRows(d_num_outputs).transpose() * d_P * d_r;
-	}
-	if (d_solver == RAMPC_CONTROLLER_SOLVER_GUROBI)
-		d_lin_cost_vec_r *= 2.0;
-
-	d_r_gs = d_r.replicate(d_Tini + d_N + 1, 1);
-
-	// If optimizing over steady state gs & us, no need to perform gs inversion logic
-	if (d_opt_sparse && d_opt_steady_state)
-		return;
-
-	ds_Rampc_gs_inversion_mutex.lock();
-	//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1327");
-    d_gs_inversion_complete = ds_gs_inversion_complete;
-    ds_Rampc_gs_inversion_mutex.unlock();
-    //ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1327");
-
-	if (!d_get_gs)
-	{
-		// Steady state trajectory mapper
-		d_b_gs.bottomRows(d_r_gs.rows()) = d_r_gs;
-
-		// Get gs from gs matrix inversion thread
-		d_get_gs = true;
-
-		ds_Rampc_gs_inversion_mutex.lock();
-		//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1320");
-		ds_A_gs = d_A_gs;
-		ds_b_gs = d_b_gs;
-        ds_get_gs = d_get_gs;
-        ds_Rampc_gs_inversion_mutex.unlock();
-        //ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1320");
-	}
-
-    if (d_gs_inversion_complete)
-    {
-    	d_get_gs = false;
-
-    	ds_Rampc_gs_inversion_mutex.lock();
-		//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1337");
-	    d_gs = ds_gs;
-	    ds_get_gs = d_get_gs;
-	    ds_Rampc_gs_inversion_mutex.unlock();
-	    //ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1337");
-
-	    d_lin_cost_vec_gs = -d_lambda2_g * d_gs;
-
-		if (d_solver == RAMPC_CONTROLLER_SOLVER_GUROBI)
-			d_lin_cost_vec_gs *= 2.0;
-    }
-}
-
-// Update optimization linear cost vectors when reference is changing
-// Used during runtime to update objective on reference r only steady-state trajectory mapper is not updated since it takes too long for inversion to do in real-time
-// us is hovering steady state input and is constant so does not get updated
-// Gurobi refers to this as 'c'. It is multiplied by 2 since Gurobi minimizes (x^T * Q * x + c^t * x)
-// OSQP refers to this as 'q'. It is not multiplied by 2 since OSQP minimizes (1/2 * x^T * P * x + q^t * x)
-void update_lin_cost_vectors_changing_ref()
-{
-    // Reference
-	d_r.topRows(3) = d_setpoint.topRows(3);
-	if (d_Rampc_yaw_control)
-		d_r.bottomRows(1) = d_setpoint.bottomRows(1);
-
-	d_figure_8_scale = 2 / (3 - cos(2 * d_figure_8_frequency_rad * (d_time_in_seconds - PI/2))) * d_figure_8_amplitude;
-	d_r(0) += d_figure_8_scale * cos(d_figure_8_frequency_rad * (d_time_in_seconds - PI/2));
-	d_r(1) += d_figure_8_scale * sin(2 * d_figure_8_frequency_rad * (d_time_in_seconds - PI/2)) / 2;
-	d_r(2) += d_z_sine_amplitude * sin(d_z_sine_frequency_rad * d_time_in_seconds);
-
-	d_time_in_seconds += d_control_deltaT;
-
-	if (d_opt_sparse)
-	{
-		d_lin_cost_vec_r.topRows(d_Nyf) = (-d_Q * d_r).replicate(d_N, 1);
-		d_lin_cost_vec_r.bottomRows(d_num_outputs) = -d_P * d_r;
-	}
-	else
-	{
-		d_lin_cost_vec_r = MatrixXf::Zero(d_Ng, 1);
-
-		for (int i = 0; i < d_N; i++)
-			d_lin_cost_vec_r -= d_Y_f.middleRows(i * d_num_outputs, d_num_outputs).transpose() * d_Q * d_r;
-
-		d_lin_cost_vec_r -= d_Y_f.bottomRows(d_num_outputs).transpose() * d_P * d_r;
-	}
-	if (d_solver == RAMPC_CONTROLLER_SOLVER_GUROBI)
-		d_lin_cost_vec_r *= 2.0;
-
-	d_r_gs = d_r.replicate(d_Tini + d_N + 1, 1);
-}
-
-// Get static equality constraints matrix
-// Static equality constraints don't change in runtime ([uf; yf; yt]), and ([gs; us]) if optimizing over steady state gs & us
-// This is part of Gurobi/OSQP A matrix
-MatrixXf get_static_eq_constr_matrix()
-{
-	MatrixXf A_eq_stat;
-	if (d_opt_sparse)
-	{
-		d_num_stat_eq_constr = d_Nuf + d_Nyf + d_num_outputs;
-		if (d_opt_steady_state)
-			d_num_stat_eq_constr += d_Nuini + d_Nuf;
-
-		A_eq_stat = MatrixXf::Zero(d_num_stat_eq_constr, d_num_opt_vars);
-		A_eq_stat.topLeftCorner(d_Nuf, d_Ng) = d_U_f;
-		A_eq_stat.block(0, d_uf_start_i, d_Nuf, d_Nuf) = -MatrixXf::Identity(d_Nuf, d_Nuf);
-		A_eq_stat.block(d_Nuf, 0, d_Nyf + d_num_outputs, d_Ng) = d_Y_f;
-		A_eq_stat.block(d_Nuf, d_yf_start_i, d_Nyf + d_num_outputs, d_Nyf + d_num_outputs) = -MatrixXf::Identity(d_Nyf + d_num_outputs, d_Nyf + d_num_outputs);
-
-		if (d_opt_steady_state)
-		{
-			MatrixXf Up_Uf = MatrixXf::Zero(d_Nuini + d_Nuf, d_Ng);
-			Up_Uf.topRows(d_Nuini) = d_U_p;
-			Up_Uf.bottomRows(d_Nuf) = d_U_f;
-
-			A_eq_stat.block(d_Nuf + d_Nyf + d_num_outputs, d_gs_start_i, d_Nuini + d_Nuf, d_Ng) = Up_Uf;
-			A_eq_stat.bottomRightCorner(d_Nuini + d_Nuf, d_num_inputs) = -MatrixXf::Identity(d_num_inputs, d_num_inputs).replicate(d_Tini + d_N, 1);
-		}
-	}
-	else
-	{
-		// There are no static equality constraints in dense formulation (they are subtituted)
-		d_num_stat_eq_constr = 0;
-
-		A_eq_stat = MatrixXf::Zero(0, 0);
-	}
-
-	return A_eq_stat;
-}
-
-// Get static equality constraints vector
-// Static equality constraints don't change in runtime ([uf; yf; yt]), and ([gs; us]) if optimizing over steady state gs & us
-// This is part of Gurobi b vector
-// This is part of OSQP l/u vectors
-MatrixXf get_static_eq_constr_vector()
-{
-	MatrixXf stat_eq_constr_vec;
-	if (d_num_stat_eq_constr > 0)
-		stat_eq_constr_vec = MatrixXf::Zero(d_num_stat_eq_constr, 1);
-	else
-	{
-		// There are no static equality constraints in dense formulation (they are subtituted)
-		stat_eq_constr_vec = MatrixXf::Zero(0, 0);
-	}
-
-	return stat_eq_constr_vec;
-}
-
-// Get dynamic equality constraints matrix
-// Dynamic equality constraints change in runtime ([uini; yini]), and ([gs; r]) if optimizing over steady state gs & us
-// This is part of Gurobi/OSQP A matrix
-MatrixXf get_dynamic_eq_constr_matrix()
-{
-	d_num_dyn_eq_constr = d_Nuini + d_Nyini;
-	if (d_opt_sparse && d_opt_steady_state)
-		d_num_dyn_eq_constr += d_Nyini + d_Nyf + d_num_outputs;
-
-	MatrixXf A_eq_dyn = MatrixXf::Zero(d_num_dyn_eq_constr, d_num_opt_vars);
-	A_eq_dyn.topLeftCorner(d_Nuini, d_Ng) = d_U_p;
-	A_eq_dyn.block(d_Nuini, 0, d_Nyini, d_Ng) = d_Y_p;
-	A_eq_dyn.block(d_Nuini, d_Ng, d_Ns, d_Ns) = -MatrixXf::Identity(d_Ns, d_Ns);
-
-	if (d_opt_sparse && d_opt_steady_state)
-	{
-		MatrixXf Yp_Yf = MatrixXf::Zero(d_Nyini + d_Nyf + d_num_outputs, d_Ng);
-		Yp_Yf.topRows(d_Nyini) = d_Y_p;
-		Yp_Yf.bottomRows(d_Nyf + d_num_outputs) = d_Y_f;
-
-		A_eq_dyn.block(d_Nuini + d_Nyini, d_gs_start_i, d_Nyini + d_Nyf + d_num_outputs, d_Ng) = Yp_Yf;
-	}
-
-	return A_eq_dyn;
-}
-
-// Get dynamic equality constraints vector
-// Dynamic equality constraints change in runtime ([uini; yini]), and ([gs; r]) if optimizing over steady state gs & us
-// This is part of Gurobi b vector
-// This is part of OSQP l/u vectors
-MatrixXf get_dynamic_eq_constr_vector()
-{
-	MatrixXf dyn_eq_constr_vec = MatrixXf::Zero(d_num_dyn_eq_constr, 1);
-	d_uini = MatrixXf::Zero(d_Nuini, 1);
-    d_yini = MatrixXf::Zero(d_Nyini, 1);
-	dyn_eq_constr_vec.topRows(d_Nuini) = d_uini;
-	dyn_eq_constr_vec.middleRows(d_Nuini, d_Nyini) = d_yini;
-
-	if (d_opt_sparse && d_opt_steady_state)
-		dyn_eq_constr_vec.bottomRows(d_Nyini + d_Nuf + d_num_outputs) = d_r_gs;
-
-	return dyn_eq_constr_vec;
-}
 
 // Some steps to finish Rampc setup
 void finish_Rampc_setup()
@@ -5965,13 +3681,7 @@ void clear_setupRampc_success_flag()
 	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1294");
 }
 
-// Gurobi cleanup
-// Deletes any heap allocated variables
-void gurobi_cleanup()
-{
-	delete[] d_grb_vars;
-	delete[] d_grb_dyn_constrs;
-}
+
 
 // OSQP extended cleanup
 // Frees any data structures to which memory was allocated
@@ -5984,6 +3694,7 @@ void osqp_extended_cleanup()
 	c_free(d_osqp_u_new);
 }
 
+// Extended cleanup for the theta optimisation
 void osqp_theta_extended_cleanup()
 {
 	osqp_cleanup(d_osqp_theta_max_work);
@@ -5994,7 +3705,7 @@ void osqp_theta_extended_cleanup()
 }
 
 
-
+// Free Optimisation data
 void osqp_cleanup_data(OSQPData* data)
 {
 	if (!data)
@@ -6011,25 +3722,7 @@ void osqp_cleanup_data(OSQPData* data)
 	c_free(data);
 }
 
-// Data to Hankel function
-MatrixXf data2hankel(const MatrixXf& data, int num_block_rows)
-{
-	// data =  Data matrix of size [dimension of data point x number of data points]
-	// num_block_rows = number of block rows wanted in Hankel matrix
 
-	int dim = data.rows();
-	int num_data_pts = data.cols();
-	int H_rows = dim * num_block_rows;
-	int H_cols = num_data_pts - num_block_rows + 1;
-	
-	MatrixXf H = MatrixXf::Zero(H_rows, H_cols);
-
-	for (int i = 0; i < num_block_rows; i++)
-	    for (int j = 0; j < H_cols; j++)
-	        H.block(dim*i,j,dim,1) = data.col(i+j);
-
-    return H;
-}
 
 // Convert Eigen Dense matrix to CSC format used in OSQP
 csc* eigen2csc(const MatrixXf& eigen_dense_mat)
@@ -6122,52 +3815,7 @@ bool write_csv(const string& path, const MatrixXf& M)
 	return true;
 }
 
-// RAMPC GS MATRIX INVERSION THREAD MAIN
-// Matrix inversion for steady state trajectory mapper gs takes long so it is performed in seperate thread
-void Rampc_gs_inversion_thread_main()
-{
-	bool get_gs;
-	bool gs_inversion_complete = false;
-	MatrixXf gs;
-	MatrixXf A_gs;
-	MatrixXf b_gs;
 
-	while (ros::ok())
-	{
-		ds_Rampc_gs_inversion_mutex.lock();
-		//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1593");
-        get_gs = ds_get_gs;
-        ds_Rampc_gs_inversion_mutex.unlock();
-        //ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1593");
-        
-        if (!get_gs)
-        	gs_inversion_complete = false;
-
-        if (get_gs && !gs_inversion_complete)
-        {
-        	ds_Rampc_gs_inversion_mutex.lock();
-			//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1593");
-	        A_gs = ds_A_gs;
-	        b_gs = ds_b_gs;
-	        ds_Rampc_gs_inversion_mutex.unlock();
-	        //ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1593");
-
-	        // This line is why this thread was created. It takes looong
-        	gs = A_gs.bdcSvd(ComputeThinU | ComputeThinV).solve(b_gs);
-        	
-        	gs_inversion_complete = true;
-
-        	ds_Rampc_gs_inversion_mutex.lock();
-        	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1609");
-        	ds_gs = gs;
-        	ds_gs_inversion_complete = gs_inversion_complete;
-        	ds_Rampc_gs_inversion_mutex.unlock();
-        	// ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1609");
-
-        	ROS_INFO("[RAMPC CONTROLLER] Rampc gs matrix inversion complete");
-        }
-    }
-}
 
 
 //    ------------------------------------------------------------------------------
@@ -6371,17 +4019,11 @@ bool calculateControlOutput(Controller::Request &request, Controller::Response &
 			computeResponse_for_LQR(request, response);
 			break;
 
-        case RAMPC_CONTROLLER_STATE_EXCITATION_LQR:
-            computeResponse_for_excitation_LQR(request, response);
-            break;
 
         case RAMPC_CONTROLLER_STATE_RAMPC:
             computeResponse_for_Rampc(request, response);
             break;
 
-        case RAMPC_CONTROLLER_STATE_EXCITATION_RAMPC:
-            computeResponse_for_excitation_Rampc(request, response);
-            break;
 
 		case RAMPC_CONTROLLER_STATE_LANDING_MOVE_DOWN:
 			computeResponse_for_landing_move_down(request, response);
@@ -6627,211 +4269,7 @@ void computeResponse_for_LQR(Controller::Request &request, Controller::Response 
 	update_uini_yini(request, output);
 }
 
-void computeResponse_for_excitation_LQR(Controller::Request &request, Controller::Response &response)
-{
-    // Check if the state "just recently" changed
-    if (m_current_state_changed)
-    {
-        // PERFORM "ONE-OFF" OPERATIONS HERE
-		m_time_in_seconds = 0.0;
-        for (int i = 0; i < 9; i++)
-			m_previous_stateErrorInertial[i] = 0.0;
-        m_thrustExcIndex = 0;
-        m_rollRateExcIndex = 0;
-        m_pitchRateExcIndex = 0;
-        m_yawRateExcIndex = 0;
-        m_dataIndex = 0;
-        // Set the change flag back to false
-        m_current_state_changed = false;
-        // Publish the change
-        publishCurrentSetpointAndState();
-        // Inform the user
-        ROS_INFO_STREAM("[RAMPC CONTROLLER] State \"Excitation LQR\" started");
-    }
 
-    m_setpoint_for_controller[0] = m_setpoint[0];
-    m_setpoint_for_controller[1] = m_setpoint[1];
-    m_setpoint_for_controller[2] = m_setpoint[2];
-    m_setpoint_for_controller[3] = m_setpoint[3];
-
-    // Call the LQR control function
-    control_output output;
-    calculateControlOutput_viaLQR(request, output);
-
-    // Output excitation
-    if (m_thrustExcEnable && m_time_in_seconds > yaml_exc_start_time - m_control_deltaT)
-    {
-        //output.thrust += m_thrustExcAmp_in_newtons * sin(2 * PI * yaml_thrustExcFreq * m_thrustExcTime_in_seconds);
-        //m_thrustExcTime_in_seconds += m_control_deltaT;
-        if (m_thrustExcIndex < m_thrustExcSignal.size())
-        {
-        	output.thrust += m_thrustExcAmp_in_newtons * m_thrustExcSignal(m_thrustExcIndex);
-        	m_thrustExcIndex++;
-        }
-        else
-        {
-        	if (m_rollRateExcEnable || m_pitchRateExcEnable || m_yawRateExcEnable)
-            {
-                // Inform the user
-                ROS_INFO("[RAMPC CONTROLLER] Thrust excitation signal ended. State stays at: Excitation LQR");
-                m_thrustExcEnable = false;
-            }
-            else
-            {
-                // Inform the user
-                ROS_INFO("[RAMPC CONTROLLER] Thrust excitation signal ended. Switch to state: LQR");
-                // Update the state accordingly
-                m_current_state = RAMPC_CONTROLLER_STATE_LQR;
-                m_current_state_changed = true;
-                m_write_data = true;
-            }
-        }
-    }
-
-    if (m_rollRateExcEnable && m_time_in_seconds > yaml_exc_start_time - m_control_deltaT)
-    {
-        //output.rollRate += m_rollRateExcAmp_in_rad * sin(2 * PI * yaml_rollRateExcFreq * m_rollRateExcTime_in_seconds);
-        //m_rollRateExcTime_in_seconds += m_control_deltaT;
-        if (m_rollRateExcIndex < m_rollRateExcSignal.size())
-        {
-        	output.rollRate += m_rollRateExcAmp_in_rad * m_rollRateExcSignal(m_rollRateExcIndex);
-        	m_rollRateExcIndex++;
-        }
-        else
-        {
-        	if (m_thrustExcEnable || m_pitchRateExcEnable || m_yawRateExcEnable)
-            {
-                // Inform the user
-                ROS_INFO("[RAMPC CONTROLLER] Roll rate excitation signal ended. State stays at: Excitation LQR");
-                m_rollRateExcEnable = false;
-            }
-            else
-            {
-                // Inform the user
-                ROS_INFO("[RAMPC CONTROLLER] Roll rate excitation signal ended. Switch to state: LQR");
-                // Update the state accordingly
-                m_current_state = RAMPC_CONTROLLER_STATE_LQR;
-                m_current_state_changed = true;
-                m_write_data = true;
-            }
-        }
-    }
-
-    if (m_pitchRateExcEnable && m_time_in_seconds > yaml_exc_start_time - m_control_deltaT)
-    {
-        //output.pitchRate += m_pitchRateExcAmp_in_rad * sin(2 * PI * yaml_pitchRateExcFreq * m_pitchRateExcTime_in_seconds);
-        //m_pitchRateExcTime_in_seconds += m_control_deltaT;
-        if (m_pitchRateExcIndex < m_pitchRateExcSignal.size())
-        {
-        	output.pitchRate += m_pitchRateExcAmp_in_rad * m_pitchRateExcSignal(m_pitchRateExcIndex);
-        	m_pitchRateExcIndex++;
-        }
-        else
-        {
-        	if (m_thrustExcEnable || m_rollRateExcEnable || m_yawRateExcEnable)
-            {
-                // Inform the user
-                ROS_INFO("[RAMPC CONTROLLER] Pitch rate excitation signal ended. State stays at: Excitation LQR");
-                m_pitchRateExcEnable = false;
-            }
-            else
-            {
-                // Inform the user
-                ROS_INFO("[RAMPC CONTROLLER] Pitch rate excitation signal ended. Switch to state: LQR");
-                // Update the state accordingly
-                m_current_state = RAMPC_CONTROLLER_STATE_LQR;
-                m_current_state_changed = true;
-                m_write_data = true;
-            }
-        }
-    }
-
-    if (m_yawRateExcEnable  && m_time_in_seconds > yaml_exc_start_time - m_control_deltaT)
-    {
-        //output.yawRate += m_yawRateExcAmp_in_rad * sin(2 * PI * yaml_yawRateExcFreq * m_yawRateExcTime_in_seconds);
-        //m_yawRateExcTime_in_seconds += m_control_deltaT;
-        if (m_yawRateExcIndex < m_yawRateExcSignal.size())
-        {
-        	output.yawRate += m_yawRateExcAmp_in_rad * m_yawRateExcSignal(m_yawRateExcIndex);
-        	m_yawRateExcIndex++;
-        }
-        else
-        {
-        	if (m_thrustExcEnable || m_rollRateExcEnable || m_pitchRateExcEnable)
-            {
-                // Inform the user
-                ROS_INFO("[RAMPC CONTROLLER] Yaw rate excitation signal ended. State stays at: Excitation LQR");
-                m_yawRateExcEnable = false;
-            }
-            else
-            {
-                // Inform the user
-                ROS_INFO("[RAMPC CONTROLLER] Yaw rate excitation signal ended. Switch to state: LQR");
-                // Update the state accordingly
-                m_current_state = RAMPC_CONTROLLER_STATE_LQR;
-                m_current_state_changed = true;
-                m_write_data = true;
-            }
-        }
-    }
-
-    // PREPARE AND RETURN THE VARIABLE "response"
-    // Specify that using a "rate type" of command
-    response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
-
-    // Put the computed body rate commands into the "response" variable
-    response.controlOutput.roll = output.rollRate;
-    response.controlOutput.pitch = output.pitchRate;
-    response.controlOutput.yaw = output.yawRate;
-
-    // Put the thrust commands into the "response" variable.
-    // . NOTE: The thrust is commanded per motor, so divide by 4.0
-    // > NOTE: The function "computeMotorPolyBackward" converts the input argument
-    //         from Newtons to the 16-bit command expected by the Crazyflie.
-    float thrust_request_per_motor = output.thrust / 4.0;
-    response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrust_request_per_motor);
-    response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrust_request_per_motor);
-    response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrust_request_per_motor);
-    response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrust_request_per_motor);
-
-    // Capture data
-    if (m_dataIndex < m_u_data.rows())
-    {
-    	// Input data
-    	m_u_data(m_dataIndex,0) = output.thrust;
-    	m_u_data(m_dataIndex,1) = output.rollRate;
-    	m_u_data(m_dataIndex,2) = output.pitchRate;
-    	m_u_data(m_dataIndex,3) = output.yawRate;
-
-    	// Output data
-    	m_y_data(m_dataIndex,0) = request.ownCrazyflie.x;
-    	m_y_data(m_dataIndex,1) = request.ownCrazyflie.y;
-    	m_y_data(m_dataIndex,2) = request.ownCrazyflie.z;
-    	m_y_data(m_dataIndex,3) = request.ownCrazyflie.roll;
-    	m_y_data(m_dataIndex,4) = request.ownCrazyflie.pitch;
-    	m_y_data(m_dataIndex,5) = request.ownCrazyflie.yaw;
-    }
-    m_dataIndex++;
-
-	// Increment time
-    m_time_in_seconds += m_control_deltaT;
-
-    // DEBUG INFO
-    if (yaml_shouldDisplayDebugInfo)
-    {
-        ROS_INFO_STREAM("output.thrust = " << output.thrust);
-        ROS_INFO_STREAM("controlOutput.roll = " << response.controlOutput.roll);
-        ROS_INFO_STREAM("controlOutput.pitch = " << response.controlOutput.pitch);
-        ROS_INFO_STREAM("controlOutput.yaw = " << response.controlOutput.yaw);
-        ROS_INFO_STREAM("controlOutput.motorCmd1 = " << response.controlOutput.motorCmd1);
-        ROS_INFO_STREAM("controlOutput.motorCmd2 = " << response.controlOutput.motorCmd2);
-        ROS_INFO_STREAM("controlOutput.motorCmd3 = " << response.controlOutput.motorCmd3);
-        ROS_INFO_STREAM("controlOutput.motorCmd4 = " << response.controlOutput.motorCmd4);
-    }
-
-    // Update uini yini
-	update_uini_yini(request, output);
-}
 
 void computeResponse_for_Rampc(Controller::Request &request, Controller::Response &response)
 {
@@ -6849,43 +4287,7 @@ void computeResponse_for_Rampc(Controller::Request &request, Controller::Respons
 		m_Rampc_cycles_since_solve = 0;
 		// Set the change flag back to false
 		m_current_state_changed = false;
-
-		// If just coming from excitation state, write data collected
-		if (m_write_data)
-		{
-			ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing input data to: " << m_outputFolder << "m_u_data.csv");
-            if (write_csv(m_outputFolder + "m_u_data.csv", m_u_data.transpose()))
-            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
-            else
-            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
-
-            ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing output data to: " << m_outputFolder << "m_y_data.csv");
-            if (write_csv(m_outputFolder + "m_y_data.csv", m_y_data.transpose()))
-            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
-            else
-            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
-
-            // Make copies of Hankel matrix data if collecting data
-            if (m_collect_data)
-            {
-            	m_num_hankels++;
-
-            	ROS_INFO_STREAM("[RAMPC CONTROLLER] Making copy of input data to: " << m_outputFolder << "m_u_data_" << m_num_hankels << ".csv");
-	            if (write_csv(m_outputFolder + "m_u_data_" + to_string(m_num_hankels) + ".csv", m_u_data.transpose()))
-	            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
-	            else
-	            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
-
-	            ROS_INFO_STREAM("[RAMPC CONTROLLER] Making copy of output data to: " << m_outputFolder << "m_y_data_" << m_num_hankels << ".csv");
-	            if (write_csv(m_outputFolder + "m_y_data_" + to_string(m_num_hankels) + ".csv", m_y_data.transpose()))
-	            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
-	            else
-	            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
-            }
-
-            m_write_data = false;
-		}
-
+		
 		// Publish the change
 		publishCurrentSetpointAndState();
 		// Inform the user
@@ -6896,6 +4298,7 @@ void computeResponse_for_Rampc(Controller::Request &request, Controller::Respons
 	// Rampc control is not allowed to start unless setup, but on exceptions setup success flag is reset
 	// Rampc must be (re-)setup in this case to allow restart
 
+	// Get relevant bools and quadrotor data
 	s_Rampc_mutex.lock();
 	//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1460");
 	bool setupRampc_success = s_setupRampc_success;
@@ -6912,6 +4315,7 @@ void computeResponse_for_Rampc(Controller::Request &request, Controller::Respons
 	bool use_LQR = false;
 	control_output output;
 
+	// Use LQR if setup not successful
 	if (!setupRampc_success)
 	{
 		// Inform the user
@@ -6928,8 +4332,10 @@ void computeResponse_for_Rampc(Controller::Request &request, Controller::Respons
 	if (Rampc_first_pass || m_Rampc_solving_first_opt)
 		use_LQR = true;
 
+
 	if (solveRampc)
 	{
+		// count cycles since last solve 
 		m_Rampc_cycles_since_solve++;
 		if (m_Rampc_cycles_since_solve >= yaml_N)
 			use_LQR = true;
@@ -6940,23 +4346,13 @@ void computeResponse_for_Rampc(Controller::Request &request, Controller::Respons
 		m_Rampc_cycles_since_solve = 0;
 	}
 
-	// Set reference for LQR controller in case it is used
+	// Set reference 
 	m_setpoint_for_controller[0] = m_setpoint[0];
 	m_setpoint_for_controller[1] = m_setpoint[1];
 	m_setpoint_for_controller[2] = m_setpoint[2];
 	m_setpoint_for_controller[3] = m_setpoint[3];
 	
-	// Add 'Figure 8' (found here: "https://gamedev.stackexchange.com/questions/43691/how-can-i-move-an-object-in-an-infinity-or-figure-8-trajectory", as "Lemniscate of Bernoulli")
-	// Note that this computation is repeated in the Rampc thread to update reference in optimization problem
-	if (m_changing_ref_enable)
-	{
-		float figure_8_scale = 2 / (3 - cos(2 * m_figure_8_frequency_rad * (m_time_in_seconds - PI/2))) * yaml_figure_8_amplitude;
-		m_setpoint_for_controller[0] += figure_8_scale * cos(m_figure_8_frequency_rad * (m_time_in_seconds - PI/2));
-		m_setpoint_for_controller[1] += figure_8_scale * sin(2 * m_figure_8_frequency_rad * (m_time_in_seconds - PI/2)) / 2;
-		m_setpoint_for_controller[2] += yaml_z_sine_amplitude * sin(m_z_sine_frequency_rad * m_time_in_seconds);
-
-		m_time_in_seconds += m_control_deltaT;
-	}
+	
 
 	if (use_LQR)
 	{	 
@@ -6965,6 +4361,7 @@ void computeResponse_for_Rampc(Controller::Request &request, Controller::Respons
 	}
 	else
 	{	
+		// Compute LQR for x, y and yaw control
 		calculateControlOutput_viaLQR(request, output);
 		switch (experiment){
 		case RAMPC_CONTROLLER_EXPERIMENT_MASS:
@@ -6974,7 +4371,11 @@ void computeResponse_for_Rampc(Controller::Request &request, Controller::Respons
 		//ROS_INFO_STREAM("[RAMPC CONTROLLER] index number: "<<input_number * m_num_inputs);
 		input_number= m_Rampc_cycles_since_solve/20;
 		//ROS_INFO_STREAM("[RAMPC CONTROLLER] cycle: "<< m_Rampc_cycles_since_solve<< "; index number: "<<input_number * m_num_inputs);
+
+		// use the relevant output from the RAMPC computation
 		output.thrust = m_u_f(input_number * m_num_inputs);
+
+		// Rotor Failure for the second experiment
 		if (experiment==2){
 			rotorFailureTime=ros::WallTime::now().toSec();
 			rotorFailureDuration=rotorFailureTime-rotorFailureTimeStart;
@@ -7000,6 +4401,7 @@ void computeResponse_for_Rampc(Controller::Request &request, Controller::Respons
 
 		// PREPARE AND RETURN THE VARIABLE "response"
 		// Specify that using a "rate type" of command
+
 
 		response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
 
@@ -7035,9 +4437,12 @@ void computeResponse_for_Rampc(Controller::Request &request, Controller::Respons
 		ROS_INFO_STREAM(output.thrust2);
 		ROS_INFO_STREAM(output.thrust3);
 		ROS_INFO_STREAM(output.thrust4);
+
+		// use direct thrust mode for the full state
 		
 		response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_MOTORS;
 		
+
 		response.controlOutput.motorCmd1 = computeMotorPolyBackward(output.thrust1);
 		response.controlOutput.motorCmd2 = computeMotorPolyBackward(output.thrust2);
 		response.controlOutput.motorCmd3 = computeMotorPolyBackward(output.thrust3);
@@ -7056,83 +4461,8 @@ void computeResponse_for_Rampc(Controller::Request &request, Controller::Respons
 
 	}
 	}
-	// Capture data
-	if (m_collect_data && !use_LQR)
-	{
-		if (m_dataIndex_Rampc < m_u_data_Rampc.rows())
-	    {
-	    	// Input data
-	    	m_u_data_Rampc(m_dataIndex_Rampc,0) = output.thrust;
-	    	m_u_data_Rampc(m_dataIndex_Rampc,1) = output.rollRate;
-	    	m_u_data_Rampc(m_dataIndex_Rampc,2) = output.pitchRate;
-	    	m_u_data_Rampc(m_dataIndex_Rampc,3) = output.yawRate;
-
-	    	// Predicted input data
-	    	m_uf_data_Rampc.row(m_dataIndex_Rampc) = m_u_f.transpose();
-
-	    	// Output data
-	    	m_y_data_Rampc(m_dataIndex_Rampc,0) = request.ownCrazyflie.x;
-	    	m_y_data_Rampc(m_dataIndex_Rampc,1) = request.ownCrazyflie.y;
-	    	m_y_data_Rampc(m_dataIndex_Rampc,2) = request.ownCrazyflie.z;
-	    	m_y_data_Rampc(m_dataIndex_Rampc,3) = request.ownCrazyflie.roll;
-	    	m_y_data_Rampc(m_dataIndex_Rampc,4) = request.ownCrazyflie.pitch;
-	    	m_y_data_Rampc(m_dataIndex_Rampc,5) = request.ownCrazyflie.yaw;
-
-	    	// Predicted output data
-	    	m_yf_data_Rampc.row(m_dataIndex_Rampc) = m_y_f.transpose();
-
-	    	// Reference data
-	    	m_r_data_Rampc.row(m_dataIndex_Rampc) = m_Rampc_active_setpoint.transpose();
-
-	    	// Solve time data
-	    	m_solveTime_data_Rampc(m_dataIndex_Rampc) = m_solve_time;
-
-	    	m_dataIndex_Rampc++;
-	    }
-	    else
-	    {
-	    	// Inform the user
-	    	ROS_INFO("[RAMPC CONTROLLER] Rampc data collection timeout expired.");
-
-	    	ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing input data to: " << m_outputFolder << "m_u_data_Rampc.csv");
-            if (write_csv(m_outputFolder + "m_u_data_Rampc.csv", m_u_data_Rampc.transpose()))
-            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
-            else
-            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
-
-            ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing predicted input data to: " << m_outputFolder << "m_uf_data_Rampc.csv");
-            if (write_csv(m_outputFolder + "m_uf_data_Rampc.csv", m_uf_data_Rampc.transpose()))
-            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
-            else
-            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
-
-            ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing output data to: " << m_outputFolder << "m_y_data_Rampc.csv");
-            if (write_csv(m_outputFolder + "m_y_data_Rampc.csv", m_y_data_Rampc.transpose()))
-            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
-            else
-            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
-
-            ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing predicted output data to: " << m_outputFolder << "m_yf_data_Rampc.csv");
-            if (write_csv(m_outputFolder + "m_yf_data_Rampc.csv", m_yf_data_Rampc.transpose()))
-            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
-            else
-            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
-
-            ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing reference data to: " << m_outputFolder << "m_r_data_Rampc.csv");
-            if (write_csv(m_outputFolder + "m_r_data_Rampc.csv", m_r_data_Rampc.transpose()))
-            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
-            else
-            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
-
-            ROS_INFO_STREAM("[RAMPC CONTROLLER] Writing solve time data to: " << m_outputFolder << "m_solveTime_data_Rampc.csv");
-            if (write_csv(m_outputFolder + "m_solveTime_data_Rampc.csv", m_solveTime_data_Rampc.transpose()))
-            	ROS_INFO("[RAMPC CONTROLLER] Write file successful");
-            else
-            	ROS_INFO("[RAMPC CONTROLLER] Write file failed");
-
-            m_collect_data = false;
-	    }
-	}
+	
+	
 
 	// DEBUG INFO
 	if (yaml_shouldDisplayDebugInfo)
@@ -7172,272 +4502,6 @@ void computeResponse_for_Rampc(Controller::Request &request, Controller::Respons
 			m_Rampc_solving_first_opt = true;
 }
 
-void computeResponse_for_excitation_Rampc(Controller::Request &request, Controller::Response &response)
-{
-    // Check if the state "just recently" changed
-    if (m_current_state_changed)
-    {
-        // PERFORM "ONE-OFF" OPERATIONS HERE
-        for (int i = 0; i < 9; i++)
-			m_previous_stateErrorInertial[i] = 0.0;
-		m_time_in_seconds = 0.0;
-        m_thrustExcIndex = 0;
-        m_rollRateExcIndex = 0;
-        m_pitchRateExcIndex = 0;
-        m_yawRateExcIndex = 0;
-        m_Rampc_cycles_since_solve = 0;
-        m_dataIndex = 0;
-        // Set the change flag back to false
-        m_current_state_changed = false;
-        // Publish the change
-        publishCurrentSetpointAndState();
-        // Inform the user
-        ROS_INFO_STREAM("[RAMPC CONTROLLER] State \"Excitation Rampc\" started");
-    }
-
-    // Check if Rampc is not setup and exit Rampc control mode
-	// Rampc control is not allowed to start unless setup, but on exceptions setup success flag is reset
-	// Rampc must be (re-)setup in this case to allow restart
-	s_Rampc_mutex.lock();
-	//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1460");
-	bool setupRampc_success = s_setupRampc_success;
-	bool solveRampc = s_solveRampc;
-	m_u_f = s_u_f;
-	s_Rampc_mutex.unlock();
-	//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1460");
-
-	bool use_LQR = false;
-	control_output output;
-
-	if (!setupRampc_success)
-	{
-		// Inform the user
-        ROS_INFO("[RAMPC CONTROLLER] Rampc control error. Rampc must be (re-)setup. Switch to state: LQR");
-        // Update the state accordingly
-        m_current_state = RAMPC_CONTROLLER_STATE_LQR;
-        m_current_state_changed = true;
-        use_LQR = true;
-	}
-
-	if (solveRampc)
-		m_Rampc_cycles_since_solve++;
-	else
-	{
-		ROS_INFO_STREAM("[RAMPC CONTROLLER] Rampc solving optimization took " << m_Rampc_cycles_since_solve + 1 << " cycles");
-		m_Rampc_cycles_since_solve = 0;
-	}
-
-	if (use_LQR)
-	{
-		m_setpoint_for_controller[0] = m_setpoint[0];
-		m_setpoint_for_controller[1] = m_setpoint[1];
-		m_setpoint_for_controller[2] = m_setpoint[2];
-		m_setpoint_for_controller[3] = m_setpoint[3];
-		
-		// Call the LQR control function
-		calculateControlOutput_viaLQR(request, output);
-	}
-	else
-	{
-		output.thrust = m_u_f(m_Rampc_cycles_since_solve * m_num_inputs);
-		output.rollRate = m_u_f(m_Rampc_cycles_since_solve * m_num_inputs + 1);
-		output.pitchRate = m_u_f(m_Rampc_cycles_since_solve * m_num_inputs + 2);
-		if (yaml_Rampc_yaw_control)
-			output.yawRate = m_u_f(m_Rampc_cycles_since_solve * m_num_inputs + 3);
-		else
-		{
-			float yawError = request.ownCrazyflie.yaw - m_setpoint[3];
-			while(yawError > PI) {yawError -= 2 * PI;}
-			while(yawError < -PI) {yawError += 2 * PI;}
-			output.yawRate = -yaml_gainMatrixYawRate[8] * yawError;
-		}
-		
-	}
-
-    // Output excitation
-    if (m_thrustExcEnable && m_time_in_seconds > yaml_exc_start_time - m_control_deltaT)
-    {
-        //output.thrust += m_thrustExcAmp_in_newtons * sin(2 * PI * yaml_thrustExcFreq * m_thrustExcTime_in_seconds);
-        //m_thrustExcTime_in_seconds += m_control_deltaT;
-        if (m_thrustExcIndex < m_thrustExcSignal.size())
-        {
-        	output.thrust += m_thrustExcAmp_in_newtons * m_thrustExcSignal(m_thrustExcIndex);
-        	m_thrustExcIndex++;
-        }
-        else
-        {
-        	if (m_rollRateExcEnable || m_pitchRateExcEnable || m_yawRateExcEnable)
-            {
-                // Inform the user
-                ROS_INFO("[RAMPC CONTROLLER] Thrust excitation signal ended. State stays at: Excitation Rampc");
-                m_thrustExcEnable = false;
-            }
-            else
-            {
-                // Inform the user
-                ROS_INFO("[RAMPC CONTROLLER] Thrust excitation signal ended. Switch to state: LQR");
-                // Update the state accordingly
-                m_current_state = RAMPC_CONTROLLER_STATE_LQR;
-                m_current_state_changed = true;
-                m_write_data = true;
-            }
-        }
-    }
-
-    if (m_rollRateExcEnable && m_time_in_seconds > yaml_exc_start_time - m_control_deltaT)
-    {
-        //output.rollRate += m_rollRateExcAmp_in_rad * sin(2 * PI * yaml_rollRateExcFreq * m_rollRateExcTime_in_seconds);
-        //m_rollRateExcTime_in_seconds += m_control_deltaT;
-        if (m_rollRateExcIndex < m_rollRateExcSignal.size())
-        {
-        	output.rollRate += m_rollRateExcAmp_in_rad * m_rollRateExcSignal(m_rollRateExcIndex);
-        	m_rollRateExcIndex++;
-        }
-        else
-        {
-        	if (m_thrustExcEnable || m_pitchRateExcEnable || m_yawRateExcEnable)
-            {
-                // Inform the user
-                ROS_INFO("[RAMPC CONTROLLER] Roll rate excitation signal ended. State stays at: Excitation Rampc");
-                m_rollRateExcEnable = false;
-            }
-            else
-            {
-                // Inform the user
-                ROS_INFO("[RAMPC CONTROLLER] Roll rate excitation signal ended. Switch to state: LQR");
-                // Update the state accordingly
-                m_current_state = RAMPC_CONTROLLER_STATE_LQR;
-                m_current_state_changed = true;
-                m_write_data = true;
-            }
-        }
-    }
-
-    if (m_pitchRateExcEnable && m_time_in_seconds > yaml_exc_start_time - m_control_deltaT)
-    {
-        //output.pitchRate += m_pitchRateExcAmp_in_rad * sin(2 * PI * yaml_pitchRateExcFreq * m_pitchRateExcTime_in_seconds);
-        //m_pitchRateExcTime_in_seconds += m_control_deltaT;
-        if (m_pitchRateExcIndex < m_pitchRateExcSignal.size())
-        {
-        	output.pitchRate += m_pitchRateExcAmp_in_rad * m_pitchRateExcSignal(m_pitchRateExcIndex);
-        	m_pitchRateExcIndex++;
-        }
-        else
-        {
-        	if (m_thrustExcEnable || m_rollRateExcEnable || m_yawRateExcEnable)
-            {
-                // Inform the user
-                ROS_INFO("[RAMPC CONTROLLER] Pitch rate excitation signal ended. State stays at: Excitation Rampc");
-                m_pitchRateExcEnable = false;
-            }
-            else
-            {
-                // Inform the user
-                ROS_INFO("[RAMPC CONTROLLER] Pitch rate excitation signal ended. Switch to state: LQR");
-                // Update the state accordingly
-                m_current_state = RAMPC_CONTROLLER_STATE_LQR;
-                m_current_state_changed = true;
-                m_write_data = true;
-            }
-        }
-    }
-
-    if (m_yawRateExcEnable  && m_time_in_seconds > yaml_exc_start_time - m_control_deltaT)
-    {
-        //output.yawRate += m_yawRateExcAmp_in_rad * sin(2 * PI * yaml_yawRateExcFreq * m_yawRateExcTime_in_seconds);
-        //m_yawRateExcTime_in_seconds += m_control_deltaT;
-        if (m_yawRateExcIndex < m_yawRateExcSignal.size())
-        {
-        	output.yawRate += m_yawRateExcAmp_in_rad * m_yawRateExcSignal(m_yawRateExcIndex);
-        	m_yawRateExcIndex++;
-        }
-        else
-        {
-        	if (m_thrustExcEnable || m_rollRateExcEnable || m_pitchRateExcEnable)
-            {
-                // Inform the user
-                ROS_INFO("[RAMPC CONTROLLER] Yaw rate excitation signal ended. State stays at: Excitation Rampc");
-                m_yawRateExcEnable = false;
-            }
-            else
-            {
-                // Inform the user
-                ROS_INFO("[RAMPC CONTROLLER] Yaw rate excitation signal ended. Switch to state: LQR");
-                // Update the state accordingly
-                m_current_state = RAMPC_CONTROLLER_STATE_LQR;
-                m_current_state_changed = true;
-                m_write_data = true;
-            }
-        }
-    }
-
-    // PREPARE AND RETURN THE VARIABLE "response"
-    // Specify that using a "rate type" of command
-    response.controlOutput.onboardControllerType = CF_COMMAND_TYPE_RATE;
-
-    // Put the computed body rate commands into the "response" variable
-    response.controlOutput.roll = output.rollRate;
-    response.controlOutput.pitch = output.pitchRate;
-    response.controlOutput.yaw = output.yawRate;
-
-    // Put the thrust commands into the "response" variable.
-    // . NOTE: The thrust is commanded per motor, so divide by 4.0
-    // > NOTE: The function "computeMotorPolyBackward" converts the input argument
-    //         from Newtons to the 16-bit command expected by the Crazyflie.
-    float thrust_request_per_motor = output.thrust / 4.0;
-    response.controlOutput.motorCmd1 = computeMotorPolyBackward(thrust_request_per_motor);
-    response.controlOutput.motorCmd2 = computeMotorPolyBackward(thrust_request_per_motor);
-    response.controlOutput.motorCmd3 = computeMotorPolyBackward(thrust_request_per_motor);
-    response.controlOutput.motorCmd4 = computeMotorPolyBackward(thrust_request_per_motor);
-
-    // Capture data
-    if (m_dataIndex < m_u_data.rows())
-    {
-    	// Input data
-    	m_u_data(m_dataIndex,0) = output.thrust;
-    	m_u_data(m_dataIndex,1) = output.rollRate;
-    	m_u_data(m_dataIndex,2) = output.pitchRate;
-    	m_u_data(m_dataIndex,3) = output.yawRate;
-
-    	// Output data
-    	m_y_data(m_dataIndex,0) = request.ownCrazyflie.x;
-    	m_y_data(m_dataIndex,1) = request.ownCrazyflie.y;
-    	m_y_data(m_dataIndex,2) = request.ownCrazyflie.z;
-    	m_y_data(m_dataIndex,3) = request.ownCrazyflie.roll;
-    	m_y_data(m_dataIndex,4) = request.ownCrazyflie.pitch;
-    	m_y_data(m_dataIndex,5) = request.ownCrazyflie.yaw;
-    }
-    m_dataIndex++;
-
-	// Increment time
-    m_time_in_seconds += m_control_deltaT;
-
-    // DEBUG INFO
-    if (true)
-    {
-        ROS_INFO_STREAM("output.thrust = " << output.thrust);
-        ROS_INFO_STREAM("controlOutput.roll = " << response.controlOutput.roll);
-        ROS_INFO_STREAM("controlOutput.pitch = " << response.controlOutput.pitch);
-        ROS_INFO_STREAM("controlOutput.yaw = " << response.controlOutput.yaw);
-        ROS_INFO_STREAM("controlOutput.motorCmd1 = " << response.controlOutput.motorCmd1);
-        ROS_INFO_STREAM("controlOutput.motorCmd2 = " << response.controlOutput.motorCmd2);
-        ROS_INFO_STREAM("controlOutput.motorCmd3 = " << response.controlOutput.motorCmd3);
-        ROS_INFO_STREAM("controlOutput.motorCmd4 = " << response.controlOutput.motorCmd4);
-    }
-
-    // Update uini yini BEFORE CALLING OPTIMIZATION
-	update_uini_yini(request, output);
-
-	if (!solveRampc)
-	{
-		// Set flag to solve Rampc optimization
-		s_Rampc_mutex.lock();
-		//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Lock 1520");
-		s_solveRampc = true;
-		s_Rampc_mutex.unlock();
-		//ROS_INFO("[RAMPC CONTROLLER] DEBUG Mutex Unlock 1520");
-	}
-}
 
 void computeResponse_for_landing_move_down(Controller::Request &request, Controller::Response &response)
 {
@@ -7964,7 +5028,7 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 
                 break;
 
-			// > FOR CUSTOM BUTTON 2 - SETUP GUROBI OPTIMIZATION
+			// > FOR CUSTOM BUTTON 2 - SETUP OSQP OPTIMIZATION
 			case 2:
 				// Let the user know that this part of the code was triggered
 				ROS_INFO_STREAM("[RAMPC CONTROLLER] Button 2 received in controller, with message.float_data = " << float_data );
@@ -8011,6 +5075,7 @@ void customCommandReceivedCallback(const CustomButtonWithHeader& commandReceived
 // CUSTOM BUTTON 1 - EXCITATION
 void processCustomButton1(float float_data, int int_data, bool* bool_data)
 {
+	/*
 	// Button data decoding:
 	// int_data		== 0 => Excite all
 	// bool_data[0]	== 1 => Excite thrust
@@ -8129,6 +5194,7 @@ void processCustomButton1(float float_data, int int_data, bool* bool_data)
             ROS_INFO("[RAMPC CONTROLLER] Received request to start excitation in invalid state. Request ignored");
             break;
     }
+    */
 }
 
 // CUSTOM BUTTON 2 - SETUP RAMPC OPTIMIZATION
@@ -8186,8 +5252,7 @@ void processCustomButton3(float float_data, int int_data, bool* bool_data)
             m_current_state_changed = true;
             break;
 
-        case RAMPC_CONTROLLER_STATE_EXCITATION_LQR:
-        case RAMPC_CONTROLLER_STATE_EXCITATION_RAMPC:
+        
         case RAMPC_CONTROLLER_STATE_LANDING_MOVE_DOWN:
         case RAMPC_CONTROLLER_STATE_LANDING_SPIN_MOTORS:
         case RAMPC_CONTROLLER_STATE_STANDBY:
@@ -8201,6 +5266,7 @@ void processCustomButton3(float float_data, int int_data, bool* bool_data)
 // CUSTOM BUTTON 4 - COLLECT DATA
 void processCustomButton4(float float_data, int int_data, bool* bool_data)
 {	
+	/*
 	if (!m_collect_data)
 	{
 		// Inform the user
@@ -8277,11 +5343,13 @@ void processCustomButton4(float float_data, int int_data, bool* bool_data)
 
 		m_collect_data = false;
 	}
+	*/
 }
 
 // CUSTOM BUTTON 5 - CHANGING REFERENCE
 void processCustomButton5(float float_data, int int_data, bool* bool_data)
 {	
+	/*
 	// If already following changing reference, disable it and return
 	if (m_changing_ref_enable)
 	{
@@ -8325,6 +5393,7 @@ void processCustomButton5(float float_data, int int_data, bool* bool_data)
             ROS_INFO("[RAMPC CONTROLLER] Received request to follow changing reference in invalid state. Request ignored");
             break;
     }
+    */
 }
 
 //    ----------------------------------------------------------------------------------

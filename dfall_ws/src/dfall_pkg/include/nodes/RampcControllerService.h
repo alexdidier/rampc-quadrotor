@@ -452,6 +452,8 @@ bool s_setpoint_changed = false;
 bool s_setupRampc = false;
 bool s_solveRampc = false;
 bool s_updateTheta=false;
+bool s_RampcSolved=false;
+bool d_RampcSolved=false;
 bool s_setupButtonPressed=false;
 int s_experiment=0;
 // Variables used for changing reference
@@ -545,10 +547,14 @@ MatrixXf d_gs;
 MatrixXf d_A;
 MatrixXf d_A_update;
 MatrixXf d_A_const_update;
+MatrixXf d_A_pred;
+MatrixXf d_A_const_pred;
 MatrixXf d_B_0;
 MatrixXf d_B_0_update;
+MatrixXf d_B_0_pred;
 MatrixXf d_B_1;
 MatrixXf d_B_1_update;
+MatrixXf d_B_1_pred;
 MatrixXf d_H_x;
 MatrixXf d_H_xf_x;
 MatrixXf d_H_xf_s;
@@ -695,24 +701,15 @@ MatrixXf s_current_state_estimate = MatrixXf::Zero(12, 1);
 MatrixXf m_previous_state_estimate=MatrixXf::Zero(12,1);
 MatrixXf d_previous_state_estimate=MatrixXf::Zero(12,1);
 MatrixXf s_previous_state_estimate=MatrixXf::Zero(12,1);
-// MPC FUNCTIONS
-void change_Rampc_setpoint_mpc();
-void change_Rampc_setpoint_mpc_changing_ref();
-void setup_Rampc_mpc();
-void solve_Rampc_mpc();
+
 
 // RAMPC FUNCTIONS
 void Rampc_thread_main();
 void change_Rampc_params();
-void change_Rampc_setpoint_gurobi();
-void change_Rampc_setpoint_gurobi_changing_ref();
 void change_Rampc_setpoint_osqp();
-void change_Rampc_setpoint_osqp_changing_ref();
-void setup_Rampc_gurobi();
 void setup_Rampc_osqp();
 void setup_Rampc_all_rotors_osqp();
 void setup_Rampc_full_state_osqp();
-void solve_Rampc_gurobi();
 void solve_Rampc_osqp();
 void solve_Rampc_full_state_osqp();
 
@@ -753,16 +750,10 @@ void get_control_feedback_all_rotors();
 void get_control_feedback_full_state();
 // UPDATE UINI YINI
 void update_uini_yini(Controller::Request &request, control_output &output);
-// GET U_DATA FROM FILE
-MatrixXf get_u_data();
-// GET Y_DATA FROM FILE
-MatrixXf get_y_data();
 // GET VARIABLE LENGTHS
 void get_variable_lengths();
 // GET VARIABLE LENGTHS
 void get_variable_lengths_full_state();
-// GET HANKEL MATICES
-void get_hankel_matrices(const MatrixXf& u_data, const MatrixXf& y_data);
 // GET COST MATRICES
 void get_cost_matrices();
 // GET COST MATRICES
@@ -777,48 +768,27 @@ void get_input_output_constr_full_state();
 MatrixXf get_quad_cost_matrix();
 // GET OPTIMIZATION QUADRATIC COST MATRIX
 MatrixXf get_quad_cost_matrix_full_state();
-// GET OPTIMIZATION LINEAR COST VECTORS
-void get_lin_cost_vectors();
-// UPDATE OPTIMIZATION LINEAR COST VECTORS
-void update_lin_cost_vectors();
-// UPDATE OPTIMIZATION LINEAR COST VECTORS WHEN REFERENCE IS CHANGING
-void update_lin_cost_vectors_changing_ref();
-// GET STATIC EQUALITY CONSTRAINTS MATRIX
-MatrixXf get_static_eq_constr_matrix();
-// GET STATIC EQUALITY CONSTRAINTS VECTOR
-MatrixXf get_static_eq_constr_vector();
-// GET DYNAMIC EQUALITY CONSTRAINTS MATRIX
-MatrixXf get_dynamic_eq_constr_matrix();
-// GET DYNAMIC EQUALITY CONSTRAINTS VECTOR
-MatrixXf get_dynamic_eq_constr_vector();
 // SOME STEPS TO FINISH RAMPC SETUP
 void finish_Rampc_setup();
 // CLEAR SETUP RAMPC SUCCESS FLAG
 void clear_setupRampc_success_flag();
-// GUROBI CLEANUP
-void gurobi_cleanup();
 // OSQP CLEANUP FUNCTIONS
 void osqp_extended_cleanup();
 void osqp_theta_extended_cleanup();
 void osqp_cleanup_data(OSQPData* data);
-// DATA TO HANKEL
-MatrixXf data2hankel(const MatrixXf& data, int num_block_rows);
 // CONVERT EIGEN SPARSE MATRIX TO CSC FORMAT USED IN OSQP
 csc* eigen2csc(const MatrixXf& eigen_dense_mat);
 // READ/WRITE CSV FILES
 MatrixXf read_csv(const string& path);
 bool write_csv(const string& path, const MatrixXf& M);
 
-// RAMPC GS MATRIX INVERSION THREAD MAIN
-void Rampc_gs_inversion_thread_main();
+
 
 // CONTROLLER COMPUTATIONS
 bool calculateControlOutput(Controller::Request &request, Controller::Response &response);
 void computeResponse_for_standby(Controller::Request &request, Controller::Response &response);
 void computeResponse_for_LQR(Controller::Request &request, Controller::Response &response);
-void computeResponse_for_excitation_LQR(Controller::Request &request, Controller::Response &response);
 void computeResponse_for_Rampc(Controller::Request &request, Controller::Response &response);
-void computeResponse_for_excitation_Rampc(Controller::Request &request, Controller::Response &response);
 void computeResponse_for_landing_move_down(Controller::Request &request, Controller::Response &response);
 void computeResponse_for_landing_spin_motors(Controller::Request &request, Controller::Response &response);
 void calculateControlOutput_viaLQR(Controller::Request &request, control_output &output);

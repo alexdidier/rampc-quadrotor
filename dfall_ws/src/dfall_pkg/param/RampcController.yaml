@@ -118,7 +118,7 @@ Rampc_yaw_control : false
 Tini : 6
 
 # Prediction horizon in discrete time steps
-N : 10
+N : 20
 
 # Output cost matrix diagonal entries (x, y, z, x_dot, y_dot, z_dot, roll, pitch, yaw)
 Q : [1.0, 0.3, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
